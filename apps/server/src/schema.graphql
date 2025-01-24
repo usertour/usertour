@@ -1,0 +1,871 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Analytics {
+  totalCompletions: Int!
+  totalViews: Int!
+  uniqueCompletions: Int!
+  uniqueViews: Int!
+  viewsByDay: JSON
+  viewsByStep: JSON
+  viewsByTask: JSON
+}
+
+input AnalyticsOrder {
+  direction: OrderDirection!
+  field: AnalyticsOrderField!
+}
+
+"""Properties by which content connections can be ordered."""
+enum AnalyticsOrderField {
+  createdAt
+  id
+  updatedAt
+}
+
+input AnalyticsQuery {
+  contentId: String!
+  endDate: String!
+  startDate: String!
+  timezone: String!
+}
+
+type Attribute {
+  bizType: Int!
+  codeName: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  dataType: Int!
+  description: String!
+  displayName: String!
+  id: ID!
+  predefined: Boolean!
+  projectId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type AttributeOnEvent {
+  attributeId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  eventId: String!
+  id: ID!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type Auth {
+  """JWT access token"""
+  accessToken: JWT!
+
+  """JWT refresh token"""
+  refreshToken: JWT!
+  user: User!
+}
+
+input BizCompanyOnSegmentInput {
+  bizCompanyId: String!
+  data: JSON
+  segmentId: String!
+}
+
+type BizConnection {
+  edges: [BizModelEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BizEvent {
+  bizSessionId: String!
+  bizUserId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  eventId: String!
+  id: ID!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type BizModel {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  environmentId: String!
+  externalId: String!
+  id: ID!
+  membership: JSON!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type BizModelEdge {
+  cursor: String!
+  node: BizModel!
+}
+
+input BizOrder {
+  direction: OrderDirection!
+  field: BizOrderField!
+}
+
+"""Properties by which content connections can be ordered."""
+enum BizOrderField {
+  createdAt
+  id
+  updatedAt
+}
+
+input BizQuery {
+  companyId: String
+  data: JSON
+  environmentId: String
+  search: String
+  segmentId: String
+  userId: String
+}
+
+type BizSession {
+  bizEvent: [BizEvent!]
+  bizUser: BizModel!
+  bizUserId: String!
+  contentId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  id: ID!
+  progress: Int!
+  state: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type BizSessionConnection {
+  edges: [BizSessionEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BizSessionEdge {
+  cursor: String!
+  node: BizSession!
+}
+
+input BizUserOnSegmentInput {
+  bizUserId: String!
+  data: JSON
+  segmentId: String!
+}
+
+input BizUserOrCompanyIdsInput {
+  environmentId: String!
+  ids: [String!]!
+}
+
+input ChangeEmailInput {
+  email: String!
+  password: String!
+}
+
+input ChangePasswordInput {
+  newPassword: String!
+  oldPassword: String!
+}
+
+type Common {
+  count: Int!
+  success: Boolean!
+}
+
+type Content {
+  buildUrl: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  deleted: Boolean!
+  editedVersionId: String
+  environmentId: String!
+  id: ID!
+  name: String
+  published: Boolean!
+  publishedAt: DateTime!
+  publishedVersionId: String
+  steps: [Step!]
+  type: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type ContentConnection {
+  edges: [ContentEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input ContentDuplicateInput {
+  contentId: String!
+  name: String
+}
+
+type ContentEdge {
+  cursor: String!
+  node: Content!
+}
+
+input ContentIdInput {
+  contentId: String!
+}
+
+input ContentInput {
+  buildUrl: String
+  config: JSON
+  data: JSON
+  environmentId: String
+  name: String
+  steps: [StepInput!]
+  themeId: String
+  type: String!
+}
+
+input ContentOrder {
+  direction: OrderDirection!
+  field: ContentOrderField!
+}
+
+"""Properties by which content connections can be ordered."""
+enum ContentOrderField {
+  createdAt
+  id
+  publishedAt
+  updatedAt
+}
+
+input ContentQuery {
+  environmentId: String!
+  name: String
+  published: Boolean
+  type: String
+}
+
+input ContentStepsInput {
+  contentId: String!
+  steps: [StepInput!]!
+  themeId: String!
+  versionId: String!
+}
+
+input ContentUpdateInput {
+  content: UpdateContentInput!
+  contentId: String!
+}
+
+input ContentVersionInput {
+  buildUrl: String
+  config: JSON
+  data: JSON
+  environmentId: String
+  name: String
+  steps: [StepInput!]
+  themeId: String
+  type: String
+  versionId: String!
+}
+
+input CopyThemeInput {
+  id: String!
+  name: String!
+}
+
+input CreatSegment {
+  bizType: SegmentBizType!
+  columns: JSON
+  data: JSON
+  dataType: SegmentDataType!
+  environmentId: String!
+  name: String
+}
+
+input CreateAttributeInput {
+  bizType: Int!
+  codeName: String!
+  dataType: Int!
+  description: String!
+  displayName: String!
+  projectId: String!
+}
+
+input CreateBizCompanyInput {
+  data: JSON
+  environmentId: String!
+  externalId: String!
+  membership: JSON!
+  userId: String!
+}
+
+input CreateBizCompanyOnSegment {
+  companyOnSegment: [BizCompanyOnSegmentInput!]!
+}
+
+input CreateBizInput {
+  data: JSON
+  environmentId: String!
+  externalId: String!
+  membership: JSON!
+}
+
+input CreateBizUserOnSegment {
+  userOnSegment: [BizUserOnSegmentInput!]!
+}
+
+input CreateEnvironmentInput {
+  name: String!
+  projectId: String!
+}
+
+input CreateEventInput {
+  attributeIds: [String!]!
+  codeName: String!
+  deleted: Boolean
+  description: String
+  displayName: String!
+  eventId: String
+  projectId: String!
+}
+
+input CreateLocalizationInput {
+  code: String!
+  locale: String!
+  name: String!
+  projectId: String!
+}
+
+input CreateStepInput {
+  contentId: String
+  data: JSON
+  name: String
+  screenshot: JSON
+  sequence: Int
+  setting: JSON
+  target: JSON
+  themeId: String
+  trigger: JSON
+  type: String!
+  versionId: String!
+}
+
+input CreateThemeInput {
+  isDefault: Boolean!
+  name: String!
+  projectId: String!
+  settings: JSON
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input DeleteAttributeInput {
+  id: ID!
+}
+
+input DeleteBizCompanyOnSegment {
+  bizCompanyIds: [String!]!
+  segmentId: String!
+}
+
+input DeleteBizUserOnSegment {
+  bizUserIds: [String!]!
+  segmentId: String!
+}
+
+input DeleteEnvironmentInput {
+  id: String!
+}
+
+input DeleteEventInput {
+  id: ID!
+}
+
+input DeleteLocalizationInput {
+  id: ID!
+}
+
+input DeleteSegment {
+  id: ID!
+}
+
+input DeleteThemeInput {
+  id: String
+}
+
+type Environment {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  projectId: String!
+  token: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type Events {
+  attributeIds: [String!]!
+  codeName: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  deleted: Boolean
+  description: String
+  displayName: String!
+  eventId: String
+  id: ID!
+  predefined: Boolean!
+  projectId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+A field whose value is a JSON Web Token (JWT): https://jwt.io/introduction.
+"""
+scalar JWT
+
+type Localization {
+  code: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  isDefault: Boolean!
+  locale: String!
+  name: String!
+  projectId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input MagicLinkInput {
+  email: String!
+}
+
+type Mutation {
+  addContentStep(data: CreateStepInput!): Step!
+  addContentSteps(data: ContentStepsInput!): Common!
+  changeEmail(data: ChangeEmailInput!): User!
+  changePassword(data: ChangePasswordInput!): User!
+  copyTheme(data: CopyThemeInput!): Theme!
+  createAttribute(data: CreateAttributeInput!): Attribute!
+  createBizCompany(data: CreateBizCompanyInput!): Common!
+  createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
+  createBizUser(data: CreateBizInput!): Common!
+  createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
+  createContent(data: ContentInput!): Content!
+  createContentVersion(data: ContentVersionInput!): Version!
+  createEnvironments(data: CreateEnvironmentInput!): Environment!
+  createEvent(data: CreateEventInput!): Events!
+  createLocalization(data: CreateLocalizationInput!): Localization!
+  createMagicLink(data: MagicLinkInput!): Register!
+  createPresignedUrl(data: createPresignedUrlInput!): Storage!
+  createSegment(data: CreatSegment!): Segment!
+  createTheme(data: CreateThemeInput!): Theme!
+  deleteAttribute(data: DeleteAttributeInput!): Attribute!
+  deleteBizCompany(data: BizUserOrCompanyIdsInput!): Common!
+  deleteBizCompanyOnSegment(data: DeleteBizCompanyOnSegment!): Common!
+  deleteBizUser(data: BizUserOrCompanyIdsInput!): Common!
+  deleteBizUserOnSegment(data: DeleteBizUserOnSegment!): Common!
+  deleteContent(data: ContentIdInput!): Common!
+  deleteEnvironments(data: DeleteEnvironmentInput!): Environment!
+  deleteEvent(data: DeleteEventInput!): Events!
+  deleteLocalization(data: DeleteLocalizationInput!): Localization!
+  deleteSegment(data: DeleteSegment!): Common!
+  deleteTheme(data: DeleteThemeInput!): Theme!
+  duplicateContent(data: ContentDuplicateInput!): Content!
+  login(data: LoginInput!): Auth!
+  publishedContentVersion(data: VersionIdInput!): Version!
+  refreshToken(token: JWT!): Token!
+  resendMagicLink(data: ResendLinkInput!): Register!
+  resetUserPassword(data: ResetPasswordInput!): Common!
+  resetUserPasswordByCode(data: ResetPasswordByCodeInput!): Common!
+  restoreContentVersion(data: VersionIdInput!): Version!
+  setDefaultLocalization(id: String!): Localization!
+  setDefaultTheme(themeId: String!): Theme!
+  signup(data: SignupInput!): Auth!
+  unpublishedContentVersion(data: ContentIdInput!): Common!
+  updateAttribute(data: UpdateAttributeInput!): Attribute!
+  updateContent(data: ContentUpdateInput!): Content!
+  updateContentStep(data: UpdateStepInput!, stepId: String!): Common!
+  updateContentVersion(data: VersionUpdateInput!): Version!
+  updateEnvironments(data: UpdateEnvironmentInput!): Environment!
+  updateEvent(data: UpdateEventInput!): Events!
+  updateLocalization(data: UpdateLocalizationInput!): Localization!
+  updateSegment(data: UpdateSegment!): Segment!
+  updateTheme(data: UpdateThemeInput!): Theme!
+  updateUser(data: UpdateUserInput!): User!
+  updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
+}
+
+type OEmbed {
+  height: String!
+  html: String!
+  width: String!
+}
+
+"""
+Possible directions in which to order a list of items when provided an `orderBy` argument.
+"""
+enum OrderDirection {
+  asc
+  desc
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type Project {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  environments: [Environment!]
+  id: String!
+  logoUrl: String
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type Query {
+  findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
+  getContent(contentId: String!): Content!
+  getContentVersion(versionId: String!): Version!
+  getTheme(themeId: String!): Theme!
+  hello(name: String!): String!
+  helloWorld: String!
+  listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
+  listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
+  listContentVersions(contentId: String!): [Version!]!
+  listEvents(projectId: String!): [Events!]!
+  listLocalizations(projectId: String!): [Localization!]!
+  listSegment(environmentId: String!): [Segment!]!
+  listThemes(projectId: String!): [Theme!]!
+  me: User!
+  queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
+  queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
+  queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
+  queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
+  queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
+  queryOembedInfo(url: String!): OEmbed!
+  userEnvironments(projectId: String!): [Environment!]!
+}
+
+type Register {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+input ResendLinkInput {
+  id: String!
+}
+
+input ResetPasswordByCodeInput {
+  code: String!
+  password: String!
+}
+
+input ResetPasswordInput {
+  email: String!
+}
+
+"""User role"""
+enum Role {
+  ADMIN
+  OWNER
+  USER
+}
+
+type Segment {
+  bizType: SegmentBizType!
+  columns: JSON
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  dataType: SegmentDataType!
+  environmentId: String!
+  id: ID!
+  name: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+enum SegmentBizType {
+  COMPANY
+  USER
+}
+
+enum SegmentDataType {
+  ALL
+  CONDITION
+  MANUAL
+}
+
+input SignupInput {
+  code: String!
+  companyName: String!
+  password: String!
+  userName: String!
+}
+
+type Step {
+  contentId: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  cvid: String!
+  data: JSON
+  id: ID!
+  name: String
+  screenshot: JSON
+  sequence: Int
+  setting: JSON
+  target: JSON
+  themeId: String
+  trigger: JSON
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+  versionId: String!
+}
+
+input StepInput {
+  data: JSON
+  id: String
+  name: String
+  screenshot: JSON
+  sequence: Int
+  setting: JSON
+  target: JSON
+  themeId: String
+  trigger: JSON
+  type: String!
+}
+
+type Storage {
+  cdnUrl: String!
+  signedUrl: String!
+}
+
+type Theme {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  isDefault: Boolean!
+  isSystem: Boolean!
+  name: String!
+  projectId: String!
+  settings: JSON!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type Token {
+  """JWT access token"""
+  accessToken: JWT!
+
+  """JWT refresh token"""
+  refreshToken: JWT!
+}
+
+input UpdateAttributeInput {
+  bizType: Int
+  codeName: String
+  dataType: Int
+  description: String
+  displayName: String
+  id: String!
+}
+
+input UpdateContentInput {
+  buildUrl: String
+  name: String
+}
+
+input UpdateEnvironmentInput {
+  id: String!
+  name: String!
+}
+
+input UpdateEventInput {
+  attributeIds: [String!]
+  codeName: String
+  deleted: Boolean
+  description: String
+  displayName: String
+  eventId: String
+  id: String!
+}
+
+input UpdateLocalizationInput {
+  code: String
+  id: String!
+  locale: String
+  name: String
+}
+
+input UpdateSegment {
+  columns: JSON
+  data: JSON
+  id: ID!
+  name: String
+}
+
+input UpdateStepInput {
+  contentId: String
+  data: JSON
+  name: String
+  screenshot: JSON
+  sequence: Int
+  setting: JSON
+  target: JSON
+  themeId: String
+  trigger: JSON
+  type: String
+  versionId: String
+}
+
+input UpdateThemeInput {
+  id: String!
+  isDefault: Boolean
+  name: String
+  settings: JSON
+}
+
+input UpdateUserInput {
+  avatarUrl: String
+  name: String!
+}
+
+type User {
+  avatarUrl: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String
+  projects: [UserOnProject!]!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type UserOnProject {
+  actived: Boolean!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  project: Project!
+  role: Role!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type Version {
+  config: JSON
+  contentId: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  id: ID!
+  sequence: Int!
+  steps: [Step!]
+  themeId: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+input VersionIdInput {
+  versionId: String
+}
+
+input VersionInput {
+  config: JSON
+  data: JSON
+  themeId: String
+}
+
+type VersionOnLocalization {
+  backup: JSON
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  enabled: Boolean!
+  id: ID!
+  localizationId: String!
+  localized: JSON
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+  versionId: String!
+}
+
+input VersionUpdateInput {
+  content: VersionInput!
+  versionId: String
+}
+
+input VersionUpdateLocalizationInput {
+  backup: JSON!
+  enabled: Boolean!
+  localizationId: String!
+  localized: JSON!
+  versionId: String!
+}
+
+input createPresignedUrlInput {
+  contentType: String
+  fileName: String!
+  storageType: String!
+}

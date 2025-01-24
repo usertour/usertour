@@ -1,0 +1,9 @@
+{
+  "Welcome to React": "Welcome to React Boilerplate",
+  "Logged In": "Logged In",
+  "Logout": "Logout",
+  "Login": "Login",
+  "Sorry, you are not authorized to access this page.": "Sorry, you are not authorized to access this page.",
+  "Sorry, something is wrong with the server.": "Sorry, something is wrong with the server.",
+  "Sorry, the page you are trying to visit does not exist.": "Sorry, the page you are trying to visit does not exist."
+}

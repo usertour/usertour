@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+    <style>
+      body {
+        padding: 300px;
+      }
+
+      .step1 {
+        width: 100px;
+        min-height: 20px;
+        background-color: red;
+      }
+
+      .d1 {
+        width: 400px;
+        height: 350px;
+        position: absolute;
+        z-index: 888;
+        background-color: blue;
+      }
+
+      .d2 {
+        margin-top: 600px;
+        width: 400px;
+        min-height: 20px;
+        background-color: yellow;
+        color: white;
+      }
+
+      #tooltip {
+        background-color: #333;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      #mydiv {
+        position: absolute;
+        z-index: 9;
+        background-color: #f1f1f1;
+        border: 1px solid #d3d3d3;
+        text-align: center;
+      }
+
+      #mydivheader {
+        padding: 10px;
+        cursor: move;
+        z-index: 10;
+        background-color: #2196f3;
+        color: #fff;
+      }
+
+      .container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 20px;
+      }
+
+      .drop-targets {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+
+        margin: 20px 0;
+      }
+
+      .box {
+        height: 150px;
+        width: 150px;
+        border: solid 3px #ccc;
+        margin: 10px;
+
+        /* align items in the box */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .drag-over {
+        border: dashed 3px red;
+      }
+
+      .item {
+        height: 75px;
+        width: 75px;
+        background-color: #f0db4f;
+      }
+
+      .hide {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <input placeholder="Enter some text" name="name" class="i1" value="fsds" />
+    <input placeholder="Enter some text" name="name" class="i2" value="12321" />
+    <div id="mydiv">
+      <!-- Include a header DIV with the same name as the draggable DIV, followed by "header" -->
+      <div id="mydivheader">Click here to move</div>
+      <p>Move</p>
+      <p>this</p>
+      <p>DIV</p>
+    </div>
+    <div class="d1">
+      <div>some info</div>
+    </div>
+    <div style="height: 100px; overflow: auto; background-color: #2196f3">
+      <div
+        style="
+          width: 600px;
+          height: 600px;
+          overflow-y: auto;
+          position: absolute;
+          background: red;
+          top: 800px;
+          padding-top: 100px;
+        "
+      >
+        <div class="d2" style="height: 30px">Hello World!</div>
+        <div style="height: 800px"></div>
+      </div>
+    </div>
+    <!-- <iframe src="subpage.html" width="800" height="800"></iframe> -->
+    <div></div>
+
+    <div class="container">
+      <h1>JavaScript - Drag and Drop</h1>
+      <div class="drop-targets">
+        <div class="box">
+          <div class="item" id="item" draggable="true"></div>
+        </div>
+        <input id="input-111" style="width: 200px" />
+        <div class="box"></div>
+        <div class="box"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/usertour.ts"></script>
+    <script>
+      window.onload = async function () {
+        if (window.usertour) {
+          usertour.init("cm5wcjl3s00049kqit37o2os8");
+          await usertour.identify(new Date().getTime().toString(), {
+            // userNamedddd: "liuzhaodong-test",
+            male: true,
+            sdsdd: 13,
+            registerAt: "2024-03-29T10:05:45-06:00",
+          });
+          await usertour.updateUser({
+            website_lead: true,
+            loginName: "222222222222",
+          });
+          await usertour.group(
+            "group-999999",
+            {
+              name: "tushuguan",
+            },
+            { membership: { isBook: true, Content: "ccccjjjjj" } }
+          );
+          // usertour.identifyAnonymous({
+          //   website_lead: true,
+          // });
+        }
+      };
+    </script>
+  </body>
+</html>

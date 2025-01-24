@@ -1,0 +1,9 @@
+{
+  "Welcome to React": "React Boilerplate에서 환영합니다!",
+  "Logged In": "로그인됨",
+  "Logout": "로그아웃",
+  "Login": "로그인",
+  "Sorry, you are not authorized to access this page.": "죄송합니다. 해당 페이지에 접근 권한이 없습니다.",
+  "Sorry, something is wrong with the server.": "죄송합니다. 서버에 문제가 있습니다.",
+  "Sorry, the page you are trying to visit does not exist.": "죄송합니다. 해당 페이지가 존재하지 않습니다."
+}

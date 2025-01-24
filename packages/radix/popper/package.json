@@ -1,0 +1,63 @@
+{
+  "name": "@usertour-ui/react-popper",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src --dts",
+    "dev": "pnpm build:fast -- --watch",
+    "clean": "rimraf dist .turbo",
+    "typecheck": "tsc --noEmit",
+    "build:fast": "tsup src"
+  },
+  "tsup": {
+    "clean": true,
+    "target": "es2019",
+    "format": [
+      "cjs",
+      "esm"
+    ]
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.13.10",
+    "@floating-ui/react-dom": "^2.0.0",
+    "@usertour-ui/react-arrow": "workspace:*",
+    "@usertour-ui/react-compose-refs": "workspace:*",
+    "@usertour-ui/react-context": "workspace:*",
+    "@usertour-ui/react-primitive": "workspace:*",
+    "@usertour-ui/react-use-callback-ref": "workspace:*",
+    "@usertour-ui/react-use-layout-effect": "workspace:*",
+    "@usertour-ui/react-use-rect": "workspace:*",
+    "@usertour-ui/react-use-size": "workspace:*",
+    "@usertour-ui/rect": "workspace:*"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0",
+    "react-dom": "^16.8 || ^17.0 || ^18.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://usertour-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usertour-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/usertour-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.2"
+}

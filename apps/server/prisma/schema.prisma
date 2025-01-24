@@ -1,0 +1,385 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+
+  // previewFeatures = []
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+model User {
+  id        String          @id @default(cuid())
+  createdAt DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime        @updatedAt @db.Timestamptz(6)
+  email     String          @unique
+  password  String
+  avatarUrl String?
+  name      String?
+  projects  UserOnProject[]
+  codes     Code[]
+}
+
+model Register {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  code      String   @default(cuid())
+  email     String
+}
+
+model Code {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  ext       Json?    @db.JsonB
+}
+
+model Project {
+  id            String          @id @default(cuid())
+  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
+  name          String
+  logoUrl       String?
+  users         UserOnProject[]
+  environments  Environment[]
+  themes        Theme[]
+  attributes    Attribute[]
+  events        Event[]
+  localizations Localization[]
+}
+
+model UserOnProject {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  role      Role
+  actived   Boolean
+  project   Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId String?
+  userId    String?
+
+  @@unique([projectId, userId])
+}
+
+model Environment {
+  id           String       @id @default(cuid())
+  createdAt    DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(6)
+  name         String?
+  token        String       @default(cuid())
+  deleted      Boolean      @default(false)
+  project      Project      @relation(fields: [projectId], references: [id])
+  projectId    String
+  contents     Content[]
+  bizUsers     BizUser[]
+  bizCompanies BizCompany[]
+  segments     Segment[]
+}
+
+model Theme {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  name      String    @default("")
+  isDefault Boolean   @default(false)
+  isSystem  Boolean   @default(false)
+  deleted   Boolean   @default(false)
+  project   Project   @relation(fields: [projectId], references: [id])
+  projectId String
+  // settings  String
+  settings  Json?     @db.JsonB
+  steps     Step[]
+  versions  Version[]
+}
+
+model Content {
+  id                 String       @id @default(cuid())
+  createdAt          DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime     @updatedAt @db.Timestamptz(6)
+  publishedAt        DateTime?    @default(now()) @db.Timestamptz(6)
+  name               String?
+  buildUrl           String?
+  type               String       @default("flow")
+  published          Boolean      @default(false)
+  deleted            Boolean      @default(false)
+  environment        Environment  @relation(fields: [environmentId], references: [id])
+  environmentId      String
+  config             Json?        @db.JsonB
+  versions           Version[]    @relation("ContentVersions")
+  editedVersion      Version?     @relation("EditedVersion", fields: [editedVersionId], references: [id])
+  publishedVersion   Version?     @relation("publishedVersion", fields: [publishedVersionId], references: [id])
+  publishedVersionId String?      @unique
+  editedVersionId    String?      @unique
+  bizSession         BizSession[]
+}
+
+model Version {
+  id                    String                  @id @default(cuid())
+  createdAt             DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
+  publishedAt           DateTime?               @db.Timestamptz(6)
+  deleted               Boolean                 @default(false)
+  sequence              Int                     @default(0)
+  theme                 Theme?                  @relation(fields: [themeId], references: [id])
+  themeId               String?
+  content               Content                 @relation("ContentVersions", fields: [contentId], references: [id])
+  contentId             String
+  data                  Json?                   @db.JsonB
+  config                Json?                   @db.JsonB
+  steps                 Step[]
+  editByContent         Content?                @relation("EditedVersion")
+  publishByContent      Content?                @relation("publishedVersion")
+  bizSession            BizSession[]
+  versionOnLocalization VersionOnLocalization[]
+
+  @@unique([contentId, sequence])
+}
+
+model Step {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+  sequence   Int      @default(0)
+  cvid       String   @default(cuid())
+  name       String?
+  type       String?
+  target     Json?    @db.JsonB
+  data       Json?    @db.JsonB
+  trigger    Json?    @db.JsonB
+  setting    Json?    @db.JsonB
+  screenshot Json?    @db.JsonB
+  theme      Theme?   @relation(fields: [themeId], references: [id])
+  themeId    String?
+  version    Version  @relation(fields: [versionId], references: [id])
+  versionId  String
+
+  @@unique([versionId, cvid])
+  @@unique([versionId, sequence])
+}
+
+model Localization {
+  id                    String                  @id @default(cuid())
+  createdAt             DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
+  locale                String
+  name                  String
+  code                  String
+  isDefault             Boolean                 @default(false)
+  project               Project                 @relation(fields: [projectId], references: [id])
+  projectId             String
+  VersionOnLocalization VersionOnLocalization[]
+
+  @@unique([projectId, code])
+}
+
+model VersionOnLocalization {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(6)
+  version        Version      @relation(fields: [versionId], references: [id])
+  versionId      String
+  enabled        Boolean      @default(false)
+  localization   Localization @relation(fields: [localizationId], references: [id])
+  localizationId String
+  localized      Json         @db.JsonB
+  backup         Json         @db.JsonB
+
+  @@unique([versionId, localizationId])
+}
+
+enum Role {
+  ADMIN
+  USER
+  OWNER
+}
+
+model Attribute {
+  id               String             @id @default(cuid())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  bizType          Int                @default(1)
+  project          Project            @relation(fields: [projectId], references: [id])
+  projectId        String
+  displayName      String             @default("")
+  codeName         String             @default("")
+  description      String             @default("")
+  dataType         Int                @default(1)
+  randomMax        Int                @default(1)
+  predefined       Boolean            @default(false)
+  deleted          Boolean            @default(false)
+  attributeOnEvent AttributeOnEvent[]
+
+  @@unique([projectId, bizType, codeName])
+}
+
+model BizUser {
+  id                String             @id @default(cuid())
+  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(6)
+  environment       Environment        @relation(fields: [environmentId], references: [id])
+  environmentId     String
+  externalId        String             @default("")
+  data              Json?              @db.JsonB
+  deleted           Boolean            @default(false)
+  bizUsersOnCompany BizUserOnCompany[]
+  bizCompany        BizCompany?        @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId      String?
+  bizUsersOnSegment BizUserOnSegment[]
+  bizEvent          BizEvent[]
+  bizSession        BizSession[]
+
+  @@unique([environmentId, externalId])
+  @@index([externalId])
+}
+
+model BizUserOnCompany {
+  id           String     @id @default(cuid())
+  createdAt    DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(6)
+  bizCompany   BizCompany @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId String
+  bizUser      BizUser    @relation(fields: [bizUserId], references: [id])
+  bizUserId    String
+  data         Json       @db.JsonB
+
+  @@unique([bizCompanyId, bizUserId])
+  @@index([bizUserId])
+}
+
+model BizCompany {
+  id                    String                @id @default(cuid())
+  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime              @updatedAt @db.Timestamptz(6)
+  environment           Environment           @relation(fields: [environmentId], references: [id])
+  environmentId         String
+  externalId            String                @default("")
+  data                  Json?                 @db.JsonB
+  deleted               Boolean               @default(false)
+  bizUsersOnCompany     BizUserOnCompany[]
+  bizUsers              BizUser[]
+  bizCompaniesOnSegment BizCompanyOnSegment[]
+
+  @@unique([environmentId, externalId])
+  @@index([externalId])
+}
+
+model Segment {
+  id                    String                @id @default(cuid())
+  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime              @updatedAt @db.Timestamptz(6)
+  name                  String                @default("")
+  bizType               Int                   @default(1)
+  dataType              Int                   @default(1)
+  environment           Environment           @relation(fields: [environmentId], references: [id])
+  environmentId         String
+  columns               Json?                 @db.JsonB
+  data                  Json?                 @db.JsonB
+  deleted               Boolean               @default(false)
+  bizUsersOnSegment     BizUserOnSegment[]
+  bizCompaniesOnSegment BizCompanyOnSegment[]
+}
+
+model BizUserOnSegment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  segment   Segment  @relation(fields: [segmentId], references: [id])
+  segmentId String
+  bizUser   BizUser  @relation(fields: [bizUserId], references: [id])
+  bizUserId String
+  data      Json?    @db.JsonB
+
+  @@unique([segmentId, bizUserId])
+  @@index([bizUserId])
+}
+
+model BizCompanyOnSegment {
+  id           String     @id @default(cuid())
+  createdAt    DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(6)
+  segment      Segment    @relation(fields: [segmentId], references: [id])
+  segmentId    String
+  bizCompany   BizCompany @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId String
+  data         Json?      @db.JsonB
+
+  @@unique([segmentId, bizCompanyId])
+  @@index([bizCompanyId])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  displayName String   @default("")
+  codeName    String   @default("")
+  description String   @default("")
+  deleted     Boolean  @default(false)
+  predefined  Boolean  @default(false)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+
+  attributeOnEvent AttributeOnEvent[]
+  bizEvent         BizEvent[]
+
+  @@unique([codeName, projectId])
+}
+
+model AttributeOnEvent {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  event       Event     @relation(fields: [eventId], references: [id])
+  eventId     String
+  attribute   Attribute @relation(fields: [attributeId], references: [id])
+  attributeId String
+
+  @@unique([eventId, attributeId])
+}
+
+model BizSession {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime   @updatedAt @db.Timestamptz(6)
+  deleted   Boolean    @default(false)
+  state     Int        @default(0)
+  data      Json?      @db.JsonB
+  progress  Int        @default(0)
+  bizUser   BizUser    @relation(fields: [bizUserId], references: [id])
+  bizUserId String
+  content   Content    @relation(fields: [contentId], references: [id])
+  contentId String
+  version   Version    @relation(fields: [versionId], references: [id])
+  versionId String
+  bizEvent  BizEvent[]
+
+  @@index([bizUserId])
+  @@index([contentId])
+}
+
+model BizEvent {
+  id           String      @id @default(cuid())
+  createdAt    DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
+  event        Event       @relation(fields: [eventId], references: [id])
+  eventId      String
+  /// stores snapshot data related to event
+  data         Json?       @db.JsonB
+  bizUser      BizUser     @relation(fields: [bizUserId], references: [id])
+  bizUserId    String
+  bizSession   BizSession? @relation(fields: [bizSessionId], references: [id])
+  bizSessionId String?
+
+  @@index([bizUserId])
+  @@index([bizSessionId])
+}

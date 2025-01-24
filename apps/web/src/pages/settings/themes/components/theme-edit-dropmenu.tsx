@@ -1,0 +1,106 @@
+import { ReactNode, useState } from "react";
+import { Theme } from "@usertour-ui/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@usertour-ui/dropdown-menu";
+import { StarFilledIcon } from "@radix-ui/react-icons";
+import { CopyIcon, Delete2Icon } from "@usertour-ui/icons";
+import { ThemeDuplicateForm } from "./theme-duplicate-form";
+import { ThemeDeleteForm } from "./theme-delete-form";
+import { useToast } from "@usertour-ui/use-toast";
+import { useMutation } from "@apollo/client";
+import { setDefaultTheme } from "@usertour-ui/gql";
+import { getErrorMessage } from "@usertour-ui/shared-utils";
+
+type ThemeEditDropdownMenuProps = {
+  theme: Theme;
+  children: ReactNode;
+  onSubmit: (action: string) => void;
+};
+export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
+  const { theme, children, onSubmit } = props;
+  const [setDefaultThemeMutation] = useMutation(setDefaultTheme);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [openDuplicate, setOpenDuplicate] = useState(false);
+  const { toast } = useToast();
+
+  const handleOnClick = () => {
+    setOpenDelete(true);
+  };
+
+  const handleDuplicateOpen = () => {
+    setOpenDuplicate(true);
+  };
+  const handleDuplicateSuccess = () => {
+    setOpenDuplicate(false);
+    onSubmit("duplicate");
+  };
+
+  const handleSetAsDefault = async () => {
+    try {
+      await setDefaultThemeMutation({
+        variables: {
+          themeId: theme.id,
+        },
+      });
+      onSubmit("setAsDefault");
+      toast({
+        variant: "success",
+        title: "The theme has been successfully set as default",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: getErrorMessage(error),
+      });
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="z-[101]">
+          <DropdownMenuItem onClick={handleSetAsDefault}>
+            <StarFilledIcon className="mr-1" width={15} height={15} />
+            Set as company default
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleDuplicateOpen}>
+            <CopyIcon className="mr-1" width={15} height={15} />
+            Duplicate theme
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-red-600"
+            onClick={handleOnClick}
+            disabled={theme.isSystem}
+          >
+            <Delete2Icon className="mr-1" />
+            Delete theme
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ThemeDuplicateForm
+        duplicateTheme={theme}
+        open={openDuplicate}
+        onOpenChange={setOpenDuplicate}
+        onSuccess={handleDuplicateSuccess}
+      />
+      <ThemeDeleteForm
+        data={theme}
+        open={openDelete}
+        onOpenChange={setOpenDelete}
+        onSubmit={() => {
+          onSubmit("delete");
+        }}
+      />
+    </>
+  );
+};
+
+ThemeEditDropdownMenu.displayName = "ThemeEditDropdownMenu";

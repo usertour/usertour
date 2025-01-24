@@ -1,0 +1,455 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  email String [unique, not null]
+  password String [not null]
+  avatarUrl String
+  name String
+  projects UserOnProject [not null]
+  codes Code [not null]
+}
+
+Table Register {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  code String [not null]
+  email String [not null]
+}
+
+Table Code {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user User [not null]
+  userId String [not null]
+  ext Json
+}
+
+Table Project {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  logoUrl String
+  users UserOnProject [not null]
+  environments Environment [not null]
+  themes Theme [not null]
+  attributes Attribute [not null]
+  events Event [not null]
+  localizations Localization [not null]
+}
+
+Table UserOnProject {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  role Role [not null]
+  actived Boolean [not null]
+  project Project
+  user User
+  projectId String
+  userId String
+
+  indexes {
+    (projectId, userId) [unique]
+  }
+}
+
+Table Environment {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String
+  token String [not null]
+  deleted Boolean [not null, default: false]
+  project Project [not null]
+  projectId String [not null]
+  contents Content [not null]
+  bizUsers BizUser [not null]
+  bizCompanies BizCompany [not null]
+  segments Segment [not null]
+}
+
+Table Theme {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null, default: '']
+  isDefault Boolean [not null, default: false]
+  isSystem Boolean [not null, default: false]
+  deleted Boolean [not null, default: false]
+  project Project [not null]
+  projectId String [not null]
+  settings Json
+  steps Step [not null]
+  versions Version [not null]
+}
+
+Table Content {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  publishedAt DateTime [default: `now()`]
+  name String
+  buildUrl String
+  type String [not null, default: 'flow']
+  published Boolean [not null, default: false]
+  deleted Boolean [not null, default: false]
+  environment Environment [not null]
+  environmentId String [not null]
+  config Json
+  versions Version [not null]
+  editedVersion Version
+  publishedVersion Version
+  publishedVersionId String [unique]
+  editedVersionId String [unique]
+  bizSession BizSession [not null]
+}
+
+Table Version {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  publishedAt DateTime
+  deleted Boolean [not null, default: false]
+  sequence Int [not null, default: 0]
+  theme Theme
+  themeId String
+  content Content [not null]
+  contentId String [not null]
+  data Json
+  config Json
+  steps Step [not null]
+  editByContent Content
+  publishByContent Content
+  bizSession BizSession [not null]
+  versionOnLocalization VersionOnLocalization [not null]
+
+  indexes {
+    (contentId, sequence) [unique]
+  }
+}
+
+Table Step {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  sequence Int [not null, default: 0]
+  cvid String [not null]
+  name String
+  type String
+  target Json
+  data Json
+  trigger Json
+  setting Json
+  screenshot Json
+  theme Theme
+  themeId String
+  version Version [not null]
+  versionId String [not null]
+
+  indexes {
+    (versionId, cvid) [unique]
+    (versionId, sequence) [unique]
+  }
+}
+
+Table Localization {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  locale String [not null]
+  name String [not null]
+  code String [not null]
+  isDefault Boolean [not null, default: false]
+  project Project [not null]
+  projectId String [not null]
+  VersionOnLocalization VersionOnLocalization [not null]
+
+  indexes {
+    (projectId, code) [unique]
+  }
+}
+
+Table VersionOnLocalization {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  version Version [not null]
+  versionId String [not null]
+  enabled Boolean [not null, default: false]
+  localization Localization [not null]
+  localizationId String [not null]
+  localized Json [not null]
+  backup Json [not null]
+
+  indexes {
+    (versionId, localizationId) [unique]
+  }
+}
+
+Table Attribute {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  bizType Int [not null, default: 1]
+  project Project [not null]
+  projectId String [not null]
+  displayName String [not null, default: '']
+  codeName String [not null, default: '']
+  description String [not null, default: '']
+  dataType Int [not null, default: 1]
+  randomMax Int [not null, default: 1]
+  predefined Boolean [not null, default: false]
+  deleted Boolean [not null, default: false]
+  attributeOnEvent AttributeOnEvent [not null]
+
+  indexes {
+    (projectId, bizType, codeName) [unique]
+  }
+}
+
+Table BizUser {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  externalId String [not null, default: '']
+  data Json
+  deleted Boolean [not null, default: false]
+  bizUsersOnCompany BizUserOnCompany [not null]
+  bizCompany BizCompany
+  bizCompanyId String
+  bizUsersOnSegment BizUserOnSegment [not null]
+  bizEvent BizEvent [not null]
+  bizSession BizSession [not null]
+
+  indexes {
+    (environmentId, externalId) [unique]
+  }
+}
+
+Table BizUserOnCompany {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  bizCompany BizCompany [not null]
+  bizCompanyId String [not null]
+  bizUser BizUser [not null]
+  bizUserId String [not null]
+  data Json [not null]
+
+  indexes {
+    (bizCompanyId, bizUserId) [unique]
+  }
+}
+
+Table BizCompany {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  externalId String [not null, default: '']
+  data Json
+  deleted Boolean [not null, default: false]
+  bizUsersOnCompany BizUserOnCompany [not null]
+  bizUsers BizUser [not null]
+  bizCompaniesOnSegment BizCompanyOnSegment [not null]
+
+  indexes {
+    (environmentId, externalId) [unique]
+  }
+}
+
+Table Segment {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null, default: '']
+  bizType Int [not null, default: 1]
+  dataType Int [not null, default: 1]
+  environment Environment [not null]
+  environmentId String [not null]
+  columns Json
+  data Json
+  deleted Boolean [not null, default: false]
+  bizUsersOnSegment BizUserOnSegment [not null]
+  bizCompaniesOnSegment BizCompanyOnSegment [not null]
+}
+
+Table BizUserOnSegment {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  segment Segment [not null]
+  segmentId String [not null]
+  bizUser BizUser [not null]
+  bizUserId String [not null]
+  data Json
+
+  indexes {
+    (segmentId, bizUserId) [unique]
+  }
+}
+
+Table BizCompanyOnSegment {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  segment Segment [not null]
+  segmentId String [not null]
+  bizCompany BizCompany [not null]
+  bizCompanyId String [not null]
+  data Json
+
+  indexes {
+    (segmentId, bizCompanyId) [unique]
+  }
+}
+
+Table Event {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  displayName String [not null, default: '']
+  codeName String [not null, default: '']
+  description String [not null, default: '']
+  deleted Boolean [not null, default: false]
+  predefined Boolean [not null, default: false]
+  projectId String [not null]
+  project Project [not null]
+  attributeOnEvent AttributeOnEvent [not null]
+  bizEvent BizEvent [not null]
+
+  indexes {
+    (codeName, projectId) [unique]
+  }
+}
+
+Table AttributeOnEvent {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  event Event [not null]
+  eventId String [not null]
+  attribute Attribute [not null]
+  attributeId String [not null]
+
+  indexes {
+    (eventId, attributeId) [unique]
+  }
+}
+
+Table BizSession {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  deleted Boolean [not null, default: false]
+  state Int [not null, default: 0]
+  data Json
+  progress Int [not null, default: 0]
+  bizUser BizUser [not null]
+  bizUserId String [not null]
+  content Content [not null]
+  contentId String [not null]
+  version Version [not null]
+  versionId String [not null]
+  bizEvent BizEvent [not null]
+}
+
+Table BizEvent {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  event Event [not null]
+  eventId String [not null]
+  data Json [note: 'stores snapshot data related to event']
+  bizUser BizUser [not null]
+  bizUserId String [not null]
+  bizSession BizSession
+  bizSessionId String
+}
+
+Enum Role {
+  ADMIN
+  USER
+  OWNER
+}
+
+Ref: Code.userId > User.id
+
+Ref: UserOnProject.projectId > Project.id [delete: Cascade]
+
+Ref: UserOnProject.userId > User.id [delete: Cascade]
+
+Ref: Environment.projectId > Project.id
+
+Ref: Theme.projectId > Project.id
+
+Ref: Content.environmentId > Environment.id
+
+Ref: Content.editedVersionId - Version.id
+
+Ref: Content.publishedVersionId - Version.id
+
+Ref: Version.themeId > Theme.id
+
+Ref: Version.contentId > Content.id
+
+Ref: Step.themeId > Theme.id
+
+Ref: Step.versionId > Version.id
+
+Ref: Localization.projectId > Project.id
+
+Ref: VersionOnLocalization.versionId > Version.id
+
+Ref: VersionOnLocalization.localizationId > Localization.id
+
+Ref: Attribute.projectId > Project.id
+
+Ref: BizUser.environmentId > Environment.id
+
+Ref: BizUser.bizCompanyId > BizCompany.id
+
+Ref: BizUserOnCompany.bizCompanyId > BizCompany.id
+
+Ref: BizUserOnCompany.bizUserId > BizUser.id
+
+Ref: BizCompany.environmentId > Environment.id
+
+Ref: Segment.environmentId > Environment.id
+
+Ref: BizUserOnSegment.segmentId > Segment.id
+
+Ref: BizUserOnSegment.bizUserId > BizUser.id
+
+Ref: BizCompanyOnSegment.segmentId > Segment.id
+
+Ref: BizCompanyOnSegment.bizCompanyId > BizCompany.id
+
+Ref: Event.projectId > Project.id
+
+Ref: AttributeOnEvent.eventId > Event.id
+
+Ref: AttributeOnEvent.attributeId > Attribute.id
+
+Ref: BizSession.bizUserId > BizUser.id
+
+Ref: BizSession.contentId > Content.id
+
+Ref: BizSession.versionId > Version.id
+
+Ref: BizEvent.eventId > Event.id
+
+Ref: BizEvent.bizUserId > BizUser.id
+
+Ref: BizEvent.bizSessionId > BizSession.id

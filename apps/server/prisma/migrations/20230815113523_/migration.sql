@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Content" ALTER COLUMN "publishedAt" DROP NOT NULL,
+ALTER COLUMN "publishedAt" SET DEFAULT CURRENT_TIMESTAMP,
+ALTER COLUMN "config" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Step" ADD COLUMN     "name" TEXT;

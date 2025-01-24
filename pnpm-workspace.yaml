@@ -1,0 +1,7 @@
+packages:
+  - "apps/sdk"
+  - "apps/web"
+  - "apps/server"
+  - "packages/components/*"
+  - "packages/radix/*"
+  - "packages/shared/*"

@@ -1,0 +1,40 @@
+<mjml>
+  <mj-body background-color="#f1f1f1" width="100%">
+    <mj-section background-color="#f3f5fb">
+      <mj-column>
+        <mj-text font-size="30px" align="center" color="#5534ff">
+          Usertour
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff">
+      <mj-column>
+        <mj-text font-size="20px"> Welcome to Usertour! </mj-text>
+        <mj-text font-size="16px" color="#555" line-height="30px">
+          <a href="{{url}}" target="_blank">Verify your email</a>
+          to finish setting up your account.
+        </mj-text>
+        <mj-button
+          background-color="#5534ff"
+          border-radius="50px"
+          color="white"
+          font-size="15px"
+          href="{{url}}"
+        >
+          Verify my email
+        </mj-button>
+        <mj-divider border-color="#5534ff" border-width="2px"></mj-divider>
+        <mj-text font-size="12px" color="#555">
+          You're receiving this email because you signed up for an account on
+          usertour.io. If you're not sure why you received this email, please
+          ignore it or feel free to contact us.
+        </mj-text>
+        <mj-text font-size="12px" color="#555">
+          If you’re having trouble with the button above, copy and paste the URL
+          below into your web browser.
+        </mj-text>
+        <mj-text font-size="12px" color="#555"> {{url}} </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

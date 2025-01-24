@@ -1,0 +1,124 @@
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.9 84% 4.9%;
+    --success: 141.9 69.2% 58%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 48 96% 89%;
+    --background-400: 212.7 26.8% 83.9%;
+    --background-700: 210 40% 96.1%;
+    --background-800: 210 40% 96.1%;
+    --background-900: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.9 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.9 84% 4.9%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --primary: 250 100% 60%;
+    --primary-foreground: 210 40% 98%;
+    --primary-hover: 250 100% 60%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-hover: 226.5 100% 93.9%;
+
+    --accent: 226.5 100% 93.9%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-hover: 229.7 93.5% 81.8%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --destructive-hover: 0 84.2% 60.2%;
+
+    --editor: 210 40% 96.1%;
+    --editor-foreground: 240 10% 3.9%;
+    --editor-hover: 210 40% 96.1%;
+    --editor-toolbar: 205.7 46.7% 97.1%;
+    --editor-border: 203.3 39.1% 91%;
+
+    --ring: 215 20.2% 65.1%;
+
+    --radius: 0.5rem;
+
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 212 95% 68%;
+    --chart-3: 216 92% 60%;
+    --chart-4: 210 98% 78%;
+    --chart-5: 212 97% 87%;
+  }
+
+  .dark {
+    --background: 221.5 46.4% 11%;
+    --foreground: 0 0% 98%;
+    --success: 141.9 69.2% 58%;
+    --warning: 48 96% 89%;
+    --warning-foreground: 38 92% 50%;
+
+    --background-400: 215 20.2% 65.1%;
+    --background-700: 215.3 25% 26.7%;
+    --background-800: 217.2 33.3% 17.1%;
+    --background-900: 221.5 46.4% 11%;
+
+    --muted: 215.3 25% 26.7%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --border: 215.3 25% 26.7%;
+    --input: 215.4 16.3% 46.9%;
+
+    --primary: 250 100% 60%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 250 100% 60%;
+
+    --secondary: 215.3 25% 26.7%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-hover: 215.3 19.3% 34.5%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --accent-hover: 229.7 93.5% 81.8%;
+
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --destructive-hover: 0 84.2% 60.2%;
+
+    --editor: 210 40% 96.1%;
+    --editor-foreground: 240 10% 3.9%;
+    --editor-hover: 210 40% 96.1%;
+    --editor-toolbar: 205.7 46.7% 97.1%;
+    --editor-border: 203.3 39.1% 91%;
+
+    --ring: 240 3.7% 15.9%;
+
+    --radius: 0.5rem;
+
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 212 95% 68%;
+    --chart-3: 216 92% 60%;
+    --chart-4: 210 98% 78%;
+    --chart-5: 212 97% 87%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply text-foreground;
+  }
+}

@@ -1,0 +1,23 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "../../../packages/shared/assets/sdk/index.css";
+@import "../../../packages/shared/assets/sdk/components.css";
+
+@config "../tailwind.config.js";
+
+@layer base {
+  * {
+    @apply border-sdk-border;
+  }
+  body {
+    @apply bg-sdk-background text-sdk-foreground;
+    /* @apply text-xs; */
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}

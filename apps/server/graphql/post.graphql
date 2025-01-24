@@ -1,0 +1,55 @@
+query UserPosts {
+  userPosts(userId: "USER_ID") {
+    ...PostData
+  }
+}
+
+query PublishedPostsConnection {
+  publishedPosts(first: 20, orderBy: { field: title, direction: desc }) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...PostData
+        author {
+          ...UserData
+        }
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+mutation CreatePost {
+  createPost(data: { content: "Hello", title: "New Post" }) {
+    ...PostData
+  }
+}
+
+subscription SubscriptionPost {
+  postCreated {
+    ...PostData
+  }
+}
+
+fragment PostData on Post {
+  id
+  createdAt
+  updatedAt
+  published
+  title
+  content
+}
+
+fragment UserData on User {
+  id
+  email
+  firstname
+  lastname
+  role
+}

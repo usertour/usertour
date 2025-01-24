@@ -1,0 +1,26 @@
+<mjml>
+  <mj-body background-color="#f1f1f1">
+    <mj-section>
+      <mj-column>
+        <mj-image
+          width="100px"
+          src="https://jslancer.com/assets/images/logo/jslancer.png"
+        ></mj-image>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff">
+      <mj-column>
+        <mj-text font-size="30px" align="center">
+          Invoice payment successfully
+        </mj-text>
+        <mj-divider border-color="#06adef" width="100px"></mj-divider>
+        <mj-text font-size="18px" align="left" color="#555" line-height="30px">
+          Hi {{name}}! Your invoice payment successfully. Your plan expire on {{date}}.
+        </mj-text>
+        <mj-text font-size="18px" align="left" color="#555" line-height="30px">
+          You can check your invoice at this <a href="{{link}}">link</a>.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
