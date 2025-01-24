@@ -57,3 +57,32 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
   - Get started quickly with our [Self-hosting Guide](https://www.usertour.io/docs/self-hosting/self-hosting/) to run Usertour in your environment. For more detailed references and in-depth instructions, please refer to our documentation.
 - **Usertour for enterprise / organizations**
   - Please contact us at [support@usertour.io](mailto:support@usertour.io) for private deployment solutions.
+
+
+## Contributing Guidelines
+
+| Bug Reports                                                              | Feature Requests                                                  | Issues/Discussions                                                       | Usertour Community                                                     |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| [Create Bug Report](https://github.com/usertour/usertour/issues/new/choose) | [Submit Feature Request](https://github.com/usertour/usertour/pulls) | [View GitHub Discussions](https://github.com/usertour/usertour/discussions) | [Visit Usertour Community](https://www.usertour.io/docs/faq) |
+| Something isn't working as expected                                      | Ideas for new features or improvements                            | Discuss and raise questions                                              | A place to ask questions, learn, and connect with others              |
+
+Calling all developers, testers, tech writers and more! Contributions of all types are more than welcome, please feel free to browse our [GitHub issues](https://github.com/usertour/usertour/issues) to show us what you can do.
+
+For bug reports, feature requests, and other suggestions, you can also [create a new issue](https://github.com/usertour/usertour/issues/new/choose) and choose the most appropriate template to provide feedback.
+
+If you have any questions, feel free to reach out to us. One of the best places to get more information and learn is the [Usertour Community](https://discord.com/invite/Q57psZap), where you can connect with other like-minded individuals.
+
+## Community and Contact
+
+- [GitHub Discussion](https://github.com/usertour/usertour/discussions): Best for sharing feedback and asking questions.
+- [GitHub Issues](https://github.com/usertour/usertour/issues): Best for reporting bugs and suggesting features when using Usertour. Please refer to our contribution guidelines.
+- [Discord](https://discord.com/invite/Q57psZap): Best for sharing your applications and interacting with the community.
+- [X(Twitter)](https://x.com/usertourio): Best for sharing your applications and staying connected with the community.
+
+## Security Issues
+
+To protect your privacy, please avoid posting security-related issues on GitHub. Instead, send your questions to [support@usertour.io](mailto:support@usertour.io), and we will provide you with a more detailed response.
+
+## License
+
+Usertour is open-source under the GNU Affero General Public License v3.0 (AGPL-3.0), you will find more information about the license and how to comply with it [here](./LICENSE)
