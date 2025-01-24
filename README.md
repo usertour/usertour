@@ -8,7 +8,7 @@
   <p>Usertour is open-source user onboarding platform built for developers, You can build in-app product tours, checklists, and launchers in minutes— effortlessly and with full control.</p>
 </div>
 <p align="center">
-  <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://www.usertour.io/docs">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a>
+  <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://www.usertour.io/docs">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a> | <a target="_blank" href="https://discord.com/invite/Q57psZap">Discord</a>
 </p>
 
 ## Quick Start
