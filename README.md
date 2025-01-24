@@ -4,6 +4,7 @@
   <h1 align="center">
     <img alt="usertour logo" height="60" src="./assets/logo.svg">
   </h1>
+  <a href="https://www.usertour.io">Usertour</a>: An alternative to: Appcues, Userpilot, Userflow, Userguiding, Chameleon , Etc...<br /><br />
   <p>Usertour is open-source user onboarding platform built for developers, You can build in-app product tours, checklists, and launchers in minutes— effortlessly and with full control.</p>
 </div>
 <p align="center">
