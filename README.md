@@ -11,6 +11,19 @@
   <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://www.usertour.io/docs">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a>
 </p>
 
+## Quick Start
+### Self-deploy with Docker
+Deploy your own feature-rich, unlimited version of Usertour using Docker. 
+
+To start deployment:
+```bash
+cp .env.example .env # make sure all required envs are properly set
+docker compose up -d
+```
+Visit http://localhost:8000 to start using Usertour.
+
+### Local Development
+View details in [Self-hosting](https://www.usertour.io/docs/self-hosting/self-hosting/).
 
 ## Features
 
