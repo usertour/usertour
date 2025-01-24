@@ -1,3 +1,5 @@
+<img src="./assets/hero.png" alt="Usertour" />
+
 <div align="center">
   <h1 align="center">
     <img alt="usertour logo" height="60" src="./assets/logo.svg">
@@ -7,6 +9,7 @@
 <p align="center">
   <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://www.usertour.io/docs">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a>
 </p>
+
 
 ## Features
 
