@@ -1,11 +1,11 @@
-<img src="./assets/hero.png" alt="Usertour" />
+<a href="https://www.usertour.io"><img src="./assets/hero.png" alt="Usertour" /></a>
 
 <div align="center">
   <h1 align="center">
     <img alt="usertour logo" height="60" src="./assets/logo.svg">
   </h1>
   <a href="https://www.usertour.io">Usertour</a>: An alternative to: Appcues, Userpilot, Userflow, Userguiding, Chameleon , Etc...<br /><br />
-  <p>Usertour is open-source user onboarding platform built for developers, You can build in-app product tours, checklists, and launchers in minutes— effortlessly and with full control.</p>
+  <p>Usertour is an open-source user onboarding platform designed for developers. It allows you to create in-app product tours, checklists, and launchers in minutes—effortlessly and with full control.</p>
 </div>
 <p align="center">
   <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://www.usertour.io/docs">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a> | <a target="_blank" href="https://discord.com/invite/Q57psZap">Discord</a>
