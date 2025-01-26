@@ -37,6 +37,7 @@ import { on } from "../utils/listener";
 import { ReportEventOptions, ReportEventParams } from "../types/content";
 import { compareContentPriorities } from "../utils/content";
 import { AppEvents } from "../utils/event";
+import { getMainCss, getWsUri } from "../utils/env";
 
 interface AppStartOptions {
   environmentId?: string;
@@ -47,7 +48,7 @@ interface AppStartOptions {
 }
 
 export class App extends Evented {
-  socket = new Socket({ wsUri: import.meta.env.VITE_WS_URI });
+  socket = new Socket({ wsUri: getWsUri() });
   activeTour: Tour | undefined;
   startOptions: AppStartOptions = {
     environmentId: "",
@@ -362,7 +363,7 @@ export class App extends Evented {
    * @returns False if document is not available
    */
   async loadCss() {
-    const cssFile = USERTOUR_APP_MAIN_CSS;
+    const cssFile = getMainCss();
     if (!document) {
       return false;
     }

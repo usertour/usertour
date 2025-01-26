@@ -3,20 +3,11 @@ import {
   SubscribeMessage,
   WebSocketGateway as WsGateway,
   WebSocketServer,
-  WsResponse,
 } from "@nestjs/websockets";
-import { from, Observable } from "rxjs";
-import { map } from "rxjs/operators";
 import { Server } from "socket.io";
 import { WebSocketService } from "./web-socket.service";
 
-@WsGateway({
-  cors: {
-    // origin: "https://js.usertour.local:5173",
-    origin: "*",
-    // credentials: false
-  },
-})
+@WsGateway()
 export class WebSocketGateway {
   constructor(private service: WebSocketService) {}
   @WebSocketServer()

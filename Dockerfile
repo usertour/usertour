@@ -1,3 +1,4 @@
+ 
 # Build stage for server
 FROM node:22.13-alpine AS server-builder
 
@@ -24,6 +25,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY tsconfig.json ./
 COPY apps/web ./apps/web
 COPY apps/sdk ./apps/sdk
+COPY apps/sdk/.env.example ./apps/sdk/.env
 COPY packages ./packages
 
 RUN pnpm install 
@@ -54,6 +56,7 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copy built artifacts from both builders
 COPY --from=web-builder /app/apps/web/dist /usr/share/nginx/html/web
+COPY --from=web-builder /app/apps/sdk/dist /usr/share/nginx/html/sdk
 COPY --from=web-builder /sdk-dist /usr/share/nginx/html/sdk
 
 COPY --from=server-builder /app/node_modules ./node_modules

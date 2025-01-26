@@ -1,17 +1,9 @@
 import { NestApplicationOptions, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { HttpAdapterHost, NestFactory } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { PrismaClientExceptionFilter, PrismaService } from "nestjs-prisma";
+import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import type {
-  CorsConfig,
-  NestConfig,
-  SwaggerConfig,
-} from "@/common/configs/config.interface";
-import { WsAdapter } from "@nestjs/platform-ws";
+import type { NestConfig } from "@/common/configs/config.interface";
 import { RedisIoAdapter } from "./adapters/redis-io.adapter";
-import { PostgresIoAdapter } from "./adapters/postgres.adapter";
 import * as fs from "fs";
 import { AllExceptionsFilter } from "./common/filter";
 import { rateLimit } from "express-rate-limit";
@@ -39,41 +31,13 @@ async function bootstrap() {
   // Validation
   app.useGlobalPipes(new ValidationPipe());
 
-  // enable shutdown hook
-  // const prismaService: PrismaService = app.get(PrismaService);
-  // await prismaService.enableShutdownHooks(app);
-
-  // Prisma Client Exception Filter for unhandled exceptions
-  // const { httpAdapter } = app.get(HttpAdapterHost);
-  // app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
-
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>("nest");
-  const corsConfig = configService.get<CorsConfig>("cors");
-  // const swaggerConfig = configService.get<SwaggerConfig>("swagger");
 
-  // Swagger Api
-  // if (swaggerConfig.enabled) {
-  //   const options = new DocumentBuilder()
-  //     .setTitle(swaggerConfig.title || "Nestjs")
-  //     .setDescription(swaggerConfig.description || "The nestjs API description")
-  //     .setVersion(swaggerConfig.version || "1.0")
-  //     .build();
-  //   const document = SwaggerModule.createDocument(app, options);
-
-  //   SwaggerModule.setup(swaggerConfig.path || "api", app, document);
-  // }
-
-  // Cors
-  if (corsConfig.enabled) {
-    app.enableCors();
-  }
   // Uncomment these lines to use the Redis adapter:
   const adapter = new RedisIoAdapter(app);
   await adapter.connectToRedis();
   app.useWebSocketAdapter(adapter);
-
-  // app.useWebSocketAdapter(new WsAdapter(app));
 
   /**
    * Limit the number of user's requests

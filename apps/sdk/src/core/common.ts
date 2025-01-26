@@ -2,12 +2,13 @@ import { AssetAttributes } from "@usertour-ui/frame";
 import { BizUserInfo, Theme } from "@usertour-ui/types";
 import { uuidV4 } from "@usertour-ui/ui-utils";
 import { TourStore, ChecklistStore, LauncherStore } from "../types/store";
+import { getUserTourCss } from "../utils/env";
 
 const defaultAssets: AssetAttributes[] = [
   {
     tagName: "link",
     isCheckLoaded: false,
-    href: USERTOUR_APP_USER_TOUR_CSS,
+    href: getUserTourCss(),
     rel: "stylesheet",
     type: "text/css",
   },
@@ -69,7 +70,7 @@ const createMockUser = (userId?: string): BizUserInfo => {
 const UserTourAsset: AssetAttributes = {
   tagName: "link",
   isCheckLoaded: false,
-  href: USERTOUR_APP_USER_TOUR_CSS,
+  href: getUserTourCss(),
   rel: "stylesheet",
   type: "text/css",
 };
