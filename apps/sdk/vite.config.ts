@@ -51,15 +51,14 @@ const buildPlugins = [
   visualizer(),
 ];
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ command }) => {
   const isIffeBundle = process.argv.includes("--iife");
   const version = process.env.npm_package_version;
   const folderName = isIffeBundle ? "legacy" : "es2020";
   const isBuild = command === "build";
-  const env = loadEnv(mode, process.cwd());
 
-  const css1 = `${env.VITE_ASSETS_URI}/${version}/${folderName}/css/index.css`;
-  const css2 = `${env.VITE_ASSETS_URI}/${version}/${folderName}/css/usertour.css`;
+  const css1 = `/${version}/${folderName}/css/index.css`;
+  const css2 = `/${version}/${folderName}/css/usertour.css`;
 
   const defaultConfig: UserConfigExport = {
     plugins: [react()],
@@ -91,7 +90,7 @@ export default defineConfig(({ command, mode }) => {
     server: {
       host: "js.usertour.local",
       port: 5173,
-      https: true,
+      https: false,
       open: true,
     },
   };

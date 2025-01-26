@@ -1,4 +1,9 @@
-import { ManagerOptions, Socket as SocketIO, io } from "socket.io-client";
+import {
+  ManagerOptions,
+  SocketOptions as SocketIOOptions,
+  Socket as SocketIO,
+  io,
+} from "socket.io-client";
 import { Evented } from "./evented";
 import autoBind from "../utils/auto-bind";
 import {
@@ -13,7 +18,7 @@ import { UserTourTypes } from "@usertour-ui/types";
 
 interface SocketOptions {
   wsUri: string;
-  socketConfig?: Partial<ManagerOptions & SocketOptions>;
+  socketConfig?: Partial<ManagerOptions & SocketIOOptions>;
 }
 
 export class Socket extends Evented {
