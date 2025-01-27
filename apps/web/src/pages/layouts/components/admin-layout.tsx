@@ -9,12 +9,13 @@ import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { storage } from "@usertour-ui/shared-utils";
 import { Button } from "@usertour-ui/button";
-import { AdminMainNav, AdminMainNewNav } from "./admin-main-nav";
+import { AdminMainNav } from "./admin-main-nav";
 import { AdminEnvSwitcher } from "./admin-env-switcher";
 import { AdminUserNav } from "./admin-user-nav";
-import { UserTourTypes } from "@usertour-ui/types";
 import { usePostHog } from "posthog-js/react";
 import { cn } from "@usertour-ui/ui-utils";
+import usertour from "usertour.js";
+import { userTourToken } from "@/utils/env";
 
 export const AdminLayoutHeader = () => {
   return (
@@ -176,31 +177,35 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+// Add new custom hook
+const useUserTracking = (userInfo: any) => {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (!userInfo || !userInfo.id) {
+      return;
+    }
+    usertour.init(userTourToken);
+    usertour.identify(`${userInfo.id}`, {
+      name: userInfo?.name,
+      email: userInfo?.email,
+      signed_up_at: userInfo.createdAt,
+    });
+    posthog?.identify(userInfo.id, {
+      email: userInfo.email,
+    });
+    if (userInfo.projectId) {
+      posthog?.group("company", userInfo.projectId);
+    }
+  }, [userInfo, posthog]);
+};
+
 export const AdminLayout = (props: AdminLayoutProps) => {
   const { children } = props;
   const { project, userInfo } = useAppContext();
   const { type } = useParams();
-  const posthog = usePostHog();
 
-  useEffect(() => {
-    const usertour = (window as UserTourTypes.WindowWithUsertour).usertour;
-    if (usertour && userInfo && userInfo.id) {
-      usertour.identify(`${userInfo.id}`, {
-        name: userInfo?.name,
-        email: userInfo?.email,
-        signed_up_at: userInfo.createdAt,
-      });
-    }
-    if (userInfo && userInfo.id) {
-      // Identify sends an event, so you want may want to limit how often you call it
-      posthog?.identify(userInfo.id, {
-        email: userInfo.email,
-      });
-      if (userInfo.projectId) {
-        posthog?.group("company", userInfo.projectId);
-      }
-    }
-  }, [userInfo, posthog]);
+  useUserTracking(userInfo);
 
   return (
     <>
@@ -229,27 +234,8 @@ export const AdminNewLayout = (props: AdminLayoutProps) => {
   const { children } = props;
   const { project, userInfo } = useAppContext();
   const { type } = useParams();
-  const posthog = usePostHog();
 
-  useEffect(() => {
-    const usertour = (window as UserTourTypes.WindowWithUsertour).usertour;
-    if (usertour && userInfo && userInfo.id) {
-      usertour.identify(`${userInfo.id}`, {
-        name: userInfo?.name,
-        email: userInfo?.email,
-        signed_up_at: userInfo.createdAt,
-      });
-    }
-    if (userInfo && userInfo.id) {
-      // Identify sends an event, so you want may want to limit how often you call it
-      posthog?.identify(userInfo.id, {
-        email: userInfo.email,
-      });
-      if (userInfo.projectId) {
-        posthog?.group("company", userInfo.projectId);
-      }
-    }
-  }, [userInfo, posthog]);
+  useUserTracking(userInfo);
 
   return (
     <>

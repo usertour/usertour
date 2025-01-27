@@ -4,6 +4,7 @@
 import { getAuthToken } from "@usertour-ui/shared-utils";
 import { setContext } from "@apollo/client/link/context";
 import { createHttpLink } from "@apollo/client";
+import { apiUrl } from "@/utils/env";
 
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
@@ -17,10 +18,8 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
-const uri = import.meta.env.VITE_GRAPHQL_HTTP_URI || "/graphql";
-
 const httpLink = createHttpLink({
-  uri,
+  uri: apiUrl,
 });
 
 export const serverLink = authLink.concat(httpLink);

@@ -11,9 +11,10 @@ import { Toaster } from "@usertour-ui/toaster";
 import React from "react";
 import { AppProvider } from "@/contexts/app-context";
 import { PostHogProvider } from "posthog-js/react";
+import { posthogHost, posthogKey } from "./utils/env";
 
 const options = {
-  api_host: import.meta.env.VITE_APP_PUBLIC_POSTHOG_HOST,
+  api_host: posthogHost,
 };
 
 async function bootstrap() {
@@ -28,10 +29,7 @@ async function bootstrap() {
 
   const AppBundle = (
     <React.StrictMode>
-      <PostHogProvider
-        apiKey={import.meta.env.VITE_APP_PUBLIC_POSTHOG_KEY}
-        options={options}
-      >
+      <PostHogProvider apiKey={posthogKey} options={options}>
         <ApolloProvider client={client}>
           <I18nextProvider i18n={i18n}>
             <HelmetProvider>
