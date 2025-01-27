@@ -149,6 +149,30 @@ _:future,
   visibility: inherit;
 }
 
+.usertour-widget-popper-block {
+  position: fixed;
+  visibility: hidden;
+}
+.usertour-widget-popper-block--visible {
+  visibility: inherit;
+}
+.usertour-widget-popper-block--top {
+  top: 0;
+  left: 0;
+}
+.usertour-widget-popper-block--right {
+  top: 0;
+  right: 0;
+}
+.usertour-widget-popper-block--bottom {
+  right: 0;
+  bottom: 0;
+}
+.usertour-widget-popper-block--left {
+  bottom: 0;
+  left: 0;
+}
+
 @supports (-ms-ime-align: auto) {
   .usertour-widget-popper {
     filter: none !important;

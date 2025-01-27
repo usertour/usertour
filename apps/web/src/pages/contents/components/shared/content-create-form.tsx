@@ -155,7 +155,11 @@ export const ContentCreateForm = ({
                     <FormLabel className="w-32 flex-none">Flow name:</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-x-1 w-full grow">
-                        <Input placeholder="Enter flow  name" {...field} />
+                        <Input
+                          placeholder="Enter flow  name"
+                          {...field}
+                          id="flow-name-input"
+                        />
                         <FormMessage />
                       </div>
                     </FormControl>
@@ -197,7 +201,11 @@ export const ContentCreateForm = ({
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                id="create-flow-submit"
+              >
                 {isLoading && (
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 )}
