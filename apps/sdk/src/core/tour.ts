@@ -6,17 +6,14 @@ import {
   SDKContent,
   Step,
   StepContentType,
-  Theme,
 } from "@usertour-ui/types";
 import { type App } from "./app";
 import { smoothScroll } from "@usertour-ui/dom";
 import { ContentEditorButtonElement } from "@usertour-ui/shared-editor";
 import { evalCode } from "@usertour-ui/ui-utils";
-import { convertSettings, convertToCssVars } from "@usertour-ui/shared-utils";
-import { AssetAttributes } from "@usertour-ui/frame";
 import { document } from "../utils/globals";
 import { isActive } from "../utils/conditions";
-import { defaultTourStore, getAssets } from "./common";
+import { defaultTourStore } from "./common";
 import { ElementWatcher } from "./element-watcher";
 import { BaseContent } from "./base-content";
 import { TourStore } from "../types/store";
@@ -63,7 +60,8 @@ export class Tour extends BaseContent<TourStore> {
     const currentStep = newStep || this.getCurrentStep() || undefined;
     this.setCurrentStep(currentStep || null);
 
-    const { openState, triggerRef, ...storeData } = this.buildStoreData();
+    const { openState, triggerRef, progress, ...storeData } =
+      this.buildStoreData();
 
     //todo replace element watcher target
     this.updateStore({ ...storeData, currentStep });
@@ -99,7 +97,9 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
     this.reset();
-    const index = content.steps.indexOf(currentStep);
+    const index = content.steps.findIndex(
+      (step) => step.cvid == currentStep.cvid
+    );
     const isComplete = index + 1 == total ? true : false;
     const progress = ((index + 1) / total) * 100;
     this.setCurrentStep(currentStep);
@@ -305,7 +305,8 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
     const total = content.steps?.length ?? 0;
-    const index = content.steps?.indexOf(currentStep) ?? 0;
+    const index =
+      content.steps?.findIndex((step) => step.cvid == currentStep.cvid) ?? 0;
     const progress = Math.round(((index + 1) / total) * 100);
 
     await this.reportEventWithSession(
