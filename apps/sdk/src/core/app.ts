@@ -31,13 +31,14 @@ import ReactDOM from "react-dom/client";
 import { render } from "../components";
 import { Checklist } from "./checklist";
 import { ExternalStore } from "./store";
-import { createMockUser, UserTourAsset } from "./common";
+import { createMockUser } from "./common";
 import { initializeContentItems } from "../utils/content-utils";
 import { on } from "../utils/listener";
 import { ReportEventOptions, ReportEventParams } from "../types/content";
 import { compareContentPriorities } from "../utils/content";
 import { AppEvents } from "../utils/event";
 import { getMainCss, getWsUri } from "../utils/env";
+import { AssetAttributes } from "@usertour-ui/frame";
 
 interface AppStartOptions {
   environmentId?: string;
@@ -61,7 +62,7 @@ export class App extends Evented {
   container?: HTMLDivElement;
   sessions = new Map<string, { sessionId: string; state: number }>();
   originContents?: SDKContent[];
-  assets = [UserTourAsset];
+  assets: AssetAttributes[] = [];
   userInfo: BizUserInfo | undefined;
   companyInfo: BizCompany | undefined;
   themes: Theme[] | undefined;

@@ -1,16 +1,5 @@
 import { window } from "@usertour-ui/shared-utils";
 
-declare global {
-  interface Window {
-    ENV?: {
-      API_URL?: string;
-      USERTOUR_TOKEN?: string;
-      POSTHOG_KEY?: string;
-      POSTHOG_HOST?: string;
-    };
-  }
-}
-
 export const apiUrl =
   import.meta.env.VITE_API_URL || window?.ENV?.API_URL || "/graphql";
 
