@@ -39,7 +39,7 @@ View details in [Self-hosting](https://www.usertour.io/docs/self-hosting/self-ho
 
 Usertour makes it easy to design in-app product tours, checklists, launchers, and surveys, enabling anyone to craft effective onboarding experiences. Our team is dedicated to consistently improving Usertour with frequent updates that include new features, bug fixes, and performance enhancements.  
 
-### Effortless integration with any web application  
+### Easy Onboarding: Build Flows Fast with Simple Integration and Smart Targeting  
 
 - 🌐 **Compatible with all frameworks**: If your app runs in a browser, it seamlessly integrates with Usertour.  
 - 📄 **Supports multi-page apps**: Whether it's a single-page application or spans across multiple pages, Usertour fits perfectly.  
@@ -54,7 +54,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 🔄 **Version tracking**: Monitor every change in your flows, including who made adjustments and when.  
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/e3720191-c044-41d4-ae04-e36d6d1cc0ef" width="100%" />
+  <video src="https://github.com/user-attachments/assets/eaa81019-57a1-429f-8a05-72428915de05" width="100%" />
 </p>
 
 ### Fully customizable appearance  
