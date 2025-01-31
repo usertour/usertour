@@ -39,31 +39,42 @@ View details in [Self-hosting](https://www.usertour.io/docs/self-hosting/self-ho
 
 Usertour makes it easy to design in-app product tours, checklists, launchers, and surveys, enabling anyone to craft effective onboarding experiences. Our team is dedicated to consistently improving Usertour with frequent updates that include new features, bug fixes, and performance enhancements.  
 
-| ![Image 1](https://github.com/user-attachments/assets/9635c996-9a6d-4207-b747-60340b696889) | ![Image 2](https://github.com/user-attachments/assets/97fe8e32-52b3-40f0-864c-bc629352e632) |
-|--------------------------------|--------------------------------|
-| ![Image 3](https://github.com/user-attachments/assets/7538af6c-185a-485c-a560-fa98efaa4529) | ![Image 4](https://github.com/user-attachments/assets/20da9560-3b32-44a9-822d-747a137f9d2d) |
-
-
 ### Effortless integration with any web application  
 
 - 🌐 **Compatible with all frameworks**: If your app runs in a browser, it seamlessly integrates with Usertour.  
 - 📄 **Supports multi-page apps**: Whether it's a single-page application or spans across multiple pages, Usertour fits perfectly.  
 - 🎯 **Advanced user targeting**: Define custom user attributes and track events to segment and engage your audience effectively.  
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/97fe8e32-52b3-40f0-864c-bc629352e632" width="100%" />
+</p>
 
 ### Built for professional workflows with version control and environments  
 
 - 🛠️ **Multiple environments supported**: Manage environments like Production and Staging within a single Usertour account.  
 - 🔄 **Version tracking**: Monitor every change in your flows, including who made adjustments and when.  
 
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/20da9560-3b32-44a9-822d-747a137f9d2d" width="100%" />
+</p>
+
 ### Fully customizable appearance  
 
 - 🎨 **Tailor your design**: Adjust text, button colors, font family, and size to match your branding.  
 - 🖌️ **Support for multiple themes**: Create unique themes for different flows, offering flexibility for varied use cases.  
 
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/7538af6c-185a-485c-a560-fa98efaa4529" width="100%" />
+</p>
+
 ### Gain actionable insights with powerful analytics  
 
 - 📊 **Performance metrics**: Track the effectiveness of your flows with detailed data on views and completion rates.  
 - 🚨 **Identify problem areas**: Pinpoint steps causing user confusion or drop-offs and address the issues seamlessly.  
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/ada64b91-5010-417e-9979-13e07f0036da" width="100%" />
+</p>
+
 
 ## How to Use?
 - **Cloud**
