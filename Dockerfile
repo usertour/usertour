@@ -1,4 +1,3 @@
- 
 # Build stage for server
 FROM node:22.13-alpine AS server-builder
 
@@ -28,6 +27,18 @@ COPY apps/sdk ./apps/sdk
 COPY apps/sdk/.env.example ./apps/sdk/.env
 COPY packages ./packages
 
+
+# Generate config.js dynamically from .env.example
+# This will overwrite the existing config.js file
+RUN echo "window.ENV = {" > ./apps/web/public/config.js && \
+    cat ./apps/web/.env.example | while read line; do \
+    if [ ! -z "$line" ]; then \
+        var_name=$(echo $line | cut -d'=' -f1 | tr -d ' ' | sed 's/VITE_//'); \
+        echo "  $var_name: '\$$var_name'," >> ./apps/web/public/config.js; \
+    fi \
+    done && \
+    echo "};" >> ./apps/web/public/config.js
+
 RUN pnpm install 
 RUN pnpm --filter @usertour/web build
 RUN pnpm --filter @usertour/sdk build
@@ -47,7 +58,7 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Install system dependencies
-RUN apk add --no-cache nginx openssl openssl-dev libc6-compat
+RUN apk add --no-cache nginx openssl openssl-dev libc6-compat gettext
 RUN apk add --no-cache openssl3 openssl3-dev
 
 # Copy nginx configuration

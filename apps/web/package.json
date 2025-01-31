@@ -4,7 +4,7 @@
   "author": "Usertour, Inc.",
   "license": "AGPL-3.0",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -104,6 +104,7 @@
     "recharts": "^2.7.2",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.6",
+    "usertour.js": "^0.0.10",
     "vite-plugin-mkcert": "^1.17.5",
     "zod": "^3.21.4"
   },

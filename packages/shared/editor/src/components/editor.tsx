@@ -1,7 +1,5 @@
 "use client";
 
-import escapeHtml from "escape-html";
-import isHotkey from "is-hotkey";
 import React, {
   CSSProperties,
   FC,
@@ -35,6 +33,7 @@ import { withUserAttribute } from "../lib/withUserAttribute";
 import { UserAttrButton } from "./toolbar/user-attr";
 import { PopperEditorContextProps, PopperEditorProps } from "../types/editor";
 import { withLink } from "../lib/withLink";
+import isHotkey from "is-hotkey";
 
 const HOTKEYS = {
   "mod+b": "bold",
@@ -89,7 +88,7 @@ export const serializeLeaf = (node: Descendant, key: string = "") => {
   if (!Text.isText(node)) {
     return null;
   }
-  let string = escapeHtml(node.text);
+  let string = node.text;
   let style: CSSProperties = {};
   if (node.bold) {
     style.fontWeight = "bold";

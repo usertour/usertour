@@ -246,19 +246,19 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>(
           ref={backdropRef}
         ></div>
         <div
-          className="usertour-tooltip-block usertour-tooltip-block--top usertour-tooltip-block--visible"
+          className="usertour-widget-popper-block usertour-widget-popper-block--top usertour-widget-popper-block--visible"
           style={{ ...backdrop?.top }}
         ></div>
         <div
-          className="usertour-tooltip-block usertour-tooltip-block--right usertour-tooltip-block--visible"
+          className="usertour-widget-popper-block usertour-widget-popper-block--right usertour-widget-popper-block--visible"
           style={backdrop?.right}
         ></div>
         <div
-          className="usertour-tooltip-block usertour-tooltip-block--bottom usertour-tooltip-block--visible"
+          className="usertour-widget-popper-block usertour-widget-popper-block--bottom usertour-widget-popper-block--visible"
           style={backdrop?.bottom}
         ></div>
         <div
-          className="usertour-tooltip-block usertour-tooltip-block--left usertour-tooltip-block--visible"
+          className="usertour-widget-popper-block usertour-widget-popper-block--left usertour-widget-popper-block--visible"
           style={backdrop?.left}
         ></div>
       </>

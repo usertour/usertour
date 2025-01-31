@@ -10,11 +10,21 @@ const getAssetsUri = () => {
 };
 
 const getMainCss = () => {
-  return getAssetsUri() + USERTOUR_APP_MAIN_CSS;
+  // @ts-ignore: USERTOUR_APP_MAIN_CSS is injected by vite
+  const mainCss =
+    typeof USERTOUR_APP_MAIN_CSS !== "undefined"
+      ? USERTOUR_APP_MAIN_CSS
+      : "/css/index.css";
+  return getAssetsUri() + mainCss;
 };
 
 const getUserTourCss = () => {
-  return getAssetsUri() + USERTOUR_APP_USER_TOUR_CSS;
+  // @ts-ignore: USERTOUR_APP_USER_TOUR_CSS is injected by vite
+  const userTourCss =
+    typeof USERTOUR_APP_USER_TOUR_CSS !== "undefined"
+      ? USERTOUR_APP_USER_TOUR_CSS
+      : `/css/usertour.css`;
+  return getAssetsUri() + userTourCss;
 };
 
 const getUsertourEnvVars = (key: string) => {

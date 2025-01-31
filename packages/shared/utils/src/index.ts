@@ -8,3 +8,4 @@ export * from "./auth";
 export * from "./storage";
 export * from "./settings";
 export * from "./is-url";
+export * from "./globals";

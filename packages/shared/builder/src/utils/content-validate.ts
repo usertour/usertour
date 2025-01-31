@@ -22,6 +22,20 @@ export const stepIsReachable = (steps: Step[], currentStep: Step) => {
           }
         });
       }
+      if (step.trigger) {
+        step.trigger.forEach((trigger) => {
+          if (trigger.actions) {
+            trigger.actions.forEach((action) => {
+              if (
+                action.type == ContentActionsItemType.STEP_GOTO &&
+                action.data.stepCvid == currentStep.cvid
+              ) {
+                reachable = true;
+              }
+            });
+          }
+        });
+      }
       if (step.data) {
         const data = step.data as ContentEditorRoot[];
         data.forEach((d) => {

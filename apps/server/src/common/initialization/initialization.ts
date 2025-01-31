@@ -98,7 +98,7 @@ export const initializationThemes: InitThemeInput[] = [
         color: "#020617",
         opacity: 18,
         highlight: {
-          type: "outside",
+          type: "inset",
           color: "#8b572a",
           radius: 3,
           spread: 3,
@@ -211,7 +211,7 @@ export const initializationThemes: InitThemeInput[] = [
         color: "#020617",
         opacity: 18,
         highlight: {
-          type: "outside",
+          type: "inset",
           color: "#8b572a",
           radius: 3,
           spread: 3,

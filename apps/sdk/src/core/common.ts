@@ -4,21 +4,11 @@ import { uuidV4 } from "@usertour-ui/ui-utils";
 import { TourStore, ChecklistStore, LauncherStore } from "../types/store";
 import { getUserTourCss } from "../utils/env";
 
-const defaultAssets: AssetAttributes[] = [
-  {
-    tagName: "link",
-    isCheckLoaded: false,
-    href: getUserTourCss(),
-    rel: "stylesheet",
-    type: "text/css",
-  },
-];
-
 const DEFAULT_Z_INDEX = 11111;
 const DEFAULT_STORE_VALUES = {
   openState: false,
   globalStyle: "",
-  assets: [...defaultAssets],
+  assets: [],
   userInfo: undefined,
 };
 
@@ -33,12 +23,21 @@ const defaultTourStore: TourStore = {
 const getAssets = (theme: Theme): AssetAttributes[] => {
   const { fontFamily } = theme.settings.font;
 
+  const assets: AssetAttributes[] = [
+    {
+      tagName: "link",
+      isCheckLoaded: false,
+      href: getUserTourCss(),
+      rel: "stylesheet",
+      type: "text/css",
+    },
+  ];
   if (fontFamily === "System font" || fontFamily === "Custom font") {
-    return [...defaultAssets];
+    return [...assets];
   }
 
   return [
-    ...defaultAssets,
+    ...assets,
     {
       tagName: "link",
       isCheckLoaded: false,
@@ -67,14 +66,6 @@ const createMockUser = (userId?: string): BizUserInfo => {
   };
 };
 
-const UserTourAsset: AssetAttributes = {
-  tagName: "link",
-  isCheckLoaded: false,
-  href: getUserTourCss(),
-  rel: "stylesheet",
-  type: "text/css",
-};
-
 const defaultChecklistStore: ChecklistStore = {
   ...DEFAULT_STORE_VALUES,
   zIndex: 1000000,
@@ -93,7 +84,6 @@ export {
   defaultTourStore,
   defaultChecklistStore,
   defaultLauncherStore,
-  UserTourAsset,
   getAssets,
   createMockUser,
 };

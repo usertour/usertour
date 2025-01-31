@@ -2,7 +2,7 @@ import { Label } from "@usertour-ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@usertour-ui/tabs";
 import { InputNumber } from "./shared/input";
 import { Alignment } from "./shared/alignment";
-import { useReducer, useEffect } from "react";
+import { useReducer, useState } from "react";
 import { HelpTooltip } from "@usertour-ui/shared-components";
 import {
   Align,
@@ -19,31 +19,28 @@ export interface ContentAlignmentProps {
 
 export const ContentAlignment = (props: ContentAlignmentProps) => {
   const { initialValue, onChange, title = "Alignment" } = props;
-  const [data, dispatch] = useReducer(
-    (state: ContentAlignmentData, action: Partial<ContentAlignmentData>) => {
-      return { ...state, ...action };
-    },
-    initialValue
-  );
+  const [data, setData] = useState<ContentAlignmentData>(initialValue);
 
-  useEffect(() => {
-    onChange(data);
-  }, [data, onChange]);
+  const handleDataChange = (newData: Partial<ContentAlignmentData>) => {
+    const updatedData = { ...data, ...newData };
+    setData(updatedData);
+    onChange(updatedData);
+  };
 
   const handleAlignmentChange = (side: Side, align: Align) => {
-    dispatch({ side, align });
+    handleDataChange({ side, align });
   };
 
   const handleAlignTypeChange = (value: string) => {
-    dispatch({ alignType: value as AlignType });
+    handleDataChange({ alignType: value as AlignType });
   };
 
   const handleSideOffsetChange = (value: number) => {
-    dispatch({ sideOffset: Number(value) });
+    handleDataChange({ sideOffset: Number(value) });
   };
 
   const handleAlignOffsetChange = (value: number) => {
-    dispatch({ alignOffset: Number(value) });
+    handleDataChange({ alignOffset: Number(value) });
   };
 
   return (
