@@ -12,7 +12,7 @@ import { smoothScroll } from "@usertour-ui/dom";
 import { ContentEditorButtonElement } from "@usertour-ui/shared-editor";
 import { evalCode } from "@usertour-ui/ui-utils";
 import { document } from "../utils/globals";
-import { isActive } from "../utils/conditions";
+import { activedRulesConditions, isActive } from "../utils/conditions";
 import { defaultTourStore } from "./common";
 import { ElementWatcher } from "./element-watcher";
 import { BaseContent } from "./base-content";
@@ -29,7 +29,7 @@ export class Tour extends BaseContent<TourStore> {
   async monitor() {
     if (this.isActiveTour()) {
       this.checkStepVisible();
-      this.triggerCurrentStepActions();
+      this.activeTriggerConditions();
     }
     await this.activeContentConditions();
   }
@@ -57,14 +57,21 @@ export class Tour extends BaseContent<TourStore> {
     const newStep = content.steps?.find(
       (step) => step.cvid == this.getCurrentStep()?.cvid
     );
-    const currentStep = newStep || this.getCurrentStep() || undefined;
-    this.setCurrentStep(currentStep || null);
+    const currentStep = this.getCurrentStep();
+    if (!newStep || !currentStep) {
+      return;
+    }
+    const { trigger, ...rest } = newStep;
+
+    const step = { ...rest, trigger: currentStep.trigger };
+
+    this.setCurrentStep(step);
 
     const { openState, triggerRef, progress, ...storeData } =
       this.buildStoreData();
 
     //todo replace element watcher target
-    this.updateStore({ ...storeData, currentStep });
+    this.updateStore({ ...storeData, currentStep: step });
   }
 
   getReusedSessionId() {
@@ -240,22 +247,33 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  async triggerCurrentStepActions() {
+  async activeTriggerConditions() {
     const currentStep = this.getCurrentStep();
-    if (
-      !currentStep ||
-      !currentStep?.trigger ||
-      currentStep?.trigger.length == 0
-    ) {
+    if (!currentStep?.trigger?.length) {
       return;
     }
-    for (let index = 0; index < currentStep.trigger.length; index++) {
-      const { actions, conditions } = currentStep.trigger[index];
-      if (isActive(conditions)) {
-        await this.handleActions(actions);
-        currentStep.trigger.splice(index, 1);
+
+    const remainingTriggers = [];
+
+    for (const trigger of currentStep.trigger) {
+      const { conditions, ...rest } = trigger;
+      const activatedConditions = await activedRulesConditions(conditions);
+
+      if (!isActive(activatedConditions)) {
+        remainingTriggers.push({
+          ...rest,
+          conditions: activatedConditions,
+        });
+      } else {
+        // Execute actions immediately when conditions are met
+        await this.handleActions(trigger.actions);
       }
     }
+
+    this.setCurrentStep({
+      ...currentStep,
+      trigger: remainingTriggers,
+    });
   }
 
   isActiveTour() {
