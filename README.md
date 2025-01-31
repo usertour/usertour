@@ -45,7 +45,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 📄 **Supports multi-page apps**: Whether it's a single-page application or spans across multiple pages, Usertour fits perfectly.  
 - 🎯 **Advanced user targeting**: Define custom user attributes and track events to segment and engage your audience effectively.  
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/97fe8e32-52b3-40f0-864c-bc629352e632" width="100%" />
+  <video src="https://github.com/user-attachments/assets/f909515d-7419-4677-903b-3e07729bc471" width="100%" />
 </p>
 
 ### Built for professional workflows with version control and environments  
@@ -54,7 +54,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 🔄 **Version tracking**: Monitor every change in your flows, including who made adjustments and when.  
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/20da9560-3b32-44a9-822d-747a137f9d2d" width="100%" />
+  <video src="https://github.com/user-attachments/assets/e3720191-c044-41d4-ae04-e36d6d1cc0ef" width="100%" />
 </p>
 
 ### Fully customizable appearance  
@@ -63,7 +63,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 🖌️ **Support for multiple themes**: Create unique themes for different flows, offering flexibility for varied use cases.  
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/7538af6c-185a-485c-a560-fa98efaa4529" width="100%" />
+  <video src="https://github.com/user-attachments/assets/052e87e0-c064-4306-a6e9-0568ff2fb127" width="100%" />
 </p>
 
 ### Gain actionable insights with powerful analytics  
@@ -72,7 +72,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 🚨 **Identify problem areas**: Pinpoint steps causing user confusion or drop-offs and address the issues seamlessly.  
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/ada64b91-5010-417e-9979-13e07f0036da" width="100%" />
+  <video src="https://github.com/user-attachments/assets/8e10a03e-9d81-4158-bbff-9817769246c8" width="100%" />
 </p>
 
 
