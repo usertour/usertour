@@ -14,7 +14,7 @@ import { AdminEnvSwitcher } from "./admin-env-switcher";
 import { AdminUserNav } from "./admin-user-nav";
 import { usePostHog } from "posthog-js/react";
 import { cn } from "@usertour-ui/ui-utils";
-// import usertour from "usertour.js";
+import usertour from "usertour.js";
 import { userTourToken } from "@/utils/env";
 import { window } from "@usertour-ui/shared-utils";
 
@@ -186,14 +186,12 @@ const useUserTracking = (userInfo: any) => {
     if (!userInfo || !userInfo.id) {
       return;
     }
-    if (window?.usertour) {
-      window?.usertour.init(userTourToken);
-      window?.usertour.identify(`${userInfo.id}`, {
-        name: userInfo?.name,
-        email: userInfo?.email,
-        signed_up_at: userInfo.createdAt,
-      });
-    }
+    usertour.init(userTourToken);
+    usertour.identify(`${userInfo.id}`, {
+      name: userInfo?.name,
+      email: userInfo?.email,
+      signed_up_at: userInfo.createdAt,
+    });
     posthog?.identify(userInfo.id, {
       email: userInfo.email,
     });
