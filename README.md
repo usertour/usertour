@@ -36,7 +36,7 @@ docker-compose up -d
 Visit http://localhost:8011 to start using Usertour.
 
 ### Local Development
-View details in [Self-hosting](https://www.usertour.io/docs/self-hosting/self-hosting/).
+View details in [Self-hosting](https://www.usertour.io/docs/open-source/self-hosting/).
 
 ## Features
 
