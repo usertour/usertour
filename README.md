@@ -87,7 +87,6 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - **Usertour for enterprise / organizations**
   - Please contact us at [support@usertour.io](mailto:support@usertour.io) for private deployment solutions.
 
-
 ## Contributing Guidelines
 
 | Bug Reports                                                              | Feature Requests                                                  | Issues/Discussions                                                       | Usertour Community                                                     |
