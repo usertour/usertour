@@ -83,7 +83,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - **Cloud**
   - We've deployed a Usertour Cloud version that allows zero-configuration usage, offering all capabilities of the self-hosted version. Visit [https://www.usertour.io/](https://www.usertour.io/) to get started.
 - **Self-hosting Usertour Community Edition**
-  - Get started quickly with our [Self-hosting Guide](https://www.usertour.io/docs/self-hosting/self-hosting/) to run Usertour in your environment. For more detailed references and in-depth instructions, please refer to our documentation.
+  - Get started quickly with our [Self-hosting Guide](https://www.usertour.io/docs/open-source/self-hosting/) to run Usertour in your environment. For more detailed references and in-depth instructions, please refer to our documentation.
 - **Usertour for enterprise / organizations**
   - Please contact us at [support@usertour.io](mailto:support@usertour.io) for private deployment solutions.
 
