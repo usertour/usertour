@@ -12,6 +12,9 @@ COPY apps/server ./
 RUN pnpm install
 RUN pnpm build
 
+# Copy email templates after build
+COPY apps/server/src/email-templates ./dist/email-templates
+
 # Build stage for web and sdk
 FROM node:22.13-alpine AS web-builder
 
