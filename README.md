@@ -41,7 +41,7 @@ Visit http://localhost:8011 to start using Usertour.
 
 ### Local Development
 
-View details in [Self-hosting](https://www.usertour.io/docs/open-source/self-hosting/).
+View details in [Self-hosting](https://www.usertour.io/docs/open-source/self-hosting).
 
 ## Features
 
