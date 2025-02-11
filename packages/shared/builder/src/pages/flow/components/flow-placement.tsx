@@ -16,6 +16,9 @@ import {
   useAttributeListContext,
   useContentListContext,
 } from "@usertour-ui/contexts";
+import { Button } from "@usertour-ui/button";
+import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { window } from "@usertour-ui/shared-utils";
 
 export const FlowPlacement = () => {
   const {
@@ -65,6 +68,13 @@ export const FlowPlacement = () => {
     return createStep(currentVersion, step);
   };
 
+  const handleAboutPlacement = () => {
+    window?.open(
+      "https://www.usertour.io/docs/building-experiences/creating-your-first-flow/#edit-flow",
+      "_blank"
+    );
+  };
+
   return (
     <ContentPlacementProvider
       isShowError={isShowError}
@@ -80,7 +90,17 @@ export const FlowPlacement = () => {
       subTitle="Show tooltip on this element"
     >
       <div className="space-y-3">
-        <h1 className="text-sm">Placement</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-sm">Placement </h1>
+          <Button
+            variant="link"
+            onClick={handleAboutPlacement}
+            className="p-0 h-full"
+          >
+            About placement
+            <OpenInNewWindowIcon className="ml-1" />
+          </Button>
+        </div>
         {/* <ContentPlacementTabs>
           <ContentPlacementTabsContent value="manual">
             <ContentPlacementManual />
