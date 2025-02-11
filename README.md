@@ -25,61 +25,66 @@
 </p>
 
 ## Quick Start
+
 ### Self-deploy with Docker
-Deploy your own feature-rich, unlimited version of Usertour using Docker. 
+
+Deploy your own feature-rich, unlimited version of Usertour using Docker.
 
 To start deployment:
+
 ```bash
 cp .env.example .env # make sure all required envs are properly set
 docker-compose up -d
 ```
+
 Visit http://localhost:8011 to start using Usertour.
 
 ### Local Development
+
 View details in [Self-hosting](https://www.usertour.io/docs/open-source/self-hosting/).
 
 ## Features
 
-Usertour makes it easy to design in-app product tours, checklists, launchers, and surveys, enabling anyone to craft effective onboarding experiences. Our team is dedicated to consistently improving Usertour with frequent updates that include new features, bug fixes, and performance enhancements.  
+Usertour makes it easy to design in-app product tours, checklists, launchers, and surveys, enabling anyone to craft effective onboarding experiences. Our team is dedicated to consistently improving Usertour with frequent updates that include new features, bug fixes, and performance enhancements.
 
-### Easy Onboarding: Build Flows Fast with Simple Integration and Smart Targeting  
+### Easy Onboarding: Build Flows Fast with Simple Integration and Smart Targeting
 
-- 🌐 **Compatible with all frameworks**: If your app runs in a browser, it seamlessly integrates with Usertour.  
-- 📄 **Supports multi-page apps**: Whether it's a single-page application or spans across multiple pages, Usertour fits perfectly.  
-- 🎯 **Advanced user targeting**: Define custom user attributes and track events to segment and engage your audience effectively.  
+- 🌐 **Compatible with all frameworks**: If your app runs in a browser, it seamlessly integrates with Usertour.
+- 📄 **Supports multi-page apps**: Whether it's a single-page application or spans across multiple pages, Usertour fits perfectly.
+- 🎯 **Advanced user targeting**: Define custom user attributes and track events to segment and engage your audience effectively.
 <p align="center">
   <video src="https://github.com/user-attachments/assets/831c6790-7cde-4820-9408-fa781a8ba887" width="100%" />
 </p>
 
-### Built for professional workflows with version control and environments  
+### Built for professional workflows with version control and environments
 
-- 🛠️ **Multiple environments supported**: Manage environments like Production and Staging within a single Usertour account.  
-- 🔄 **Version tracking**: Monitor every change in your flows, including who made adjustments and when.  
+- 🛠️ **Multiple environments supported**: Manage environments like Production and Staging within a single Usertour account.
+- 🔄 **Version tracking**: Monitor every change in your flows, including who made adjustments and when.
 
 <p align="center">
   <video src="https://github.com/user-attachments/assets/eaa81019-57a1-429f-8a05-72428915de05" width="100%" />
 </p>
 
-### Fully customizable appearance  
+### Fully customizable appearance
 
-- 🎨 **Tailor your design**: Adjust text, button colors, font family, and size to match your branding.  
-- 🖌️ **Support for multiple themes**: Create unique themes for different flows, offering flexibility for varied use cases.  
+- 🎨 **Tailor your design**: Adjust text, button colors, font family, and size to match your branding.
+- 🖌️ **Support for multiple themes**: Create unique themes for different flows, offering flexibility for varied use cases.
 
 <p align="center">
   <video src="https://github.com/user-attachments/assets/052e87e0-c064-4306-a6e9-0568ff2fb127" width="100%" />
 </p>
 
-### Gain actionable insights with powerful analytics  
+### Gain actionable insights with powerful analytics
 
-- 📊 **Performance metrics**: Track the effectiveness of your flows with detailed data on views and completion rates.  
-- 🚨 **Identify problem areas**: Pinpoint steps causing user confusion or drop-offs and address the issues seamlessly.  
+- 📊 **Performance metrics**: Track the effectiveness of your flows with detailed data on views and completion rates.
+- 🚨 **Identify problem areas**: Pinpoint steps causing user confusion or drop-offs and address the issues seamlessly.
 
 <p align="center">
   <video src="https://github.com/user-attachments/assets/8e10a03e-9d81-4158-bbff-9817769246c8" width="100%" />
 </p>
 
-
 ## How to Use?
+
 - **Cloud**
   - We've deployed a Usertour Cloud version that allows zero-configuration usage, offering all capabilities of the self-hosted version. Visit [https://www.usertour.io/](https://www.usertour.io/) to get started.
 - **Self-hosting Usertour Community Edition**
@@ -89,10 +94,10 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 
 ## Contributing Guidelines
 
-| Bug Reports                                                              | Feature Requests                                                  | Issues/Discussions                                                       | Usertour Community                                                     |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| Bug Reports                                                                 | Feature Requests                                                     | Issues/Discussions                                                          | Usertour Community                                           |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | [Create Bug Report](https://github.com/usertour/usertour/issues/new/choose) | [Submit Feature Request](https://github.com/usertour/usertour/pulls) | [View GitHub Discussions](https://github.com/usertour/usertour/discussions) | [Visit Usertour Community](https://www.usertour.io/docs/faq) |
-| Something isn't working as expected                                      | Ideas for new features or improvements                            | Discuss and raise questions                                              | A place to ask questions, learn, and connect with others              |
+| Something isn't working as expected                                         | Ideas for new features or improvements                               | Discuss and raise questions                                                 | A place to ask questions, learn, and connect with others     |
 
 Calling all developers, testers, tech writers and more! Contributions of all types are more than welcome, please feel free to browse our [GitHub issues](https://github.com/usertour/usertour/issues) to show us what you can do.
 
