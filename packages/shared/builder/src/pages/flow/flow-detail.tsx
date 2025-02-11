@@ -307,14 +307,13 @@ const FlowBuilderDetailFooter = () => {
         height = rect.height;
       }
       setIsLoading(true);
-      const screenshot =
-        currentStep.type == "tooltip"
-          ? await uploadScreenshot(currentStep, backupStepData)
-          : { mini: "", full: "" };
+      // const screenshot =
+      //   currentStep.type == "tooltip"
+      //     ? await uploadScreenshot(currentStep, backupStepData)
+      //     : { mini: "", full: "" };
       const step = {
         ...currentStep,
-        screenshot,
-
+        screenshot: { mini: "", full: "" },
         setting: { ...currentStep.setting, height },
       };
       if (!step.id) {
