@@ -1,23 +1,9 @@
-import {
-  useMemo,
-  useRef,
-  useSyncExternalStore,
-  useState,
-  useEffect,
-} from "react";
-import { Launcher } from "../core/launcher";
-import {
-  ContentEditorButtonElement,
-  ContentEditorSerialize,
-} from "@usertour-ui/shared-editor";
-import {
-  LauncherContentWrapper,
-  LauncherPopperContent,
-} from "@usertour-ui/sdk/src/launcher";
-import { LauncherPopperContentPotal } from "@usertour-ui/sdk/src/launcher";
-import { LauncherPopper } from "@usertour-ui/sdk/src/launcher";
-import { LauncherRoot } from "@usertour-ui/sdk/src/launcher";
-import { PopperMadeWith } from "@usertour-ui/sdk";
+import { PopperMadeWith } from '@usertour-ui/sdk';
+import { LauncherContentWrapper, LauncherPopperContent } from '@usertour-ui/sdk/src/launcher';
+import { LauncherPopperContentPotal } from '@usertour-ui/sdk/src/launcher';
+import { LauncherPopper } from '@usertour-ui/sdk/src/launcher';
+import { LauncherRoot } from '@usertour-ui/sdk/src/launcher';
+import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   BizUserInfo,
@@ -26,11 +12,13 @@ import {
   LauncherTriggerElement,
   RulesCondition,
   Theme,
-} from "@usertour-ui/types";
-import { document } from "../utils/globals";
-import { useEventHandlers } from "../hooks/use-event-handlers";
-import { on } from "../utils/listener";
-import { off } from "../utils/listener";
+} from '@usertour-ui/types';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Launcher } from '../core/launcher';
+import { useEventHandlers } from '../hooks/use-event-handlers';
+import { document } from '../utils/globals';
+import { on } from '../utils/listener';
+import { off } from '../utils/listener';
 
 interface LauncherWidgetCoreProps {
   data: LauncherData;
@@ -44,16 +32,7 @@ interface LauncherWidgetCoreProps {
 }
 
 const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
-  const {
-    data,
-    handleActions,
-    el,
-    theme,
-    zIndex,
-    handleOnClick,
-    userInfo,
-    handleActive,
-  } = props;
+  const { data, handleActions, el, theme, zIndex, handleOnClick, userInfo, handleActive } = props;
   const actionType = data?.behavior?.actionType;
   const [open, setOpen] = useState(false);
   const popperRef = useRef<HTMLDivElement>(null);
@@ -81,14 +60,14 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
       handleMouseLeave: () => {
         if (actionType === LauncherActionType.SHOW_TOOLTIP) {
           setTimeout(() => {
-            if (!popperRef.current?.matches(":hover")) {
+            if (!popperRef.current?.matches(':hover')) {
               setOpen(false);
             }
           }, 100);
         }
       },
     }),
-    [data, actionType, setOpen]
+    [data, actionType, setOpen],
   );
 
   useEventHandlers(data, launcherRef, triggerRef, handlers);
@@ -96,17 +75,14 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
   useEffect(() => {
     if (!open || !document) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        popperRef.current &&
-        !popperRef.current.contains(event.target as Node)
-      ) {
+      if (popperRef.current && !popperRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
-    on(document, "mousedown", handleClickOutside);
+    on(document, 'mousedown', handleClickOutside);
     return () => {
       if (document) {
-        off(document, "mousedown", handleClickOutside);
+        off(document, 'mousedown', handleClickOutside);
       }
     };
   }, [open]);
@@ -119,9 +95,9 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
         setOpen(false);
       }
     };
-    on(popper, "mouseleave", handlePopperMouseLeave);
+    on(popper, 'mouseleave', handlePopperMouseLeave);
     return () => {
-      off(popper, "mouseleave", handlePopperMouseLeave);
+      off(popper, 'mouseleave', handlePopperMouseLeave);
     };
   }, [actionType]);
 
@@ -142,16 +118,12 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
               contents={data.tooltip.content}
               onClick={handleOnClick}
               userInfo={userInfo}
-            ></ContentEditorSerialize>
+            />
             <PopperMadeWith />
           </LauncherPopperContent>
         </LauncherPopperContentPotal>
       </LauncherPopper>
-      <LauncherContentWrapper
-        zIndex={zIndex}
-        referenceRef={triggerRef}
-        ref={launcherRef}
-      />
+      <LauncherContentWrapper zIndex={zIndex} referenceRef={triggerRef} ref={launcherRef} />
     </LauncherRoot>
   );
 };
@@ -159,8 +131,11 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
 export const LauncherWidget = (props: { launcher: Launcher }) => {
   const { launcher } = props;
   const store = launcher.getStore();
-  const { userInfo, content, zIndex, theme, triggerRef, openState } =
-    useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const { userInfo, content, zIndex, theme, triggerRef, openState } = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  );
 
   const data = content?.data as LauncherData | undefined;
 

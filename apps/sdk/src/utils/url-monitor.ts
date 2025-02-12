@@ -1,4 +1,4 @@
-import { window } from "./globals";
+import { window } from './globals';
 
 // Add URL change monitoring with multiple fallback options
 export const setupUrlChangeMonitoring = (callback: () => void) => {
@@ -24,10 +24,10 @@ export const setupUrlChangeMonitoring = (callback: () => void) => {
   }
 
   // Method 2: hashchange event (Legacy support)
-  window?.addEventListener("hashchange", handleUrlChange);
+  window?.addEventListener('hashchange', handleUrlChange);
 
   // Method 3: popstate event (History API)
-  window?.addEventListener("popstate", handleUrlChange);
+  window?.addEventListener('popstate', handleUrlChange);
 
   // Method 4: Periodic check as final fallback
   setInterval(handleUrlChange, 1000);

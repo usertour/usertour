@@ -1,4 +1,4 @@
-import autoBind from "../utils/auto-bind";
+import autoBind from '../utils/auto-bind';
 
 /**
  * A generic store class that manages state and notifies subscribers of changes
@@ -59,6 +59,8 @@ export class ExternalStore<T> {
    * Notifies all subscribers of state changes
    */
   private emitChange(): void {
-    this.listeners.forEach((listener) => listener());
+    for (const listener of this.listeners) {
+      listener();
+    }
   }
 }

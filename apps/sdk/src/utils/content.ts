@@ -1,7 +1,7 @@
-import { Tour } from "../core/tour";
-import { Launcher } from "../core/launcher";
-import { Checklist } from "../core/checklist";
-import { PRIORITIES } from "@usertour-ui/constants";
+import { PRIORITIES } from '@usertour-ui/constants';
+import { Checklist } from '../core/checklist';
+import { Launcher } from '../core/launcher';
+import { Tour } from '../core/tour';
 
 /**
  * Compares two contents based on their priority
@@ -11,7 +11,7 @@ import { PRIORITIES } from "@usertour-ui/constants";
  */
 export const compareContentPriorities = (
   contentA: Tour | Launcher | Checklist,
-  contentB: Tour | Launcher | Checklist
+  contentB: Tour | Launcher | Checklist,
 ): number => {
   const priorityA = PRIORITIES.indexOf(contentA.getConfigPriority());
   const priorityB = PRIORITIES.indexOf(contentB.getConfigPriority());

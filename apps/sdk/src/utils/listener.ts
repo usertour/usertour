@@ -1,21 +1,21 @@
-import { window, navigator } from "./globals"
+import { navigator, window } from './globals';
 
-export const noop = () => { };
+export const noop = () => {};
 
 export function on<T extends Window | Document | HTMLElement | EventTarget>(
   obj: T | null,
-  ...args: Parameters<T['addEventListener']> | [string, Function | null, ...any]
+  ...args: Parameters<T['addEventListener']> | [string, (...args: any[]) => void, ...any]
 ): void {
-  if (obj && obj.addEventListener) {
+  if (obj?.addEventListener) {
     obj.addEventListener(...(args as Parameters<HTMLElement['addEventListener']>));
   }
 }
 
 export function off<T extends Window | Document | HTMLElement | EventTarget>(
   obj: T | null,
-  ...args: Parameters<T['removeEventListener']> | [string, Function | null, ...any]
+  ...args: Parameters<T['removeEventListener']> | [string, (...args: any[]) => void, ...any]
 ): void {
-  if (obj && obj.removeEventListener) {
+  if (obj?.removeEventListener) {
     obj.removeEventListener(...(args as Parameters<HTMLElement['removeEventListener']>));
   }
 }

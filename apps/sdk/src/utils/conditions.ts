@@ -1,29 +1,27 @@
-import { isMatchUrlPattern } from "@usertour-ui/shared-utils";
-import { location, document } from "../utils/globals";
+import { computePosition, hide } from '@floating-ui/dom';
+import { PRIORITIES } from '@usertour-ui/constants';
+import { finderV2 } from '@usertour-ui/finder';
+import { isMatchUrlPattern } from '@usertour-ui/shared-utils';
+import { conditionsIsSame } from '@usertour-ui/shared-utils';
 import {
-  SDKContent,
-  RulesCondition,
   BizEvent,
-  FrequencyUnits,
-  Frequency,
   BizEvents,
   ContentDataType,
-} from "@usertour-ui/types";
-import { finderV2 } from "@usertour-ui/finder";
+  Frequency,
+  FrequencyUnits,
+  RulesCondition,
+  SDKContent,
+} from '@usertour-ui/types';
 import {
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  differenceInSeconds,
   isAfter,
   isBefore,
-  differenceInSeconds,
-  differenceInMinutes,
-  differenceInHours,
-  differenceInDays,
-} from "date-fns";
-import { computePosition, hide } from "@floating-ui/dom";
-import { off, on } from "./listener";
-import { conditionsIsSame } from "@usertour-ui/shared-utils";
-import { PRIORITIES } from "@usertour-ui/constants";
-import { logger } from "./logger";
-import { isUndefined } from "./type-check";
+} from 'date-fns';
+import { document, location } from '../utils/globals';
+import { off, on } from './listener';
 
 const isActiveRulesByCurrentPage = (rules: RulesCondition) => {
   const { excludes, includes } = rules.data;
@@ -35,17 +33,9 @@ const isActiveRulesByCurrentPage = (rules: RulesCondition) => {
 };
 
 const isActiveRulesByCurrentTime = (rules: RulesCondition) => {
-  const {
-    endDate,
-    endDateHour,
-    endDateMinute,
-    startDate,
-    startDateHour,
-    startDateMinute,
-  } = rules.data;
-  const startTime = new Date(
-    `${startDate} ${startDateHour}:${startDateMinute}:00`
-  );
+  const { endDate, endDateHour, endDateMinute, startDate, startDateHour, startDateMinute } =
+    rules.data;
+  const startTime = new Date(`${startDate} ${startDateHour}:${startDateMinute}:00`);
   const endTime = new Date(`${endDate} ${endDateHour}:${endDateMinute}:00`);
   const now = new Date();
   if (!endDate) {
@@ -59,7 +49,7 @@ export const isVisible = async (el: HTMLElement) => {
     return false;
   }
   const { middlewareData } = await computePosition(el, document.body, {
-    strategy: "fixed",
+    strategy: 'fixed',
     middleware: [hide()],
   });
   if (middlewareData?.hide?.referenceHidden) {
@@ -76,9 +66,9 @@ const isClicked = (el: HTMLElement) => {
   }
   const onClick = () => {
     cache.set(el, true);
-    off(el, "click", onClick);
+    off(el, 'click', onClick);
   };
-  on(el, "click", onClick);
+  on(el, 'click', onClick);
   cache.set(el, false);
   return false;
 };
@@ -95,17 +85,17 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
   const isPresent = await isVisible(el);
   const isDisabled = (el as any).disabled ?? false;
   switch (data.logic) {
-    case "present":
+    case 'present':
       return isPresent;
-    case "unpresent":
+    case 'unpresent':
       return !isPresent;
-    case "disabled":
+    case 'disabled':
       return el && isDisabled;
-    case "undisabled":
+    case 'undisabled':
       return el && !isDisabled;
-    case "clicked":
+    case 'clicked':
       return el && isClicked(el);
-    case "unclicked":
+    case 'unclicked':
       return el && !isClicked(el);
     default:
       return false;
@@ -125,25 +115,25 @@ const isActiveRulesByTextInput = async (rules: RulesCondition) => {
   }
   const elValue = el.value;
   switch (logic) {
-    case "is":
-      return elValue == value;
-    case "not":
-      return elValue != value;
-    case "contains":
+    case 'is':
+      return elValue === value;
+    case 'not':
+      return elValue !== value;
+    case 'contains':
       return elValue.includes(value);
-    case "notContain":
+    case 'notContain':
       return !elValue.includes(value);
-    case "startsWith":
+    case 'startsWith':
       return elValue.startsWith(value);
-    case "endsWith":
+    case 'endsWith':
       return elValue.endsWith(value);
-    case "match":
-      return elValue.search(value) != -1;
-    case "unmatch":
-      return elValue.search(value) == -1;
-    case "any":
+    case 'match':
+      return elValue.search(value) !== -1;
+    case 'unmatch':
+      return elValue.search(value) === -1;
+    case 'any':
       return true;
-    case "empty":
+    case 'empty':
       return !elValue;
     default:
       return false;
@@ -174,30 +164,30 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
     if (isActive) {
       return true;
     }
-    if (timestamp != -1 && now - timestamp > 1000 && value != el.value) {
-      off(document, "click", onKeyup);
+    if (timestamp !== -1 && now - timestamp > 1000 && value !== el.value) {
+      off(document, 'click', onKeyup);
       fillCache.set(el, { timestamp, value, isActive: true });
       return true;
     }
     return false;
   }
-  on(document, "keyup", onKeyup);
+  on(document, 'keyup', onKeyup);
   fillCache.set(el, { timestamp: -1, value: el.value, isActive: false });
   return false;
 };
 
 export const rulesTypes: string[] = [
-  "user-attr",
-  "current-page",
-  "event",
-  "segment",
-  "content",
-  "element",
-  "text-input",
-  "text-fill",
-  "time",
-  "group",
-  "task-is-clicked",
+  'user-attr',
+  'current-page',
+  'event',
+  'segment',
+  'content',
+  'element',
+  'text-input',
+  'text-fill',
+  'time',
+  'group',
+  'task-is-clicked',
 ];
 
 const isValidRulesType = (type: string) => {
@@ -209,15 +199,15 @@ const isActiveRules = async (rules: RulesCondition) => {
     return true;
   }
   switch (rules.type) {
-    case "current-page":
+    case 'current-page':
       return isActiveRulesByCurrentPage(rules);
-    case "time":
+    case 'time':
       return isActiveRulesByCurrentTime(rules);
-    case "element":
+    case 'element':
       return await isActiveRulesByElement(rules);
-    case "text-input":
+    case 'text-input':
       return await isActiveRulesByTextInput(rules);
-    case "text-fill":
+    case 'text-fill':
       return await isActiveRulesByTextFill(rules);
     default:
       return rules.actived;
@@ -225,26 +215,24 @@ const isActiveRules = async (rules: RulesCondition) => {
 };
 
 type RewriteRulesCondition = {
-  "task-is-clicked": boolean;
+  'task-is-clicked': boolean;
 };
 
 export const activedRulesConditions = async (
   conditions: RulesCondition[],
-  rewrite?: RewriteRulesCondition
+  rewrite?: RewriteRulesCondition,
 ) => {
-  let rulesCondition: RulesCondition[] = [...conditions];
+  const rulesCondition: RulesCondition[] = [...conditions];
   for (let j = 0; j < rulesCondition.length; j++) {
     const rules = rulesCondition[j];
-    if (rules.type != "group") {
-      if (rewrite && rewrite[rules.type as keyof RewriteRulesCondition]) {
+    if (rules.type !== 'group') {
+      if (rewrite?.[rules.type as keyof RewriteRulesCondition]) {
         rulesCondition[j].actived = true;
       } else {
         rulesCondition[j].actived = await isActiveRules(rules);
       }
     } else if (rules.conditions) {
-      rulesCondition[j].conditions = await activedRulesConditions(
-        rules.conditions
-      );
+      rulesCondition[j].conditions = await activedRulesConditions(rules.conditions);
     }
   }
   return rulesCondition;
@@ -254,16 +242,9 @@ export const activedContentCondition = async (contents: SDKContent[]) => {
   const _contents = JSON.parse(JSON.stringify(contents)) as SDKContent[];
   for (let index = 0; index < _contents.length; index++) {
     const content = _contents[index];
-    const {
-      enabledAutoStartRules,
-      autoStartRules,
-      hideRules,
-      enabledHideRules,
-    } = content.config;
+    const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = content.config;
     if (enabledAutoStartRules && autoStartRules && autoStartRules.length > 0) {
-      content.config.autoStartRules = await activedRulesConditions(
-        autoStartRules
-      );
+      content.config.autoStartRules = await activedRulesConditions(autoStartRules);
     }
     if (enabledHideRules && hideRules && hideRules.length > 0) {
       content.config.hideRules = await activedRulesConditions(hideRules);
@@ -273,7 +254,7 @@ export const activedContentCondition = async (contents: SDKContent[]) => {
 };
 
 export const isActive = (autoStartRules: RulesCondition[]): boolean => {
-  if (!autoStartRules || autoStartRules.length == 0) {
+  if (!autoStartRules || autoStartRules.length === 0) {
     return false;
   }
   const operator = autoStartRules[0].operators;
@@ -283,9 +264,7 @@ export const isActive = (autoStartRules: RulesCondition[]): boolean => {
     }
     return isActive(rule.conditions);
   });
-  return operator == "and"
-    ? actives.length == autoStartRules.length
-    : actives.length > 0;
+  return operator === 'and' ? actives.length === autoStartRules.length : actives.length > 0;
 };
 
 export const isActiveContent = (content: SDKContent) => {
@@ -306,32 +285,27 @@ const priorityCompare = (a: SDKContent, b: SDKContent) => {
   const index2 = PRIORITIES.indexOf(a2);
   if (index1 > index2) {
     return 1;
-  } else if (index1 < index2) {
+  }
+  if (index1 < index2) {
     return -1;
   }
   return 0;
 };
 
-export const filterAutoStartContent = (
-  contents: SDKContent[],
-  type: string
-) => {
+export const filterAutoStartContent = (contents: SDKContent[], type: string) => {
   return contents
     .filter((content) => {
       const isActive = isActiveContent(content);
       const isValid = isValidContent(content, contents);
-      return content.type == type && isActive && isValid;
+      return content.type === type && isActive && isValid;
     })
     .sort(priorityCompare);
 };
 
-export const isHasActivedContents = (
-  source: SDKContent[],
-  dest: SDKContent[]
-) => {
+export const isHasActivedContents = (source: SDKContent[], dest: SDKContent[]) => {
   for (let index = 0; index < source.length; index++) {
     const content1 = source[index];
-    const content2 = dest.find((c) => c.id == content1.id);
+    const content2 = dest.find((c) => c.id === content1.id);
     if (!content2) {
       return true;
     }
@@ -343,42 +317,31 @@ export const isHasActivedContents = (
 };
 
 export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
-  if (!source || !dest || source.length != dest.length) {
+  if (!source || !dest || source.length !== dest.length) {
     return false;
   }
   for (let index = 0; index < source.length; index++) {
     const content1 = source[index];
-    const content2 = dest.find((c) => c.id == content1.id);
+    const content2 = dest.find((c) => c.id === content1.id);
     if (!content2) {
       return false;
     }
-    if (
-      !conditionsIsSame(
-        content1.config.autoStartRules,
-        content2.config.autoStartRules
-      )
-    ) {
+    if (!conditionsIsSame(content1.config.autoStartRules, content2.config.autoStartRules)) {
       return false;
     }
   }
   return true;
 };
 
-const getLatestEvent = (
-  contentId: string,
-  contents: SDKContent[],
-  eventCodeName: string
-) => {
+const getLatestEvent = (contentId: string, contents: SDKContent[], eventCodeName: string) => {
   const bizEvents: BizEvent[] = [];
   for (let index = 0; index < contents.length; index++) {
     const content = contents[index];
-    if (content.id == contentId) {
+    if (content.id === contentId) {
       continue;
     }
     if (content.events && content.events.length > 0) {
-      bizEvents.push(
-        ...content.events.filter((e) => e.event.codeName == eventCodeName)
-      );
+      bizEvents.push(...content.events.filter((e) => e.event.codeName === eventCodeName));
     }
   }
   return findLatestEvent(bizEvents);
@@ -388,18 +351,12 @@ const findLatestEvent = (bizEvents: BizEvent[]) => {
   const initialValue = bizEvents[0];
   const lastEvent = bizEvents.reduce(
     (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
-      if (
-        isAfter(
-          new Date(currentValue.createdAt),
-          new Date(accumulator.createdAt)
-        )
-      ) {
+      if (isAfter(new Date(currentValue.createdAt), new Date(accumulator.createdAt))) {
         return currentValue;
-      } else {
-        return accumulator;
       }
+      return accumulator;
     },
-    initialValue
+    initialValue,
   );
   return lastEvent;
 };
@@ -419,7 +376,7 @@ const isGreaterThenDuration = (
   dateLeft: Date,
   dateRight: Date,
   unit: FrequencyUnits,
-  duration: number
+  duration: number,
 ) => {
   switch (unit) {
     case FrequencyUnits.SECONDS: {
@@ -449,15 +406,13 @@ const isGreaterThenDuration = (
 };
 
 export const checklistIsDimissed = (content: SDKContent) => {
-  return content.events.find(
-    (event) => event.event.codeName == BizEvents.CHECKLIST_DISMISSED
-  );
+  return content.events.find((event) => event.event.codeName === BizEvents.CHECKLIST_DISMISSED);
 };
 
 export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const now = new Date();
-  if (content.type == ContentDataType.FLOW) {
-    if (!content.steps || content.steps.length == 0) {
+  if (content.type === ContentDataType.FLOW) {
+    if (!content.steps || content.steps.length === 0) {
       return false;
     }
   } else {
@@ -468,15 +423,10 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   if (!content.config.autoStartRulesSetting) {
     return true;
   }
-  const completeEventName =
-    completeEventMapping[content.type as keyof typeof completeEventMapping];
-  const lastEventName =
-    showEventMapping[content.type as keyof typeof showEventMapping];
-  const { frequency, startIfNotComplete } =
-    content.config.autoStartRulesSetting;
-  const isComplete = content.events.find(
-    (e) => e.event.codeName == completeEventName
-  );
+  const completeEventName = completeEventMapping[content.type as keyof typeof completeEventMapping];
+  const lastEventName = showEventMapping[content.type as keyof typeof showEventMapping];
+  const { frequency, startIfNotComplete } = content.config.autoStartRulesSetting;
+  const isComplete = content.events.find((e) => e.event.codeName === completeEventName);
   if (startIfNotComplete && isComplete) {
     return false;
   }
@@ -490,48 +440,34 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
       now,
       new Date(lastEvent.createdAt),
       frequency.atLeast.unit,
-      frequency.atLeast.duration
+      frequency.atLeast.duration,
     )
   ) {
     return false;
   }
 
-  const showEventName =
-    showEventMapping[content.type as keyof typeof showEventMapping];
+  const showEventName = showEventMapping[content.type as keyof typeof showEventMapping];
   const showEvents = content.events.filter(
     (e) =>
-      e.event.codeName == showEventName &&
-      (content.type == ContentDataType.FLOW
-        ? e.data.flow_step_number == 0
-        : true)
+      e.event.codeName === showEventName &&
+      (content.type === ContentDataType.FLOW ? e.data.flow_step_number === 0 : true),
   );
-  if (!showEvents || showEvents.length == 0 || !frequency) {
+  if (!showEvents || showEvents.length === 0 || !frequency) {
     return true;
   }
-  if (frequency.frequency == Frequency.ONCE && content.totalSessions > 0) {
+  if (frequency.frequency === Frequency.ONCE && content.totalSessions > 0) {
     return false;
   }
   const lastShowEvent = findLatestEvent(showEvents);
   const lastShowEventDate = new Date(lastShowEvent.createdAt);
-  if (frequency.frequency == Frequency.MULTIPLE) {
-    if (
-      frequency.every.times &&
-      content.totalSessions >= frequency.every.times
-    ) {
+  if (frequency.frequency === Frequency.MULTIPLE) {
+    if (frequency.every.times && content.totalSessions >= frequency.every.times) {
       return false;
     }
   }
-  if (
-    frequency.frequency == Frequency.MULTIPLE ||
-    frequency.frequency == Frequency.UNLIMITED
-  ) {
+  if (frequency.frequency === Frequency.MULTIPLE || frequency.frequency === Frequency.UNLIMITED) {
     if (
-      !isGreaterThenDuration(
-        now,
-        lastShowEventDate,
-        frequency.every.unit,
-        frequency.every.duration
-      )
+      !isGreaterThenDuration(now, lastShowEventDate, frequency.every.unit, frequency.every.duration)
     ) {
       return false;
     }

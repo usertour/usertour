@@ -1,8 +1,8 @@
-import { LauncherTriggerEvent } from "@usertour-ui/types";
-import { LauncherTriggerElement } from "@usertour-ui/types";
-import { LauncherData } from "@usertour-ui/types";
-import { useEffect } from "react";
-import { off, on } from "../utils/listener";
+import { LauncherTriggerEvent } from '@usertour-ui/types';
+import { LauncherTriggerElement } from '@usertour-ui/types';
+import { LauncherData } from '@usertour-ui/types';
+import { useEffect } from 'react';
+import { off, on } from '../utils/listener';
 
 // Custom hook for event handling
 export const useEventHandlers = (
@@ -13,7 +13,7 @@ export const useEventHandlers = (
     handleClick: () => void;
     handleMouseEnter: () => void;
     handleMouseLeave: () => void;
-  }
+  },
 ) => {
   useEffect(() => {
     if (!data) return;
@@ -22,27 +22,26 @@ export const useEventHandlers = (
     const { triggerElement, triggerEvent } = data.behavior;
 
     const shouldBindLauncher = triggerElement !== LauncherTriggerElement.TARGET;
-    const shouldBindTrigger =
-      triggerElement !== LauncherTriggerElement.LAUNCHER;
+    const shouldBindTrigger = triggerElement !== LauncherTriggerElement.LAUNCHER;
     const isClickTrigger = triggerEvent === LauncherTriggerEvent.CLICKED;
 
     // Bind events helper
     const bindEvents = (element: HTMLElement) => {
       if (isClickTrigger) {
-        on(element, "click", handlers.handleClick);
+        on(element, 'click', handlers.handleClick);
       } else {
-        on(element, "mouseenter", handlers.handleMouseEnter);
-        on(element, "mouseleave", handlers.handleMouseLeave);
+        on(element, 'mouseenter', handlers.handleMouseEnter);
+        on(element, 'mouseleave', handlers.handleMouseLeave);
       }
     };
 
     // Unbind events helper
     const unbindEvents = (element: HTMLElement) => {
       if (isClickTrigger) {
-        off(element, "click", handlers.handleClick);
+        off(element, 'click', handlers.handleClick);
       } else {
-        off(element, "mouseenter", handlers.handleMouseEnter);
-        off(element, "mouseleave", handlers.handleMouseLeave);
+        off(element, 'mouseenter', handlers.handleMouseEnter);
+        off(element, 'mouseleave', handlers.handleMouseLeave);
       }
     };
 

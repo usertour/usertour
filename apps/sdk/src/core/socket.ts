@@ -1,20 +1,20 @@
 import {
-  ManagerOptions,
-  SocketOptions as SocketIOOptions,
-  Socket as SocketIO,
-  io,
-} from "socket.io-client";
-import { Evented } from "./evented";
-import autoBind from "../utils/auto-bind";
-import {
   BizCompany,
   BizSession,
   BizUserInfo,
   SDKContent,
   SDKSettingsMode,
   Theme,
-} from "@usertour-ui/types";
-import { UserTourTypes } from "@usertour-ui/types";
+} from '@usertour-ui/types';
+import { UserTourTypes } from '@usertour-ui/types';
+import {
+  ManagerOptions,
+  Socket as SocketIO,
+  SocketOptions as SocketIOOptions,
+  io,
+} from 'socket.io-client';
+import autoBind from '../utils/auto-bind';
+import { Evented } from './evented';
 
 interface SocketOptions {
   wsUri: string;
@@ -44,8 +44,8 @@ export class Socket extends Evented {
   }
 
   private setupErrorHandling(): void {
-    this.socket.on("connect_error", (error) => {
-      this.trigger("error", error);
+    this.socket.on('connect_error', (error) => {
+      this.trigger('error', error);
     });
   }
 
@@ -53,7 +53,7 @@ export class Socket extends Evented {
     try {
       return await this.socket.emitWithAck(event, data);
     } catch (error) {
-      this.trigger("error", error);
+      this.trigger('error', error);
       throw error;
     }
   }
@@ -63,7 +63,7 @@ export class Socket extends Evented {
     attributes?: UserTourTypes.Attributes;
     token: string;
   }): Promise<BizUserInfo | undefined> {
-    const response = await this.emitWithTimeout("upsert-user", params);
+    const response = await this.emitWithTimeout('upsert-user', params);
     return response as BizUserInfo;
   }
 
@@ -72,9 +72,9 @@ export class Socket extends Evented {
     userId: string,
     companyId: string,
     attributes?: UserTourTypes.Attributes,
-    membership?: UserTourTypes.Attributes
+    membership?: UserTourTypes.Attributes,
   ): Promise<BizCompany | undefined> {
-    const response = await this.emitWithTimeout("upsert-company", {
+    const response = await this.emitWithTimeout('upsert-company', {
       token,
       companyId,
       userId,
@@ -91,7 +91,7 @@ export class Socket extends Evented {
     contentId?: string;
     versionId?: string;
   }): Promise<SDKContent[]> {
-    const response = await this.emitWithTimeout("list-contents", params);
+    const response = await this.emitWithTimeout('list-contents', params);
     if (!Array.isArray(response)) {
       return [];
     }
@@ -99,7 +99,7 @@ export class Socket extends Evented {
   }
 
   async listThemes(params: { token: string }): Promise<Theme[]> {
-    const response = await this.emitWithTimeout("list-themes", params);
+    const response = await this.emitWithTimeout('list-themes', params);
     if (!Array.isArray(response)) {
       return [];
     }
@@ -111,7 +111,7 @@ export class Socket extends Evented {
     token: string;
     contentId: string;
   }): Promise<BizSession> {
-    const response = await this.emitWithTimeout("create-session", params);
+    const response = await this.emitWithTimeout('create-session', params);
     return response as BizSession;
   }
 
@@ -122,6 +122,6 @@ export class Socket extends Evented {
     sessionId: string;
     eventData: any;
   }): Promise<void> {
-    await this.emitWithTimeout("track-event", params);
+    await this.emitWithTimeout('track-event', params);
   }
 }

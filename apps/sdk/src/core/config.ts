@@ -1,12 +1,12 @@
 import {
-  autoStartRulesSetting,
   ContentConfigObject,
   ContentPriority,
   RulesCondition,
-} from "@usertour-ui/types";
-import autoBind from "../utils/auto-bind";
-import { Evented } from "./evented";
-import { activedRulesConditions, isActive } from "../utils/conditions";
+  autoStartRulesSetting,
+} from '@usertour-ui/types';
+import autoBind from '../utils/auto-bind';
+import { activedRulesConditions, isActive } from '../utils/conditions';
+import { Evented } from './evented';
 
 export class Config extends Evented {
   private config: ContentConfigObject;
@@ -21,9 +21,7 @@ export class Config extends Evented {
   }
 
   getPriority(): ContentPriority {
-    return (
-      this.config.autoStartRulesSetting?.priority ?? ContentPriority.MEDIUM
-    );
+    return this.config.autoStartRulesSetting?.priority ?? ContentPriority.MEDIUM;
   }
 
   wait(): Promise<void> {
@@ -49,7 +47,7 @@ export class Config extends Evented {
     if (!this.isEnabledAutoStartRules()) {
       return false;
     }
-    if (!autoStartRules || autoStartRules.length == 0) {
+    if (!autoStartRules || autoStartRules.length === 0) {
       return true;
     }
     return isActive(autoStartRules);
@@ -60,7 +58,7 @@ export class Config extends Evented {
     if (!this.isEnabledHideRules()) {
       return false;
     }
-    if (!hideRules || hideRules.length == 0) {
+    if (!hideRules || hideRules.length === 0) {
       return true;
     }
     return isActive(hideRules);
@@ -102,7 +100,7 @@ export class Config extends Evented {
     const processRules = async (
       enabled: boolean,
       rules: any[] | undefined,
-      key: keyof ContentConfigObject
+      key: keyof ContentConfigObject,
     ) => {
       if (enabled && rules && rules.length > 0) {
         const activedRules = await activedRulesConditions(rules);
@@ -111,12 +109,8 @@ export class Config extends Evented {
     };
 
     await Promise.all([
-      processRules(
-        this.isEnabledAutoStartRules(),
-        this.getAutoStartRules(),
-        "autoStartRules"
-      ),
-      processRules(this.isEnabledHideRules(), this.getHideRules(), "hideRules"),
+      processRules(this.isEnabledAutoStartRules(), this.getAutoStartRules(), 'autoStartRules'),
+      processRules(this.isEnabledHideRules(), this.getHideRules(), 'hideRules'),
     ]);
   }
 }

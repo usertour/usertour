@@ -1,4 +1,5 @@
-import { ContentEditorButtonElement } from "@usertour-ui/shared-editor";
+import { canCompleteChecklistItem } from '@usertour-ui/sdk';
+import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ChecklistData,
@@ -7,21 +8,15 @@ import {
   EventAttributes,
   RulesCondition,
   SDKContent,
-} from "@usertour-ui/types";
-import { AssetAttributes } from "@usertour-ui/frame";
-import { defaultChecklistStore } from "./common";
-import { App } from "./app";
-import { BaseContent } from "./base-content";
-import { ChecklistStore } from "../types/store";
-import { evalCode } from "@usertour-ui/ui-utils";
-import {
-  activedRulesConditions,
-  checklistIsDimissed,
-  isActive,
-} from "../utils/conditions";
-import { canCompleteChecklistItem } from "@usertour-ui/sdk";
-import { ReportEventOptions } from "../types/content";
-import { AppEvents } from "../utils/event";
+} from '@usertour-ui/types';
+import { evalCode } from '@usertour-ui/ui-utils';
+import { ReportEventOptions } from '../types/content';
+import { ChecklistStore } from '../types/store';
+import { activedRulesConditions, checklistIsDimissed, isActive } from '../utils/conditions';
+import { AppEvents } from '../utils/event';
+import { App } from './app';
+import { BaseContent } from './base-content';
+import { defaultChecklistStore } from './common';
 
 // Add interface for item status
 interface ChecklistItemStatus {
@@ -108,29 +103,29 @@ export class Checklist extends BaseContent<ChecklistStore> {
   itemIsCompleted(item: ChecklistItemType) {
     return !!this.getContent().events.find(
       (event) =>
-        event.event.codeName == BizEvents.CHECKLIST_TASK_COMPLETED &&
-        event.data.checklist_task_id == item.id
+        event.event.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
+        event.data.checklist_task_id === item.id,
     );
   }
 
   handleOnClick = async ({ type, data }: ContentEditorButtonElement) => {
-    if (type === "button" && data.actions) {
+    if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
   };
 
   async handleActions(actions: RulesCondition[]) {
-    actions.forEach(async (action) => {
-      if (action.type == ContentActionsItemType.FLOW_START) {
+    for (const action of actions) {
+      if (action.type === ContentActionsItemType.FLOW_START) {
         await this.startNewTour(action.data.contentId);
-      } else if (action.type == ContentActionsItemType.PAGE_NAVIGATE) {
+      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
         this.handleNavigate(action.data);
-      } else if (action.type == ContentActionsItemType.JAVASCRIPT_EVALUATE) {
+      } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
-      } else if (action.type == ContentActionsItemType.CHECKLIST_DISMIS) {
+      } else if (action.type === ContentActionsItemType.CHECKLIST_DISMIS) {
         this.dismiss();
       }
-    });
+    }
   }
 
   handleItemClick = (item: ChecklistItemType) => {
@@ -157,10 +152,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
         // Get current item status
         const currentStatus = this.getItemStatus(item.id);
         // Get completed status
-        const activedConditions = await activedRulesConditions(
-          item.completeConditions,
-          { "task-is-clicked": currentStatus.clicked }
-        );
+        const activedConditions = await activedRulesConditions(item.completeConditions, {
+          'task-is-clicked': currentStatus.clicked,
+        });
         const completed = item.isCompleted
           ? true
           : canCompleteChecklistItem(data.completionOrder, items, item) &&
@@ -169,17 +163,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
         // Only check visibility conditions if onlyShowTask is true
         let visible = true;
         if (item.onlyShowTask) {
-          const visibleConditions = await activedRulesConditions(
-            item.onlyShowTaskConditions
-          );
+          const visibleConditions = await activedRulesConditions(item.onlyShowTaskConditions);
           visible = isActive(visibleConditions);
         }
 
         // Check if status actually changed
-        if (
-          currentStatus.completed !== completed ||
-          currentStatus.visible !== visible
-        ) {
+        if (currentStatus.completed !== completed || currentStatus.visible !== visible) {
           this.updateItemStatus(item.id, { completed, visible });
 
           // Update content array
@@ -193,7 +182,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
             hasChanges = true;
           }
         }
-      })
+      }),
     );
 
     // Only update store if there were actual changes
@@ -207,11 +196,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
           },
         },
       });
-      updateItems.forEach((item) => {
+      for (const item of updateItems) {
         if (item.isCompleted) {
           this.trigger(BizEvents.CHECKLIST_TASK_COMPLETED, { item });
         }
-      });
+      }
 
       if (updateItems.every((item) => item.isCompleted)) {
         this.trigger(BizEvents.CHECKLIST_COMPLETED);
@@ -230,10 +219,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     );
   }
 
-  private updateItemStatus(
-    itemId: string,
-    status: Partial<ChecklistItemStatus>
-  ) {
+  private updateItemStatus(itemId: string, status: Partial<ChecklistItemStatus>) {
     const currentStatus = this.getItemStatus(itemId);
     this.itemStatus.set(itemId, {
       ...currentStatus,
@@ -297,7 +283,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private async reportChecklistEvent(
     eventName: BizEvents,
     additionalData: Partial<Record<EventAttributes, any>> = {},
-    options: ReportEventOptions = {}
+    options: ReportEventOptions = {},
   ) {
     const content = this.getContent();
     const baseEventData = {
@@ -315,13 +301,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
           ...additionalData,
         },
       },
-      options
+      options,
     );
   }
 
   private async reportDismissEvent() {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_DISMISSED, {
-      [EventAttributes.CHECKLIST_END_REASON]: "dismissed",
+      [EventAttributes.CHECKLIST_END_REASON]: 'dismissed',
     });
   }
 
@@ -334,11 +320,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   private async reportStartEvent() {
-    await this.reportChecklistEvent(
-      BizEvents.CHECKLIST_STARTED,
-      {},
-      { isCreateSession: true }
-    );
+    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {}, { isCreateSession: true });
   }
 
   private async reportTaskClickEvent(item: ChecklistItemType) {

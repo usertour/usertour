@@ -1,7 +1,7 @@
-import { ContentDataType, SDKContent } from "@usertour-ui/types";
-import { Tour } from "../core/tour";
-import { Launcher } from "../core/launcher";
-import { Checklist } from "../core/checklist";
+import { ContentDataType, SDKContent } from '@usertour-ui/types';
+import { Checklist } from '../core/checklist';
+import { Launcher } from '../core/launcher';
+import { Tour } from '../core/tour';
 
 /**
  * Initialize or update content items based on the provided contents
@@ -15,17 +15,13 @@ export function initializeContentItems<T extends Tour | Launcher | Checklist>(
   contents: SDKContent[],
   currentItems: T[],
   contentType: ContentDataType,
-  createItem: (content: SDKContent) => T
+  createItem: (content: SDKContent) => T,
 ): T[] {
   // Filter relevant contents
-  const filteredContents = contents.filter(
-    (content) => content.type === contentType
-  );
+  const filteredContents = contents.filter((content) => content.type === contentType);
 
   // Create contentId map for quick lookup
-  const contentIdMap = new Set(
-    filteredContents.map((content) => content.contentId)
-  );
+  const contentIdMap = new Set(filteredContents.map((content) => content.contentId));
 
   // Remove items that no longer exist
   const validItems = currentItems.filter((item) => {
@@ -42,9 +38,7 @@ export function initializeContentItems<T extends Tour | Launcher | Checklist>(
   });
 
   // Create map of existing items
-  const existingItemsMap = new Map(
-    validItems.map((item) => [item.getContent().contentId, item])
-  );
+  const existingItemsMap = new Map(validItems.map((item) => [item.getContent().contentId, item]));
 
   // Update or create items
   return filteredContents.map((content) => {

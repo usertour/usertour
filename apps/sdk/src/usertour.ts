@@ -1,15 +1,14 @@
-import { SDKSettingsMode, UserTourTypes } from "@usertour-ui/types";
-import { App } from "./core/app";
-import { logger } from "./utils/logger";
+import { SDKSettingsMode, UserTourTypes } from '@usertour-ui/types';
+import { App } from './core/app';
+import { logger } from './utils/logger';
 
-var w: UserTourTypes.WindowWithUsertour =
-  typeof window === "undefined" ? ({} as any) : window;
+const w: UserTourTypes.WindowWithUsertour = typeof window === 'undefined' ? ({} as any) : window;
 
 if (w.usertour === undefined || w.usertour?._stubbed) {
   const app = new App();
   const usertour = Object.assign(
     w.usertour || {},
-    (function () {
+    (() => {
       return {
         _stubbed: false,
         _app: app,
@@ -24,53 +23,61 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
           userId: string,
           attributes?: UserTourTypes.Attributes,
           //@ts-ignore
-          opts?: UserTourTypes.IdentifyOptions
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          opts?: UserTourTypes.IdentifyOptions,
         ) => {
           return await app.identify(userId, { ...attributes });
         },
         identifyAnonymous: async (
           attributes?: UserTourTypes.Attributes,
           //@ts-ignore
-          opts?: UserTourTypes.IdentifyOptions
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          opts?: UserTourTypes.IdentifyOptions,
         ) => {
           return await app.identifyAnonymous(attributes);
         },
         updateUser: async (
           attributes: UserTourTypes.Attributes,
           //@ts-ignore
-          opts?: UserTourTypes.IdentifyOptions
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          opts?: UserTourTypes.IdentifyOptions,
         ) => {
           return await app.updateUser(attributes);
         },
         group: async (
           groupId: string,
           attributes?: UserTourTypes.Attributes,
-          opts?: UserTourTypes.GroupOptions
+          opts?: UserTourTypes.GroupOptions,
         ) => {
           return await app.group(groupId, attributes, opts);
         },
         updateGroup: async (
           attributes: UserTourTypes.Attributes,
-          opts?: UserTourTypes.GroupOptions
+          opts?: UserTourTypes.GroupOptions,
         ) => {
           return await app.updateGroup(attributes, opts);
         },
         track: async (
-          // @ts-ignore
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           name: string,
-          // @ts-ignore
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           attributes?: UserTourTypes.EventAttributes,
-          // @ts-ignore
-          opts?: UserTourTypes.TrackOptions
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          opts?: UserTourTypes.TrackOptions,
         ) => {},
         isIdentified: () => {
           return app.isIdentified();
         },
         start: async (
-          // @ts-ignore
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           contentId: string,
-          // @ts-ignore
-          opts?: UserTourTypes.StartOptions
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          opts?: UserTourTypes.StartOptions,
         ) => {},
         endAll: async () => {
           return await app.endAll();
@@ -84,46 +91,50 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
         },
         // eslint-disable-next-line es5/no-rest-parameters
         on: (
-          // @ts-ignore
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           eventName: string,
-          // @ts-ignore
-          listener: (...args: any[]) => void
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          listener: (...args: any[]) => void,
         ) => {},
         // eslint-disable-next-line es5/no-rest-parameters
         off: (
-          // @ts-ignore
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           eventName: string,
-          // @ts-ignore
-          listener: (...args: any[]) => void
+          //@ts-ignore
+          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+          listener: (...args: any[]) => void,
         ) => {},
       };
-    })()
+    })(),
   );
 
   w.usertour = usertour;
 
-  (function () {
+  (() => {
     const ut = w.usertour;
     const stubQueue = w.USERTOURJS_QUEUE;
-    if (!stubQueue || stubQueue.length == 0) {
+    if (!stubQueue || stubQueue.length === 0) {
       return;
     }
     // @ts-ignore
     logger.info(`processing ${stubQueue.length} items in the queue`);
-    delete w.USERTOURJS_QUEUE;
+    w.USERTOURJS_QUEUE = undefined;
     for (const [method, deferred, args] of stubQueue) {
       const m = method as keyof typeof ut;
-      if ("function" != typeof ut[m]) {
+      if (typeof ut[m] !== 'function') {
         console.error(`usertour.js: Invalid method '${m}' in queue`);
         continue;
       }
       // @ts-ignore
       const t = ut[m](...args) as any;
-      if (deferred && "function" == typeof t.then) {
+      if (deferred && typeof t.then === 'function') {
         t.then(deferred.resolve, deferred.reject);
       }
     }
-    logger.info("queue processed");
+    logger.info('queue processed');
   })();
 }
 // export default usertour;

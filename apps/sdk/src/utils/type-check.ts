@@ -19,7 +19,9 @@ export function isHTMLElement<T>(value: T | HTMLElement): value is HTMLElement {
  * @param value The param to check if it is a function
  */
 // eslint-disable-next-line @typescript-eslint/ban-types
-export function isFunction<T>(value: T | Function): value is Function {
+export function isFunction<T>(
+  value: T | ((...args: any[]) => void),
+): value is (...args: any[]) => void {
   return typeof value === 'function';
 }
 
