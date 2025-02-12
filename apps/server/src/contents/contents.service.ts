@@ -57,7 +57,7 @@ export class ContentsService {
     const content = await this.getContent(contentId);
     if (
       !content ||
-      content.editedVersionId !== '' ||
+      !content.editedVersionId ||
       versionId !== content.editedVersionId ||
       content.publishedVersionId === versionId
     ) {
