@@ -1,6 +1,6 @@
-import { InputType, Field, PartialType } from "@nestjs/graphql";
-import GraphQLJSON from "graphql-type-json";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { Field, InputType } from '@nestjs/graphql';
+import { JsonValue } from '@prisma/client/runtime/library';
+import GraphQLJSON from 'graphql-type-json';
 
 @InputType()
 export class VersionInput {

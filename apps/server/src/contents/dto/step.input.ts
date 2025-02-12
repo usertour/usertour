@@ -1,14 +1,8 @@
-import { IsNotEmpty } from "class-validator";
-import {
-  InputType,
-  Field,
-  PartialType,
-  OmitType,
-  PickType,
-} from "@nestjs/graphql";
-import { TargetModel, StepSettingModel, Step } from "../models/step.model";
-import GraphQLJSON from "graphql-type-json";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { Field, InputType, OmitType, PartialType } from '@nestjs/graphql';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { IsNotEmpty } from 'class-validator';
+import GraphQLJSON from 'graphql-type-json';
+import { Step, StepSettingModel, TargetModel } from '../models/step.model';
 
 @InputType()
 export class SettingInput extends PartialType(StepSettingModel, InputType) {}
@@ -60,11 +54,11 @@ export class StepInput {
 @InputType()
 export class CreateStepInput extends OmitType(
   Step,
-  ["id", "createdAt", "updatedAt", "cvid"],
-  InputType
+  ['id', 'createdAt', 'updatedAt', 'cvid'],
+  InputType,
 ) {}
 
 @InputType()
 export class UpdateStepInput extends PartialType(
-  OmitType(Step, ["id", "createdAt", "updatedAt", "cvid"], InputType)
+  OmitType(Step, ['id', 'createdAt', 'updatedAt', 'cvid'], InputType),
 ) {}

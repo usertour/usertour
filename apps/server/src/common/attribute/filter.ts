@@ -1,20 +1,20 @@
-import { Attribute } from "@/attributes/models/attribute.model";
-import { subDays, startOfDay, endOfDay } from "date-fns";
-import { BizAttributeTypes } from "../consts/attribute";
-import { Prisma } from "@prisma/client";
+import { Attribute } from '@/attributes/models/attribute.model';
+import { Prisma } from '@prisma/client';
+import { endOfDay, startOfDay, subDays } from 'date-fns';
+import { BizAttributeTypes } from '../consts/attribute';
 
 export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   const { data = {} } = condition;
   const { logic, value, attrId, value2 } = data;
-  const attr = attributes.find((attr) => attr.id == attrId);
+  const attr = attributes.find((attr) => attr.id === attrId);
   if (!attr) {
     return false;
   }
-  if (attr.dataType == BizAttributeTypes.String) {
+  if (attr.dataType === BizAttributeTypes.String) {
     switch (logic) {
-      case "is":
+      case 'is':
         return { data: { path: [attr.codeName], equals: value } };
-      case "not":
+      case 'not':
         return {
           OR: [
             { data: { path: [attr.codeName], not: value } },
@@ -22,9 +22,9 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
           ],
         };
       // return { data: { path: [attr.codeName], not: value } };
-      case "contains":
+      case 'contains':
         return { data: { path: [attr.codeName], string_contains: value } };
-      case "notContain":
+      case 'notContain':
         return {
           OR: [
             { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
@@ -36,34 +36,35 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return {
       //   NOT: [{ data: { path: [attr.codeName], string_contains: value } }],
       // };
-      case "startsWith":
+      case 'startsWith':
         return { data: { path: [attr.codeName], string_starts_with: value } };
-      case "endsWith":
+      case 'endsWith':
         return { data: { path: [attr.codeName], string_ends_with: value } };
-      case "empty":
+      case 'empty':
         return {
           OR: [
-            { data: { path: [attr.codeName], equals: "" } },
+            { data: { path: [attr.codeName], equals: '' } },
             { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], equals: "" } };
-      case "any":
+      case 'any':
         return {
           AND: [
-            { data: { path: [attr.codeName], not: "" } },
+            { data: { path: [attr.codeName], not: '' } },
             { data: { path: [attr.codeName], not: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], not: "" } };
     }
-  } else if (attr.dataType == BizAttributeTypes.Number) {
+  }
+  if (attr.dataType === BizAttributeTypes.Number) {
     const intValue = Number(value);
     const intValue2 = Number(value2);
     switch (logic) {
-      case "is":
+      case 'is':
         return { data: { path: [attr.codeName], equals: intValue } };
-      case "not":
+      case 'not':
         return {
           OR: [
             { data: { path: [attr.codeName], not: intValue } },
@@ -71,72 +72,74 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
           ],
         };
       // return { data: { path: [attr.codeName], not: intValue } };
-      case "isLessThan":
+      case 'isLessThan':
         return { data: { path: [attr.codeName], lt: intValue } };
-      case "isLessThanOrEqualTo":
+      case 'isLessThanOrEqualTo':
         return { data: { path: [attr.codeName], lte: intValue } };
-      case "isGreaterThan":
+      case 'isGreaterThan':
         return { data: { path: [attr.codeName], gt: intValue } };
-      case "isGreaterThanOrEqualTo":
+      case 'isGreaterThanOrEqualTo':
         return { data: { path: [attr.codeName], gte: intValue } };
-      case "between":
+      case 'between':
         return {
           data: { path: [attr.codeName], gte: intValue, lte: intValue2 },
         };
-      case "empty":
+      case 'empty':
         return {
           OR: [
-            { data: { path: [attr.codeName], equals: "" } },
+            { data: { path: [attr.codeName], equals: '' } },
             { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], equals: "" } };
-      case "any":
+      case 'any':
         return {
           AND: [
-            { data: { path: [attr.codeName], not: "" } },
+            { data: { path: [attr.codeName], not: '' } },
             { data: { path: [attr.codeName], not: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], not: "" } };
     }
-  } else if (attr.dataType == BizAttributeTypes.Boolean) {
+  }
+  if (attr.dataType === BizAttributeTypes.Boolean) {
     switch (logic) {
-      case "true":
+      case 'true':
         return { data: { path: [attr.codeName], equals: true } };
-      case "false":
+      case 'false':
         return { data: { path: [attr.codeName], equals: false } };
-      case "empty":
+      case 'empty':
         return {
           OR: [
-            { data: { path: [attr.codeName], equals: "" } },
+            { data: { path: [attr.codeName], equals: '' } },
             { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], equals: "" } };
-      case "any":
+      case 'any':
         return {
           AND: [
-            { data: { path: [attr.codeName], not: "" } },
+            { data: { path: [attr.codeName], not: '' } },
             { data: { path: [attr.codeName], not: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], not: "" } };
     }
-  } else if (attr.dataType == BizAttributeTypes.List) {
+  }
+  if (attr.dataType === BizAttributeTypes.List) {
     switch (logic) {
-      case "includesAtLeastOne":
+      case 'includesAtLeastOne':
         return {
           OR: [
             { data: { path: [attr.codeName], array_contains: value } },
             { data: { path: [attr.codeName], array_contains: value2 } },
           ],
         };
-      case "includesAll":
+      case 'includesAll':
         return {
           data: { path: [attr.codeName], array_contains: [value, value2] },
         };
-      case "notIncludesAtLeastOne":
+      case 'notIncludesAtLeastOne':
         return {
           NOT: [
             {
@@ -147,7 +150,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
             },
           ],
         };
-      case "includesAll":
+      case 'notIncludesAll':
         return {
           NOT: [
             {
@@ -155,30 +158,31 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
             },
           ],
         };
-      case "empty":
+      case 'empty':
         return {
           OR: [
-            { data: { path: [attr.codeName], equals: "" } },
+            { data: { path: [attr.codeName], equals: '' } },
             { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], equals: "" } };
-      case "any":
+      case 'any':
         return {
           AND: [
-            { data: { path: [attr.codeName], not: "" } },
+            { data: { path: [attr.codeName], not: '' } },
             { data: { path: [attr.codeName], not: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], not: "" } };
     }
-  } else if (attr.dataType == BizAttributeTypes.DateTime) {
+  }
+  if (attr.dataType === BizAttributeTypes.DateTime) {
     const iosNow = new Date().toISOString();
     const iosValue = new Date(value).toISOString();
     switch (logic) {
-      case "lessThan":
+      case 'lessThan':
         return { data: { path: [attr.codeName], gte: subDays(iosNow, value) } };
-      case "exactly":
+      case 'exactly': {
         const preDate = subDays(iosNow, value);
         return {
           data: {
@@ -187,11 +191,12 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
             lte: endOfDay(preDate),
           },
         };
-      case "moreThan":
+      }
+      case 'moreThan':
         return { data: { path: [attr.codeName], lte: subDays(iosNow, value) } };
-      case "before":
+      case 'before':
         return { data: { path: [attr.codeName], lte: iosValue } };
-      case "on":
+      case 'on':
         return {
           data: {
             path: [attr.codeName],
@@ -199,20 +204,20 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
             lte: endOfDay(iosValue),
           },
         };
-      case "after":
+      case 'after':
         return { data: { path: [attr.codeName], gte: iosValue } };
-      case "empty":
+      case 'empty':
         return {
           OR: [
-            { data: { path: [attr.codeName], equals: "" } },
+            { data: { path: [attr.codeName], equals: '' } },
             { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
           ],
         };
       // return { data: { path: [attr.codeName], equals: "" } };
-      case "any":
+      case 'any':
         return {
           AND: [
-            { data: { path: [attr.codeName], not: "" } },
+            { data: { path: [attr.codeName], not: '' } },
             { data: { path: [attr.codeName], not: Prisma.AnyNull } },
           ],
         };
@@ -221,34 +226,35 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   }
 };
 
-export const createConditionsFilter = (
-  conditions: any,
-  attributes: Attribute[]
-) => {
+export const createConditionsFilter = (conditions: any, attributes: Attribute[]) => {
   if (!conditions || !conditions.length) {
     return false;
   }
-  const filter = { AND: [], OR: [] };
+  const AND = [];
+  const OR = [];
+
   for (const condition of conditions) {
     const { operators } = condition;
     const item =
-      condition["type"] != "group"
+      condition.type !== 'group'
         ? createFilterItem(condition, attributes)
-        : createConditionsFilter(condition["conditions"], attributes);
+        : createConditionsFilter(condition.conditions, attributes);
     if (!item) {
       continue;
     }
-    if (operators == "and") {
-      filter.AND.push(item);
+    if (operators === 'and') {
+      AND.push(item);
     } else {
-      filter.OR.push(item);
+      OR.push(item);
     }
   }
-  if (filter.AND.length == 0) {
-    delete filter.AND;
+
+  const filter: Record<string, any> = {};
+  if (AND.length > 0) {
+    filter.AND = AND;
   }
-  if (filter.OR.length == 0) {
-    delete filter.OR;
+  if (OR.length > 0) {
+    filter.OR = OR;
   }
   return filter;
 };

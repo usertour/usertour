@@ -1,21 +1,20 @@
-import { Field, Int, ObjectType } from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
-import GraphQLJSON from "graphql-type-json";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { JsonValue } from '@prisma/client/runtime/library';
+import GraphQLJSON from 'graphql-type-json';
 
 @ObjectType()
 export class Analytics {
   @Field(() => Int)
-  uniqueViews: Number;
+  uniqueViews: number;
 
   @Field(() => Int)
-  totalViews: Number;
+  totalViews: number;
 
   @Field(() => Int)
-  uniqueCompletions: Number;
+  uniqueCompletions: number;
 
   @Field(() => Int)
-  totalCompletions: Number;
+  totalCompletions: number;
 
   @Field(() => GraphQLJSON, { nullable: true })
   viewsByDay: JsonValue;

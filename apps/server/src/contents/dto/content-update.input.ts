@@ -1,11 +1,11 @@
-import { IsNotEmpty } from "class-validator";
-import { InputType, Field, PartialType, PickType } from "@nestjs/graphql";
-import { ContentInput } from "./content.input";
+import { Field, InputType, PartialType, PickType } from '@nestjs/graphql';
+import { IsNotEmpty } from 'class-validator';
+import { ContentInput } from './content.input';
 
 @InputType()
 export class UpdateContentInput extends PartialType(
-  PickType(ContentInput, ["name", "buildUrl"]),
-  InputType
+  PickType(ContentInput, ['name', 'buildUrl']),
+  InputType,
 ) {}
 
 @InputType()
@@ -20,8 +20,8 @@ export class ContentUpdateInput {
 
 @InputType()
 export class ContentDuplicateInput extends PartialType(
-  PickType(ContentInput, ["name"]),
-  InputType
+  PickType(ContentInput, ['name']),
+  InputType,
 ) {
   @Field()
   @IsNotEmpty()

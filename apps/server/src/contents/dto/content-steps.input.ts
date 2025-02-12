@@ -1,6 +1,6 @@
-import { IsNotEmpty } from "class-validator";
-import { InputType, Field } from "@nestjs/graphql";
-import { StepInput } from "./step.input";
+import { Field, InputType } from '@nestjs/graphql';
+import { IsNotEmpty } from 'class-validator';
+import { StepInput } from './step.input';
 
 @InputType()
 export class ContentStepsInput {
@@ -17,6 +17,6 @@ export class ContentStepsInput {
   themeId: string;
 
   @IsNotEmpty()
-  @Field((type) => [StepInput])
+  @Field(() => [StepInput])
   steps: StepInput[];
 }

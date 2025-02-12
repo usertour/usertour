@@ -1,20 +1,20 @@
-import { Field, Int, ObjectType } from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
+import { BizModel } from '@/biz/models/biz.model';
+import { BaseModel } from '@/common/models/base.model';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { JsonObject } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
-import { JsonObject } from "@prisma/client/runtime/library";
-import { BizModel } from "@/biz/models/biz.model";
-import { BizEvent } from "./biz-event";
+import { BizEvent } from './biz-event';
 
 @ObjectType()
 export class BizSession extends BaseModel {
   @Field(() => Int)
-  state: Number;
+  state: number;
 
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonObject;
 
   @Field(() => Int)
-  progress: Number;
+  progress: number;
 
   @Field(() => String)
   bizUserId: string;
@@ -27,5 +27,4 @@ export class BizSession extends BaseModel {
 
   @Field(() => [BizEvent], { nullable: true })
   bizEvent: BizEvent[];
-
 }

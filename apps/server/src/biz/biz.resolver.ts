@@ -1,12 +1,13 @@
-import { Resolver, Mutation, Args, Query } from "@nestjs/graphql";
-import { BizService } from "./biz.service";
-import { CreateBizCompanyInput, CreateBizInput } from "./dto/biz.input";
-import { BizConnection } from "./models/biz-connection.model";
-import { PaginationArgs } from "@/common/pagination/pagination.args";
-import { BizQuery } from "./dto/biz-query.input";
-import { BizOrder } from "./dto/biz-order.input";
-import { Common } from "@/auth/models/common.model";
-import { Segment } from "./models/segment.model";
+import { Common } from '@/auth/models/common.model';
+import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { UseGuards } from '@nestjs/common';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { BizGuard } from './biz.guard';
+import { BizService } from './biz.service';
+import { BizOrder } from './dto/biz-order.input';
+import { BizQuery } from './dto/biz-query.input';
+import { CreateBizCompanyInput, CreateBizInput } from './dto/biz.input';
 import {
   BizUserOrCompanyIdsInput,
   CreatSegment,
@@ -17,10 +18,9 @@ import {
   DeleteSegment,
   ListSegment,
   UpdateSegment,
-} from "./dto/segment.input";
-import { UseGuards } from "@nestjs/common";
-import { BizGuard } from "./biz.guard";
-import { RolesScopeEnum, Roles } from "@/common/decorators/roles.decorator";
+} from './dto/segment.input';
+import { BizConnection } from './models/biz-connection.model';
+import { Segment } from './models/segment.model';
 
 @Resolver()
 @UseGuards(BizGuard)
@@ -29,14 +29,14 @@ export class BizResolver {
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async createBizUser(@Args("data") data: CreateBizInput) {
+  async createBizUser(@Args('data') data: CreateBizInput) {
     const ret = await this.service.upsertBizUsers(data);
     return { success: ret };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async createBizCompany(@Args("data") data: CreateBizCompanyInput) {
+  async createBizCompany(@Args('data') data: CreateBizCompanyInput) {
     const ret = await this.service.upsertBizCompany(data);
     return { success: ret };
   }
@@ -45,8 +45,8 @@ export class BizResolver {
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async queryBizUser(
     @Args() pagination: PaginationArgs,
-    @Args("query") query: BizQuery,
-    @Args("orderBy") orderBy: BizOrder
+    @Args('query') query: BizQuery,
+    @Args('orderBy') orderBy: BizOrder,
   ) {
     return await this.service.queryBizUser(query, pagination, orderBy);
   }
@@ -55,29 +55,29 @@ export class BizResolver {
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async queryBizCompany(
     @Args() pagination: PaginationArgs,
-    @Args("query") query: BizQuery,
-    @Args("orderBy") orderBy: BizOrder
+    @Args('query') query: BizQuery,
+    @Args('orderBy') orderBy: BizOrder,
   ) {
     return await this.service.queryBizCompany(query, pagination, orderBy);
   }
 
   @Mutation(() => Segment)
   @Roles([RolesScopeEnum.ADMIN])
-  async createSegment(@Args("data") data: CreatSegment) {
+  async createSegment(@Args('data') data: CreatSegment) {
     return await this.service.creatSegment(data);
   }
 
   @Mutation(() => Segment)
   @Roles([RolesScopeEnum.ADMIN])
-  async updateSegment(@Args("data") data: UpdateSegment) {
+  async updateSegment(@Args('data') data: UpdateSegment) {
     return await this.service.updateSegment(data);
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteSegment(@Args("data") data: DeleteSegment) {
+  async deleteSegment(@Args('data') data: DeleteSegment) {
     const [, , r3] = await this.service.deleteSegment(data);
-    return { success: r3.id ? true : false };
+    return { success: !!r3.id };
   }
 
   @Query(() => [Segment])
@@ -88,55 +88,43 @@ export class BizResolver {
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async createBizUserOnSegment(@Args("data") data: CreateBizUserOnSegment) {
+  async createBizUserOnSegment(@Args('data') data: CreateBizUserOnSegment) {
     const ret = await this.service.createBizUserOnSegment(data.userOnSegment);
-    return { success: ret.count > 0 ? true : false, count: ret.count };
+    return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteBizUserOnSegment(@Args("data") data: DeleteBizUserOnSegment) {
+  async deleteBizUserOnSegment(@Args('data') data: DeleteBizUserOnSegment) {
     const ret = await this.service.deleteBizUserOnSegment(data);
-    return { success: ret.count > 0 ? true : false, count: ret.count };
+    return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteBizUser(@Args("data") data: BizUserOrCompanyIdsInput) {
-    const [, , r3] = await this.service.deleteBizUser(
-      data.ids,
-      data.environmentId
-    );
-    return { success: r3.count > 0 ? true : false, count: r3.count };
+  async deleteBizUser(@Args('data') data: BizUserOrCompanyIdsInput) {
+    const [, , r3] = await this.service.deleteBizUser(data.ids, data.environmentId);
+    return { success: r3.count > 0, count: r3.count };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteBizCompany(@Args("data") data: BizUserOrCompanyIdsInput) {
-    const ret = await this.service.deleteBizCompany(
-      data.ids,
-      data.environmentId
-    );
-    return { success: ret.count > 0 ? true : false, count: ret.count };
+  async deleteBizCompany(@Args('data') data: BizUserOrCompanyIdsInput) {
+    const ret = await this.service.deleteBizCompany(data.ids, data.environmentId);
+    return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async createBizCompanyOnSegment(
-    @Args("data") data: CreateBizCompanyOnSegment
-  ) {
-    const ret = await this.service.createBizCompanyOnSegment(
-      data.companyOnSegment
-    );
-    return { success: ret.count > 0 ? true : false, count: ret.count };
+  async createBizCompanyOnSegment(@Args('data') data: CreateBizCompanyOnSegment) {
+    const ret = await this.service.createBizCompanyOnSegment(data.companyOnSegment);
+    return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteBizCompanyOnSegment(
-    @Args("data") data: DeleteBizCompanyOnSegment
-  ) {
+  async deleteBizCompanyOnSegment(@Args('data') data: DeleteBizCompanyOnSegment) {
     const ret = await this.service.deleteBizCompanyOnSegment(data);
-    return { success: ret.count > 0 ? true : false, count: ret.count };
+    return { success: ret.count > 0, count: ret.count };
   }
 }

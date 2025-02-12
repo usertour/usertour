@@ -1,29 +1,23 @@
-import { PrismaService } from "nestjs-prisma";
-import { Prisma, User } from "@prisma/client";
-import crypto from "crypto";
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { SecurityConfig } from '@/common/configs/config.interface';
+import compileEmailTemplate from '@/common/email/compile-email-template';
+import { initialization, initializationThemes } from '@/common/initialization/initialization';
 import {
-  Injectable,
-  NotFoundException,
   BadRequestException,
   ConflictException,
+  Injectable,
+  NotFoundException,
   UnauthorizedException,
-  Catch,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { JwtService } from "@nestjs/jwt";
-import { PasswordService } from "./password.service";
-import { SignupInput } from "./dto/signup.input";
-import { Token } from "./models/token.model";
-import { Common } from "./models/common.model";
-import { SecurityConfig } from "@/common/configs/config.interface";
-import { createTransport } from "nodemailer";
-import compileEmailTemplate from "@/common/email/compile-email-template";
-import {
-  initialization,
-  initializationThemes,
-} from "@/common/initialization/initialization";
-import { SegmentBizType, SegmentDataType } from "@/biz/models/segment.model";
-import { getGravatarUrl } from "@/utils/gravatar";
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Prisma, User } from '@prisma/client';
+import { PrismaService } from 'nestjs-prisma';
+import { createTransport } from 'nodemailer';
+import { SignupInput } from './dto/signup.input';
+import { Common } from './models/common.model';
+import { Token } from './models/token.model';
+import { PasswordService } from './password.service';
 
 @Injectable()
 export class AuthService {
@@ -31,14 +25,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   async createMagicLink(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
       throw new ConflictException({
-        code: "10001",
+        code: '10001',
         msg: `The email ${email} is registed`,
       });
     }
@@ -53,20 +47,20 @@ export class AuthService {
       return result;
     } catch (e) {
       console.log(e);
-      throw new BadRequestException("Failed to create margin link!!", e);
+      throw new BadRequestException('Failed to create margin link!!', e);
     }
   }
 
   async resendMargicLink(id: string) {
     const data = await this.prisma.register.findUnique({ where: { id } });
     if (!data) {
-      throw new BadRequestException("Bad margic link id!");
+      throw new BadRequestException('Bad margic link id!');
     }
     try {
       await this.sendMagicLinkEmail(data.code, data.email);
       return data;
-    } catch (e) {
-      throw new BadRequestException("Failed to create margin link!!");
+    } catch (_) {
+      throw new BadRequestException('Failed to create margin link!!');
     }
   }
 
@@ -82,12 +76,7 @@ export class AuthService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const user = await this.createUser(
-          tx,
-          userName,
-          register.email,
-          hashedPassword
-        );
+        const user = await this.createUser(tx, userName, register.email, hashedPassword);
         const project = await this.createProject(tx, companyName, user.id);
         await initialization(tx, project.id);
         return this.generateTokens({
@@ -96,10 +85,7 @@ export class AuthService {
       });
     } catch (e) {
       console.log(e);
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === "P2002"
-      ) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new ConflictException(`Email ${register.email} already used.`);
       }
       throw new Error(e);
@@ -117,21 +103,14 @@ export class AuthService {
     }
 
     if (user.projects.length === 0) {
-      const project = await this.createProject(
-        this.prisma,
-        "Unnamed Project",
-        user.id
-      );
+      const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
       await initialization(this.prisma, project.id);
     }
 
-    const passwordValid = await this.passwordService.validatePassword(
-      password,
-      user.password
-    );
+    const passwordValid = await this.passwordService.validatePassword(password, user.password);
 
     if (!passwordValid) {
-      throw new BadRequestException("Invalid password");
+      throw new BadRequestException('Invalid password');
     }
 
     return this.generateTokens({
@@ -143,7 +122,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new ConflictException({
-        code: "10002",
+        code: '10002',
         msg: `The email ${email} is not registed`,
       });
     }
@@ -157,19 +136,16 @@ export class AuthService {
       await this.sendResetPasswordEmail(result.id, email, user.name);
       return { success: true };
     } catch (e) {
-      throw new BadRequestException("Failed to resete password!!", e);
+      throw new BadRequestException('Failed to resete password!!', e);
     }
   }
 
-  async resetUserPasswordByCode(
-    code: string,
-    password: string
-  ): Promise<Common> {
+  async resetUserPasswordByCode(code: string, password: string): Promise<Common> {
     const data = await this.prisma.code.findUnique({ where: { id: code } });
     if (!data) {
       throw new ConflictException({
-        code: "10003",
-        msg: `The not is invalid`,
+        code: '10003',
+        msg: 'The not is invalid',
       });
     }
 
@@ -178,8 +154,8 @@ export class AuthService {
     });
     if (!user) {
       throw new ConflictException({
-        code: "10003",
-        msg: `The user is empay`,
+        code: '10003',
+        msg: 'The user is empay',
       });
     }
 
@@ -193,7 +169,7 @@ export class AuthService {
       });
       return { success: true };
     } catch (e) {
-      throw new BadRequestException("Failed to resete password!!", e);
+      throw new BadRequestException('Failed to resete password!!', e);
     }
   }
 
@@ -202,8 +178,8 @@ export class AuthService {
   }
 
   async getUserFromToken(token: string): Promise<User> {
-    const id = this.jwtService.decode(token)["userId"];
-    return await this.prisma.user.findUnique({ where: { id } });
+    const { userId } = this.jwtService.decode(token);
+    return await this.prisma.user.findUnique({ where: { id: userId } });
   }
 
   generateTokens(payload: { userId: string }): Token {
@@ -218,9 +194,9 @@ export class AuthService {
   }
 
   private generateRefreshToken(payload: { userId: string }): string {
-    const securityConfig = this.configService.get<SecurityConfig>("security");
+    const securityConfig = this.configService.get<SecurityConfig>('security');
     return this.jwtService.sign(payload, {
-      secret: this.configService.get("JWT_REFRESH_SECRET"),
+      secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: securityConfig.refreshIn,
     });
   }
@@ -228,25 +204,25 @@ export class AuthService {
   refreshToken(token: string) {
     try {
       const { userId } = this.jwtService.verify(token, {
-        secret: this.configService.get("JWT_REFRESH_SECRET"),
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
 
       return this.generateTokens({
         userId,
       });
-    } catch (e) {
+    } catch (_) {
       throw new UnauthorizedException();
     }
   }
 
   async sendEmail(data: any) {
     const transporter = createTransport({
-      host: this.configService.get("EMAIL_HOST"),
-      port: this.configService.get("EMAIL_PORT"),
+      host: this.configService.get('EMAIL_HOST'),
+      port: this.configService.get('EMAIL_PORT'),
       secure: true,
       auth: {
-        user: this.configService.get("EMAIL_USER"),
-        pass: this.configService.get("EMAIL_PASS"),
+        user: this.configService.get('EMAIL_USER'),
+        pass: this.configService.get('EMAIL_PASS'),
       },
     });
     return await transporter.sendMail(data);
@@ -255,16 +231,16 @@ export class AuthService {
   async sendMagicLinkEmail(code: string, email: string) {
     const link = `${process.env.APP_HOMEPAGE_URL}/auth/registration/${code}`;
     const template = await compileEmailTemplate({
-      fileName: "verifyEmail.mjml",
+      fileName: 'verifyEmail.mjml',
       data: {
-        name: "test",
+        name: 'test',
         url: link,
       },
     });
     return await this.sendEmail({
       from: '"support" support@usertour.io', // sender address
       to: email, // list of receivers
-      subject: "Welcome to Usertour, verify your email", // Subject line
+      subject: 'Welcome to Usertour, verify your email', // Subject line
       html: template, // html body
     });
   }
@@ -272,7 +248,7 @@ export class AuthService {
   async sendResetPasswordEmail(id: string, email: string, name: string) {
     const link = `${process.env.APP_HOMEPAGE_URL}/auth/password-reset/${id}`;
     const template = await compileEmailTemplate({
-      fileName: "forgotPassword.mjml",
+      fileName: 'forgotPassword.mjml',
       data: {
         name,
         url: link,
@@ -281,17 +257,12 @@ export class AuthService {
     return await this.sendEmail({
       from: '"support" support@appnps.com', // sender address
       to: email, // list of receivers
-      subject: "Set up a new password for Usertour", // Subject line
+      subject: 'Set up a new password for Usertour', // Subject line
       html: template, // html body
     });
   }
 
-  async createUser(
-    tx: Prisma.TransactionClient,
-    name: string,
-    email: string,
-    password: string
-  ) {
+  async createUser(tx: Prisma.TransactionClient, name: string, email: string, password: string) {
     return await tx.user.create({
       data: {
         name,
@@ -301,31 +272,27 @@ export class AuthService {
     });
   }
 
-  async createProject(
-    tx: Prisma.TransactionClient,
-    name: string,
-    userId: string
-  ) {
+  async createProject(tx: Prisma.TransactionClient, name: string, userId: string) {
     return await tx.project.create({
       data: {
         name,
         users: {
-          create: [{ userId, role: "ADMIN", actived: true }],
+          create: [{ userId, role: 'ADMIN', actived: true }],
         },
         environments: {
           create: [
             {
-              name: "Production",
+              name: 'Production',
               segments: {
                 create: [
                   {
-                    name: "All Users",
+                    name: 'All Users',
                     bizType: SegmentBizType.USER,
                     dataType: SegmentDataType.ALL,
                     data: [],
                   },
                   {
-                    name: "All Companies",
+                    name: 'All Companies',
                     bizType: SegmentBizType.COMPANY,
                     dataType: SegmentDataType.ALL,
                     data: [],
@@ -339,9 +306,9 @@ export class AuthService {
         localizations: {
           create: [
             {
-              locale: "en-US",
-              name: "English",
-              code: "en-US",
+              locale: 'en-US',
+              name: 'English',
+              code: 'en-US',
               isDefault: true,
             },
           ],

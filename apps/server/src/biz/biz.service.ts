@@ -1,7 +1,14 @@
-import { PrismaService } from "nestjs-prisma";
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { CreateBizCompanyInput, CreateBizInput } from "./dto/biz.input";
-import { getAttributeType } from "@/common/attribute/attribute";
+import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { getAttributeType } from '@/common/attribute/attribute';
+import { createConditionsFilter } from '@/common/attribute/filter';
+import { BizAttributeTypes } from '@/common/consts/attribute';
+import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import { BizOrder } from './dto/biz-order.input';
+import { BizQuery } from './dto/biz-query.input';
+import { CreateBizCompanyInput, CreateBizInput } from './dto/biz.input';
 import {
   BizCompanyOnSegmentInput,
   BizUserOnSegmentInput,
@@ -10,15 +17,8 @@ import {
   DeleteBizUserOnSegment,
   DeleteSegment,
   UpdateSegment,
-} from "./dto/segment.input";
-import { PaginationArgs } from "@/common/pagination/pagination.args";
-import { BizQuery } from "./dto/biz-query.input";
-import { BizOrder } from "./dto/biz-order.input";
-import { findManyCursorConnection } from "@devoxa/prisma-relay-cursor-connection";
-import { AttributeBizType } from "@/attributes/models/attribute.model";
-import { createConditionsFilter } from "@/common/attribute/filter";
-import { Segment, SegmentDataType } from "./models/segment.model";
-import { BizAttributeTypes } from "@/common/consts/attribute";
+} from './dto/segment.input';
+import { Segment, SegmentDataType } from './models/segment.model';
 
 @Injectable()
 export class BizService {
@@ -45,11 +45,7 @@ export class BizService {
       return false;
     }
     const projectId = environmenet.projectId;
-    const insertAttribute = await this.insertAttributes(
-      projectId,
-      attributes,
-      1
-    );
+    const insertAttribute = await this.insertAttributes(projectId, attributes, 1);
     const user = await this.prisma.bizUser.findFirst({
       where: { externalId: userId, environmentId },
     });
@@ -79,13 +75,7 @@ export class BizService {
   }
 
   async upsertBizCompany(data: CreateBizCompanyInput): Promise<boolean> {
-    const {
-      externalId,
-      data: attributes,
-      environmentId,
-      membership,
-      userId,
-    } = data;
+    const { externalId, data: attributes, environmentId, membership, userId } = data;
     const environmenet = await this.prisma.environment.findUnique({
       where: { id: environmentId },
     });
@@ -96,11 +86,7 @@ export class BizService {
       return false;
     }
     const projectId = environmenet.projectId;
-    const insertAttribute = await this.insertAttributes(
-      projectId,
-      attributes,
-      2
-    );
+    const insertAttribute = await this.insertAttributes(projectId, attributes, 2);
     let bizCompanyId: string;
     const company = await this.prisma.bizCompany.findFirst({
       where: { externalId, environmentId },
@@ -137,11 +123,7 @@ export class BizService {
       });
     }
     if (membership) {
-      const insertAttribute = await this.insertAttributes(
-        projectId,
-        membership,
-        3
-      );
+      const insertAttribute = await this.insertAttributes(projectId, membership, 3);
       const m1 = await this.prisma.bizUserOnCompany.findFirst({
         where: {
           bizCompanyId: bizCompanyId,
@@ -196,10 +178,10 @@ export class BizService {
           continue;
         }
       }
-      if (attribute && attribute.dataType == dataType) {
+      if (attribute && attribute.dataType === dataType) {
         insertAttribute[attrName] = attrValue;
       }
-      if (dataType == BizAttributeTypes.DateTime) {
+      if (dataType === BizAttributeTypes.DateTime) {
         insertAttribute[attrName] = new Date(attrValue).toISOString();
       }
     }
@@ -230,10 +212,9 @@ export class BizService {
       const deleteUsersOnSegment = this.prisma.bizUserOnSegment.deleteMany({
         where: { segmentId: data.id },
       });
-      const deleteCompaniesOnSegment =
-        this.prisma.bizCompanyOnSegment.deleteMany({
-          where: { segmentId: data.id },
-        });
+      const deleteCompaniesOnSegment = this.prisma.bizCompanyOnSegment.deleteMany({
+        where: { segmentId: data.id },
+      });
       const deleteSegment = this.prisma.segment.delete({
         where: { id: data.id },
       });
@@ -244,24 +225,24 @@ export class BizService {
       ]);
     } catch (err) {
       console.log(err);
-      throw new BadRequestException("deleteBizUser failed!", err);
+      throw new BadRequestException('deleteBizUser failed!', err);
     }
   }
 
   async listSegment(environmentId: string) {
     return await this.prisma.segment.findMany({
       where: { environmentId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 
   async createBizUserOnSegment(data: BizUserOnSegmentInput[]) {
-    if (!data.every((item) => item.segmentId == data[0].segmentId)) {
-      throw new BadRequestException("Invalid data");
+    if (!data.every((item) => item.segmentId === data[0].segmentId)) {
+      throw new BadRequestException('Invalid data');
     }
     const segment = await this.getSegment(data[0].segmentId);
     if (!segment) {
-      throw new BadRequestException("Invalid data");
+      throw new BadRequestException('Invalid data');
     }
     const inserts = data.filter(async (item) => {
       return await this.prisma.bizUser.findFirst({
@@ -271,8 +252,8 @@ export class BizService {
         },
       });
     });
-    if (inserts.length == 0) {
-      throw new BadRequestException("Invalid data");
+    if (inserts.length === 0) {
+      throw new BadRequestException('Invalid data');
     }
 
     return await this.prisma.bizUserOnSegment.createMany({
@@ -290,12 +271,12 @@ export class BizService {
   }
 
   async createBizCompanyOnSegment(data: BizCompanyOnSegmentInput[]) {
-    if (!data.every((item) => item.segmentId == data[0].segmentId)) {
-      throw new BadRequestException("Invalid data");
+    if (!data.every((item) => item.segmentId === data[0].segmentId)) {
+      throw new BadRequestException('Invalid data');
     }
     const segment = await this.getSegment(data[0].segmentId);
     if (!segment) {
-      throw new BadRequestException("Invalid data");
+      throw new BadRequestException('Invalid data');
     }
     const inserts = data.filter(async (item) => {
       return await this.prisma.bizCompany.findFirst({
@@ -305,8 +286,8 @@ export class BizService {
         },
       });
     });
-    if (inserts.length == 0) {
-      throw new BadRequestException("Invalid data");
+    if (inserts.length === 0) {
+      throw new BadRequestException('Invalid data');
     }
     return await this.prisma.bizCompanyOnSegment.createMany({
       data: inserts,
@@ -331,8 +312,8 @@ export class BizService {
         },
       });
       const deleteIds = bizUsers.map((bizUser) => bizUser.id);
-      if (deleteIds.length == 0) {
-        throw new BadRequestException("Invalid bizUsers failed!");
+      if (deleteIds.length === 0) {
+        throw new BadRequestException('Invalid bizUsers failed!');
       }
       const deleteUsersOnCompany = this.prisma.bizUserOnCompany.deleteMany({
         where: { bizUserId: { in: deleteIds } },
@@ -352,7 +333,7 @@ export class BizService {
       ]);
     } catch (err) {
       console.log(err);
-      throw new BadRequestException("deleteBizUser failed!", err);
+      throw new BadRequestException('deleteBizUser failed!', err);
     }
   }
 
@@ -368,11 +349,7 @@ export class BizService {
     });
   }
 
-  async queryBizUser(
-    query: BizQuery,
-    pagination: PaginationArgs,
-    orderBy: BizOrder
-  ) {
+  async queryBizUser(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, userId, search } = query;
     try {
@@ -391,7 +368,7 @@ export class BizService {
         if (!segment) {
           return false;
         }
-        if (!data && segment.dataType == SegmentDataType.CONDITION) {
+        if (!data && segment.dataType === SegmentDataType.CONDITION) {
           conditions = segment.data;
         }
       }
@@ -404,9 +381,9 @@ export class BizService {
       const filter = createConditionsFilter(conditions, attributes);
       console.log(JSON.stringify(filter));
       // const conditions = { ...c };
-      const where = filter ? filter : {};
-      if (segment && segment.dataType == SegmentDataType.MANUAL) {
-        where["bizUsersOnSegment"] = {
+      const where: Record<string, any> = filter ? filter : {};
+      if (segment && segment.dataType === SegmentDataType.MANUAL) {
+        where.bizUsersOnSegment = {
           some: {
             segment: {
               id: segment.id,
@@ -415,12 +392,12 @@ export class BizService {
         };
       }
       if (userId) {
-        where["id"] = userId;
+        where.id = userId;
       }
       if (search) {
-        where["externalId"] = { contains: search };
+        where.externalId = { contains: search };
       }
-      console.log("where:", JSON.stringify(where));
+      console.log('where:', JSON.stringify(where));
       const resp = await findManyCursorConnection(
         (args) =>
           this.prisma.bizUser.findMany({
@@ -428,9 +405,7 @@ export class BizService {
               environmentId,
               ...where,
             },
-            orderBy: orderBy
-              ? { [orderBy.field]: orderBy.direction }
-              : undefined,
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
         () =>
@@ -440,7 +415,7 @@ export class BizService {
               ...where,
             },
           }),
-        { first, last, before, after }
+        { first, last, before, after },
       );
       console.log(resp);
       return resp;
@@ -449,11 +424,7 @@ export class BizService {
     }
   }
 
-  async queryBizCompany(
-    query: BizQuery,
-    pagination: PaginationArgs,
-    orderBy: BizOrder
-  ) {
+  async queryBizCompany(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, companyId, search } = query;
     try {
@@ -472,7 +443,7 @@ export class BizService {
         if (!segment) {
           return false;
         }
-        if (!data && segment.dataType == SegmentDataType.CONDITION) {
+        if (!data && segment.dataType === SegmentDataType.CONDITION) {
           conditions = segment.data;
         }
       }
@@ -483,11 +454,10 @@ export class BizService {
         },
       });
       const filter = createConditionsFilter(conditions, attributes);
-      console.log(JSON.stringify(filter));
       // const conditions = { ...c };
-      const where = filter ? filter : {};
-      if (segment && segment.dataType == SegmentDataType.MANUAL) {
-        where["bizCompaniesOnSegment"] = {
+      const where: Record<string, any> = filter ? filter : {};
+      if (segment && segment.dataType === SegmentDataType.MANUAL) {
+        where.bizCompaniesOnSegment = {
           some: {
             segment: {
               id: segment.id,
@@ -496,12 +466,12 @@ export class BizService {
         };
       }
       if (companyId) {
-        where["id"] = companyId;
+        where.id = companyId;
       }
       if (search) {
-        where["externalId"] = { contains: search };
+        where.externalId = { contains: search };
       }
-      console.log("where:", JSON.stringify(where));
+      console.log('where:', JSON.stringify(where));
       const resp = await findManyCursorConnection(
         (args) =>
           this.prisma.bizCompany.findMany({
@@ -510,9 +480,7 @@ export class BizService {
               deleted: false,
               ...where,
             },
-            orderBy: orderBy
-              ? { [orderBy.field]: orderBy.direction }
-              : undefined,
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
         () =>
@@ -523,7 +491,7 @@ export class BizService {
               ...where,
             },
           }),
-        { first, last, before, after }
+        { first, last, before, after },
       );
       console.log(resp);
       return resp;

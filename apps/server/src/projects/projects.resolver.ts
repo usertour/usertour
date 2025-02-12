@@ -1,21 +1,10 @@
-import {
-  Resolver,
-  Query,
-  Parent,
-  Mutation,
-  Args,
-  ResolveField,
-} from "@nestjs/graphql";
-import { UserEntity } from "@/common/decorators/user.decorator";
-import { ProjectsService } from "./projects.service";
-import { Project } from "./models/project.model";
-import { UserOnProject } from "./models/useronproject.model";
-import { User } from "@/users/models/user.model";
-import { CreateProjectInput } from "./dto/createProject.input";
+import { Resolver } from '@nestjs/graphql';
+import { Project } from './models/project.model';
+import { ProjectsService } from './projects.service';
 
 @Resolver(() => Project)
 export class ProjectsResolver {
-  constructor(private projectsService: ProjectsService) { }
+  constructor(private projectsService: ProjectsService) {}
 
   // @Mutation(() => Project)
   // async createProject(
@@ -24,5 +13,4 @@ export class ProjectsResolver {
   // ) {
   //   return this.projectsService.createProject(user.id, newData);
   // }
-
 }

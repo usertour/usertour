@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { EventsResolver } from "./events.resolver";
-import { EventsService } from "./events.service";
-import { EventsGuard } from "./events.guard";
-import { ProjectsModule } from "@/projects/projects.module";
+import { ProjectsModule } from '@/projects/projects.module';
+import { Module } from '@nestjs/common';
+import { EventsGuard } from './events.guard';
+import { EventsResolver } from './events.resolver';
+import { EventsService } from './events.service';
 
 @Module({
   imports: [ProjectsModule],

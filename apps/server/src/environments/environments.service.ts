@@ -1,10 +1,7 @@
-import { PrismaService } from "nestjs-prisma";
-import { Injectable, BadRequestException } from "@nestjs/common";
-import {
-  CreateEnvironmentInput,
-  UpdateEnvironmentInput,
-} from "./dto/environment.input";
-import { SegmentBizType, SegmentDataType } from "@/biz/models/segment.model";
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
 
 @Injectable()
 export class EnvironmentsService {
@@ -17,13 +14,13 @@ export class EnvironmentsService {
         segments: {
           create: [
             {
-              name: "All Users",
+              name: 'All Users',
               bizType: SegmentBizType.USER,
               dataType: SegmentDataType.ALL,
               data: [],
             },
             {
-              name: "All Companies",
+              name: 'All Companies',
               bizType: SegmentBizType.COMPANY,
               dataType: SegmentDataType.ALL,
               data: [],
@@ -39,7 +36,7 @@ export class EnvironmentsService {
       where: { id: input.id },
     });
     if (!env) {
-      throw new BadRequestException("Invalid ProjectId");
+      throw new BadRequestException('Invalid ProjectId');
     }
     return await this.prisma.environment.update({
       where: { id: env.id },
@@ -63,7 +60,7 @@ export class EnvironmentsService {
   async listEnvsByProjectId(projectId: string) {
     return await this.prisma.environment.findMany({
       where: { projectId, deleted: false },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

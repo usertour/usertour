@@ -1,21 +1,21 @@
-import { type } from "./type";
+import { type } from './type';
 
 /* @ts-ignore */
 const whiteSpaceRegx =
-  /^[\s\f\n\r\t\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff\x09\x0a\x0b\x0c\x0d\x20\xa0]+$/;
+  /^[\s\f\n\r\t\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff\x20\xa0]+$/;
 /* @ts-ignore */
 const numericRegx = /^[+-]?([0-9]*[.])?[0-9]+$/;
 
 export function isBoolean(arg: any): boolean {
-  return type(arg) === "boolean";
+  return type(arg) === 'boolean';
 }
 
 export function isString(arg: any): boolean {
-  return type(arg) === "string";
+  return type(arg) === 'string';
 }
 
 export function isNumber(arg: any): boolean {
-  return type(arg) === "number";
+  return type(arg) === 'number';
 }
 
 export function isNumeric(arg: any): boolean {
@@ -33,51 +33,51 @@ export function isNan(arg: any): boolean {
 }
 
 export function isSet(arg: any): boolean {
-  return type(arg) === "set";
+  return type(arg) === 'set';
 }
 
 export function isWeakSet(arg: any): boolean {
-  return type(arg) === "weakset";
+  return type(arg) === 'weakset';
 }
 
 export function isMap(arg: any): boolean {
-  return type(arg) === "map";
+  return type(arg) === 'map';
 }
 
 export function isWeakMap(arg: any): boolean {
-  return type(arg) === "weakmap";
+  return type(arg) === 'weakmap';
 }
 
 export function isSymbol(arg: any): boolean {
-  return type(arg) === "symbol";
+  return type(arg) === 'symbol';
 }
 
 export function isObject(arg: any): boolean {
-  return type(arg) === "object";
+  return type(arg) === 'object';
 }
 
 export function isDate(arg: any): boolean {
-  return type(arg) === "date";
+  return type(arg) === 'date';
 }
 
 export function isRegExp(arg: any): boolean {
-  return type(arg) === "regexp";
+  return type(arg) === 'regexp';
 }
 
 export function isError(arg: any): boolean {
-  return type(arg) === "error";
+  return type(arg) === 'error';
 }
 
 export function isFunction(arg: any): boolean {
-  return type(arg) === "function";
+  return type(arg) === 'function';
 }
 
 export function isNull(arg: any): boolean {
-  return type(arg) === "null";
+  return type(arg) === 'null';
 }
 
 export function isUndefined(arg: any): boolean {
-  return type(arg) === "undefined";
+  return type(arg) === 'undefined';
 }
 
 export function isNil(arg: any): boolean {
@@ -88,12 +88,12 @@ export function isPlainObject(arg: any): boolean {
   if (!isObject(arg)) return false;
 
   const ctor = arg.constructor;
-  if (typeof ctor !== "function") return false;
+  if (typeof ctor !== 'function') return false;
 
   const proto = ctor.prototype;
   if (!isObject(proto)) return false;
 
-  return proto.hasOwnProperty("isPrototypeOf");
+  return Object.prototype.hasOwnProperty.call(proto, 'isPrototypeOf');
 }
 
 export function isEmpty(arg: any): boolean {
@@ -112,15 +112,15 @@ export function isEmpty(arg: any): boolean {
   }
 
   switch (type(arg)) {
-    case "file":
-    case "map":
-    case "weakmap":
-    case "set":
-    case "weakset": {
+    case 'file':
+    case 'map':
+    case 'weakmap':
+    case 'set':
+    case 'weakset': {
       return arg.size === 0;
     }
 
-    case "object": {
+    case 'object': {
       for (const key in arg) {
         if (Object.hasOwnProperty.call(arg, key)) return false;
       }
@@ -143,11 +143,11 @@ export function isEqual(arg1: any, arg2: any): boolean {
 }
 
 export function isTrue(arg1: any): boolean {
-  return arg1 === true || arg1 === "true" || isEqual(arg1, "1");
+  return arg1 === true || arg1 === 'true' || isEqual(arg1, '1');
 }
 
 export function isFalse(arg1: any): boolean {
-  return arg1 === false || arg1 === "false" || isEqual(arg1, "0");
+  return arg1 === false || arg1 === 'false' || isEqual(arg1, '0');
 }
 
 export function isBool(arg: any): boolean {
@@ -155,7 +155,7 @@ export function isBool(arg: any): boolean {
 }
 
 export function isFormData(arg: any): boolean {
-  return type(arg) === "formdata";
+  return type(arg) === 'formdata';
 }
 
 export function uniqueArray(arg: any): any[] {
@@ -173,7 +173,7 @@ export function isURL(arg: any): boolean {
   try {
     const url = new URL(arg);
     return isValid(url.hostname);
-  } catch (err) {
+  } catch (_) {
     return false;
   }
 }

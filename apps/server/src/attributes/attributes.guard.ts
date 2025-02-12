@@ -1,15 +1,10 @@
-import {
-  BadRequestException,
-  CanActivate,
-  ExecutionContext,
-  Inject,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { GqlExecutionContext } from "@nestjs/graphql";
+import { BadRequestException, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 
-import { Roles, RolesScopeEnum } from "@/common/decorators/roles.decorator";
-import { ProjectsService } from "@/projects/projects.service";
-import { AttributesService } from "./attributes.service";
+import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { ProjectsService } from '@/projects/projects.service';
+import { AttributesService } from './attributes.service';
 
 export class AttributesGuard implements CanActivate {
   private readonly reflector: Reflector;
@@ -18,45 +13,37 @@ export class AttributesGuard implements CanActivate {
     @Inject(AttributesService)
     private readonly attributesService: AttributesService,
     @Inject(ProjectsService)
-    private readonly projectsService: ProjectsService
+    private readonly projectsService: ProjectsService,
   ) {
     this.reflector = new Reflector();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const ctx = GqlExecutionContext.create(context);
-    let { req } = ctx.getContext();
-    let args = ctx.getArgs();
+    const { req } = ctx.getContext();
+    const args = ctx.getArgs();
 
-    let attributeId = args.id || args.data?.id,
-      projectId = args.projectId || args.data?.projectId;
+    const attributeId = args.id || args.data?.id;
+    let projectId = args.projectId || args.data?.projectId;
 
     const user = req.user;
-    const roles = this.reflector.get<RolesScopeEnum>(
-      Roles,
-      context.getHandler()
-    );
+    const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
     if (!roles) {
       return true;
     }
     if (attributeId) {
       const data = await this.attributesService.get(attributeId);
-      if (!data || (projectId && data && projectId != data.projectId)) {
+      if (!data || (projectId && data && projectId !== data.projectId)) {
         throw new BadRequestException(
-          "Please make sure you have permission to access this attribute"
+          'Please make sure you have permission to access this attribute',
         );
       }
       projectId = data.projectId;
     }
 
-    const userProject = await this.projectsService.getUserProject(
-      user.id,
-      projectId
-    );
+    const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {
-      throw new BadRequestException(
-        "Please make sure you have permission to access this project"
-      );
+      throw new BadRequestException('Please make sure you have permission to access this project');
     }
 
     return true;

@@ -1,30 +1,24 @@
-import { PrismaService } from "nestjs-prisma";
-import { Injectable } from "@nestjs/common";
+import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model';
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {
   capitalizeFirstLetter,
   filterNullAttributes,
   getAttributeType,
   isNull,
-} from "@/common/attribute/attribute";
-import {
-  Attribute,
-  AttributeBizType,
-} from "@/attributes/models/attribute.model";
-import { SegmentBizType, SegmentDataType } from "@/biz/models/segment.model";
-import {
-  createConditionsFilter,
-  createFilterItem,
-} from "@/common/attribute/filter";
+} from '@/common/attribute/attribute';
+import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
+import { BizAttributeTypes, BizEvents } from '@/common/consts/attribute';
+import { ContentType } from '@/contents/models/content.model';
 import {
   ChecklistData,
   ContentConfigObject,
   RulesCondition,
-} from "@/contents/models/version.model";
-import { Environment } from "@/environments/models/environment.model";
-import { BizEvent, BizUser, Content, Step, Version } from "@prisma/client";
-import { BizAttributeTypes, BizEvents } from "@/common/consts/attribute";
-import { getEventProgress, getEventState, isValidEvent } from "@/utils/event";
-import { ContentType } from "@/contents/models/content.model";
+} from '@/contents/models/version.model';
+import { Environment } from '@/environments/models/environment.model';
+import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
+import { Injectable } from '@nestjs/common';
+import { BizEvent, BizUser, Step } from '@prisma/client';
+import { PrismaService } from 'nestjs-prisma';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -51,7 +45,7 @@ export class WebSocketService {
     if (versionId) {
       const resp = await this.prisma.version.findUnique({
         where: { id: versionId },
-        include: { steps: { orderBy: { sequence: "asc" } }, content: true },
+        include: { steps: { orderBy: { sequence: 'asc' } }, content: true },
       });
       return resp
         ? [
@@ -69,7 +63,7 @@ export class WebSocketService {
       where: { environmentId, published: true },
       // include: { steps: true },
     });
-    if (contents.length == 0) {
+    if (contents.length === 0) {
       return;
     }
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -86,7 +80,7 @@ export class WebSocketService {
       const content = contents[index];
       const version = await this.prisma.version.findUnique({
         where: { id: content.publishedVersionId },
-        include: { steps: { orderBy: { sequence: "asc" } } },
+        include: { steps: { orderBy: { sequence: 'asc' } } },
       });
       const events = await this.listEvents(content.id, bizUser.id);
       const totalSessions = await this.getTotalSessions(content.id, bizUser.id);
@@ -106,7 +100,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId
+              companyId,
             )
           : [];
       const hideRules =
@@ -116,17 +110,17 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId
+              companyId,
             )
           : [];
       const data =
-        content.type == ContentType.CHECKLIST
+        content.type === ContentType.CHECKLIST
           ? await this.activedChecklistConditions(
               version.data as unknown as ChecklistData,
               environment,
               attributes,
               bizUser,
-              companyId
+              companyId,
             )
           : version.data;
       const steps = await this.activedStepTriggers(
@@ -134,7 +128,7 @@ export class WebSocketService {
         environment,
         attributes,
         bizUser,
-        companyId
+        companyId,
       );
       const resp = {
         ...version,
@@ -156,7 +150,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string
+    companyId?: string,
   ) {
     const items = await Promise.all(
       data.items.map(async (item) => {
@@ -166,7 +160,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId
+              companyId,
             )
           : [];
         const onlyShowTaskConditions = item.onlyShowTaskConditions
@@ -175,7 +169,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId
+              companyId,
             )
           : [];
         return {
@@ -183,7 +177,7 @@ export class WebSocketService {
           completeConditions,
           onlyShowTaskConditions,
         };
-      })
+      }),
     );
     return { ...data, items };
   }
@@ -193,7 +187,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string
+    companyId?: string,
   ): Promise<Step[]> {
     const stepsData = [...steps];
     for (let index = 0; index < stepsData.length; index++) {
@@ -201,13 +195,13 @@ export class WebSocketService {
       if (step.trigger && Array.isArray(step.trigger)) {
         for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
           const trigger = step.trigger[subIndex] as any;
-          if (trigger && trigger.conditions) {
+          if (trigger?.conditions) {
             const triggerData = await this.activedRulesConditions(
               trigger.conditions,
               environment,
               attributes,
               bizUser,
-              companyId
+              companyId,
             );
             stepsData[index].trigger[subIndex].conditions = triggerData;
           }
@@ -222,12 +216,12 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string
+    companyId?: string,
   ): Promise<RulesCondition[]> {
     const conditions = [...rulesConditions];
     for (let index = 0; index < conditions.length; index++) {
       const rules = conditions[index];
-      if (rules.type == "group") {
+      if (rules.type === 'group') {
         for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
           const subRules = rules.conditions[subIndex];
           const isAcvited = await this.activedRulesCondition(
@@ -235,7 +229,7 @@ export class WebSocketService {
             environment,
             attributes,
             bizUser,
-            companyId
+            companyId,
           );
           conditions[index].conditions[subIndex].actived = isAcvited;
         }
@@ -245,7 +239,7 @@ export class WebSocketService {
           environment,
           attributes,
           bizUser,
-          companyId
+          companyId,
         );
         conditions[index] = { ...rules, actived: isAcvited };
       }
@@ -258,16 +252,12 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string
+    companyId?: string,
   ): Promise<boolean> {
-    const userAttrs = attributes.filter(
-      (attr) => attr.bizType == AttributeBizType.USER
-    );
-    const companyAttrs = attributes.filter(
-      (attr) => attr.bizType == AttributeBizType.COMPANY
-    );
+    const userAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.USER);
+    const companyAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY);
     switch (rules.type) {
-      case "user-attr":
+      case 'user-attr': {
         const filter = createFilterItem(rules, userAttrs);
         const segmentUser = await this.prisma.bizUser.findFirst({
           where: {
@@ -276,8 +266,9 @@ export class WebSocketService {
             ...filter,
           },
         });
-        return segmentUser ? true : false;
-      case "segment":
+        return !!segmentUser;
+      }
+      case 'segment': {
         const { segmentId } = rules.data;
         const segment = await this.prisma.segment.findFirst({
           where: { id: segmentId },
@@ -285,30 +276,31 @@ export class WebSocketService {
         if (!segment) {
           return false;
         }
-        if (segment.bizType == SegmentBizType.USER) {
+        if (segment.bizType === SegmentBizType.USER) {
           return await this.activedUserSegmentRulesCondition(
             rules,
             environment,
             userAttrs,
-            bizUser
+            bizUser,
           );
-        } else if (segment.bizType == SegmentBizType.COMPANY && companyId) {
+        }
+        if (segment.bizType === SegmentBizType.COMPANY && companyId) {
           return await this.activedCompanySegmentRulesCondition(
             rules,
             environment,
             companyAttrs,
             bizUser,
-            companyId
+            companyId,
           );
         }
-      case "content":
-        return await this.activedContentRulesCondition(
-          rules,
-          environment,
-          bizUser
-        );
-      default:
         return false;
+      }
+      case 'content': {
+        return await this.activedContentRulesCondition(rules, environment, bizUser);
+      }
+      default: {
+        return false;
+      }
     }
   }
 
@@ -317,9 +309,9 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId: string
+    companyId: string,
   ): Promise<boolean> {
-    const { segmentId, logic = "is" } = rules.data;
+    const { segmentId, logic = 'is' } = rules.data;
     const segment = await this.prisma.segment.findFirst({
       where: { id: segmentId },
     });
@@ -335,18 +327,19 @@ export class WebSocketService {
     if (!relation) {
       return false;
     }
-    if (segment.dataType == SegmentDataType.ALL) {
-      return logic == "is" ? true : false;
-    } else if (segment.dataType == SegmentDataType.MANUAL) {
+    if (segment.dataType === SegmentDataType.ALL) {
+      return logic === 'is';
+    }
+    if (segment.dataType === SegmentDataType.MANUAL) {
       const item = await this.prisma.bizCompanyOnSegment.findFirst({
         where: { segmentId, bizCompanyId: bizCompany.id },
       });
-      if (logic == "is") {
-        return item ? true : false;
-      } else {
-        return item ? false : true;
+      if (logic === 'is') {
+        return !!item;
       }
-    } else if (segment.dataType == SegmentDataType.CONDITION) {
+      return !item;
+    }
+    if (segment.dataType === SegmentDataType.CONDITION) {
       const filter = createConditionsFilter(segment.data, attributes);
       const segmentItem = await this.prisma.bizCompany.findFirst({
         where: {
@@ -355,11 +348,7 @@ export class WebSocketService {
           ...filter,
         },
       });
-      if (logic == "is") {
-        return segmentItem ? true : false;
-      } else {
-        return segmentItem ? false : true;
-      }
+      return logic === 'is' ? !!segmentItem : !segmentItem;
     }
     return false;
   }
@@ -368,27 +357,25 @@ export class WebSocketService {
     rules: RulesCondition,
     environment: Environment,
     attributes: Attribute[],
-    bizUser: BizUser
+    bizUser: BizUser,
   ): Promise<boolean> {
-    const { segmentId, logic = "is" } = rules.data;
+    const { segmentId, logic = 'is' } = rules.data;
     const segment = await this.prisma.segment.findFirst({
       where: { id: segmentId },
     });
     if (!segment) {
       return false;
     }
-    if (segment.dataType == SegmentDataType.ALL) {
-      return logic == "is" ? true : false;
-    } else if (segment.dataType == SegmentDataType.MANUAL) {
+    if (segment.dataType === SegmentDataType.ALL) {
+      return logic === 'is';
+    }
+    if (segment.dataType === SegmentDataType.MANUAL) {
       const user = await this.prisma.bizUserOnSegment.findFirst({
         where: { segmentId, bizUserId: bizUser.id },
       });
-      if (logic == "is") {
-        return user ? true : false;
-      } else {
-        return user ? false : true;
-      }
-    } else if (segment.dataType == SegmentDataType.CONDITION) {
+      return logic === 'is' ? !!user : !user;
+    }
+    if (segment.dataType === SegmentDataType.CONDITION) {
       const filter = createConditionsFilter(segment.data, attributes);
       const segmentUser = await this.prisma.bizUser.findFirst({
         where: {
@@ -397,11 +384,7 @@ export class WebSocketService {
           ...filter,
         },
       });
-      if (logic == "is") {
-        return segmentUser ? true : false;
-      } else {
-        return segmentUser ? false : true;
-      }
+      return logic === 'is' ? !!segmentUser : !segmentUser;
     }
     return false;
   }
@@ -409,7 +392,7 @@ export class WebSocketService {
   async activedContentRulesCondition(
     rules: RulesCondition,
     environment: Environment,
-    bizUser: BizUser
+    bizUser: BizUser,
   ): Promise<boolean> {
     const { contentId, logic } = rules.data;
 
@@ -458,10 +441,10 @@ export class WebSocketService {
   async listEvents(contentId: string, bizUserId: string): Promise<any> {
     const sessions = await this.prisma.bizSession.findMany({
       where: { contentId, bizUserId, deleted: false },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 1,
     });
-    let data: BizEvent[] = [];
+    const data: BizEvent[] = [];
     for (let index = 0; index < sessions.length; index++) {
       const session = sessions[index];
       const events = await this.prisma.bizEvent.findMany({
@@ -506,7 +489,7 @@ export class WebSocketService {
     const insertAttribute = await this.insertBizAttributes(
       projectId,
       AttributeBizType.USER,
-      attributes
+      attributes,
     );
 
     const user = await this.prisma.bizUser.findFirst({
@@ -540,7 +523,7 @@ export class WebSocketService {
   async insertBizAttributes(
     projectId: string,
     bizType: AttributeBizType,
-    attributes: any
+    attributes: any,
   ): Promise<any> {
     const insertAttribute = {};
     for (const codeName in attributes) {
@@ -573,8 +556,8 @@ export class WebSocketService {
           continue;
         }
       }
-      if (attribute && attribute.dataType == dataType) {
-        if (dataType == BizAttributeTypes.DateTime) {
+      if (attribute && attribute.dataType === dataType) {
+        if (dataType === BizAttributeTypes.DateTime) {
           insertAttribute[attrName] = new Date(attrValue).toISOString();
         } else {
           insertAttribute[attrName] = attrValue;
@@ -588,15 +571,15 @@ export class WebSocketService {
     projectId: string,
     environmentId: string,
     companyId: string,
-    attributes: any
+    attributes: any,
   ): Promise<any> {
-    let company = await this.prisma.bizCompany.findFirst({
+    const company = await this.prisma.bizCompany.findFirst({
       where: { externalId: String(companyId), environmentId },
     });
     const insertAttribute = await this.insertBizAttributes(
       projectId,
       AttributeBizType.COMPANY,
-      attributes
+      attributes,
     );
     if (company) {
       const userData = JSON.parse(JSON.stringify(company.data));
@@ -612,31 +595,29 @@ export class WebSocketService {
           data: insertData,
         },
       });
-    } else {
-      company = await this.prisma.bizCompany.create({
-        data: {
-          externalId: String(companyId),
-          environmentId,
-          data: insertAttribute,
-        },
-      });
     }
-    return company;
+    return await this.prisma.bizCompany.create({
+      data: {
+        externalId: String(companyId),
+        environmentId,
+        data: insertAttribute,
+      },
+    });
   }
 
   async upsertBizMembership(
     projectId: string,
     bizCompanyId: string,
     bizUserId: string,
-    membership: any
+    membership: any,
   ): Promise<any> {
     const insertAttribute = await this.insertBizAttributes(
       projectId,
       AttributeBizType.MEMBERSHIP,
-      membership
+      membership,
     );
 
-    let relation = await this.prisma.bizUserOnCompany.findFirst({
+    const relation = await this.prisma.bizUserOnCompany.findFirst({
       where: { bizCompanyId, bizUserId },
     });
 
@@ -654,19 +635,18 @@ export class WebSocketService {
           data: insertData,
         },
       });
-    } else {
-      return await this.prisma.bizUserOnCompany.create({
-        data: {
-          bizUserId,
-          bizCompanyId,
-          data: insertAttribute,
-        },
-      });
     }
+    return await this.prisma.bizUserOnCompany.create({
+      data: {
+        bizUserId,
+        bizCompanyId,
+        data: insertAttribute,
+      },
+    });
   }
 
   async upsertBizCompanies(data: any): Promise<any> {
-    const { companyId, userId, attributes, token, membership } = data;
+    const { companyId, userId, attributes, token } = data;
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -686,13 +666,7 @@ export class WebSocketService {
       projectId,
       environmentId,
       companyId,
-      attributes
-    );
-    const realation = await this.upsertBizMembership(
-      projectId,
-      company.id,
-      user.id,
-      membership
+      attributes,
     );
 
     return company;
@@ -716,7 +690,7 @@ export class WebSocketService {
 
   async listBizUserSegments(body: any): Promise<any> {
     const { token, bizUserId } = body;
-    let ids = [];
+    const ids = [];
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -728,9 +702,9 @@ export class WebSocketService {
       where: { externalId: String(bizUserId), environmentId },
       include: { bizUsersOnSegment: true },
     });
-    user.bizUsersOnSegment.forEach((onSegment) => {
+    for (const onSegment of user.bizUsersOnSegment) {
       ids.push(onSegment.segmentId);
-    });
+    }
     const attributes = await this.prisma.attribute.findMany({
       where: {
         projectId: environmenet.projectId,
@@ -793,13 +767,13 @@ export class WebSocketService {
       where: { eventId },
       include: { attribute: true },
     });
-    if (!attributes || attributes.length == 0) {
+    if (!attributes || attributes.length === 0) {
       return false;
     }
 
-    let attrs = {};
+    const attrs = {};
     for (const key in data) {
-      const isFind = attributes.find((attr) => attr.attribute.codeName == key);
+      const isFind = attributes.find((attr) => attr.attribute.codeName === key);
       if (isFind) {
         attrs[key] = data[key];
       }
@@ -827,7 +801,7 @@ export class WebSocketService {
       where: { id: sessionId },
       include: { content: true },
     });
-    if (!bizSession || bizSession.state == 1) {
+    if (!bizSession || bizSession.state === 1) {
       return false;
     }
     const event = await this.prisma.event.findFirst({

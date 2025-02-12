@@ -1,74 +1,56 @@
-import { PrismaService } from "nestjs-prisma";
-import {
-  Resolver,
-  Query,
-  Parent,
-  Mutation,
-  Args,
-  ResolveField,
-} from "@nestjs/graphql";
-import { BadRequestException, UseGuards } from "@nestjs/common";
-import { UserEntity } from "@/common/decorators/user.decorator";
-import { ContentsService } from "./contents.service";
-import { Content } from "./models/content.model";
-import { User } from "@/users/models/user.model";
-import { ContentInput, ContentVersionInput } from "./dto/content.input";
-import { PaginationArgs } from "@/common/pagination/pagination.args";
-import { findManyCursorConnection } from "@devoxa/prisma-relay-cursor-connection";
-import { ContentConnection } from "./models/content-connection.model";
-import { ContentOrder } from "./dto/content-order.input";
-import { ContentStepsInput } from "./dto/content-steps.input";
+import { Common } from '@/auth/models/common.model';
+import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { UseGuards } from '@nestjs/common';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { PrismaService } from 'nestjs-prisma';
+import { ContentIdArgs } from './args/content-id.args';
+import { VersionIdArgs } from './args/version-id.args';
+import { ContentsGuard } from './contents.guard';
+import { ContentsService } from './contents.service';
+import { ContentOrder } from './dto/content-order.input';
+import { ContentQuery } from './dto/content-query.input';
+import { ContentStepsInput } from './dto/content-steps.input';
 import {
   ContentDuplicateInput,
   ContentIdInput,
   ContentUpdateInput,
-} from "./dto/content-update.input";
-import { ContentIdArgs } from "./args/content-id.args";
-import { Common } from "@/auth/models/common.model";
-import { ContentQuery } from "./dto/content-query.input";
-import { Version } from "./models/version.model";
-import { VersionIdArgs } from "./args/version-id.args";
-import { VersionUpdateInput } from "./dto/version-update.input";
-import {
-  VersionIdInput,
-  VersionUpdateLocalizationInput,
-} from "./dto/version.input";
-import { CreateStepInput, UpdateStepInput } from "./dto/step.input";
-import { Step } from "./models/step.model";
-import { ContentsGuard } from "./contents.guard";
-import { RolesScopeEnum, Roles } from "@/common/decorators/roles.decorator";
-import { VersionOnLocalization } from "./models/version-on-localization.model";
+} from './dto/content-update.input';
+import { ContentInput, ContentVersionInput } from './dto/content.input';
+import { CreateStepInput, UpdateStepInput } from './dto/step.input';
+import { VersionUpdateInput } from './dto/version-update.input';
+import { VersionIdInput, VersionUpdateLocalizationInput } from './dto/version.input';
+import { ContentConnection } from './models/content-connection.model';
+import { Content } from './models/content.model';
+import { Step } from './models/step.model';
+import { VersionOnLocalization } from './models/version-on-localization.model';
+import { Version } from './models/version.model';
 
 @Resolver(() => Content)
 @UseGuards(ContentsGuard)
 export class ContentsResolver {
   constructor(
     private contentsService: ContentsService,
-    private prisma: PrismaService
+    private prisma: PrismaService,
   ) {}
 
   @Mutation(() => Content)
   @Roles([RolesScopeEnum.ADMIN])
-  async createContent(@Args("data") data: ContentInput) {
+  async createContent(@Args('data') data: ContentInput) {
     return await this.contentsService.createContent(data);
   }
 
   @Mutation(() => Content)
   @Roles([RolesScopeEnum.ADMIN])
-  async updateContent(@Args("data") data: ContentUpdateInput) {
-    return await this.contentsService.updateContent(
-      data.contentId,
-      data.content
-    );
+  async updateContent(@Args('data') data: ContentUpdateInput) {
+    return await this.contentsService.updateContent(data.contentId, data.content);
   }
 
   @Mutation(() => Content)
   @Roles([RolesScopeEnum.ADMIN])
-  async duplicateContent(@Args("data") data: ContentDuplicateInput) {
-    return await this.contentsService.duplicateContent(
-      data.contentId,
-      data.name
-    );
+  async duplicateContent(@Args('data') data: ContentDuplicateInput) {
+    return await this.contentsService.duplicateContent(data.contentId, data.name);
   }
 
   @Query(() => Content)
@@ -79,7 +61,7 @@ export class ContentsResolver {
 
   @Mutation(() => Version)
   @Roles([RolesScopeEnum.ADMIN])
-  async createContentVersion(@Args("data") data: ContentVersionInput) {
+  async createContentVersion(@Args('data') data: ContentVersionInput) {
     return await this.contentsService.createContentVersion(data);
   }
 
@@ -91,32 +73,32 @@ export class ContentsResolver {
 
   @Mutation(() => Version)
   @Roles([RolesScopeEnum.ADMIN])
-  async updateContentVersion(@Args("data") input: VersionUpdateInput) {
+  async updateContentVersion(@Args('data') input: VersionUpdateInput) {
     return await this.contentsService.updateContentVersion(input);
   }
 
   @Mutation(() => Version)
   @Roles([RolesScopeEnum.ADMIN])
-  async restoreContentVersion(@Args("data") { versionId }: VersionIdInput) {
+  async restoreContentVersion(@Args('data') { versionId }: VersionIdInput) {
     return await this.contentsService.restoreContentVersion(versionId);
   }
 
   @Mutation(() => Version)
   @Roles([RolesScopeEnum.ADMIN])
-  async publishedContentVersion(@Args("data") { versionId }: VersionIdInput) {
+  async publishedContentVersion(@Args('data') { versionId }: VersionIdInput) {
     return await this.contentsService.publishedContentVersion(versionId);
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async unpublishedContentVersion(@Args("data") { contentId }: ContentIdInput) {
+  async unpublishedContentVersion(@Args('data') { contentId }: ContentIdInput) {
     await this.contentsService.unpublishedContentVersion(contentId);
     return { success: true };
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteContent(@Args("data") { contentId }: ContentIdInput) {
+  async deleteContent(@Args('data') { contentId }: ContentIdInput) {
     await this.contentsService.deleteContent(contentId);
     return { success: true };
   }
@@ -129,23 +111,20 @@ export class ContentsResolver {
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async addContentSteps(@Args("data") contentStepsInput: ContentStepsInput) {
+  async addContentSteps(@Args('data') contentStepsInput: ContentStepsInput) {
     await this.contentsService.addContentSteps(contentStepsInput);
     return { success: true };
   }
 
   @Mutation(() => Step)
   @Roles([RolesScopeEnum.ADMIN])
-  async addContentStep(@Args("data") step: CreateStepInput) {
+  async addContentStep(@Args('data') step: CreateStepInput) {
     return await this.contentsService.addContentStep(step);
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN])
-  async updateContentStep(
-    @Args("stepId") stepId: string,
-    @Args("data") step: UpdateStepInput
-  ) {
+  async updateContentStep(@Args('stepId') stepId: string, @Args('data') step: UpdateStepInput) {
     await this.contentsService.updateContentStep(stepId, step);
     return { success: true };
   }
@@ -158,9 +137,7 @@ export class ContentsResolver {
 
   @Mutation(() => VersionOnLocalization)
   @Roles([RolesScopeEnum.ADMIN])
-  async updateVersionLocationData(
-    @Args("data") input: VersionUpdateLocalizationInput
-  ) {
+  async updateVersionLocationData(@Args('data') input: VersionUpdateLocalizationInput) {
     return await this.contentsService.upsertVersionLocationData(input);
   }
 
@@ -178,14 +155,14 @@ export class ContentsResolver {
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async queryContents(
     @Args() { after, before, first, last }: PaginationArgs,
-    @Args({ name: "query", type: () => ContentQuery, nullable: true })
+    @Args({ name: 'query', type: () => ContentQuery, nullable: true })
     query: ContentQuery,
     @Args({
-      name: "orderBy",
+      name: 'orderBy',
       type: () => ContentOrder,
       nullable: true,
     })
-    orderBy: ContentOrder
+    orderBy: ContentOrder,
   ) {
     const conditions = {
       ...query,
@@ -202,9 +179,7 @@ export class ContentsResolver {
             where: {
               ...conditions,
             },
-            orderBy: orderBy
-              ? { [orderBy.field]: orderBy.direction }
-              : undefined,
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
         () =>
@@ -213,7 +188,7 @@ export class ContentsResolver {
               ...conditions,
             },
           }),
-        { first, last, before, after }
+        { first, last, before, after },
       );
       console.log(a);
       return a;
@@ -222,11 +197,11 @@ export class ContentsResolver {
     }
   }
 
-  @ResolveField("steps")
+  @ResolveField('steps')
   steps(@Parent() content: Content) {
     return this.prisma.step.findMany({
       where: { versionId: content.editedVersionId },
-      orderBy: { sequence: "asc" },
+      orderBy: { sequence: 'asc' },
     });
   }
 }

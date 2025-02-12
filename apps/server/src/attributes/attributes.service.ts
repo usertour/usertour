@@ -1,9 +1,6 @@
-import { PrismaService } from "nestjs-prisma";
-import { Injectable } from "@nestjs/common";
-import {
-  CreateAttributeInput,
-  UpdateAttributeInput,
-} from "./dto/attribute.input";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.input';
 
 @Injectable()
 export class AttributesService {
@@ -36,15 +33,15 @@ export class AttributesService {
   }
 
   async list(projectId: string, bizType: number) {
-    if (bizType == 0) {
+    if (bizType === 0) {
       return await this.prisma.attribute.findMany({
         where: { projectId },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: 'asc' },
       });
     }
     return await this.prisma.attribute.findMany({
       where: { projectId, bizType },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

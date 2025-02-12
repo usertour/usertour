@@ -1,7 +1,7 @@
-import { PrismaService } from "nestjs-prisma";
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { CreateEventInput, UpdateEventInput } from "./dto/events.input";
-import { CreateAttributeOnEventInput } from "./dto/attributeOnEvent.input";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
+import { CreateEventInput, UpdateEventInput } from './dto/events.input';
 
 @Injectable()
 export class EventsService {
@@ -10,7 +10,7 @@ export class EventsService {
   async create(data: CreateEventInput) {
     const { attributeIds } = data;
 
-    delete data.attributeIds;
+    data.attributeIds = undefined;
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -19,9 +19,7 @@ export class EventsService {
         });
 
         if (!createEvent || !createEvent.id) {
-          throw new BadRequestException(
-            "Failed to create event or get event ID"
-          );
+          throw new BadRequestException('Failed to create event or get event ID');
         }
 
         const eventId = createEvent.id;
@@ -35,15 +33,13 @@ export class EventsService {
         });
 
         if (!createAttributeOnEvent) {
-          throw new BadRequestException(
-            "Failed to create attributes for event"
-          );
+          throw new BadRequestException('Failed to create attributes for event');
         }
 
         return createEvent;
       });
-    } catch (error) {
-      throw new BadRequestException("Failed to create event");
+    } catch (_) {
+      throw new BadRequestException('Failed to create event');
     }
   }
 
@@ -105,14 +101,14 @@ export class EventsService {
   async list(projectId: string) {
     return await this.prisma.event.findMany({
       where: { projectId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 
   async listAttributeOnEvents(eventId: string) {
     return await this.prisma.attributeOnEvent.findMany({
       where: { eventId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

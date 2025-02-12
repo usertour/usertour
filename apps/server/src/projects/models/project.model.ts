@@ -1,6 +1,6 @@
-import { Field, ObjectType } from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
-import { Environment } from "@/environments/models/environment.model";
+import { BaseModel } from '@/common/models/base.model';
+import { Environment } from '@/environments/models/environment.model';
+import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class Project extends BaseModel {
