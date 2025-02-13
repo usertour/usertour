@@ -1,8 +1,8 @@
-import { Step } from "@usertour-ui/types";
+import { Step } from '@usertour-ui/types';
 
 export const defaultStep: Step = {
-  name: "step",
-  type: "tooltip",
+  name: 'step',
+  type: 'tooltip',
   sequence: 0,
   setting: {
     height: 0,
@@ -10,28 +10,28 @@ export const defaultStep: Step = {
     skippable: true,
     enabledBackdrop: false,
     enabledBlockTarget: false,
-    align: "center",
-    side: "bottom",
+    align: 'center',
+    side: 'bottom',
     sideOffset: 0,
     alignOffset: 0,
-    alignType: "auto",
-    position: "center",
+    alignType: 'auto',
+    position: 'center',
     positionOffsetX: 0,
     positionOffsetY: 0,
   },
   data: [
     {
-      type: "paragraph",
-      children: [{ text: "" }],
+      type: 'paragraph',
+      children: [{ text: '' }],
     },
   ],
   target: {
     selectors: null,
-    content: "",
-    sequence: "1st",
-    precision: "stricter",
+    content: '',
+    sequence: '1st',
+    precision: 'stricter',
     isDynamicContent: false,
-    customSelector: "",
-    type: "auto",
+    customSelector: '',
+    type: 'auto',
   },
 };

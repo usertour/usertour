@@ -8,14 +8,13 @@
  * to handle the case where the global is not available.
  */
 
-import { UserTourTypes } from "@usertour-ui/types/";
+import { UserTourTypes } from '@usertour-ui/types/';
 
 // eslint-disable-next-line no-restricted-globals
 const win: (UserTourTypes.WindowWithUsertour & typeof globalThis) | undefined =
-  typeof window !== "undefined" ? window : undefined;
+  typeof window !== 'undefined' ? window : undefined;
 
-const global: typeof globalThis | undefined =
-  typeof globalThis !== "undefined" ? globalThis : win;
+const global: typeof globalThis | undefined = typeof globalThis !== 'undefined' ? globalThis : win;
 
 export const ArrayProto = Array.prototype;
 export const nativeForEach = ArrayProto.forEach;
@@ -26,13 +25,12 @@ export const document = global?.document;
 export const location = global?.location;
 export const fetch = global?.fetch;
 export const XMLHttpRequest =
-  global?.XMLHttpRequest && "withCredentials" in new global.XMLHttpRequest()
+  global?.XMLHttpRequest && 'withCredentials' in new global.XMLHttpRequest()
     ? global.XMLHttpRequest
     : undefined;
 export const AbortController = global?.AbortController;
 export const userAgent = navigator?.userAgent;
-export const assignableWindow: Window &
-  typeof globalThis &
-  Record<string, any> = win ?? ({} as any);
+export const assignableWindow: Window & typeof globalThis & Record<string, any> =
+  win ?? ({} as any);
 
 export { win as window };

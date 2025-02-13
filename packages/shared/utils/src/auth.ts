@@ -1,6 +1,6 @@
-import { storage } from "./storage";
+import { storage } from './storage';
 
-const TOKEN_NAME = "token";
+const TOKEN_NAME = 'token';
 
 export const getAuthToken = () => {
   return storage.getLocalStorage(TOKEN_NAME) as string;
