@@ -1,20 +1,20 @@
-"use client";
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+'use client';
+import { Icons } from '@/components/atoms/icons';
+import { useMutation, useQuery } from '@apollo/client';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@usertour-ui/dialog";
-import { getContentVersion, publishedContentVersion } from "@usertour-ui/gql";
-import { useMutation, useQuery } from "@apollo/client";
-import { useToast } from "@usertour-ui/use-toast";
-import { ContentVersion } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { getContentVersion, publishedContentVersion } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { ContentVersion } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
 
 interface ContentPublishFormProps {
   versionId: string;
@@ -41,10 +41,8 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   }, [contentVersion?.data]);
 
   const showToast = (isSuccess: boolean, message?: string) => {
-    const variant = isSuccess ? "success" : "destructive";
-    const title = isSuccess
-      ? "The flow published successfully."
-      : "The flow published failed.";
+    const variant = isSuccess ? 'success' : 'destructive';
+    const title = isSuccess ? 'The flow published successfully.' : 'The flow published failed.';
     toast({ variant, title: message || title });
   };
 
@@ -71,7 +69,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
           <DialogTitle>Publish flow </DialogTitle>
         </DialogHeader>
         <div>
-          The version you are about to publish is{" "}
+          The version you are about to publish is{' '}
           <span className="font-bold">v{version?.sequence}</span>
         </div>
         <DialogFooter>
@@ -80,15 +78,8 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
               Cancel
             </Button>
           </DialogClose>
-          <Button
-            className="flex-none"
-            type="submit"
-            disabled={isLoading}
-            onClick={handleOnSubmit}
-          >
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
+          <Button className="flex-none" type="submit" disabled={isLoading} onClick={handleOnSubmit}>
+            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Publish
           </Button>
         </DialogFooter>

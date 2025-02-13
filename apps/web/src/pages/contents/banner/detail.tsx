@@ -1,17 +1,17 @@
-import { ContentDetailProvider } from "@/contexts/content-detail-context";
-import { ContentVersionProvider } from "@/contexts/content-version-context";
-import { SegmentListProvider } from "@/contexts/segment-list-context";
-import { ContentListProvider } from "@/contexts/content-list-context";
-import { ContentVersionListProvider } from "@/contexts/content-version-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { ContentDetailHeader } from "../components/detail/content-detail-header";
-import { ContentDetailVersion } from "../components/version/content-detail-version";
-import { ContentDetailAnalytics } from "../components/version/content-detail-analytics";
-import { ContentLocalizationList } from "../components/version/content-localization-list";
-import { ContentTypeName } from "@usertour-ui/types";
-import { ThemeListProvider } from "@/contexts/theme-list-context";
-import { ContentDetailSettings } from "../components/detail/content-detail-settings";
-import { ContentDetailContent } from "../components/detail/content-detail-content";
+import { useAppContext } from '@/contexts/app-context';
+import { ContentDetailProvider } from '@/contexts/content-detail-context';
+import { ContentListProvider } from '@/contexts/content-list-context';
+import { ContentVersionProvider } from '@/contexts/content-version-context';
+import { ContentVersionListProvider } from '@/contexts/content-version-list-context';
+import { SegmentListProvider } from '@/contexts/segment-list-context';
+import { ThemeListProvider } from '@/contexts/theme-list-context';
+import { ContentTypeName } from '@usertour-ui/types';
+import { ContentDetailContent } from '../components/detail/content-detail-content';
+import { ContentDetailHeader } from '../components/detail/content-detail-header';
+import { ContentDetailSettings } from '../components/detail/content-detail-settings';
+import { ContentDetailAnalytics } from '../components/version/content-detail-analytics';
+import { ContentDetailVersion } from '../components/version/content-detail-version';
+import { ContentLocalizationList } from '../components/version/content-localization-list';
 
 export const BannerDetailContent = () => {
   const { project } = useAppContext();
@@ -28,7 +28,7 @@ export const BannerDetailContent = () => {
   );
 };
 
-BannerDetailContent.displayName = "BannerDetailContent";
+BannerDetailContent.displayName = 'BannerDetailContent';
 
 interface BannerDetailProps {
   contentId: string;
@@ -39,29 +39,21 @@ export const BannerDetail = (props: BannerDetailProps) => {
   const { environment } = useAppContext();
 
   return (
-    <SegmentListProvider
-      environmentId={environment?.id}
-      bizType={["COMPANY", "USER"]}
-    >
+    <SegmentListProvider environmentId={environment?.id} bizType={['COMPANY', 'USER']}>
       <ContentListProvider
         environmentId={environment?.id}
-        key={"environmentId"}
+        key={'environmentId'}
         contentType={ContentTypeName.BANNERS}
         defaultPagination={{ pageSize: 100, pageIndex: 0 }}
       >
-        <ContentDetailProvider
-          contentId={contentId}
-          contentType={ContentTypeName.BANNERS}
-        >
+        <ContentDetailProvider contentId={contentId} contentType={ContentTypeName.BANNERS}>
           <ContentVersionProvider>
             <ContentVersionListProvider contentId={contentId}>
               <ContentDetailHeader />
-              {type == "detail" && <BannerDetailContent />}
-              {type == "versions" && <ContentDetailVersion />}
-              {type == "analytics" && (
-                <ContentDetailAnalytics contentId={contentId} />
-              )}
-              {type == "localization" && <ContentLocalizationList />}
+              {type === 'detail' && <BannerDetailContent />}
+              {type === 'versions' && <ContentDetailVersion />}
+              {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
+              {type === 'localization' && <ContentLocalizationList />}
             </ContentVersionListProvider>
           </ContentVersionProvider>
         </ContentDetailProvider>
@@ -70,4 +62,4 @@ export const BannerDetail = (props: BannerDetailProps) => {
   );
 };
 
-BannerDetail.displayName = "BannerDetail";
+BannerDetail.displayName = 'BannerDetail';

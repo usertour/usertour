@@ -1,62 +1,58 @@
-import { ArrowRightIcon, CloseCircleIcon, PlusIcon } from "@usertour-ui/icons";
+import { CodeIcon, Link2Icon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { EDITOR_RICH_ACTION } from '@usertour-ui/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { ReactNode, useCallback, useEffect } from "react";
-import { useState } from "react";
-import { ContentActionsItemType, RulesCondition } from "@usertour-ui/types";
-import { ActionsGroupContext } from "../contexts/actions-group-context";
-import {
-  CodeIcon,
-  Link2Icon,
-  OpenInNewWindowIcon,
-} from "@radix-ui/react-icons";
-import { useContentActionsContext } from "../contexts/content-actions-context";
-import { hasActionError } from "@usertour-ui/shared-utils";
-import { ContentActionsStep } from "./actions-step";
-import { ContentActionsDismiss } from "./actions-dismis";
-import { ContentActionsContents } from "./actions-content";
-import { ContentActionsNavigate } from "./actions-navigate";
-import { ContentActionsCode } from "./actions-code";
-import { EDITOR_RICH_ACTION } from "@usertour-ui/constants";
+} from '@usertour-ui/dropdown-menu';
+import { ArrowRightIcon, CloseCircleIcon, PlusIcon } from '@usertour-ui/icons';
+import { hasActionError } from '@usertour-ui/shared-utils';
+import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
+import { ReactNode, useCallback, useEffect } from 'react';
+import { useState } from 'react';
+import { ActionsGroupContext } from '../contexts/actions-group-context';
+import { useContentActionsContext } from '../contexts/content-actions-context';
+import { ContentActionsCode } from './actions-code';
+import { ContentActionsContents } from './actions-content';
+import { ContentActionsDismiss } from './actions-dismis';
+import { ContentActionsNavigate } from './actions-navigate';
+import { ContentActionsStep } from './actions-step';
 
 const contentActionsItem = [
   {
     type: ContentActionsItemType.STEP_GOTO,
-    text: "Go to step",
+    text: 'Go to step',
     IconElement: ArrowRightIcon,
     RulesElement: ContentActionsStep,
   },
   {
     type: ContentActionsItemType.FLOW_DISMIS,
-    text: "Dismiss flow",
+    text: 'Dismiss flow',
     IconElement: CloseCircleIcon,
     RulesElement: ContentActionsDismiss,
   },
   {
     type: ContentActionsItemType.LAUNCHER_DISMIS,
-    text: "Dismiss launcher",
+    text: 'Dismiss launcher',
     IconElement: CloseCircleIcon,
     RulesElement: ContentActionsDismiss,
   },
   {
     type: ContentActionsItemType.CHECKLIST_DISMIS,
-    text: "Dismiss checklist",
+    text: 'Dismiss checklist',
     IconElement: CloseCircleIcon,
     RulesElement: ContentActionsDismiss,
   },
   {
     type: ContentActionsItemType.FLOW_START,
-    text: "Start new flow",
+    text: 'Start new flow',
     IconElement: OpenInNewWindowIcon,
     RulesElement: ContentActionsContents,
   },
   {
     type: ContentActionsItemType.PAGE_NAVIGATE,
-    text: "Navigate to page",
+    text: 'Navigate to page',
     IconElement: Link2Icon,
     RulesElement: ContentActionsNavigate,
   },
@@ -68,7 +64,7 @@ const contentActionsItem = [
   // },
   {
     type: ContentActionsItemType.JAVASCRIPT_EVALUATE,
-    text: "Evaluate JavaScript",
+    text: 'Evaluate JavaScript',
     IconElement: CodeIcon,
     RulesElement: ContentActionsCode,
   },
@@ -87,19 +83,18 @@ const ContentActionsAddDropdown = (props: ContentActionsAddDropdownProps) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent align="start" style={{ zIndex: zIndex }}>
-        {items &&
-          items.map(({ type, text, IconElement }, index) => (
-            <DropdownMenuItem
-              key={index}
-              className="cursor-pointer min-w-[180px]"
-              onSelect={() => {
-                onSelect(type);
-              }}
-            >
-              <IconElement width={16} height={16} className="mx-1" />
-              {text}
-            </DropdownMenuItem>
-          ))}
+        {items.map(({ type, text, IconElement }, index) => (
+          <DropdownMenuItem
+            key={index}
+            className="cursor-pointer min-w-[180px]"
+            onSelect={() => {
+              onSelect(type);
+            }}
+          >
+            <IconElement width={16} height={16} className="mx-1" />
+            {text}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -111,59 +106,51 @@ export type ContentActionsGroupItemProps = {
 
 export const ContentActionsGroup = () => {
   const {
-    isHorizontal,
     filterItems,
     addButtonText,
     onDataChange,
-    attributes,
     defaultConditions,
     zIndex = 1000,
   } = useContentActionsContext();
 
-  const [conditions, setConditions] =
-    useState<RulesCondition[]>(defaultConditions);
+  const [conditions, setConditions] = useState<RulesCondition[]>(defaultConditions);
   const [rulesItems, _] = useState<typeof contentActionsItem>(
     contentActionsItem.filter((item) => {
       if (filterItems && filterItems.length > 0) {
         return filterItems.includes(item.type);
-      } else {
-        return (
-          item.type !== ContentActionsItemType.LAUNCHER_DISMIS &&
-          item.type !== ContentActionsItemType.CHECKLIST_DISMIS
-        );
       }
-    })
+      return (
+        item.type !== ContentActionsItemType.LAUNCHER_DISMIS &&
+        item.type !== ContentActionsItemType.CHECKLIST_DISMIS
+      );
+    }),
   );
 
-  const [dropdownItems, setDropdownItems] =
-    useState<typeof contentActionsItem>(rulesItems);
+  const [dropdownItems, setDropdownItems] = useState<typeof contentActionsItem>(rulesItems);
 
   useEffect(() => {
     const newItems = rulesItems
       .filter((item) => {
+        if (conditions.find((cond) => cond.type === ContentActionsItemType.STEP_GOTO)) {
+          return (
+            item.type !== ContentActionsItemType.FLOW_DISMIS &&
+            item.type !== ContentActionsItemType.FLOW_START
+          );
+        }
         if (
           conditions.find(
-            (cond) => cond.type == ContentActionsItemType.STEP_GOTO
-          )
-        ) {
-          return (
-            item.type != ContentActionsItemType.FLOW_DISMIS &&
-            item.type != ContentActionsItemType.FLOW_START
-          );
-        } else if (
-          conditions.find(
             (cond) =>
-              cond.type == ContentActionsItemType.FLOW_DISMIS ||
-              cond.type == ContentActionsItemType.FLOW_START
+              cond.type === ContentActionsItemType.FLOW_DISMIS ||
+              cond.type === ContentActionsItemType.FLOW_START,
           )
         ) {
-          return item.type != ContentActionsItemType.STEP_GOTO;
+          return item.type !== ContentActionsItemType.STEP_GOTO;
         }
         return true;
       })
       .filter((item) => {
-        if (item.type != ContentActionsItemType.JAVASCRIPT_EVALUATE) {
-          return !conditions.find((condition) => condition.type == item.type);
+        if (item.type !== ContentActionsItemType.JAVASCRIPT_EVALUATE) {
+          return !conditions.find((condition) => condition.type === item.type);
         }
         return true;
       });
@@ -173,7 +160,7 @@ export const ContentActionsGroup = () => {
   const [conditionType, setConditionType] = useState(
     (defaultConditions.length > 0 && defaultConditions[0].operators
       ? defaultConditions[0].operators
-      : "and") ?? "and"
+      : 'and') ?? 'and',
   );
 
   const setNewConditions = (newConditions: RulesCondition[]) => {
@@ -186,40 +173,28 @@ export const ContentActionsGroup = () => {
 
   const handleOnSelect = useCallback(
     (type: string) => {
-      if (type == "group") {
+      if (type === 'group') {
         setNewConditions([...conditions, { type, data: {}, conditions: [] }]);
       } else {
-        setNewConditions([
-          ...conditions,
-          { type, data: {}, operators: conditionType },
-        ]);
+        setNewConditions([...conditions, { type, data: {}, operators: conditionType }]);
       }
     },
-    [conditionType, conditions]
+    [conditionType, conditions],
   );
-  const handleOnChange = (index: number, conds: RulesCondition[]) => {
-    const newConds = conditions.map((condition, i) => {
-      if (i == index) {
-        condition.conditions = [...conds];
-      }
-      return condition;
-    });
-    setNewConditions(newConds);
-  };
 
   useEffect(() => {
     setNewConditions(
       conditions.map((cond) => ({
         ...cond,
         operators: conditionType,
-      }))
+      })),
     );
   }, [conditionType]);
 
   const updateConditionData = useCallback(
     (index: number, data: any) => {
       const newConds = conditions.map((condition, i) => {
-        if (i == index) {
+        if (i === index) {
           if (data) {
             condition.data = data;
           }
@@ -229,7 +204,7 @@ export const ContentActionsGroup = () => {
       });
       setNewConditions(newConds);
     },
-    [conditionType, conditions]
+    [conditionType, conditions],
   );
 
   const value = {
@@ -242,12 +217,10 @@ export const ContentActionsGroup = () => {
 
   return (
     <ActionsGroupContext.Provider value={value}>
-      <div className={"flex flex-col space-y-1"}>
+      <div className={'flex flex-col space-y-1'}>
         {conditions.map((condition, i) => {
-          const rulesItem = rulesItems.find(
-            (item) => condition.type == item.type
-          );
-          if (rulesItem && rulesItem.RulesElement) {
+          const rulesItem = rulesItems.find((item) => condition.type === item.type);
+          if (rulesItem?.RulesElement) {
             if (
               rulesItem.type === ContentActionsItemType.LAUNCHER_DISMIS ||
               rulesItem.type === ContentActionsItemType.CHECKLIST_DISMIS
@@ -290,4 +263,4 @@ export const ContentActionsGroup = () => {
   );
 };
 
-ContentActionsGroup.displayName = "ContentActionsGroup";
+ContentActionsGroup.displayName = 'ContentActionsGroup';

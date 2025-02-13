@@ -1,13 +1,13 @@
-import { RulesCondition } from "./contents";
+import { RulesCondition } from './contents';
 
 export enum ChecklistInitialDisplay {
-  EXPANDED = "expanded",
-  BUTTON = "button",
+  EXPANDED = 'expanded',
+  BUTTON = 'button',
 }
 
 export enum ChecklistCompletionOrder {
-  ANY = "any",
-  ORDERED = "ordered",
+  ANY = 'any',
+  ORDERED = 'ordered',
 }
 
 export interface ChecklistData {
@@ -32,7 +32,7 @@ export interface ChecklistItemType {
 }
 
 export const DEFAULT_CHECKLIST_DATA: ChecklistData = {
-  buttonText: "Get Started",
+  buttonText: 'Get Started',
   initialDisplay: ChecklistInitialDisplay.EXPANDED,
   completionOrder: ChecklistCompletionOrder.ANY,
   preventDismissChecklist: false,

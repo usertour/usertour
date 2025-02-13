@@ -1,15 +1,16 @@
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { queryContents } from "@usertour-ui/gql";
-import { Pagination, PageInfo, Content } from "@usertour-ui/types";
-import { PaginationState } from "@tanstack/react-table";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useQuery } from '@apollo/client';
+import { PaginationState } from '@tanstack/react-table';
+import { queryContents } from '@usertour-ui/gql';
+import { Content, PageInfo, Pagination } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+interface ContentQuery {
+  environmentId?: string;
+  type?: string;
+  published?: boolean;
+  [key: string]: any;
+}
 
 const defaultPagination = {
   pageIndex: 0,
@@ -19,7 +20,7 @@ const defaultPagination = {
 export interface ContentListProviderProps {
   children?: ReactNode;
   environmentId: string | undefined;
-  defaultQuery?: Object;
+  defaultQuery?: ContentQuery;
   defaultPagination?: typeof defaultPagination;
   contentType: string;
 }
@@ -40,9 +41,7 @@ export interface ContentListContextValue {
   isLoading: boolean;
 }
 
-export const ContentListContext = createContext<
-  ContentListContextValue | undefined
->(undefined);
+export const ContentListContext = createContext<ContentListContextValue | undefined>(undefined);
 
 // const defaultPagination = {
 //   pageIndex: 0,
@@ -50,24 +49,26 @@ export const ContentListContext = createContext<
 // }
 
 const getQueryType = (contentType: string) => {
-  if (contentType == "launchers") {
-    return "launcher";
-  } else if (contentType == "banners") {
-    return "banner";
-  } else if (contentType == "checklists") {
-    return "checklist";
-  } else if (contentType == "surveys") {
-    return "survey";
-  } else if (contentType == "nps") {
-    return "nps";
+  if (contentType === 'launchers') {
+    return 'launcher';
+  }
+  if (contentType === 'banners') {
+    return 'banner';
+  }
+  if (contentType === 'checklists') {
+    return 'checklist';
+  }
+  if (contentType === 'surveys') {
+    return 'survey';
+  }
+  if (contentType === 'nps') {
+    return 'nps';
   }
 
-  return "flow";
+  return 'flow';
 };
 
-export function ContentListProvider(
-  props: ContentListProviderProps
-): JSX.Element {
+export function ContentListProvider(props: ContentListProviderProps): JSX.Element {
   const {
     children,
     environmentId,
@@ -79,10 +80,7 @@ export function ContentListProvider(
     first: defaultPagination.pageSize,
   });
   const [searchParams, _] = useSearchParams();
-  const published =
-    searchParams.get("published") && searchParams.get("published") == "1"
-      ? true
-      : false;
+  const published = searchParams.get('published') === '1';
   const [query, setQuery] = useState<any>({ published, ...defaultQuery });
   const [pagination, setPagination] = useState<PaginationState>({
     ...defaultPagination,
@@ -99,26 +97,26 @@ export function ContentListProvider(
     variables: {
       ...requestPagination,
       query: { environmentId, type: getQueryType(contentType), ...query },
-      orderBy: { field: "createdAt", direction: "desc" },
+      orderBy: { field: 'createdAt', direction: 'desc' },
     },
   });
 
-  const contentList = data && data.queryContents;
+  const contentList = data?.queryContents;
 
   useEffect(() => {
     const { pageIndex, pageSize } = pagination;
     let varis: Pagination = { first: pageSize };
     if (
       currentPagination &&
-      pageSize == currentPagination.pageSize &&
-      pageIndex == currentPagination.pageIndex
+      pageSize === currentPagination.pageSize &&
+      pageIndex === currentPagination.pageIndex
     ) {
       return;
     }
 
-    if (pageIndex == 0) {
+    if (pageIndex === 0) {
       varis = { first: pageSize };
-    } else if (pageIndex + 1 == pageCount) {
+    } else if (pageIndex + 1 === pageCount) {
       const costSize = totalCount - (pageCount - 1) * pageSize;
       varis = {
         last: costSize > 0 ? costSize : pageSize,
@@ -176,19 +174,13 @@ export function ContentListProvider(
     isLoading: loading,
   };
 
-  return (
-    <ContentListContext.Provider value={value}>
-      {children}
-    </ContentListContext.Provider>
-  );
+  return <ContentListContext.Provider value={value}>{children}</ContentListContext.Provider>;
 }
 
 export function useContentListContext(): ContentListContextValue {
   const context = useContext(ContentListContext);
   if (!context) {
-    throw new Error(
-      `useContentListContext must be used within a ContentListProvider.`
-    );
+    throw new Error('useContentListContext must be used within a ContentListProvider.');
   }
   return context;
 }

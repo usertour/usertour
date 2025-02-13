@@ -1,29 +1,26 @@
-import { RulesCondition } from "@usertour-ui/types";
-import isEqual from "fast-deep-equal";
+import { RulesCondition } from '@usertour-ui/types';
+import isEqual from 'fast-deep-equal';
 
 const parseUrl = (url: string) => {
-  const urlPatterns = url.match(
-    /^(([a-z\d]+):\/\/)?([^/?#]+)?(\/[^?#]*)?(\?([^#]*))?(#.*)?$/i
-  );
+  const urlPatterns = url.match(/^(([a-z\d]+):\/\/)?([^/?#]+)?(\/[^?#]*)?(\?([^#]*))?(#.*)?$/i);
   if (!urlPatterns) {
     return null;
   }
-  const [, , scheme = "", domain = "", path = "", , query = "", fragment = ""] =
-    urlPatterns;
+  const [, , scheme = '', domain = '', path = '', , query = '', fragment = ''] = urlPatterns;
   return { scheme, domain, path, query, fragment };
 };
 
-const replaceWildcard = (str: string, s1: string, s2?: string) => {
-  str = replaceSpecialWords(str);
-  str = str.replace(/\\\*/g, s1 + "*");
-  if (s2) {
-    str = str.replace(/:[a-z0-9_]+/g, "[^" + s2 + "]+");
+const replaceWildcard = (input: string, s1: string, s2?: string) => {
+  const withSpecialWords = replaceSpecialWords(input);
+  const withWildcard = withSpecialWords.replace(/\\\*/g, `${s1}*`);
+  if (!s2) {
+    return withWildcard;
   }
-  return str;
+  return withWildcard.replace(/:[a-z0-9_]+/g, `[^${s2}]+`);
 };
 
 const replaceSpecialWords = (str: string) => {
-  return str.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+  return str.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 };
 
 const parsePattern = (pattern: string) => {
@@ -32,47 +29,27 @@ const parsePattern = (pattern: string) => {
   }
   const _pattern = parseUrl(pattern);
   if (!_pattern) {
-    console.error("Invalid URL pattern:", pattern);
+    console.error('Invalid URL pattern:', pattern);
     return null;
   }
   const { scheme, domain, path, query, fragment } = _pattern;
-  const _scheme = scheme ? replaceSpecialWords(scheme) : "[a-z\\d]+";
-  const _domain = domain ? replaceWildcard(domain, "[^/]", ".") : "[^/]*";
-  const _fragment = fragment ? replaceWildcard(fragment, ".", "/") : "(#.*)?";
-  const _path = path ? replaceWildcard(path, "[^?#]", "/") : "/[^?#]*";
-  let _query = "(\\?[^#]*)?";
+  const _scheme = scheme ? replaceSpecialWords(scheme) : '[a-z\\d]+';
+  const _domain = domain ? replaceWildcard(domain, '[^/]', '.') : '[^/]*';
+  const _fragment = fragment ? replaceWildcard(fragment, '.', '/') : '(#.*)?';
+  const _path = path ? replaceWildcard(path, '[^?#]', '/') : '/[^?#]*';
+  let _query = '(\\?[^#]*)?';
   if (query) {
-    new URLSearchParams(query).forEach((key, value) => {
-      let _str;
-      (_str =
-        "" === key
-          ? "=?"
-          : "*" === key
-          ? "(=[^&#]*)?"
-          : "=" + replaceWildcard(key, "[^#]")),
-        (_query +=
-          "(?=.*[?&]" + replaceSpecialWords(value) + _str + "([&#]|$))");
+    new URLSearchParams(query).forEach((value: string, key: string) => {
+      const _str =
+        value === '' ? '=?' : value === '*' ? '(=[^&#]*)?' : `=${replaceWildcard(value, '[^#]')}`;
+      _query += `(?=.*[?&]${replaceSpecialWords(key)}${_str}([&#]|$))`;
     });
-    _query += "\\?[^#]*";
+    _query += '\\?[^#]*';
   }
-  return new RegExp(
-    "^" +
-      _scheme +
-      "://" +
-      _domain +
-      "(:\\d+)?" +
-      _path +
-      _query +
-      _fragment +
-      "$"
-  );
+  return new RegExp(`^${_scheme}://${_domain}(:\\d+)?${_path}${_query}${_fragment}$`);
 };
 
-const isMatchUrlPattern = (
-  _url: string,
-  includes: string[],
-  excludes: string[]
-) => {
+const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[]) => {
   // const _url = window.location.href;
   const isMatchIncludesConditions = includes
     ? includes.some((_include) => {
@@ -95,10 +72,7 @@ const isMatchUrlPattern = (
   return isMatchIncludesConditions && !isMatchExcludesConditions;
 };
 
-const compareConditionsItem = (
-  item1: RulesCondition,
-  item2: RulesCondition
-) => {
+const compareConditionsItem = (item1: RulesCondition, item2: RulesCondition) => {
   const { data = {}, ...others1 } = item1;
   const { data: data2 = {}, ...others2 } = item2;
   if (!isEqual(others2, others1)) {
@@ -115,15 +89,15 @@ const compareConditionsItem = (
 const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
   const r1 = [...rr1];
   const r2 = [...rr2];
-  if (r1.length == 0 && r2.length == 0) {
+  if (r1.length === 0 && r2.length === 0) {
     return true;
   }
-  if (r1.length != r2.length) {
+  if (r1.length !== r2.length) {
     return false;
   }
-  const group1 = r1.filter((item) => item.type == "group");
-  const group2 = r2.filter((item) => item.type == "group");
-  if (group1.length != group2.length) {
+  const group1 = r1.filter((item) => item.type === 'group');
+  const group2 = r2.filter((item) => item.type === 'group');
+  if (group1.length !== group2.length) {
     return false;
   }
   for (let index = 0; index < r1.length; index++) {
@@ -132,7 +106,7 @@ const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
     if (!item1 || !item2) {
       return false;
     }
-    if (item1.type == "group") {
+    if (item1.type === 'group') {
       if (!item2.conditions) {
         return false;
       }

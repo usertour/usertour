@@ -1,5 +1,4 @@
-import { Skeleton } from "@usertour-ui/skeleton";
-import { Component, useState } from "react";
+import { Skeleton } from '@usertour-ui/skeleton';
 
 export const ListSkeleton = () => {
   return (
@@ -14,7 +13,7 @@ export const ListSkeleton = () => {
   );
 };
 
-ListSkeleton.displayName = "ListSkeleton";
+ListSkeleton.displayName = 'ListSkeleton';
 
 export const AdminSkeleton = () => {
   return (
@@ -68,18 +67,13 @@ interface ListSkeletonCountProps {
   count: number;
 }
 
-export const ListSkeletonCount: React.FC<ListSkeletonCountProps> = ({
-  count,
-}) => {
-  const widthClasses = ["w-full", "w-10/12", "w-8/12", "w-5/12", "w-11/12"];
+export const ListSkeletonCount: React.FC<ListSkeletonCountProps> = ({ count }) => {
+  const widthClasses = ['w-full', 'w-10/12', 'w-8/12', 'w-5/12', 'w-11/12'];
 
   return (
     <div className="flex flex-col space-y-2">
       {Array.from({ length: count }, (_, index) => (
-        <Skeleton
-          key={index}
-          className={`h-10 ${widthClasses[index % widthClasses.length]}`}
-        />
+        <Skeleton key={index} className={`h-10 ${widthClasses[index % widthClasses.length]}`} />
       ))}
     </div>
   );

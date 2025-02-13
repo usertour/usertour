@@ -1,27 +1,15 @@
-import { PagesIcon, PlusIcon, Delete2Icon } from "@usertour-ui/icons";
-import { Input } from "@usertour-ui/input";
-import { ChangeEvent, useEffect, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import { getUrlPatternError } from "@usertour-ui/shared-utils";
-import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { getUrlPatternError } from '@usertour-ui/shared-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 export interface RulesUrlPatternProps {
   index: number;
@@ -38,15 +26,15 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   const [excludesValues, setExcludesValues] = useState(excludes);
   const [includesValues, setIncludesValues] = useState(includes);
   const [filterExcludesValues, setFilterExcludesValues] = useState(
-    excludes.filter((v) => v != "")
+    excludes.filter((v) => v !== ''),
   );
   const [filterIncludesValues, setFilterIncludesValues] = useState(
-    includesValues.filter((v) => v != "")
+    includesValues.filter((v) => v !== ''),
   );
   const [openError, setOpenError] = useState(false);
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
 
   const deleteIncludeItem = (index: number) => {
     const v = [...includesValues];
@@ -71,8 +59,8 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   };
 
   useEffect(() => {
-    setFilterExcludesValues(excludesValues.filter((v) => v != ""));
-    setFilterIncludesValues(includesValues.filter((v) => v != ""));
+    setFilterExcludesValues(excludesValues.filter((v) => v !== ''));
+    setFilterIncludesValues(includesValues.filter((v) => v !== ''));
   }, [includesValues, excludesValues]);
 
   useEffect(() => {
@@ -100,10 +88,8 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
             </RulesConditionIcon>
             <RulesPopover onOpenChange={setOpen} open={open}>
               <RulesPopoverTrigger>
-                Current page matches{" "}
-                <span className="font-bold">{includesValues.join(",")}</span>{" "}
-                and does not match{" "}
-                <span className="font-bold">{excludesValues.join(",")}</span>
+                Current page matches <span className="font-bold">{includesValues.join(',')}</span>{' '}
+                and does not match <span className="font-bold">{excludesValues.join(',')}</span>
               </RulesPopoverTrigger>
               <RulesPopoverContent>
                 <div className=" flex flex-col space-y-2">
@@ -119,7 +105,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                                 height={16}
                                 className="cursor-pointer"
                                 onClick={() => {
-                                  setIncludesValues([...includesValues, ""]);
+                                  setIncludesValues([...includesValues, '']);
                                 }}
                               />
                             </TooltipTrigger>
@@ -137,7 +123,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                             type="text"
                             className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
                             defaultValue={value}
-                            placeholder={""}
+                            placeholder={''}
                             onChange={(e: ChangeEvent<HTMLInputElement>) => {
                               const value = e.target.value;
                               handleIncludeOnChange(value, index);
@@ -178,7 +164,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                                 height={16}
                                 className="cursor-pointer"
                                 onClick={() => {
-                                  setExcludesValues([...excludesValues, ""]);
+                                  setExcludesValues([...excludesValues, '']);
                                 }}
                               />
                             </TooltipTrigger>
@@ -200,7 +186,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                               const value = e.target.value;
                               handleExcludeOnChange(value, index);
                             }}
-                            placeholder={""}
+                            placeholder={''}
                           />
                         </div>
                         <div className="flex-none inline-flex px-2 items-center">
@@ -229,6 +215,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                     href="https://www.usertour.io/docs/how-to-guides/urls/"
                     className="text-primary flex flex-row items-center space-x-1 text-xs"
                     target="_blank"
+                    rel="noreferrer"
                   >
                     <span>Read full URL pattern matching guide</span>
                     <OpenInNewWindowIcon className="size-3.5" />
@@ -245,4 +232,4 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   );
 };
 
-RulesUrlPattern.displayName = "RulesUrlPattern";
+RulesUrlPattern.displayName = 'RulesUrlPattern';

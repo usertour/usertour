@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { EventCreateForm } from "./event-create-form";
-import { Button } from "@usertour-ui/button";
-import { useEventListContext } from "@/contexts/event-list-context";
-import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { useEventListContext } from '@/contexts/event-list-context';
+import { Button } from '@usertour-ui/button';
+import { useState } from 'react';
+import { EventCreateForm } from './event-create-form';
 
 export const EventListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -29,4 +28,4 @@ export const EventListHeader = () => {
   );
 };
 
-EventListHeader.displayName = "EventListHeader";
+EventListHeader.displayName = 'EventListHeader';

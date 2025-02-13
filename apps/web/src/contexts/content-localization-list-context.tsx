@@ -1,13 +1,7 @@
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { findManyVersionLocations } from "@usertour-ui/gql";
-import { VersionOnLocalization } from "@usertour-ui/types";
+import { useQuery } from '@apollo/client';
+import { findManyVersionLocations } from '@usertour-ui/gql';
+import { VersionOnLocalization } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 export interface ContentLocalizationListProviderProps {
   children: ReactNode;
@@ -25,19 +19,19 @@ export const ContentLocalizationListContext = createContext<
 >(undefined);
 
 export function ContentLocalizationListProvider(
-  props: ContentLocalizationListProviderProps
+  props: ContentLocalizationListProviderProps,
 ): JSX.Element {
   const { children, versionId } = props;
-  const [contentLocalizationList, setContentLocalizationList] = useState<
-    VersionOnLocalization[]
-  >([]);
+  const [contentLocalizationList, setContentLocalizationList] = useState<VersionOnLocalization[]>(
+    [],
+  );
 
   const { data, refetch, loading } = useQuery(findManyVersionLocations, {
     variables: { versionId },
   });
 
   useEffect(() => {
-    if (data && data.findManyVersionLocations) {
+    if (data?.findManyVersionLocations) {
       setContentLocalizationList(data.findManyVersionLocations);
     }
   }, [data]);
@@ -59,7 +53,7 @@ export function useContentLocalizationListContext(): ContentLocalizationListCont
   const context = useContext(ContentLocalizationListContext);
   if (!context) {
     throw new Error(
-      `useContentLocalizationListContext must be used within a ContentLocalizationListProvider.`
+      'useContentLocalizationListContext must be used within a ContentLocalizationListProvider.',
     );
   }
   return context;

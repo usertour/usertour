@@ -1,2 +1,2 @@
-export { SettingsThemeList } from "./list";
-export { SettingsThemeDetail } from "./detail";
+export { SettingsThemeList } from './list';
+export { SettingsThemeDetail } from './detail';

@@ -1,5 +1,16 @@
-import { TextInputIcon } from "@usertour-ui/icons";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
+import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { TextInputIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-ui/select';
+import { getTextInputError } from '@usertour-ui/shared-utils';
+import { ElementSelectorPropsData } from '@usertour-ui/types';
 import {
   ChangeEvent,
   Dispatch,
@@ -8,33 +19,15 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
-import { Input } from "@usertour-ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
-import { ElementSelector } from "../selector/element-selector";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { ElementSelectorPropsData } from "@usertour-ui/types";
-import { getTextInputError } from "@usertour-ui/shared-utils";
-import { useRulesContext } from ".";
-import { EXTENSION_CONTENT_RULES } from "@usertour-ui/constants";
+} from 'react';
+import { useRulesContext } from '.';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { ElementSelector } from '../selector/element-selector';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 export interface RulesTextInputProps {
   index: number;
@@ -47,16 +40,16 @@ export interface RulesTextInputProps {
 }
 
 const conditions = [
-  { value: "is", name: "is" },
-  { value: "not", name: "is not" },
-  { value: "contains", name: "contains" },
-  { value: "notContain", name: "does not contain" },
-  { value: "startsWith", name: "starts with" },
-  { value: "endsWith", name: "ends with" },
-  { value: "match", name: "matches regular expression" },
-  { value: "unmatch", name: "does not match regular expression" },
-  { value: "any", name: "has any value" },
-  { value: "empty", name: "is empty" },
+  { value: 'is', name: 'is' },
+  { value: 'not', name: 'is not' },
+  { value: 'contains', name: 'contains' },
+  { value: 'notContain', name: 'does not contain' },
+  { value: 'startsWith', name: 'starts with' },
+  { value: 'endsWith', name: 'ends with' },
+  { value: 'match', name: 'matches regular expression' },
+  { value: 'unmatch', name: 'does not match regular expression' },
+  { value: 'any', name: 'has any value' },
+  { value: 'empty', name: 'is empty' },
 ];
 
 interface RulesTextInputContextValue {
@@ -68,35 +61,25 @@ interface RulesTextInputContextValue {
   setElementData: Dispatch<SetStateAction<ElementSelectorPropsData>>;
 }
 
-const RulesTextInputContext = createContext<
-  RulesTextInputContextValue | undefined
->(undefined);
+const RulesTextInputContext = createContext<RulesTextInputContextValue | undefined>(undefined);
 
 function useRulesTextInputContext(): RulesTextInputContextValue {
   const context = useContext(RulesTextInputContext);
   if (!context) {
-    throw new Error(
-      `useRulesTextInputContext must be used within a RulesTextInputContext.`
-    );
+    throw new Error('useRulesTextInputContext must be used within a RulesTextInputContext.');
   }
   return context;
 }
 
 const RulesTextInputInput = () => {
-  const { inputValue, setInputValue, conditionValue } =
-    useRulesTextInputContext();
+  const { inputValue, setInputValue, conditionValue } = useRulesTextInputContext();
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
   return (
     <>
-      {conditionValue != "empty" && conditionValue != "any" && (
-        <Input
-          type="text"
-          value={inputValue}
-          onChange={handleOnChange}
-          placeholder={""}
-        />
+      {conditionValue !== 'empty' && conditionValue !== 'any' && (
+        <Input type="text" value={inputValue} onChange={handleOnChange} placeholder={''} />
       )}
     </>
   );
@@ -109,7 +92,7 @@ const RulesTextInputCondition = () => {
       <Select defaultValue={conditionValue} onValueChange={setConditionValue}>
         <SelectTrigger className="justify-start flex h-9">
           <div className="grow text-left">
-            <SelectValue placeholder={""} />
+            <SelectValue placeholder={''} />
           </div>
         </SelectTrigger>
         <SelectPortal>
@@ -120,11 +103,7 @@ const RulesTextInputCondition = () => {
           >
             {conditions.map((item, index) => {
               return (
-                <SelectItem
-                  key={index}
-                  value={item.value}
-                  className="cursor-pointer"
-                >
+                <SelectItem key={index} value={item.value} className="cursor-pointer">
                   {item.name}
                 </SelectItem>
               );
@@ -138,19 +117,19 @@ const RulesTextInputCondition = () => {
 
 export const RulesTextInput = (props: RulesTextInputProps) => {
   const { index, data, type } = props;
-  const [conditionValue, setConditionValue] = useState(data.logic ?? "is");
-  const [inputValue, setInputValue] = useState(data.value ?? "");
+  const [conditionValue, setConditionValue] = useState(data.logic ?? 'is');
+  const [inputValue, setInputValue] = useState(data.value ?? '');
 
   const [elementData, setElementData] = useState<ElementSelectorPropsData>(
     data.elementData || {
-      type: "auto",
-      precision: "strict",
+      type: 'auto',
+      precision: 'strict',
       isDynamicContent: false,
-      sequence: "1st",
-    }
+      sequence: '1st',
+    },
   );
   const [openError, setOpenError] = useState(false);
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
   const { currentContent, token, onElementChange } = useRulesContext();
@@ -192,36 +171,32 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
               <RulesPopover onOpenChange={setOpen} open={open}>
                 <RulesPopoverTrigger className="space-y-1">
                   <div className="grow pr-6 text-sm text-wrap break-all">
-                    The value of this input{" "}
+                    The value of this input{' '}
                   </div>
                   <div>
+                    {elementData && elementData.type === 'auto' && elementData.screenshot && (
+                      <img
+                        className="max-w-32	max-h-16 border rounded"
+                        src={elementData.screenshot}
+                      />
+                    )}
                     {elementData &&
-                      elementData.type == "auto" &&
-                      elementData.screenshot && (
-                        <img
-                          className="max-w-32	max-h-16 border rounded"
-                          src={elementData.screenshot}
-                        />
-                      )}
-                    {elementData &&
-                      elementData.type == "manual" &&
+                      elementData.type === 'manual' &&
                       (elementData.content || elementData.customSelector) && (
                         <span className="font-bold space-x-1">
                           {elementData.content} {elementData.customSelector}
                         </span>
                       )}
                     {elementData &&
-                      elementData.type == "manual" &&
-                      elementData.content == "" &&
-                      elementData.customSelector == "" && (
-                        <span className="font-bold text-destructive">
-                          No element selected yet
-                        </span>
+                      elementData.type === 'manual' &&
+                      elementData.content === '' &&
+                      elementData.customSelector === '' && (
+                        <span className="font-bold text-destructive">No element selected yet</span>
                       )}
                   </div>
                   <div>
-                    {conditions.find((c) => c.value == conditionValue)?.name}{" "}
-                    {conditionValue != "empty" && conditionValue != "any" && (
+                    {conditions.find((c) => c.value === conditionValue)?.name}{' '}
+                    {conditionValue !== 'empty' && conditionValue !== 'any' && (
                       <span className="font-bold">{inputValue}</span>
                     )}
                   </div>
@@ -233,7 +208,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
                     <ElementSelector
                       data={{
                         ...elementData,
-                        type: elementData?.type || "auto",
+                        type: elementData?.type || 'auto',
                       }}
                       onDataChange={setElementData}
                       isInput={true}
@@ -262,4 +237,4 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   );
 };
 
-RulesTextInput.displayName = "RulesTextInput";
+RulesTextInput.displayName = 'RulesTextInput';

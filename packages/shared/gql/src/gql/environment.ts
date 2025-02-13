@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 export const getUserEnvironments = gql`
   query userEnvironments($projectId: String!) {

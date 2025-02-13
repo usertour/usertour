@@ -1,10 +1,10 @@
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { Label } from "@usertour-ui/label";
-import { Switch } from "@usertour-ui/switch";
-import { ChangeEvent } from "react";
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { Input } from "@usertour-ui/input";
-import { useThemeSettingsContext } from ".";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { Switch } from '@usertour-ui/switch';
+import { ChangeEvent } from 'react';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsBorder = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -48,12 +48,12 @@ export const ThemeSettingsBorder = () => {
               <div className="ml-auto w-36 relative">
                 <Input
                   type="number"
-                  id={"border-width"}
-                  name={"Border width"}
+                  id={'border-width'}
+                  name={'Border width'}
                   onChange={handleOnChange}
                   value={settings.border.borderWidth}
                   className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
-                  placeholder={""}
+                  placeholder={''}
                 />
                 <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-20 pe-4">
                   <span className="text-gray-500">px</span>
@@ -63,23 +63,21 @@ export const ThemeSettingsBorder = () => {
           )}
         </div>
         {settings.border.borderWidthEnabled && (
-          <>
-            <ThemeSelectColor
-              name="border-color"
-              defaultColor={settings.border.borderColor}
-              showAutoButton={true}
-              isAutoColor={settings.border.borderColor == "Auto"}
-              autoColor={finalSettings?.border.borderColor}
-              onChange={(value: string) => {
-                updateBorder({ borderColor: value });
-              }}
-              text="Border color"
-            />
-          </>
+          <ThemeSelectColor
+            name="border-color"
+            defaultColor={settings.border.borderColor}
+            showAutoButton={true}
+            isAutoColor={settings.border.borderColor === 'Auto'}
+            autoColor={finalSettings?.border.borderColor}
+            onChange={(value: string) => {
+              updateBorder({ borderColor: value });
+            }}
+            text="Border color"
+          />
         )}
       </div>
     </div>
   );
 };
 
-ThemeSettingsBorder.displayName = "ThemeSettingsBorder";
+ThemeSettingsBorder.displayName = 'ThemeSettingsBorder';

@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { EDITOR_SELECT } from '@usertour-ui/constants';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -16,43 +13,33 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Button } from "@usertour-ui/button";
-import {
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { RulesCondition } from '@usertour-ui/types';
+import { useCallback, useEffect, useState } from 'react';
+import { ContentActions } from '../..';
+import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorButtonElement,
   ContentEditorElementInsertDirection,
-} from "../../types/editor";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { EDITOR_SELECT } from "@usertour-ui/constants";
-import { Checkbox } from "@usertour-ui/checkbox";
-import { ContentActions } from "../..";
-import { RulesCondition } from "@usertour-ui/types";
-import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from "../../components/editor-error";
+} from '../../types/editor';
 
 const marginKeyMapping = {
-  left: "marginLeft",
-  top: "marginTop",
-  bottom: "marginBottom",
-  right: "marginRight",
+  left: 'marginLeft',
+  top: 'marginTop',
+  bottom: 'marginBottom',
+  right: 'marginRight',
 };
 const transformsStyle = (element: ContentEditorButtonElement) => {
-  let _style: any = {};
+  const _style: any = {};
   if (element.margin) {
     for (const k in marginKeyMapping) {
       const key = k as keyof typeof marginKeyMapping;
       const marginName = marginKeyMapping[key];
       if (element.margin[key]) {
         if (element.margin.enabled) {
-          _style[marginName] = element.margin[key] + "px";
+          _style[marginName] = `${element.margin[key]}px`;
         } else {
           _style[marginName] = null;
         }
@@ -89,22 +76,10 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
     deleteElementInColumn(path);
   };
   const handleAddLeft = () => {
-    insertElementInColumn(
-      element,
-      path,
-      ContentEditorElementInsertDirection.LEFT
-    );
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.LEFT);
   };
   const handleAddRight = () => {
-    insertElementInColumn(
-      element,
-      path,
-      ContentEditorElementInsertDirection.RIGHT
-    );
-  };
-
-  const handleButtonActionChange = (action: string) => {
-    updateElement({ ...element, data: { ...element.data, action } }, id);
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.RIGHT);
   };
 
   const handleButtonStyleChange = (type: string) => {
@@ -116,7 +91,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
       const value = e.target.value;
       updateElement({ ...element, data: { ...element.data, text: value } }, id);
     },
-    [element, path]
+    [element, path],
   );
 
   const handleMarginValueChange = (e: any, position: string) => {
@@ -126,10 +101,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   };
 
   const handleMarginCheckedChange = (enabled: boolean) => {
-    updateElement(
-      { ...element, margin: { top: 0, left: 0, bottom: 0, right: 0, enabled } },
-      id
-    );
+    updateElement({ ...element, margin: { top: 0, left: 0, bottom: 0, right: 0, enabled } }, id);
   };
 
   const handleActionChange = (actions: RulesCondition[]) => {
@@ -137,10 +109,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   };
 
   useEffect(() => {
-    if (
-      isOpen === false &&
-      (!element?.data?.actions || element?.data?.actions.length == 0)
-    ) {
+    if (isOpen === false && (!element?.data?.actions || element?.data?.actions.length === 0)) {
       setIsShowError(true);
     } else {
       setIsShowError(false);
@@ -182,10 +151,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                   onChange={handleButtonTextChange}
                 />
                 <Label>Button style</Label>
-                <Select
-                  onValueChange={handleButtonStyleChange}
-                  defaultValue={element.data.type}
-                >
+                <Select onValueChange={handleButtonStyleChange} defaultValue={element.data.type}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a distribute" />
                   </SelectTrigger>
@@ -215,7 +181,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                         value={element.margin?.left}
                         placeholder="Left"
                         onChange={(e) => {
-                          handleMarginValueChange(e, "left");
+                          handleMarginValueChange(e, 'left');
                         }}
                         className="bg-background flex-none w-20"
                       />
@@ -224,7 +190,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                       <Input
                         value={element.margin?.top}
                         onChange={(e) => {
-                          handleMarginValueChange(e, "top");
+                          handleMarginValueChange(e, 'top');
                         }}
                         placeholder="Top"
                         className="bg-background flex-none w-20"
@@ -232,7 +198,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                       <Input
                         value={element.margin?.bottom}
                         onChange={(e) => {
-                          handleMarginValueChange(e, "bottom");
+                          handleMarginValueChange(e, 'bottom');
                         }}
                         placeholder="Bottom"
                         className="bg-background flex-none w-20"
@@ -243,7 +209,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                         value={element.margin?.right}
                         placeholder="Right"
                         onChange={(e) => {
-                          handleMarginValueChange(e, "right");
+                          handleMarginValueChange(e, 'right');
                         }}
                         className="bg-background flex-none w-20"
                       />
@@ -276,7 +242,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                           size="icon"
                           onClick={handleDelete}
                         >
-                          <DeleteIcon className="fill-red-500"></DeleteIcon>
+                          <DeleteIcon className="fill-red-500" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -284,7 +250,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <div className="grow"></div>
+                  <div className="grow" />
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -294,7 +260,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                           size="icon"
                           onClick={handleAddLeft}
                         >
-                          <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                          <InsertColumnLeftIcon className="fill-foreground" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -312,7 +278,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                           size="icon"
                           onClick={handleAddRight}
                         >
-                          <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                          <InsertColumnRightIcon className="fill-foreground" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -334,7 +300,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   );
 };
 
-ContentEditorButton.displayName = "ContentEditorButton";
+ContentEditorButton.displayName = 'ContentEditorButton';
 
 export type ContentEditorButtonSerializeType = {
   className?: string;
@@ -343,10 +309,8 @@ export type ContentEditorButtonSerializeType = {
   onClick?: (element: ContentEditorButtonElement) => void;
 };
 
-export const ContentEditorButtonSerialize = (
-  props: ContentEditorButtonSerializeType
-) => {
-  const { className, children, element, onClick } = props;
+export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerializeType) => {
+  const { element, onClick } = props;
 
   const handleOnClick = () => {
     if (onClick) {
@@ -368,4 +332,4 @@ export const ContentEditorButtonSerialize = (
   );
 };
 
-ContentEditorButtonSerialize.displayName = "ContentEditorButtonSerialize";
+ContentEditorButtonSerialize.displayName = 'ContentEditorButtonSerialize';

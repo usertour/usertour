@@ -1,8 +1,8 @@
-import { IsNotEmpty } from "class-validator";
-import { InputType, Field, PartialType } from "@nestjs/graphql";
-import { StepInput } from "./step.input";
-import GraphQLJSON from "graphql-type-json";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { Field, InputType, PartialType } from '@nestjs/graphql';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { IsNotEmpty } from 'class-validator';
+import GraphQLJSON from 'graphql-type-json';
+import { StepInput } from './step.input';
 
 @InputType()
 export class ContentInput {

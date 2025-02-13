@@ -1,5 +1,5 @@
-import { IsNotEmpty } from "class-validator";
-import { InputType, Field } from "@nestjs/graphql";
+import { Field, InputType } from '@nestjs/graphql';
+import { IsNotEmpty } from 'class-validator';
 
 @InputType()
 export class createPresignedUrlInput {

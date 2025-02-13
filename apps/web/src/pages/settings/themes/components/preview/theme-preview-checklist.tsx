@@ -1,20 +1,20 @@
-import { useThemeDetailContext } from "@/contexts/theme-detail-context";
+import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import {
-  ChecklistRoot,
+  ChecklistContainer,
   ChecklistDismiss,
   ChecklistDropdown,
   ChecklistItems,
   ChecklistPopper,
   ChecklistPopperContent,
   ChecklistProgress,
-  ChecklistContainer,
-} from "@usertour-ui/sdk/src/checklist";
-import { PopperMadeWith } from "@usertour-ui/sdk/src/popper";
+  ChecklistRoot,
+} from '@usertour-ui/sdk/src/checklist';
+import { PopperMadeWith } from '@usertour-ui/sdk/src/popper';
 import {
   ChecklistCompletionOrder,
   ChecklistData,
   ChecklistInitialDisplay,
-} from "@usertour-ui/types";
+} from '@usertour-ui/types';
 
 interface ThemePreviewChecklistProps {
   open?: boolean;
@@ -27,17 +27,15 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   if (!settings) return null;
 
   const data: ChecklistData = {
-    buttonText: "Checklist",
-    initialDisplay: open
-      ? ChecklistInitialDisplay.EXPANDED
-      : ChecklistInitialDisplay.BUTTON,
+    buttonText: 'Checklist',
+    initialDisplay: open ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
     completionOrder: ChecklistCompletionOrder.ANY,
     preventDismissChecklist: false,
     items: [
       {
-        id: "1",
-        name: "First item",
-        description: "Checklist",
+        id: '1',
+        name: 'First item',
+        description: 'Checklist',
         clickedActions: [],
         completeConditions: [],
         onlyShowTask: false,
@@ -45,9 +43,9 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         onlyShowTaskConditions: [],
       },
       {
-        id: "2",
-        name: "Second item",
-        description: "Checklist",
+        id: '2',
+        name: 'Second item',
+        description: 'Checklist',
         clickedActions: [],
         completeConditions: [],
         onlyShowTask: false,
@@ -55,9 +53,9 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         onlyShowTaskConditions: [],
       },
       {
-        id: "3",
-        name: "Third item",
-        description: "Checklist",
+        id: '3',
+        name: 'Third item',
+        description: 'Checklist',
         clickedActions: [],
         completeConditions: [],
         onlyShowTask: false,
@@ -89,4 +87,4 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   );
 };
 
-ThemePreviewChecklist.displayName = "ThemePreviewChecklist";
+ThemePreviewChecklist.displayName = 'ThemePreviewChecklist';

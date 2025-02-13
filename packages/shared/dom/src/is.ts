@@ -1,6 +1,6 @@
-import {getComputedStyle} from './getComputedStyle';
-import {getWindow} from './getWindow';
-import {getNodeName} from './node';
+import { getComputedStyle } from './getComputedStyle';
+import { getWindow } from './getWindow';
+import { getNodeName } from './node';
 
 declare global {
   interface Window {
@@ -25,13 +25,11 @@ export function isShadowRoot(node: Node): node is ShadowRoot {
     return false;
   }
 
-  return (
-    node instanceof getWindow(node).ShadowRoot || node instanceof ShadowRoot
-  );
+  return node instanceof getWindow(node).ShadowRoot || node instanceof ShadowRoot;
 }
 
 export function isOverflowElement(element: Element): boolean {
-  const {overflow, overflowX, overflowY, display} = getComputedStyle(element);
+  const { overflow, overflowX, overflowY, display } = getComputedStyle(element);
   return (
     /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) &&
     !['inline', 'contents'].includes(display)
@@ -54,11 +52,9 @@ export function isContainingBlock(element: Element): boolean {
     (!safari && (css.backdropFilter ? css.backdropFilter !== 'none' : false)) ||
     (!safari && (css.filter ? css.filter !== 'none' : false)) ||
     ['transform', 'perspective', 'filter'].some((value) =>
-      (css.willChange || '').includes(value)
+      (css.willChange || '').includes(value),
     ) ||
-    ['paint', 'layout', 'strict', 'content'].some((value) =>
-      (css.contain || '').includes(value)
-    )
+    ['paint', 'layout', 'strict', 'content'].some((value) => (css.contain || '').includes(value))
   );
 }
 

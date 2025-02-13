@@ -1,40 +1,28 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { createSegment } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect } from "react";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { RadioGroup, RadioGroupItem } from "@usertour-ui/radio-group";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { createSegment } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface CreateFormProps {
   isOpen: boolean;
@@ -43,10 +31,10 @@ interface CreateFormProps {
 }
 
 const formSchema = z.object({
-  dataType: z.enum(["CONDITION", "MANUAL"]),
+  dataType: z.enum(['CONDITION', 'MANUAL']),
   name: z
     .string({
-      required_error: "Please company segment name.",
+      required_error: 'Please company segment name.',
     })
     .max(20)
     .min(2),
@@ -55,8 +43,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  name: "",
-  dataType: "CONDITION",
+  name: '',
+  dataType: 'CONDITION',
 };
 
 export const UserSegmentFilterForm = (props: CreateFormProps) => {
@@ -67,7 +55,7 @@ export const UserSegmentFilterForm = (props: CreateFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -75,7 +63,7 @@ export const UserSegmentFilterForm = (props: CreateFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -86,7 +74,7 @@ export const UserSegmentFilterForm = (props: CreateFormProps) => {
     try {
       const data = {
         ...formValues,
-        bizType: "USER",
+        bizType: 'USER',
         data: {},
         environmentId,
       };
@@ -175,9 +163,7 @@ export const UserSegmentFilterForm = (props: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Create Segment
               </Button>
             </DialogFooter>
@@ -188,4 +174,4 @@ export const UserSegmentFilterForm = (props: CreateFormProps) => {
   );
 };
 
-UserSegmentFilterForm.displayName = "UserSegmentFilterForm";
+UserSegmentFilterForm.displayName = 'UserSegmentFilterForm';

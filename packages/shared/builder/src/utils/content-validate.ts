@@ -1,63 +1,62 @@
-import { ContentActionsItemType, Step } from "@usertour-ui/types";
-import {
-  ContentEditorElementType,
-  ContentEditorRoot,
-} from "@usertour-ui/shared-editor";
+import { ContentEditorElementType, ContentEditorRoot } from '@usertour-ui/shared-editor';
+import { ContentActionsItemType, Step } from '@usertour-ui/types';
 
 export const stepIsReachable = (steps: Step[], currentStep: Step) => {
-  if (steps.indexOf(currentStep) == 0) {
+  if (steps.indexOf(currentStep) === 0) {
     return true;
   }
   let reachable = false;
-  steps
-    .filter((step, i) => step.id != currentStep.id)
-    .forEach((step) => {
-      if (step.target?.actions) {
-        step.target?.actions.forEach((action) => {
-          if (
-            action.type == ContentActionsItemType.STEP_GOTO &&
-            action.data.stepCvid == currentStep.cvid
-          ) {
-            reachable = true;
-          }
-        });
+  const filteredSteps = steps.filter((step) => step.id !== currentStep.id);
+
+  for (const step of filteredSteps) {
+    if (step.target?.actions) {
+      for (const action of step.target.actions) {
+        if (
+          action.type === ContentActionsItemType.STEP_GOTO &&
+          action.data.stepCvid === currentStep.cvid
+        ) {
+          reachable = true;
+        }
       }
-      if (step.trigger) {
-        step.trigger.forEach((trigger) => {
-          if (trigger.actions) {
-            trigger.actions.forEach((action) => {
-              if (
-                action.type == ContentActionsItemType.STEP_GOTO &&
-                action.data.stepCvid == currentStep.cvid
-              ) {
-                reachable = true;
-              }
-            });
+    }
+
+    if (step.trigger) {
+      for (const trigger of step.trigger) {
+        if (trigger.actions) {
+          for (const action of trigger.actions) {
+            if (
+              action.type === ContentActionsItemType.STEP_GOTO &&
+              action.data.stepCvid === currentStep.cvid
+            ) {
+              reachable = true;
+            }
           }
-        });
+        }
       }
-      if (step.data) {
-        const data = step.data as ContentEditorRoot[];
-        data.forEach((d) => {
-          d.children.forEach((column) => {
-            column.children.forEach((element) => {
-              if (element.element.type == ContentEditorElementType.BUTTON) {
-                if (element.element.data.actions) {
-                  element.element.data.actions.forEach((action) => {
-                    if (
-                      action.type == ContentActionsItemType.STEP_GOTO &&
-                      action.data.stepCvid == currentStep.cvid
-                    ) {
-                      reachable = true;
-                    }
-                  });
+    }
+
+    if (step.data) {
+      const data = step.data as ContentEditorRoot[];
+      for (const d of data) {
+        for (const column of d.children) {
+          for (const element of column.children) {
+            if (element.element.type === ContentEditorElementType.BUTTON) {
+              if (element.element.data.actions) {
+                for (const action of element.element.data.actions) {
+                  if (
+                    action.type === ContentActionsItemType.STEP_GOTO &&
+                    action.data.stepCvid === currentStep.cvid
+                  ) {
+                    reachable = true;
+                  }
                 }
               }
-            });
-          });
-        });
+            }
+          }
+        }
       }
-    });
+    }
+  }
 
   return reachable;
 };

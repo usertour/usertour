@@ -1,13 +1,7 @@
-import { CubeIcon } from "@radix-ui/react-icons";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
-import { LauncherPositionType } from "@usertour-ui/types";
+import { CubeIcon } from '@radix-ui/react-icons';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import { LauncherPositionType } from '@usertour-ui/types';
 interface LauncherPositionProps {
   type?: LauncherPositionType;
   onChange: (value: LauncherPositionType) => void;
@@ -30,7 +24,7 @@ export const LauncherPosition = (props: LauncherPositionProps) => {
       </div>
       <Select defaultValue={type} onValueChange={handleTypeChange} value={type}>
         <SelectTrigger className="justify-start flex h-8">
-          <CubeIcon className="flex-none mr-2"></CubeIcon>
+          <CubeIcon className="flex-none mr-2" />
           <div className="grow text-left">
             <SelectValue placeholder="" asChild>
               <div className="capitalize">{type}</div>
@@ -38,16 +32,10 @@ export const LauncherPosition = (props: LauncherPositionProps) => {
           </div>
         </SelectTrigger>
         <SelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-          <SelectItem
-            value={LauncherPositionType.TARGET}
-            className="cursor-pointer"
-          >
+          <SelectItem value={LauncherPositionType.TARGET} className="cursor-pointer">
             Target element
           </SelectItem>
-          <SelectItem
-            value={LauncherPositionType.LAUNCHER}
-            className="cursor-pointer"
-          >
+          <SelectItem value={LauncherPositionType.LAUNCHER} className="cursor-pointer">
             Launcher
           </SelectItem>
         </SelectContent>
@@ -55,4 +43,4 @@ export const LauncherPosition = (props: LauncherPositionProps) => {
     </div>
   );
 };
-LauncherPosition.displayName = "LauncherPosition";
+LauncherPosition.displayName = 'LauncherPosition';

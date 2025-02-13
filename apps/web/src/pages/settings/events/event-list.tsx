@@ -1,9 +1,9 @@
-import { Separator } from "@usertour-ui/separator";
-import { SettingsContent } from "../components/content";
-import { EventListHeader } from "./components/event-list-header";
-import { EventListContent } from "./components/event-list-content";
-import { EventListProvider } from "@/contexts/event-list-context";
-import { useAppContext } from "@/contexts/app-context";
+import { useAppContext } from '@/contexts/app-context';
+import { EventListProvider } from '@/contexts/event-list-context';
+import { Separator } from '@usertour-ui/separator';
+import { SettingsContent } from '../components/content';
+import { EventListContent } from './components/event-list-content';
+import { EventListHeader } from './components/event-list-header';
 
 export const SettingsEventsList = () => {
   const { project } = useAppContext();
@@ -18,4 +18,4 @@ export const SettingsEventsList = () => {
   );
 };
 
-SettingsEventsList.displayName = "SettingsEventsList";
+SettingsEventsList.displayName = 'SettingsEventsList';

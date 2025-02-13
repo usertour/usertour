@@ -1,7 +1,7 @@
-import { ReactNode, createContext, useContext } from "react";
-import { Theme } from "@usertour-ui/types";
-import { useQuery } from "@apollo/client";
-import { listThemes } from "@usertour-ui/gql";
+import { useQuery } from '@apollo/client';
+import { listThemes } from '@usertour-ui/gql';
+import { Theme } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext } from 'react';
 
 export interface ThemeListProviderProps {
   children?: ReactNode;
@@ -13,9 +13,7 @@ export interface ThemeListContextValue {
   refetch: any;
   loading: boolean;
 }
-export const ThemeListContext = createContext<
-  ThemeListContextValue | undefined
->(undefined);
+export const ThemeListContext = createContext<ThemeListContextValue | undefined>(undefined);
 
 export function ThemeListProvider(props: ThemeListProviderProps): JSX.Element {
   const { children, projectId } = props;
@@ -23,26 +21,20 @@ export function ThemeListProvider(props: ThemeListProviderProps): JSX.Element {
     variables: { projectId: projectId },
   });
 
-  const themeList = data && data.listThemes;
+  const themeList = data?.listThemes;
   const value: ThemeListContextValue = {
     themeList,
     refetch,
     loading,
   };
 
-  return (
-    <ThemeListContext.Provider value={value}>
-      {children}
-    </ThemeListContext.Provider>
-  );
+  return <ThemeListContext.Provider value={value}>{children}</ThemeListContext.Provider>;
 }
 
 export function useThemeListContext(): ThemeListContextValue {
   const context = useContext(ThemeListContext);
   if (!context) {
-    throw new Error(
-      `useThemeListContext must be used within a ThemeListProvider.`
-    );
+    throw new Error('useThemeListContext must be used within a ThemeListProvider.');
   }
   return context;
 }

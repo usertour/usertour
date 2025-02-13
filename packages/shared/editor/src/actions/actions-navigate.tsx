@@ -1,28 +1,24 @@
-import { PagesIcon, PlusIcon, Delete2Icon } from "@usertour-ui/icons";
-import { Input } from "@usertour-ui/input";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@usertour-ui/tabs";
-import { ContentActionsRemove } from "./actions-remove";
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
+import { PagesIcon } from '@usertour-ui/icons';
+import { getNavitateError } from '@usertour-ui/shared-utils';
+import { Tabs, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { useCallback, useState } from 'react';
+import { Descendant } from 'slate';
+import { PopperEditorMini, serializeMini } from '../components/editor';
+import { useActionsGroupContext } from '../contexts/actions-group-context';
+import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
   ContentActionsError,
   ContentActionsErrorAnchor,
   ContentActionsErrorContent,
-} from "./actions-error";
+} from './actions-error';
 import {
   ContentActionsPopover,
   ContentActionsPopoverContent,
   ContentActionsPopoverTrigger,
-} from "./actions-popper";
-import {
-  ContentActionsConditionIcon,
-  ActionsConditionRightContent,
-} from "./actions-template";
-import { useActionsGroupContext } from "../contexts/actions-group-context";
-import { getNavitateError } from "@usertour-ui/shared-utils";
-import { useContentActionsContext } from "../contexts/content-actions-context";
-import { Descendant } from "slate";
-import { PopperEditorMini, serializeMini } from "../components/editor";
-import { EDITOR_RICH_ACTION_CONTENT } from "@usertour-ui/constants";
+} from './actions-popper';
+import { ContentActionsRemove } from './actions-remove';
+import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 
 export interface ContentActionsNavigateProps {
   index: number;
@@ -35,8 +31,8 @@ export interface ContentActionsNavigateProps {
 
 const initialValue: Descendant[] = [
   {
-    type: "paragraph",
-    children: [{ text: "this is a text" }],
+    type: 'paragraph',
+    children: [{ text: 'this is a text' }],
   },
 ];
 
@@ -46,9 +42,9 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
   const { updateConditionData } = useActionsGroupContext();
 
   const { attributes, zIndex } = useContentActionsContext();
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
   const [value, setValue] = useState(data?.value || initialValue);
-  const [openType, setOpenType] = useState(data?.openType || "same");
+  const [openType, setOpenType] = useState(data?.openType || 'same');
 
   const handleOnOpenChange = useCallback(
     (open: boolean) => {
@@ -63,7 +59,7 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
         updateConditionData(index, updates);
       }
     },
-    [openType, value]
+    [openType, value],
   );
 
   return (
@@ -76,16 +72,11 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
                 <ContentActionsConditionIcon>
                   <PagesIcon width={16} height={16} />
                 </ContentActionsConditionIcon>
-                <span
-                  className="break-words"
-                  style={{ wordBreak: "break-word" }}
-                >
+                <span className="break-words" style={{ wordBreak: 'break-word' }}>
                   Navigate to {value.map((v) => serializeMini(v))}
                 </span>
               </ContentActionsPopoverTrigger>
-              <ContentActionsPopoverContent
-                style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}
-              >
+              <ContentActionsPopoverContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}>
                 <div className=" flex flex-col space-y-2">
                   <div className=" flex flex-col space-y-1">
                     <div>URL to navigate to</div>
@@ -104,11 +95,7 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
                       onChange={handleValueChange}
                     /> */}
                   </div>
-                  <Tabs
-                    className="w-full"
-                    defaultValue={openType}
-                    onValueChange={setOpenType}
-                  >
+                  <Tabs className="w-full" defaultValue={openType} onValueChange={setOpenType}>
                     <TabsList className="h-auto w-full	">
                       <TabsTrigger
                         value="same"
@@ -130,9 +117,7 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
             <ContentActionsRemove index={index} />
           </ActionsConditionRightContent>
         </ContentActionsErrorAnchor>
-        <ContentActionsErrorContent
-          style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}
-        >
+        <ContentActionsErrorContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}>
           {errorInfo}
         </ContentActionsErrorContent>
       </div>
@@ -140,4 +125,4 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
   );
 };
 
-ContentActionsNavigate.displayName = "ContentActionsNavigate";
+ContentActionsNavigate.displayName = 'ContentActionsNavigate';

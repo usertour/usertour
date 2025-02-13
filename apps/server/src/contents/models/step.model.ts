@@ -1,11 +1,7 @@
-import { Field, ObjectType } from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
-import GraphQLJSON from "graphql-type-json";
-import {
-  JsonArray,
-  JsonObject,
-  JsonValue,
-} from "@prisma/client/runtime/library";
+import { BaseModel } from '@/common/models/base.model';
+import { Field, ObjectType } from '@nestjs/graphql';
+import { JsonArray, JsonValue } from '@prisma/client/runtime/library';
+import GraphQLJSON from 'graphql-type-json';
 
 @ObjectType()
 export class TargetModel {

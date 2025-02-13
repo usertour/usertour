@@ -1,7 +1,7 @@
-import { Label } from "@usertour-ui/label";
-import { Switch } from "@usertour-ui/switch";
-import { useState } from "react";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+import { Label } from '@usertour-ui/label';
+import { HelpTooltip } from '@usertour-ui/shared-components';
+import { Switch } from '@usertour-ui/switch';
+import { useState } from 'react';
 
 export type ContentSettingsData = {
   enabledBackdrop: boolean;
@@ -60,19 +60,10 @@ export const ContentSettings = (props: ContentSettingsProps) => {
                 <span className="font-normal">Add backdrop</span>
               </Label>
               <HelpTooltip>
-                {type == "tooltip" && (
-                  <>
-                    Adds a semi-transparent layer on top of your app, which only
-                    reveals the tooltip and the target element. Use this to
-                    force users to interact with the target element.
-                  </>
-                )}
-                {type == "modal" && (
-                  <>
-                    Adds a semi-transparent layer on top of your app, which only
-                    reveals the modal.
-                  </>
-                )}
+                {type === 'tooltip' &&
+                  'Adds a semi-transparent layer on top of your app, which only reveals the tooltip and the target element. Use this to force users to interact with the target element.'}
+                {type === 'modal' &&
+                  'Adds a semi-transparent layer on top of your app, which only reveals the modal.'}
               </HelpTooltip>
             </div>
             <Switch
@@ -82,12 +73,9 @@ export const ContentSettings = (props: ContentSettingsProps) => {
               onCheckedChange={handleBackdrop}
             />
           </div>
-          {data.enabledBackdrop && type == "tooltip" && (
+          {data.enabledBackdrop && type === 'tooltip' && (
             <div className="flex items-center justify-between space-x-2">
-              <Label
-                htmlFor="enable-block-target"
-                className="flex flex-col space-y-1"
-              >
+              <Label htmlFor="enable-block-target" className="flex flex-col space-y-1">
                 <span className="font-normal">Block tooltip target clicks</span>
               </Label>
               <Switch
@@ -103,4 +91,4 @@ export const ContentSettings = (props: ContentSettingsProps) => {
     </div>
   );
 };
-ContentSettings.displayName = "ContentSettings";
+ContentSettings.displayName = 'ContentSettings';

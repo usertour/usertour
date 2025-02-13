@@ -1,16 +1,16 @@
-import { PrismaService } from "nestjs-prisma";
-import { Injectable, BadRequestException } from "@nestjs/common";
-import { PasswordService } from "@/auth/password.service";
-import { ChangePasswordInput } from "./dto/change-password.input";
-import { UpdateUserInput } from "./dto/update-user.input";
-import { ChangeEmailInput } from "./dto/change-email.input";
+import { PasswordService } from '@/auth/password.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import { ChangeEmailInput } from './dto/change-email.input';
+import { ChangePasswordInput } from './dto/change-password.input';
+import { UpdateUserInput } from './dto/update-user.input';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
-    private passwordService: PasswordService
-  ) { }
+    private passwordService: PasswordService,
+  ) {}
 
   updateUser(userId: string, newUserData: UpdateUserInput) {
     return this.prisma.user.update({
@@ -21,23 +21,17 @@ export class UsersService {
     });
   }
 
-  async changePassword(
-    userId: string,
-    userPassword: string,
-    changePassword: ChangePasswordInput
-  ) {
+  async changePassword(userId: string, userPassword: string, changePassword: ChangePasswordInput) {
     const passwordValid = await this.passwordService.validatePassword(
       changePassword.oldPassword,
-      userPassword
+      userPassword,
     );
 
     if (!passwordValid) {
-      throw new BadRequestException("Invalid password");
+      throw new BadRequestException('Invalid password');
     }
 
-    const hashedPassword = await this.passwordService.hashPassword(
-      changePassword.newPassword
-    );
+    const hashedPassword = await this.passwordService.hashPassword(changePassword.newPassword);
 
     return this.prisma.user.update({
       data: {
@@ -47,18 +41,11 @@ export class UsersService {
     });
   }
 
-  async changeEmail(
-    userId: string,
-    userPassword: string,
-    input: ChangeEmailInput
-  ) {
-    const passwordValid = await this.passwordService.validatePassword(
-      input.password,
-      userPassword
-    );
+  async changeEmail(userId: string, userPassword: string, input: ChangeEmailInput) {
+    const passwordValid = await this.passwordService.validatePassword(input.password, userPassword);
 
     if (!passwordValid) {
-      throw new BadRequestException("Invalid password");
+      throw new BadRequestException('Invalid password');
     }
 
     return this.prisma.user.update({

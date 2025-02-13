@@ -66,17 +66,17 @@ export type Content = {
 };
 
 export enum ContentPriority {
-  HIGHEST = "highest",
-  HIGH = "high",
-  MEDIUM = "medium",
-  LOW = "low",
-  LOWEST = "lowest",
+  HIGHEST = 'highest',
+  HIGH = 'high',
+  MEDIUM = 'medium',
+  LOW = 'low',
+  LOWEST = 'lowest',
 }
 
 export enum BuilderType {
-  EXTENSION = "extension",
-  WEB = "web",
-  ALL = "all",
+  EXTENSION = 'extension',
+  WEB = 'web',
+  ALL = 'all',
 }
 
 export type ContentConfig = {
@@ -90,25 +90,25 @@ export type ContentConfig = {
 export type RulesCondition = {
   type: string;
   data: any;
-  operators?: "and" | "or";
+  operators?: 'and' | 'or';
   actived?: boolean;
   conditions?: RulesCondition[];
 };
 
 export enum Frequency {
-  ONCE = "once",
-  MULTIPLE = "multiple",
-  UNLIMITED = "unlimited",
+  ONCE = 'once',
+  MULTIPLE = 'multiple',
+  UNLIMITED = 'unlimited',
 }
 export enum FrequencyUnits {
-  DAYES = "days",
-  HOURS = "hours",
-  SECONDS = "seconds",
-  MINUTES = "minutes",
+  DAYES = 'days',
+  HOURS = 'hours',
+  SECONDS = 'seconds',
+  MINUTES = 'minutes',
 }
 export enum StepContentType {
-  TOOLTIP = "tooltip",
-  MODAL = "modal",
+  TOOLTIP = 'tooltip',
+  MODAL = 'modal',
 }
 export type RulesFrequencyValueEvery = {
   times?: number;
@@ -158,32 +158,32 @@ export type ContentVersion = {
 };
 
 export enum ContentTypeName {
-  CHECKLISTS = "checklists",
-  FLOWS = "flows",
-  LAUNCHERS = "launchers",
+  CHECKLISTS = 'checklists',
+  FLOWS = 'flows',
+  LAUNCHERS = 'launchers',
   // RESOURCE_CENTERS = "resource-centers",
-  BANNERS = "banners",
-  NPS = "nps",
-  SURVEYS = "surveys",
-  TRACKERS = "trackers",
-  EVENTS = "events",
+  BANNERS = 'banners',
+  NPS = 'nps',
+  SURVEYS = 'surveys',
+  TRACKERS = 'trackers',
+  EVENTS = 'events',
 }
 
 export enum ContentDataType {
-  CHECKLIST = "checklist",
-  FLOW = "flow",
-  LAUNCHER = "launcher",
-  BANNER = "banner",
-  NPS = "nps",
-  SURVEY = "survey",
-  TRACKER = "tracker",
-  EVENT = "event",
+  CHECKLIST = 'checklist',
+  FLOW = 'flow',
+  LAUNCHER = 'launcher',
+  BANNER = 'banner',
+  NPS = 'nps',
+  SURVEY = 'survey',
+  TRACKER = 'tracker',
+  EVENT = 'event',
 }
 
 export enum LauncherDataType {
-  BEACON = "beacon",
-  ICON = "icon",
-  HIDDEN = "hidden",
+  BEACON = 'beacon',
+  ICON = 'icon',
+  HIDDEN = 'hidden',
 }
 
 export type ElementSelectorPropsData = {
@@ -200,13 +200,13 @@ export type ElementSelectorPropsData = {
 };
 
 export enum ContentActionsItemType {
-  STEP_GOTO = "step-goto",
-  FLOW_DISMIS = "flow-dismis",
-  LAUNCHER_DISMIS = "launcher-dismis",
-  CHECKLIST_DISMIS = "checklist-dismis",
-  FLOW_START = "flow-start",
-  PAGE_NAVIGATE = "page-navigate",
-  JAVASCRIPT_EVALUATE = "javascript-evaluate",
+  STEP_GOTO = 'step-goto',
+  FLOW_DISMIS = 'flow-dismis',
+  LAUNCHER_DISMIS = 'launcher-dismis',
+  CHECKLIST_DISMIS = 'checklist-dismis',
+  FLOW_START = 'flow-start',
+  PAGE_NAVIGATE = 'page-navigate',
+  JAVASCRIPT_EVALUATE = 'javascript-evaluate',
 }
 
 export type ContentOmbedInfo = {
@@ -216,13 +216,13 @@ export type ContentOmbedInfo = {
 };
 
 export enum ModalPosition {
-  LeftTop = "leftTop",
-  CenterTop = "centerTop",
-  RightTop = "rightTop",
-  LeftBottom = "leftBottom",
-  CenterBottom = "centerBottom",
-  RightBottom = "rightBottom",
-  Center = "center",
+  LeftTop = 'leftTop',
+  CenterTop = 'centerTop',
+  RightTop = 'rightTop',
+  LeftBottom = 'leftBottom',
+  CenterBottom = 'centerBottom',
+  RightBottom = 'rightBottom',
+  Center = 'center',
 }
 
 export type ContentModalPlacementData = {

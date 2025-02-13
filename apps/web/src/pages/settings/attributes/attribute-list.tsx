@@ -1,14 +1,9 @@
-import { Separator } from "@usertour-ui/separator";
-import { SettingsContent } from "../components/content";
-import { AttributeListHeader } from "./components/attribute-list-header";
-import { AttributeListContent } from "./components/attribute-list-content";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@usertour-ui/tabs";
-import {
-  CompanyIcon,
-  UserIcon,
-  UserIcon2,
-  EventIcon2,
-} from "@usertour-ui/icons";
+import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-ui/icons';
+import { Separator } from '@usertour-ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { SettingsContent } from '../components/content';
+import { AttributeListContent } from './components/attribute-list-content';
+import { AttributeListHeader } from './components/attribute-list-header';
 
 export const SettingsAttributeList = () => {
   return (
@@ -62,4 +57,4 @@ export const SettingsAttributeList = () => {
   );
 };
 
-SettingsAttributeList.displayName = "SettingsAttributeList";
+SettingsAttributeList.displayName = 'SettingsAttributeList';

@@ -8,7 +8,7 @@ const getYoutubeId = (url: string) => {
 export const parseUrlToEmbed = (url: string) => {
   const id = getYoutubeId(url);
   if (id) {
-    return "https://www.youtube.com/embed/" + id;
+    return `https://www.youtube.com/embed/${id}`;
   }
   return url;
 };

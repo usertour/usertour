@@ -1,5 +1,5 @@
-import { Editor, Transforms } from 'slate';
 import imageExtensions from 'image-extensions';
+import { Editor, Transforms } from 'slate';
 
 import { ImageElementType } from '../types/slate';
 

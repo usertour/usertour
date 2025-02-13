@@ -5,32 +5,17 @@ export interface Usertour {
 
   init: (token: string) => void;
 
-  identify: (
-    userId: string,
-    attributes?: Attributes,
-    opts?: IdentifyOptions
-  ) => Promise<void>;
+  identify: (userId: string, attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
 
-  identifyAnonymous: (
-    attributes?: Attributes,
-    opts?: IdentifyOptions
-  ) => Promise<void>;
+  identifyAnonymous: (attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
 
   updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<void>;
 
-  group: (
-    groupId: string,
-    attributes?: Attributes,
-    opts?: GroupOptions
-  ) => Promise<void>;
+  group: (groupId: string, attributes?: Attributes, opts?: GroupOptions) => Promise<void>;
 
   updateGroup: (attributes: Attributes, opts?: GroupOptions) => Promise<void>;
 
-  track(
-    name: string,
-    attributes?: EventAttributes,
-    opts?: TrackOptions
-  ): Promise<void>;
+  track(name: string, attributes?: EventAttributes, opts?: TrackOptions): Promise<void>;
 
   isIdentified: () => boolean;
 
@@ -105,7 +90,7 @@ interface AttributeChange {
   data_type?: AttributeDataType;
 }
 
-type AttributeDataType = "string" | "boolean" | "number" | "datetime" | "list";
+type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
 
 export type IdentifyOptions = {
   signature?: string;
@@ -140,16 +125,16 @@ export interface ResourceCenterState {
   unreadAnnouncementCount: number;
 }
 
-interface ScrollPadding {
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-}
+// interface ScrollPadding {
+//   top?: number;
+//   right?: number;
+//   bottom?: number;
+//   left?: number;
+// }
 
-type StringFilter = ((className: string) => boolean) | RegExp;
+// type StringFilter = ((className: string) => boolean) | RegExp;
 
-type StringFilters = StringFilter | StringFilter[];
+// type StringFilters = StringFilter | StringFilter[];
 
 export interface Deferred {
   resolve: () => void;

@@ -1,6 +1,6 @@
-import { useLauncherContext } from "../../../contexts";
-import { GearIcon } from "@radix-ui/react-icons";
-import { ElementIcon } from "@usertour-ui/icons";
+import { GearIcon } from '@radix-ui/react-icons';
+import { ElementIcon } from '@usertour-ui/icons';
+import { useLauncherContext } from '../../../contexts';
 
 export const LauncherTargetPreview = () => {
   const { gotoLauncherTarget } = useLauncherContext();
@@ -25,4 +25,4 @@ export const LauncherTargetPreview = () => {
   );
 };
 
-LauncherTargetPreview.displayName = "LauncherTargetPreview";
+LauncherTargetPreview.displayName = 'LauncherTargetPreview';

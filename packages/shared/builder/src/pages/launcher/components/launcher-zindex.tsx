@@ -1,5 +1,5 @@
-import { useLauncherContext } from "../../../contexts";
-import { Input } from "@usertour-ui/input";
+import { Input } from '@usertour-ui/input';
+import { useLauncherContext } from '../../../contexts';
 
 export const LauncherZIndex = () => {
   const { updateLocalData, localData } = useLauncherContext();
@@ -16,9 +16,9 @@ export const LauncherZIndex = () => {
 
       <Input
         value={localData.zIndex}
-        placeholder={!localData.zIndex ? "Default" : undefined}
+        placeholder={!localData.zIndex ? 'Default' : undefined}
         onChange={(e) => {
-          const value = parseInt(e.target.value);
+          const value = Number.parseInt(e.target.value);
           updateLocalData({ zIndex: value || undefined });
         }}
       />
@@ -26,4 +26,4 @@ export const LauncherZIndex = () => {
   );
 };
 
-LauncherZIndex.displayName = "LauncherZIndex";
+LauncherZIndex.displayName = 'LauncherZIndex';

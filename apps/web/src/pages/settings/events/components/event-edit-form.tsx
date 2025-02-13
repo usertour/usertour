@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
-import { PlusIcon } from "@usertour-ui/icons";
+import { Icons } from '@/components/atoms/icons';
+import { ListSkeletonCount } from '@/components/molecules/skeleton';
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { Event } from '@/types/project';
+import { Attribute } from '@/types/project';
+import { useMutation, useQuery } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+} from '@usertour-ui/dialog';
 import {
   Form,
   FormControl,
@@ -24,29 +24,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@usertour-ui/form";
-import { updateEvent, listAttributeOnEvents } from "@usertour-ui/gql";
-import { useMutation, useQuery } from "@apollo/client";
-import { useCallback, useEffect, useState } from "react";
-import { Event } from "@/types/project";
-import { Attribute } from "@/types/project";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import { CloseIcon } from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@usertour-ui/select";
-import { ListSkeletonCount } from "@/components/molecules/skeleton";
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/form';
+import { listAttributeOnEvents, updateEvent } from '@usertour-ui/gql';
+import { PlusIcon } from '@usertour-ui/icons';
+import { CloseIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour-ui/select';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface EditFormProps {
   isOpen: boolean;
@@ -57,13 +47,13 @@ interface EditFormProps {
 const formSchema = z.object({
   displayName: z
     .string({
-      required_error: "Please input display name.",
+      required_error: 'Please input display name.',
     })
     .max(20)
     .min(2),
   codeName: z
     .string({
-      required_error: "Please input code name.",
+      required_error: 'Please input code name.',
     })
     .max(20)
     .min(2),
@@ -79,10 +69,8 @@ export const EventEditForm = (props: EditFormProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
-  const [selectAttributeStatus, setSelectAttributeStatus] =
-    useState<boolean>(false);
-  const [selectedAttributeValue, setSelectedAttributeValue] =
-    useState<string>("");
+  const [selectAttributeStatus, setSelectAttributeStatus] = useState<boolean>(false);
+  const [selectedAttributeValue, setSelectedAttributeValue] = useState<string>('');
   const { attributeList } = useAttributeListContext();
 
   const {
@@ -95,18 +83,15 @@ export const EventEditForm = (props: EditFormProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const attributeOnEventsData =
-      attributeOnEvents && attributeOnEvents.listAttributeOnEvents;
+    const attributeOnEventsData = attributeOnEvents?.listAttributeOnEvents;
 
     if (attributeOnEventsData) {
       const currentAttributeIds = attributeOnEventsData.map(
-        (item: { attributeId: string }) => item.attributeId
+        (item: { attributeId: string }) => item.attributeId,
       );
       if (attributeList) {
-        const matchedItems = attributeList.filter((item) =>
-          currentAttributeIds.includes(item.id)
-        );
-        setEventAttrs(attributeList.filter((attr) => attr.bizType == 4));
+        const matchedItems = attributeList.filter((item) => currentAttributeIds.includes(item.id));
+        setEventAttrs(attributeList.filter((attr) => attr.bizType === 4));
         setEventsOnAttributes(matchedItems);
       }
     }
@@ -114,7 +99,7 @@ export const EventEditForm = (props: EditFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -125,7 +110,7 @@ export const EventEditForm = (props: EditFormProps) => {
       ...event,
       attributeIds: [],
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -151,7 +136,7 @@ export const EventEditForm = (props: EditFormProps) => {
         const ret = await updateMutation({ variables: { data } });
 
         if (!ret.data?.updateEvent?.id) {
-          showError("Update Event failed.");
+          showError('Update Event failed.');
         }
         onClose();
       } catch (error) {
@@ -159,7 +144,7 @@ export const EventEditForm = (props: EditFormProps) => {
       }
       setIsLoading(false);
     },
-    [event.id, eventsOnAttributes, onClose, updateMutation]
+    [event.id, eventsOnAttributes, onClose, updateMutation],
   );
 
   const handleAttrValueChange = useCallback(
@@ -175,9 +160,9 @@ export const EventEditForm = (props: EditFormProps) => {
         setSelectedAttributeValue(value);
       } else {
         toast({
-          description: "That attribute is already associated with the event.",
+          description: 'That attribute is already associated with the event.',
         });
-        setSelectedAttributeValue("");
+        setSelectedAttributeValue('');
       }
     },
     [
@@ -186,7 +171,7 @@ export const EventEditForm = (props: EditFormProps) => {
       setEventsOnAttributes,
       setSelectAttributeStatus,
       setSelectedAttributeValue,
-    ]
+    ],
   );
 
   return (
@@ -214,21 +199,16 @@ export const EventEditForm = (props: EditFormProps) => {
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs bg-slate-700">
                                 <p>
-                                  Human-friendly name shown in Usertour. we
-                                  recommend using Word Case (i.e.uppercasefrst
-                                  letter, spaces between words) such as"Billing
-                                  Plan".
+                                  Human-friendly name shown in Usertour. we recommend using Word
+                                  Case (i.e.uppercasefrst letter, spaces between words) such
+                                  as"Billing Plan".
                                 </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter display name"
-                            className="w-72"
-                            {...field}
-                          />
+                          <Input placeholder="Enter display name" className="w-72" {...field} />
                         </FormControl>
                         <FormDescription>Can be changed later</FormDescription>
                         <FormMessage />
@@ -249,11 +229,9 @@ export const EventEditForm = (props: EditFormProps) => {
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs bg-slate-700">
                                 <p>
-                                  Code-friendly name used in Webhooks and
-                                  integrations to analytics providers. we
-                                  recommend using snake_case (i.e.
-                                  lowercaseletters with words separated by
-                                  underscore).
+                                  Code-friendly name used in Webhooks and integrations to analytics
+                                  providers. we recommend using snake_case (i.e. lowercaseletters
+                                  with words separated by underscore).
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -267,9 +245,7 @@ export const EventEditForm = (props: EditFormProps) => {
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Can NOT be changed later
-                        </FormDescription>
+                        <FormDescription>Can NOT be changed later</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -288,20 +264,13 @@ export const EventEditForm = (props: EditFormProps) => {
                               <QuestionMarkCircledIcon className="ml-1 cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Put any additional information for your
-                                ownreference here.
-                              </p>
+                              <p>Put any additional information for your ownreference here.</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Optional description"
-                          className="w-full"
-                          {...field}
-                        />
+                        <Input placeholder="Optional description" className="w-full" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -324,32 +293,29 @@ export const EventEditForm = (props: EditFormProps) => {
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
                               <p>
-                                Determines what kind of values will be stored in
-                                this attribute.
+                                Determines what kind of values will be stored in this attribute.
                               </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
-                      <hr className="border-t"></hr>
+                      <hr className="border-t" />
                       {loading && <ListSkeletonCount count={1} />}
                       {eventsOnAttributes.map((eventsOnAttribute, i) => {
                         return (
                           <div
                             className="relative group border-b hover:bg-muted"
                             key={i}
-                            style={{ marginTop: "0" }}
+                            style={{ marginTop: '0' }}
                           >
-                            <div className="p-2 text-sm">
-                              {eventsOnAttribute.displayName}
-                            </div>
+                            <div className="p-2 text-sm">{eventsOnAttribute.displayName}</div>
                             <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
                               <Button
-                                variant={"ghost"}
+                                variant={'ghost'}
                                 className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
                                 onClick={() =>
                                   setEventsOnAttributes((prev) =>
-                                    prev.filter((_, index) => index !== i)
+                                    prev.filter((_, index) => index !== i),
                                   )
                                 }
                               >
@@ -370,16 +336,14 @@ export const EventEditForm = (props: EditFormProps) => {
                             <FormControl>
                               <SelectTrigger className="w-full">
                                 <span className="text-gray-500">
-                                  {selectedAttributeValue
-                                    ? ""
-                                    : "Select an attribute"}
+                                  {selectedAttributeValue ? '' : 'Select an attribute'}
                                 </span>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="w-full">
                               {eventAttrs.map((eventAttrs) => {
                                 return (
-                                  <SelectItem value={String(eventAttrs.id)}>
+                                  <SelectItem value={`${eventAttrs.id}`} key={eventAttrs.id}>
                                     {eventAttrs.displayName}
                                   </SelectItem>
                                 );
@@ -399,7 +363,7 @@ export const EventEditForm = (props: EditFormProps) => {
                         <div
                           className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer"
                           onClick={() => {
-                            setSelectedAttributeValue("");
+                            setSelectedAttributeValue('');
                             setSelectAttributeStatus(true);
                           }}
                         >
@@ -418,9 +382,7 @@ export const EventEditForm = (props: EditFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Save Event
               </Button>
             </DialogFooter>
@@ -431,4 +393,4 @@ export const EventEditForm = (props: EditFormProps) => {
   );
 };
 
-EventEditForm.displayName = "EventEditForm";
+EventEditForm.displayName = 'EventEditForm';

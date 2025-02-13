@@ -1,4 +1,4 @@
-import { window } from "./globals";
+import { window } from './globals';
 interface VisibilityObserverOptions {
   onVisible?: () => void;
   onHidden?: () => void;
@@ -27,17 +27,13 @@ class SharedMutationObserver {
 
         // Skip processing if too many mutations occur in a short time
         if (mutations.length > 100) {
-          console.warn("Too many mutations detected, skipping some updates");
+          console.warn('Too many mutations detected, skipping some updates');
           return;
         }
 
-        mutations.forEach((mutation: MutationRecord) => {
+        for (const mutation of mutations) {
           // Skip if the mutation is caused by our own updates
-          if (
-            (mutation.target as Element).hasAttribute(
-              "data-visibility-processing"
-            )
-          ) {
+          if ((mutation.target as Element).hasAttribute('data-visibility-processing')) {
             return;
           }
 
@@ -49,25 +45,31 @@ class SharedMutationObserver {
               affectedElements.add(el);
             }
           });
-        });
+        }
 
         // Trigger callbacks
-        affectedElements.forEach((element) => {
+        for (const element of affectedElements) {
           const callbacks = this.observedElements.get(element);
-          callbacks?.forEach((callback) => callback());
-        });
-      }, 100) // Throttle to max once per 100ms
+          if (callbacks) {
+            for (const callback of callbacks) {
+              callback();
+            }
+          }
+        }
+      }, 100), // Throttle to max once per 100ms
     );
   }
 
   // Add throttle implementation
   private throttle(fn: (...args: any[]) => void, limit: number) {
-    let inThrottle: boolean = false;
+    let inThrottle = false;
     return function (this: SharedMutationObserver, ...args: any[]) {
       if (!inThrottle) {
         fn.apply(this, args);
         inThrottle = true;
-        setTimeout(() => (inThrottle = false), limit);
+        setTimeout(() => {
+          inThrottle = false;
+        }, limit);
       }
     };
   }
@@ -86,7 +88,7 @@ class SharedMutationObserver {
       // Observe the element itself
       this.observer.observe(element, {
         attributes: true,
-        attributeFilter: ["style", "class"],
+        attributeFilter: ['style', 'class'],
         childList: false,
         subtree: false,
       });
@@ -97,7 +99,7 @@ class SharedMutationObserver {
         if (!this.observedElements.has(parent)) {
           this.observer.observe(parent, {
             attributes: true,
-            attributeFilter: ["style", "class"],
+            attributeFilter: ['style', 'class'],
             childList: false,
             subtree: false,
           });
@@ -121,7 +123,7 @@ class SharedMutationObserver {
         this.observedElements.forEach((_, el) => {
           this.observer.observe(el, {
             attributes: true,
-            attributeFilter: ["style", "class"],
+            attributeFilter: ['style', 'class'],
             childList: false,
             subtree: false,
           });
@@ -134,7 +136,7 @@ class SharedMutationObserver {
 export class ElementVisibilityObserver {
   private element: Element;
   private intersectionObserver: IntersectionObserver;
-  private isVisible: boolean = false;
+  private isVisible = false;
   private options: VisibilityObserverOptions;
 
   constructor(element: Element, options: VisibilityObserverOptions = {}) {
@@ -143,9 +145,11 @@ export class ElementVisibilityObserver {
 
     this.intersectionObserver = new IntersectionObserver(
       (entries) => {
-        entries.forEach(() => this.debouncedCheckVisibility());
+        for (const _ of entries) {
+          this.debouncedCheckVisibility();
+        }
       },
-      { threshold: 0 }
+      { threshold: 0 },
     );
 
     this.startObserving();
@@ -198,7 +202,7 @@ export class ElementVisibilityObserver {
             currentWindow = iframeWindow;
             currentElement = iframeWindow.frameElement;
             continue;
-          } catch (e) {
+          } catch (_) {
             // Cross-origin iframe, assume visible
             return true;
           }
@@ -208,15 +212,15 @@ export class ElementVisibilityObserver {
 
         // Check basic visibility
         if (
-          styles.display === "none" ||
-          styles.visibility === "hidden" ||
-          parseFloat(styles.opacity) < 0.01
+          styles.display === 'none' ||
+          styles.visibility === 'hidden' ||
+          Number.parseFloat(styles.opacity) < 0.01
         ) {
           return false;
         }
 
         // Check transform
-        if (styles.transform !== "none") {
+        if (styles.transform !== 'none') {
           const matrix = new DOMMatrix(styles.transform);
           if (matrix.m11 === 0 || matrix.m22 === 0) {
             // scale(0)
@@ -225,10 +229,7 @@ export class ElementVisibilityObserver {
         }
 
         // Check clip properties
-        if (
-          styles.clipPath === "inset(100%)" ||
-          styles.clip === "rect(0px, 0px, 0px, 0px)"
-        ) {
+        if (styles.clipPath === 'inset(100%)' || styles.clip === 'rect(0px, 0px, 0px, 0px)') {
           return false;
         }
 
@@ -243,14 +244,13 @@ export class ElementVisibilityObserver {
         const position = styles.position;
         const rect = currentElement.getBoundingClientRect();
 
-        if (position === "fixed") {
+        if (position === 'fixed') {
           if (!this.isInViewport(rect, rootWindow)) {
             return false;
           }
-        } else if (position === "absolute" || position === "relative") {
+        } else if (position === 'absolute' || position === 'relative') {
           const parentElement =
-            (currentElement as HTMLElement).offsetParent ||
-            currentElement.parentElement;
+            (currentElement as HTMLElement).offsetParent || currentElement.parentElement;
           if (parentElement && !this.isInParentBounds(rect, parentElement)) {
             return false;
           }
@@ -262,7 +262,7 @@ export class ElementVisibilityObserver {
       // Final viewport check
       return this.isInViewport(elementRect, rootWindow);
     } catch (error) {
-      console.error("Visibility check error:", error);
+      console.error('Visibility check error:', error);
       return false;
     }
   }
@@ -271,8 +271,7 @@ export class ElementVisibilityObserver {
   private isScrollable(element: Element): boolean {
     const style = getComputedStyle(element);
     return (
-      ["auto", "scroll"].includes(style.overflowY) ||
-      ["auto", "scroll"].includes(style.overflowX)
+      ['auto', 'scroll'].includes(style.overflowY) || ['auto', 'scroll'].includes(style.overflowX)
     );
   }
 
@@ -289,10 +288,8 @@ export class ElementVisibilityObserver {
   }
 
   private isInViewport(rect: DOMRect, window: Window): boolean {
-    const viewportHeight =
-      window.innerHeight || window.document.documentElement?.clientHeight || 0;
-    const viewportWidth =
-      window.innerWidth || window.document.documentElement?.clientWidth || 0;
+    const viewportHeight = window.innerHeight || window.document.documentElement?.clientHeight || 0;
+    const viewportWidth = window.innerWidth || window.document.documentElement?.clientWidth || 0;
 
     return (
       rect.top >= 0 &&
@@ -325,17 +322,11 @@ export class ElementVisibilityObserver {
 
   startObserving() {
     this.intersectionObserver.observe(this.element);
-    SharedMutationObserver.getInstance().observe(
-      this.element,
-      this.debouncedCheckVisibility
-    );
+    SharedMutationObserver.getInstance().observe(this.element, this.debouncedCheckVisibility);
   }
 
   stopObserving() {
     this.intersectionObserver.disconnect();
-    SharedMutationObserver.getInstance().unobserve(
-      this.element,
-      this.checkVisibility
-    );
+    SharedMutationObserver.getInstance().unobserve(this.element, this.checkVisibility);
   }
 }

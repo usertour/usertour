@@ -1,15 +1,15 @@
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { ThemeSettingSelect } from "@/components/molecules/theme/theme-setting-select";
-import { ModalPosition } from "@usertour-ui/types";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
+import { ModalPosition } from '@usertour-ui/types';
+import { useThemeSettingsContext } from '.';
 
 const placementItems = [
-  { name: "Top Left", value: ModalPosition.LeftTop },
-  { name: "Top Right", value: ModalPosition.RightTop },
-  { name: "Bottom Left", value: ModalPosition.LeftBottom },
-  { name: "Bottom Right", value: ModalPosition.RightBottom },
-  { name: "Center", value: ModalPosition.Center },
+  { name: 'Top Left', value: ModalPosition.LeftTop },
+  { name: 'Top Right', value: ModalPosition.RightTop },
+  { name: 'Bottom Left', value: ModalPosition.LeftBottom },
+  { name: 'Bottom Right', value: ModalPosition.RightBottom },
+  { name: 'Center', value: ModalPosition.Center },
 ];
 
 export const ThemeSettingsChecklist = () => {
@@ -94,7 +94,7 @@ export const ThemeSettingsChecklist = () => {
           name="checklist-checkmark-color"
           defaultColor={settings.checklist.checkmarkColor}
           showAutoButton={true}
-          isAutoColor={settings.checklist.checkmarkColor == "Auto"}
+          isAutoColor={settings.checklist.checkmarkColor === 'Auto'}
           autoColor={finalSettings?.checklist.checkmarkColor}
           onChange={(value: string) => {
             update({ checkmarkColor: value });
@@ -105,4 +105,4 @@ export const ThemeSettingsChecklist = () => {
   );
 };
 
-ThemeSettingsChecklist.displayName = "ThemeSettingsChecklist";
+ThemeSettingsChecklist.displayName = 'ThemeSettingsChecklist';

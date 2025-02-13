@@ -1,37 +1,23 @@
-import { cn } from "@usertour-ui/ui-utils";
-import { Button } from "@usertour-ui/button";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { useSearchParams } from "react-router-dom";
-import { useCallback, useEffect, useState } from "react";
-import { Segment } from "@usertour-ui/types";
-import {
-  FilterIcon2,
-  UserIcon3,
-  CompanyIcon,
-  PLUSIcon,
-} from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { CompanySegmentCreateForm } from "./create-form";
+import AdminSidebarFooter from '@/components/molecules/admin-sidebar-footer';
 import {
   AdminSidebarBodyItemTemplate,
   AdminSidebarBodyTemplate,
   AdminSidebarBodyTitleTemplate,
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
-} from "@/components/templates/admin-sidebar-template";
-import AdminSidebarFooter from "@/components/molecules/admin-sidebar-footer";
+} from '@/components/templates/admin-sidebar-template';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { Button } from '@usertour-ui/button';
+import { CompanyIcon, FilterIcon2, PLUSIcon, UserIcon3 } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Segment } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { CompanySegmentCreateForm } from './create-form';
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export function CompanyListSidebar({ className }: SidebarProps) {
-  const { segmentList, refetch, environmentId, currentSegment } =
-    useSegmentListContext();
-  const [searchParams, setSearchParams] = useSearchParams();
+export function CompanyListSidebar() {
+  const { segmentList, refetch, environmentId, currentSegment } = useSegmentListContext();
+  const [_, setSearchParams] = useSearchParams();
 
   const [open, setOpen] = useState(false);
   const handleCreate = () => {
@@ -44,12 +30,12 @@ export function CompanyListSidebar({ className }: SidebarProps) {
 
   const handleOnClick = useCallback(
     (segment: Segment) => {
-      if (currentSegment && segment.id == currentSegment.id) {
+      if (currentSegment?.id === segment.id) {
         return;
       }
       setSearchParams({ segment_id: segment.id });
     },
-    [currentSegment?.id]
+    [currentSegment?.id],
   );
 
   return (
@@ -61,7 +47,7 @@ export function CompanyListSidebar({ className }: SidebarProps) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={"ghost"}
+                  variant={'ghost'}
                   className="p-1 h-auto text-primary"
                   onClick={handleCreate}
                 >
@@ -75,38 +61,31 @@ export function CompanyListSidebar({ className }: SidebarProps) {
           </TooltipProvider>
         </AdminSidebarHeaderTemplate>
         <AdminSidebarBodyTemplate>
-          <AdminSidebarBodyTitleTemplate>
-            Segments
-          </AdminSidebarBodyTitleTemplate>
+          <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
 
-          {segmentList &&
-            segmentList.map((segment, index) => (
-              <AdminSidebarBodyItemTemplate
-                key={index}
-                onClick={() => {
-                  handleOnClick(segment);
-                }}
-                variant={
-                  segment.id == currentSegment?.id ? "secondary" : "ghost"
-                }
-                className={
-                  segment.id == currentSegment?.id
-                    ? "bg-gray-200/40 dark:bg-secondary/60  "
-                    : ""
-                }
-              >
-                {segment.dataType == "CONDITION" && (
-                  <FilterIcon2 width={16} height={16} className="mr-1" />
-                )}
-                {segment.dataType == "ALL" && (
-                  <CompanyIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.dataType == "MANUAL" && (
-                  <UserIcon3 width={16} height={16} className="mr-1" />
-                )}
-                {segment.name}
-              </AdminSidebarBodyItemTemplate>
-            ))}
+          {segmentList?.map((segment, index) => (
+            <AdminSidebarBodyItemTemplate
+              key={index}
+              onClick={() => {
+                handleOnClick(segment);
+              }}
+              variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
+              className={
+                segment.id === currentSegment?.id ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
+              }
+            >
+              {segment.dataType === 'CONDITION' && (
+                <FilterIcon2 width={16} height={16} className="mr-1" />
+              )}
+              {segment.dataType === 'ALL' && (
+                <CompanyIcon width={16} height={16} className="mr-1" />
+              )}
+              {segment.dataType === 'MANUAL' && (
+                <UserIcon3 width={16} height={16} className="mr-1" />
+              )}
+              {segment.name}
+            </AdminSidebarBodyItemTemplate>
+          ))}
         </AdminSidebarBodyTemplate>
         <AdminSidebarFooter />
       </AdminSidebarContainerTemplate>
@@ -119,4 +98,4 @@ export function CompanyListSidebar({ className }: SidebarProps) {
   );
 }
 
-CompanyListSidebar.displayName = "CompanyListSidebar";
+CompanyListSidebar.displayName = 'CompanyListSidebar';

@@ -1,23 +1,23 @@
-import { extendSdk } from "@usertour-ui/tailwind";
+import { extendSdk } from '@usertour-ui/tailwind';
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ["class"],
+  darkMode: ['class'],
   content: [
-    "./src/**/*.{ts,tsx}",
-    "../../packages/components/**/src/*.{js,ts,jsx,tsx}",
-    "../../packages/shared/**/src/**/*.{js,ts,jsx,tsx}",
-    "../../packages/shared/**/src/**/**/*.{js,ts,jsx,tsx}",
+    './src/**/*.{ts,tsx}',
+    '../../packages/components/**/src/*.{js,ts,jsx,tsx}',
+    '../../packages/shared/**/src/**/*.{js,ts,jsx,tsx}',
+    '../../packages/shared/**/src/**/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: '2rem',
       screens: {
-        "2xl": "1400px",
+        '2xl': '1400px',
       },
     },
     extend: extendSdk,
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require('tailwindcss-animate')],
 };

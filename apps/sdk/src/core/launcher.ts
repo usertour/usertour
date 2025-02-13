@@ -1,20 +1,14 @@
-import {
-  BizEvents,
-  EventAttributes,
-  LauncherData,
-  SDKContent,
-} from "@usertour-ui/types";
-import { App } from "./app";
-import { AssetAttributes } from "@usertour-ui/frame";
-import { defaultLauncherStore } from "./common";
-import { document } from "../utils/globals";
-import { RulesCondition, ContentActionsItemType } from "@usertour-ui/types";
-import { ContentEditorButtonElement } from "@usertour-ui/shared-editor";
-import { evalCode } from "@usertour-ui/ui-utils";
-import { BaseContent } from "./base-content";
-import { LauncherStore } from "../types/store";
-import { ElementWatcher } from "./element-watcher";
-import { AppEvents } from "../utils/event";
+import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
+import { BizEvents, EventAttributes, LauncherData, SDKContent } from '@usertour-ui/types';
+import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
+import { evalCode } from '@usertour-ui/ui-utils';
+import { LauncherStore } from '../types/store';
+import { AppEvents } from '../utils/event';
+import { document } from '../utils/globals';
+import { App } from './app';
+import { BaseContent } from './base-content';
+import { defaultLauncherStore } from './common';
+import { ElementWatcher } from './element-watcher';
 
 export class Launcher extends BaseContent<LauncherStore> {
   private watcher: ElementWatcher | null = null;
@@ -91,23 +85,23 @@ export class Launcher extends BaseContent<LauncherStore> {
   }
 
   async handleOnClick({ type, data }: ContentEditorButtonElement) {
-    if (type == "button" && data.actions) {
+    if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
   }
 
   async handleActions(actions: RulesCondition[]) {
-    actions.forEach(async (action) => {
-      if (action.type == ContentActionsItemType.FLOW_START) {
+    for (const action of actions) {
+      if (action.type === ContentActionsItemType.FLOW_START) {
         await this.startNewTour(action.data.contentId);
-      } else if (action.type == ContentActionsItemType.PAGE_NAVIGATE) {
+      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
         this.handleNavigate(action.data);
-      } else if (action.type == ContentActionsItemType.JAVASCRIPT_EVALUATE) {
+      } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
-      } else if (action.type == ContentActionsItemType.LAUNCHER_DISMIS) {
+      } else if (action.type === ContentActionsItemType.LAUNCHER_DISMIS) {
         this.dismiss();
       }
-    });
+    }
   }
 
   initializeEventListeners() {
@@ -166,7 +160,7 @@ export class Launcher extends BaseContent<LauncherStore> {
         eventName: BizEvents.LAUNCHER_SEEN,
         eventData: this.getEventData(),
       },
-      { isCreateSession: true }
+      { isCreateSession: true },
     );
   }
 
@@ -176,7 +170,7 @@ export class Launcher extends BaseContent<LauncherStore> {
         eventName: BizEvents.LAUNCHER_DISMISSED,
         eventData: this.getEventData(),
       },
-      { isDeleteSession: true }
+      { isDeleteSession: true },
     );
   }
 
@@ -186,7 +180,7 @@ export class Launcher extends BaseContent<LauncherStore> {
         eventName: BizEvents.LAUNCHER_ACTIVATED,
         eventData: this.getEventData(),
       },
-      { isDeleteSession: true }
+      { isDeleteSession: true },
     );
   }
 }

@@ -1,5 +1,5 @@
-import { TypePolicies } from "@apollo/client";
-import { initialUser, initialI18n } from "@/apollo/state";
+import { initialI18n, initialUser } from '@/apollo/state';
+import { TypePolicies } from '@apollo/client';
 
 export const TypePolicy: TypePolicies = {
   Query: {

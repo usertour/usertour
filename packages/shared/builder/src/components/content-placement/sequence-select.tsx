@@ -1,4 +1,4 @@
-import { Label } from "@usertour-ui/label";
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -6,8 +6,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+} from '@usertour-ui/select';
+import { HelpTooltip } from '@usertour-ui/shared-components';
 
 interface SequenceSelectProps {
   value?: string;
@@ -15,11 +15,7 @@ interface SequenceSelectProps {
   zIndex: number;
 }
 
-export const SequenceSelect = ({
-  value = "1st",
-  onChange,
-  zIndex,
-}: SequenceSelectProps) => {
+export const SequenceSelect = ({ value = '1st', onChange, zIndex }: SequenceSelectProps) => {
   const options = [1, 2, 3, 4, 5].map((num) => ({
     value: `${num}st`,
     label: `select ${num}st element`,
@@ -30,12 +26,11 @@ export const SequenceSelect = ({
       <div className="flex justify-start items-center space-x-1	">
         <Label>If multiple matches</Label>
         <HelpTooltip>
-          If multiple elements match your criteria, you can tell Usertour which
-          of the elements to select.
+          If multiple elements match your criteria, you can tell Usertour which of the elements to
+          select.
           <br />
-          Elements are sorted first by vertical position and second by
-          horizontal position. l.e. an element higher up on the page and more
-          towards the left takes precedence.{" "}
+          Elements are sorted first by vertical position and second by horizontal position. l.e. an
+          element higher up on the page and more towards the left takes precedence.{' '}
         </HelpTooltip>
       </div>
       <Select onValueChange={onChange} defaultValue={value}>

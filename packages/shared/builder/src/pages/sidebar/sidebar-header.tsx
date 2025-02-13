@@ -1,82 +1,5 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { EyeOpenIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@usertour-ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { SpinnerIcon } from "@usertour-ui/icons";
-import { Input } from "@usertour-ui/input";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-import { useBuilderContext } from "../../contexts";
-import { usePreview } from "../../hooks/use-preivew";
-import { EXTENSION_PREVIEW_DIALOG } from "@usertour-ui/constants";
-
 export const SidebarHeader = (props: { title: string }) => {
   const { title } = props;
-  const {
-    environmentId,
-    currentContent,
-    currentLocation,
-    currentVersion,
-    usertourjsUrl,
-    zIndex,
-    envToken,
-  } = useBuilderContext();
-  const { preview, isLoading } = usePreview({ usertourjsUrl });
-  // const handlePreview = () => {
-  //   preview(url, {
-  //     environmentId,
-  //     contentId,
-  //     testUser: { id: 123 }
-  //   })
-  // }
-  const formSchema = z.object({
-    url: z
-      .string({
-        required_error: "Please input your app url.",
-      })
-      .max(200)
-      .min(4),
-  });
-
-  type FormValues = z.infer<typeof formSchema>;
-
-  const defaultValues: Partial<FormValues> = {
-    url: currentLocation || currentContent?.buildUrl,
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-    mode: "onChange",
-  });
-
-  async function onSubmit(formValues: FormValues) {
-    preview(formValues.url, {
-      environmentId,
-      contentId: currentContent?.id,
-      versionId: currentVersion?.id,
-      testUser: { id: 123 },
-      token: envToken,
-    });
-  }
 
   return (
     <>
@@ -152,4 +75,4 @@ export const SidebarHeader = (props: { title: string }) => {
     </>
   );
 };
-SidebarHeader.displayName = "SidebarHeader";
+SidebarHeader.displayName = 'SidebarHeader';

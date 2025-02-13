@@ -1,8 +1,5 @@
-import {
-  AdminLayoutNewContent,
-  AdminNewLayout,
-} from "./components/admin-layout";
-import { AdminMainNewNav } from "./components/admin-main-nav";
+import { AdminLayoutNewContent, AdminNewLayout } from './components/admin-layout';
+import { AdminMainNewNav } from './components/admin-main-nav';
 
 interface AdminListLayoutProps {
   children: React.ReactNode;
@@ -19,4 +16,4 @@ export const AdminListLayout = ({ children }: AdminListLayoutProps) => {
   );
 };
 
-AdminListLayout.displayName = "AdminListLayout";
+AdminListLayout.displayName = 'AdminListLayout';

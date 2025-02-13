@@ -1,17 +1,18 @@
-import { useCallback, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { ContentEditorScaleElement } from "../../types/editor";
-import { ContentActions } from "../..";
-import { RulesCondition } from "@usertour-ui/types";
-import { QuestionTooltip } from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { RulesCondition } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
+import { ContentActions } from '../..';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ContentEditorScaleElement } from '../../types/editor';
+import { Button } from '@usertour-ui/button';
 
 // Define Scale element type
 
 const buttonBaseClass =
-  "flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30 rounded-md main-transition p-2 py-2 text-base justify-center";
+  'flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30 rounded-md main-transition p-2 py-2 text-base justify-center';
 
 export const ContentEditorScale = (props: {
   element: ContentEditorScaleElement;
@@ -38,10 +39,10 @@ export const ContentEditorScale = (props: {
           ...element,
           data: { ...element.data, name: e.target.value },
         },
-        id
+        id,
       );
     },
-    [element, id]
+    [element, id],
   );
 
   const handleActionChange = (actions: RulesCondition[]) => {
@@ -65,9 +66,9 @@ export const ContentEditorScale = (props: {
             }}
           >
             {Array.from({ length: scaleLength }, (_, i) => (
-              <button key={i} className={buttonBaseClass}>
+              <Button key={i} className={buttonBaseClass} forSdk>
                 {element.data.lowRange + i}
-              </button>
+              </Button>
             ))}
           </div>
           {(element.data.lowLabel || element.data.highLabel) && (
@@ -111,22 +112,21 @@ export const ContentEditorScale = (props: {
                 type="number"
                 value={element.data.lowRange}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "lowRange")}
+                onChange={(e) => handleLabelChange(e.target.value, 'lowRange')}
               />
               <p>-</p>
               <Input
                 type="number"
                 value={element.data.highRange}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "highRange")}
+                onChange={(e) => handleLabelChange(e.target.value, 'highRange')}
               />
             </div>
             <Label className="flex items-center gap-1">
               Labels
               <QuestionTooltip>
-                Below each option, provide labels to clearly convey their
-                meaning, such as "Bad" positioned under the left option and
-                "Good" under the right.
+                Below each option, provide labels to clearly convey their meaning, such as "Bad"
+                positioned under the left option and "Good" under the right.
               </QuestionTooltip>
             </Label>
             <div className="flex flex-row gap-2">
@@ -134,13 +134,13 @@ export const ContentEditorScale = (props: {
                 type="text"
                 value={element.data.lowLabel}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "lowLabel")}
+                onChange={(e) => handleLabelChange(e.target.value, 'lowLabel')}
               />
               <Input
                 type="text"
                 value={element.data.highLabel}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "highLabel")}
+                onChange={(e) => handleLabelChange(e.target.value, 'highLabel')}
               />
             </div>
           </div>
@@ -150,7 +150,7 @@ export const ContentEditorScale = (props: {
   );
 };
 
-ContentEditorScale.displayName = "ContentEditorScale";
+ContentEditorScale.displayName = 'ContentEditorScale';
 
 export type ContentEditorScaleSerializeType = {
   className?: string;
@@ -159,16 +159,8 @@ export type ContentEditorScaleSerializeType = {
   onClick?: (element: ContentEditorScaleElement) => void;
 };
 
-export const ContentEditorScaleSerialize = (
-  props: ContentEditorScaleSerializeType
-) => {
-  const { className, children, element, onClick } = props;
-
-  const handleOnClick = () => {
-    if (onClick) {
-      onClick(element);
-    }
-  };
+export const ContentEditorScaleSerialize = (props: ContentEditorScaleSerializeType) => {
+  const { element } = props;
 
   const scaleLength = element.data.highRange - element.data.lowRange + 1;
 
@@ -182,9 +174,9 @@ export const ContentEditorScaleSerialize = (
           }}
         >
           {Array.from({ length: scaleLength }, (_, i) => (
-            <button key={i} className={buttonBaseClass}>
+            <Button key={i} className={buttonBaseClass} forSdk>
               {element.data.lowRange + i}
-            </button>
+            </Button>
           ))}
         </div>
         {(element.data.lowLabel || element.data.highLabel) && (
@@ -198,4 +190,4 @@ export const ContentEditorScaleSerialize = (
   );
 };
 
-ContentEditorScaleSerialize.displayName = "ContentEditorScaleSerialize";
+ContentEditorScaleSerialize.displayName = 'ContentEditorScaleSerialize';

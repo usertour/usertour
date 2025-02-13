@@ -1,14 +1,9 @@
-import { Checkbox } from "@usertour-ui/checkbox";
-import { Label } from "@usertour-ui/label";
-import { useId, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import { ContentDataType } from "@usertour-ui/types";
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { Label } from '@usertour-ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { ContentDataType } from '@usertour-ui/types';
+import { useId, useState } from 'react';
 
 interface RulesIfCompletedProps {
   defaultValue: boolean;
@@ -41,8 +36,8 @@ export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
             <QuestionMarkCircledIcon />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
-            If enabled, the {contentType} will only auto-start if the user has
-            not completed it before.
+            If enabled, the {contentType} will only auto-start if the user has not completed it
+            before.
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -50,4 +45,4 @@ export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
   );
 };
 
-RulesIfCompleted.displayName = "RulesIfCompleted";
+RulesIfCompleted.displayName = 'RulesIfCompleted';

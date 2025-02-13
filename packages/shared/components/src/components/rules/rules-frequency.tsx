@@ -1,28 +1,13 @@
-import {
-  ChevronDownIcon,
-  QuestionMarkCircledIcon,
-} from "@radix-ui/react-icons";
+import { ChevronDownIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { Input } from "@usertour-ui/input";
-import {
-  ChangeEvent,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+} from '@usertour-ui/dropdown-menu';
+import { Input } from '@usertour-ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import {
   ContentDataType,
   Frequency,
@@ -30,13 +15,14 @@ import {
   RulesFrequencyValue,
   RulesFrequencyValueAtLeast,
   RulesFrequencyValueEvery,
-} from "@usertour-ui/types";
-import { HelpTooltip } from "../common/help-tooltip";
+} from '@usertour-ui/types';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { HelpTooltip } from '../common/help-tooltip';
 
 const itemsMapping = [
-  { key: Frequency.ONCE, value: "Once per user" },
-  { key: Frequency.MULTIPLE, value: "Multiple times per user" },
-  { key: Frequency.UNLIMITED, value: "Unlimited times per user" },
+  { key: Frequency.ONCE, value: 'Once per user' },
+  { key: Frequency.MULTIPLE, value: 'Multiple times per user' },
+  { key: Frequency.UNLIMITED, value: 'Unlimited times per user' },
 ];
 const timesList = [
   FrequencyUnits.DAYES,
@@ -66,9 +52,7 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
       <DropdownMenuTrigger asChild>
         <div className="flex flex-row items-center space-x-2">
           <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
-            <span>
-              {itemsMapping.find((item) => item.key == frequency)?.value}
-            </span>
+            <span>{itemsMapping.find((item) => item.key === frequency)?.value}</span>
             <ChevronDownIcon width={16} height={16} />
           </div>
           <TooltipProvider>
@@ -77,18 +61,14 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
                 <QuestionMarkCircledIcon />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs bg-foreground text-background">
-                Whether the {contentType} can auto-start for the same user just
-                once, or many times.
+                Whether the {contentType} can auto-start for the same user just once, or many times.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuRadioGroup
-          value={frequency}
-          onValueChange={handleValueChange}
-        >
+        <DropdownMenuRadioGroup value={frequency} onValueChange={handleValueChange}>
           {itemsMapping.map((item) => (
             <DropdownMenuRadioItem value={item.key} key={item.key}>
               {item.value}
@@ -121,10 +101,10 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
   };
 
   const handleTimesInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    update({ times: parseInt(e.target.value) });
+    update({ times: Number.parseInt(e.target.value) });
   };
   const handleDurationInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    update({ duration: parseInt(e.target.value) });
+    update({ duration: Number.parseInt(e.target.value) });
   };
   const handleUnitOnChange = (value: string) => {
     update({ unit: value as FrequencyUnits });
@@ -140,10 +120,7 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={data.unit}
-            onValueChange={handleUnitOnChange}
-          >
+          <DropdownMenuRadioGroup value={data.unit} onValueChange={handleUnitOnChange}>
             {timesList.map((v) => (
               <DropdownMenuRadioItem value={v} key={v}>
                 {v}
@@ -155,31 +132,31 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
     );
   };
 
-  if (frequency == Frequency.ONCE) {
+  if (frequency === Frequency.ONCE) {
     return <></>;
   }
 
-  if (frequency == Frequency.MULTIPLE) {
+  if (frequency === Frequency.MULTIPLE) {
     return (
       <div className="flex flex-row items-center space-x-2">
         <Input
           type="text"
-          id={"border-width"}
-          name={"Border width"}
+          id={'border-width'}
+          name={'Border width'}
           onChange={handleTimesInputOnChange}
           value={data.times}
           className="rounded-lg text-sm w-16 h-6 "
-          placeholder={""}
+          placeholder={''}
         />
         <span className="text-sm">times, </span>
         <Input
           type="text"
-          id={"border-width"}
-          name={"Border width"}
+          id={'border-width'}
+          name={'Border width'}
           onChange={handleDurationInputOnChange}
           value={data.duration}
           className="rounded-lg text-sm w-16 h-6 "
-          placeholder={""}
+          placeholder={''}
         />
         <EveryTimes />
         <span className="text-sm">apart </span>
@@ -190,8 +167,8 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
             </TooltipTrigger>
             <TooltipContent className="max-w-xs bg-foreground text-background">
               <p>
-                The {contentType} may auto-start up to {data.times} times, with
-                at least {data.duration} {data.unit} passing in between.
+                The {contentType} may auto-start up to {data.times} times, with at least{' '}
+                {data.duration} {data.unit} passing in between.
               </p>
             </TooltipContent>
           </Tooltip>
@@ -204,17 +181,17 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
       <span className="text-sm">Every </span>
       <Input
         type="text"
-        id={"border-width"}
-        name={"Border width"}
+        id={'border-width'}
+        name={'Border width'}
         onChange={handleDurationInputOnChange}
         value={data.duration}
         className="rounded-lg text-sm w-16 h-6 "
-        placeholder={""}
+        placeholder={''}
       />
       <EveryTimes />
       <HelpTooltip>
-        The {contentType} may auto-start unlimited times, with at least{" "}
-        {data.duration} {data.unit} passing in between.
+        The {contentType} may auto-start unlimited times, with at least {data.duration} {data.unit}{' '}
+        passing in between.
       </HelpTooltip>
     </div>
   );
@@ -240,7 +217,7 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
     });
   };
   const handleInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    update({ duration: parseInt(e.target.value) });
+    update({ duration: Number.parseInt(e.target.value) });
   };
   const handleUnitOnChange = (value: string) => {
     update({ unit: value as FrequencyUnits });
@@ -251,12 +228,12 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
       <span className="text-sm">At least</span>
       <Input
         type="text"
-        id={"border-width"}
-        name={"Border width"}
+        id={'border-width'}
+        name={'Border width'}
         onChange={handleInputOnChange}
         value={data.duration}
         className="rounded-lg text-sm w-16 h-6 "
-        placeholder={""}
+        placeholder={''}
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -266,10 +243,7 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={data.unit}
-            onValueChange={handleUnitOnChange}
-          >
+          <DropdownMenuRadioGroup value={data.unit} onValueChange={handleUnitOnChange}>
             {timesList.map((v) => (
               <DropdownMenuRadioItem value={v} key={v}>
                 {v}
@@ -285,10 +259,9 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
             <QuestionMarkCircledIcon />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
-            If enabled, the {contentType} will only auto-start if no other{" "}
-            {contentType} has shown in the period you pick. This is useful to
-            make sure you don't overwhelm users with too much {contentType} at
-            the same time.
+            If enabled, the {contentType} will only auto-start if no other {contentType} has shown
+            in the period you pick. This is useful to make sure you don't overwhelm users with too
+            much {contentType} at the same time.
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -316,12 +289,7 @@ export interface RulesFrequencyProps {
   contentType?: ContentDataType;
 }
 export const RulesFrequency = (props: RulesFrequencyProps) => {
-  const {
-    onChange,
-    defaultValue,
-    showAtLeast = true,
-    contentType = ContentDataType.FLOW,
-  } = props;
+  const { onChange, defaultValue, showAtLeast = true, contentType = ContentDataType.FLOW } = props;
 
   const initialData: RulesFrequencyValue = {
     ...(defaultValue || initialValue),
@@ -373,4 +341,4 @@ export const RulesFrequency = (props: RulesFrequencyProps) => {
   );
 };
 
-RulesFrequency.displayName = "RulesFrequency";
+RulesFrequency.displayName = 'RulesFrequency';

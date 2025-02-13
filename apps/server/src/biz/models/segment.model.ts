@@ -1,24 +1,24 @@
-import { Field, Int, ObjectType, registerEnumType } from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
-import GraphQLJSON from "graphql-type-json";
-import { JsonObject, JsonValue } from "@prisma/client/runtime/library";
+import { BaseModel } from '@/common/models/base.model';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { JsonObject, JsonValue } from '@prisma/client/runtime/library';
+import GraphQLJSON from 'graphql-type-json';
 
 export enum SegmentDataType {
   ALL = 1,
-  CONDITION,
-  MANUAL,
+  CONDITION = 2,
+  MANUAL = 3,
 }
 
 export enum SegmentBizType {
   USER = 1,
-  COMPANY,
+  COMPANY = 2,
 }
 
 registerEnumType(SegmentDataType, {
-  name: "SegmentDataType",
+  name: 'SegmentDataType',
 });
 registerEnumType(SegmentBizType, {
-  name: "SegmentBizType",
+  name: 'SegmentBizType',
 });
 
 @ObjectType()

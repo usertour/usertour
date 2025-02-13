@@ -1,25 +1,19 @@
-import { Button } from "@usertour-ui/button";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { Attribute } from '@/types/project';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import { Attribute } from "@/types/project";
-import { AttributeEditForm } from "./attribute-edit-form";
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { useState } from "react";
-import { AttributeDeleteForm } from "./attribute-delete-form";
-import { CloseIcon, EditIcon } from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+} from '@usertour-ui/dropdown-menu';
+import { CloseIcon, EditIcon } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useState } from 'react';
+import { AttributeDeleteForm } from './attribute-delete-form';
+import { AttributeEditForm } from './attribute-edit-form';
 
 type AttributeListActionProps = {
   attribute: Attribute;
@@ -68,10 +62,7 @@ export const AttributeListAction = (props: AttributeListActionProps) => {
       {
         <DropdownMenu>
           <DropdownMenuTrigger disabled={attribute.predefined} asChild>
-            <Button
-              variant="ghost"
-              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-            >
+            <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -88,11 +79,7 @@ export const AttributeListAction = (props: AttributeListActionProps) => {
           </DropdownMenuContent>
         </DropdownMenu>
       }
-      <AttributeEditForm
-        attribute={attribute}
-        isOpen={open}
-        onClose={handleOnClose}
-      />
+      <AttributeEditForm attribute={attribute} isOpen={open} onClose={handleOnClose} />
       <AttributeDeleteForm
         data={attribute}
         open={openDeleteDialog}
@@ -103,4 +90,4 @@ export const AttributeListAction = (props: AttributeListActionProps) => {
   );
 };
 
-AttributeListAction.displayName = "AttributeListAction";
+AttributeListAction.displayName = 'AttributeListAction';

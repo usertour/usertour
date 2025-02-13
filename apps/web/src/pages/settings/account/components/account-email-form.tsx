@@ -1,43 +1,36 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@usertour-ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { Separator } from "@usertour-ui/separator";
-import { useMutation } from "@apollo/client";
-import { updateEmail } from "@usertour-ui/gql";
-import { Icons } from "@/components/atoms/icons";
-import { useState } from "react";
-import { useAppContext } from "@/contexts/app-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { updateEmail } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { Separator } from '@usertour-ui/separator';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 const accountFormSchema = z.object({
   email: z
     .string()
     .min(2, {
-      message: "Password must be at least 6 characters.",
+      message: 'Password must be at least 6 characters.',
     })
     .max(30, {
-      message: "Password must not be longer than 30 characters.",
+      message: 'Password must not be longer than 30 characters.',
     }),
   password: z
     .string()
     .min(2, {
-      message: "Password must be at least 6 characters.",
+      message: 'Password must be at least 6 characters.',
     })
     .max(30, {
-      message: "Password must not be longer than 30 characters.",
+      message: 'Password must not be longer than 30 characters.',
     }),
 });
 
@@ -49,7 +42,7 @@ export const AccountEmailForm = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
-    defaultValues: { email: user?.email, password: "" },
+    defaultValues: { email: user?.email, password: '' },
   });
   const { toast } = useToast();
 
@@ -69,13 +62,13 @@ export const AccountEmailForm = () => {
       if (ret.data?.changeEmail?.id) {
         await refetch();
         toast({
-          variant: "success",
-          title: "Modified email successfully",
+          variant: 'success',
+          title: 'Modified email successfully',
         });
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -125,10 +118,8 @@ export const AccountEmailForm = () => {
             )}
           />
 
-          <Button type="submit" disabled={form.watch("email") == user?.email}>
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
+          <Button type="submit" disabled={form.watch('email') === user?.email}>
+            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </form>
@@ -137,4 +128,4 @@ export const AccountEmailForm = () => {
   );
 };
 
-AccountEmailForm.displayName = "AccountEmailForm";
+AccountEmailForm.displayName = 'AccountEmailForm';

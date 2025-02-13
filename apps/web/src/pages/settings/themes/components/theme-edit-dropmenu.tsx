@@ -1,20 +1,20 @@
-import { ReactNode, useState } from "react";
-import { Theme } from "@usertour-ui/types";
+import { useMutation } from '@apollo/client';
+import { StarFilledIcon } from '@radix-ui/react-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { StarFilledIcon } from "@radix-ui/react-icons";
-import { CopyIcon, Delete2Icon } from "@usertour-ui/icons";
-import { ThemeDuplicateForm } from "./theme-duplicate-form";
-import { ThemeDeleteForm } from "./theme-delete-form";
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { setDefaultTheme } from "@usertour-ui/gql";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dropdown-menu';
+import { setDefaultTheme } from '@usertour-ui/gql';
+import { CopyIcon, Delete2Icon } from '@usertour-ui/icons';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Theme } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { ReactNode, useState } from 'react';
+import { ThemeDeleteForm } from './theme-delete-form';
+import { ThemeDuplicateForm } from './theme-duplicate-form';
 
 type ThemeEditDropdownMenuProps = {
   theme: Theme;
@@ -37,7 +37,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
   };
   const handleDuplicateSuccess = () => {
     setOpenDuplicate(false);
-    onSubmit("duplicate");
+    onSubmit('duplicate');
   };
 
   const handleSetAsDefault = async () => {
@@ -47,14 +47,14 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
           themeId: theme.id,
         },
       });
-      onSubmit("setAsDefault");
+      onSubmit('setAsDefault');
       toast({
-        variant: "success",
-        title: "The theme has been successfully set as default",
+        variant: 'success',
+        title: 'The theme has been successfully set as default',
       });
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -96,11 +96,11 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
         open={openDelete}
         onOpenChange={setOpenDelete}
         onSubmit={() => {
-          onSubmit("delete");
+          onSubmit('delete');
         }}
       />
     </>
   );
 };
 
-ThemeEditDropdownMenu.displayName = "ThemeEditDropdownMenu";
+ThemeEditDropdownMenu.displayName = 'ThemeEditDropdownMenu';

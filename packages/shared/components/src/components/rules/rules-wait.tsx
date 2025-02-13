@@ -1,13 +1,8 @@
-import { ChangeEvent, useState } from "react";
-import { Input } from "@usertour-ui/input";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Input } from '@usertour-ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { ChangeEvent, useState } from 'react';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 
 export interface RulesCurrentTimeProps {
   defaultValue: number;
@@ -21,7 +16,7 @@ export const RulesWait = (props: RulesCurrentTimeProps) => {
   const [inputValue, setInputValue] = useState<number>(defaultValue ?? 0);
 
   const handleInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
+    const value = Number.parseInt(e.target.value);
     setInputValue(value);
     if (value > maxSeconds) {
       setOpenError(true);
@@ -39,16 +34,14 @@ export const RulesWait = (props: RulesCurrentTimeProps) => {
           <RulesErrorAnchor asChild>
             <Input
               type="text"
-              name={"Border width"}
+              name={'Border width'}
               onChange={handleInputOnChange}
               value={inputValue}
               className="rounded-lg text-sm w-16 h-6 "
-              placeholder={""}
+              placeholder={''}
             />
           </RulesErrorAnchor>
-          <div className="text-muted-foreground text-sm">
-            second before starting
-          </div>
+          <div className="text-muted-foreground text-sm">second before starting</div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -61,12 +54,12 @@ export const RulesWait = (props: RulesCurrentTimeProps) => {
           </TooltipProvider>
         </div>
         <RulesErrorContent className="w-60">
-          Wait time must not be greater than {maxSeconds} seconds (
-          {Math.floor(maxSeconds / 60)} minutes)
+          Wait time must not be greater than {maxSeconds} seconds ({Math.floor(maxSeconds / 60)}{' '}
+          minutes)
         </RulesErrorContent>
       </div>
     </RulesError>
   );
 };
 
-RulesWait.displayName = "RulesWait";
+RulesWait.displayName = 'RulesWait';

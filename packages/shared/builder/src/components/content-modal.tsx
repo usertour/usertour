@@ -1,9 +1,6 @@
-import { EXTENSION_CONTENT_MODAL } from "@usertour-ui/constants";
-import {
-  ContentEditor,
-  ContentEditorElementType,
-  ContentEditorRoot,
-} from "@usertour-ui/shared-editor";
+import { useLazyQuery } from '@apollo/client';
+import { EXTENSION_CONTENT_MODAL } from '@usertour-ui/constants';
+import { queryOembedInfo } from '@usertour-ui/gql';
 import {
   Popper,
   PopperClose,
@@ -11,12 +8,13 @@ import {
   PopperMadeWith,
   PopperModalContentPotal,
   PopperProgress,
-} from "@usertour-ui/sdk";
+} from '@usertour-ui/sdk';
 import {
-  convertSettings,
-  convertToCssVars,
-  loadGoogleFontCss,
-} from "@usertour-ui/shared-utils";
+  ContentEditor,
+  ContentEditorElementType,
+  ContentEditorRoot,
+} from '@usertour-ui/shared-editor';
+import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-ui/shared-utils';
 import {
   Attribute,
   Content,
@@ -26,11 +24,9 @@ import {
   Step,
   Theme,
   ThemeTypesSetting,
-} from "@usertour-ui/types";
-import { forwardRef, useEffect, useState } from "react";
-import { useAws } from "../hooks/use-aws";
-import { useLazyQuery } from "@apollo/client";
-import { queryOembedInfo } from "@usertour-ui/gql";
+} from '@usertour-ui/types';
+import { forwardRef, useEffect, useState } from 'react';
+import { useAws } from '../hooks/use-aws';
 
 export interface ContentModalProps {
   currentStep: Step;
@@ -42,10 +38,7 @@ export interface ContentModalProps {
   onChange: (value: ContentEditorRoot[]) => void;
   contents: Content[];
   currentContent: Content | undefined;
-  createStep: (
-    currentVersion: ContentVersion,
-    sequence: number
-  ) => Promise<Step | undefined>;
+  createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
 }
 
 export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
@@ -62,7 +55,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       currentContent,
       createStep,
     } = props;
-    const [globalStyle, setGlobalStyle] = useState<string>("");
+    const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
@@ -86,7 +79,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     };
 
     const getOembedInfo = async (url: string): Promise<ContentOmbedInfo> => {
-      const resp = { html: "", width: 0, height: 0 };
+      const resp = { html: '', width: 0, height: 0 };
       const ret = await queryOembed({ variables: { url } });
       if (ret?.data?.queryOembedInfo) {
         return ret?.data?.queryOembedInfo;
@@ -101,32 +94,24 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     }, [themeSetting]);
 
     const progress = Math.min(
-      currentVersion?.steps?.length
-        ? (currentIndex + 1 / currentVersion?.steps?.length) * 100
-        : 0,
-      100
+      currentVersion?.steps?.length ? (currentIndex + 1 / currentVersion?.steps?.length) * 100 : 0,
+      100,
     );
     const enabledElementTypes =
-      contentType == ContentDataType.SURVEY ||
-      contentType == ContentDataType.NPS
+      contentType === ContentDataType.SURVEY || contentType === ContentDataType.NPS
         ? Object.values(ContentEditorElementType)
         : undefined;
 
     return (
       <>
         <div id="usertour-widget">
-          <Popper
-            triggerRef={undefined}
-            open={true}
-            zIndex={zIndex}
-            globalStyle={globalStyle}
-          >
+          <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
             <PopperModalContentPotal
               position={currentStep.setting.position}
               positionOffsetX={currentStep.setting.positionOffsetX}
               positionOffsetY={currentStep.setting.positionOffsetY}
               enabledBackdrop={currentStep.setting.enabledBackdrop}
-              width={currentStep.setting.width + "px"}
+              width={`${currentStep.setting.width}px`}
               ref={ref}
             >
               <PopperContent>
@@ -143,7 +128,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   onValueChange={handleEditorValueChange}
                   getOembedInfo={getOembedInfo}
                   createStep={createStep}
-                ></ContentEditor>
+                />
                 <PopperMadeWith />
                 <PopperProgress width={progress} />
               </PopperContent>
@@ -152,6 +137,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
         </div>
       </>
     );
-  }
+  },
 );
-ContentModal.displayName = "ContentModal";
+ContentModal.displayName = 'ContentModal';

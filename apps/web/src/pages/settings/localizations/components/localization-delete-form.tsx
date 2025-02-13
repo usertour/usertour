@@ -1,6 +1,4 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteLocalization } from "@usertour-ui/gql";
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +8,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { Localization } from "@usertour-ui/types";
+} from '@usertour-ui/alert-dialog';
+import { deleteLocalization } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Localization } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
 
 export const LocalizationDeleteForm = (props: {
   data: Localization;
@@ -36,8 +36,8 @@ export const LocalizationDeleteForm = (props: {
       });
       if (ret.data?.deleteLocalization?.id) {
         toast({
-          variant: "success",
-          title: "The localization has been successfully deleted",
+          variant: 'success',
+          title: 'The localization has been successfully deleted',
         });
         onSubmit(true);
         return;
@@ -45,7 +45,7 @@ export const LocalizationDeleteForm = (props: {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -57,20 +57,17 @@ export const LocalizationDeleteForm = (props: {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the
-            localization{" "}
+            This action cannot be undone. This will permanently delete the localization{' '}
             <span className="font-bold text-foreground">{data.name}</span>.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Submit
-          </AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteSubmit}>Submit</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 };
 
-LocalizationDeleteForm.displayName = "LocalizationDeleteForm";
+LocalizationDeleteForm.displayName = 'LocalizationDeleteForm';

@@ -1,7 +1,7 @@
-import { LauncherDataType } from "@usertour-ui/types";
-import { useLauncherContext } from "../../../contexts";
-import { LauncherContentType, LauncherIconType } from "../../../components/";
-import { EXTENSION_SIDEBAR_MAIN } from "@usertour-ui/constants";
+import { EXTENSION_SIDEBAR_MAIN } from '@usertour-ui/constants';
+import { LauncherDataType } from '@usertour-ui/types';
+import { LauncherContentType, LauncherIconType } from '../../../components/';
+import { useLauncherContext } from '../../../contexts';
 
 export const LauncherType = () => {
   const { updateLocalData, zIndex, localData } = useLauncherContext();
@@ -38,4 +38,4 @@ export const LauncherType = () => {
   );
 };
 
-LauncherType.displayName = "LauncherType";
+LauncherType.displayName = 'LauncherType';

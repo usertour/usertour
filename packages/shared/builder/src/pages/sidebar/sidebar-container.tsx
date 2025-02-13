@@ -1,28 +1,25 @@
-import { SidebarMini } from "./sidebar-mini";
+import { SidebarMini } from './sidebar-mini';
 
-import { cn } from "@usertour-ui/ui-utils";
-import { EXTENSION_SIDEBAR_MAIN } from "@usertour-ui/constants";
-import { Card } from "@usertour-ui/card";
-import { useRef } from "react";
-import { useBuilderContext } from "../../contexts";
+import { Card } from '@usertour-ui/card';
+import { EXTENSION_SIDEBAR_MAIN } from '@usertour-ui/constants';
+import { cn } from '@usertour-ui/ui-utils';
+import { useRef } from 'react';
+import { useBuilderContext } from '../../contexts';
 
 interface SidebarContainerProps {
   children: React.ReactNode;
   className?: string;
 }
-export const SidebarContainer = ({
-  children,
-  className,
-}: SidebarContainerProps) => {
+export const SidebarContainer = ({ children, className }: SidebarContainerProps) => {
   const { position, zIndex } = useBuilderContext();
   const sidbarRef = useRef<HTMLDivElement | null>(null);
   return (
     <div
       style={{ zIndex: zIndex + EXTENSION_SIDEBAR_MAIN }}
       className={cn(
-        "w-80 h-screen p-2 fixed top-0",
-        position == "left" ? "left-0" : "right-0",
-        className
+        'w-80 h-screen p-2 fixed top-0',
+        position === 'left' ? 'left-0' : 'right-0',
+        className,
       )}
       ref={sidbarRef}
     >
@@ -32,4 +29,4 @@ export const SidebarContainer = ({
   );
 };
 
-SidebarContainer.displayName = "SidebarContainer";
+SidebarContainer.displayName = 'SidebarContainer';

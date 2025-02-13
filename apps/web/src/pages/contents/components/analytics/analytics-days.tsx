@@ -1,14 +1,6 @@
-import { useAnalyticsContext } from "@/contexts/analytics-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@usertour-ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@usertour-ui/tabs";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 import {
   ChartConfig,
   ChartContainer,
@@ -16,40 +8,36 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "@usertour-ui/chart";
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { ContentDataType } from "@usertour-ui/types";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
+} from '@usertour-ui/chart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { ContentDataType } from '@usertour-ui/types';
+import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 
 // Add new function to generate chart configs
 const generateChartConfig = (
-  chartType: "view" | "rate",
-  contentType: ContentDataType
+  chartType: 'view' | 'rate',
+  contentType: ContentDataType,
 ): ChartConfig => {
-  if (chartType === "view") {
+  if (chartType === 'view') {
     return {
       uniqueViews: {
-        label: "Unique Views",
-        color: "hsl(var(--chart-1))",
+        label: 'Unique Views',
+        color: 'hsl(var(--chart-1))',
       },
       uniqueCompletions: {
         label:
-          contentType === ContentDataType.LAUNCHER
-            ? "Unique Activations"
-            : "Unique Completions",
-        color: "hsl(var(--chart-2))",
+          contentType === ContentDataType.LAUNCHER ? 'Unique Activations' : 'Unique Completions',
+        color: 'hsl(var(--chart-2))',
       },
       totalViews: {
-        label: "Total Views",
-        color: "hsl(var(--chart-3))",
+        label: 'Total Views',
+        color: 'hsl(var(--chart-3))',
       },
       totalCompletions: {
-        label:
-          contentType === ContentDataType.LAUNCHER
-            ? "Total Activations"
-            : "Total Completions",
-        color: "hsl(var(--chart-4))",
+        label: contentType === ContentDataType.LAUNCHER ? 'Total Activations' : 'Total Completions',
+        color: 'hsl(var(--chart-4))',
       },
     };
   }
@@ -58,16 +46,16 @@ const generateChartConfig = (
     unique: {
       label:
         contentType === ContentDataType.LAUNCHER
-          ? "Unique Activation Rate"
-          : "Unique Completion rate",
-      color: "hsl(var(--chart-1))",
+          ? 'Unique Activation Rate'
+          : 'Unique Completion rate',
+      color: 'hsl(var(--chart-1))',
     },
     total: {
       label:
         contentType === ContentDataType.LAUNCHER
-          ? "Total Activation Rate"
-          : "Total Completion rate",
-      color: "hsl(var(--chart-2))",
+          ? 'Total Activation Rate'
+          : 'Total Completion rate',
+      color: 'hsl(var(--chart-2))',
     },
   };
 };
@@ -100,14 +88,10 @@ const TooltipFormatter = ({
   showPercentage?: boolean;
 }) => (
   <div className="flex flex-row w-[180px] items-center text-xs text-muted-foreground">
-    <div className="grow">
-      {chartConfig[name as keyof typeof chartConfig]?.label || name}
-    </div>
+    <div className="grow">{chartConfig[name as keyof typeof chartConfig]?.label || name}</div>
     <div className="flex-none mx-2 font-medium tabular-nums text-foreground text-center w-6">
       {value}
-      {showPercentage && (
-        <span className="font-normal text-muted-foreground">%</span>
-      )}
+      {showPercentage && <span className="font-normal text-muted-foreground">%</span>}
     </div>
   </div>
 );
@@ -125,12 +109,7 @@ const AnalyticsViewChart = ({
       <ComposedChart accessibilityLayer data={chartData}>
         <CartesianGrid vertical={false} />
         <YAxis tickLine={false} tickMargin={10} axisLine={false} />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-        />
+        <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
         <ChartTooltip
           content={
             <ChartTooltipContent
@@ -147,12 +126,7 @@ const AnalyticsViewChart = ({
         />
         <ChartLegend content={<ChartLegendContent />} />
         {Object.keys(chartConfig).map((key) => (
-          <Bar
-            key={key}
-            dataKey={key}
-            fill={`var(--color-${key})`}
-            radius={4}
-          />
+          <Bar key={key} dataKey={key} fill={`var(--color-${key})`} radius={4} />
         ))}
       </ComposedChart>
     </ChartContainer>
@@ -169,7 +143,7 @@ const AnalyticsRateChart = (props: {
       <ChartContainer config={chartConfig} className="h-96 w-full">
         <ComposedChart accessibilityLayer data={chartData}>
           <CartesianGrid vertical={false} />
-          <YAxis tickLine={false} tickMargin={10} axisLine={false} unit={"%"} />
+          <YAxis tickLine={false} tickMargin={10} axisLine={false} unit={'%'} />
           <XAxis
             dataKey="date"
             tickLine={false}
@@ -187,15 +161,12 @@ const AnalyticsRateChart = (props: {
                 formatter={(value, name) => (
                   <div className="flex flex-row w-[180px] items-center text-xs text-muted-foreground">
                     <div className="grow">
-                      {chartConfig[name as keyof typeof chartConfig]?.label ||
-                        name}
+                      {chartConfig[name as keyof typeof chartConfig]?.label || name}
                     </div>
                     <div className="flex-none mx-2 font-medium tabular-nums text-foreground text-center w-6">
                       <>
                         {value}
-                        <span className="font-normal text-muted-foreground">
-                          %
-                        </span>
+                        <span className="font-normal text-muted-foreground">%</span>
                       </>
                     </div>
                   </div>
@@ -208,14 +179,14 @@ const AnalyticsRateChart = (props: {
           <Line
             dataKey="unique"
             type="monotone"
-            stroke={`var(--color-unique)`}
+            stroke={'var(--color-unique)'}
             strokeWidth={2}
             dot={false}
           />
           <Line
             dataKey="total"
             type="monotone"
-            stroke={`var(--color-total)`}
+            stroke="var(--color-total)"
             strokeWidth={2}
             dot={false}
           />
@@ -226,7 +197,7 @@ const AnalyticsRateChart = (props: {
 };
 
 export const AnalyticsDays = () => {
-  const { analyticsData, dateRange } = useAnalyticsContext();
+  const { analyticsData } = useAnalyticsContext();
   const { content } = useContentDetailContext();
   const contentType = content?.type;
   const [viewData, setViewData] = useState<ChartDataType[]>();
@@ -237,7 +208,7 @@ export const AnalyticsDays = () => {
     if (!analyticsData?.viewsByDay) return;
 
     const transformData = analyticsData.viewsByDay.map((view) => {
-      const date = format(new Date(view.date), "PP");
+      const date = format(new Date(view.date), 'PP');
       return {
         viewData: {
           date,
@@ -251,9 +222,7 @@ export const AnalyticsDays = () => {
           unique: view.uniqueViews
             ? Math.round((view.uniqueCompletions / view.uniqueViews) * 100)
             : 0,
-          total: view.totalViews
-            ? Math.round((view.totalCompletions / view.totalViews) * 100)
-            : 0,
+          total: view.totalViews ? Math.round((view.totalCompletions / view.totalViews) * 100) : 0,
         },
       };
     });
@@ -286,14 +255,14 @@ export const AnalyticsDays = () => {
           </CardHeader>
           <TabsContent value="views" className="border-none p-0 outline-none">
             <AnalyticsViewChart
-              chartConfig={generateChartConfig("view", contentType)}
+              chartConfig={generateChartConfig('view', contentType)}
               chartData={viewData}
             />
           </TabsContent>
           <TabsContent value="rate" className="border-none p-0 outline-none">
             {/* <AnalyticsChart chartConfig={totalChartConfig} chartData={totalData} /> */}
             <AnalyticsRateChart
-              chartConfig={generateChartConfig("rate", contentType)}
+              chartConfig={generateChartConfig('rate', contentType)}
               chartData={rateData}
             />
           </TabsContent>
@@ -303,4 +272,4 @@ export const AnalyticsDays = () => {
   );
 };
 
-AnalyticsDays.displayName = "AnalyticsDays";
+AnalyticsDays.displayName = 'AnalyticsDays';

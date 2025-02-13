@@ -1,27 +1,24 @@
-import { useSyncExternalStore } from "react";
-import { Checklist } from "../core/checklist";
-import { PopperMadeWith } from "@usertour-ui/sdk";
-import { ChecklistProgress } from "@usertour-ui/sdk";
+import { AssetAttributes } from '@usertour-ui/frame';
+import { PopperMadeWith } from '@usertour-ui/sdk';
+import { ChecklistProgress } from '@usertour-ui/sdk';
 import {
   ChecklistDismiss,
   ChecklistDropdown,
   ChecklistItems,
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
-} from "@usertour-ui/sdk/src/checklist";
-import { ChecklistRoot } from "@usertour-ui/sdk/src/checklist";
+} from '@usertour-ui/sdk/src/checklist';
+import { ChecklistRoot } from '@usertour-ui/sdk/src/checklist';
+import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
-  ChecklistInitialDisplay,
-  ChecklistData,
-  ChecklistItemType,
   BizUserInfo,
+  ChecklistData,
+  ChecklistInitialDisplay,
+  ChecklistItemType,
   Theme,
-} from "@usertour-ui/types";
-import {
-  ContentEditorButtonElement,
-  ContentEditorSerialize,
-} from "@usertour-ui/shared-editor";
-import { AssetAttributes } from "@usertour-ui/frame";
+} from '@usertour-ui/types';
+import { useSyncExternalStore } from 'react';
+import { Checklist } from '../core/checklist';
 
 type ChecklistProps = {
   checklist: Checklist;
@@ -81,7 +78,7 @@ export const ChecklistWidget = (props: ChecklistProps) => {
 
   const store = useSyncExternalStore(
     checklist.getStore().subscribe,
-    checklist.getStore().getSnapshot
+    checklist.getStore().getSnapshot,
   );
   const { content, theme, userInfo, openState, assets } = store;
   const data = content?.data as ChecklistData;

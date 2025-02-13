@@ -1,7 +1,8 @@
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import { Input } from "@usertour-ui/input";
-import { Label } from "@usertour-ui/label";
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -9,16 +10,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { ChangeEvent, useCallback, useRef, useState } from "react";
-import { Content, ElementSelectorPropsData } from "@usertour-ui/types";
-import { EXTENSION_CONTENT_RULES } from "@usertour-ui/constants";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Content, ElementSelectorPropsData } from '@usertour-ui/types';
+import { ChangeEvent, useCallback, useRef, useState } from 'react';
 
 export interface ElementSelectorProps {
   data: ElementSelectorPropsData;
@@ -37,16 +32,16 @@ export const ElementSelector = (props: ElementSelectorProps) => {
   const updateInnerData = useCallback(
     (props: Partial<ElementSelectorPropsData>) => {
       const _innerData = {
-        precision: "loose",
-        sequence: "1st",
+        precision: 'loose',
+        sequence: '1st',
         ...innerData,
         ...props,
-        type: "manual",
+        type: 'manual',
       };
       setInnerData(_innerData);
       onDataChange(_innerData);
     },
-    [innerData]
+    [innerData],
   );
 
   const handleElementTextChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -74,17 +69,14 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                     <QuestionMarkCircledIcon />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>
-                      Usertour will select an element containing the text you
-                      write here.
-                    </p>
+                    <p>Usertour will select an element containing the text you write here.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
             <Input
               id="button-manual-element-text"
-              value={innerData.content || ""}
+              value={innerData.content || ''}
               placeholder="None"
               onChange={handleElementTextChange}
             />
@@ -97,11 +89,10 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-foreground text-background">
                     <p>
-                      Advanced feature: If possible, we recommend selecting
-                      elements using text. lf an element does not have text, or
-                      the text is very generic, you can select it using a CSS
-                      selector instead. lf both text and CSS selector is filled
-                      in, Usertour will select an element matching both.
+                      Advanced feature: If possible, we recommend selecting elements using text. lf
+                      an element does not have text, or the text is very generic, you can select it
+                      using a CSS selector instead. lf both text and CSS selector is filled in,
+                      Usertour will select an element matching both.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -109,7 +100,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
             </div>
             <Input
               id="button-manual-css-selector"
-              value={innerData.customSelector || ""}
+              value={innerData.customSelector || ''}
               placeholder="None"
               onChange={handleSelectorChange}
             />
@@ -128,9 +119,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
               ))}
             </div>
             <div className="flex justify-start items-center space-x-1	">
-              <Label htmlFor="button-manual-css-selector">
-                If multiple matches
-              </Label>
+              <Label htmlFor="button-manual-css-selector">If multiple matches</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -138,22 +127,19 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-foreground text-background">
                     <p>
-                      If multiple elements match your criteria, you can tell
-                      Usertour which of the elements to select.
+                      If multiple elements match your criteria, you can tell Usertour which of the
+                      elements to select.
                     </p>
                     <p>
-                      Elements are sorted first by vertical position and second
-                      by horizontal position. l.e. an element higher up on the
-                      page and more towards the left takes precedence.{" "}
+                      Elements are sorted first by vertical position and second by horizontal
+                      position. l.e. an element higher up on the page and more towards the left
+                      takes precedence.{' '}
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <Select
-              onValueChange={handleSequenceValueChange}
-              defaultValue={innerData.sequence}
-            >
+            <Select onValueChange={handleSequenceValueChange} defaultValue={innerData.sequence}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a option" />
               </SelectTrigger>
@@ -187,4 +173,4 @@ export const ElementSelector = (props: ElementSelectorProps) => {
     </div>
   );
 };
-ElementSelector.displayName = "ElementSelector";
+ElementSelector.displayName = 'ElementSelector';

@@ -1,4 +1,4 @@
-import { ThemeColorPicker } from "./theme-color-picker";
+import { ThemeColorPicker } from './theme-color-picker';
 
 type ThemeSelectColorProps = {
   text: string;
@@ -12,16 +12,7 @@ type ThemeSelectColorProps = {
 };
 
 export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
-  const {
-    text,
-    placeholder = "",
-    name,
-    defaultColor,
-    onChange,
-    autoColor,
-    isAutoColor,
-    showAutoButton,
-  } = props;
+  const { text, name, defaultColor, onChange, autoColor, isAutoColor, showAutoButton } = props;
 
   return (
     <div className="flex flex-row">
@@ -43,4 +34,4 @@ export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
   );
 };
 
-ThemeSelectColor.displayName = "ThemeSelectColor";
+ThemeSelectColor.displayName = 'ThemeSelectColor';

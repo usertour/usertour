@@ -1,15 +1,14 @@
-import { PrismaService } from "nestjs-prisma";
-import { Injectable } from "@nestjs/common";
-import { PaginationArgs } from "@/common/pagination/pagination.args";
-import { AnalyticsOrder } from "./dto/analytics-order.input";
-import { addDays, isBefore, lightFormat } from "date-fns";
-import { AnalyticsQuery } from "./dto/analytics-query.input";
-import { findManyCursorConnection } from "@devoxa/prisma-relay-cursor-connection";
-import { Environment, Event } from "@prisma/client";
-import { BizEvents } from "@/common/consts/attribute";
-import { User } from "@/users/models/user.model";
-import { ContentType } from "@/contents/models/content.model";
-import { AnalyticsIdArgs } from "./args/analytics-query.args";
+import { BizEvents } from '@/common/consts/attribute';
+import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { ContentType } from '@/contents/models/content.model';
+import { User } from '@/users/models/user.model';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { Injectable } from '@nestjs/common';
+import { Environment, Event } from '@prisma/client';
+import { addDays, isBefore, lightFormat } from 'date-fns';
+import { PrismaService } from 'nestjs-prisma';
+import { AnalyticsOrder } from './dto/analytics-order.input';
+import { AnalyticsQuery } from './dto/analytics-query.input';
 
 type AnalyticsConditions = {
   contentId: string;
@@ -80,7 +79,7 @@ export class AnalyticsService {
     startDate: string,
     endDate: string,
     timezone: string,
-    user: User
+    user: User,
   ) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
@@ -103,14 +102,12 @@ export class AnalyticsService {
       },
     });
 
-    const startEventFilter = (ev: Event) =>
-      ev.codeName === EVENT_TYPE_MAPPING[content.type].start;
+    const startEventFilter = (ev: Event) => ev.codeName === EVENT_TYPE_MAPPING[content.type].start;
 
     const completeEventFilter = (ev: Event) =>
       ev.codeName === EVENT_TYPE_MAPPING[content.type].complete;
 
-    const stepSeenEventFilter = (ev: Event) =>
-      ev.codeName === BizEvents.FLOW_STEP_SEEN;
+    const stepSeenEventFilter = (ev: Event) => ev.codeName === BizEvents.FLOW_STEP_SEEN;
 
     const startEvent = events.find(startEventFilter);
     const completeEvent = events.find(completeEventFilter);
@@ -143,17 +140,14 @@ export class AnalyticsService {
     const viewsByStep = await this.aggregationStepsByContent(
       condition,
       stepSeenEvent,
-      completeEvent
+      completeEvent,
     );
-    const viewsByTask = await this.aggregationTasksByContent(
-      condition,
-      projectId
-    );
+    const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
       { ...condition },
       timezone,
       startEvent,
-      completeEvent
+      completeEvent,
     );
 
     const data = {
@@ -175,24 +169,24 @@ export class AnalyticsService {
     condition: AnalyticsConditions,
     timezone: string,
     startEvent: Event,
-    completeEvent: Event
+    completeEvent: Event,
   ) {
     const { startDateStr, endDateStr } = condition;
     const uniqueViewsByDay = await this.aggregationByDay(
       { ...condition, eventId: startEvent.id },
-      timezone
+      timezone,
     );
     const totalViewsByDay = await this.aggregationByDay(
       { ...condition, eventId: startEvent.id, isDistinct: false },
-      timezone
+      timezone,
     );
     const uniqueCompletionByDay = await this.aggregationByDay(
       { ...condition, eventId: completeEvent.id },
-      timezone
+      timezone,
     );
     const totalCompletionByDay = await this.aggregationByDay(
       { ...condition, eventId: completeEvent.id, isDistinct: false },
-      timezone
+      timezone,
     );
     const data = [];
 
@@ -204,18 +198,18 @@ export class AnalyticsService {
     const endDate = addDays(endDateStr, 1);
 
     while (isBefore(startDate, endDate)) {
-      const dd = lightFormat(startDate, "yyyy-MM-dd");
+      const dd = lightFormat(startDate, 'yyyy-MM-dd');
       const uniqueView = uniqueViewsByDay.find(
-        (views) => lightFormat(views.day, "yyyy-MM-dd") == dd
+        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
       );
       const totalView = totalViewsByDay.find(
-        (views) => lightFormat(views.day, "yyyy-MM-dd") == dd
+        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
       );
       const uniqueCompletion = uniqueCompletionByDay.find(
-        (views) => lightFormat(views.day, "yyyy-MM-dd") == dd
+        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
       );
       const totalCompletion = totalCompletionByDay.find(
-        (views) => lightFormat(views.day, "yyyy-MM-dd") == dd
+        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
       );
       data.push({
         date: startDate,
@@ -235,7 +229,7 @@ export class AnalyticsService {
   async aggregationStepsByContent(
     condition: AnalyticsConditions,
     startEvent: Event,
-    completeEvent: Event
+    completeEvent: Event,
   ) {
     const { contentId } = condition;
     const content = await this.prisma.content.findFirst({
@@ -243,24 +237,22 @@ export class AnalyticsService {
     });
     if (
       !content ||
-      content.type == ContentType.CHECKLIST ||
-      content.type == ContentType.LAUNCHER
+      content.type === ContentType.CHECKLIST ||
+      content.type === ContentType.LAUNCHER
     ) {
       return false;
     }
-    const versionId = content.published
-      ? content.publishedVersionId
-      : content.editedVersionId;
+    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: true },
     });
-    if (!version || !version.steps || version.steps.length == 0) {
+    if (!version || !version.steps || version.steps.length === 0) {
       return false;
     }
     const maxStepIndex = version.steps.length;
 
-    let ret = [];
+    const ret = [];
     let totalUniqueViews: number;
     for (let index = 0; index < maxStepIndex; index++) {
       const stepInfo = version.steps[index];
@@ -283,7 +275,7 @@ export class AnalyticsService {
         eventId: completeEvent.id,
         isDistinct: false,
       });
-      if (totalUniqueViews == undefined) {
+      if (totalUniqueViews === undefined) {
         totalUniqueViews = uniqueViews;
       }
       ret.push({
@@ -300,10 +292,7 @@ export class AnalyticsService {
     return ret;
   }
 
-  async aggregationTasksByContent(
-    condition: AnalyticsConditions,
-    projectId: string
-  ) {
+  async aggregationTasksByContent(condition: AnalyticsConditions, projectId: string) {
     const { contentId } = condition;
     const content = await this.prisma.content.findFirst({
       where: { id: contentId },
@@ -311,9 +300,7 @@ export class AnalyticsService {
     if (!content || content.type !== ContentType.CHECKLIST) {
       return false;
     }
-    const versionId = content.published
-      ? content.publishedVersionId
-      : content.editedVersionId;
+    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: true },
@@ -330,12 +317,8 @@ export class AnalyticsService {
         },
       },
     });
-    const startEvent = events.find(
-      (ev) => ev.codeName === BizEvents.CHECKLIST_SEEN
-    );
-    const completeEvent = events.find(
-      (ev) => ev.codeName === BizEvents.CHECKLIST_TASK_COMPLETED
-    );
+    const startEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_SEEN);
+    const completeEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_COMPLETED);
     if (!startEvent || !completeEvent) {
       return false;
     }
@@ -343,14 +326,14 @@ export class AnalyticsService {
     const checklistData = version.data as unknown as ChecklistData;
     const totalItem = checklistData.items.length;
 
-    let ret = [];
+    const ret = [];
     let totalUniqueViews: number;
     for (let index = 0; index < totalItem; index++) {
       const item = checklistData.items[index];
       const taskCondition = {
         ...condition,
         eventId: startEvent.id,
-        key: "checklist_id",
+        key: 'checklist_id',
         value: content.id,
       };
       const uniqueViews = await this.aggregationByItem({
@@ -363,18 +346,18 @@ export class AnalyticsService {
       const uniqueCompletions = await this.aggregationByItem({
         ...taskCondition,
         eventId: completeEvent.id,
-        key: "checklist_task_id",
+        key: 'checklist_task_id',
         value: item.id,
       });
       const totalCompletions = await this.aggregationByItem({
         ...taskCondition,
         eventId: completeEvent.id,
-        key: "checklist_task_id",
+        key: 'checklist_task_id',
         value: item.id,
         isDistinct: false,
       });
 
-      if (totalUniqueViews == undefined) {
+      if (totalUniqueViews === undefined) {
         totalUniqueViews = uniqueViews;
       }
       ret.push({
@@ -392,8 +375,7 @@ export class AnalyticsService {
   }
 
   async aggregationByEvent(condition: AnalyticsConditions) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct } =
-      condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -404,7 +386,7 @@ export class AnalyticsService {
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
       `;
-      return parseInt(data[0].count.toString());
+      return Number.parseInt(data[0].count.toString());
     }
 
     const data = await this.prisma.$queryRaw`
@@ -413,12 +395,11 @@ export class AnalyticsService {
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         `;
-    return parseInt(data[0].count.toString());
+    return Number.parseInt(data[0].count.toString());
   }
 
   async aggregationByDay(condition: AnalyticsConditions, timezone: string) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct } =
-      condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -446,14 +427,7 @@ export class AnalyticsService {
   }
 
   async aggregationByStep(condition: AnalyticsConditions) {
-    const {
-      contentId,
-      eventId,
-      startDateStr,
-      endDateStr,
-      isDistinct,
-      stepIndex,
-    } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, stepIndex } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
     const stepIndexStr = String(stepIndex);
@@ -466,7 +440,7 @@ export class AnalyticsService {
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> 'flow_step_number' = ${stepIndexStr}
       `;
-      return parseInt(data[0].count.toString());
+      return Number.parseInt(data[0].count.toString());
     }
 
     const data = await this.prisma.$queryRaw`
@@ -476,19 +450,11 @@ export class AnalyticsService {
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> 'flow_step_number' = ${stepIndexStr}
         `;
-    return parseInt(data[0].count.toString());
+    return Number.parseInt(data[0].count.toString());
   }
 
   async aggregationByItem(condition: ItemAnalyticsConditions) {
-    const {
-      contentId,
-      eventId,
-      startDateStr,
-      endDateStr,
-      isDistinct,
-      key,
-      value,
-    } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, key, value } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -500,7 +466,7 @@ export class AnalyticsService {
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
       `;
-      return parseInt(data[0].count.toString());
+      return Number.parseInt(data[0].count.toString());
     }
 
     const data = await this.prisma.$queryRaw`
@@ -510,14 +476,14 @@ export class AnalyticsService {
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
         `;
-    return parseInt(data[0].count.toString());
+    return Number.parseInt(data[0].count.toString());
   }
 
   async queryRecentSessions(
     query: AnalyticsQuery,
     pagination: PaginationArgs,
     orderBy: AnalyticsOrder,
-    user: User
+    user: User,
   ) {
     const { first, last, before, after } = pagination;
     const { contentId, startDate, endDate } = query;
@@ -550,9 +516,7 @@ export class AnalyticsService {
               },
             },
             include: { bizUser: true, bizEvent: true },
-            orderBy: orderBy
-              ? { [orderBy.field]: orderBy.direction }
-              : undefined,
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
         () =>
@@ -568,10 +532,10 @@ export class AnalyticsService {
               },
             },
           }),
-        { first, last, before, after }
+        { first, last, before, after },
       );
       return resp;
-    } catch (error) {
+    } catch (_) {
       // console.log(error);
     }
   }
@@ -584,7 +548,7 @@ export class AnalyticsService {
       where: {
         userId: user.id,
         projectId: environment.projectId,
-        role: { in: ["ADMIN", "OWNER"] },
+        role: { in: ['ADMIN', 'OWNER'] },
       },
     });
     if (!userOnProject) {

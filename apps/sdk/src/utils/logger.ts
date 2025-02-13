@@ -1,24 +1,19 @@
-import { isUndefined } from "@usertour-ui/shared-utils";
-import { window } from "./globals";
+import { isUndefined } from '@usertour-ui/shared-utils';
+import { window } from './globals';
 
-const debugEnabled = (localStorage.getItem("debug") || "")
-  .split(",")
-  .some((v) => v === "*" || v.startsWith("usertour-widget:*"));
+const debugEnabled = (localStorage.getItem('debug') || '')
+  .split(',')
+  .some((v) => v === '*' || v.startsWith('usertour-widget:*'));
 
 let lastT: any;
 
-const LOGGER_PREFIX = "[usertour-widget]";
+const LOGGER_PREFIX = '[usertour-widget]';
 export const logger = {
   enabled: () => {
-    localStorage.setItem("debug", "*");
+    localStorage.setItem('debug', '*');
   },
-  _log: (level: "log" | "warn" | "error", ...args: any[]) => {
-    if (
-      window &&
-      debugEnabled &&
-      !isUndefined(window.console) &&
-      window.console
-    ) {
+  _log: (level: 'log' | 'warn' | 'error', ...args: any[]) => {
+    if (window && debugEnabled && !isUndefined(window.console) && window.console) {
       const consoleLog = window.console[level];
       // eslint-disable-next-line no-console
       consoleLog(LOGGER_PREFIX, ...args);
@@ -27,24 +22,24 @@ export const logger = {
       lastT = now;
       consoleLog(
         `%c${LOGGER_PREFIX} %c${args[0]} %c+${t}ms`,
-        "color:#1FDB7D;",
-        "",
-        "color:#1FDB7D;",
-        ...args
+        'color:#1FDB7D;',
+        '',
+        'color:#1FDB7D;',
+        ...args,
       );
     }
   },
 
   info: (...args: any[]) => {
-    logger._log("log", ...args);
+    logger._log('log', ...args);
   },
 
   warn: (...args: any[]) => {
-    logger._log("warn", ...args);
+    logger._log('warn', ...args);
   },
 
   error: (...args: any[]) => {
-    logger._log("error", ...args);
+    logger._log('error', ...args);
   },
 
   critical: (...args: any[]) => {

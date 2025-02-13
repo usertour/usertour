@@ -1,1 +1,1 @@
-export { Selector } from "../shared/selector";
+export { Selector } from '../shared/selector';

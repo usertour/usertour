@@ -1,18 +1,5 @@
-import { ArrowRightIcon, SpinnerIcon } from "@usertour-ui/icons";
-import { useActionsGroupContext } from "../contexts/actions-group-context";
-import { useCallback, useEffect, useState } from "react";
-import { ContentActionsRemove } from "./actions-remove";
-import {
-  ContentActionsError,
-  ContentActionsErrorAnchor,
-  ContentActionsErrorContent,
-} from "./actions-error";
-import {
-  ContentActionsConditionIcon,
-  ActionsConditionRightContent,
-} from "./actions-template";
-import { useContentActionsContext } from "../contexts/content-actions-context";
-import { getStepError } from "@usertour-ui/shared-utils";
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
+import { ArrowRightIcon, SpinnerIcon } from '@usertour-ui/icons';
 import {
   Select,
   SelectContent,
@@ -20,8 +7,18 @@ import {
   SelectPortal,
   SelectTriggerNoIcon,
   SelectValue,
-} from "@usertour-ui/select";
-import { EDITOR_RICH_ACTION_CONTENT } from "@usertour-ui/constants";
+} from '@usertour-ui/select';
+import { getStepError } from '@usertour-ui/shared-utils';
+import { useCallback, useEffect, useState } from 'react';
+import { useActionsGroupContext } from '../contexts/actions-group-context';
+import { useContentActionsContext } from '../contexts/content-actions-context';
+import {
+  ContentActionsError,
+  ContentActionsErrorAnchor,
+  ContentActionsErrorContent,
+} from './actions-error';
+import { ContentActionsRemove } from './actions-remove';
+import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 
 export interface ContentActionsStepProps {
   data?: {
@@ -35,13 +32,12 @@ export interface ContentActionsStepProps {
 }
 
 export const ContentActionsStep = (props: ContentActionsStepProps) => {
-  const { index, data, type } = props;
+  const { index, data } = props;
   const { updateConditionData } = useActionsGroupContext();
-  const { currentVersion, zIndex, currentStep, createStep } =
-    useContentActionsContext();
+  const { currentVersion, zIndex, currentStep, createStep } = useContentActionsContext();
   const [openError, setOpenError] = useState(false);
-  const [errorInfo, setErrorInfo] = useState("");
-  const [open, setOpen] = useState(false);
+  const [errorInfo, setErrorInfo] = useState('');
+  const [open] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   // const [stepIndex, setStepIndex] = useState<string | undefined>(
   //   data?.stepIndex
@@ -61,7 +57,7 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
 
   const handleValuChange = useCallback(
     async (value: string) => {
-      if (value == "create") {
+      if (value === 'create') {
         if (createStep && currentVersion) {
           setIsLoading(true);
           const seq = currentStep?.sequence ?? 0;
@@ -78,7 +74,7 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
         setStepCvid(value);
       }
     },
-    [currentVersion, currentStep]
+    [currentVersion, currentStep],
   );
 
   return (
@@ -95,32 +91,27 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
               <ContentActionsConditionIcon className="px-0 pr-2">
                 <ArrowRightIcon width={16} height={16} />
               </ContentActionsConditionIcon>
-              <span className="pr-1">Go to Step</span>{" "}
-              {isLoading && (
-                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {!isLoading && <SelectValue placeholder={""} />}
+              <span className="pr-1">Go to Step</span>{' '}
+              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {!isLoading && <SelectValue placeholder={''} />}
             </SelectTriggerNoIcon>
             <SelectPortal>
-              <SelectContent
-                style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}
-              >
-                {currentVersion?.steps &&
-                  currentVersion?.steps.map((item, index) => {
-                    if (currentStep && currentStep.cvid == item.cvid) {
-                      return;
-                    }
-                    return (
-                      <SelectItem
-                        key={item.cvid}
-                        value={item.cvid as string}
-                        className="cursor-pointer"
-                      >
-                        {index + 1}.{item.name}
-                      </SelectItem>
-                    );
-                  })}
-                <SelectItem value={"create"} className="cursor-pointer">
+              <SelectContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}>
+                {currentVersion?.steps?.map((item, index) => {
+                  if (currentStep?.cvid === item.cvid) {
+                    return;
+                  }
+                  return (
+                    <SelectItem
+                      key={item.cvid}
+                      value={item.cvid as string}
+                      className="cursor-pointer"
+                    >
+                      {index + 1}.{item.name}
+                    </SelectItem>
+                  );
+                })}
+                <SelectItem value={'create'} className="cursor-pointer">
                   Add new step
                 </SelectItem>
               </SelectContent>
@@ -129,13 +120,11 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
           <ContentActionsRemove index={index} />
         </ContentActionsErrorAnchor>
       </ActionsConditionRightContent>
-      <ContentActionsErrorContent
-        style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}
-      >
+      <ContentActionsErrorContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}>
         {errorInfo}
       </ContentActionsErrorContent>
     </ContentActionsError>
   );
 };
 
-ContentActionsStep.displayName = "ContentActionsStep";
+ContentActionsStep.displayName = 'ContentActionsStep';

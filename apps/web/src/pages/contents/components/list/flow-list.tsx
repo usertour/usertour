@@ -1,12 +1,12 @@
-import { PlusCircledIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import { Separator } from "@usertour-ui/separator";
-import { EmptyPlaceholder } from "../shared/empty-placeholder";
-import { DataTable } from "./data-table";
-import { ContentCreateForm } from "../shared/content-create-form";
-import { useState } from "react";
-import { useContentListContext } from "@/contexts/content-list-context";
-import { ContentListSkeleton } from "@/components/molecules/skeleton";
+import { ContentListSkeleton } from '@/components/molecules/skeleton';
+import { useContentListContext } from '@/contexts/content-list-context';
+import { OpenInNewWindowIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { Separator } from '@usertour-ui/separator';
+import { useState } from 'react';
+import { ContentCreateForm } from '../shared/content-create-form';
+import { EmptyPlaceholder } from '../shared/empty-placeholder';
+import { DataTable } from './data-table';
 
 export const FlowListContent = () => {
   const [open, setOpen] = useState(false);
@@ -15,18 +15,10 @@ export const FlowListContent = () => {
     setOpen(true);
   };
 
-  const { contents, refetch, setQuery, isLoading } = useContentListContext();
+  const { contents, refetch, isLoading } = useContentListContext();
   const handleOnClose = async () => {
     setOpen(false);
     refetch();
-  };
-
-  const handleOnValueChange = async (value: string) => {
-    if (value == "published") {
-      setQuery({ published: true });
-    } else {
-      setQuery({});
-    }
   };
 
   return (
@@ -37,12 +29,13 @@ export const FlowListContent = () => {
             <h3 className="text-2xl font-semibold tracking-tight">Flows</h3>
             <div className="flex flex-row space-x-1">
               <p className="text-sm text-muted-foreground">
-                Step-by-step flows with tooltips and pop-up modals. Perfect for:
-                product tours, user guides, and announcements. <br />
+                Step-by-step flows with tooltips and pop-up modals. Perfect for: product tours, user
+                guides, and announcements. <br />
                 <a
                   href="https://www.usertour.io/docs/building-experiences/creating-your-first-flow/"
                   className="text-primary "
                   target="_blank"
+                  rel="noreferrer"
                 >
                   <span>Read more in our Creating your first flow guide</span>
                   <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
@@ -50,11 +43,7 @@ export const FlowListContent = () => {
               </p>
             </div>
           </div>
-          <Button
-            onClick={openCreateFormHandler}
-            className="flex-none"
-            id="create-flow-button"
-          >
+          <Button onClick={openCreateFormHandler} className="flex-none" id="create-flow-button">
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Flow
           </Button>
@@ -62,7 +51,7 @@ export const FlowListContent = () => {
       </div>
       <Separator className="my-6" />
       {isLoading && <ContentListSkeleton count={9} />}
-      {!isLoading && contents && contents.length == 0 && (
+      {!isLoading && contents && contents.length === 0 && (
         <EmptyPlaceholder>
           <Button onClick={openCreateFormHandler}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
@@ -76,4 +65,4 @@ export const FlowListContent = () => {
   );
 };
 
-FlowListContent.displayName = "FlowListContent";
+FlowListContent.displayName = 'FlowListContent';

@@ -1,43 +1,28 @@
-"use client";
+'use client';
 
-import { ChevronLeftIcon, PlusCircledIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { EXTENSION_CONTENT_SIDEBAR } from "@usertour-ui/constants";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { cn, uuidV4 } from "@usertour-ui/ui-utils";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { BuilderMode, useBuilderContext } from "../../contexts";
-import { SidebarMini } from "../sidebar/sidebar-mini";
-import {
-  useAttributeListContext,
-  useContentListContext,
-} from "@usertour-ui/contexts";
-import {
-  defaultStep,
-  getErrorMessage,
-  hasActionError,
-  hasError,
-} from "@usertour-ui/shared-utils";
-import { SpinnerIcon } from "@usertour-ui/icons";
-import { useMutation } from "@apollo/client";
-import { updateContentStep } from "@usertour-ui/gql";
-import { useToast } from "@usertour-ui/use-toast";
-import { ContentTrigger } from "../../components/content-trigger";
-import { ContentVersion, RulesCondition, Step } from "@usertour-ui/types";
-import { TriggerProvider, useTriggerContext } from "../../contexts";
-import { createValue1 } from "@usertour-ui/shared-editor";
-import { useToken } from "../../hooks/use-token";
+import { useMutation } from '@apollo/client';
+import { ChevronLeftIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { EXTENSION_CONTENT_SIDEBAR } from '@usertour-ui/constants';
+import { useAttributeListContext, useContentListContext } from '@usertour-ui/contexts';
+import { updateContentStep } from '@usertour-ui/gql';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { createValue1 } from '@usertour-ui/shared-editor';
+import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour-ui/shared-utils';
+import { ContentVersion, RulesCondition, Step } from '@usertour-ui/types';
+import { cn, uuidV4 } from '@usertour-ui/ui-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ContentTrigger } from '../../components/content-trigger';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { TriggerProvider, useTriggerContext } from '../../contexts';
+import { useToken } from '../../hooks/use-token';
+import { SidebarMini } from '../sidebar/sidebar-mini';
 
 const FlowBuilderTriggerHeader = () => {
-  const { setCurrentMode, currentStep, currentContent, currentIndex } =
-    useBuilderContext();
+  const { setCurrentMode, currentStep, currentContent, currentIndex } = useBuilderContext();
 
   const handleBackup = () => {
     setCurrentMode({ mode: BuilderMode.FLOW });
@@ -45,9 +30,7 @@ const FlowBuilderTriggerHeader = () => {
 
   return (
     <CardHeader className="flex-none p-5 space-y-2">
-      <CardTitle className="text-base truncate ...">
-        {currentContent?.name}
-      </CardTitle>
+      <CardTitle className="text-base truncate ...">{currentContent?.name}</CardTitle>
       <div className="flex">
         <Button
           variant="link"
@@ -92,22 +75,18 @@ const FlowBuilderTriggerBody = () => {
   const createNewStep = (currentVersion: ContentVersion, sequence: number) => {
     const step: Step = {
       ...defaultStep,
-      type: "tooltip",
-      name: "Untitled",
+      type: 'tooltip',
+      name: 'Untitled',
       data: createValue1,
       sequence,
     };
     return createStep(currentVersion, step);
   };
 
-  const handleOnActionsChange = (
-    actions: RulesCondition[],
-    index: number,
-    hasError: boolean
-  ) => {
+  const handleOnActionsChange = (actions: RulesCondition[], index: number) => {
     setShowError(false);
     updateCurrentStep((step) => {
-      if (step.trigger && step.trigger[index]) {
+      if (step.trigger?.[index]) {
         step.trigger[index].actions = [...actions];
       } else {
         step.trigger = [{ actions, conditions: [] }];
@@ -116,14 +95,10 @@ const FlowBuilderTriggerBody = () => {
     });
   };
 
-  const handleOnConditonsChange = (
-    conditions: RulesCondition[],
-    index: number,
-    hasError: boolean
-  ) => {
+  const handleOnConditonsChange = (conditions: RulesCondition[], index: number) => {
     setShowError(false);
     updateCurrentStep((step) => {
-      if (step.trigger && step.trigger[index]) {
+      if (step.trigger?.[index]) {
         step.trigger[index].conditions = [...conditions];
       } else {
         step.trigger = [{ conditions, actions: [] }];
@@ -136,9 +111,8 @@ const FlowBuilderTriggerBody = () => {
     updateCurrentStep((step) => {
       if (!step.trigger) {
         return { ...step, trigger: [emptyTrigger] };
-      } else {
-        return { ...step, trigger: [...step.trigger, emptyTrigger] };
       }
+      return { ...step, trigger: [...step.trigger, emptyTrigger] };
     });
   };
 
@@ -156,9 +130,9 @@ const FlowBuilderTriggerBody = () => {
   const handleOnRulesConditionElementChange = (
     index: number,
     conditionIndex: number,
-    type: string
+    type: string,
   ) => {
-    const isInput = type == "text-input" || type == "text-fill" ? true : false;
+    const isInput = type === 'text-input' || type === 'text-fill';
     setCurrentMode({
       mode: BuilderMode.ELEMENT_SELECTOR,
       data: { isInput },
@@ -168,20 +142,16 @@ const FlowBuilderTriggerBody = () => {
   };
 
   useEffect(() => {
-    if (
-      currentMode.mode == BuilderMode.FLOW_STEP_TRIGGER &&
-      selectorOutput &&
-      !isWebBuilder
-    ) {
+    if (currentMode?.mode === BuilderMode.FLOW_STEP_TRIGGER && selectorOutput && !isWebBuilder) {
       const { triggerConditionData } = currentMode;
       if (!triggerConditionData) {
         return;
       }
 
       const elementData = {
-        precision: "loose",
-        sequence: "1st",
-        type: "auto",
+        precision: 'loose',
+        sequence: '1st',
+        type: 'auto',
         isDynamicContent: false,
         selectors: selectorOutput.target.selectors,
         content: selectorOutput.target.content,
@@ -197,21 +167,20 @@ const FlowBuilderTriggerBody = () => {
             return step;
           }
           let conditions = [...trigger[index].conditions];
-          const operators =
-            conditions.length > 0 ? conditions[0].operators : "or";
+          const operators = conditions.length > 0 ? conditions[0].operators : 'or';
 
           if (conditionIndex >= conditions.length) {
             conditions.push({
               type,
               operators,
               data: {
-                logic: "present",
+                logic: 'present',
                 elementData,
               },
             });
           } else {
             conditions = trigger[index].conditions.map((condition, i) => {
-              if (i == conditionIndex) {
+              if (i === conditionIndex) {
                 return {
                   ...condition,
                   data: { ...condition.data, elementData },
@@ -234,49 +203,41 @@ const FlowBuilderTriggerBody = () => {
       <ScrollArea className="h-full ">
         <div className="flex-col space-y-3 p-4">
           <h1 className="text-sm">Triggers</h1>
-          {currentStep?.trigger &&
-            currentStep.trigger.map((trigger, index) => (
-              <ContentTrigger
-                key={trigger.id ?? index}
-                showError={showError}
-                attributeList={attributeList}
-                contents={contents}
-                onActionsChange={(actions, hasError) => {
-                  handleOnActionsChange(actions, index, hasError);
-                }}
-                onConditonsChange={(conditions, hasError) => {
-                  handleOnConditonsChange(conditions, index, hasError);
-                }}
-                onDelete={() => {
-                  handleOnDelete(index);
-                }}
-                zIndex={zIndex}
-                currentVersion={currentVersion}
-                createStep={createNewStep}
-                currentStep={currentStep}
-                currentContent={currentContent}
-                conditions={trigger.conditions}
-                actions={trigger.actions}
-                token={token}
-                onRulesConditionElementChange={
-                  isWebBuilder
-                    ? undefined
-                    : (conditionIndex, type) => {
-                        handleOnRulesConditionElementChange(
-                          index,
-                          conditionIndex,
-                          type
-                        );
-                      }
-                }
-              />
-            ))}
-          <Button
-            className="w-full"
-            variant="secondary"
-            onClick={handleOnClick}
-          >
-            <PlusCircledIcon className="mr-2"></PlusCircledIcon>Add trigger
+          {currentStep?.trigger?.map((trigger, index) => (
+            <ContentTrigger
+              key={trigger.id ?? index}
+              showError={showError}
+              attributeList={attributeList}
+              contents={contents}
+              onActionsChange={(actions) => {
+                handleOnActionsChange(actions, index);
+              }}
+              onConditonsChange={(conditions) => {
+                handleOnConditonsChange(conditions, index);
+              }}
+              onDelete={() => {
+                handleOnDelete(index);
+              }}
+              zIndex={zIndex}
+              currentVersion={currentVersion}
+              createStep={createNewStep}
+              currentStep={currentStep}
+              currentContent={currentContent}
+              conditions={trigger.conditions}
+              actions={trigger.actions}
+              token={token}
+              onRulesConditionElementChange={
+                isWebBuilder
+                  ? undefined
+                  : (conditionIndex, type) => {
+                      handleOnRulesConditionElementChange(index, conditionIndex, type);
+                    }
+              }
+            />
+          ))}
+          <Button className="w-full" variant="secondary" onClick={handleOnClick}>
+            <PlusCircledIcon className="mr-2" />
+            Add trigger
           </Button>
         </div>
       </ScrollArea>
@@ -285,12 +246,8 @@ const FlowBuilderTriggerBody = () => {
 };
 
 const FlowBuilderTriggerFooter = () => {
-  const {
-    setCurrentMode,
-    currentStep,
-    fetchContentAndVersion,
-    currentVersion,
-  } = useBuilderContext();
+  const { setCurrentMode, currentStep, fetchContentAndVersion, currentVersion } =
+    useBuilderContext();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updateContentStepMutation] = useMutation(updateContentStep);
@@ -308,7 +265,7 @@ const FlowBuilderTriggerFooter = () => {
       if (hasError(conditions, attributeList) || hasActionError(actions)) {
         return;
       }
-      if (conditions.length == 0 || actions.length == 0) {
+      if (conditions.length === 0 || actions.length === 0) {
         setShowError(true);
         return;
       }
@@ -325,14 +282,11 @@ const FlowBuilderTriggerFooter = () => {
         },
       });
       if (ret.data.updateContentStep && currentVersion?.contentId) {
-        await fetchContentAndVersion(
-          currentVersion?.contentId,
-          currentVersion?.id
-        );
+        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -359,8 +313,8 @@ export const FlowBuilderTrigger = () => {
       <TriggerProvider>
         <div
           className={cn(
-            "w-96 h-screen p-2 fixed top-0",
-            position == "left" ? "left-0" : "right-0"
+            'w-96 h-screen p-2 fixed top-0',
+            position === 'left' ? 'left-0' : 'right-0',
           )}
           style={{ zIndex: zIndex + EXTENSION_CONTENT_SIDEBAR }}
           ref={ref}
@@ -377,4 +331,4 @@ export const FlowBuilderTrigger = () => {
   );
 };
 
-FlowBuilderTrigger.displayName = "FlowBuilderTrigger";
+FlowBuilderTrigger.displayName = 'FlowBuilderTrigger';

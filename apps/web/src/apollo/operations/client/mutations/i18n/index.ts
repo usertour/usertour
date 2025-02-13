@@ -1,1 +1,1 @@
-export * from "./updateLanguage";
+export * from './updateLanguage';

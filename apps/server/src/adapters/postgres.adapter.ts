@@ -1,8 +1,8 @@
-import { IoAdapter } from "@nestjs/platform-socket.io";
-import { ServerOptions } from "socket.io";
-import { createAdapter } from "@socket.io/postgres-adapter";
-import pg from "pg";
-import { ConfigService } from "@nestjs/config";
+import { ConfigService } from '@nestjs/config';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { createAdapter } from '@socket.io/postgres-adapter';
+import pg from 'pg';
+import { ServerOptions } from 'socket.io';
 
 export class PostgresIoAdapter extends IoAdapter {
   private readonly configService: ConfigService;
@@ -24,8 +24,8 @@ export class PostgresIoAdapter extends IoAdapter {
           payload     bytea
       );
     `);
-    pool.on("error", (err) => {
-      console.error("Postgres error", err);
+    pool.on('error', (err) => {
+      console.error('Postgres error', err);
     });
     this.adapterConstructor = createAdapter(pool);
   }

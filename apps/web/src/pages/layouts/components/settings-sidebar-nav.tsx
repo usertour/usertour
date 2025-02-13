@@ -1,40 +1,40 @@
-"use client";
+'use client';
 
-import { useLocation, useNavigate } from "react-router-dom";
+import AdminSidebarFooter from '@/components/molecules/admin-sidebar-footer';
 import {
-  AdminSidebarBodyTemplate,
   AdminSidebarBodyItemTemplate,
+  AdminSidebarBodyTemplate,
   AdminSidebarBodyTitleTemplate,
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
-} from "@/components/templates/admin-sidebar-template";
-import AdminSidebarFooter from "@/components/molecules/admin-sidebar-footer";
-import { useAppContext } from "@/contexts/app-context";
+} from '@/components/templates/admin-sidebar-template';
+import { useAppContext } from '@/contexts/app-context';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const sidebarNavItems = [
   {
-    title: "Themes",
-    href: "/settings/themes",
+    title: 'Themes',
+    href: '/settings/themes',
   },
   {
-    title: "Environments",
-    href: "/settings/environments",
+    title: 'Environments',
+    href: '/settings/environments',
   },
   // {
   //   title: "Localization",
   //   href: "/settings/localizations",
   // },
   {
-    title: "Attributes",
-    href: "/settings/attributes",
+    title: 'Attributes',
+    href: '/settings/attributes',
   },
   {
-    title: "Events",
-    href: "/settings/events",
+    title: 'Events',
+    href: '/settings/events',
   },
   {
-    title: "Account",
-    href: "/settings/account",
+    title: 'Account',
+    href: '/settings/account',
   },
 ];
 
@@ -60,11 +60,9 @@ export const SettingsSidebarNav = () => {
             onClick={() => {
               navigate(item.href);
             }}
-            variant={location.pathname === item.href ? "secondary" : "ghost"}
+            variant={location.pathname === item.href ? 'secondary' : 'ghost'}
             className={`w-full justify-start ${
-              location.pathname === item.href
-                ? "bg-gray-200/40 dark:bg-secondary/60  "
-                : ""
+              location.pathname === item.href ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
             }`}
           >
             {item.title}
@@ -76,4 +74,4 @@ export const SettingsSidebarNav = () => {
   );
 };
 
-SettingsSidebarNav.displayName = "SettingsSidebarNav";
+SettingsSidebarNav.displayName = 'SettingsSidebarNav';

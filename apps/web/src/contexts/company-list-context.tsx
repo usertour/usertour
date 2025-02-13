@@ -1,12 +1,17 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
-import { useQuery } from "@apollo/client";
-import { queryBizCompany } from "@usertour-ui/gql";
-import { BizUser, Pagination, BizQuery } from "@usertour-ui/types";
+import { useQuery } from '@apollo/client';
+import { queryBizCompany } from '@usertour-ui/gql';
+import { Pagination } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+
+interface CompanyQuery {
+  environmentId?: string;
+  [key: string]: any;
+}
 
 export interface CompanyListProviderProps {
   children?: ReactNode;
   environmentId: string | undefined;
-  defaultQuery?: Object
+  defaultQuery?: CompanyQuery;
 }
 
 export interface CompanyListContextValue {
@@ -14,55 +19,45 @@ export interface CompanyListContextValue {
   refetch: any;
   requestPagination: Pagination;
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
-  query: Object;
-  setQuery: React.Dispatch<React.SetStateAction<Object>>;
+  query: CompanyQuery;
+  setQuery: React.Dispatch<React.SetStateAction<CompanyQuery>>;
 }
-export const CompanyListContext = createContext<
-  CompanyListContextValue | undefined
->(undefined);
+export const CompanyListContext = createContext<CompanyListContextValue | undefined>(undefined);
 
-export function CompanyListProvider(
-  props: CompanyListProviderProps
-): JSX.Element {
+export function CompanyListProvider(props: CompanyListProviderProps): JSX.Element {
   const { children, environmentId, defaultQuery = {} } = props;
-  const [requestPagination, setRequestPagination] = useState<Pagination>({ first: 10 })
-  const [query, setQuery] = useState<Object>(defaultQuery)
+  const [requestPagination, setRequestPagination] = useState<Pagination>({ first: 10 });
+  const [query, setQuery] = useState<CompanyQuery>(defaultQuery);
 
   const { data, refetch } = useQuery(queryBizCompany, {
     variables: {
       ...requestPagination,
       query: { environmentId, ...query },
-      orderBy: { field: "createdAt", direction: "desc" },
+      orderBy: { field: 'createdAt', direction: 'desc' },
     },
   });
 
   useEffect(() => {
-    refetch()
-  }, [query, requestPagination])
+    refetch();
+  }, [query, requestPagination]);
 
-  const bizCompanyList = data && data.queryBizCompany;
+  const bizCompanyList = data?.queryBizCompany;
   const value: CompanyListContextValue = {
     bizCompanyList,
     refetch,
     requestPagination,
     setRequestPagination,
     query,
-    setQuery
+    setQuery,
   };
 
-  return (
-    <CompanyListContext.Provider value={value}>
-      {children}
-    </CompanyListContext.Provider>
-  );
+  return <CompanyListContext.Provider value={value}>{children}</CompanyListContext.Provider>;
 }
 
 export function useCompanyListContext(): CompanyListContextValue {
   const context = useContext(CompanyListContext);
   if (!context) {
-    throw new Error(
-      `useCompanyListContext must be used within a CompanyListProvider.`
-    );
+    throw new Error('useCompanyListContext must be used within a CompanyListProvider.');
   }
   return context;
 }

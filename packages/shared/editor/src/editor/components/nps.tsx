@@ -1,29 +1,23 @@
-import { useCallback, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { ContentEditorNPSElement } from "../../types/editor";
-import { Button } from "@usertour-ui/button";
-import { ContentActions } from "../..";
-import { RulesCondition } from "@usertour-ui/types";
-import { QuestionTooltip } from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { RulesCondition } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
+import { ContentActions } from '../..';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ContentEditorNPSElement } from '../../types/editor';
+import { Button } from '@usertour-ui/button';
 
 const buttonBaseClass =
-  "flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30  rounded-md main-transition p-2 py-2 text-base justify-center";
-
-const getScoreColor = (score: number) => {
-  if (score <= 6) return "bg-red-500";
-  if (score <= 8) return "bg-yellow-500";
-  return "bg-green-500";
-};
+  'flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30  rounded-md main-transition p-2 py-2 text-base justify-center';
 
 export const ContentEditorNPS = (props: {
   element: ContentEditorNPSElement;
   id: string;
   path: number[];
 }) => {
-  const { element, id, path } = props;
+  const { element, id } = props;
   const {
     updateElement,
     zIndex,
@@ -43,17 +37,17 @@ export const ContentEditorNPS = (props: {
           ...element,
           data: { ...element.data, name: e.target.value },
         },
-        id
+        id,
       );
     },
-    [element, id]
+    [element, id],
   );
 
   const handleActionChange = (actions: RulesCondition[]) => {
     updateElement({ ...element, data: { ...element.data, actions } }, id);
   };
 
-  const handleLabelChange = (value: string, type: "lowLabel" | "highLabel") => {
+  const handleLabelChange = (value: string, type: 'lowLabel' | 'highLabel') => {
     updateElement({ ...element, data: { ...element.data, [type]: value } }, id);
   };
 
@@ -63,17 +57,17 @@ export const ContentEditorNPS = (props: {
         <div className="cursor-pointer">
           <div
             className="grid gap-1.5 !gap-1"
-            style={{ gridTemplateColumns: "repeat(11, minmax(0px, 1fr))" }}
+            style={{ gridTemplateColumns: 'repeat(11, minmax(0px, 1fr))' }}
           >
             {Array.from({ length: 11 }, (_, i) => (
-              <button key={i} className={`${buttonBaseClass}`}>
+              <Button key={i} className={`${buttonBaseClass}`}>
                 {i}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-            <p>{element.data.lowLabel || "Not at all likely"}</p>
-            <p>{element.data.highLabel || "Extremely likely"}</p>
+            <p>{element.data.lowLabel || 'Not at all likely'}</p>
+            <p>{element.data.highLabel || 'Extremely likely'}</p>
           </div>
         </div>
       </Popover.Trigger>
@@ -108,9 +102,8 @@ export const ContentEditorNPS = (props: {
             <Label className="flex items-center gap-1">
               Labels
               <QuestionTooltip>
-                Below each option, provide labels to clearly convey their
-                meaning, such as "Bad" positioned under the left option and
-                "Good" under the right.
+                Below each option, provide labels to clearly convey their meaning, such as "Bad"
+                positioned under the left option and "Good" under the right.
               </QuestionTooltip>
             </Label>
             <div className="flex flex-row gap-2">
@@ -118,13 +111,13 @@ export const ContentEditorNPS = (props: {
                 type="text"
                 value={element.data.lowLabel}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "lowLabel")}
+                onChange={(e) => handleLabelChange(e.target.value, 'lowLabel')}
               />
               <Input
                 type="text"
                 value={element.data.highLabel}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "highLabel")}
+                onChange={(e) => handleLabelChange(e.target.value, 'highLabel')}
               />
             </div>
           </div>
@@ -134,7 +127,7 @@ export const ContentEditorNPS = (props: {
   );
 };
 
-ContentEditorNPS.displayName = "ContentEditorNPS";
+ContentEditorNPS.displayName = 'ContentEditorNPS';
 
 export type ContentEditorNPSSerializeType = {
   className?: string;
@@ -143,36 +136,29 @@ export type ContentEditorNPSSerializeType = {
   onClick?: (element: ContentEditorNPSElement) => void;
 };
 
-export const ContentEditorNPSSerialize = (
-  props: ContentEditorNPSSerializeType
-) => {
-  const { className, children, element, onClick } = props;
+export const ContentEditorNPSSerialize = (props: ContentEditorNPSSerializeType) => {
+  const { element } = props;
 
-  const handleOnClick = () => {
-    if (onClick) {
-      onClick(element);
-    }
-  };
   return (
     <>
       <div className="cursor-pointer">
         <div
           className="grid gap-1.5 !gap-1"
-          style={{ gridTemplateColumns: "repeat(11, minmax(0px, 1fr))" }}
+          style={{ gridTemplateColumns: 'repeat(11, minmax(0px, 1fr))' }}
         >
           {Array.from({ length: 11 }, (_, i) => (
-            <button key={i} className={`${buttonBaseClass}`}>
+            <Button key={i} className={`${buttonBaseClass}`} forSdk>
               {i}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-          <p>{element.data.lowLabel || "Not at all likely"}</p>
-          <p>{element.data.highLabel || "Extremely likely"}</p>
+          <p>{element.data.lowLabel || 'Not at all likely'}</p>
+          <p>{element.data.highLabel || 'Extremely likely'}</p>
         </div>
       </div>
     </>
   );
 };
 
-ContentEditorNPSSerialize.displayName = "ContentEditorNPSSerialize";
+ContentEditorNPSSerialize.displayName = 'ContentEditorNPSSerialize';

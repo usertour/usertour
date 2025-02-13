@@ -1,4 +1,4 @@
-import { Label } from "@usertour-ui/label";
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -6,8 +6,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+} from '@usertour-ui/select';
+import { HelpTooltip } from '@usertour-ui/shared-components';
 
 interface PrecisionSelectProps {
   value?: string;
@@ -15,18 +15,12 @@ interface PrecisionSelectProps {
   zIndex: number;
 }
 
-export const PrecisionSelect = ({
-  value,
-  onChange,
-  zIndex,
-}: PrecisionSelectProps) => {
+export const PrecisionSelect = ({ value, onChange, zIndex }: PrecisionSelectProps) => {
   return (
     <div className="items-center space-y-2">
       <div className="flex justify-start items-center space-x-1">
         <Label>Precision</Label>
-        <HelpTooltip>
-          How flexible Usertour should be when looking for the element. If
-        </HelpTooltip>
+        <HelpTooltip>How flexible Usertour should be when looking for the element. If</HelpTooltip>
       </div>
       <Select onValueChange={onChange} defaultValue={value}>
         <SelectTrigger>

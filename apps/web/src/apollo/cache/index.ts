@@ -1,7 +1,7 @@
-import { TypePolicy } from "@/apollo/type-policies";
-import { persistCache } from "apollo3-cache-persist";
+import { TypePolicy } from '@/apollo/type-policies';
+import { persistCache } from 'apollo3-cache-persist';
 
-import { InMemoryCache } from "@apollo/client";
+import { InMemoryCache } from '@apollo/client';
 
 async function initCache(): Promise<InMemoryCache> {
   const cache: InMemoryCache = new InMemoryCache({
@@ -12,7 +12,7 @@ async function initCache(): Promise<InMemoryCache> {
   await persistCache({
     cache,
     storage: window.localStorage,
-    debug: import.meta.env.MODE === "development",
+    debug: import.meta.env.MODE === 'development',
   });
 
   return cache;

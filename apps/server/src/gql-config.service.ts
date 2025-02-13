@@ -1,22 +1,22 @@
-import { GraphqlConfig } from "./common/configs/config.interface";
-import { ConfigService } from "@nestjs/config";
-import { ApolloDriverConfig, UserInputError } from "@nestjs/apollo";
-import { Injectable } from "@nestjs/common";
-import { GqlOptionsFactory } from "@nestjs/graphql";
-import { ValidationError } from "class-validator";
-import { isValid, isArray } from "@/utils/helper";
+import { isArray, isValid } from '@/utils/helper';
+import { ApolloDriverConfig, UserInputError } from '@nestjs/apollo';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { GqlOptionsFactory } from '@nestjs/graphql';
+import { ValidationError } from 'class-validator';
+import { GraphqlConfig } from './common/configs/config.interface';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
   constructor(private configService: ConfigService) {}
   createGqlOptions(): ApolloDriverConfig {
-    const graphqlConfig = this.configService.get<GraphqlConfig>("graphql");
+    const graphqlConfig = this.configService.get<GraphqlConfig>('graphql');
     return {
       // schema options
-      autoSchemaFile: graphqlConfig.schemaDestination || "./src/schema.graphql",
+      autoSchemaFile: graphqlConfig.schemaDestination || './src/schema.graphql',
       sortSchema: graphqlConfig.sortSchema,
       buildSchemaOptions: {
-        numberScalarMode: "integer",
+        numberScalarMode: 'integer',
       },
       // subscription
       installSubscriptionHandlers: true,
@@ -39,18 +39,16 @@ export class GqlConfigService implements GqlOptionsFactory {
           if (isValid(response.code)) {
             code = response.code;
           } else if (isValid(response.error)) {
-            code = response.error.replace(/\s+/g, "_").toUpperCase();
+            code = response.error.replace(/\s+/g, '_').toUpperCase();
           }
 
           if (isValid(response.message)) {
-            message = isArray(response.message)
-              ? response.message[0]
-              : response.message;
+            message = isArray(response.message) ? response.message[0] : response.message;
           }
         }
 
         //@ts-ignore
-        delete e.extensions.exception?.response;
+        e.extensions.exception.response = undefined;
 
         return {
           code,

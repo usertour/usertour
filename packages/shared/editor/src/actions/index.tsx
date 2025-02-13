@@ -1,8 +1,8 @@
-import { ContentActionsGroup } from "./actions-group";
 import {
   ContentActionsProvider,
   ContentActionsProviderProps,
-} from "../contexts/content-actions-context";
+} from '../contexts/content-actions-context';
+import { ContentActionsGroup } from './actions-group';
 
 export const ContentActions = (props: ContentActionsProviderProps) => {
   return (
@@ -12,4 +12,4 @@ export const ContentActions = (props: ContentActionsProviderProps) => {
   );
 };
 
-ContentActions.displayName = "ContentActions";
+ContentActions.displayName = 'ContentActions';

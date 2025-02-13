@@ -1,10 +1,10 @@
-import { Separator } from "@usertour-ui/separator";
+import { Separator } from '@usertour-ui/separator';
 
-import { ContentLocalizationListProvider } from "@/contexts/content-localization-list-context";
-import { useContentVersionContext } from "@/contexts/content-version-context";
-import { LocalizationListProvider } from "@/contexts/localization-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { ContentLocalizationTable } from "./content-localization-table";
+import { useAppContext } from '@/contexts/app-context';
+import { ContentLocalizationListProvider } from '@/contexts/content-localization-list-context';
+import { useContentVersionContext } from '@/contexts/content-version-context';
+import { LocalizationListProvider } from '@/contexts/localization-list-context';
+import { ContentLocalizationTable } from './content-localization-table';
 
 export const ContentLocalizationList = () => {
   const { version } = useContentVersionContext();
@@ -31,4 +31,4 @@ export const ContentLocalizationList = () => {
   );
 };
 
-ContentLocalizationList.displayName = "ContentLocalizationList";
+ContentLocalizationList.displayName = 'ContentLocalizationList';

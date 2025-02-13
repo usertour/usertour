@@ -1,24 +1,16 @@
-import {
-  AttributeBizType,
-  AttributeDataType,
-} from "@/attributes/models/attribute.model";
-import { Attribute, Prisma } from "@prisma/client";
-import { InitThemeInput } from "@/themes/dto/theme.input";
-import {
-  BizEvents,
-  CompanyAttributes,
-  EventAttributes,
-  UserAttributes,
-} from "../consts/attribute";
+import { AttributeBizType, AttributeDataType } from '@/attributes/models/attribute.model';
+import { InitThemeInput } from '@/themes/dto/theme.input';
+import { Attribute, Prisma } from '@prisma/client';
+import { BizEvents, CompanyAttributes, EventAttributes, UserAttributes } from '../consts/attribute';
 
 export const initializationThemes: InitThemeInput[] = [
   {
-    name: "Standard Light",
+    name: 'Standard Light',
     settings: {
       font: {
         fontSize: 14,
-        linkColor: "#7ed321",
-        fontFamily: "System font",
+        linkColor: '#7ed321',
+        fontFamily: 'System font',
         h1FontSize: 18,
         h2FontSize: 24,
         lineHeight: 20,
@@ -27,9 +19,9 @@ export const initializationThemes: InitThemeInput[] = [
       },
       modal: { width: 500, padding: 10 },
       border: {
-        borderColor: "#50e3c2",
+        borderColor: '#50e3c2',
         borderWidth: 1,
-        borderRadius: "8",
+        borderRadius: '8',
         borderWidthEnabled: false,
       },
       buttons: {
@@ -38,100 +30,100 @@ export const initializationThemes: InitThemeInput[] = [
         primary: {
           border: {
             color: {
-              color: "#417505",
-              hover: "#7ed321",
-              active: "#9013fe",
-              background: "#FFFFFF",
+              color: '#417505',
+              hover: '#7ed321',
+              active: '#9013fe',
+              background: '#FFFFFF',
             },
             enabled: false,
             borderWidth: 1,
           },
           textColor: {
-            color: "Auto",
-            hover: "Auto",
-            active: "Auto",
-            background: "#FFFFFF",
+            color: 'Auto',
+            hover: 'Auto',
+            active: 'Auto',
+            background: '#FFFFFF',
           },
           fontWeight: 400,
           backgroundColor: {
-            color: "#FFFFFF",
-            hover: "Auto",
-            active: "Auto",
-            background: "Auto",
+            color: '#FFFFFF',
+            hover: 'Auto',
+            active: 'Auto',
+            background: 'Auto',
           },
         },
         minWidth: 80,
         secondary: {
           border: {
             color: {
-              color: "Auto",
-              hover: "Auto",
-              active: "Auto",
-              background: "#FFFFFF",
+              color: 'Auto',
+              hover: 'Auto',
+              active: 'Auto',
+              background: '#FFFFFF',
             },
             enabled: true,
             borderWidth: 1,
           },
           textColor: {
-            color: "Auto",
-            hover: "Auto",
-            active: "Auto",
-            background: "#FFFFFF",
+            color: 'Auto',
+            hover: 'Auto',
+            active: 'Auto',
+            background: '#FFFFFF',
           },
           fontWeight: 400,
           backgroundColor: {
-            color: "#FFFFFF",
-            hover: "Auto",
-            active: "Auto",
-            background: "Auto",
+            color: '#FFFFFF',
+            hover: 'Auto',
+            active: 'Auto',
+            background: 'Auto',
           },
         },
         borderRadius: 3,
       },
       tooltip: { width: 300, notchSize: 20 },
-      xbutton: { color: "#f5a623" },
+      xbutton: { color: '#f5a623' },
       progress: {
-        color: "#f5a623",
+        color: '#f5a623',
         height: 2,
       },
       backdrop: {
-        color: "#020617",
+        color: '#020617',
         opacity: 18,
         highlight: {
-          type: "inset",
-          color: "#8b572a",
+          type: 'inset',
+          color: '#8b572a',
           radius: 3,
           spread: 3,
           opacity: 10,
         },
       },
       mainColor: {
-        color: "#020617",
-        hover: "Auto",
-        active: "Auto",
-        autoHover: "#ffffff",
-        autoActive: "#ffffff",
-        background: "#FFFFFF",
+        color: '#020617',
+        hover: 'Auto',
+        active: 'Auto',
+        autoHover: '#ffffff',
+        autoActive: '#ffffff',
+        background: '#FFFFFF',
       },
       brandColor: {
-        color: "#f8fafc",
-        hover: "Auto",
-        active: "Auto",
-        autoHover: "#3162ec",
-        autoActive: "#4576ff",
-        background: "#1d4ed8",
+        color: '#f8fafc',
+        hover: 'Auto',
+        active: 'Auto',
+        autoHover: '#3162ec',
+        autoActive: '#4576ff',
+        background: '#1d4ed8',
       },
     },
     isDefault: true,
     isSystem: true,
   },
   {
-    name: "Standard Dark",
+    name: 'Standard Dark',
     settings: {
       font: {
         fontSize: 14,
-        linkColor: "#7ed321",
-        fontFamily: "System font",
+        linkColor: '#7ed321',
+        fontFamily: 'System font',
         h1FontSize: 18,
         h2FontSize: 24,
         lineHeight: 20,
@@ -140,9 +132,9 @@ export const initializationThemes: InitThemeInput[] = [
       },
       modal: { width: 500, padding: 10 },
       border: {
-        borderColor: "#50e3c2",
+        borderColor: '#50e3c2',
         borderWidth: 1,
-        borderRadius: "8",
+        borderRadius: '8',
         borderWidthEnabled: false,
       },
       buttons: {
@@ -151,88 +143,88 @@ export const initializationThemes: InitThemeInput[] = [
         primary: {
           border: {
             color: {
-              color: "#417505",
-              hover: "#7ed321",
-              active: "#9013fe",
-              background: "#FFFFFF",
+              color: '#417505',
+              hover: '#7ed321',
+              active: '#9013fe',
+              background: '#FFFFFF',
             },
             enabled: false,
             borderWidth: 1,
           },
           textColor: {
-            color: "Auto",
-            hover: "Auto",
-            active: "Auto",
-            background: "#FFFFFF",
+            color: 'Auto',
+            hover: 'Auto',
+            active: 'Auto',
+            background: '#FFFFFF',
           },
           fontWeight: 400,
           backgroundColor: {
-            color: "#FFFFFF",
-            hover: "Auto",
-            active: "Auto",
-            background: "Auto",
+            color: '#FFFFFF',
+            hover: 'Auto',
+            active: 'Auto',
+            background: 'Auto',
           },
         },
         minWidth: 80,
         secondary: {
           border: {
             color: {
-              color: "Auto",
-              hover: "Auto",
-              active: "Auto",
-              background: "#FFFFFF",
+              color: 'Auto',
+              hover: 'Auto',
+              active: 'Auto',
+              background: '#FFFFFF',
             },
             enabled: true,
             borderWidth: 1,
           },
           textColor: {
-            color: "Auto",
-            hover: "Auto",
-            active: "Auto",
-            background: "#FFFFFF",
+            color: 'Auto',
+            hover: 'Auto',
+            active: 'Auto',
+            background: '#FFFFFF',
           },
           fontWeight: 400,
           backgroundColor: {
-            color: "#FFFFFF",
-            hover: "Auto",
-            active: "Auto",
-            background: "Auto",
+            color: '#FFFFFF',
+            hover: 'Auto',
+            active: 'Auto',
+            background: 'Auto',
           },
         },
         borderRadius: 3,
       },
       tooltip: { width: 300, notchSize: 20 },
-      xbutton: { color: "#f5a623" },
+      xbutton: { color: '#f5a623' },
       progress: {
-        color: "#f5a623",
+        color: '#f5a623',
         height: 2,
       },
       backdrop: {
-        color: "#020617",
+        color: '#020617',
         opacity: 18,
         highlight: {
-          type: "inset",
-          color: "#8b572a",
+          type: 'inset',
+          color: '#8b572a',
           radius: 3,
           spread: 3,
           opacity: 10,
         },
       },
       mainColor: {
-        color: "#f8fafc",
-        hover: "Auto",
-        active: "Auto",
-        autoHover: "#161a2b",
-        autoActive: "#2a2e3f",
-        background: "#020617",
+        color: '#f8fafc',
+        hover: 'Auto',
+        active: 'Auto',
+        autoHover: '#161a2b',
+        autoActive: '#2a2e3f',
+        background: '#020617',
       },
       brandColor: {
-        color: "#f8fafc",
-        hover: "Auto",
-        active: "Auto",
-        autoHover: "#3162ec",
-        autoActive: "#4576ff",
-        background: "#1d4ed8",
+        color: '#f8fafc',
+        hover: 'Auto',
+        active: 'Auto',
+        autoHover: '#3162ec',
+        autoActive: '#4576ff',
+        background: '#1d4ed8',
       },
     },
     isDefault: false,
@@ -242,7 +234,7 @@ export const initializationThemes: InitThemeInput[] = [
 
 const defaultEvents = [
   {
-    displayName: "Page Viewed",
+    displayName: 'Page Viewed',
     codeName: BizEvents.PAGE_VIEWED,
     attributes: [
       EventAttributes.LOCALE_CODE,
@@ -252,7 +244,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Flow Started",
+    displayName: 'Flow Started',
     codeName: BizEvents.FLOW_STARTED,
     attributes: [
       EventAttributes.FLOW_ID,
@@ -268,7 +260,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Flow Dismissed/Ended",
+    displayName: 'Flow Dismissed/Ended',
     codeName: BizEvents.FLOW_ENDED,
     attributes: [
       EventAttributes.FLOW_END_REASON,
@@ -284,7 +276,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Flow Step Seen",
+    displayName: 'Flow Step Seen',
     codeName: BizEvents.FLOW_STEP_SEEN,
     attributes: [
       EventAttributes.FLOW_ID,
@@ -304,7 +296,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Flow Step Completed",
+    displayName: 'Flow Step Completed',
     codeName: BizEvents.FLOW_STEP_COMPLETED,
     attributes: [
       EventAttributes.FLOW_ID,
@@ -324,7 +316,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Flow Completed",
+    displayName: 'Flow Completed',
     codeName: BizEvents.FLOW_COMPLETED,
     attributes: [
       EventAttributes.FLOW_ID,
@@ -339,7 +331,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Tooltip Target Missing",
+    displayName: 'Tooltip Target Missing',
     codeName: BizEvents.TOOLTIP_TARGET_MISSING,
     attributes: [
       EventAttributes.FLOW_ID,
@@ -359,7 +351,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Launcher Activated",
+    displayName: 'Launcher Activated',
     codeName: BizEvents.LAUNCHER_ACTIVATED,
     attributes: [
       EventAttributes.LAUNCHER_ID,
@@ -374,7 +366,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Launcher Dismissed",
+    displayName: 'Launcher Dismissed',
     codeName: BizEvents.LAUNCHER_DISMISSED,
     attributes: [
       EventAttributes.LAUNCHER_ID,
@@ -389,7 +381,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Launcher Seen",
+    displayName: 'Launcher Seen',
     codeName: BizEvents.LAUNCHER_SEEN,
     attributes: [
       EventAttributes.LAUNCHER_ID,
@@ -404,7 +396,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Question Answered",
+    displayName: 'Question Answered',
     codeName: BizEvents.QUESTION_ANSWERED,
     attributes: [
       EventAttributes.LIST_ANSWER,
@@ -419,7 +411,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Completed",
+    displayName: 'Checklist Completed',
     codeName: BizEvents.CHECKLIST_COMPLETED,
     attributes: [
       EventAttributes.LOCALE_CODE,
@@ -434,7 +426,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Dismissed/Ended",
+    displayName: 'Checklist Dismissed/Ended',
     codeName: BizEvents.CHECKLIST_DISMISSED,
     attributes: [
       EventAttributes.CHECKLIST_END_REASON,
@@ -450,7 +442,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Hidden",
+    displayName: 'Checklist Hidden',
     codeName: BizEvents.CHECKLIST_HIDDEN,
     attributes: [
       EventAttributes.CHECKLIST_VERSION_NUMBER,
@@ -465,7 +457,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Shown",
+    displayName: 'Checklist Shown',
     codeName: BizEvents.CHECKLIST_SEEN,
     attributes: [
       EventAttributes.PAGE_URL,
@@ -480,7 +472,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Started",
+    displayName: 'Checklist Started',
     codeName: BizEvents.CHECKLIST_STARTED,
     attributes: [
       EventAttributes.VIEWPORT_WIDTH,
@@ -496,7 +488,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Task Clicked",
+    displayName: 'Checklist Task Clicked',
     codeName: BizEvents.CHECKLIST_TASK_CLICKED,
     attributes: [
       EventAttributes.CHECKLIST_SESSION_ID,
@@ -514,7 +506,7 @@ const defaultEvents = [
     ],
   },
   {
-    displayName: "Checklist Task Completed",
+    displayName: 'Checklist Task Completed',
     codeName: BizEvents.CHECKLIST_TASK_COMPLETED,
     attributes: [
       EventAttributes.PAGE_URL,
@@ -536,365 +528,358 @@ const defaultEvents = [
 const defaultAttributes: Partial<Attribute>[] = [
   {
     codeName: UserAttributes.EMAIL,
-    displayName: "Email",
+    displayName: 'Email',
     bizType: AttributeBizType.USER,
     dataType: AttributeDataType.String,
     description: "User's email address",
   },
   {
     codeName: UserAttributes.NAME,
-    displayName: "Name",
+    displayName: 'Name',
     bizType: AttributeBizType.USER,
     dataType: AttributeDataType.String,
     description: "User's full name",
   },
   {
     codeName: UserAttributes.FIRST_SEEN_AT,
-    displayName: "First Seen",
+    displayName: 'First Seen',
     bizType: AttributeBizType.USER,
     dataType: AttributeDataType.DateTime,
-    description: "When user was first seen by Usertour",
+    description: 'When user was first seen by Usertour',
   },
   {
     codeName: UserAttributes.LAST_SEEN_AT,
-    displayName: "Last Seen",
+    displayName: 'Last Seen',
     bizType: AttributeBizType.USER,
     dataType: AttributeDataType.DateTime,
-    description: "When user was last seen by Usertour",
+    description: 'When user was last seen by Usertour',
   },
   {
     codeName: UserAttributes.SIGNED_UP_AT,
-    displayName: "Signed Up",
+    displayName: 'Signed Up',
     bizType: AttributeBizType.USER,
     dataType: AttributeDataType.DateTime,
-    description: "When user first signed up in your app",
+    description: 'When user first signed up in your app',
   },
   {
     codeName: CompanyAttributes.NAME,
-    displayName: "Company Name",
+    displayName: 'Company Name',
     bizType: AttributeBizType.COMPANY,
     dataType: AttributeDataType.String,
     description: "Company's name",
   },
   {
     codeName: CompanyAttributes.FIRST_SEEN_AT,
-    displayName: "Company First Seen",
+    displayName: 'Company First Seen',
     bizType: AttributeBizType.COMPANY,
     dataType: AttributeDataType.DateTime,
-    description: "When a member of the company was first seen by Usertour",
+    description: 'When a member of the company was first seen by Usertour',
   },
   {
     codeName: CompanyAttributes.LAST_SEEN_AT,
-    displayName: "Company Last Seen",
+    displayName: 'Company Last Seen',
     bizType: AttributeBizType.COMPANY,
     dataType: AttributeDataType.DateTime,
-    description: "When a member of the company was last seen by Usertour",
+    description: 'When a member of the company was last seen by Usertour',
   },
   {
     codeName: CompanyAttributes.SIGNED_UP_AT,
-    displayName: "Company Signed Up",
+    displayName: 'Company Signed Up',
     bizType: AttributeBizType.COMPANY,
     dataType: AttributeDataType.DateTime,
-    description: "When the company was first signed up in your app",
+    description: 'When the company was first signed up in your app',
   },
   {
     codeName: EventAttributes.FLOW_ID,
-    displayName: "Flow ID",
+    displayName: 'Flow ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour flow id",
+    description: 'Usertour flow id',
   },
   {
     codeName: EventAttributes.FLOW_NAME,
-    displayName: "Flow Name",
+    displayName: 'Flow Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour flow name",
+    description: 'Usertour flow name',
   },
   {
     codeName: EventAttributes.FLOW_SESSION_ID,
-    displayName: "Flow Session ID",
+    displayName: 'Flow Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "A session of a specific user viewing a specific flow",
+    description: 'A session of a specific user viewing a specific flow',
   },
   {
     codeName: EventAttributes.FLOW_START_REASON,
-    displayName: "Flow Start Reason",
+    displayName: 'Flow Start Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Describes why a flow started",
+    description: 'Describes why a flow started',
   },
   {
     codeName: EventAttributes.FLOW_END_REASON,
-    displayName: "Flow End Reason",
+    displayName: 'Flow End Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Describes why a flow ended",
+    description: 'Describes why a flow ended',
   },
   {
     codeName: EventAttributes.FLOW_STEP_ID,
-    displayName: "Flow Step ID",
+    displayName: 'Flow Step ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour flow step id",
+    description: 'Usertour flow step id',
   },
   {
     codeName: EventAttributes.FLOW_STEP_CVID,
-    displayName: "Flow Step CVID",
+    displayName: 'Flow Step CVID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour flow step cvid",
+    description: 'Usertour flow step cvid',
   },
   {
     codeName: EventAttributes.FLOW_STEP_NAME,
-    displayName: "Flow Step Name",
+    displayName: 'Flow Step Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour flow step name",
+    description: 'Usertour flow step name',
   },
   {
     codeName: EventAttributes.FLOW_STEP_NUMBER,
-    displayName: "Flow Step Number",
+    displayName: 'Flow Step Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "Usertour flow step number",
+    description: 'Usertour flow step number',
   },
   {
     codeName: EventAttributes.FLOW_STEP_PROGRESS,
-    displayName: "Flow Step Progress",
+    displayName: 'Flow Step Progress',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "Usertour flow step progress (% towards goal step)",
+    description: 'Usertour flow step progress (% towards goal step)',
   },
   {
     codeName: EventAttributes.FLOW_VERSION_ID,
-    displayName: "Flow Version ID",
+    displayName: 'Flow Version ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour flow version id",
+    description: 'Usertour flow version id',
   },
   {
     codeName: EventAttributes.FLOW_VERSION_NUMBER,
-    displayName: "Flow Version Number",
+    displayName: 'Flow Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "Usertour flow version number",
+    description: 'Usertour flow version number',
   },
   {
     codeName: EventAttributes.LAUNCHER_ID,
-    displayName: "Launcher ID",
+    displayName: 'Launcher ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour launcher id",
+    description: 'Usertour launcher id',
   },
   {
     codeName: EventAttributes.LAUNCHER_NAME,
-    displayName: "Launcher Name",
+    displayName: 'Launcher Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour launcher name",
+    description: 'Usertour launcher name',
   },
   {
     codeName: EventAttributes.LAUNCHER_SESSION_ID,
-    displayName: "Launcher Session ID",
+    displayName: 'Launcher Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "A session of a specific user viewing a specific launcher",
+    description: 'A session of a specific user viewing a specific launcher',
   },
   {
     codeName: EventAttributes.LAUNCHER_VERSION_ID,
-    displayName: "Launcher Version ID",
+    displayName: 'Launcher Version ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour launcher version",
+    description: 'Usertour launcher version',
   },
   {
     codeName: EventAttributes.LAUNCHER_VERSION_NUMBER,
-    displayName: "Launcher Version Number",
+    displayName: 'Launcher Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "Usertour launcher version number",
+    description: 'Usertour launcher version number',
   },
   {
     codeName: EventAttributes.CHECKLIST_ID,
-    displayName: "Checklist ID",
+    displayName: 'Checklist ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour checklist id",
+    description: 'Usertour checklist id',
   },
   {
     codeName: EventAttributes.CHECKLIST_NAME,
-    displayName: "Checklist Name",
+    displayName: 'Checklist Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour checklist name",
+    description: 'Usertour checklist name',
   },
   {
     codeName: EventAttributes.CHECKLIST_SESSION_ID,
-    displayName: "Checklist Session ID",
+    displayName: 'Checklist Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "A session of a specific user viewing a specific checklist",
+    description: 'A session of a specific user viewing a specific checklist',
   },
   {
     codeName: EventAttributes.CHECKLIST_VERSION_ID,
-    displayName: "Checklist Version ID",
+    displayName: 'Checklist Version ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour checklist version",
+    description: 'Usertour checklist version',
   },
   {
     codeName: EventAttributes.CHECKLIST_VERSION_NUMBER,
-    displayName: "Checklist Version Number",
+    displayName: 'Checklist Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "Usertour checklist version number",
+    description: 'Usertour checklist version number',
   },
   {
     codeName: EventAttributes.CHECKLIST_END_REASON,
-    displayName: "Checklist End Reason",
+    displayName: 'Checklist End Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Describes why a checklist ended",
+    description: 'Describes why a checklist ended',
   },
   {
     codeName: EventAttributes.CHECKLIST_START_REASON,
-    displayName: "Checklist Start Reason",
+    displayName: 'Checklist Start Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Describes why a checklist started",
+    description: 'Describes why a checklist started',
   },
   {
     codeName: EventAttributes.CHECKLIST_TASK_CVID,
-    displayName: "Checklist Task CVID",
+    displayName: 'Checklist Task CVID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
     description:
-      "Usertour checklist task Cross-Version ID (a pseudo-ID that does not change across versions)",
+      'Usertour checklist task Cross-Version ID (a pseudo-ID that does not change across versions)',
   },
   {
     codeName: EventAttributes.CHECKLIST_TASK_ID,
-    displayName: "Checklist Task ID",
+    displayName: 'Checklist Task ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour checklist task id",
+    description: 'Usertour checklist task id',
   },
   {
     codeName: EventAttributes.CHECKLIST_TASK_NAME,
-    displayName: "Checklist Task Name",
+    displayName: 'Checklist Task Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour checklist task name",
+    description: 'Usertour checklist task name',
   },
   {
     codeName: EventAttributes.EVENT_TRACKER_ID,
-    displayName: "Event Tracker ID",
+    displayName: 'Event Tracker ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour event tracker id",
+    description: 'Usertour event tracker id',
   },
   {
     codeName: EventAttributes.EVENT_TRACKER_NAME,
-    displayName: "Event Tracker Name",
+    displayName: 'Event Tracker Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour event tracker name",
+    description: 'Usertour event tracker name',
   },
   {
     codeName: EventAttributes.EVENT_TRACKER_VERSION_ID,
-    displayName: "Event Tracker Version ID",
+    displayName: 'Event Tracker Version ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "Usertour event tracker version",
+    description: 'Usertour event tracker version',
   },
   {
     codeName: EventAttributes.EVENT_TRACKER_VERSION_NUMBER,
-    displayName: "Event Tracker Version Number",
+    displayName: 'Event Tracker Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "Usertour event tracker version number",
+    description: 'Usertour event tracker version number',
   },
   {
     codeName: EventAttributes.LIST_ANSWER,
-    displayName: "List Answer",
+    displayName: 'List Answer',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.List,
-    description: "The selected answer from a list of options",
+    description: 'The selected answer from a list of options',
   },
   {
     codeName: EventAttributes.NUMBER_ANSWER,
-    displayName: "Number Answer",
+    displayName: 'Number Answer',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "The numeric answer provided",
+    description: 'The numeric answer provided',
   },
   {
     codeName: EventAttributes.TEXT_ANSWER,
-    displayName: "Text Answer",
+    displayName: 'Text Answer',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "The text answer provided",
+    description: 'The text answer provided',
   },
   {
     codeName: EventAttributes.LOCALE_CODE,
-    displayName: "Locale Code",
+    displayName: 'Locale Code',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "The locale/language code for the content",
+    description: 'The locale/language code for the content',
   },
   {
     codeName: EventAttributes.PAGE_URL,
-    displayName: "Page URL",
+    displayName: 'Page URL',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "The URL of the page where the event occurred",
+    description: 'The URL of the page where the event occurred',
   },
   {
     codeName: EventAttributes.VIEWPORT_HEIGHT,
-    displayName: "Viewport Height",
+    displayName: 'Viewport Height',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "The height of the browser viewport in pixels",
+    description: 'The height of the browser viewport in pixels',
   },
   {
     codeName: EventAttributes.VIEWPORT_WIDTH,
-    displayName: "Viewport Width",
+    displayName: 'Viewport Width',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: "The width of the browser viewport in pixels",
+    description: 'The width of the browser viewport in pixels',
   },
   {
     codeName: EventAttributes.QUESTION_CVID,
-    displayName: "Question CVID",
+    displayName: 'Question CVID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description:
-      "Question Cross-Version ID (a pseudo-ID that does not change across versions)",
+    description: 'Question Cross-Version ID (a pseudo-ID that does not change across versions)',
   },
   {
     codeName: EventAttributes.QUESTION_NAME,
-    displayName: "Question Name",
+    displayName: 'Question Name',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: "The name of the question",
+    description: 'The name of the question',
   },
 ];
 
-const initializationAttributes = async (
-  tx: Prisma.TransactionClient,
-  projectId: string
-) => {
+const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
   const predefined = true;
   return await tx.attribute.createMany({
     data: defaultAttributes.map((attr) => ({ ...attr, projectId, predefined })),
   });
 };
 
-const initializationEvents = async (
-  tx: Prisma.TransactionClient,
-  projectId: string
-) => {
+const initializationEvents = async (tx: Prisma.TransactionClient, projectId: string) => {
   const predefined = true;
   return await tx.event.createMany({
     data: defaultEvents.map(({ displayName, codeName }) => ({
@@ -906,10 +891,7 @@ const initializationEvents = async (
   });
 };
 
-const initializationAttributeOnEvent = async (
-  tx: Prisma.TransactionClient,
-  projectId: string
-) => {
+const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, projectId: string) => {
   const attributes = await tx.attribute.findMany({
     where: { bizType: AttributeBizType.EVENT, predefined: true, projectId },
   });
@@ -918,7 +900,7 @@ const initializationAttributeOnEvent = async (
   const inserts = [];
   for (let z = 0; z < defaultEvents.length; z++) {
     const defaultEvent = defaultEvents[z];
-    const event = events.find((e) => e.codeName == defaultEvent.codeName);
+    const event = events.find((e) => e.codeName === defaultEvent.codeName);
     if (!event) {
       continue;
     }
@@ -932,10 +914,7 @@ const initializationAttributeOnEvent = async (
   await tx.attributeOnEvent.createMany({ data: [...inserts] });
 };
 
-export const initialization = async (
-  tx: Prisma.TransactionClient,
-  projectId: string
-) => {
+export const initialization = async (tx: Prisma.TransactionClient, projectId: string) => {
   await initializationAttributes(tx, projectId);
   await initializationEvents(tx, projectId);
   await initializationAttributeOnEvent(tx, projectId);

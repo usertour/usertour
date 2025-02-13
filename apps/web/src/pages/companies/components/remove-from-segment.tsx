@@ -1,17 +1,16 @@
-import { CloseIcon } from "@usertour-ui/icons";
-import { Button } from "@usertour-ui/button";
-import { Table } from "@tanstack/react-table"
-import { useCallback, useState } from "react";
-import { BizCompanyRemoveForm } from "./bizuser-remove-form";
-import { Segment } from "@usertour-ui/types";
+import { CloseIcon } from '@usertour-ui/icons';
+import { Button } from '@usertour-ui/button';
+import { Table } from '@tanstack/react-table';
+import { useCallback, useState } from 'react';
+import { BizCompanyRemoveForm } from './bizuser-remove-form';
+import { Segment } from '@usertour-ui/types';
 
-
-interface RemoveFromSegmentProps<TData> {
-  table: Table<TData>
-  currentSegment: Segment
+interface RemoveFromSegmentProps {
+  table: Table<any>;
+  currentSegment: Segment;
 }
 
-export const RemoveFromSegment = function <TData>(props: RemoveFromSegmentProps<TData>) {
+export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
 
   const [openDelete, setOpenDelete] = useState(false);
@@ -21,18 +20,21 @@ export const RemoveFromSegment = function <TData>(props: RemoveFromSegmentProps<
     const rows = table.getFilteredSelectedRowModel().rows;
     const ids = [];
     for (const row of rows) {
-      ids.push(row.getValue("id"))
+      ids.push(row.getValue('id'));
     }
     if (ids.length > 0) {
-      setBizCompanyIds(ids)
+      setBizCompanyIds(ids);
       setOpenDelete(true);
     }
-  }, [table, bizCompanyIds])
-
+  }, [table, bizCompanyIds]);
 
   return (
     <>
-      <Button variant={"ghost"} className="h-8 text-primary hover:text-primary px-1" onClick={handleOnClick}>
+      <Button
+        variant={'ghost'}
+        className="h-8 text-primary hover:text-primary px-1"
+        onClick={handleOnClick}
+      >
         <CloseIcon className="mr-1" />
         Remove from this segment
       </Button>
@@ -51,4 +53,4 @@ export const RemoveFromSegment = function <TData>(props: RemoveFromSegmentProps<
   );
 };
 
-RemoveFromSegment.displayName = "RemoveFromSegment";
+RemoveFromSegment.displayName = 'RemoveFromSegment';

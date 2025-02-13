@@ -1,10 +1,10 @@
-import { ThemeDetailHeader } from "./components/theme-detail-header";
-import { useParams } from "react-router-dom";
-import { ThemeDetailProvider } from "@/contexts/theme-detail-context";
-import { ThemeDetailContent } from "./components/theme-detail-content";
+import { ThemeDetailProvider } from '@/contexts/theme-detail-context';
+import { useParams } from 'react-router-dom';
+import { ThemeDetailContent } from './components/theme-detail-content';
+import { ThemeDetailHeader } from './components/theme-detail-header';
 
 export const SettingsThemeDetail = () => {
-  const { themeId = "" } = useParams();
+  const { themeId = '' } = useParams();
 
   return (
     <>
@@ -18,4 +18,4 @@ export const SettingsThemeDetail = () => {
   );
 };
 
-SettingsThemeDetail.displayName = "SettingsThemeDetail";
+SettingsThemeDetail.displayName = 'SettingsThemeDetail';

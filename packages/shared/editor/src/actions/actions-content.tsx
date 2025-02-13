@@ -1,5 +1,18 @@
-import * as Popover from "@radix-ui/react-popover";
-import { useActionsGroupContext } from "../contexts/actions-group-context";
+import { CaretSortIcon, CheckIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@usertour-ui/command';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { getContentError } from '@usertour-ui/shared-utils';
+import { ContentDataType } from '@usertour-ui/types';
+import { cn } from '@usertour-ui/ui-utils';
 import {
   Dispatch,
   SetStateAction,
@@ -8,41 +21,21 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
-import {
-  CaretSortIcon,
-  CheckIcon,
-  OpenInNewWindowIcon,
-} from "@radix-ui/react-icons";
-import { cn } from "@usertour-ui/ui-utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@usertour-ui/command";
-import { Button } from "@usertour-ui/button";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { ContentActionsRemove } from "./actions-remove";
+} from 'react';
+import { useActionsGroupContext } from '../contexts/actions-group-context';
+import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
   ContentActionsError,
   ContentActionsErrorAnchor,
   ContentActionsErrorContent,
-} from "./actions-error";
+} from './actions-error';
 import {
   ContentActionsPopover,
   ContentActionsPopoverContent,
   ContentActionsPopoverTrigger,
-} from "./actions-popper";
-import {
-  ContentActionsConditionIcon,
-  ActionsConditionRightContent,
-} from "./actions-template";
-import { useContentActionsContext } from "../contexts/content-actions-context";
-import { getContentError } from "@usertour-ui/shared-utils";
-import { EDITOR_RICH_ACTION_CONTENT } from "@usertour-ui/constants";
-import { ContentDataType } from "@usertour-ui/types";
+} from './actions-popper';
+import { ContentActionsRemove } from './actions-remove';
+import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 
 export interface SelectItemType {
   id: string;
@@ -64,15 +57,15 @@ interface ContentActionsContentsContextValue {
   setSelectedPreset: Dispatch<SetStateAction<SelectItemType | null>>;
 }
 
-const ContentActionsContentsContext = createContext<
-  ContentActionsContentsContextValue | undefined
->(undefined);
+const ContentActionsContentsContext = createContext<ContentActionsContentsContextValue | undefined>(
+  undefined,
+);
 
 function useContentActionsContentsContext(): ContentActionsContentsContextValue {
   const context = useContext(ContentActionsContentsContext);
   if (!context) {
     throw new Error(
-      `useContentActionsContentsContext must be used within a ContentActionsContentsContext.`
+      'useContentActionsContentsContext must be used within a ContentActionsContentsContext.',
     );
   }
   return context;
@@ -80,8 +73,7 @@ function useContentActionsContentsContext(): ContentActionsContentsContextValue 
 
 const ContentActionsContentsName = () => {
   const [open, setOpen] = useState(false);
-  const { selectedPreset, setSelectedPreset } =
-    useContentActionsContentsContext();
+  const { selectedPreset, setSelectedPreset } = useContentActionsContentsContext();
   const { contents, zIndex } = useContentActionsContext();
   const handleOnSelected = (item: SelectItemType) => {
     setSelectedPreset(item);
@@ -91,24 +83,20 @@ const ContentActionsContentsName = () => {
   const handleFilter = useCallback(
     (value: string, search: string) => {
       if (contents && contents.length > 0) {
-        const flow = contents.find((flow) => flow.id == value);
-        if (flow && flow.name && flow.name.includes(search)) {
+        const flow = contents.find((flow) => flow.id === value);
+        if (flow?.name?.includes(search)) {
           return 1;
         }
       }
       return 0;
     },
-    [contents]
+    [contents],
   );
   return (
     <div className="flex flex-row">
       <Popover.Popover open={open} onOpenChange={setOpen}>
         <Popover.PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            className="flex-1 justify-between "
-          >
+          <Button variant="outline" className="flex-1 justify-between ">
             {selectedPreset?.name}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -125,7 +113,7 @@ const ContentActionsContentsName = () => {
                 {contents &&
                   contents.length > 0 &&
                   contents
-                    .filter((c) => c.type == ContentDataType.FLOW)
+                    .filter((c) => c.type === ContentDataType.FLOW)
                     .map((item) => (
                       <CommandItem
                         key={item.id}
@@ -134,17 +122,15 @@ const ContentActionsContentsName = () => {
                         onSelect={() => {
                           handleOnSelected({
                             id: item.id,
-                            name: item.name || "",
+                            name: item.name || '',
                           });
                         }}
                       >
                         {item.name}
                         <CheckIcon
                           className={cn(
-                            "ml-auto h-4 w-4",
-                            selectedPreset?.id === item.id
-                              ? "opacity-100"
-                              : "opacity-0"
+                            'ml-auto h-4 w-4',
+                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
                           )}
                         />
                       </CommandItem>
@@ -164,13 +150,13 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
   const { contents, zIndex } = useContentActionsContext();
   const item =
     contents && contents.length > 0
-      ? contents?.find((item) => item.id == data?.contentId)
+      ? contents?.find((item) => item.id === data?.contentId)
       : undefined;
   const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(
-    item ? { id: item?.id, name: item?.name || "" } : null
+    item ? { id: item?.id, name: item?.name || '' } : null,
   );
   const [openError, setOpenError] = useState(false);
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
   const [open, setOpen] = useState(false);
   const value = {
     selectedPreset,
@@ -182,9 +168,9 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
       return;
     }
     const updates = {
-      contentId: selectedPreset?.id || "",
-      type: "flow",
-      logic: "and",
+      contentId: selectedPreset?.id || '',
+      type: 'flow',
+      logic: 'and',
     };
     const { showError, errorInfo } = getContentError(updates);
     setOpenError(showError);
@@ -203,8 +189,7 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
                   <ContentActionsConditionIcon>
                     <OpenInNewWindowIcon width={16} height={16} />
                   </ContentActionsConditionIcon>
-                  Start flow:{" "}
-                  <span className="font-bold">{selectedPreset?.name} </span>
+                  Start flow: <span className="font-bold">{selectedPreset?.name} </span>
                 </ContentActionsPopoverTrigger>
                 <ContentActionsPopoverContent
                   style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}
@@ -218,9 +203,7 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
               <ContentActionsRemove index={index} />
             </ActionsConditionRightContent>
           </ContentActionsErrorAnchor>
-          <ContentActionsErrorContent
-            style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}
-          >
+          <ContentActionsErrorContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}>
             {errorInfo}
           </ContentActionsErrorContent>
         </div>
@@ -229,4 +212,4 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
   );
 };
 
-ContentActionsContents.displayName = "ContentActionsContents";
+ContentActionsContents.displayName = 'ContentActionsContents';

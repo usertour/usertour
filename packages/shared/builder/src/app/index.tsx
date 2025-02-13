@@ -3,20 +3,20 @@ import {
   ContentListProvider,
   ThemeListProvider,
   useThemeListContext,
-} from "@usertour-ui/contexts";
-import { useEffect } from "react";
-import { FlowBuilderTrigger, FlowBuilderDetail } from "../pages/flow";
-import { BuilderSideBar } from "../pages/sidebar";
+} from '@usertour-ui/contexts';
+import { useEffect } from 'react';
 import {
   BuilderMode,
   BuilderProvider,
   ChecklistProvider,
   LauncherProvider,
   useBuilderContext,
-} from "../contexts";
-import { LauncherBuilder } from "../pages/launcher";
-import { ChecklistBuilder } from "../pages/checklist";
-import { BannerBuilder } from "../pages/banner";
+} from '../contexts';
+import { BannerBuilder } from '../pages/banner';
+import { ChecklistBuilder } from '../pages/checklist';
+import { FlowBuilderDetail, FlowBuilderTrigger } from '../pages/flow';
+import { LauncherBuilder } from '../pages/launcher';
+import { BuilderSideBar } from '../pages/sidebar';
 
 const Container = () => {
   const { currentMode, currentVersion, setCurrentTheme } = useBuilderContext();
@@ -27,36 +27,39 @@ const Container = () => {
       return;
     }
     if (themeList) {
-      const theme = themeList.find(
-        (theme) => theme.id == currentVersion.themeId
-      );
+      const theme = themeList.find((theme) => theme.id === currentVersion.themeId);
       if (theme) {
         setCurrentTheme(theme);
       }
     }
   }, [themeList, currentVersion]);
 
-  if (currentMode.mode == BuilderMode.FLOW_STEP_DETAIL) {
+  if (currentMode.mode === BuilderMode.FLOW_STEP_DETAIL) {
     return <FlowBuilderDetail />;
-  } else if (currentMode.mode == BuilderMode.FLOW_STEP_TRIGGER) {
+  }
+  if (currentMode.mode === BuilderMode.FLOW_STEP_TRIGGER) {
     return <FlowBuilderTrigger />;
-  } else if (
-    currentMode.mode == BuilderMode.LAUNCHER ||
-    currentMode.mode == BuilderMode.LAUNCHER_TARGET ||
-    currentMode.mode == BuilderMode.LAUNCHER_TOOLTIP
+  }
+  if (
+    currentMode.mode === BuilderMode.LAUNCHER ||
+    currentMode.mode === BuilderMode.LAUNCHER_TARGET ||
+    currentMode.mode === BuilderMode.LAUNCHER_TOOLTIP
   ) {
     return <LauncherBuilder />;
-  } else if (
-    currentMode.mode == BuilderMode.CHECKLIST ||
-    currentMode.mode == BuilderMode.CHECKLIST_ITEM
+  }
+  if (
+    currentMode.mode === BuilderMode.CHECKLIST ||
+    currentMode.mode === BuilderMode.CHECKLIST_ITEM
   ) {
     return <ChecklistBuilder />;
-  } else if (currentMode.mode == BuilderMode.BANNER) {
+  }
+  if (currentMode.mode === BuilderMode.BANNER) {
     return <BannerBuilder />;
-  } else if (
-    currentMode.mode == BuilderMode.FLOW ||
-    currentMode.mode == BuilderMode.NPS ||
-    currentMode.mode == BuilderMode.SURVEY
+  }
+  if (
+    currentMode.mode === BuilderMode.FLOW ||
+    currentMode.mode === BuilderMode.NPS ||
+    currentMode.mode === BuilderMode.SURVEY
   ) {
     return <BuilderSideBar />;
   }
@@ -94,7 +97,7 @@ const WebBuilderCore = (props: WebBuilderProps) => {
         <AttributeListProvider projectId={projectId}>
           <ContentListProvider
             environmentId={environmentId}
-            key={"environmentId"}
+            key={'environmentId'}
             contentType={undefined}
             defaultQuery={{}}
             defaultPagination={{
@@ -110,16 +113,12 @@ const WebBuilderCore = (props: WebBuilderProps) => {
   );
 };
 
-WebBuilderCore.displayName = "WebBuilderCore";
+WebBuilderCore.displayName = 'WebBuilderCore';
 
 export const WebBuilder = (props: WebBuilderProps) => {
   const { onSaved, usertourjsUrl } = props;
   return (
-    <BuilderProvider
-      isWebBuilder={true}
-      onSaved={onSaved}
-      usertourjsUrl={usertourjsUrl}
-    >
+    <BuilderProvider isWebBuilder={true} onSaved={onSaved} usertourjsUrl={usertourjsUrl}>
       <LauncherProvider>
         <ChecklistProvider>
           <WebBuilderCore {...props} />
@@ -129,4 +128,4 @@ export const WebBuilder = (props: WebBuilderProps) => {
   );
 };
 
-WebBuilder.displayName = "WebBuilder";
+WebBuilder.displayName = 'WebBuilder';

@@ -1,33 +1,27 @@
-import { App } from "./app";
-import { Evented } from "./evented";
-import { ExternalStore } from "./store";
-import { Config } from "./config";
-import {
-  EventAttributes,
-  flowEndReason,
-  SDKContent,
-  Step,
-  Theme,
-} from "@usertour-ui/types";
-import autoBind from "../utils/auto-bind";
-import { buildNavigateUrl } from "../utils/navigate-utils";
-import { window } from "../utils/globals";
-import { ReportEventOptions, ReportEventParams } from "../types/content";
-import { isValidContent } from "../utils/conditions";
-import { AppEvents } from "../utils/event";
-import { convertSettings } from "@usertour-ui/shared-utils";
-import { getAssets } from "./common";
-import { convertToCssVars } from "@usertour-ui/shared-utils";
-import { isEqual } from "lodash";
+import { convertSettings } from '@usertour-ui/shared-utils';
+import { convertToCssVars } from '@usertour-ui/shared-utils';
+import { EventAttributes, SDKContent, Step, Theme, flowEndReason } from '@usertour-ui/types';
+import { isEqual } from 'lodash';
+import { ReportEventOptions, ReportEventParams } from '../types/content';
+import autoBind from '../utils/auto-bind';
+import { isValidContent } from '../utils/conditions';
+import { AppEvents } from '../utils/event';
+import { window } from '../utils/globals';
+import { buildNavigateUrl } from '../utils/navigate-utils';
+import { App } from './app';
+import { getAssets } from './common';
+import { Config } from './config';
+import { Evented } from './evented';
+import { ExternalStore } from './store';
 
 export abstract class BaseContent<T = any> extends Evented {
   private readonly instance: App;
   private content: SDKContent;
   private readonly store: ExternalStore<T>;
   private readonly config: Config;
-  private isDismissed: boolean = false;
-  private isStarted: boolean = false;
-  private sessionId: string = "";
+  private isDismissed = false;
+  private isStarted = false;
+  private sessionId = '';
   private currentStep?: Step | null;
   constructor(instance: App, content: SDKContent, defaultStore: T) {
     super();
@@ -60,7 +54,7 @@ export abstract class BaseContent<T = any> extends Evented {
     const reusedSessionId = this.getReusedSessionId();
     const sessionId = reusedSessionId || (await this.createSessionId());
     if (!sessionId) {
-      throw new Error("Failed to create user session.");
+      throw new Error('Failed to create user session.');
     }
     this.sessionId = sessionId;
     this.isStarted = true;
@@ -69,12 +63,7 @@ export abstract class BaseContent<T = any> extends Evented {
   }
 
   canAutoStart() {
-    return (
-      !this.hasDismissed() &&
-      this.isAutoStart() &&
-      this.isValid() &&
-      this.hasContainer()
-    );
+    return !this.hasDismissed() && this.isAutoStart() && this.isValid() && this.hasContainer();
   }
 
   hasDismissed() {
@@ -200,16 +189,11 @@ export abstract class BaseContent<T = any> extends Evented {
   }
 
   async createSessionId() {
-    const session = await this.getInstance().createSession(
-      this.getContent().contentId
-    );
+    const session = await this.getInstance().createSession(this.getContent().contentId);
     return session?.id;
   }
 
-  private async reportEvent(
-    event: Partial<ReportEventParams>,
-    options: ReportEventOptions = {}
-  ) {
+  private async reportEvent(event: Partial<ReportEventParams>, options: ReportEventOptions = {}) {
     const userInfo = this.getUserInfo();
     const content = this.getContent();
     const { externalId: userId } = userInfo || {};
@@ -239,7 +223,7 @@ export abstract class BaseContent<T = any> extends Evented {
 
   async reportEventWithSession(
     event: Partial<ReportEventParams>,
-    options: ReportEventOptions = {}
+    options: ReportEventOptions = {},
   ) {
     const sessionId = this.getSessionId();
     if (!sessionId) {
@@ -250,7 +234,7 @@ export abstract class BaseContent<T = any> extends Evented {
         ...event,
         sessionId,
       },
-      options
+      options,
     );
   }
 
@@ -264,13 +248,13 @@ export abstract class BaseContent<T = any> extends Evented {
 
   async startNewTour(contentId: string) {
     await this.cancelActiveTour();
-    await this.startTour(contentId, "action");
+    await this.startTour(contentId, 'action');
   }
 
   handleNavigate(data: any) {
     const userInfo = this.getUserInfo();
     const url = buildNavigateUrl(data.value, userInfo);
-    window?.top?.open(url, data.openType == "same" ? "_self" : "_blank");
+    window?.top?.open(url, data.openType === 'same' ? '_self' : '_blank');
   }
 
   async activeContentConditions() {
@@ -281,15 +265,15 @@ export abstract class BaseContent<T = any> extends Evented {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
-    if (!themes || themes.length == 0) {
+    if (!themes || themes.length === 0) {
       return {};
     }
     let theme: Theme | undefined;
     const currentStep = this.getCurrentStep();
-    if (currentStep && currentStep.themeId) {
-      theme = themes.find((item) => item.id == currentStep?.themeId);
+    if (currentStep?.themeId) {
+      theme = themes.find((item) => item.id === currentStep?.themeId);
     } else {
-      theme = themes.find((item) => this.getContent()?.themeId == item.id);
+      theme = themes.find((item) => this.getContent()?.themeId === item.id);
     }
     if (!theme) {
       return {};

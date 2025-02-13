@@ -1,12 +1,7 @@
-import { Separator } from "@usertour-ui/separator";
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { useState } from "react";
-import { ThemeSettingsButton } from "./theme-settings-button";
-import { useThemeSettingsContext } from ".";
-import {
-  ThemeTypesSettingsButton,
-  ThemeTypesSettingsColor,
-} from "@/types/theme-settings";
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { Separator } from '@usertour-ui/separator';
+import { useThemeSettingsContext } from '.';
+import { ThemeSettingsButton } from './theme-settings-button';
 
 export const ThemeSettingsButtons = () => {
   const { settings, setSettings } = useThemeSettingsContext();
@@ -61,4 +56,4 @@ export const ThemeSettingsButtons = () => {
   );
 };
 
-ThemeSettingsButtons.displayName = "ThemeSettingsButtons";
+ThemeSettingsButtons.displayName = 'ThemeSettingsButtons';

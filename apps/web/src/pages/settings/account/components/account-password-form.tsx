@@ -1,58 +1,51 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@usertour-ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { Separator } from "@usertour-ui/separator";
-import { useMutation } from "@apollo/client";
-import { changePassword } from "@usertour-ui/gql";
-import { Icons } from "@/components/atoms/icons";
-import { useState } from "react";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { changePassword } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { Separator } from '@usertour-ui/separator';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 const accountFormSchema = z
   .object({
     currentPassword: z
       .string()
       .min(2, {
-        message: "Password must be at least 6 characters.",
+        message: 'Password must be at least 6 characters.',
       })
       .max(30, {
-        message: "Password must not be longer than 30 characters.",
+        message: 'Password must not be longer than 30 characters.',
       }),
     newPassword: z
       .string()
       .min(2, {
-        message: "Password must be at least 6 characters.",
+        message: 'Password must be at least 6 characters.',
       })
       .max(30, {
-        message: "Password must not be longer than 30 characters.",
+        message: 'Password must not be longer than 30 characters.',
       }),
     confirmPassword: z
       .string()
       .min(2, {
-        message: "Password must be at least 6 characters.",
+        message: 'Password must be at least 6 characters.',
       })
       .max(30, {
-        message: "Password must not be longer than 30 characters.",
+        message: 'Password must not be longer than 30 characters.',
       }),
   })
   .superRefine(({ confirmPassword, newPassword }, ctx) => {
     if (confirmPassword !== newPassword) {
       ctx.addIssue({
-        code: "custom",
-        message: "The passwords did not match",
+        code: 'custom',
+        message: 'The passwords did not match',
       });
     }
   });
@@ -64,9 +57,9 @@ export const AccountPasswordForm = () => {
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     },
   });
   const { toast } = useToast();
@@ -85,14 +78,14 @@ export const AccountPasswordForm = () => {
       });
       if (ret.data?.changePassword?.id) {
         toast({
-          variant: "success",
-          title: "Modified password successfully",
+          variant: 'success',
+          title: 'Modified password successfully',
         });
       }
       setIsLoading(false);
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -102,9 +95,7 @@ export const AccountPasswordForm = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-2xl font-semibold tracking-tight">
-          Change password
-        </h3>
+        <h3 className="text-2xl font-semibold tracking-tight">Change password</h3>
         {/* <p className="text-sm text-muted-foreground">Update your password.</p> */}
       </div>
       <Separator />
@@ -167,13 +158,9 @@ export const AccountPasswordForm = () => {
 
           <Button
             type="submit"
-            disabled={
-              form.watch("newPassword") == form.watch("currentPassword")
-            }
+            disabled={form.watch('newPassword') === form.watch('currentPassword')}
           >
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </form>
@@ -182,4 +169,4 @@ export const AccountPasswordForm = () => {
   );
 };
 
-AccountPasswordForm.displayName = "AccountPasswordForm";
+AccountPasswordForm.displayName = 'AccountPasswordForm';

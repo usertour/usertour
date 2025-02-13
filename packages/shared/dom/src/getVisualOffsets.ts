@@ -1,13 +1,13 @@
-import {getWindow} from './getWindow';
-import {isSafari} from './is';
-import {createEmptyCoords} from './math';
+import { getWindow } from './getWindow';
+import { isSafari } from './is';
+import { createEmptyCoords } from './math';
 
 const noOffsets = createEmptyCoords(0);
 
 export function getVisualOffsets(
   element: Element | undefined,
   isFixed = true,
-  floatingOffsetParent?: Element | Window | undefined
+  floatingOffsetParent?: Element | Window | undefined,
 ) {
   if (!isSafari()) {
     return noOffsets;

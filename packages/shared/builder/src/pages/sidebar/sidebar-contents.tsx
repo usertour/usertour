@@ -1,27 +1,22 @@
 import {
-  closestCenter,
   DndContext,
   DragEndEvent,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  closestCenter,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
+  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  DragHandleDots2Icon,
-  ExclamationTriangleIcon,
-  GearIcon,
-} from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { DragHandleDots2Icon, ExclamationTriangleIcon, GearIcon } from '@radix-ui/react-icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,42 +27,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@usertour-ui/alert-dialog";
-import { Delete2Icon, EventIcon2 } from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { Step } from "@usertour-ui/types";
-import { forwardRef, useCallback, useState } from "react";
+} from '@usertour-ui/alert-dialog';
+import { Button } from '@usertour-ui/button';
+import { Delete2Icon, EventIcon2 } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Step } from '@usertour-ui/types';
+import { forwardRef, useCallback, useState } from 'react';
 
-import { BuilderMode, useBuilderContext } from "../../contexts";
-import { stepIsReachable } from "../../utils/content-validate";
-import { defaultStep } from "@usertour-ui/shared-utils";
+import { defaultStep } from '@usertour-ui/shared-utils';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { stepIsReachable } from '../../utils/content-validate';
 
 const SidebarContent = forwardRef<HTMLDivElement, any>(
   (
-    {
-      index,
-      step,
-      onClick,
-      listeners = {},
-      attributes = {},
-      isReachable = true,
-      ...props
-    },
-    ref
+    { index, step, onClick, listeners = {}, attributes = {}, isReachable = true, ...props },
+    ref,
   ) => {
     const handleEdit = () => {
-      onClick("edit", index);
+      onClick('edit', index);
     };
     const handleEditTrigger = () => {
-      onClick("trigger", index);
+      onClick('trigger', index);
     };
     const handleDelete = () => {
-      onClick("delete", index);
+      onClick('delete', index);
     };
 
     return (
@@ -80,7 +63,7 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
       >
         <div className="flex items-center justify-between ">
           <div className="grow inline-flex items-center text-sm ">
-            <DragHandleDots2Icon {...listeners} />{" "}
+            <DragHandleDots2Icon {...listeners} />{' '}
             <span className="w-36 truncate ...">
               {index + 1}、{step.name}
             </span>
@@ -89,12 +72,7 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 h-fit"
-                    onClick={handleEdit}
-                  >
+                  <Button variant="ghost" size="sm" className="p-1 h-fit" onClick={handleEdit}>
                     <GearIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -138,16 +116,13 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    After deletion, it will not be possible to access or recover
-                    the data through any means. Please confirm.
+                    After deletion, it will not be possible to access or recover the data through
+                    any means. Please confirm.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    variant={"destructive"}
-                  >
+                  <AlertDialogAction onClick={handleDelete} variant={'destructive'}>
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -161,25 +136,20 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
               <ExclamationTriangleIcon className="h-3 w-3" />
             </div>
             <span className="text-xs grow ">
-              Step is not reachable from the start step. Add a button, trigger
-              that links to this step, or delete it.
+              Step is not reachable from the start step. Add a button, trigger that links to this
+              step, or delete it.
             </span>
           </div>
         )}
       </div>
     );
-  }
+  },
 );
 
 const SortableItem = ({ id, step, onClick, isReachable }: any) => {
-  const {
-    attributes,
-    listeners,
-    isDragging,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -197,7 +167,7 @@ const SortableItem = ({ id, step, onClick, isReachable }: any) => {
       step={step}
       listeners={listeners}
       attributes={attributes}
-    ></SidebarContent>
+    />
   );
 };
 
@@ -215,12 +185,12 @@ export const SidebarContents = () => {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
-  const handleDeleteStep = (step: Step, index: number) => {
+  const handleDeleteStep = (_: Step, index: number) => {
     setCurrentVersion((pre) => {
-      if (pre && pre.steps) {
+      if (pre?.steps) {
         const copySteps = [...pre.steps];
         copySteps.splice(index, 1);
         return { ...pre, steps: copySteps };
@@ -234,7 +204,7 @@ export const SidebarContents = () => {
       JSON.stringify({
         ...step,
         setting: { ...defaultStep.setting, ...step.setting },
-      })
+      }),
     );
     setCurrentStep(_step);
     setCurrentIndex(index);
@@ -247,17 +217,15 @@ export const SidebarContents = () => {
         return;
       }
       const _step = currentVersion.steps[index];
-      if (action == "delete") {
+      if (action === 'delete') {
         handleDeleteStep(_step, index);
       } else {
         const mode: BuilderMode =
-          action == "trigger"
-            ? BuilderMode.FLOW_STEP_TRIGGER
-            : BuilderMode.FLOW_STEP_DETAIL;
+          action === 'trigger' ? BuilderMode.FLOW_STEP_TRIGGER : BuilderMode.FLOW_STEP_DETAIL;
         handleEditStep(_step, index, mode);
       }
     },
-    [currentVersion]
+    [currentVersion],
   );
 
   const handleDragStart = (event: any) => {
@@ -270,11 +238,7 @@ export const SidebarContents = () => {
         return;
       }
       if (active && over && active.id !== over?.id) {
-        const newList = arrayMove(
-          currentVersion.steps,
-          active.id as number,
-          over.id as number
-        );
+        const newList = arrayMove(currentVersion.steps, active.id as number, over.id as number);
         setCurrentVersion((pre) => {
           if (pre) {
             return { ...pre, steps: newList };
@@ -284,7 +248,7 @@ export const SidebarContents = () => {
 
       setActiveId(null);
     },
-    [currentVersion]
+    [currentVersion],
   );
 
   if (!currentVersion?.steps) {
@@ -309,10 +273,7 @@ export const SidebarContents = () => {
             <SortableItem
               key={index}
               id={index}
-              isReachable={stepIsReachable(
-                currentVersion.steps as Step[],
-                step
-              )}
+              isReachable={stepIsReachable(currentVersion.steps as Step[], step)}
               step={step}
               onClick={handleOnClick}
             />
@@ -322,10 +283,7 @@ export const SidebarContents = () => {
           {activeId ? (
             <SidebarContent
               index={activeId}
-              isReachable={stepIsReachable(
-                currentVersion.steps,
-                currentVersion.steps[activeId]
-              )}
+              isReachable={stepIsReachable(currentVersion.steps, currentVersion.steps[activeId])}
               step={currentVersion.steps[activeId]}
               // onClick={handleOnClick}
             />
@@ -335,4 +293,4 @@ export const SidebarContents = () => {
     </>
   );
 };
-SidebarContents.displayName = "SidebarContents";
+SidebarContents.displayName = 'SidebarContents';

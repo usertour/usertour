@@ -1,10 +1,9 @@
-import { Field, InputType } from "@nestjs/graphql";
-import { JsonObject, JsonValue } from "@prisma/client/runtime/library";
+import { Field, InputType } from '@nestjs/graphql';
+import { JsonObject } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 @InputType()
 export class BizQuery {
-
   @Field(() => String, { nullable: true })
   environmentId: string;
 

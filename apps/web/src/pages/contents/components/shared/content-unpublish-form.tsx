@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-  DialogDescription,
-} from "@usertour-ui/dialog";
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { Content } from "@usertour-ui/types";
-import { unpublishedContentVersion } from "@usertour-ui/gql";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { unpublishedContentVersion } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Content } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
 
 interface ContentUnpublishFormProps {
   content: Content;
@@ -33,7 +33,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   const { toast } = useToast();
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -47,7 +47,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
       const ret = await mutation({ variables });
       if (ret.data?.unpublishedContentVersion?.success) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `The ${name} has been successfully created`,
         });
       }
@@ -64,8 +64,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
         <DialogHeader>
           <DialogTitle>Unpublish {name}</DialogTitle>
           <DialogDescription>
-            When you unpublish a {name}, users will no longer be able to view
-            it.
+            When you unpublish a {name}, users will no longer be able to view it.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -75,9 +74,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
             </Button>
           </DialogClose>
           <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Unpublish
           </Button>
         </DialogFooter>
@@ -86,4 +83,4 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   );
 };
 
-ContentUnpublishForm.displayName = "ContentUnpublishForm";
+ContentUnpublishForm.displayName = 'ContentUnpublishForm';

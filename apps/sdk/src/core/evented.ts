@@ -61,9 +61,7 @@ export class Evented {
     const bindings = this.bindings.get(event);
     if (bindings) {
       // Filter out the handler we want to remove
-      const filteredBindings = bindings.filter(
-        (binding) => binding.handler !== handler
-      );
+      const filteredBindings = bindings.filter((binding) => binding.handler !== handler);
       if (filteredBindings.length === 0) {
         this.bindings.delete(event);
       } else {

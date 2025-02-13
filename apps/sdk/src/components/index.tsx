@@ -1,27 +1,27 @@
-import "../index.css";
-import React, { useSyncExternalStore } from "react";
-import ReactDOM from "react-dom/client";
-import { ExternalStore } from "../core/store";
-import { Tour } from "../core/tour";
-import { Checklist } from "../core/checklist";
-import { Launcher } from "../core/launcher";
+import React, { useSyncExternalStore } from 'react';
+import ReactDOM from 'react-dom/client';
+import { Checklist } from '../core/checklist';
+import { Launcher } from '../core/launcher';
+import { ExternalStore } from '../core/store';
+import { Tour } from '../core/tour';
+import '../index.css';
 
 // Extract widgets into a constant to improve readability
 const WIDGETS = {
   Tour: React.lazy(() =>
-    import("./tour").then((module) => ({
+    import('./tour').then((module) => ({
       default: module.Tour,
-    }))
+    })),
   ),
   Launcher: React.lazy(() =>
-    import("./launcher").then((module) => ({
+    import('./launcher').then((module) => ({
       default: module.LauncherWidget,
-    }))
+    })),
   ),
   Checklist: React.lazy(() =>
-    import("./checklist").then((module) => ({
+    import('./checklist').then((module) => ({
       default: module.ChecklistWidget,
-    }))
+    })),
   ),
 };
 
@@ -49,16 +49,10 @@ const App = ({ toursStore, launchersStore, checklistsStore }: AppProps) => {
           <WIDGETS.Tour tour={tour} key={tour.getContent().contentId} />
         ))}
         {launchers.map((launcher) => (
-          <WIDGETS.Launcher
-            launcher={launcher}
-            key={launcher.getContent().contentId}
-          />
+          <WIDGETS.Launcher launcher={launcher} key={launcher.getContent().contentId} />
         ))}
         {checklists.map((checklist) => (
-          <WIDGETS.Checklist
-            checklist={checklist}
-            key={checklist.getContent().contentId}
-          />
+          <WIDGETS.Checklist checklist={checklist} key={checklist.getContent().contentId} />
         ))}
       </React.Suspense>
     </React.StrictMode>
@@ -72,7 +66,7 @@ export const render = async (
     toursStore: ExternalStore<Tour[]>;
     launchersStore: ExternalStore<Launcher[]>;
     checklistsStore: ExternalStore<Checklist[]>;
-  }
+  },
 ) => {
   return root.render(<App {...props} />);
 };

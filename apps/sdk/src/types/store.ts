@@ -1,11 +1,5 @@
-import { AssetAttributes } from "@usertour-ui/frame";
-import {
-  BizUserInfo,
-  SDKContent,
-  Step,
-  Theme,
-  ThemeTypesSetting,
-} from "@usertour-ui/types";
+import { AssetAttributes } from '@usertour-ui/frame';
+import { BizUserInfo, SDKContent, Step, Theme } from '@usertour-ui/types';
 
 // Base store interface
 export interface BaseStore {

@@ -1,4 +1,4 @@
-import type { Config } from "./config.interface";
+import type { Config } from './config.interface';
 
 const config: Config = {
   nest: {
@@ -9,20 +9,20 @@ const config: Config = {
   },
   swagger: {
     enabled: true,
-    title: "Nestjs FTW",
-    description: "The nestjs API description",
-    version: "1.5",
-    path: "api",
+    title: 'Nestjs FTW',
+    description: 'The nestjs API description',
+    version: '1.5',
+    path: 'api',
   },
   graphql: {
     playgroundEnabled: true,
     debug: true,
-    schemaDestination: "./src/schema.graphql",
+    schemaDestination: './src/schema.graphql',
     sortSchema: true,
   },
   security: {
-    expiresIn: "7d",
-    refreshIn: "7d",
+    expiresIn: '7d',
+    refreshIn: '7d',
     bcryptSaltOrRound: 10,
   },
 };

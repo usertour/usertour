@@ -1,1 +1,1 @@
-export { NpsBuilder } from "./nps";
+export { NpsBuilder } from './nps';

@@ -1,17 +1,13 @@
-import { Switch } from "@usertour-ui/switch";
-import { Label } from "@usertour-ui/label";
-import {
-  ContentError,
-  ContentErrorAnchor,
-  ContentErrorContent,
-} from "../content-error";
-import { SelectorDialog } from "@usertour-ui/shared-components";
-import { useContentPlacement } from "./content-placement-context";
-import { Button } from "@usertour-ui/button";
-import { Crosshair2Icon } from "@radix-ui/react-icons";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { PrecisionSelect } from "./precision-select";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+import { Crosshair2Icon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Label } from '@usertour-ui/label';
+import { SelectorDialog } from '@usertour-ui/shared-components';
+import { HelpTooltip } from '@usertour-ui/shared-components';
+import { Switch } from '@usertour-ui/switch';
+import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
+import { useContentPlacement } from './content-placement-context';
+import { PrecisionSelect } from './precision-select';
 
 export const ContentPlacementAuto = () => {
   const {
@@ -40,11 +36,7 @@ export const ContentPlacementAuto = () => {
   };
 
   return (
-    <ContentError
-      open={
-        isShowError && (!target?.selectors || target?.selectors.length === 0)
-      }
-    >
+    <ContentError open={isShowError && (!target?.selectors || target?.selectors.length === 0)}>
       <div className="flex flex-col space-y-2">
         <h1 className="text-sm">{subTitle}</h1>
         {!isWebBuilder ? (
@@ -66,9 +58,9 @@ export const ContentPlacementAuto = () => {
         ) : (
           <SelectorDialog
             onSuccess={handleElementSelectSuccess}
-            buildUrl={buildUrl || ""}
+            buildUrl={buildUrl || ''}
             zIndex={zIndex + EXTENSION_SELECT}
-            token={token || ""}
+            token={token || ''}
           >
             <div className="rounded-2xl flex-col overflow-hidden">
               <div className="w-[242px] h-[130px] overflow-hidden">
@@ -77,7 +69,7 @@ export const ContentPlacementAuto = () => {
               <ContentErrorAnchor>
                 <Button className="w-full rounded-none">
                   <Crosshair2Icon className="mr-2" />
-                  {!target ? "Select element" : "Select another element"}
+                  {!target ? 'Select element' : 'Select another element'}
                 </Button>
               </ContentErrorAnchor>
             </div>
@@ -94,17 +86,14 @@ export const ContentPlacementAuto = () => {
           <div className="flex space-x-2 grow">
             <Label htmlFor="dynamic-content">Dynamic text</Label>
             <HelpTooltip>
-              If the element's text is dynamic and may change, enabled this
-              switch to make Usertour find it without considering its current
-              text.
+              If the element's text is dynamic and may change, enabled this switch to make Usertour
+              find it without considering its current text.
             </HelpTooltip>
           </div>
           <Switch
             id="dynamic-content"
             checked={target?.isDynamicContent}
-            onCheckedChange={(value) =>
-              onTargetChange({ isDynamicContent: value })
-            }
+            onCheckedChange={(value) => onTargetChange({ isDynamicContent: value })}
           />
         </div>
       </div>

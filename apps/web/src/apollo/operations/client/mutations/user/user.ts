@@ -1,5 +1,5 @@
-import { getApolloClient } from "@/apollo";
-import { getLocalUser } from "@/apollo/operations/client/queries";
+import { getApolloClient } from '@/apollo';
+import { getLocalUser } from '@/apollo/operations/client/queries';
 
 export const updateLocalUser = async (isLoggedIn: boolean) => {
   try {

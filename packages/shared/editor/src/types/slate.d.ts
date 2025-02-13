@@ -1,72 +1,72 @@
-import { BaseEditor, Descendant } from "slate";
-import { ReactEditor } from "slate-react";
-import { HistoryEditor } from "slate-history";
+import { BaseEditor, Descendant } from 'slate';
+import { HistoryEditor } from 'slate-history';
+import { ReactEditor } from 'slate-react';
 
 export type PlainElementType = {
-  type: "paragraph";
+  type: 'paragraph';
   align?: string;
   children: Descendant[];
 };
 
 export type H1ElementType = {
-  type: "h1";
+  type: 'h1';
   align?: string;
   children: Descendant[];
 };
 
 export type H2ElementType = {
-  type: "h2";
+  type: 'h2';
   align?: string;
   children: Descendant[];
 };
 
 export type H3ElementType = {
-  type: "h3";
+  type: 'h3';
   align?: string;
   children: Descendant[];
 };
 
 export type BulletedListElementType = {
-  type: "bulleted-list";
+  type: 'bulleted-list';
   align?: string;
   children: ItemListElementType[];
 };
 
 export type NumberedListElementType = {
-  type: "numbered-list";
+  type: 'numbered-list';
   align?: string;
   children: ItemListElementType[];
 };
 
 export type ItemListElementType = {
-  type: "list-item";
+  type: 'list-item';
   align?: string;
   children: Descendant[];
 };
 
 export type CodeElementType = {
-  type: "code";
+  type: 'code';
   align?: string;
   children: Descendant[];
 };
 
 export type QuoteElementType = {
-  type: "quote";
+  type: 'quote';
   children: Descendant[];
 };
 
 export type DividerElementType = {
-  type: "divider";
+  type: 'divider';
   children: Descendant[];
 };
 
 export type TodoElementType = {
-  type: "todo";
+  type: 'todo';
   children: Descendant[];
 };
 
 export type GroupElementType = {
-  type: "group";
+  type: 'group';
   isFirst: boolean;
   isLast: boolean;
   children: ColumnElementType[];
@@ -78,7 +78,7 @@ type ButtonData = {
   action: string;
 };
 export type ButtonElementType = {
-  type: "button";
+  type: 'button';
   data: ButtonData;
   children: Descendant[];
 };
@@ -97,14 +97,14 @@ type ElementMargin = {
 };
 
 export type ColumnElementType = {
-  type: "column";
+  type: 'column';
   style?: CSSProperties;
   width?: ElementWidth;
   children: Descendant[];
 };
 
 export type ImageElementType = {
-  type: "image";
+  type: 'image';
   url: string;
   width?: ElementWidth;
   margin?: ElementMargin;
@@ -112,7 +112,7 @@ export type ImageElementType = {
 };
 
 export type EmbedElementType = {
-  type: "embed";
+  type: 'embed';
   url: string;
   parsedUrl?: string;
   width?: ElementWidth;
@@ -121,7 +121,7 @@ export type EmbedElementType = {
 };
 
 export type UserAttributeElementType = {
-  type: "user-attribute";
+  type: 'user-attribute';
   attrCode: string;
   fallback: string;
   value?: string;
@@ -129,7 +129,7 @@ export type UserAttributeElementType = {
 };
 
 export type LinkElementType = {
-  type: "link";
+  type: 'link';
   data?: Descendant[];
   url?: string;
   openType?: string;
@@ -156,7 +156,7 @@ type CustomElement =
   | LinkElementType
   | PlainElementType;
 
-export type CustomElementStrings = CustomElement["type"];
+export type CustomElementStrings = CustomElement['type'];
 
 export type CustomMarkup = {
   bold: boolean;
@@ -177,7 +177,7 @@ export type CustomText = Partial<CustomMarkup> & {
 
 export type CustomEditor = BaseEditor & ReactEditor & HistoryEditor;
 
-declare module "slate" {
+declare module 'slate' {
   // eslint-disable-next-line no-unused-vars
   interface CustomTypes {
     Editor: CustomEditor;

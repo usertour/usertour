@@ -3,9 +3,9 @@ import {
   SubscribeMessage,
   WebSocketGateway as WsGateway,
   WebSocketServer,
-} from "@nestjs/websockets";
-import { Server } from "socket.io";
-import { WebSocketService } from "./web-socket.service";
+} from '@nestjs/websockets';
+import { Server } from 'socket.io';
+import { WebSocketService } from './web-socket.service';
 
 @WsGateway()
 export class WebSocketGateway {
@@ -13,37 +13,37 @@ export class WebSocketGateway {
   @WebSocketServer()
   server: Server;
 
-  @SubscribeMessage("list-contents")
+  @SubscribeMessage('list-contents')
   async listContents(@MessageBody() body: any): Promise<any> {
     return await this.service.listContents(body);
   }
 
-  @SubscribeMessage("list-themes")
+  @SubscribeMessage('list-themes')
   async listThemes(@MessageBody() body: any): Promise<any> {
     return await this.service.listThemes(body);
   }
 
-  @SubscribeMessage("identity")
+  @SubscribeMessage('identity')
   async identity(@MessageBody() data: number): Promise<number> {
     return data;
   }
 
-  @SubscribeMessage("upsert-user")
+  @SubscribeMessage('upsert-user')
   async upsertBizUsers(@MessageBody() body: any): Promise<any> {
     return await this.service.upsertBizUsers(body);
   }
 
-  @SubscribeMessage("upsert-company")
+  @SubscribeMessage('upsert-company')
   async upsertBizCompanies(@MessageBody() body: any): Promise<any> {
     return await this.service.upsertBizCompanies(body);
   }
 
-  @SubscribeMessage("create-session")
+  @SubscribeMessage('create-session')
   async createSession(@MessageBody() body: any): Promise<any> {
     return await this.service.createSession(body);
   }
 
-  @SubscribeMessage("track-event")
+  @SubscribeMessage('track-event')
   async sendEvent(@MessageBody() body: any): Promise<any> {
     return await this.service.trackEvent(body);
   }

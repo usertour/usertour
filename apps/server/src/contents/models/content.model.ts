@@ -1,16 +1,16 @@
-import { Field, ObjectType } from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
-import { Step } from "./step.model";
+import { BaseModel } from '@/common/models/base.model';
+import { Field, ObjectType } from '@nestjs/graphql';
+import { Step } from './step.model';
 
 export enum ContentType {
-  CHECKLIST = "checklist",
-  FLOW = "flow",
-  LAUNCHER = "launcher",
-  BANNER = "banner",
-  NPS = "nps",
-  SURVEY = "survey",
-  TRACKER = "tracker",
-  EVENT = "event",
+  CHECKLIST = 'checklist',
+  FLOW = 'flow',
+  LAUNCHER = 'launcher',
+  BANNER = 'banner',
+  NPS = 'nps',
+  SURVEY = 'survey',
+  TRACKER = 'tracker',
+  EVENT = 'event',
 }
 
 @ObjectType()
@@ -37,10 +37,10 @@ export class Content extends BaseModel {
   publishedVersionId?: string;
 
   @Field(() => Boolean)
-  published: Boolean;
+  published: boolean;
 
   @Field(() => Boolean)
-  deleted: Boolean;
+  deleted: boolean;
 
   @Field(() => [Step], { nullable: true })
   steps?: [Step];

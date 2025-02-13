@@ -1,15 +1,9 @@
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { queryBizSession } from "@usertour-ui/gql";
-import { BizSessionObject, PageInfo, Pagination } from "@usertour-ui/types";
-import { PaginationState } from "@tanstack/react-table";
-import { useAnalyticsContext } from "./analytics-context";
+import { useQuery } from '@apollo/client';
+import { PaginationState } from '@tanstack/react-table';
+import { queryBizSession } from '@usertour-ui/gql';
+import { BizSessionObject, PageInfo, Pagination } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { useAnalyticsContext } from './analytics-context';
 
 const defaultPagination = {
   pageIndex: 0,
@@ -33,13 +27,9 @@ export interface BizSessionContextValue {
   totalCount: number;
 }
 
-export const BizSessionContext = createContext<
-  BizSessionContextValue | undefined
->(undefined);
+export const BizSessionContext = createContext<BizSessionContextValue | undefined>(undefined);
 
-export function BizSessionProvider(
-  props: BizSessionProviderProps
-): JSX.Element {
+export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element {
   const { children, contentId } = props;
   const [requestPagination, setRequestPagination] = useState<Pagination>({
     first: defaultPagination.pageSize,
@@ -66,26 +56,26 @@ export function BizSessionProvider(
         endDate: dateRange?.to?.toISOString(),
         timezone,
       },
-      orderBy: { field: "createdAt", direction: "desc" },
+      orderBy: { field: 'createdAt', direction: 'desc' },
     },
   });
 
-  const contentList = data && data.queryBizSession;
+  const contentList = data?.queryBizSession;
 
   useEffect(() => {
     const { pageIndex, pageSize } = pagination;
     let varis: Pagination = { first: pageSize };
     if (
       currentPagination &&
-      pageSize == currentPagination.pageSize &&
-      pageIndex == currentPagination.pageIndex
+      pageSize === currentPagination.pageSize &&
+      pageIndex === currentPagination.pageIndex
     ) {
       return;
     }
 
-    if (pageIndex == 0) {
+    if (pageIndex === 0) {
       varis = { first: pageSize };
-    } else if (pageIndex + 1 == pageCount) {
+    } else if (pageIndex + 1 === pageCount) {
       const costSize = totalCount - (pageCount - 1) * pageSize;
       varis = {
         last: costSize > 0 ? costSize : pageSize,
@@ -144,19 +134,13 @@ export function BizSessionProvider(
     totalCount,
   };
 
-  return (
-    <BizSessionContext.Provider value={value}>
-      {children}
-    </BizSessionContext.Provider>
-  );
+  return <BizSessionContext.Provider value={value}>{children}</BizSessionContext.Provider>;
 }
 
 export function useBizSessionContext(): BizSessionContextValue {
   const context = useContext(BizSessionContext);
   if (!context) {
-    throw new Error(
-      `useBizSessionContext must be used within a BizSessionProvider.`
-    );
+    throw new Error('useBizSessionContext must be used within a BizSessionProvider.');
   }
   return context;
 }

@@ -1,21 +1,16 @@
-import { Separator } from "@usertour-ui/separator";
-import { DataTable } from "./data-table";
-import { CompanyListProvider } from "@/contexts/company-list-context";
-import { EditIcon } from "@usertour-ui/icons";
-import { UserSegmentEditForm } from "./edit-form";
-import { useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { DotsVerticalIcon } from "@radix-ui/react-icons";
-import { UserEditDropdownMenu } from "./edit-dropmenu";
-import { Button } from "@usertour-ui/button";
-import { useNavigate } from "react-router-dom";
-import { UserSegmentFilterSave } from "./filter-save";
+import { CompanyListProvider } from '@/contexts/company-list-context';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { DotsVerticalIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { EditIcon } from '@usertour-ui/icons';
+import { Separator } from '@usertour-ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DataTable } from './data-table';
+import { UserEditDropdownMenu } from './edit-dropmenu';
+import { UserSegmentEditForm } from './edit-form';
+import { UserSegmentFilterSave } from './filter-save';
 
 export function CompanyListContent(props: {
   environmentId: string | undefined;
@@ -34,10 +29,8 @@ export function CompanyListContent(props: {
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
         <div className="flex items-center justify-between">
           <div className="space-y-1 flex flex-row items-center relative">
-            <h2 className="text-xl font-semibold tracking-tight">
-              {currentSegment?.name}
-            </h2>
-            {currentSegment?.dataType != "ALL" && (
+            <h2 className="text-xl font-semibold tracking-tight">{currentSegment?.name}</h2>
+            {currentSegment?.dataType !== 'ALL' && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -58,7 +51,7 @@ export function CompanyListContent(props: {
             )}
             {<UserSegmentFilterSave currentSegment={currentSegment} />}
           </div>
-          {currentSegment && currentSegment.dataType != "ALL" && (
+          {currentSegment && currentSegment.dataType !== 'ALL' && (
             <UserEditDropdownMenu
               segment={currentSegment}
               onSubmit={async () => {
@@ -74,20 +67,12 @@ export function CompanyListContent(props: {
         </div>
         <Separator className="my-4" />
         {currentSegment && (
-          <DataTable
-            published={false}
-            segment={currentSegment}
-            key={currentSegment.id}
-          />
+          <DataTable published={false} segment={currentSegment} key={currentSegment.id} />
         )}
       </div>
-      <UserSegmentEditForm
-        isOpen={open}
-        onClose={handleOnClose}
-        segment={currentSegment}
-      />
+      <UserSegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </CompanyListProvider>
   );
 }
 
-CompanyListContent.displayName = "CompanyListContent";
+CompanyListContent.displayName = 'CompanyListContent';

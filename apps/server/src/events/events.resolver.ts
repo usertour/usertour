@@ -1,18 +1,18 @@
-import { Resolver, Mutation, Args, Query } from "@nestjs/graphql";
-import { UserEntity } from "@/common/decorators/user.decorator";
-import { EventsService } from "./events.service";
-import { Events } from "./models/events.model";
-import { AttributeOnEvent } from "./models/attributeOnEvent.model";
+import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { UseGuards } from '@nestjs/common';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { QueryAttributeOnEventsInput } from './dto/attributeOnEvent.input';
 import {
   CreateEventInput,
   DeleteEventInput,
-  UpdateEventInput,
   QueryEventsInput,
-} from "./dto/events.input";
-import { QueryAttributeOnEventsInput } from "./dto/attributeOnEvent.input";
-import { RolesScopeEnum, Roles } from "@/common/decorators/roles.decorator";
-import { UseGuards } from "@nestjs/common";
-import { EventsGuard } from "./events.guard";
+  UpdateEventInput,
+} from './dto/events.input';
+import { EventsGuard } from './events.guard';
+import { EventsService } from './events.service';
+import { AttributeOnEvent } from './models/attributeOnEvent.model';
+import { Events } from './models/events.model';
 
 @Resolver(() => Events)
 @UseGuards(EventsGuard)
@@ -21,19 +21,19 @@ export class EventsResolver {
 
   @Mutation(() => Events)
   @Roles([RolesScopeEnum.ADMIN])
-  async createEvent(@UserEntity() @Args("data") data: CreateEventInput) {
+  async createEvent(@UserEntity() @Args('data') data: CreateEventInput) {
     return this.service.create(data);
   }
 
   @Mutation(() => Events)
   @Roles([RolesScopeEnum.ADMIN])
-  async updateEvent(@UserEntity() @Args("data") data: UpdateEventInput) {
+  async updateEvent(@UserEntity() @Args('data') data: UpdateEventInput) {
     return await this.service.update(data);
   }
 
   @Mutation(() => Events)
   @Roles([RolesScopeEnum.ADMIN])
-  async deleteEvent(@UserEntity() @Args("data") { id }: DeleteEventInput) {
+  async deleteEvent(@UserEntity() @Args('data') { id }: DeleteEventInput) {
     return await this.service.delete(id);
   }
 
@@ -45,9 +45,7 @@ export class EventsResolver {
 
   @Query(() => [AttributeOnEvent])
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
-  async listAttributeOnEvents(
-    @Args() { eventId }: QueryAttributeOnEventsInput
-  ) {
+  async listAttributeOnEvents(@Args() { eventId }: QueryAttributeOnEventsInput) {
     return await this.service.listAttributeOnEvents(eventId);
   }
 }

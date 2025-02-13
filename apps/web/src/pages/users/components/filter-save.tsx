@@ -1,6 +1,5 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { updateSegment } from "@usertour-ui/gql";
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,12 +9,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { Segment } from "@usertour-ui/types";
-import { Button } from "@usertour-ui/button";
-import { useCallback, useEffect, useState } from "react";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { conditionsIsSame, getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { Button } from '@usertour-ui/button';
+import { updateSegment } from '@usertour-ui/gql';
+import { conditionsIsSame, getErrorMessage } from '@usertour-ui/shared-utils';
+import { Segment } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback, useEffect, useState } from 'react';
 
 export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;
@@ -34,7 +34,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
     if (
       !currentSegment ||
       !currentConditions ||
-      currentConditions.segmentId != currentSegment.id
+      currentConditions.segmentId !== currentSegment.id
     ) {
       return;
     }
@@ -50,13 +50,13 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
       }
       if (ret.data?.updateSegment?.id) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `The segment ${currentSegment.name} filter has been successfully saved`,
         });
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -64,11 +64,10 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
 
   useEffect(() => {
     if (
-      currentSegment &&
-      currentSegment.data &&
+      currentSegment?.data &&
       currentConditions &&
       !conditionsIsSame(currentSegment.data, currentConditions.data) &&
-      currentSegment.dataType == "CONDITION"
+      currentSegment.dataType === 'CONDITION'
     ) {
       setIsShowButton(true);
     } else {
@@ -81,7 +80,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
       {isShowButton && (
         <Button
           className="h-8 ml-3 text-primary hover:text-primary"
-          variant={"ghost"}
+          variant={'ghost'}
           onClick={handleOnClick}
         >
           Save filter
@@ -92,15 +91,12 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Save filter</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirm saving{" "}
-              <span className="font-bold">{currentSegment?.name}</span> filter?
+              Confirm saving <span className="font-bold">{currentSegment?.name}</span> filter?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit}>
-              Yes, save
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleSubmit}>Yes, save</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -108,4 +104,4 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   );
 };
 
-UserSegmentFilterSave.displayName = "UserSegmentFilterSave";
+UserSegmentFilterSave.displayName = 'UserSegmentFilterSave';

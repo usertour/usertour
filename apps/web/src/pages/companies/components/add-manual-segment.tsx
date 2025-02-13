@@ -1,27 +1,25 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { createBizCompanyOnSegment } from "@usertour-ui/gql";
+import { useToast } from '@usertour-ui/use-toast';
+import { useMutation } from '@apollo/client';
+import { createBizCompanyOnSegment } from '@usertour-ui/gql';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { UserIcon3 } from "@usertour-ui/icons";
-import { Button } from "@usertour-ui/button";
-import { Table } from "@tanstack/react-table";
-import { useCallback } from "react";
-import { Segment } from "@usertour-ui/types";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dropdown-menu';
+import { UserIcon3 } from '@usertour-ui/icons';
+import { Button } from '@usertour-ui/button';
+import { Table } from '@tanstack/react-table';
+import { useCallback } from 'react';
+import { Segment } from '@usertour-ui/types';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
 
-interface AddCompanyManualSegmentProps<TData> {
-  table: Table<TData>;
+interface AddCompanyManualSegmentProps {
+  table: Table<any>;
 }
 
-export const AddCompanyManualSegment = function <TData>(
-  props: AddCompanyManualSegmentProps<TData>
-) {
+export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => {
   const { table } = props;
   const [mutation] = useMutation(createBizCompanyOnSegment);
   const { segmentList } = useSegmentListContext();
@@ -32,12 +30,12 @@ export const AddCompanyManualSegment = function <TData>(
       const companyOnSegment = [];
       for (const row of table.getFilteredSelectedRowModel().rows) {
         companyOnSegment.push({
-          bizCompanyId: row.getValue("id"),
+          bizCompanyId: row.getValue('id'),
           segmentId: segment.id,
           data: {},
         });
       }
-      if (companyOnSegment.length == 0) {
+      if (companyOnSegment.length === 0) {
         return;
       }
 
@@ -48,27 +46,24 @@ export const AddCompanyManualSegment = function <TData>(
         const ret = await mutation({ variables: { data } });
         if (ret.data?.createBizCompanyOnSegment?.success) {
           toast({
-            variant: "success",
+            variant: 'success',
             title: `${ret.data?.createBizCompanyOnSegment.count} users added to ${segment.name}`,
           });
         }
       } catch (error) {
         toast({
-          variant: "destructive",
+          variant: 'destructive',
           title: getErrorMessage(error),
         });
       }
     },
-    [table]
+    [table],
   );
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant={"ghost"}
-          className="h-8 text-primary hover:text-primary px-1 "
-        >
+        <Button variant={'ghost'} className="h-8 text-primary hover:text-primary px-1 ">
           <UserIcon3 width={16} height={16} className="mr-1" />
           Add to manual segment
         </Button>
@@ -76,7 +71,7 @@ export const AddCompanyManualSegment = function <TData>(
       <DropdownMenuContent align="start">
         {segmentList?.map(
           (segment) =>
-            segment.dataType == "MANUAL" && (
+            segment.dataType === 'MANUAL' && (
               <DropdownMenuItem
                 className="cursor-pointer min-w-[180px]"
                 onSelect={() => {
@@ -85,11 +80,11 @@ export const AddCompanyManualSegment = function <TData>(
               >
                 {segment.name}
               </DropdownMenuItem>
-            )
+            ),
         )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 };
 
-AddCompanyManualSegment.displayName = "AddCompanyManualSegment";
+AddCompanyManualSegment.displayName = 'AddCompanyManualSegment';

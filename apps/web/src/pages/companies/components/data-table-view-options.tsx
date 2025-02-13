@@ -1,31 +1,29 @@
-"use client";
+'use client';
 
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { useMutation } from "@apollo/client";
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-import { MixerHorizontalIcon } from "@radix-ui/react-icons";
-import { Table } from "@tanstack/react-table";
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useMutation } from '@apollo/client';
+import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { MixerHorizontalIcon } from '@radix-ui/react-icons';
+import { Table } from '@tanstack/react-table';
 
-import { Button } from "@usertour-ui/button";
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@usertour-ui/dropdown-menu";
-import { updateSegment } from "@usertour-ui/gql";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { useToast } from "@usertour-ui/use-toast";
-import { useCallback } from "react";
+} from '@usertour-ui/dropdown-menu';
+import { updateSegment } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
 }
 
-export function DataTableViewOptions<TData>({
-  table,
-}: DataTableViewOptionsProps<TData>) {
+export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
   const { refetch, currentSegment } = useSegmentListContext();
 
   const [mutation] = useMutation(updateSegment);
@@ -46,22 +44,18 @@ export function DataTableViewOptions<TData>({
         }
       } catch (error) {
         toast({
-          variant: "destructive",
+          variant: 'destructive',
           title: getErrorMessage(error),
         });
       }
     },
-    [currentSegment]
+    [currentSegment],
   );
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto hidden h-8 lg:flex"
-        >
+        <Button variant="outline" size="sm" className="ml-auto hidden h-8 lg:flex">
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
           View
         </Button>
@@ -71,10 +65,7 @@ export function DataTableViewOptions<TData>({
         <DropdownMenuSeparator />
         {table
           .getAllColumns()
-          .filter(
-            (column) =>
-              typeof column.accessorFn !== "undefined" && column.getCanHide()
-          )
+          .filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide())
           .map((column) => {
             return (
               <DropdownMenuCheckboxItem

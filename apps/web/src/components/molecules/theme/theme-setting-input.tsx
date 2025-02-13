@@ -1,7 +1,7 @@
-import { Input } from "@usertour-ui/input";
-import { HelpTooltip } from "@usertour-ui/shared-components";
-import { cn } from "@usertour-ui/ui-utils";
-import { ChangeEvent } from "react";
+import { Input } from '@usertour-ui/input';
+import { HelpTooltip } from '@usertour-ui/shared-components';
+import { cn } from '@usertour-ui/ui-utils';
+import { ChangeEvent } from 'react';
 
 type ThemeSettingInputProps = {
   text: string;
@@ -15,7 +15,7 @@ type ThemeSettingInputProps = {
 export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
   const {
     text,
-    placeholder = "",
+    placeholder = '',
     name,
     onChange,
     defaultValue,
@@ -45,8 +45,8 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
           value={defaultValue}
           onChange={handleOnChange}
           className={cn(
-            "py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm ",
-            disableUnit ? "pe-4" : "pe-8"
+            'py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm ',
+            disableUnit ? 'pe-4' : 'pe-8',
           )}
           placeholder={placeholder}
         />
@@ -60,4 +60,4 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
   );
 };
 
-ThemeSettingInput.displayName = "ThemeSettingInput";
+ThemeSettingInput.displayName = 'ThemeSettingInput';

@@ -1,8 +1,4 @@
-import {
-  autoStartRulesSetting,
-  ContentConfigObject,
-  ContentPriority,
-} from "@usertour-ui/types";
+import { ContentConfigObject, ContentPriority, autoStartRulesSetting } from '@usertour-ui/types';
 
 const rulesSetting: autoStartRulesSetting = {
   // frequency: {
@@ -31,9 +27,9 @@ export const autoStartConditions: ContentConfigObject = {
   enabledAutoStartRules: true,
   autoStartRules: [
     {
-      data: { excludes: [], includes: ["/*"] },
-      type: "current-page",
-      operators: "and",
+      data: { excludes: [], includes: ['/*'] },
+      type: 'current-page',
+      operators: 'and',
     },
   ],
 };

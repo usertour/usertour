@@ -1,9 +1,6 @@
-import { CloseCircleIcon } from "@usertour-ui/icons";
-import { ContentActionsRemove } from "./actions-remove";
-import {
-  ContentActionsConditionIcon,
-  ActionsConditionRightContent,
-} from "./actions-template";
+import { CloseCircleIcon } from '@usertour-ui/icons';
+import { ContentActionsRemove } from './actions-remove';
+import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 
 export interface ContentActionsDismissProps {
   data?: {
@@ -17,17 +14,16 @@ export interface ContentActionsDismissProps {
 }
 
 export const ContentActionsDismiss = (props: ContentActionsDismissProps) => {
-  const { index, text = "Dismiss flow" } = props;
+  const { index, text = 'Dismiss flow' } = props;
 
   return (
     <ActionsConditionRightContent className="h-9 items-center w-fit pr-5">
       <ContentActionsConditionIcon>
         <CloseCircleIcon width={16} height={16} />
       </ContentActionsConditionIcon>
-      <span className="pr-1  text-sm">{text}</span>{" "}
-      <ContentActionsRemove index={index} />
+      <span className="pr-1  text-sm">{text}</span> <ContentActionsRemove index={index} />
     </ActionsConditionRightContent>
   );
 };
 
-ContentActionsDismiss.displayName = "ContentActionsDismiss";
+ContentActionsDismiss.displayName = 'ContentActionsDismiss';

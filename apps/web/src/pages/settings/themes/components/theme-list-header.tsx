@@ -1,7 +1,7 @@
-import { useThemeListContext } from "@/contexts/theme-list-context";
-import { useState } from "react";
-import { ThemeCreateForm } from "./theme-create-form";
-import { Button } from "@usertour-ui/button";
+import { useThemeListContext } from '@/contexts/theme-list-context';
+import { Button } from '@usertour-ui/button';
+import { useState } from 'react';
+import { ThemeCreateForm } from './theme-create-form';
 
 export const ThemeListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -23,8 +23,8 @@ export const ThemeListHeader = () => {
           </div>
           <div className="text-sm text-muted-foreground">
             <p>
-              With themes, you can make flows and other Usertour content look
-              like a native part of your app.
+              With themes, you can make flows and other Usertour content look like a native part of
+              your app.
             </p>
           </div>
         </div>
@@ -34,4 +34,4 @@ export const ThemeListHeader = () => {
   );
 };
 
-ThemeListHeader.displayName = "ThemeListHeader";
+ThemeListHeader.displayName = 'ThemeListHeader';

@@ -1,21 +1,15 @@
-import {
-  Field,
-  HideField,
-  ObjectType,
-  registerEnumType,
-} from "@nestjs/graphql";
-import { BaseModel } from "@/common/models/base.model";
-import { Role } from "@prisma/client";
-import { Project } from "@/projects/models/project.model";
+import { BaseModel } from '@/common/models/base.model';
+import { Project } from '@/projects/models/project.model';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Role } from '@prisma/client';
 
 registerEnumType(Role, {
-  name: "Role",
-  description: "User role",
+  name: 'Role',
+  description: 'User role',
 });
 
 @ObjectType()
 export class UserOnProject extends BaseModel {
-
   @Field(() => Role)
   role: Role;
 

@@ -1,19 +1,18 @@
-import { Button } from "@usertour-ui/button";
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { Environment } from '@/types/project';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import { Environment } from "@/types/project";
-import { EnvironmentEditForm } from "./environment-edit-form";
-import { useEnvironmentListContext } from "@/contexts/environment-list-context";
-import { useState } from "react";
-import { EnvironmentDeleteForm } from "./environment-delete-form";
-import { CloseIcon, EditIcon } from "@usertour-ui/icons";
+} from '@usertour-ui/dropdown-menu';
+import { CloseIcon, EditIcon } from '@usertour-ui/icons';
+import { useState } from 'react';
+import { EnvironmentDeleteForm } from './environment-delete-form';
+import { EnvironmentEditForm } from './environment-edit-form';
 
 type EnvironmentListActionProps = {
   environment: Environment;
@@ -41,10 +40,7 @@ export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          >
+          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -60,11 +56,7 @@ export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EnvironmentEditForm
-        environment={environment}
-        isOpen={open}
-        onClose={handleOnClose}
-      />
+      <EnvironmentEditForm environment={environment} isOpen={open} onClose={handleOnClose} />
       <EnvironmentDeleteForm
         data={environment}
         open={openDeleteDialog}
@@ -75,4 +67,4 @@ export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
   );
 };
 
-EnvironmentListAction.displayName = "EnvironmentListAction";
+EnvironmentListAction.displayName = 'EnvironmentListAction';

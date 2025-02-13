@@ -1,8 +1,18 @@
-import { UserIcon } from "@usertour-ui/icons";
+import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import { UserIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
 // import * as Popover from "@radix-ui/react-popover";
-import * as Popover from "@usertour-ui/popover";
-import { Input } from "@usertour-ui/input";
-import { format, formatISO } from "date-fns";
+import * as Popover from '@usertour-ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-ui/select';
+import { cn } from '@usertour-ui/ui-utils';
+import { format } from 'date-fns';
 import {
   ChangeEvent,
   Dispatch,
@@ -12,99 +22,82 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
-import { CalendarIcon, CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-import { cn } from "@usertour-ui/ui-utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
+} from 'react';
 
+import { Button } from '@usertour-ui/button';
+import { Calendar } from '@usertour-ui/calendar';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@usertour-ui/command";
-import { Button } from "@usertour-ui/button";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import { useRulesContext } from ".";
+} from '@usertour-ui/command';
+import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { getUserAttrError } from '@usertour-ui/shared-utils';
 import {
   Attribute,
   AttributeDataType,
   RulesUserAttributeData,
   RulesUserAttributeProps,
-} from "@usertour-ui/types";
-import { Calendar } from "@usertour-ui/calendar";
-import { getUserAttrError } from "@usertour-ui/shared-utils";
-import { EXTENSION_CONTENT_RULES } from "@usertour-ui/constants";
+} from '@usertour-ui/types';
+import { useRulesContext } from '.';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 export const conditionsTypeMapping = {
   [AttributeDataType.Number]: [
-    { value: "is", name: "is" },
-    { value: "not", name: "is not" },
-    { value: "isLessThan", name: "is less than" },
-    { value: "isLessThanOrEqualTo", name: "is less than or equal to" },
-    { value: "isGreaterThan", name: "is greater than" },
-    { value: "isGreaterThanOrEqualTo", name: "is greater than or equal to" },
-    { value: "between", name: "is between" },
-    { value: "any", name: "has any value" },
-    { value: "empty", name: "is empty" },
+    { value: 'is', name: 'is' },
+    { value: 'not', name: 'is not' },
+    { value: 'isLessThan', name: 'is less than' },
+    { value: 'isLessThanOrEqualTo', name: 'is less than or equal to' },
+    { value: 'isGreaterThan', name: 'is greater than' },
+    { value: 'isGreaterThanOrEqualTo', name: 'is greater than or equal to' },
+    { value: 'between', name: 'is between' },
+    { value: 'any', name: 'has any value' },
+    { value: 'empty', name: 'is empty' },
   ],
   [AttributeDataType.String]: [
-    { value: "is", name: "is" },
-    { value: "not", name: "is not" },
-    { value: "contains", name: "contains" },
-    { value: "notContain", name: "does not contain" },
-    { value: "startsWith", name: "starts with" },
-    { value: "endsWith", name: "ends with" },
-    { value: "any", name: "has any value" },
-    { value: "empty", name: "is empty" },
+    { value: 'is', name: 'is' },
+    { value: 'not', name: 'is not' },
+    { value: 'contains', name: 'contains' },
+    { value: 'notContain', name: 'does not contain' },
+    { value: 'startsWith', name: 'starts with' },
+    { value: 'endsWith', name: 'ends with' },
+    { value: 'any', name: 'has any value' },
+    { value: 'empty', name: 'is empty' },
   ],
   [AttributeDataType.Boolean]: [
-    { value: "true", name: "is true" },
-    { value: "false", name: "is false" },
-    { value: "any", name: "has any value" },
-    { value: "empty", name: "is empty" },
+    { value: 'true', name: 'is true' },
+    { value: 'false', name: 'is false' },
+    { value: 'any', name: 'has any value' },
+    { value: 'empty', name: 'is empty' },
   ],
   [AttributeDataType.List]: [
-    { value: "includesAtLeastOne", name: "includes at least one of" },
-    { value: "includesAll", name: "includes all of" },
+    { value: 'includesAtLeastOne', name: 'includes at least one of' },
+    { value: 'includesAll', name: 'includes all of' },
     {
-      value: "notIncludesAtLeastOne",
-      name: "does not include at least one of",
+      value: 'notIncludesAtLeastOne',
+      name: 'does not include at least one of',
     },
-    { value: "notIncludesAll", name: "does not include all of" },
-    { value: "any", name: "has any value" },
-    { value: "empty", name: "is empty" },
+    { value: 'notIncludesAll', name: 'does not include all of' },
+    { value: 'any', name: 'has any value' },
+    { value: 'empty', name: 'is empty' },
   ],
   [AttributeDataType.DateTime]: [
-    { value: "lessThan", name: "less than", display: "less than ... days ago" },
-    { value: "exactly", name: "exactly", display: "exactly ... days ago" },
-    { value: "moreThan", name: "more than", display: "more than ... days ago" },
-    { value: "before", name: "before", display: "before a specific date" },
-    { value: "on", name: "on", display: "on a specific date" },
-    { value: "after", name: "after", display: "after a specific date" },
-    { value: "any", name: "has any value" },
-    { value: "empty", name: "is empty" },
+    { value: 'lessThan', name: 'less than', display: 'less than ... days ago' },
+    { value: 'exactly', name: 'exactly', display: 'exactly ... days ago' },
+    { value: 'moreThan', name: 'more than', display: 'more than ... days ago' },
+    { value: 'before', name: 'before', display: 'before a specific date' },
+    { value: 'on', name: 'on', display: 'on a specific date' },
+    { value: 'after', name: 'after', display: 'after a specific date' },
+    { value: 'any', name: 'has any value' },
+    { value: 'empty', name: 'is empty' },
   ],
 };
 
@@ -120,15 +113,15 @@ interface RulesUserAttributeContextValue {
   updateLocalData: (updates: RulesUserAttributeData) => void;
 }
 
-const RulesUserAttributeContext = createContext<
-  RulesUserAttributeContextValue | undefined
->(undefined);
+const RulesUserAttributeContext = createContext<RulesUserAttributeContextValue | undefined>(
+  undefined,
+);
 
 function useRulesUserAttributeContext(): RulesUserAttributeContextValue {
   const context = useContext(RulesUserAttributeContext);
   if (!context) {
     throw new Error(
-      `useRulesUserAttributeContext must be used within a RulesUserAttributeContext.`
+      'useRulesUserAttributeContext must be used within a RulesUserAttributeContext.',
     );
   }
   return context;
@@ -144,14 +137,14 @@ const RulesAttributeDatePicker = (props: {
     <Popover.Popover>
       <Popover.PopoverTrigger asChild>
         <Button
-          variant={"outline"}
+          variant={'outline'}
           className={cn(
-            "w-full justify-start text-left font-normal h-9",
-            !date && "text-muted-foreground"
+            'w-full justify-start text-left font-normal h-9',
+            !date && 'text-muted-foreground',
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "yyyy-MM-dd") : <span>Pick a date</span>}
+          {date ? format(date, 'yyyy-MM-dd') : <span>Pick a date</span>}
         </Button>
       </Popover.PopoverTrigger>
       <Popover.PopoverContent
@@ -175,8 +168,7 @@ const RulesAttributeDatePicker = (props: {
 
 const RulesUserAttributeName = () => {
   const [open, setOpen] = useState(false);
-  const { selectedPreset, setSelectedPreset, updateLocalData } =
-    useRulesUserAttributeContext();
+  const { selectedPreset, setSelectedPreset, updateLocalData } = useRulesUserAttributeContext();
   const { attributes } = useRulesContext();
   const { type } = useRulesUserAttributeContext();
   const handleOnSelected = (item: Attribute) => {
@@ -188,24 +180,20 @@ const RulesUserAttributeName = () => {
   const handleFilter = useCallback(
     (value: string, search: string) => {
       if (attributes) {
-        const attribute = attributes.find((attr) => attr.id == value);
-        if (attribute && attribute.displayName.includes(search)) {
+        const attribute = attributes.find((attr) => attr.id === value);
+        if (attribute?.displayName.includes(search)) {
           return 1;
         }
       }
       return 0;
     },
-    [attributes]
+    [attributes],
   );
   return (
     <div className="flex flex-row">
       <Popover.Popover open={open} onOpenChange={setOpen}>
         <Popover.PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            className="flex-1 justify-between "
-          >
+          <Button variant="outline" className="flex-1 justify-between ">
             {selectedPreset?.displayName}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -218,64 +206,55 @@ const RulesUserAttributeName = () => {
             <CommandInput placeholder="Search attribute..." />
             <CommandEmpty>No items found.</CommandEmpty>
             <ScrollArea className="h-72">
-              {type == "user-attr" && (
-                <CommandGroup
-                  heading="User attribute"
-                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
-                >
-                  {attributes &&
-                    attributes
-                      .filter((attr) => attr.bizType == 1)
-                      .map((item) => (
-                        <CommandItem
-                          key={item.id}
-                          className="cursor-pointer"
-                          value={item.id}
-                          onSelect={() => {
-                            handleOnSelected(item);
-                          }}
-                        >
-                          {item.displayName || item.codeName}
-                          <CheckIcon
-                            className={cn(
-                              "ml-auto h-4 w-4",
-                              selectedPreset?.id === item.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                        </CommandItem>
-                      ))}
+              {type === 'user-attr' && (
+                <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                  {attributes
+                    ?.filter((attr) => attr.bizType === 1)
+                    .map((item) => (
+                      <CommandItem
+                        key={item.id}
+                        className="cursor-pointer"
+                        value={item.id}
+                        onSelect={() => {
+                          handleOnSelected(item);
+                        }}
+                      >
+                        {item.displayName || item.codeName}
+                        <CheckIcon
+                          className={cn(
+                            'ml-auto h-4 w-4',
+                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
                 </CommandGroup>
               )}
-              {type == "company-attr" && (
+              {type === 'company-attr' && (
                 <CommandGroup
                   heading="Company attribute"
                   style={{ zIndex: EXTENSION_CONTENT_RULES }}
                 >
-                  {attributes &&
-                    attributes
-                      .filter((attr) => attr.bizType == 2)
-                      .map((item) => (
-                        <CommandItem
-                          key={item.id}
-                          className="cursor-pointer text-sm"
-                          value={item.id}
-                          onSelect={() => {
-                            handleOnSelected(item);
-                          }}
-                        >
-                          {item.displayName || item.codeName}
-                          <CheckIcon
-                            className={cn(
-                              "ml-auto h-4 w-4",
-                              selectedPreset?.id === item.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                        </CommandItem>
-                      ))}
+                  {attributes
+                    ?.filter((attr) => attr.bizType === 2)
+                    .map((item) => (
+                      <CommandItem
+                        key={item.id}
+                        className="cursor-pointer text-sm"
+                        value={item.id}
+                        onSelect={() => {
+                          handleOnSelected(item);
+                        }}
+                      >
+                        {item.displayName || item.codeName}
+                        <CheckIcon
+                          className={cn(
+                            'ml-auto h-4 w-4',
+                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
                 </CommandGroup>
               )}
             </ScrollArea>
@@ -287,8 +266,7 @@ const RulesUserAttributeName = () => {
 };
 
 const RulesUserAttributeCondition = () => {
-  const { localData, updateLocalData, activeConditionMapping } =
-    useRulesUserAttributeContext();
+  const { localData, updateLocalData, activeConditionMapping } = useRulesUserAttributeContext();
 
   const handleConditionChange = (value: string) => {
     updateLocalData({ logic: value });
@@ -296,29 +274,21 @@ const RulesUserAttributeCondition = () => {
 
   return (
     <>
-      <Select
-        defaultValue={localData?.logic}
-        onValueChange={handleConditionChange}
-      >
+      <Select defaultValue={localData?.logic} onValueChange={handleConditionChange}>
         <SelectTrigger className="justify-start flex h-9">
           <div className="grow text-left">
-            <SelectValue placeholder={""} />
+            <SelectValue placeholder={''} />
           </div>
         </SelectTrigger>
         <SelectPortal>
           <SelectContent style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-            {activeConditionMapping &&
-              activeConditionMapping.map((item, index) => {
-                return (
-                  <SelectItem
-                    key={index}
-                    value={item.value}
-                    className="cursor-pointer"
-                  >
-                    {item.display || item.name}
-                  </SelectItem>
-                );
-              })}
+            {activeConditionMapping?.map((item, index) => {
+              return (
+                <SelectItem key={index} value={item.value} className="cursor-pointer">
+                  {item.display || item.name}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </SelectPortal>
       </Select>
@@ -327,17 +297,12 @@ const RulesUserAttributeCondition = () => {
 };
 
 const RulesUserAttributeInput = () => {
-  const { localData, updateLocalData, selectedPreset } =
-    useRulesUserAttributeContext();
+  const { localData, updateLocalData, selectedPreset } = useRulesUserAttributeContext();
   const isDateTime =
-    selectedPreset?.dataType == AttributeDataType.DateTime &&
-    (localData?.logic == "on" ||
-      localData?.logic == "after" ||
-      localData?.logic == "before")
-      ? true
-      : false;
+    selectedPreset?.dataType === AttributeDataType.DateTime &&
+    (localData?.logic === 'on' || localData?.logic === 'after' || localData?.logic === 'before');
   const [startDate, setStartDate] = useState<Date | undefined>(
-    localData?.value && isDateTime ? new Date(localData?.value) : undefined
+    localData?.value && isDateTime ? new Date(localData?.value) : undefined,
   );
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateLocalData({ value: e.target.value });
@@ -345,13 +310,13 @@ const RulesUserAttributeInput = () => {
   const handleOnChange2 = (e: ChangeEvent<HTMLInputElement>) => {
     updateLocalData({ value2: e.target.value });
   };
-  const [inputType, setInputType] = useState<string>("");
+  const [inputType, setInputType] = useState<string>('');
 
   useEffect(() => {
-    if (selectedPreset?.dataType == AttributeDataType.Number) {
-      setInputType("number");
+    if (selectedPreset?.dataType === AttributeDataType.Number) {
+      setInputType('number');
     } else {
-      setInputType("text");
+      setInputType('text');
     }
   }, [selectedPreset]);
 
@@ -359,10 +324,10 @@ const RulesUserAttributeInput = () => {
     if (isDateTime) {
       try {
         updateLocalData({
-          value: startDate ? format(startDate, "yyyy-MM-dd") : "",
+          value: startDate ? format(startDate, 'yyyy-MM-dd') : '',
         });
-      } catch (error) {
-        updateLocalData({ value: "" });
+      } catch (_) {
+        updateLocalData({ value: '' });
       }
     }
   }, [startDate, isDateTime]);
@@ -378,27 +343,27 @@ const RulesUserAttributeInput = () => {
   return (
     <>
       <div className="flex flex-row space-x-4 items-center">
-        {selectedPreset?.dataType != AttributeDataType.Boolean &&
-          localData?.logic != "empty" &&
-          localData?.logic != "any" &&
-          localData?.logic != "before" &&
-          localData?.logic != "on" &&
-          localData?.logic != "after" && (
+        {selectedPreset?.dataType !== AttributeDataType.Boolean &&
+          localData?.logic !== 'empty' &&
+          localData?.logic !== 'any' &&
+          localData?.logic !== 'before' &&
+          localData?.logic !== 'on' &&
+          localData?.logic !== 'after' && (
             <Input
               type={inputType}
               value={localData?.value}
               onChange={handleOnChange}
-              placeholder={""}
+              placeholder={''}
             />
           )}
-        {localData?.logic == "between" && (
+        {localData?.logic === 'between' && (
           <>
             <span>and</span>
             <Input
               type={inputType}
               value={localData?.value2}
               onChange={handleOnChange2}
-              placeholder={""}
+              placeholder={''}
             />
           </>
         )}
@@ -417,21 +382,17 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   const [activeConditionMapping, setActiveConditionMapping] = useState<
     (typeof conditionsTypeMapping)[AttributeDataType.Number]
   >(conditionsTypeMapping[AttributeDataType.Number]);
-  const [localData, setLocalData] = useState<
-    RulesUserAttributeData | undefined
-  >(data);
-  const [errorInfo, setErrorInfo] = useState("");
+  const [localData, setLocalData] = useState<RulesUserAttributeData | undefined>(data);
+  const [errorInfo, setErrorInfo] = useState('');
 
-  const [displayCondition, setDisplayCondition] = useState<string>("");
-  const [displayValue, setDisplayValue] = useState<string>("");
+  const [displayCondition, setDisplayCondition] = useState<string>('');
+  const [displayValue, setDisplayValue] = useState<string>('');
 
   const [isUpdate, setIsUpdate] = useState(!data?.attrId);
 
   useEffect(() => {
     if (attributes && data?.attrId) {
-      const item = attributes.find(
-        (item: Attribute) => item.id == data?.attrId
-      );
+      const item = attributes.find((item: Attribute) => item.id === data?.attrId);
       if (item) {
         setSelectedPreset(item);
         updateLocalData({ attrId: item.id });
@@ -445,7 +406,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
       setLocalData(data);
       setIsUpdate(true);
     },
-    [localData]
+    [localData],
   );
 
   useEffect(() => {
@@ -460,13 +421,13 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
       setErrorInfo(errorInfo);
       setOpenError(true);
     } else {
-      setErrorInfo("");
+      setErrorInfo('');
       setOpenError(false);
     }
   }, [open, selectedPreset, localData, isUpdate]);
 
   useEffect(() => {
-    if (selectedPreset && selectedPreset.dataType) {
+    if (selectedPreset?.dataType) {
       const t = selectedPreset.dataType as keyof typeof conditionsTypeMapping;
       setActiveConditionMapping(conditionsTypeMapping[t]);
     }
@@ -474,9 +435,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
 
   useEffect(() => {
     if (activeConditionMapping && activeConditionMapping.length > 0) {
-      const mapping = activeConditionMapping.find(
-        (c) => c.value == localData?.logic
-      );
+      const mapping = activeConditionMapping.find((c) => c.value === localData?.logic);
       if (mapping) {
         setDisplayCondition(mapping.name);
       } else {
@@ -487,14 +446,14 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
 
   useEffect(() => {
     if (
-      localData?.logic != "empty" &&
-      localData?.logic != "any" &&
-      selectedPreset?.dataType != AttributeDataType.Boolean &&
+      localData?.logic !== 'empty' &&
+      localData?.logic !== 'any' &&
+      selectedPreset?.dataType !== AttributeDataType.Boolean &&
       localData?.value
     ) {
       setDisplayValue(localData?.value);
     } else {
-      setDisplayValue("");
+      setDisplayValue('');
     }
   }, [localData, selectedPreset]);
 
@@ -511,12 +470,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   return (
     <RulesUserAttributeContext.Provider value={value}>
       <RulesError open={openError}>
-        <div
-          className={cn(
-            "flex flex-row ",
-            isHorizontal ? "mr-1 mb-1 space-x-1 " : "space-x-3 "
-          )}
-        >
+        <div className={cn('flex flex-row ', isHorizontal ? 'mr-1 mb-1 space-x-1 ' : 'space-x-3 ')}>
           <RulesLogic index={index} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent>
@@ -524,15 +478,10 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                 <UserIcon width={16} height={16} />
               </RulesConditionIcon>
               <RulesPopover onOpenChange={setOpen} open={open}>
-                <RulesPopoverTrigger
-                  className={cn(isHorizontal ? "w-auto" : "")}
-                >
-                  <span className="font-bold">
-                    {selectedPreset?.displayName}{" "}
-                  </span>
-                  {displayCondition}{" "}
-                  <span className="font-bold ">{displayValue}</span>
-                  {localData?.logic == "between" && (
+                <RulesPopoverTrigger className={cn(isHorizontal ? 'w-auto' : '')}>
+                  <span className="font-bold">{selectedPreset?.displayName} </span>
+                  {displayCondition} <span className="font-bold ">{displayValue}</span>
+                  {localData?.logic === 'between' && (
                     <>
                       <span className="mx-1">and</span>
                       <span className="font-bold ">{localData?.value2}</span>
@@ -543,8 +492,8 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                   <div className=" flex flex-col space-y-2">
                     <div className=" flex flex-col space-y-1">
                       <div>
-                        {type == "user-attr" && "User attribute"}
-                        {type == "company-attr" && "Company attribute"}
+                        {type === 'user-attr' && 'User attribute'}
+                        {type === 'company-attr' && 'Company attribute'}
                       </div>
                       <RulesUserAttributeName />
                       <RulesUserAttributeCondition />
@@ -563,4 +512,4 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   );
 };
 
-RulesUserAttribute.displayName = "RulesUserAttribute";
+RulesUserAttribute.displayName = 'RulesUserAttribute';

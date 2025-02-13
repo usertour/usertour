@@ -1,12 +1,12 @@
-import { Editor } from "slate";
-import { wrapLink } from "./editorHelper";
-import { isUrl } from "@usertour-ui/shared-utils";
+import { isUrl } from '@usertour-ui/shared-utils';
+import { Editor } from 'slate';
+import { wrapLink } from './editorHelper';
 
 export const withLink = (editor: Editor) => {
   const { insertData, insertText, isInline } = editor;
 
   editor.isInline = (element) => {
-    return element.type === "link" ? true : isInline(element);
+    return element.type === 'link' ? true : isInline(element);
   };
 
   editor.insertText = (text) => {
@@ -18,7 +18,7 @@ export const withLink = (editor: Editor) => {
   };
 
   editor.insertData = (data) => {
-    const text = data.getData("text/plain");
+    const text = data.getData('text/plain');
 
     if (text && isUrl(text)) {
       wrapLink(editor, text);

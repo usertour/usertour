@@ -1,16 +1,16 @@
-import { InputNumber } from "./shared/input";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+import { HelpTooltip } from '@usertour-ui/shared-components';
+import { InputNumber } from './shared/input';
 
 export interface ContentWidthProps {
   width: number;
   onChange: (width: number) => void;
-  type: "modal" | "tooltip" | "checklist";
+  type: 'modal' | 'tooltip' | 'checklist';
 }
 
 const tooltipContent = {
-  modal: "The width in pixels of the modal",
-  tooltip: "The width in pixels of the tooltip",
-  checklist: "The width in pixels of the checklist",
+  modal: 'The width in pixels of the modal',
+  tooltip: 'The width in pixels of the tooltip',
+  checklist: 'The width in pixels of the checklist',
 } as const;
 
 export const ContentWidth = (props: ContentWidthProps) => {
@@ -30,4 +30,4 @@ export const ContentWidth = (props: ContentWidthProps) => {
     </div>
   );
 };
-ContentWidth.displayName = "ContentWidth";
+ContentWidth.displayName = 'ContentWidth';

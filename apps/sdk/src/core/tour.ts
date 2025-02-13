@@ -1,23 +1,23 @@
+import { smoothScroll } from '@usertour-ui/dom';
+import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ContentActionsItemType,
-  flowEndReason,
   RulesCondition,
   SDKContent,
   Step,
   StepContentType,
-} from "@usertour-ui/types";
-import { type App } from "./app";
-import { smoothScroll } from "@usertour-ui/dom";
-import { ContentEditorButtonElement } from "@usertour-ui/shared-editor";
-import { evalCode } from "@usertour-ui/ui-utils";
-import { document } from "../utils/globals";
-import { activedRulesConditions, isActive } from "../utils/conditions";
-import { defaultTourStore } from "./common";
-import { ElementWatcher } from "./element-watcher";
-import { BaseContent } from "./base-content";
-import { TourStore } from "../types/store";
-import { AppEvents } from "../utils/event";
+  flowEndReason,
+} from '@usertour-ui/types';
+import { evalCode } from '@usertour-ui/ui-utils';
+import { TourStore } from '../types/store';
+import { activedRulesConditions, isActive } from '../utils/conditions';
+import { AppEvents } from '../utils/event';
+import { document } from '../utils/globals';
+import { type App } from './app';
+import { BaseContent } from './base-content';
+import { defaultTourStore } from './common';
+import { ElementWatcher } from './element-watcher';
 
 export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
@@ -54,9 +54,7 @@ export class Tour extends BaseContent<TourStore> {
 
   refresh() {
     const content = this.getContent();
-    const newStep = content.steps?.find(
-      (step) => step.cvid == this.getCurrentStep()?.cvid
-    );
+    const newStep = content.steps?.find((step) => step.cvid === this.getCurrentStep()?.cvid);
     const currentStep = this.getCurrentStep();
     if (!newStep || !currentStep) {
       return;
@@ -67,8 +65,7 @@ export class Tour extends BaseContent<TourStore> {
 
     this.setCurrentStep(step);
 
-    const { openState, triggerRef, progress, ...storeData } =
-      this.buildStoreData();
+    const { openState, triggerRef, progress, ...storeData } = this.buildStoreData();
 
     //todo replace element watcher target
     this.updateStore({ ...storeData, currentStep: step });
@@ -98,16 +95,14 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
     const total = content.steps.length;
-    const currentStep = content.steps.find((step) => step.cvid == stepCvid);
+    const currentStep = content.steps.find((step) => step.cvid === stepCvid);
     if (!currentStep) {
       this.handleClose(flowEndReason.USER_CLOSED);
       return;
     }
     this.reset();
-    const index = content.steps.findIndex(
-      (step) => step.cvid == currentStep.cvid
-    );
-    const isComplete = index + 1 == total ? true : false;
+    const index = content.steps.findIndex((step) => step.cvid === currentStep.cvid);
+    const isComplete = index + 1 === total;
     const progress = ((index + 1) / total) * 100;
     this.setCurrentStep(currentStep);
     const storeData = this.buildStoreData();
@@ -116,7 +111,7 @@ export class Tour extends BaseContent<TourStore> {
       progress,
     };
 
-    if (currentStep.type == "tooltip") {
+    if (currentStep.type === 'tooltip') {
       await this.showPopper(data);
     } else {
       await this.showModal(data);
@@ -126,11 +121,7 @@ export class Tour extends BaseContent<TourStore> {
 
   async showPopper(tourStore: TourStore) {
     const currentStep = this.getCurrentStep();
-    if (
-      !currentStep?.target ||
-      currentStep.cvid != this.getCurrentStep()?.cvid ||
-      !document
-    ) {
+    if (!currentStep?.target || currentStep.cvid !== this.getCurrentStep()?.cvid || !document) {
       await this.cancelActiveTour();
       return;
     }
@@ -139,10 +130,10 @@ export class Tour extends BaseContent<TourStore> {
       this.watcher = null;
     }
     this.watcher = new ElementWatcher(currentStep.target);
-    this.watcher.once("element-found", (el) => {
-      const openState = this.isTemporarilyHidden() ? false : true;
+    this.watcher.once('element-found', (el) => {
+      const openState = !this.isTemporarilyHidden();
       if (openState) {
-        smoothScroll(el as Element, { block: "center" });
+        smoothScroll(el as Element, { block: 'center' });
       }
       this.setStore({
         ...tourStore,
@@ -150,14 +141,14 @@ export class Tour extends BaseContent<TourStore> {
         openState,
       });
     });
-    this.watcher.once("element-found-timeout", () => {
+    this.watcher.once('element-found-timeout', () => {
       this.handleClose(flowEndReason.ELEMENT_NOT_FOUND);
     });
     this.watcher.findElement();
   }
 
   async showModal(tourStore: TourStore) {
-    const openState = this.isTemporarilyHidden() ? false : true;
+    const openState = !this.isTemporarilyHidden();
     this.setStore({ ...tourStore, openState });
   }
 
@@ -175,34 +166,33 @@ export class Tour extends BaseContent<TourStore> {
 
   async handleClose(reason?: flowEndReason) {
     await this.closeActiveTour(reason);
-    await this.startTour(undefined, "start_condition");
+    await this.startTour(undefined, 'start_condition');
   }
 
   async handleActions(actions: RulesCondition[]) {
-    actions.forEach(async (action) => {
-      if (action.type == ContentActionsItemType.STEP_GOTO) {
+    for (const action of actions) {
+      if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
-      } else if (action.type == ContentActionsItemType.FLOW_START) {
+      } else if (action.type === ContentActionsItemType.FLOW_START) {
         await this.startNewTour(action.data.contentId);
-      } else if (action.type == ContentActionsItemType.FLOW_DISMIS) {
+      } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
         await this.handleClose();
-      } else if (action.type == ContentActionsItemType.PAGE_NAVIGATE) {
+      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
         this.handleNavigate(action.data);
-      } else if (action.type == ContentActionsItemType.JAVASCRIPT_EVALUATE) {
+      } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       }
-    });
+    }
   }
 
   async handleOnClick({ type, data }: ContentEditorButtonElement) {
-    if (type == "button" && data.actions) {
+    if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
   }
 
   async checkStepVisible() {
-    const { triggerRef, currentStep, openState } =
-      this.getStore().getSnapshot();
+    const { triggerRef, currentStep, openState } = this.getStore().getSnapshot();
     if (!this.getCurrentStep() || !currentStep) {
       return;
     }
@@ -214,7 +204,7 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
 
-    if (currentStep.type == StepContentType.MODAL) {
+    if (currentStep.type === StepContentType.MODAL) {
       if (!openState) {
         this.open();
       }
@@ -225,7 +215,7 @@ export class Tour extends BaseContent<TourStore> {
       !triggerRef ||
       !this.watcher ||
       !currentStep?.cvid ||
-      currentStep.type != StepContentType.TOOLTIP
+      currentStep.type !== StepContentType.TOOLTIP
     ) {
       return;
     }
@@ -241,7 +231,7 @@ export class Tour extends BaseContent<TourStore> {
 
     if (isTimeout) {
       await this.closeActiveTour();
-      await this.startTour(undefined, "start_condition");
+      await this.startTour(undefined, 'start_condition');
     } else {
       this.hide();
     }
@@ -277,7 +267,7 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   isActiveTour() {
-    return this.getActiveTour() == this;
+    return this.getActiveTour() === this;
   }
 
   isShow() {
@@ -309,10 +299,10 @@ export class Tour extends BaseContent<TourStore> {
       {
         eventName: BizEvents.FLOW_STARTED,
         eventData: {
-          flow_start_reason: reason ?? "auto_start",
+          flow_start_reason: reason ?? 'auto_start',
         },
       },
-      { isCreateSession: true }
+      { isCreateSession: true },
     );
   }
 
@@ -323,8 +313,7 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
     const total = content.steps?.length ?? 0;
-    const index =
-      content.steps?.findIndex((step) => step.cvid == currentStep.cvid) ?? 0;
+    const index = content.steps?.findIndex((step) => step.cvid === currentStep.cvid) ?? 0;
     const progress = Math.round(((index + 1) / total) * 100);
 
     await this.reportEventWithSession(
@@ -338,7 +327,7 @@ export class Tour extends BaseContent<TourStore> {
           flow_step_progress: progress,
         },
       },
-      { isDeleteSession: true }
+      { isDeleteSession: true },
     );
   }
 
@@ -346,7 +335,7 @@ export class Tour extends BaseContent<TourStore> {
     currentStep: Step,
     index: number,
     progress: number,
-    isComplete: boolean
+    isComplete: boolean,
   ) {
     const eventData = {
       flow_step_number: index,
@@ -366,7 +355,7 @@ export class Tour extends BaseContent<TourStore> {
           eventData,
           eventName: BizEvents.FLOW_COMPLETED,
         },
-        { isDeleteSession: true }
+        { isDeleteSession: true },
       );
     }
   }

@@ -13,15 +13,16 @@
     background-color: var(--usertour-primary);
     color: var(--usertour-primary-foreground);
     font-weight: var(--usertour-primary-font-weight);
-    border: var(--usertour-primary-border-width) solid
-      var(--usertour-primary-border-color);
+    border: var(--usertour-primary-border-width) solid var(--usertour-primary-border-color);
     padding-top: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-primary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-primary-border-width)
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-primary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-primary-border-width)
     );
   }
   .usertour-btn--primary:hover {
@@ -39,15 +40,18 @@
     color: var(--usertour-secondary-foreground);
     font-weight: var(--usertour-secondary-font-weight);
     border-color: var(--usertour-secondary-border-color);
-    border: var(--usertour-secondary-border-width) solid
-      var(--usertour-secondary-border-color);
+    border-width: var(--usertour-secondary-border-width);
+    border-style: solid;
+    /* border: var(--usertour-secondary-border-width) solid var(--usertour-secondary-border-color); */
     padding-top: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-secondary-border-width)
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-secondary-border-width)
     );
   }
   .usertour-btn--secondary:hover {

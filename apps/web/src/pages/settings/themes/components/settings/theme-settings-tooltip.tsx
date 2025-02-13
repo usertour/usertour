@@ -1,5 +1,5 @@
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { useThemeSettingsContext } from ".";
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsTooltip = () => {
   const { settings, setSettings } = useThemeSettingsContext();
@@ -34,4 +34,4 @@ export const ThemeSettingsTooltip = () => {
   );
 };
 
-ThemeSettingsTooltip.displayName = "ThemeSettingsTooltip";
+ThemeSettingsTooltip.displayName = 'ThemeSettingsTooltip';

@@ -4,10 +4,10 @@
  * Use two levels of REs to avoid REDOS.
  */
 
-var protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
+const protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
 
-var localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/;
-var nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
+const localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/;
+const nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
 
 /**
  * Loosely validate a URL `string`.
@@ -17,16 +17,16 @@ var nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
  */
 
 export function isUrl(string: string): boolean {
-  if (typeof string !== "string") {
+  if (typeof string !== 'string') {
     return false;
   }
 
-  var match = string.match(protocolAndDomainRE);
+  const match = string.match(protocolAndDomainRE);
   if (!match) {
     return false;
   }
 
-  var everythingAfterProtocol = match[1];
+  const everythingAfterProtocol = match[1];
   if (!everythingAfterProtocol) {
     return false;
   }

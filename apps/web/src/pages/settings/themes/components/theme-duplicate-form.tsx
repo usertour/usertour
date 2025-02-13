@@ -1,34 +1,27 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { copyTheme } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect, useState } from "react";
-import { Theme } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { useToast } from "@usertour-ui/use-toast";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { copyTheme } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Theme } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface ThemeDuplicateFormProps {
   duplicateTheme: Theme;
@@ -40,7 +33,7 @@ interface ThemeDuplicateFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please enter your theme name.",
+      required_error: 'Please enter your theme name.',
     })
     .max(30)
     .min(1),
@@ -55,7 +48,7 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
   const { toast } = useToast();
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -63,7 +56,7 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: duplicateTheme.name },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -80,8 +73,8 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
       const response = await copyMutation({ variables });
       if (response.data.copyTheme.id) {
         toast({
-          variant: "success",
-          title: "The theme has been successfully created",
+          variant: 'success',
+          title: 'The theme has been successfully created',
         });
       }
       onSuccess();
@@ -125,9 +118,7 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -138,4 +129,4 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
   );
 };
 
-ThemeDuplicateForm.displayName = "ThemeDuplicateForm";
+ThemeDuplicateForm.displayName = 'ThemeDuplicateForm';

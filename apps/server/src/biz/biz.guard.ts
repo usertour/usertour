@@ -1,17 +1,11 @@
-import {
-  BadRequestException,
-  CanActivate,
-  ExecutionContext,
-  Inject,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { GqlExecutionContext } from "@nestjs/graphql";
+import { BadRequestException, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 
-import { Roles, RolesScopeEnum } from "@/common/decorators/roles.decorator";
-import { ProjectsService } from "@/projects/projects.service";
-import { BizService } from "./biz.service";
-import { EnvironmentsService } from "@/environments/environments.service";
-import { BizUserOnSegment } from "@prisma/client";
+import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { EnvironmentsService } from '@/environments/environments.service';
+import { ProjectsService } from '@/projects/projects.service';
+import { BizService } from './biz.service';
 
 export class BizGuard implements CanActivate {
   private readonly reflector: Reflector;
@@ -22,28 +16,22 @@ export class BizGuard implements CanActivate {
     @Inject(ProjectsService)
     private readonly projectsService: ProjectsService,
     @Inject(BizService)
-    private readonly bizservice: BizService
+    private readonly bizservice: BizService,
   ) {
     this.reflector = new Reflector();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const ctx = GqlExecutionContext.create(context);
-    let { req } = ctx.getContext();
-    let args = ctx.getArgs();
+    const { req } = ctx.getContext();
+    const args = ctx.getArgs();
 
-    let environmentId =
-      args.environmentId ||
-      args.data?.environmentId ||
-      args.query?.environmentId;
+    let environmentId = args.environmentId || args.data?.environmentId || args.query?.environmentId;
 
     let segmentId = args.data?.id || args.data?.segmentId;
 
     const user = req.user;
-    const roles = this.reflector.get<RolesScopeEnum>(
-      Roles,
-      context.getHandler()
-    );
+    const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
     if (!roles) {
       return true;
     }
@@ -61,25 +49,20 @@ export class BizGuard implements CanActivate {
     }
     if (!environmentId) {
       throw new BadRequestException(
-        "Please make sure you have permission to access this environment"
+        'Please make sure you have permission to access this environment',
       );
     }
     const environment = await this.environmentsService.get(environmentId);
     if (!environment) {
       throw new BadRequestException(
-        "Please make sure you have permission to access this environment"
+        'Please make sure you have permission to access this environment',
       );
     }
     const projectId = environment.projectId;
 
-    const userProject = await this.projectsService.getUserProject(
-      user.id,
-      projectId
-    );
+    const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {
-      throw new BadRequestException(
-        "Please make sure you have permission to access this project"
-      );
+      throw new BadRequestException('Please make sure you have permission to access this project');
     }
 
     return true;

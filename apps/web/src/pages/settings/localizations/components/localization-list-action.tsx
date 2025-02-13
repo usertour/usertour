@@ -1,29 +1,22 @@
-import { Button } from "@usertour-ui/button";
+import { useLocalizationListContext } from '@/contexts/localization-list-context';
+import { useMutation } from '@apollo/client';
+import { DotsHorizontalIcon, StarFilledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { DotsHorizontalIcon, StarFilledIcon } from "@radix-ui/react-icons";
-import { LocalizationEditForm } from "./localization-edit-form";
-import { useLocalizationListContext } from "@/contexts/localization-list-context";
-import { useState } from "react";
-import { LocalizationDeleteForm } from "./localization-delete-form";
-import { CloseIcon, EditIcon } from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { Localization } from "@usertour-ui/types";
-import { useMutation } from "@apollo/client";
-import { setDefaultLocalization } from "@usertour-ui/gql";
-import { useToast } from "@usertour-ui/use-toast";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dropdown-menu';
+import { setDefaultLocalization } from '@usertour-ui/gql';
+import { EditIcon } from '@usertour-ui/icons';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Localization } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { LocalizationDeleteForm } from './localization-delete-form';
+import { LocalizationEditForm } from './localization-edit-form';
 
 type LocalizationListActionProps = {
   localization: Localization;
@@ -42,9 +35,6 @@ export const LocalizationListAction = (props: LocalizationListActionProps) => {
     setOpen(false);
     refetch();
   };
-  const handleDeleteOpen = () => {
-    setOpenDeleteDialog(true);
-  };
   const handleDeleteClose = () => {
     setOpenDeleteDialog(false);
     refetch();
@@ -60,12 +50,12 @@ export const LocalizationListAction = (props: LocalizationListActionProps) => {
       await refetch();
       // onSubmit("setAsDefault");
       toast({
-        variant: "success",
-        title: "The localization has been successfully set as default",
+        variant: 'success',
+        title: 'The localization has been successfully set as default',
       });
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -76,10 +66,7 @@ export const LocalizationListAction = (props: LocalizationListActionProps) => {
       {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-            >
+            <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -89,21 +76,14 @@ export const LocalizationListAction = (props: LocalizationListActionProps) => {
               Edit localization
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleSetAsDefault}
-              disabled={localization.isDefault}
-            >
+            <DropdownMenuItem onClick={handleSetAsDefault} disabled={localization.isDefault}>
               <StarFilledIcon className="mr-1" width={15} height={15} />
               Set as company default
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       }
-      <LocalizationEditForm
-        localization={localization}
-        isOpen={open}
-        onClose={handleOnClose}
-      />
+      <LocalizationEditForm localization={localization} isOpen={open} onClose={handleOnClose} />
       <LocalizationDeleteForm
         data={localization}
         open={openDeleteDialog}
@@ -114,4 +94,4 @@ export const LocalizationListAction = (props: LocalizationListActionProps) => {
   );
 };
 
-LocalizationListAction.displayName = "LocalizationListAction";
+LocalizationListAction.displayName = 'LocalizationListAction';

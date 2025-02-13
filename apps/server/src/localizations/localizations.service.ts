@@ -1,9 +1,6 @@
-import { PrismaService } from "nestjs-prisma";
-import { BadRequestException, Injectable } from "@nestjs/common";
-import {
-  CreateLocalizationInput,
-  UpdateLocalizationInput,
-} from "./dto/localization.input";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import { CreateLocalizationInput, UpdateLocalizationInput } from './dto/localization.input';
 
 @Injectable()
 export class LocalizationsService {
@@ -18,7 +15,7 @@ export class LocalizationsService {
   async setDefault(id: string) {
     const item = await this.prisma.localization.findFirst({ where: { id } });
     if (!item) {
-      throw new BadRequestException("Localization is not exist!");
+      throw new BadRequestException('Localization is not exist!');
     }
     await this.prisma.localization.updateMany({
       where: { isDefault: true, projectId: item.projectId },
@@ -41,7 +38,7 @@ export class LocalizationsService {
   async delete(id: string) {
     const item = await this.prisma.localization.findUnique({ where: { id } });
     if (!item || item.isDefault) {
-      throw new BadRequestException("Invalid request!");
+      throw new BadRequestException('Invalid request!');
     }
     return await this.prisma.localization.delete({
       where: { id },
@@ -57,7 +54,7 @@ export class LocalizationsService {
   async findMany(projectId: string) {
     return await this.prisma.localization.findMany({
       where: { projectId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

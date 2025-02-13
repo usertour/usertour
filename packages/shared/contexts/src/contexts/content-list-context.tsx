@@ -1,14 +1,8 @@
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { queryContents } from "@usertour-ui/gql";
-import { Pagination, PageInfo, Content } from "@usertour-ui/types";
-import { PaginationState } from "@tanstack/react-table";
+import { useQuery } from '@apollo/client';
+import { PaginationState } from '@tanstack/react-table';
+import { queryContents } from '@usertour-ui/gql';
+import { Content, PageInfo, Pagination } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 const defaultPagination = {
   pageIndex: 0,
@@ -18,9 +12,9 @@ const defaultPagination = {
 export interface ContentListProviderProps {
   children?: ReactNode;
   environmentId: string | undefined;
-  defaultQuery?: Object;
+  defaultQuery?: any;
   defaultPagination?: typeof defaultPagination;
-  contentType: String | undefined;
+  contentType: string | undefined;
 }
 
 export interface ContentListContextValue {
@@ -28,28 +22,24 @@ export interface ContentListContextValue {
   refetch: any;
   requestPagination: Pagination;
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
-  query: Object;
-  setQuery: React.Dispatch<React.SetStateAction<Object>>;
+  query: any;
+  setQuery: React.Dispatch<React.SetStateAction<any>>;
   pagination: PaginationState;
   setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
   pageCount: number;
   contents: Content[];
   totalCount: number;
-  contentType: String | undefined;
+  contentType: string | undefined;
 }
 
-export const ContentListContext = createContext<
-  ContentListContextValue | undefined
->(undefined);
+export const ContentListContext = createContext<ContentListContextValue | undefined>(undefined);
 
 // const defaultPagination = {
 //   pageIndex: 0,
 //   pageSize: 10,
 // }
 
-export function ContentListProvider(
-  props: ContentListProviderProps
-): JSX.Element {
+export function ContentListProvider(props: ContentListProviderProps): JSX.Element {
   const {
     children,
     environmentId,
@@ -60,7 +50,7 @@ export function ContentListProvider(
   const [requestPagination, setRequestPagination] = useState<Pagination>({
     first: defaultPagination.pageSize,
   });
-  const [query, setQuery] = useState<Object>(defaultQuery);
+  const [query, setQuery] = useState<any>(defaultQuery);
   const [pagination, setPagination] = useState<PaginationState>({
     ...defaultPagination,
   });
@@ -76,26 +66,26 @@ export function ContentListProvider(
     variables: {
       ...requestPagination,
       query: { environmentId, ...query },
-      orderBy: { field: "createdAt", direction: "desc" },
+      orderBy: { field: 'createdAt', direction: 'desc' },
     },
   });
 
-  const contentList = data && data.queryContents;
+  const contentList = data?.queryContents;
 
   useEffect(() => {
     const { pageIndex, pageSize } = pagination;
     let varis: Pagination = { first: pageSize };
     if (
       currentPagination &&
-      pageSize == currentPagination.pageSize &&
-      pageIndex == currentPagination.pageIndex
+      pageSize === currentPagination.pageSize &&
+      pageIndex === currentPagination.pageIndex
     ) {
       return;
     }
 
-    if (pageIndex == 0) {
+    if (pageIndex === 0) {
       varis = { first: pageSize };
-    } else if (pageIndex + 1 == pageCount) {
+    } else if (pageIndex + 1 === pageCount) {
       const costSize = totalCount - (pageCount - 1) * pageSize;
       varis = {
         last: costSize > 0 ? costSize : pageSize,
@@ -152,19 +142,13 @@ export function ContentListProvider(
     contentType,
   };
 
-  return (
-    <ContentListContext.Provider value={value}>
-      {children}
-    </ContentListContext.Provider>
-  );
+  return <ContentListContext.Provider value={value}>{children}</ContentListContext.Provider>;
 }
 
 export function useContentListContext(): ContentListContextValue {
   const context = useContext(ContentListContext);
   if (!context) {
-    throw new Error(
-      `useContentListContext must be used within a ContentListProvider.`
-    );
+    throw new Error('useContentListContext must be used within a ContentListProvider.');
   }
   return context;
 }

@@ -1,12 +1,12 @@
-import { PlusCircledIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import { Separator } from "@usertour-ui/separator";
-import { EmptyPlaceholder } from "../shared/empty-placeholder";
-import { DataTable } from "./data-table";
-import { useState } from "react";
-import { useContentListContext } from "@/contexts/content-list-context";
-import { ContentListSkeleton } from "@/components/molecules/skeleton";
-import { ChecklistCreateForm } from "../shared/checklist-create-form";
+import { ContentListSkeleton } from '@/components/molecules/skeleton';
+import { useContentListContext } from '@/contexts/content-list-context';
+import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { Separator } from '@usertour-ui/separator';
+import { useState } from 'react';
+import { ChecklistCreateForm } from '../shared/checklist-create-form';
+import { EmptyPlaceholder } from '../shared/empty-placeholder';
+import { DataTable } from './data-table';
 
 export const ChecklistListContent = () => {
   const [open, setOpen] = useState(false);
@@ -26,14 +26,11 @@ export const ChecklistListContent = () => {
       <div className="flex justify-between">
         <>
           <div className="flex flex-col space-y-1 ">
-            <h3 className="text-2xl font-semibold tracking-tight">
-              Checklists
-            </h3>
+            <h3 className="text-2xl font-semibold tracking-tight">Checklists</h3>
             <div className="flex flex-row space-x-1">
               <p className="text-sm text-muted-foreground">
-                A checklist helps users feel accomplished, encourages them to
-                engage more with your product, and guides them step-by-step
-                through clear actions.
+                A checklist helps users feel accomplished, encourages them to engage more with your
+                product, and guides them step-by-step through clear actions.
               </p>
             </div>
           </div>
@@ -46,7 +43,7 @@ export const ChecklistListContent = () => {
 
       <Separator className="my-6" />
       {isLoading && <ContentListSkeleton count={9} />}
-      {!isLoading && contents && contents.length == 0 && (
+      {!isLoading && contents && contents.length === 0 && (
         <EmptyPlaceholder
           name="No checklists added"
           description="You have not added any checklists. Add one below."
@@ -64,4 +61,4 @@ export const ChecklistListContent = () => {
   );
 };
 
-ChecklistListContent.displayName = "ChecklistListContent";
+ChecklistListContent.displayName = 'ChecklistListContent';

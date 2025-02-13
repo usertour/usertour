@@ -1,15 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { PopperEditor } from "../../components/editor";
-import { ContentEditorTextElement } from "../../types/editor";
-import { Descendant } from "slate";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { isEqual } from "@usertour-ui/shared-utils";
-import { serialize } from "../../components/serialize";
+import { Descendant } from 'slate';
+import { PopperEditor } from '../../components/editor';
+import { serialize } from '../../components/serialize';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ContentEditorTextElement } from '../../types/editor';
 
-const data = {
-  type: "paragraph",
-  children: [{ text: "this is a text" }],
-};
 export interface ContentEditorRichTextProps {
   element: ContentEditorTextElement;
   path: number[];
@@ -18,8 +12,7 @@ export interface ContentEditorRichTextProps {
 
 export const ContentEditorRichText = (props: ContentEditorRichTextProps) => {
   const { element, path, id } = props;
-  const { updateElement, activeId, zIndex, attributes } =
-    useContentEditorContext();
+  const { updateElement, activeId, zIndex, attributes } = useContentEditorContext();
 
   const handleUpdate = (value: Descendant[]) => {
     updateElement({ ...element, data: value }, id);
@@ -27,17 +20,17 @@ export const ContentEditorRichText = (props: ContentEditorRichTextProps) => {
 
   return (
     <PopperEditor
-      showToolbar={activeId ? false : true}
+      showToolbar={!activeId}
       attributes={attributes}
       initialValue={element.data}
       onValueChange={handleUpdate}
-      key={path.join("-")}
+      key={path.join('-')}
       zIndex={zIndex}
-    ></PopperEditor>
+    />
   );
 };
 
-ContentEditorRichText.displayName = "ContentEditorRichText";
+ContentEditorRichText.displayName = 'ContentEditorRichText';
 
 export type ContentEditorRichTextSerializeType = {
   className?: string;
@@ -45,18 +38,14 @@ export type ContentEditorRichTextSerializeType = {
   element: ContentEditorTextElement;
 };
 
-export const ContentEditorRichTextSerialize = (
-  props: ContentEditorRichTextSerializeType
-) => {
+export const ContentEditorRichTextSerialize = (props: ContentEditorRichTextSerializeType) => {
   const { element } = props;
 
   return (
     <>
-      <div className="w-full">
-        {element.data.map((node) => serialize(node))}
-      </div>
+      <div className="w-full">{element.data.map((node) => serialize(node))}</div>
     </>
   );
 };
 
-ContentEditorRichTextSerialize.displayName = "ContentEditorRichTextSerialize";
+ContentEditorRichTextSerialize.displayName = 'ContentEditorRichTextSerialize';

@@ -1,13 +1,13 @@
+import { isValid } from '@/utils/helper';
 import {
   ArgumentsHost,
   Catch,
   ExceptionFilter,
   HttpException,
   InternalServerErrorException,
-} from "@nestjs/common";
-import { Logger } from "../../utils";
-import { GqlExecutionContext } from "@nestjs/graphql";
-import { isValid } from "@/utils/helper";
+} from '@nestjs/common';
+import { GqlExecutionContext } from '@nestjs/graphql';
+import { Logger } from '../../utils';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {

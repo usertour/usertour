@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { Theme } from "@usertour-ui/types";
-import { WebElementListener } from "../../../components/element-listener";
-import { LauncherContentMain } from "./launcher-content";
-import { useThemeListContext } from "@usertour-ui/contexts";
-import { useBuilderContext, useLauncherContext } from "../../../contexts";
-import { useAws } from "../../../hooks/use-aws";
-import { ContentEditorRoot } from "@usertour-ui/shared-editor";
-import { isEqual } from "lodash";
+import { useThemeListContext } from '@usertour-ui/contexts';
+import { ContentEditorRoot } from '@usertour-ui/shared-editor';
+import { Theme } from '@usertour-ui/types';
+import { isEqual } from 'lodash';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { WebElementListener } from '../../../components/element-listener';
+import { useBuilderContext, useLauncherContext } from '../../../contexts';
+import { useAws } from '../../../hooks/use-aws';
+import { LauncherContentMain } from './launcher-content';
 
 export const LauncherBuilderEmbed = () => {
   const triggerRef = useRef<any>();
@@ -30,10 +30,7 @@ export const LauncherBuilderEmbed = () => {
     }
   }, [themeList, currentVersion]);
 
-  const handleCustomUploadRequest = useCallback(
-    (file: File) => upload(file),
-    [upload]
-  );
+  const handleCustomUploadRequest = useCallback((file: File) => upload(file), [upload]);
 
   const handleUpdateTooltipContent = useCallback(
     (content: ContentEditorRoot[]) => {
@@ -41,7 +38,7 @@ export const LauncherBuilderEmbed = () => {
         updateLocalDataTooltip({ content });
       }
     },
-    [updateLocalDataTooltip, localData?.tooltip.content]
+    [updateLocalDataTooltip, localData?.tooltip.content],
   );
 
   // Memoize merged data
@@ -59,12 +56,7 @@ export const LauncherBuilderEmbed = () => {
 
   return (
     <>
-      {isWebBuilder && (
-        <WebElementListener
-          ref={triggerRef}
-          onMounted={() => setIsMounted(true)}
-        />
-      )}
+      {isWebBuilder && <WebElementListener ref={triggerRef} onMounted={() => setIsMounted(true)} />}
       {isMounted && theme && currentVersion && (
         <LauncherContentMain
           theme={theme}
@@ -79,4 +71,4 @@ export const LauncherBuilderEmbed = () => {
   );
 };
 
-LauncherBuilderEmbed.displayName = "LauncherBuilderEmbed";
+LauncherBuilderEmbed.displayName = 'LauncherBuilderEmbed';

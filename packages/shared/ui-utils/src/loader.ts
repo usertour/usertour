@@ -1,12 +1,12 @@
 export const loadStyleSheet = async (url: string, doc: Document) => {
-  const sheet = doc.createElement("link");
-  sheet.rel = "stylesheet";
+  const sheet = doc.createElement('link');
+  sheet.rel = 'stylesheet';
   sheet.href = url;
-  sheet.type = "text/css";
+  sheet.type = 'text/css';
   doc.head.appendChild(sheet);
-  return new Promise(function (resolve: (isLoaded: boolean) => void) {
+  return new Promise((resolve: (isLoaded: boolean) => void) => {
     sheet.onload = () => resolve(true);
-    sheet.addEventListener("load", () => resolve(true));
+    sheet.addEventListener('load', () => resolve(true));
     sheet.onload = () => {
       resolve(true);
     };
@@ -14,7 +14,5 @@ export const loadStyleSheet = async (url: string, doc: Document) => {
     sheet.onerror = () => {
       resolve(false);
     };
-  }).then(function (isLoaded: boolean) {
-    return isLoaded;
-  });
+  }).then((isLoaded: boolean) => isLoaded);
 };

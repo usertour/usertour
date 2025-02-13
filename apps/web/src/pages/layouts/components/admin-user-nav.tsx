@@ -1,5 +1,7 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@usertour-ui/avatar";
-import { Button } from "@usertour-ui/button";
+import { useAppContext } from '@/contexts/app-context';
+import { getGravatarUrl } from '@/utils/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,14 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { removeAuthToken } from "@usertour-ui/shared-utils";
-import { useNavigate } from "react-router-dom";
-import { useEvent } from "react-use";
-import { useAppContext } from "@/contexts/app-context";
-import isHotkey from "is-hotkey";
-import { usePostHog } from "posthog-js/react";
-import { getGravatarUrl } from "@/utils/avatar";
+} from '@usertour-ui/dropdown-menu';
+import { removeAuthToken } from '@usertour-ui/shared-utils';
+import isHotkey from 'is-hotkey';
+import { usePostHog } from 'posthog-js/react';
+import { useNavigate } from 'react-router-dom';
+import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
   const { userInfo: user, setUserInfo } = useAppContext();
@@ -28,21 +28,21 @@ export const AdminUserNav = () => {
   const logoutHandler = () => {
     removeAuthToken();
     setUserInfo(null);
-    posthog?.capture("clicked_log_in");
-    return navigate("/auth/signin");
+    posthog?.capture('clicked_log_in');
+    return navigate('/auth/signin');
   };
 
   const hotkeys = {
-    "mod+u": `/project/${project?.id}/settings/account`,
-    "mod+m": `/project/${project?.id}/settings/themes`,
-    "mod+e": `/project/${project?.id}/settings/events`,
-    "shift+mod+k": "/auth/signin",
+    'mod+u': `/project/${project?.id}/settings/account`,
+    'mod+m': `/project/${project?.id}/settings/themes`,
+    'mod+e': `/project/${project?.id}/settings/events`,
+    'shift+mod+k': '/auth/signin',
   };
   const handleKeyEvent = (event: any) => {
     for (const key in hotkeys) {
       const path = hotkeys[key as keyof typeof hotkeys];
       if (isHotkey(key, event)) {
-        if (path == "/auth/signin") {
+        if (path === '/auth/signin') {
           logoutHandler();
         } else {
           navigate(path);
@@ -50,10 +50,9 @@ export const AdminUserNav = () => {
       }
     }
   };
-  useEvent("keydown", handleKeyEvent, window, { capture: true });
+  useEvent('keydown', handleKeyEvent, window, { capture: true });
 
-  const avatarUrl =
-    user?.avatarUrl ?? (user?.email ? getGravatarUrl(user?.email) : "");
+  const avatarUrl = user?.avatarUrl ?? (user?.email ? getGravatarUrl(user?.email) : '');
 
   return (
     <DropdownMenu>
@@ -72,35 +71,25 @@ export const AdminUserNav = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user?.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
+            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={() => navigate(`/project/${project?.id}/settings/account`)}
-          >
+          <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/account`)}>
             Acount
             <DropdownMenuShortcut>⌘U</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => navigate(`/project/${project?.id}/settings/themes`)}
-          >
+          <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/themes`)}>
             Themes
             <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => navigate(`/project/${project?.id}/settings/events`)}
-          >
+          <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/events`)}>
             Events
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
-              navigate(`/project/${project?.id}/settings/environments`)
-            }
+            onClick={() => navigate(`/project/${project?.id}/settings/environments`)}
           >
             Environments
           </DropdownMenuItem>
@@ -115,4 +104,4 @@ export const AdminUserNav = () => {
   );
 };
 
-AdminUserNav.displayName = "AdminUserNav";
+AdminUserNav.displayName = 'AdminUserNav';

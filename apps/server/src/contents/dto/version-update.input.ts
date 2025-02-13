@@ -1,6 +1,6 @@
-import { IsNotEmpty } from "class-validator";
-import { InputType, Field } from "@nestjs/graphql";
-import { VersionInput } from "./version.input";
+import { Field, InputType } from '@nestjs/graphql';
+import { IsNotEmpty } from 'class-validator';
+import { VersionInput } from './version.input';
 
 @InputType()
 export class VersionUpdateInput {

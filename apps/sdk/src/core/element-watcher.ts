@@ -1,10 +1,10 @@
-import { ElementSelectorPropsData } from "@usertour-ui/types";
-import { Evented } from "./evented";
-import { document } from "../utils/globals";
-import { finderV2 } from "@usertour-ui/finder";
-import { isVisibleNode } from "@usertour-ui/dom";
-import { isVisible } from "../utils/conditions";
-import { AppEvents } from "../utils/event";
+import { isVisibleNode } from '@usertour-ui/dom';
+import { finderV2 } from '@usertour-ui/finder';
+import { ElementSelectorPropsData } from '@usertour-ui/types';
+import { isVisible } from '../utils/conditions';
+import { AppEvents } from '../utils/event';
+import { document } from '../utils/globals';
+import { Evented } from './evented';
 
 type CheckContentIsVisible = {
   isHidden: boolean;
@@ -29,7 +29,7 @@ export class ElementWatcher extends Evented {
     this.target = target;
   }
 
-  findElement(retryTimes: number = 0): void {
+  findElement(retryTimes = 0): void {
     this.clearTimer();
 
     if (retryTimes >= RETRY_LIMIT) {
@@ -97,7 +97,7 @@ export class ElementWatcher extends Evented {
   }
 
   private isDocumentReady(): boolean {
-    return !!(document && document.body);
+    return !!document?.body;
   }
 
   private updateChecker(isHidden: boolean, now: number): void {

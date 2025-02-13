@@ -1,1 +1,1 @@
-export { extendSdk, mergeExtend, extendBase } from "./extend";
+export { extendSdk, mergeExtend, extendBase } from './extend';

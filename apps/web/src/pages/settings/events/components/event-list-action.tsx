@@ -1,24 +1,19 @@
-import { Button } from "@usertour-ui/button";
+import { useEventListContext } from '@/contexts/event-list-context';
+import { Event } from '@/types/project';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import { Event } from "@/types/project";
-import { EventEditForm } from "./event-edit-form";
-import { useEventListContext } from "@/contexts/event-list-context";
-import { useState } from "react";
-import { EventDeleteForm } from "./event-delete-form";
-import { CloseIcon, EditIcon } from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+} from '@usertour-ui/dropdown-menu';
+import { CloseIcon, EditIcon } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useState } from 'react';
+import { EventDeleteForm } from './event-delete-form';
+import { EventEditForm } from './event-edit-form';
 
 type EventListActionProps = {
   event: Event;
@@ -67,10 +62,7 @@ export const EventListAction = (props: EventListActionProps) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          >
+          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -97,4 +89,4 @@ export const EventListAction = (props: EventListActionProps) => {
   );
 };
 
-EventListAction.displayName = "EventListAction";
+EventListAction.displayName = 'EventListAction';

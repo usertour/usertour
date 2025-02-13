@@ -2,7 +2,7 @@ import * as React from 'react';
 
 function createContext<ContextValueType extends object | null>(
   rootComponentName: string,
-  defaultContext?: ContextValueType
+  defaultContext?: ContextValueType,
 ) {
   const Context = React.createContext<ContextValueType | undefined>(defaultContext);
 
@@ -22,7 +22,7 @@ function createContext<ContextValueType extends object | null>(
     throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
   }
 
-  Provider.displayName = rootComponentName + 'Provider';
+  Provider.displayName = `${rootComponentName}Provider`;
   return [Provider, useContext] as const;
 }
 
@@ -46,14 +46,14 @@ function createContextScope(scopeName: string, createContextScopeDeps: CreateSco
 
   function createContext<ContextValueType extends object | null>(
     rootComponentName: string,
-    defaultContext?: ContextValueType
+    defaultContext?: ContextValueType,
   ) {
     const BaseContext = React.createContext<ContextValueType | undefined>(defaultContext);
     const index = defaultContexts.length;
     defaultContexts = [...defaultContexts, defaultContext];
 
     function Provider(
-      props: ContextValueType & { scope: Scope<ContextValueType>; children: React.ReactNode }
+      props: ContextValueType & { scope: Scope<ContextValueType>; children: React.ReactNode },
     ) {
       const { scope, children, ...context } = props;
       const Context = scope?.[scopeName][index] || BaseContext;
@@ -72,7 +72,7 @@ function createContextScope(scopeName: string, createContextScopeDeps: CreateSco
       throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
     }
 
-    Provider.displayName = rootComponentName + 'Provider';
+    Provider.displayName = `${rootComponentName}Provider`;
     return [Provider, useContext] as const;
   }
 
@@ -88,7 +88,7 @@ function createContextScope(scopeName: string, createContextScopeDeps: CreateSco
       const contexts = scope?.[scopeName] || scopeContexts;
       return React.useMemo(
         () => ({ [`__scope${scopeName}`]: { ...scope, [scopeName]: contexts } }),
-        [scope, contexts]
+        [scope, contexts],
       );
     };
   };
@@ -118,7 +118,7 @@ function composeContextScopes(...scopes: CreateScope[]) {
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const scopeProps = useScope(overrideScopes);
         const currentScope = scopeProps[`__scope${scopeName}`];
-        return { ...nextScopes, ...currentScope };
+        return Object.assign({}, nextScopes, currentScope);
       }, {});
 
       return React.useMemo(() => ({ [`__scope${baseScope.scopeName}`]: nextScopes }), [nextScopes]);

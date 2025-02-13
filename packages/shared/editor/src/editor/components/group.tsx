@@ -1,29 +1,18 @@
-import {
-  CSSProperties,
-  forwardRef,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useDndMonitor } from '@dnd-kit/core';
+import { AnimateLayoutChanges, defaultAnimateLayoutChanges, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { DragHandleDots2Icon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { cn } from '@usertour-ui/ui-utils';
+import { ReactNode, forwardRef, useCallback, useEffect, useState } from 'react';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElement,
   ContentEditorElementInsertDirection,
   ContentEditorGroupElement,
   ContentEditorSideBarType,
-} from "../../types/editor";
-import { ContentEditorSideBar } from "./sidebar";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import {
-  AnimateLayoutChanges,
-  defaultAnimateLayoutChanges,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Button } from "@usertour-ui/button";
-import { DragHandleDots2Icon } from "@radix-ui/react-icons";
-import { cn } from "@usertour-ui/ui-utils";
-import { useDndMonitor } from "@dnd-kit/core";
+} from '../../types/editor';
+import { ContentEditorSideBar } from './sidebar';
 
 export interface ContentEditorGroupProps {
   children: ReactNode;
@@ -53,7 +42,7 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
   } = useSortable({
     id,
     data: {
-      type: "container",
+      type: 'container',
       children: items,
     },
     animateLayoutChanges,
@@ -75,23 +64,19 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
   };
 
   const insertBlockAtRight = (element: ContentEditorElement) => {
-    insertColumnInGroup(
-      element,
-      path,
-      ContentEditorElementInsertDirection.RIGHT
-    );
+    insertColumnInGroup(element, path, ContentEditorElementInsertDirection.RIGHT);
     setIsGroupHover(false);
   };
 
   const handleMouseOver = useCallback(() => {
-    if (activeId && activeId != id) {
+    if (activeId && activeId !== id) {
       return;
     }
     setIsGroupHover(true);
   }, [activeId, id]);
 
   useEffect(() => {
-    if (activeId && activeId != id) {
+    if (activeId && activeId !== id) {
       setIsGroupHover(false);
     }
   }, [activeId, id]);
@@ -100,21 +85,21 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
     <div
       ref={setNodeRef}
       className={cn(
-        "relative flex items-stretch"
+        'relative flex items-stretch',
         // "hover:bg-editor-hover"
         // isDragging ? "hidden" : ""
       )}
       style={{ ...dragStyle }}
       onMouseOver={handleMouseOver}
       onMouseOut={() => setIsGroupHover(false)}
+      onFocus={handleMouseOver}
+      onBlur={() => setIsGroupHover(false)}
     >
       {(isDragging || isGroupHover) && (
         <Button
           size="icon"
           ref={setActivatorNodeRef}
-          className={cn(
-            "rounded-none	 absolute w-4 h-full rounded-l -left-4 cursor-move"
-          )}
+          className={cn('rounded-none	 absolute w-4 h-full rounded-l -left-4 cursor-move')}
           {...attributes}
           {...listeners}
         >
@@ -134,41 +119,35 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
   );
 };
 
-ContentEditorGroup.displayName = "ContentEditorGroup";
+ContentEditorGroup.displayName = 'ContentEditorGroup';
 
-export const ContentEditorGroupOverlay = forwardRef<
-  HTMLDivElement,
-  ContentEditorGroupProps
->((props: ContentEditorGroupProps, ref) => {
-  const { children } = props;
-  return (
-    <div
-      ref={ref}
-      className={cn("relative h-full w-full", "flex items-stretch")}
-    >
-      <Button
-        size="icon"
-        className={cn(
-          "rounded-none	 absolute w-4 h-full rounded-l -left-4 cursor-move bg-sdk-primary"
-        )}
-      >
-        <DragHandleDots2Icon className="h-4" />
-      </Button>
-      {children}
-    </div>
-  );
-});
+export const ContentEditorGroupOverlay = forwardRef<HTMLDivElement, ContentEditorGroupProps>(
+  (props: ContentEditorGroupProps, ref) => {
+    const { children } = props;
+    return (
+      <div ref={ref} className={cn('relative h-full w-full', 'flex items-stretch')}>
+        <Button
+          size="icon"
+          className={cn(
+            'rounded-none	 absolute w-4 h-full rounded-l -left-4 cursor-move bg-sdk-primary',
+          )}
+        >
+          <DragHandleDots2Icon className="h-4" />
+        </Button>
+        {children}
+      </div>
+    );
+  },
+);
 
-ContentEditorGroupOverlay.displayName = "ContentEditorGroupOverlay";
+ContentEditorGroupOverlay.displayName = 'ContentEditorGroupOverlay';
 
 export type ContentEditorGroupSerializeType = {
   children: React.ReactNode;
 };
-export const ContentEditorGroupSerialize = (
-  props: ContentEditorGroupSerializeType
-) => {
+export const ContentEditorGroupSerialize = (props: ContentEditorGroupSerializeType) => {
   const { children } = props;
-  return <div className={cn("relative flex items-stretch")}>{children}</div>;
+  return <div className={cn('relative flex items-stretch')}>{children}</div>;
 };
 
-ContentEditorGroupSerialize.displayName = "ContentEditorGroupSerialize";
+ContentEditorGroupSerialize.displayName = 'ContentEditorGroupSerialize';

@@ -1,22 +1,14 @@
-"use client";
+'use client';
 
-import { Button } from "@usertour-ui/button";
-import { useMutation } from "@apollo/client";
-import { login } from "@usertour-ui/gql";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { getErrorMessage, setAuthToken } from "@usertour-ui/shared-utils";
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { login } from '@usertour-ui/gql';
+import { getErrorMessage, setAuthToken } from '@usertour-ui/shared-utils';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 import {
   Card,
   CardContent,
@@ -24,18 +16,17 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@usertour-ui/card";
-import { Input } from "@usertour-ui/input";
-import { Link, redirect, useNavigate } from "react-router-dom";
-import { useToast } from "@usertour-ui/use-toast";
-import { useAppContext } from "@/contexts/app-context";
-import { useState } from "react";
-import { SpinnerIcon } from "@usertour-ui/icons";
+} from '@usertour-ui/card';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const signinFormSchema = z.object({
   email: z
     .string({
-      required_error: "Please select an email to display.",
+      required_error: 'Please select an email to display.',
     })
     .email(),
   password: z.string().max(160).min(4),
@@ -44,8 +35,8 @@ const signinFormSchema = z.object({
 type SigninFormValues = z.infer<typeof signinFormSchema>;
 
 const defaultValues: Partial<SigninFormValues> = {
-  email: "",
-  password: "",
+  email: '',
+  password: '',
 };
 
 export const SignIn = () => {
@@ -56,12 +47,12 @@ export const SignIn = () => {
   const form = useForm<SigninFormValues>({
     resolver: zodResolver(signinFormSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -72,7 +63,7 @@ export const SignIn = () => {
       const ret = await loginMutation({ variables: data });
       setIsLoading(false);
       setAuthToken(ret.data.login.accessToken, -1);
-      window.location.href = `/env/1/flows`;
+      window.location.href = '/env/1/flows';
     } catch (error) {
       showError(getErrorMessage(error));
       setIsLoading(false);
@@ -84,9 +75,7 @@ export const SignIn = () => {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl  font-semibold tracking-tight">
-              Welcome back!
-            </CardTitle>
+            <CardTitle className="text-2xl  font-semibold tracking-tight">Welcome back!</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               Enter your email and password below to login your account
             </CardDescription>
@@ -100,11 +89,7 @@ export const SignIn = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Enter your email"
-                        type="email"
-                        {...field}
-                      />
+                      <Input placeholder="Enter your email" type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -120,20 +105,13 @@ export const SignIn = () => {
                     <div className="flex flex-row justify-between">
                       <FormLabel>Password</FormLabel>
                       <span className="text-sm font-medium text-muted-foreground leading-none">
-                        <Link
-                          to="/auth/reset-password"
-                          className="hover:text-primary"
-                        >
+                        <Link to="/auth/reset-password" className="hover:text-primary">
                           Forgot your password?
                         </Link>
                       </span>
                     </div>
                     <FormControl>
-                      <Input
-                        placeholder="Enter your password"
-                        type="password"
-                        {...field}
-                      />
+                      <Input placeholder="Enter your password" type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,19 +121,14 @@ export const SignIn = () => {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading && (
-                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
               Sign In with Email
             </Button>
             <div className="pt-4 text-center text-sm text-muted-foreground">
-              No account yet?{" "}
-              <Link
-                to="/auth/signup"
-                className="underline underline-offset-4 hover:text-primary"
-              >
+              No account yet?{' '}
+              <Link to="/auth/signup" className="underline underline-offset-4 hover:text-primary">
                 Sign up for a free trial
-              </Link>{" "}
+              </Link>{' '}
             </div>
           </CardFooter>
         </Card>
@@ -164,4 +137,4 @@ export const SignIn = () => {
   );
 };
 
-SignIn.displayName = "SignIn";
+SignIn.displayName = 'SignIn';

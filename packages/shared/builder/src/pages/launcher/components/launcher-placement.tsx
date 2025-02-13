@@ -1,13 +1,9 @@
-import { ElementSelectorPropsData, StepScreenshot } from "@usertour-ui/types";
-import { ContentPlacementProvider } from "../../../components/content-placement";
-import { ContentPlacementManual } from "../../../components/content-placement/content-placement-manual";
-import {
-  BuilderMode,
-  useBuilderContext,
-  useLauncherContext,
-} from "../../../contexts";
-import { getAuthToken } from "@usertour-ui/shared-utils";
-import { useEffect } from "react";
+import { getAuthToken } from '@usertour-ui/shared-utils';
+import { ElementSelectorPropsData, StepScreenshot } from '@usertour-ui/types';
+import { useEffect } from 'react';
+import { ContentPlacementProvider } from '../../../components/content-placement';
+import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
+import { BuilderMode, useBuilderContext, useLauncherContext } from '../../../contexts';
 
 export const LauncherPlacement = () => {
   const {
@@ -26,9 +22,9 @@ export const LauncherPlacement = () => {
       prev
         ? {
             ...prev,
-            element: { ...prev.element, ...element, type: "manual" },
+            element: { ...prev.element, ...element, type: 'manual' },
           }
-        : undefined
+        : undefined,
     );
   };
 
@@ -60,7 +56,7 @@ export const LauncherPlacement = () => {
             screenshot: { ...prev.screenshot, ...selectorOutput.screenshot },
             element: { ...prev.element, ...elementData },
           }
-        : undefined
+        : undefined,
     );
   };
 
@@ -102,4 +98,4 @@ export const LauncherPlacement = () => {
   );
 };
 
-LauncherPlacement.displayName = "LauncherPlacement";
+LauncherPlacement.displayName = 'LauncherPlacement';

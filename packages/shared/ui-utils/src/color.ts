@@ -1,4 +1,4 @@
-const hslToHex = (hsl: { h: number; s: number; l: number }): string => {
+export const hslToHex = (hsl: { h: number; s: number; l: number }): string => {
   const { h, s, l } = hsl;
 
   const hDecimal = l / 100;
@@ -10,7 +10,7 @@ const hslToHex = (hsl: { h: number; s: number; l: number }): string => {
     // Convert to Hex and prefix with "0" if required
     return Math.round(255 * color)
       .toString(16)
-      .padStart(2, "0");
+      .padStart(2, '0');
   };
   return `#${f(0)}${f(8)}${f(4)}`;
 };
@@ -66,14 +66,14 @@ const hslToHex = (hsl: { h: number; s: number; l: number }): string => {
 //   return { h, s, l };
 // };
 
-export function hexToHSL(hex: string): [number, string, string] {
+export function hexToHSL(hexColor: string): [number, string, string] {
   // Remove the hash if it exists
-  hex = hex.replace(/^#/, "");
+  const cleanHex = hexColor.replace(/^#/, '');
 
   // Convert hex to RGB
-  const r = parseInt(hex.slice(0, 2), 16) / 255;
-  const g = parseInt(hex.slice(2, 4), 16) / 255;
-  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const r = Number.parseInt(cleanHex.slice(0, 2), 16) / 255;
+  const g = Number.parseInt(cleanHex.slice(2, 4), 16) / 255;
+  const b = Number.parseInt(cleanHex.slice(4, 6), 16) / 255;
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -110,71 +110,35 @@ export function hexToHSL(hex: string): [number, string, string] {
 export const changeColor = (color: string, amount: number) => {
   // #FFF not supportet rather use #FFFFFF
   const clamp = (val: number) => Math.min(Math.max(val, 0), 0xff);
-  const fill = (str: string) => ("00" + str).slice(-2);
+  const fill = (str: string) => `00${str}`.slice(-2);
 
-  const num = parseInt(color.substr(1), 16);
+  const num = Number.parseInt(color.substr(1), 16);
   const red = clamp((num >> 16) + amount);
   const green = clamp(((num >> 8) & 0x00ff) + amount);
   const blue = clamp((num & 0x0000ff) + amount);
-  return (
-    "#" +
-    fill(red.toString(16)) +
-    fill(green.toString(16)) +
-    fill(blue.toString(16))
-  );
-};
-
-export const newShade = (hexColor: string, magnitude: number) => {
-  hexColor = hexColor.replace(`#`, ``);
-  if (hexColor.length === 6) {
-    const decimalColor = parseInt(hexColor, 16);
-    let r = (decimalColor >> 16) + magnitude;
-    r > 255 && (r = 255);
-    r < 0 && (r = 0);
-    let g = (decimalColor & 0x0000ff) + magnitude;
-    g > 255 && (g = 255);
-    g < 0 && (g = 0);
-    let b = ((decimalColor >> 8) & 0x00ff) + magnitude;
-    b > 255 && (b = 255);
-    b < 0 && (b = 0);
-    return `#${(g | (b << 8) | (r << 16)).toString(16)}`;
-  } else {
-    return hexColor;
-  }
+  return `#${fill(red.toString(16))}${fill(green.toString(16))}${fill(blue.toString(16))}`;
 };
 
 export const hexToRGBStr = (hex: string) => {
-  let alpha = false,
-    h = hex.slice(hex.startsWith("#") ? 1 : 0) as any;
-  if (h.length === 3) h = [...h].map((x) => x + x).join("");
+  let alpha = false;
+  let h = hex.slice(hex.startsWith('#') ? 1 : 0);
+  if (h.length === 3) h = [...h].map((x) => x + x).join('');
   else if (h.length === 8) alpha = true;
-  h = parseInt(h, 16);
-  return (
-    (h >>> (alpha ? 24 : 16)) +
-    ", " +
-    ((h & (alpha ? 0x00ff0000 : 0x00ff00)) >>> (alpha ? 16 : 8)) +
-    ", " +
-    ((h & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0)) +
-    (alpha ? `, ${h & 0x000000ff}` : "")
-  );
+  const parsedH = Number.parseInt(h, 16);
+  const r = parsedH >>> (alpha ? 24 : 16);
+  const g = (parsedH & (alpha ? 0x00ff0000 : 0x00ff00)) >>> (alpha ? 16 : 8);
+  const b = (parsedH & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0);
+  return `${r}, ${g}, ${b}${alpha ? `, ${parsedH & 0x000000ff}` : ''}`;
 };
 
 export const hexToRGB = (hex: string) => {
-  let alpha = false,
-    h = hex.slice(hex.startsWith("#") ? 1 : 0) as any;
-  if (h.length === 3) h = [...h].map((x) => x + x).join("");
+  let alpha = false;
+  let h = hex.slice(hex.startsWith('#') ? 1 : 0);
+  if (h.length === 3) h = [...h].map((x) => x + x).join('');
   else if (h.length === 8) alpha = true;
-  h = parseInt(h, 16);
-  return (
-    "rgb" +
-    (alpha ? "a" : "") +
-    "(" +
-    (h >>> (alpha ? 24 : 16)) +
-    ", " +
-    ((h & (alpha ? 0x00ff0000 : 0x00ff00)) >>> (alpha ? 16 : 8)) +
-    ", " +
-    ((h & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0)) +
-    (alpha ? `, ${h & 0x000000ff}` : "") +
-    ")"
-  );
+  const parsedH = Number.parseInt(h, 16);
+  const r = parsedH >>> (alpha ? 24 : 16);
+  const g = (parsedH & (alpha ? 0x00ff0000 : 0x00ff00)) >>> (alpha ? 16 : 8);
+  const b = (parsedH & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0);
+  return `rgb${alpha ? 'a' : ''}(${r}, ${g}, ${b}${alpha ? `, ${parsedH & 0x000000ff}` : ''})`;
 };

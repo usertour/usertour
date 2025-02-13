@@ -1,1 +1,1 @@
-export { SettingsLocalizationList } from "./localization-list";
+export { SettingsLocalizationList } from './localization-list';

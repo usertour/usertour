@@ -9,7 +9,7 @@ function observeElementRect(
   /** The element whose rect to observe */
   elementToObserve: Measurable,
   /** The callback which will be called when the rect changes */
-  callback: CallbackFn
+  callback: CallbackFn,
 ) {
   const observedData = observedElements.get(elementToObserve);
 
@@ -80,9 +80,11 @@ function runLoop() {
 
   // group DOM writes here after the DOM reads (getBoundingClientRect)
   // as DOM writes will most likely happen with the callbacks
-  changedRectsData.forEach((data) => {
-    data.callbacks.forEach((callback) => callback(data.rect));
-  });
+  for (const data of changedRectsData) {
+    for (const callback of data.callbacks) {
+      callback(data.rect);
+    }
+  }
 
   rafId = requestAnimationFrame(runLoop);
 }

@@ -1,15 +1,15 @@
-import { CompanyListSidebar } from "@/pages/companies/components/sidebar";
-import { SegmentListProvider } from "@/contexts/segment-list-context";
-import { CompanyListContent } from "./components/content";
-import { useAppContext } from "@/contexts/app-context";
-import { ScrollArea } from "@usertour-ui/scroll-area";
+import { useAppContext } from '@/contexts/app-context';
+import { SegmentListProvider } from '@/contexts/segment-list-context';
+import { CompanyListSidebar } from '@/pages/companies/components/sidebar';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { CompanyListContent } from './components/content';
 
 export const CompanyList = () => {
   const { environment } = useAppContext();
 
   return (
-    <SegmentListProvider environmentId={environment?.id} bizType={["COMPANY"]}>
-      <CompanyListSidebar className="hidden lg:block flex-none w-72 pt-2 mr-4" />
+    <SegmentListProvider environmentId={environment?.id} bizType={['COMPANY']}>
+      <CompanyListSidebar />
 
       <ScrollArea className="h-full w-full ">
         <CompanyListContent environmentId={environment?.id} />
@@ -18,4 +18,4 @@ export const CompanyList = () => {
   );
 };
 
-CompanyList.displayName = "CompanyList";
+CompanyList.displayName = 'CompanyList';

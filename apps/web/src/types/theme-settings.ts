@@ -1,1 +1,1 @@
-export * from "@usertour-ui/types";
+export * from '@usertour-ui/types';

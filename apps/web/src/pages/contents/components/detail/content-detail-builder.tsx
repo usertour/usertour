@@ -1,5 +1,5 @@
-import { WebBuilder } from "@usertour-ui/builder";
-import { useNavigate } from "react-router-dom";
+import { WebBuilder } from '@usertour-ui/builder';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentDetailBuilderProps {
   contentId: string;
@@ -27,4 +27,4 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   );
 };
 
-ContentDetailBuilder.displayName = "ContentDetailBuilder";
+ContentDetailBuilder.displayName = 'ContentDetailBuilder';

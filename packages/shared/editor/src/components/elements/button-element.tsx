@@ -1,14 +1,14 @@
-import { ReactEditor, RenderElementProps, useSlateStatic } from "slate-react";
-import { useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+  ArrowRightIcon,
+  CloseCircleIcon,
+  DeleteIcon,
+  InsertColumnLeftIcon,
+  InsertColumnRightIcon,
+} from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -17,22 +17,15 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Button } from "@usertour-ui/button";
-import {
-  ArrowRightIcon,
-  CloseCircleIcon,
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import { Path, Transforms } from "slate";
-import { ButtonData, ButtonElementType } from "../../types/slate";
-import { usePopperEditorContext } from "../editor";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useState } from 'react';
+import { Path, Transforms } from 'slate';
+import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
+import { ButtonData, ButtonElementType } from '../../types/slate';
+import { usePopperEditorContext } from '../editor';
 
-export const ButtonElement = (
-  props: RenderElementProps & { className?: string }
-) => {
+export const ButtonElement = (props: RenderElementProps & { className?: string }) => {
   const { zIndex } = usePopperEditorContext();
   const element = props.element as ButtonElementType;
   const [buttonText, setButtonText] = useState(element.data.text);
@@ -48,13 +41,13 @@ export const ButtonElement = (
     Transforms.insertNodes(
       editor,
       {
-        type: "button",
-        data: { text: "Button", type: "default", action: "goto" },
-        children: [{ text: "" }],
+        type: 'button',
+        data: { text: 'Button', type: 'default', action: 'goto' },
+        children: [{ text: '' }],
       },
       {
         at: path,
-      }
+      },
     );
   };
   const handleAddRight = () => {
@@ -62,13 +55,13 @@ export const ButtonElement = (
     Transforms.insertNodes(
       editor,
       {
-        type: "button",
-        data: { text: "Button", type: "default", action: "goto" },
-        children: [{ text: "" }],
+        type: 'button',
+        data: { text: 'Button', type: 'default', action: 'goto' },
+        children: [{ text: '' }],
       },
       {
         at: Path.next(path),
-      }
+      },
     );
   };
 
@@ -79,7 +72,7 @@ export const ButtonElement = (
       {
         data: { ...element.data, action },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -90,7 +83,7 @@ export const ButtonElement = (
       {
         data: { ...element.data, type },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -103,7 +96,7 @@ export const ButtonElement = (
       {
         data: { ...element.data, text: value },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -140,10 +133,7 @@ export const ButtonElement = (
               onChange={handleButtonTextChange}
             />
             <Label>Button style</Label>
-            <Select
-              onValueChange={handleButtonStyleChange}
-              defaultValue={element.data.type}
-            >
+            <Select onValueChange={handleButtonStyleChange} defaultValue={element.data.type}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a distribute" />
               </SelectTrigger>
@@ -159,10 +149,7 @@ export const ButtonElement = (
               </SelectPortal>
             </Select>
             <Label>When button is clicked</Label>
-            <Select
-              onValueChange={handleButtonActionChange}
-              defaultValue={element.data.action}
-            >
+            <Select onValueChange={handleButtonActionChange} defaultValue={element.data.action}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a distribute" />
               </SelectTrigger>
@@ -195,7 +182,7 @@ export const ButtonElement = (
                       size="icon"
                       onClick={handleDelete}
                     >
-                      <DeleteIcon className="fill-red-500"></DeleteIcon>
+                      <DeleteIcon className="fill-red-500" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -203,7 +190,7 @@ export const ButtonElement = (
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <div className="grow"></div>
+              <div className="grow" />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -213,7 +200,7 @@ export const ButtonElement = (
                       size="icon"
                       onClick={handleAddLeft}
                     >
-                      <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                      <InsertColumnLeftIcon className="fill-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -231,7 +218,7 @@ export const ButtonElement = (
                       size="icon"
                       onClick={handleAddRight}
                     >
-                      <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                      <InsertColumnRightIcon className="fill-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -255,7 +242,7 @@ type ButtonElementSerializeType = {
 };
 
 export const ButtonElementSerialize = (props: ButtonElementSerializeType) => {
-  const { className, children, element, onClick } = props;
+  const { element, onClick } = props;
 
   const handleOnClick = () => {
     if (onClick) {
@@ -264,15 +251,11 @@ export const ButtonElementSerialize = (props: ButtonElementSerializeType) => {
   };
   return (
     <>
-      <Button
-        variant={element.data?.type as any}
-        forSdk={true}
-        onClick={handleOnClick}
-      >
+      <Button variant={element.data?.type as any} forSdk={true} onClick={handleOnClick}>
         <span>{element.data?.text}</span>
       </Button>
     </>
   );
 };
 
-ButtonElement.display = "ButtonElement";
+ButtonElement.display = 'ButtonElement';

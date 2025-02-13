@@ -4,10 +4,7 @@
   "license": "MIT",
   "type": "module",
   "main": "src/index.ts",
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "sideEffects": false,
   "scripts": {
     "build": "tsup src --dts",
@@ -19,10 +16,7 @@
   "tsup": {
     "clean": true,
     "target": "es2019",
-    "format": [
-      "cjs",
-      "esm"
-    ]
+    "format": ["cjs", "esm"]
   },
   "peerDependencies": {
     "@types/react": "*",

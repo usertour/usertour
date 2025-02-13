@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Chance } from 'chance';
 import { AppModule } from 'src/app.module';
+import supertest from 'supertest';
 
 const chance = new Chance();
 
@@ -20,7 +20,7 @@ describe('AppResolver (e2e)', () => {
 
   it('helloWorld (Query)', () => {
     // TODO assert return value
-    return request(app.getHttpServer())
+    return supertest(app.getHttpServer())
       .post('/graphql')
       .send({
         query: '{ helloWorld }',
@@ -30,7 +30,7 @@ describe('AppResolver (e2e)', () => {
   it('hello (Query)', () => {
     // TODO assert return value
     const name = chance.name();
-    return request(app.getHttpServer())
+    return supertest(app.getHttpServer())
       .post('/graphql')
       .send({
         query: `{ hello(name: "${name}") }`,

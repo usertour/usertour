@@ -1,21 +1,16 @@
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { useAttributeListContext, useContentListContext } from '@usertour-ui/contexts';
+import { createValue1 } from '@usertour-ui/shared-editor';
+import { defaultStep, getAuthToken } from '@usertour-ui/shared-utils';
+import { window } from '@usertour-ui/shared-utils';
+import { ContentVersion, ElementSelectorPropsData, Step, StepScreenshot } from '@usertour-ui/types';
 import {
   ContentPlacementActions,
   ContentPlacementProvider,
-} from "../../../components/content-placement";
-import { BuilderMode, useBuilderContext } from "../../../contexts";
-import { ContentPlacementManual } from "../../../components/content-placement";
-import {
-  ContentVersion,
-  ElementSelectorPropsData,
-  Step,
-  StepScreenshot,
-} from "@usertour-ui/types";
-import { defaultStep, getAuthToken } from "@usertour-ui/shared-utils";
-import { createValue1 } from "@usertour-ui/shared-editor";
-import {
-  useAttributeListContext,
-  useContentListContext,
-} from "@usertour-ui/contexts";
+} from '../../../components/content-placement';
+import { ContentPlacementManual } from '../../../components/content-placement';
+import { BuilderMode, useBuilderContext } from '../../../contexts';
 
 export const FlowPlacement = () => {
   const {
@@ -36,7 +31,7 @@ export const FlowPlacement = () => {
   const handleTargetChange = (target: ElementSelectorPropsData) => {
     updateCurrentStep((pre) => ({
       ...pre,
-      target: { ...pre.target, ...target, type: "manual" },
+      target: { ...pre.target, ...target, type: 'manual' },
     }));
   };
 
@@ -57,12 +52,19 @@ export const FlowPlacement = () => {
   const createNewStep = (currentVersion: ContentVersion, sequence: number) => {
     const step: Step = {
       ...defaultStep,
-      type: "tooltip",
-      name: "Untitled",
+      type: 'tooltip',
+      name: 'Untitled',
       data: createValue1,
       sequence,
     };
     return createStep(currentVersion, step);
+  };
+
+  const handleAboutPlacement = () => {
+    window?.open(
+      'https://www.usertour.io/docs/building-experiences/creating-your-first-flow/#edit-flow',
+      '_blank',
+    );
   };
 
   return (
@@ -80,7 +82,13 @@ export const FlowPlacement = () => {
       subTitle="Show tooltip on this element"
     >
       <div className="space-y-3">
-        <h1 className="text-sm">Placement</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-sm">Placement </h1>
+          <Button variant="link" onClick={handleAboutPlacement} className="p-0 h-full">
+            About placement
+            <OpenInNewWindowIcon className="ml-1" />
+          </Button>
+        </div>
         {/* <ContentPlacementTabs>
           <ContentPlacementTabsContent value="manual">
             <ContentPlacementManual />
@@ -111,4 +119,4 @@ export const FlowPlacement = () => {
   );
 };
 
-FlowPlacement.displayName = "FlowPlacement";
+FlowPlacement.displayName = 'FlowPlacement';

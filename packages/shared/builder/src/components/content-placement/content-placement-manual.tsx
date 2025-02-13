@@ -1,47 +1,42 @@
-import { Input } from "@usertour-ui/input";
-import { Label } from "@usertour-ui/label";
-import {
-  ContentError,
-  ContentErrorAnchor,
-  ContentErrorContent,
-} from "../content-error";
-import { SequenceSelect } from "./sequence-select";
-import { SelectorButtons } from "./selector-buttons";
-import { useContentPlacement } from "./content-placement-context";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { ChangeEvent, useCallback } from "react";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { HelpTooltip } from '@usertour-ui/shared-components';
+import { ChangeEvent, useCallback } from 'react';
+import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
+import { useContentPlacement } from './content-placement-context';
+import { SelectorButtons } from './selector-buttons';
+import { SequenceSelect } from './sequence-select';
 
 export const ContentPlacementManual = () => {
-  const { target, onTargetChange, zIndex, isShowError, subTitle } =
-    useContentPlacement();
+  const { target, onTargetChange, zIndex, isShowError } = useContentPlacement();
 
   const handleContentChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       onTargetChange({ content: e.target.value });
     },
-    [onTargetChange]
+    [onTargetChange],
   );
 
   const handleSelectorChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       onTargetChange({ customSelector: e.target.value });
     },
-    [onTargetChange]
+    [onTargetChange],
   );
 
   const handleSelectorSelect = useCallback(
     (selector: string) => {
       onTargetChange({ customSelector: selector });
     },
-    [onTargetChange]
+    [onTargetChange],
   );
 
   const handleSequenceChange = useCallback(
     (value: number | string) => {
       onTargetChange({ sequence: String(value) });
     },
-    [onTargetChange]
+    [onTargetChange],
   );
 
   return (
@@ -52,22 +47,16 @@ export const ContentPlacementManual = () => {
           <div className="flex justify-start items-center space-x-1">
             <Label htmlFor="element-text">Element text</Label>
             <HelpTooltip>
-              Usertour will select an element containing the text you write
-              here.
+              Usertour will select an element containing the text you write here.
             </HelpTooltip>
           </div>
-          <Input
-            id="element-text"
-            value={target?.content}
-            onChange={handleContentChange}
-          />
+          <Input id="element-text" value={target?.content} onChange={handleContentChange} />
           <div className="flex justify-start items-center space-x-1	">
             <Label htmlFor="css-selector">CSS selector</Label>
             <HelpTooltip>
-              Advanced feature: If possible, we recommend selecting elements
-              using text. lf an element does not have text, or the text is very
-              generic, you can select it using a CSS selector instead. lf both
-              text and CSS selector is filled in, Usertour will select an
+              Advanced feature: If possible, we recommend selecting elements using text. lf an
+              element does not have text, or the text is very generic, you can select it using a CSS
+              selector instead. lf both text and CSS selector is filled in, Usertour will select an
               element matching both.
             </HelpTooltip>
           </div>
@@ -80,10 +69,7 @@ export const ContentPlacementManual = () => {
             />
           </ContentErrorAnchor>
 
-          <SelectorButtons
-            selectors={target?.selectorsList}
-            onSelect={handleSelectorSelect}
-          />
+          <SelectorButtons selectors={target?.selectorsList} onSelect={handleSelectorSelect} />
 
           <SequenceSelect
             value={target?.sequence}

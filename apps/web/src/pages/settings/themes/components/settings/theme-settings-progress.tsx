@@ -1,6 +1,6 @@
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsProgress = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -19,7 +19,7 @@ export const ThemeSettingsProgress = () => {
           name="progress-bar-color"
           defaultColor={settings.progress.color}
           showAutoButton={true}
-          isAutoColor={settings.progress.color == "Auto"}
+          isAutoColor={settings.progress.color === 'Auto'}
           autoColor={finalSettings?.brandColor.background}
           onChange={(value: string) => {
             update({ color: value });
@@ -38,4 +38,4 @@ export const ThemeSettingsProgress = () => {
   );
 };
 
-ThemeSettingsProgress.displayName = "ThemeSettingsProgress";
+ThemeSettingsProgress.displayName = 'ThemeSettingsProgress';

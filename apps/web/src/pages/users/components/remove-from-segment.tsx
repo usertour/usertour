@@ -1,19 +1,16 @@
-import { CloseIcon } from "@usertour-ui/icons";
-import { Button } from "@usertour-ui/button";
-import { Table } from "@tanstack/react-table";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { useCallback, useState } from "react";
-import { BizUserRemoveForm } from "./bizuser-remove-form";
-import { BizUser, Segment } from "@usertour-ui/types";
+import { CloseIcon } from '@usertour-ui/icons';
+import { Button } from '@usertour-ui/button';
+import { Table } from '@tanstack/react-table';
+import { useCallback, useState } from 'react';
+import { BizUserRemoveForm } from './bizuser-remove-form';
+import { Segment } from '@usertour-ui/types';
 
-interface RemoveFromSegmentProps<TData> {
-  table: Table<TData>;
+interface RemoveFromSegmentProps {
+  table: Table<any>;
   currentSegment: Segment;
 }
 
-export const RemoveFromSegment = function <TData>(
-  props: RemoveFromSegmentProps<TData>
-) {
+export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
 
   const [openDelete, setOpenDelete] = useState(false);
@@ -23,7 +20,7 @@ export const RemoveFromSegment = function <TData>(
     const rows = table.getFilteredSelectedRowModel().rows;
     const ids = [];
     for (const row of rows) {
-      ids.push(row.getValue("id"));
+      ids.push(row.getValue('id'));
     }
     if (ids.length > 0) {
       setBizUserIds(ids);
@@ -34,7 +31,7 @@ export const RemoveFromSegment = function <TData>(
   return (
     <>
       <Button
-        variant={"ghost"}
+        variant={'ghost'}
         className="h-8 text-primary hover:text-primary px-1"
         onClick={handleOnClick}
       >
@@ -56,4 +53,4 @@ export const RemoveFromSegment = function <TData>(
   );
 };
 
-RemoveFromSegment.displayName = "RemoveFromSegment";
+RemoveFromSegment.displayName = 'RemoveFromSegment';

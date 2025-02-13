@@ -1,14 +1,7 @@
-import { IsNotEmpty } from "class-validator";
-import {
-  InputType,
-  Field,
-  PartialType,
-  OmitType,
-  PickType,
-} from "@nestjs/graphql";
-import GraphQLJSON from "graphql-type-json";
-import { JsonValue } from "@prisma/client/runtime/library";
-import { Theme } from "../models/theme.model";
+import { Field, InputType, OmitType, PartialType, PickType } from '@nestjs/graphql';
+import { JsonValue } from '@prisma/client/runtime/library';
+import GraphQLJSON from 'graphql-type-json';
+import { Theme } from '../models/theme.model';
 
 @InputType()
 export class CreateThemeInput {
@@ -27,8 +20,8 @@ export class CreateThemeInput {
 
 @InputType()
 export class UpdateThemeInput extends PartialType(
-  OmitType(CreateThemeInput, ["projectId"]),
-  InputType
+  OmitType(CreateThemeInput, ['projectId']),
+  InputType,
 ) {
   @Field(() => String)
   id: string;
@@ -43,14 +36,11 @@ export class CopyThemeInput {
 }
 
 @InputType()
-export class DeleteThemeInput extends PartialType(
-  PickType(CopyThemeInput, ["id"]),
-  InputType
-) {}
+export class DeleteThemeInput extends PartialType(PickType(CopyThemeInput, ['id']), InputType) {}
 
 @InputType()
 export class InitThemeInput extends OmitType(
   Theme,
-  ["id", "createdAt", "updatedAt", "projectId"],
-  InputType
+  ['id', 'createdAt', 'updatedAt', 'projectId'],
+  InputType,
 ) {}

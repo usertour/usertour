@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { uuidV4 } from '@usertour-ui/ui-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { createContext, useContext, useEffect, useState } from 'react';
 import {
   ContentEditorColumnElement,
   ContentEditorContextProps,
@@ -10,10 +12,8 @@ import {
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
-} from "../types/editor";
-import { createNewColumn, createNewGroup } from "../utils/helper";
-import { uuidV4 } from "@usertour-ui/ui-utils";
-import { useToast } from "@usertour-ui/use-toast";
+} from '../types/editor';
+import { createNewColumn, createNewGroup } from '../utils/helper';
 
 // Helper function to check if type is restricted
 const isRestrictedType = (type: ContentEditorElementType): boolean => {
@@ -28,16 +28,12 @@ const isRestrictedType = (type: ContentEditorElementType): boolean => {
   return restrictedTypes.includes(type);
 };
 
-const ContentEditorContext = createContext<
-  ContentEditorContextProps | undefined
->(undefined);
+const ContentEditorContext = createContext<ContentEditorContextProps | undefined>(undefined);
 
 export const useContentEditorContext = () => {
   const context = useContext(ContentEditorContext);
   if (!context) {
-    throw new Error(
-      `useContentEditorContext must be used within a ContentEditorContextProvider.`
-    );
+    throw new Error('useContentEditorContext must be used within a ContentEditorContextProvider.');
   }
   return context;
 };
@@ -72,7 +68,7 @@ const removeID = (contents: ContentEditorRoot[]) => {
 // Helper function to check for existing restricted type
 export const checkExistingRestrictedType = (
   contents: ContentEditorRoot[],
-  elementType: ContentEditorElementType
+  elementType: ContentEditorElementType,
 ) => {
   // If the new element is not a restricted type, we can always add it
   if (!isRestrictedType(elementType)) {
@@ -82,22 +78,22 @@ export const checkExistingRestrictedType = (
   // If the new element is a restricted type, check if any restricted type already exists
   return !contents.some((group) =>
     group.children.some((column) =>
-      column.children.some((item) => isRestrictedType(item.element.type))
-    )
+      column.children.some((item) => isRestrictedType(item.element.type)),
+    ),
   );
 };
 
 // Extract common error message
 const RESTRICTED_TYPE_ERROR = {
-  variant: "destructive",
-  title: "Each step can only contain one question. Add a new step instead.",
+  variant: 'destructive',
+  title: 'Each step can only contain one question. Add a new step instead.',
 } as const;
 
 // Helper function to handle restricted type check and show error
 const handleRestrictedTypeCheck = (
   contents: ContentEditorRoot[],
   element: ContentEditorElement,
-  toast: any
+  toast: any,
 ): boolean => {
   if (!checkExistingRestrictedType(contents, element.type)) {
     toast(RESTRICTED_TYPE_ERROR);
@@ -113,9 +109,7 @@ export const ContentEditorContextProvider = ({
   ...props
 }: ContentEditorContextProviderProps) => {
   const [isEditorHover, setIsEditorHover] = useState(false);
-  const [contents, setContents] = useState<ContentEditorRoot[]>(
-    addID(initialValue)
-  );
+  const [contents, setContents] = useState<ContentEditorRoot[]>(addID(initialValue));
   const [activeId, setActiveId] = useState<string | undefined>();
   const { toast } = useToast();
 
@@ -131,29 +125,24 @@ export const ContentEditorContextProvider = ({
   const insertGroupAtBottom = (element: ContentEditorElement) => {
     if (!handleRestrictedTypeCheck(contents, element, toast)) return;
 
-    setContents((pre) => [
-      ...pre,
-      createNewGroup([{ element, children: null, id: uuidV4() }]),
-    ]);
+    setContents((pre) => [...pre, createNewGroup([{ element, children: null, id: uuidV4() }])]);
   };
 
   const insertColumnInGroup = (
     element: ContentEditorElement,
     path: number[],
-    direction: ContentEditorElementInsertDirection
+    direction: ContentEditorElementInsertDirection,
   ) => {
     if (!handleRestrictedTypeCheck(contents, element, toast)) return;
     setContents((pre) => {
-      const column = createNewColumn([
-        { element, children: null, id: uuidV4() },
-      ]);
+      const column = createNewColumn([{ element, children: null, id: uuidV4() }]);
       //insert at group
-      if (path.length == 1) {
-        const index = direction == "right" ? pre[path[0]].children.length : 0;
+      if (path.length === 1) {
+        const index = direction === 'right' ? pre[path[0]].children.length : 0;
         pre[path[0]].children.splice(index, 0, column);
       } else {
         const index =
-          direction == "right"
+          direction === 'right'
             ? path[path.length - 1] + 1
             : Math.max(path[path.length - 1] - 1, 0);
         pre[path[0]].children.splice(index, 0, column);
@@ -164,7 +153,7 @@ export const ContentEditorContextProvider = ({
 
   const deleteColumn = (path: number[]) => {
     setContents((pre) => {
-      if (pre[path[0]].children.length == 1) {
+      if (pre[path[0]].children.length === 1) {
         pre.splice(path[0], 1);
       } else {
         pre[path[0]].children.splice(path[1], 1);
@@ -177,13 +166,11 @@ export const ContentEditorContextProvider = ({
   const insertElementInColumn = (
     element: ContentEditorElement,
     path: number[],
-    direction: ContentEditorElementInsertDirection
+    direction: ContentEditorElementInsertDirection,
   ) => {
     setContents((pre) => {
       const index =
-        direction == "right"
-          ? path[path.length - 1] + 1
-          : Math.max(path[path.length - 1] - 1, 0);
+        direction === 'right' ? path[path.length - 1] + 1 : Math.max(path[path.length - 1] - 1, 0);
       pre[path[0]].children[path[1]].children.splice(index, 0, {
         element,
         children: null,
@@ -196,8 +183,8 @@ export const ContentEditorContextProvider = ({
   const deleteElementInColumn = (path: number[]) => {
     setContents((pre) => {
       const childrens = pre[path[0]].children[path[1]].children;
-      if (childrens.length == 1) {
-        if (pre[path[0]].children.length == 1) {
+      if (childrens.length === 1) {
+        if (pre[path[0]].children.length === 1) {
           pre.splice(path[0], 1);
         } else {
           pre[path[0]].children.splice(path[1], 1);
@@ -210,20 +197,15 @@ export const ContentEditorContextProvider = ({
   };
 
   const update = (
-    list:
-      | ContentEditorRoot[]
-      | ContentEditorRootColumn[]
-      | ContentEditorRootElement[],
+    list: ContentEditorRoot[] | ContentEditorRootColumn[] | ContentEditorRootElement[],
     id: string,
-    element:
-      | ContentEditorElement
-      | ContentEditorColumnElement
-      | ContentEditorGroupElement
+    element: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
   ): any => {
     return list.map((item) => {
-      if (item.id == id) {
+      if (item.id === id) {
         return { ...item, element: { ...item.element, ...element } };
-      } else if (item.children) {
+      }
+      if (item.children) {
         return { ...item, children: update(item.children, id, element) };
       }
       return item;
@@ -231,11 +213,8 @@ export const ContentEditorContextProvider = ({
   };
 
   const updateElement = (
-    element:
-      | ContentEditorElement
-      | ContentEditorColumnElement
-      | ContentEditorGroupElement,
-    id: string
+    element: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
+    id: string,
   ) => {
     setContents((pre) => {
       return update(pre, id, element);
@@ -265,9 +244,5 @@ export const ContentEditorContextProvider = ({
     setActiveId,
   };
 
-  return (
-    <ContentEditorContext.Provider value={value}>
-      {children}
-    </ContentEditorContext.Provider>
-  );
+  return <ContentEditorContext.Provider value={value}>{children}</ContentEditorContext.Provider>;
 };

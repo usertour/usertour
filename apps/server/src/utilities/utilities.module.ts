@@ -1,7 +1,7 @@
-import { Module } from "@nestjs/common";
-import { UtilitiesResolver } from "./utilities.resolver";
-import { UtilitiesService } from "./utilities.service";
-import { HttpModule } from "@nestjs/axios";
+import { HttpModule } from '@nestjs/axios';
+import { Module } from '@nestjs/common';
+import { UtilitiesResolver } from './utilities.resolver';
+import { UtilitiesService } from './utilities.service';
 
 @Module({
   imports: [HttpModule],

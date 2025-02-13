@@ -1,44 +1,38 @@
-import { Evented } from "./evented";
-import { document, window } from "../utils/globals";
-import autoBind from "../utils/auto-bind";
+import { MESSAGE_START_FLOW_WITH_TOKEN, STORAGE_IDENTIFY_ANONYMOUS } from '@usertour-ui/constants';
+import { AssetAttributes } from '@usertour-ui/frame';
+import { autoStartConditions, storage } from '@usertour-ui/shared-utils';
 import {
   BizCompany,
   BizUserInfo,
   ContentDataType,
-  flowEndReason,
   SDKContent,
   SDKSettingsMode,
   Theme,
-} from "@usertour-ui/types";
-import { logger } from "../utils/logger";
-import { UserTourTypes } from "@usertour-ui/types";
-import {
-  MESSAGE_START_FLOW_WITH_TOKEN,
-  STORAGE_IDENTIFY_ANONYMOUS,
-} from "@usertour-ui/constants";
-import { autoStartConditions, storage } from "@usertour-ui/shared-utils";
-import { uuidV4 } from "@usertour-ui/ui-utils";
-import { loadCSSResource } from "../utils/loader";
-import { Socket } from "./socket";
-import { Tour } from "./tour";
-import {
-  getValidMessage,
-  sendPreviewSuccessMessage,
-} from "../utils/postmessage";
-import { extensionIsRunning } from "../utils/extension";
-import { Launcher } from "./launcher";
-import ReactDOM from "react-dom/client";
-import { render } from "../components";
-import { Checklist } from "./checklist";
-import { ExternalStore } from "./store";
-import { createMockUser } from "./common";
-import { initializeContentItems } from "../utils/content-utils";
-import { on } from "../utils/listener";
-import { ReportEventOptions, ReportEventParams } from "../types/content";
-import { compareContentPriorities } from "../utils/content";
-import { AppEvents } from "../utils/event";
-import { getMainCss, getWsUri } from "../utils/env";
-import { AssetAttributes } from "@usertour-ui/frame";
+  flowEndReason,
+} from '@usertour-ui/types';
+import { UserTourTypes } from '@usertour-ui/types';
+import { uuidV4 } from '@usertour-ui/ui-utils';
+import ReactDOM from 'react-dom/client';
+import { render } from '../components';
+import { ReportEventOptions, ReportEventParams } from '../types/content';
+import autoBind from '../utils/auto-bind';
+import { compareContentPriorities } from '../utils/content';
+import { initializeContentItems } from '../utils/content-utils';
+import { getMainCss, getWsUri } from '../utils/env';
+import { AppEvents } from '../utils/event';
+import { extensionIsRunning } from '../utils/extension';
+import { document, window } from '../utils/globals';
+import { on } from '../utils/listener';
+import { loadCSSResource } from '../utils/loader';
+import { logger } from '../utils/logger';
+import { getValidMessage, sendPreviewSuccessMessage } from '../utils/postmessage';
+import { Checklist } from './checklist';
+import { createMockUser } from './common';
+import { Evented } from './evented';
+import { Launcher } from './launcher';
+import { Socket } from './socket';
+import { ExternalStore } from './store';
+import { Tour } from './tour';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -52,8 +46,8 @@ export class App extends Evented {
   socket = new Socket({ wsUri: getWsUri() });
   activeTour: Tour | undefined;
   startOptions: AppStartOptions = {
-    environmentId: "",
-    token: "",
+    environmentId: '',
+    token: '',
     mode: SDKSettingsMode.NORMAL,
   };
   tours: Tour[] = [];
@@ -70,7 +64,7 @@ export class App extends Evented {
   checklistsStore = new ExternalStore<Checklist[]>([]);
   launchersStore = new ExternalStore<Launcher[]>([]);
   toursStore = new ExternalStore<Tour[]>([]);
-  private baseZIndex: number = 1000000;
+  private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
   private contentPollingInterval: number | undefined;
   private readonly CONTENT_POLLING_INTERVAL = 10000; // 10 seconds
@@ -101,23 +95,22 @@ export class App extends Evented {
    * Initializes DOM event listeners for the application
    */
   initializeEventListeners() {
-    const self = this;
-    this.once("dom-loaded", () => {
+    this.once('dom-loaded', () => {
       this.loadCss();
     });
-    this.once("css-loaded", () => {
+    this.once('css-loaded', () => {
       this.createContainer();
       this.createRoot();
     });
-    if (document?.readyState != "loading") {
-      this.trigger("dom-loaded");
+    if (document?.readyState !== 'loading') {
+      this.trigger('dom-loaded');
     } else if (document) {
-      on(document, "DOMContentLoaded", () => {
-        self.trigger("dom-loaded");
+      on(document, 'DOMContentLoaded', () => {
+        this.trigger('dom-loaded');
       });
     }
     if (window) {
-      on(window, "message", this.handlePreviewMessage);
+      on(window, 'message', this.handlePreviewMessage);
     }
 
     this.on(AppEvents.EVENT_REPORTED, () => {
@@ -182,7 +175,7 @@ export class App extends Evented {
    * @returns True if in preview mode, false otherwise
    */
   isPreview() {
-    return this.startOptions.mode == SDKSettingsMode.PREVIEW;
+    return this.startOptions.mode === SDKSettingsMode.PREVIEW;
   }
 
   /**
@@ -229,10 +222,8 @@ export class App extends Evented {
    */
   async identifyAnonymous(attributes?: UserTourTypes.Attributes) {
     const key = STORAGE_IDENTIFY_ANONYMOUS;
-    const storageData = storage.getLocalStorage(key) as
-      | { userId: string }
-      | undefined;
-    let userId: string = "";
+    const storageData = storage.getLocalStorage(key) as { userId: string } | undefined;
+    let userId = '';
     if (!this.useCurrentUser()) {
       return;
     }
@@ -250,7 +241,7 @@ export class App extends Evented {
    * @returns True if user info exists, false otherwise
    */
   isIdentified() {
-    return this.userInfo ? true : false;
+    return !!this.userInfo;
   }
 
   /**
@@ -271,7 +262,7 @@ export class App extends Evented {
       attributes,
       token,
     });
-    if (userInfo && userInfo.externalId) {
+    if (userInfo?.externalId) {
       this.setUser(userInfo);
       this.refresh();
     }
@@ -302,7 +293,7 @@ export class App extends Evented {
   async group(
     companyId: string,
     attributes?: UserTourTypes.Attributes,
-    opts?: UserTourTypes.GroupOptions
+    opts?: UserTourTypes.GroupOptions,
   ) {
     const { token } = this.startOptions;
     if (!token || !this.userInfo?.externalId) {
@@ -317,9 +308,9 @@ export class App extends Evented {
       userId,
       companyId,
       attributes,
-      opts?.membership
+      opts?.membership,
     );
-    if (companyInfo && companyInfo.externalId) {
+    if (companyInfo?.externalId) {
       this.setCompany(companyInfo);
       this.refresh();
     }
@@ -330,10 +321,7 @@ export class App extends Evented {
    * @param attributes - Optional company attributes to update
    * @param opts - Optional group settings
    */
-  async updateGroup(
-    attributes?: UserTourTypes.Attributes,
-    opts?: UserTourTypes.GroupOptions
-  ) {
+  async updateGroup(attributes?: UserTourTypes.Attributes, opts?: UserTourTypes.GroupOptions) {
     const { token } = this.startOptions;
     if (
       !token ||
@@ -350,7 +338,7 @@ export class App extends Evented {
       userId,
       companyId,
       attributes,
-      opts?.membership
+      opts?.membership,
     );
     if (!companyInfo || !companyInfo.externalId) {
       return;
@@ -370,9 +358,9 @@ export class App extends Evented {
     }
     const loadMainCss = await loadCSSResource(cssFile, document);
     if (loadMainCss) {
-      this.trigger("css-loaded");
+      this.trigger('css-loaded');
     } else {
-      this.trigger("css-loaded-failed");
+      this.trigger('css-loaded-failed');
     }
   }
 
@@ -404,10 +392,7 @@ export class App extends Evented {
    * @param event - Event parameters to report
    * @param options - Optional reporting options
    */
-  async reportEvent(
-    event: ReportEventParams,
-    options: ReportEventOptions = {}
-  ) {
+  async reportEvent(event: ReportEventParams, options: ReportEventOptions = {}) {
     if (this.isPreview()) {
       return;
     }
@@ -415,8 +400,7 @@ export class App extends Evented {
     const { token } = this.startOptions;
 
     try {
-      const sessionId =
-        event.sessionId || (await this.handleSession(event, options));
+      const sessionId = event.sessionId || (await this.handleSession(event, options));
       if (!sessionId) {
         return;
       }
@@ -430,7 +414,7 @@ export class App extends Evented {
       });
       this.trigger(AppEvents.EVENT_REPORTED);
     } catch (error) {
-      logger.error("Failed to report event:", error);
+      logger.error('Failed to report event:', error);
     }
   }
 
@@ -442,7 +426,7 @@ export class App extends Evented {
    */
   private async handleSession(
     event: ReportEventParams,
-    options: ReportEventOptions
+    options: ReportEventOptions,
   ): Promise<string | undefined> {
     const { contentId } = event;
     const { isCreateSession = false, isDeleteSession = false } = options;
@@ -452,7 +436,7 @@ export class App extends Evented {
     if (isCreateSession) {
       const session = await this.createSession(contentId);
       if (!session) {
-        logger.error("Failed to create user session.");
+        logger.error('Failed to create user session.');
         return;
       }
 
@@ -489,17 +473,17 @@ export class App extends Evented {
       return;
     }
 
-    const containerId = "usertour-widget";
+    const containerId = 'usertour-widget';
     let container = document.getElementById(containerId) as HTMLDivElement;
 
     if (!container) {
-      container = document.createElement("div");
+      container = document.createElement('div');
       container.id = containerId;
       document.body.appendChild(container);
     }
 
     this.container = container;
-    this.trigger("container-created");
+    this.trigger('container-created');
   }
 
   /**
@@ -537,7 +521,7 @@ export class App extends Evented {
     // Validate response and mode
     if (!data || this.startOptions.mode !== mode) {
       this.originContents = undefined;
-      logger.error("Failed to fetch content data");
+      logger.error('Failed to fetch content data');
       return;
     }
 
@@ -579,20 +563,26 @@ export class App extends Evented {
    * Starts all registered checklists
    */
   async startChecklist() {
-    this.checklists
+    const sortedChecklists = this.checklists
       .filter((checklist) => checklist.canAutoStart())
-      .sort((a, b) => compareContentPriorities(a, b))
-      .forEach((checklist) => checklist.autoStart());
+      .sort((a, b) => compareContentPriorities(a, b));
+
+    for (const checklist of sortedChecklists) {
+      checklist.autoStart();
+    }
   }
 
   /**
    * Starts all registered launchers
    */
   async startLauncher() {
-    this.launchers
+    const sortedLaunchers = this.launchers
       .filter((launcher) => launcher.canAutoStart())
-      .sort((a, b) => compareContentPriorities(a, b))
-      .forEach((launcher) => launcher.autoStart());
+      .sort((a, b) => compareContentPriorities(a, b));
+
+    for (const launcher of sortedLaunchers) {
+      launcher.autoStart();
+    }
   }
 
   /**
@@ -610,7 +600,7 @@ export class App extends Evented {
       .filter((tour) => tour.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
     const activeTour = contentId
-      ? this.tours.find((tour) => tour.getContent().contentId == contentId)
+      ? this.tours.find((tour) => tour.getContent().contentId === contentId)
       : autoStartTours[0];
 
     if (!activeTour) {
@@ -655,7 +645,7 @@ export class App extends Evented {
     if (data) {
       this.themes = data;
     } else {
-      logger.error("list themes error !");
+      logger.error('list themes error !');
     }
   }
 
@@ -683,20 +673,19 @@ export class App extends Evented {
     let rafId: number;
     let lastCheck = 0;
     const CHECK_INTERVAL = 200;
-    const self = this;
 
     const handleUserActivity = () => {
-      if (self.stopLoop) return;
+      if (this.stopLoop) return;
 
       const now = Date.now();
       if (now - lastCheck >= CHECK_INTERVAL) {
         lastCheck = now;
-        self.monitor();
+        this.monitor();
       }
     };
 
     const monitor = () => {
-      if (self.stopLoop) {
+      if (this.stopLoop) {
         cancelAnimationFrame(rafId);
         return;
       }
@@ -721,9 +710,15 @@ export class App extends Evented {
     }
 
     //active conditions
-    this.tours.forEach((tour) => tour.monitor());
-    this.launchers.forEach((launcher) => launcher.monitor());
-    this.checklists.forEach((checklist) => checklist.monitor());
+    for (const tour of this.tours) {
+      tour.monitor();
+    }
+    for (const launcher of this.launchers) {
+      launcher.monitor();
+    }
+    for (const checklist of this.checklists) {
+      checklist.monitor();
+    }
 
     this.startContents();
   }
@@ -753,7 +748,7 @@ export class App extends Evented {
    * Starts all content items (tours, launchers, checklists)
    */
   async startContents() {
-    await this.startTour(undefined, "start_condition");
+    await this.startTour(undefined, 'start_condition');
     await this.startLauncher();
     await this.startChecklist();
   }
@@ -778,7 +773,7 @@ export class App extends Evented {
       this.originContents,
       this.checklists,
       ContentDataType.CHECKLIST,
-      (content) => new Checklist(this, content)
+      (content) => new Checklist(this, content),
     );
   }
 
@@ -793,7 +788,7 @@ export class App extends Evented {
       this.originContents,
       this.launchers,
       ContentDataType.LAUNCHER,
-      (content) => new Launcher(this, content)
+      (content) => new Launcher(this, content),
     );
   }
 
@@ -808,7 +803,7 @@ export class App extends Evented {
       this.originContents,
       this.tours,
       ContentDataType.FLOW,
-      (content) => new Tour(this, content)
+      (content) => new Tour(this, content),
     );
   }
 

@@ -1,21 +1,15 @@
-"use client";
+'use client';
 
-import { Button } from "@usertour-ui/button";
-import { useMutation } from "@apollo/client";
-import { resetUserPasswordByCode } from "@usertour-ui/gql";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { resetUserPasswordByCode } from '@usertour-ui/gql';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 
+import { Icons } from '@/components/atoms/icons';
 import {
   Card,
   CardContent,
@@ -23,24 +17,23 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@usertour-ui/card";
-import { Input } from "@usertour-ui/input";
-import { useState } from "react";
-import { useToast } from "@usertour-ui/use-toast";
-import { Icons } from "@/components/atoms/icons";
-import { useNavigate, useParams } from "react-router-dom";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/card';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const formSchema = z.object({
   password: z
     .string({
-      required_error: "Please input your password.",
+      required_error: 'Please input your password.',
     })
     .max(20)
     .min(8),
   repassword: z
     .string({
-      required_error: "Please input your password again.",
+      required_error: 'Please input your password again.',
     })
     .max(20)
     .min(8),
@@ -49,8 +42,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  password: "",
-  repassword: "",
+  password: '',
+  repassword: '',
 };
 
 export const PasswordReset = () => {
@@ -63,15 +56,15 @@ export const PasswordReset = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   async function onSubmit(formData: FormValues) {
     const { password, repassword } = formData;
-    if (password != repassword) {
+    if (password !== repassword) {
       return toast({
-        variant: "destructive",
-        title: "The passwords entered twice are inconsistent.",
+        variant: 'destructive',
+        title: 'The passwords entered twice are inconsistent.',
       });
     }
     try {
@@ -79,16 +72,15 @@ export const PasswordReset = () => {
       const { data } = await mutation({ variables: { code, password } });
       setIsLoading(false);
       if (data.resetUserPasswordByCode.success) {
-        return navigate("/auth/signin");
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Uh oh! Something went wrong.",
-        });
+        return navigate('/auth/signin');
       }
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+      });
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -104,8 +96,8 @@ export const PasswordReset = () => {
               Reset your password
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              So, you forgot your password? No biggie, it happens to all of us
-              Just pick a new one below.
+              So, you forgot your password? No biggie, it happens to all of us Just pick a new one
+              below.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -117,11 +109,7 @@ export const PasswordReset = () => {
                   <FormItem>
                     <FormLabel>New password</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Pick a strong password"
-                        type="password"
-                        {...field}
-                      />
+                      <Input placeholder="Pick a strong password" type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -136,11 +124,7 @@ export const PasswordReset = () => {
                   <FormItem>
                     <FormLabel>Repeat New password</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Try the same password again"
-                        type="password"
-                        {...field}
-                      />
+                      <Input placeholder="Try the same password again" type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,9 +134,7 @@ export const PasswordReset = () => {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading && (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
               Change password
             </Button>
           </CardFooter>
@@ -162,4 +144,4 @@ export const PasswordReset = () => {
   );
 };
 
-PasswordReset.displayName = "PasswordReset";
+PasswordReset.displayName = 'PasswordReset';

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { ChangeEvent } from "react";
+import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 
 export const InputNumber = (props: {
   defaultNumber: number;
@@ -53,7 +53,7 @@ export const InputNumber = (props: {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M5 12h14"></path>
+              <path d="M5 12h14" />
             </svg>
           </button>
           <button
@@ -73,8 +73,8 @@ export const InputNumber = (props: {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M5 12h14"></path>
-              <path d="M12 5v14"></path>
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
             </svg>
           </button>
         </div>
@@ -83,4 +83,4 @@ export const InputNumber = (props: {
   );
 };
 
-InputNumber.displayName = "InputNumber";
+InputNumber.displayName = 'InputNumber';

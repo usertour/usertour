@@ -1,9 +1,9 @@
-import { useAnalyticsContext } from "@/contexts/analytics-context";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@usertour-ui/card";
-import { AnalyticsGrowthIcon, AnalyticsUserIcon } from "@usertour-ui/icons";
-import { QuestionTooltip } from "@usertour-ui/tooltip";
-import { AnalyticsData, ContentDataType } from "@usertour-ui/types";
+import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour-ui/icons';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { AnalyticsData, ContentDataType } from '@usertour-ui/types';
 
 interface AnalyticsViewsProps {
   analyticsData: AnalyticsData;
@@ -31,12 +31,9 @@ const AnalyticsCard = ({ title, tooltip, value, icon }: AnalyticsCardProps) => (
   </Card>
 );
 
-const calculateCompletionRate = (
-  completions: number,
-  views: number
-): string => {
-  if (!views) return "0%";
-  return Math.floor((completions / views) * 100) + "%";
+const calculateCompletionRate = (completions: number, views: number): string => {
+  if (!views) return '0%';
+  return `${Math.floor((completions / views) * 100)}%`;
 };
 
 interface AnalyticsViewsGridProps {
@@ -59,10 +56,10 @@ const AnalyticsViewsGrid = ({
   analyticsData,
   tooltips,
   titles = {
-    uniqueViews: "Unique Views",
-    uniqueCompletionRate: "Unique Completion Rate",
-    totalViews: "Total Views",
-    totalCompletionRate: "Total Completion Rate",
+    uniqueViews: 'Unique Views',
+    uniqueCompletionRate: 'Unique Completion Rate',
+    totalViews: 'Total Views',
+    totalCompletionRate: 'Total Completion Rate',
   },
 }: AnalyticsViewsGridProps) => (
   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -77,7 +74,7 @@ const AnalyticsViewsGrid = ({
       tooltip={tooltips.uniqueCompletionRate}
       value={calculateCompletionRate(
         analyticsData?.uniqueCompletions || 0,
-        analyticsData?.uniqueViews || 0
+        analyticsData?.uniqueViews || 0,
       )}
       icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
     />
@@ -92,7 +89,7 @@ const AnalyticsViewsGrid = ({
       tooltip={tooltips.totalCompletionRate}
       value={calculateCompletionRate(
         analyticsData?.totalCompletions || 0,
-        analyticsData?.totalViews || 0
+        analyticsData?.totalViews || 0,
       )}
       icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
     />
@@ -103,20 +100,20 @@ const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   <AnalyticsViewsGrid
     analyticsData={analyticsData}
     titles={{
-      uniqueViews: "Unique Views",
-      uniqueCompletionRate: "Unique Activation Rate",
-      totalViews: "Total Views",
-      totalCompletionRate: "Total Activation Rate",
+      uniqueViews: 'Unique Views',
+      uniqueCompletionRate: 'Unique Activation Rate',
+      totalViews: 'Total Views',
+      totalCompletionRate: 'Total Activation Rate',
     }}
     tooltips={{
       uniqueViews:
-        "Views are only counted once per user, meaning even if a user views the launcher multiple times, it will only be counted once",
+        'Views are only counted once per user, meaning even if a user views the launcher multiple times, it will only be counted once',
       uniqueCompletionRate:
-        "The activation rate shows the percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it).",
+        'The activation rate shows the percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it).',
       totalViews:
-        "Views are counted for each visit, so a user will be recorded multiple times for viewing the launcher.",
+        'Views are counted for each visit, so a user will be recorded multiple times for viewing the launcher.',
       totalCompletionRate:
-        "The activation rate shows the percentage of visits where the launcher was seen and activated (e.g., by clicking or hovering).",
+        'The activation rate shows the percentage of visits where the launcher was seen and activated (e.g., by clicking or hovering).',
     }}
   />
 );
@@ -126,13 +123,13 @@ const FlowAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
     analyticsData={analyticsData}
     tooltips={{
       uniqueViews:
-        "Unique views indicate the total number of unique users who have seen the flow, while total views may be higher if some users have viewed it multiple times.",
+        'Unique views indicate the total number of unique users who have seen the flow, while total views may be higher if some users have viewed it multiple times.',
       uniqueCompletionRate:
-        "Completion rate shows the percentage of unique users who completed the flow after seeing it.",
+        'Completion rate shows the percentage of unique users who completed the flow after seeing it.',
       totalViews:
-        "Total views indicate the total number of visits to the flow, with each visit counted separately, even if a user views it multiple times.",
+        'Total views indicate the total number of visits to the flow, with each visit counted separately, even if a user views it multiple times.',
       totalCompletionRate:
-        "Completion rate shows the percentage of visits where the flow was seen and completed.",
+        'Completion rate shows the percentage of visits where the flow was seen and completed.',
     }}
   />
 );
@@ -142,13 +139,13 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
     analyticsData={analyticsData}
     tooltips={{
       uniqueViews:
-        "Unique views indicate the total number of unique users who have seen the checklist, while total views may be higher if some users have viewed it multiple times.",
+        'Unique views indicate the total number of unique users who have seen the checklist, while total views may be higher if some users have viewed it multiple times.',
       uniqueCompletionRate:
-        "Completion rate shows the percentage of unique users who completed the checklist after seeing it.",
+        'Completion rate shows the percentage of unique users who completed the checklist after seeing it.',
       totalViews:
-        "Total views indicate the total number of visits to the checklist, with each visit counted separately, even if a user views it multiple times.",
+        'Total views indicate the total number of visits to the checklist, with each visit counted separately, even if a user views it multiple times.',
       totalCompletionRate:
-        "Completion rate shows the percentage of visits where the checklist was seen and completed.",
+        'Completion rate shows the percentage of visits where the checklist was seen and completed.',
     }}
   />
 );
@@ -160,14 +157,16 @@ export const AnalyticsViews = () => {
   if (!content || !analyticsData) {
     return null;
   }
-  if (contentType == ContentDataType.LAUNCHER) {
+  if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherAnalyticsViews analyticsData={analyticsData} />;
-  } else if (contentType == ContentDataType.FLOW) {
+  }
+  if (contentType === ContentDataType.FLOW) {
     return <FlowAnalyticsViews analyticsData={analyticsData} />;
-  } else if (contentType == ContentDataType.CHECKLIST) {
+  }
+  if (contentType === ContentDataType.CHECKLIST) {
     return <ChecklistAnalyticsViews analyticsData={analyticsData} />;
   }
   return null;
 };
 
-AnalyticsViews.displayName = "AnalyticsViews";
+AnalyticsViews.displayName = 'AnalyticsViews';

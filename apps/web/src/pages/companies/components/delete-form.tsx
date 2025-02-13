@@ -1,6 +1,4 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteSegment } from "@usertour-ui/gql";
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +8,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { Segment } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteSegment } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Segment } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
 
 export const CompanySegmentDeleteForm = (props: {
   segment: Segment;
@@ -36,7 +36,7 @@ export const CompanySegmentDeleteForm = (props: {
       });
       if (ret.data?.deleteSegment?.success) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `The segment ${segment.name} has been successfully deleted`,
         });
         onSubmit(true);
@@ -44,7 +44,7 @@ export const CompanySegmentDeleteForm = (props: {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -55,19 +55,15 @@ export const CompanySegmentDeleteForm = (props: {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete segment</AlertDialogTitle>
-          <AlertDialogDescription>
-            Confirm deleting {segment.name}?
-          </AlertDialogDescription>
+          <AlertDialogDescription>Confirm deleting {segment.name}?</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Yes, delete segment
-          </AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteSubmit}>Yes, delete segment</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 };
 
-CompanySegmentDeleteForm.displayName = "CompanySegmentDeleteForm";
+CompanySegmentDeleteForm.displayName = 'CompanySegmentDeleteForm';

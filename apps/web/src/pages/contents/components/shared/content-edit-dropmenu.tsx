@@ -1,25 +1,23 @@
-import { ReactNode, useState } from "react";
-import { Content } from "@usertour-ui/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { CopyIcon, Delete2Icon, UnPublishIcon } from "@usertour-ui/icons";
-import { ContentDuplicateForm } from "./content-duplicate-form";
-import { ContentDeleteForm } from "./content-delete-form";
-import { ContentUnpublishForm } from "./content-unpublish-form";
+} from '@usertour-ui/dropdown-menu';
+import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour-ui/icons';
+import { Content } from '@usertour-ui/types';
+import { ReactNode, useState } from 'react';
+import { ContentDeleteForm } from './content-delete-form';
+import { ContentDuplicateForm } from './content-duplicate-form';
+import { ContentUnpublishForm } from './content-unpublish-form';
 
 type ContentEditDropdownMenuProps = {
   content: Content;
   children: ReactNode;
   onSubmit: (action: string) => void;
 };
-export const ContentEditDropdownMenu = (
-  props: ContentEditDropdownMenuProps
-) => {
+export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => {
   const { content, children, onSubmit } = props;
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
@@ -37,11 +35,11 @@ export const ContentEditDropdownMenu = (
   };
   const handleDuplicateSuccess = () => {
     setOpenDuplicate(false);
-    onSubmit("duplicate");
+    onSubmit('duplicate');
   };
   const handleUnpublishSuccess = () => {
     setOpenUnpublish(false);
-    onSubmit("unpublish");
+    onSubmit('unpublish');
   };
 
   return (
@@ -57,10 +55,7 @@ export const ContentEditDropdownMenu = (
             <UnPublishIcon className="mr-1" width={14} height={14} />
             Unpublish
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={handleDuplicateOpen}
-            className="cursor-pointer"
-          >
+          <DropdownMenuItem onClick={handleDuplicateOpen} className="cursor-pointer">
             <CopyIcon className="mr-1" width={15} height={15} />
             Duplicate flow
           </DropdownMenuItem>
@@ -88,7 +83,7 @@ export const ContentEditDropdownMenu = (
         open={openDelete}
         onOpenChange={setOpenDelete}
         onSubmit={() => {
-          onSubmit("delete");
+          onSubmit('delete');
         }}
       />
       <ContentUnpublishForm
@@ -102,4 +97,4 @@ export const ContentEditDropdownMenu = (
   );
 };
 
-ContentEditDropdownMenu.displayName = "ContentEditDropdownMenu";
+ContentEditDropdownMenu.displayName = 'ContentEditDropdownMenu';

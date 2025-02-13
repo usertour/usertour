@@ -1,20 +1,18 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+} from '@usertour-ui/dialog';
 import {
   Form,
   FormControl,
@@ -23,33 +21,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@usertour-ui/form";
-import { createAttribute } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
-import { BizAttributeTypes, AttributeBizTypes } from "@usertour-ui/types";
-import {
-  CompanyIcon,
-  UserIcon,
-  UserIcon2,
-  EventIcon2,
-} from "@usertour-ui/icons";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { useAppContext } from "@/contexts/app-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/form';
+import { createAttribute } from '@usertour-ui/gql';
+import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface CreateFormProps {
   isOpen: boolean;
@@ -72,13 +56,13 @@ const formSchema = z.object({
   ]),
   displayName: z
     .string({
-      required_error: "Please input display name.",
+      required_error: 'Please input display name.',
     })
     .max(20)
     .min(2),
   codeName: z
     .string({
-      required_error: "Please input code name.",
+      required_error: 'Please input code name.',
     })
     .max(20)
     .min(2),
@@ -88,7 +72,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  description: "",
+  description: '',
   bizType: String(AttributeBizTypes.User),
   dataType: String(BizAttributeTypes.Number),
 };
@@ -101,7 +85,7 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -109,7 +93,7 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -121,14 +105,14 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
     try {
       const data = {
         ...formValues,
-        bizType: parseInt(formValues.bizType),
-        dataType: parseInt(formValues.dataType),
+        bizType: Number.parseInt(formValues.bizType),
+        dataType: Number.parseInt(formValues.dataType),
         projectId: project?.id,
       };
       const ret = await createMutation({ variables: { data } });
 
       if (!ret.data?.createAttribute?.id) {
-        showError("Create Attribute failed.");
+        showError('Create Attribute failed.');
       }
       onClose();
     } catch (error) {
@@ -160,18 +144,12 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                               <QuestionMarkCircledIcon className="ml-1 cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Determines which kind of objects this attribute
-                                can be set for.
-                              </p>
+                              <p>Determines which kind of objects this attribute can be set for.</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="w-72">
                             <SelectValue placeholder="Select a object type" />
@@ -180,43 +158,25 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                         <SelectContent className="w-72">
                           <SelectItem value={String(AttributeBizTypes.User)}>
                             <div className="flex flex-row">
-                              <UserIcon
-                                width={16}
-                                height={16}
-                                className="mr-1"
-                              />
+                              <UserIcon width={16} height={16} className="mr-1" />
                               User
                             </div>
                           </SelectItem>
                           <SelectItem value={String(AttributeBizTypes.Company)}>
                             <div className="flex flex-row">
-                              <CompanyIcon
-                                width={16}
-                                height={16}
-                                className="mr-1"
-                              />
+                              <CompanyIcon width={16} height={16} className="mr-1" />
                               Company
                             </div>
                           </SelectItem>
-                          <SelectItem
-                            value={String(AttributeBizTypes.Membership)}
-                          >
+                          <SelectItem value={String(AttributeBizTypes.Membership)}>
                             <div className="flex flex-row">
-                              <UserIcon2
-                                width={16}
-                                height={16}
-                                className="mr-1"
-                              />
+                              <UserIcon2 width={16} height={16} className="mr-1" />
                               Company Membership
                             </div>
                           </SelectItem>
                           <SelectItem value={String(AttributeBizTypes.Event)}>
                             <div className="flex flex-row">
-                              <EventIcon2
-                                width={16}
-                                height={16}
-                                className="mr-1"
-                              />
+                              <EventIcon2 width={16} height={16} className="mr-1" />
                               Event
                             </div>
                           </SelectItem>
@@ -240,40 +200,26 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
                               <p>
-                                Determines what kind of values will be stored in
-                                this attribute.
+                                Determines what kind of values will be stored in this attribute.
                               </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="w-72">
                             <SelectValue placeholder="Select a data type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="w-72">
-                          <SelectItem value={String(BizAttributeTypes.Number)}>
-                            Number
-                          </SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.String)}>
-                            String
-                          </SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.Boolean)}>
-                            Boolean
-                          </SelectItem>
-                          <SelectItem
-                            value={String(BizAttributeTypes.DateTime)}
-                          >
+                          <SelectItem value={String(BizAttributeTypes.Number)}>Number</SelectItem>
+                          <SelectItem value={String(BizAttributeTypes.String)}>String</SelectItem>
+                          <SelectItem value={String(BizAttributeTypes.Boolean)}>Boolean</SelectItem>
+                          <SelectItem value={String(BizAttributeTypes.DateTime)}>
                             DateTime
                           </SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.List)}>
-                            List
-                          </SelectItem>
+                          <SelectItem value={String(BizAttributeTypes.List)}>List</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -296,9 +242,8 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
                               <p>
-                                Human-friendly name shown in Usertour. we
-                                recommend using Word Case (i.e.uppercasefrst
-                                letter, spaces between words) such as"Billing
+                                Human-friendly name shown in Usertour. we recommend using Word Case
+                                (i.e.uppercasefrst letter, spaces between words) such as"Billing
                                 Plan".
                               </p>
                             </TooltipContent>
@@ -306,11 +251,7 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                         </TooltipProvider>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter display name"
-                          className="w-72"
-                          {...field}
-                        />
+                        <Input placeholder="Enter display name" className="w-72" {...field} />
                       </FormControl>
                       <FormDescription>Can be changed later</FormDescription>
                       <FormMessage />
@@ -331,26 +272,18 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
                               <p>
-                                Code-friendly name used in Webhooks and
-                                integrations to analytics providers. we
-                                recommend using snake_case (i.e.
-                                lowercaseletters with words separated by
-                                underscore).
+                                Code-friendly name used in Webhooks and integrations to analytics
+                                providers. we recommend using snake_case (i.e. lowercaseletters with
+                                words separated by underscore).
                               </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter code name"
-                          className="w-72"
-                          {...field}
-                        />
+                        <Input placeholder="Enter code name" className="w-72" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Can NOT be changed later
-                      </FormDescription>
+                      <FormDescription>Can NOT be changed later</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -369,20 +302,13 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             <QuestionMarkCircledIcon className="ml-1 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs bg-slate-700">
-                            <p>
-                              Put any additional information for your
-                              ownreference here.
-                            </p>
+                            <p>Put any additional information for your ownreference here.</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Optional description"
-                        className="w-full"
-                        {...field}
-                      />
+                      <Input placeholder="Optional description" className="w-full" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -394,9 +320,7 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Create Attribute
               </Button>
             </DialogFooter>
@@ -407,4 +331,4 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   );
 };
 
-AttributeCreateForm.displayName = "AttributeCreateForm";
+AttributeCreateForm.displayName = 'AttributeCreateForm';

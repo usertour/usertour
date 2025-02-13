@@ -3,9 +3,6 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "plugins": [
-      "@nestjs/swagger/plugin",
-      "@nestjs/graphql/plugin"
-    ]
+    "plugins": ["@nestjs/swagger/plugin", "@nestjs/graphql/plugin"]
   }
 }

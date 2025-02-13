@@ -1,61 +1,61 @@
-import { isEmpty } from './helper'
+import { isEmpty } from './helper';
 
-const second = 1
-const minute = second * 60
-const hour = minute * 60
-const day = hour * 24
-const week = day * 7
-const year = day * 365
-const regx = /^(-?(?:\d+)?\.?\d+)(s|m|h|d|w|y)$/i
+const second = 1;
+const minute = second * 60;
+const hour = minute * 60;
+const day = hour * 24;
+const week = day * 7;
+const year = day * 365;
+const regx = /^(-?(?:\d+)?\.?\d+)(s|m|h|d|w|y)$/i;
 
 function parse(arg: string): number | undefined {
   if (isEmpty(arg)) {
-    return
+    return;
   }
 
-  const str = String(arg)
-  const matches = str.match(regx)
+  const str = String(arg);
+  const matches = str.match(regx);
 
   if (!matches) {
-    return
+    return;
   }
 
-  const num = parseFloat(matches[1])
-  const type = matches[2].toLowerCase()
+  const num = Number.parseFloat(matches[1]);
+  const type = matches[2].toLowerCase();
 
   switch (type) {
     case 'y':
-      return num * year
+      return num * year;
 
     case 'w':
-      return num * week
+      return num * week;
 
     case 'd':
-      return num * day
+      return num * day;
 
     case 'h':
-      return num * hour
+      return num * hour;
 
     case 'm':
-      return num * minute
+      return num * minute;
 
     case 's':
-      return num * second
+      return num * second;
   }
 }
 
 export function hs(arg: string): number | undefined {
-  const value = parse(arg)
+  const value = parse(arg);
 
   if (value) {
-    return Math.round(value)
+    return Math.round(value);
   }
 }
 
 export function ms(arg: string): number | undefined {
-  const value = hs(arg)
+  const value = hs(arg);
 
   if (value) {
-    return value * 1e3
+    return value * 1e3;
   }
 }

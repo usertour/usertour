@@ -1,9 +1,9 @@
-import { Separator } from "@usertour-ui/separator";
-import { SettingsContent } from "../components/content";
-import { LocalizationListHeader } from "./components/localization-list-header";
-import { LocalizationListProvider } from "@/contexts/localization-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { LocalizationListContent } from "./components/localization-list-content";
+import { useAppContext } from '@/contexts/app-context';
+import { LocalizationListProvider } from '@/contexts/localization-list-context';
+import { Separator } from '@usertour-ui/separator';
+import { SettingsContent } from '../components/content';
+import { LocalizationListContent } from './components/localization-list-content';
+import { LocalizationListHeader } from './components/localization-list-header';
 
 export const SettingsLocalizationList = () => {
   const { project } = useAppContext();
@@ -18,4 +18,4 @@ export const SettingsLocalizationList = () => {
   );
 };
 
-SettingsLocalizationList.displayName = "SettingsLocalizationList";
+SettingsLocalizationList.displayName = 'SettingsLocalizationList';

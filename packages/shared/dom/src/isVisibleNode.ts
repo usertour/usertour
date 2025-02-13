@@ -1,10 +1,8 @@
 const P = new WeakSet();
-import { getComputedStyle } from "./getComputedStyle";
+import { getComputedStyle } from './getComputedStyle';
 
 function findIframeView(target: any) {
-  const targetView = target.ownerDocument
-    ? target.ownerDocument.defaultView
-    : null;
+  const targetView = target.ownerDocument ? target.ownerDocument.defaultView : null;
   if (!targetView) {
     return null;
   }
@@ -19,32 +17,26 @@ function findIframeView(target: any) {
 }
 
 export function isVisibleNode(targetNode: any) {
-  let node = targetNode,
-    isCheckVisible = true;
+  let node = targetNode;
+  let isCheckVisible = true;
   if (!targetNode || !targetNode.parentNode) {
     return false;
   }
-  for (; node; ) {
-    const isBodyNode = node === document.body,
-      isBody = "BODY" === node.tagName,
-      nodeComputedStyle = getComputedStyle(node);
+  while (node) {
+    const isBodyNode = node === document.body;
+    const isBody = 'BODY' === node.tagName;
+    const nodeComputedStyle = getComputedStyle(node);
     if (isCheckVisible) {
-      if (
-        nodeComputedStyle.visibility &&
-        "visible" !== nodeComputedStyle.visibility
-      ) {
+      if (nodeComputedStyle.visibility && 'visible' !== nodeComputedStyle.visibility) {
         return false;
       }
       isCheckVisible = false;
     }
-    if ("none" === nodeComputedStyle.display) {
+    if ('none' === nodeComputedStyle.display) {
       return false;
     }
 
-    if (
-      null != nodeComputedStyle.opacity &&
-      parseFloat(nodeComputedStyle.opacity) < 0.01
-    ) {
+    if (null != nodeComputedStyle.opacity && Number.parseFloat(nodeComputedStyle.opacity) < 0.01) {
       return false;
     }
 

@@ -1,9 +1,9 @@
-import { UploadFunc, UploadRequestOption } from "../types/slate";
+import { UploadFunc, UploadRequestOption } from '../types/slate';
 
 export const promiseUploadFunc = (
   options: UploadRequestOption,
   customUploadRequest?: UploadFunc,
-  setPercent?: (p: number) => void
+  setPercent?: (p: number) => void,
 ) => {
   const { onProgress, onError, onSuccess } = options;
   return new Promise<{ url?: string }>((resolve, reject) => {
@@ -36,11 +36,11 @@ export const promiseUploadFunc = (
 export const base64file: UploadFunc = (option: UploadRequestOption) => {
   const reader: FileReader = new FileReader();
   reader.addEventListener(
-    "load",
+    'load',
     () => {
       option.onSuccess?.({ url: reader.result as string });
     },
-    false
+    false,
   );
   reader.readAsDataURL(option.file);
 };

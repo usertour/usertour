@@ -1,17 +1,15 @@
-import { Sidebar } from "@/pages/contents/components/shared/sidebar";
-import { useParams } from "react-router-dom";
-import { FlowListContent } from "./components/list/flow-list";
-import { ContentListProvider } from "@/contexts/content-list-context";
-import { TrackersSidebar } from "./components/shared/sidebar-trackers";
-import { useAppContext } from "@/contexts/app-context";
-import { ThemeListProvider } from "@/contexts/theme-list-context";
-import { LauncherListContent } from "./components/list/launcher-list";
-import { BannerListContent } from "./components/list/banner-list";
-import { ChecklistListContent } from "./components/list/checklist-list";
-import { SurveyListContent } from "./components/list/survey-list";
-import { NpsListContent } from "./components/list/nps-list";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { ContentListSidebar } from "./components/shared/content-list-sidebar";
+import { useAppContext } from '@/contexts/app-context';
+import { ContentListProvider } from '@/contexts/content-list-context';
+import { ThemeListProvider } from '@/contexts/theme-list-context';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { useParams } from 'react-router-dom';
+import { BannerListContent } from './components/list/banner-list';
+import { ChecklistListContent } from './components/list/checklist-list';
+import { FlowListContent } from './components/list/flow-list';
+import { LauncherListContent } from './components/list/launcher-list';
+import { NpsListContent } from './components/list/nps-list';
+import { SurveyListContent } from './components/list/survey-list';
+import { ContentListSidebar } from './components/shared/content-list-sidebar';
 
 export const ContentList = () => {
   const { contentType } = useParams();
@@ -25,22 +23,20 @@ export const ContentList = () => {
     <>
       <ContentListProvider
         environmentId={environment?.id}
-        key={"environmentId"}
+        key={'environmentId'}
         contentType={contentType}
       >
         <ThemeListProvider projectId={project?.id}>
-          <ContentListSidebar className="hidden lg:block flex-none w-72 pt-2 mr-4" />
+          <ContentListSidebar />
 
           <ScrollArea className="h-full w-full ">
             <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0 ">
-              {(contentType == "flows" || contentType == "content") && (
-                <FlowListContent />
-              )}
-              {contentType == "launchers" && <LauncherListContent />}
-              {contentType == "banners" && <BannerListContent />}
-              {contentType == "checklists" && <ChecklistListContent />}
-              {contentType == "surveys" && <SurveyListContent />}
-              {contentType == "nps" && <NpsListContent />}
+              {(contentType === 'flows' || contentType === 'content') && <FlowListContent />}
+              {contentType === 'launchers' && <LauncherListContent />}
+              {contentType === 'banners' && <BannerListContent />}
+              {contentType === 'checklists' && <ChecklistListContent />}
+              {contentType === 'surveys' && <SurveyListContent />}
+              {contentType === 'nps' && <NpsListContent />}
             </div>
           </ScrollArea>
         </ThemeListProvider>
@@ -49,4 +45,4 @@ export const ContentList = () => {
   );
 };
 
-ContentList.displayName = "ContentList";
+ContentList.displayName = 'ContentList';

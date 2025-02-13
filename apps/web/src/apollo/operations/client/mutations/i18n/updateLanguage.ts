@@ -1,6 +1,6 @@
-import { getApolloClient } from "@/apollo";
-import { getLanguage } from "@/apollo/operations/client/queries";
-import { Language } from "@/apollo/state";
+import { getApolloClient } from '@/apollo';
+import { getLanguage } from '@/apollo/operations/client/queries';
+import { Language } from '@/apollo/state';
 
 export const updateLanguage = async (language: Language) => {
   try {

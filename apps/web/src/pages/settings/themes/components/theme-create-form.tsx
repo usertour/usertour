@@ -1,35 +1,28 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { defaultSettings } from '@/types/theme-settings';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { Checkbox } from "@usertour-ui/checkbox";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { createTheme } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { defaultSettings } from "@/types/theme-settings";
-import { useEffect } from "react";
-import { useAppContext } from "@/contexts/app-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { createTheme } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface CreateFormProps {
   isOpen: boolean;
@@ -39,7 +32,7 @@ interface CreateFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please enter your theme name.",
+      required_error: 'Please enter your theme name.',
     })
     .max(30)
     .min(1),
@@ -49,7 +42,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  name: "",
+  name: '',
   isDefault: false,
 };
 
@@ -61,7 +54,7 @@ export const ThemeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -69,7 +62,7 @@ export const ThemeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -86,7 +79,7 @@ export const ThemeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
       };
       const ret = await createMutation({ variables: data });
       if (!ret.data?.createTheme?.id) {
-        showError("Create theme failed.");
+        showError('Create theme failed.');
       }
       onClose();
     } catch (error) {
@@ -127,10 +120,7 @@ export const ThemeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 ">
                         <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="leading-none">
                           <FormLabel>Set as default theme</FormLabel>
@@ -148,9 +138,7 @@ export const ThemeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -161,4 +149,4 @@ export const ThemeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   );
 };
 
-ThemeCreateForm.displayName = "ThemeCreateForm";
+ThemeCreateForm.displayName = 'ThemeCreateForm';

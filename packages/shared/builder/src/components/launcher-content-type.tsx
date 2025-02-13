@@ -1,13 +1,7 @@
-import { EyeNoneIcon, InfoCircledIcon } from "@radix-ui/react-icons";
-import { LauncherIcon } from "@usertour-ui/icons";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
-import { LauncherDataType } from "@usertour-ui/types";
+import { EyeNoneIcon, InfoCircledIcon } from '@radix-ui/react-icons';
+import { LauncherIcon } from '@usertour-ui/icons';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import { LauncherDataType } from '@usertour-ui/types';
 
 interface LauncherTypeProps {
   type: LauncherDataType;
@@ -15,11 +9,7 @@ interface LauncherTypeProps {
   onChange: (value: LauncherDataType) => void;
 }
 
-export const LauncherContentType = ({
-  zIndex,
-  type,
-  onChange,
-}: LauncherTypeProps) => {
+export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProps) => {
   const getIcon = (dataType: LauncherDataType) => {
     const iconProps = { width: 16, height: 16 };
     switch (dataType) {
@@ -35,13 +25,13 @@ export const LauncherContentType = ({
   const getDescription = (dataType: LauncherDataType) => {
     switch (dataType) {
       case LauncherDataType.BEACON:
-        return "Shows a pulsing beacon. Great for drawing attention to new features.";
+        return 'Shows a pulsing beacon. Great for drawing attention to new features.';
       case LauncherDataType.ICON:
-        return "Shows a simple icon. Great for explanation tooltips.";
+        return 'Shows a simple icon. Great for explanation tooltips.';
       case LauncherDataType.HIDDEN:
-        return "Hides the launcher. Only shows when triggered.";
+        return 'Hides the launcher. Only shows when triggered.';
       default:
-        return "";
+        return '';
     }
   };
 
@@ -64,9 +54,7 @@ export const LauncherContentType = ({
                 {getIcon(value)}
                 <span className="text-xs font-bold capitalize">{value}</span>
               </div>
-              <div className="max-w-60 text-xs text-muted-foreground">
-                {getDescription(value)}
-              </div>
+              <div className="max-w-60 text-xs text-muted-foreground">{getDescription(value)}</div>
             </div>
           </SelectItem>
         ))}
@@ -74,4 +62,4 @@ export const LauncherContentType = ({
     </Select>
   );
 };
-LauncherContentType.displayName = "LauncherContentType";
+LauncherContentType.displayName = 'LauncherContentType';

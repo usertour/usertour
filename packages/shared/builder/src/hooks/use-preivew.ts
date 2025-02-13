@@ -4,18 +4,18 @@ import {
   MESSAGE_CRX_OPEN_TARGET_REPLY,
   MESSAGE_CRX_SEND_PROXY,
   MESSAGE_START_FLOW_WITH_TOKEN,
-} from "@usertour-ui/constants";
-import { uuidV4 } from "@usertour-ui/ui-utils";
-import { useCallback, useState } from "react";
-import { useEvent } from "react-use";
+} from '@usertour-ui/constants';
+import { uuidV4 } from '@usertour-ui/ui-utils';
+import { useCallback, useState } from 'react';
+import { useEvent } from 'react-use';
 
-import { postProxyMessageToWindow } from "../utils/post-message";
+import { postProxyMessageToWindow } from '../utils/post-message';
 
 export const usePreview = (props: { usertourjsUrl: string }) => {
   const { usertourjsUrl } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [params, setParams] = useState({});
-  const [idempotentKey, setIdempotentKey] = useState("");
+  const [idempotentKey, setIdempotentKey] = useState('');
   const [retryTimer, setRetryTimer] = useState<any | null>(null);
 
   const openTarget = (url: string) => {
@@ -27,7 +27,7 @@ export const usePreview = (props: { usertourjsUrl: string }) => {
   const sendMessage = useCallback(async () => {
     postProxyMessageToWindow({
       kind: MESSAGE_CRX_SEND_PROXY,
-      direction: "builderToTarget",
+      direction: 'builderToTarget',
       message: {
         kind: MESSAGE_START_FLOW_WITH_TOKEN,
         usertourjsUrl,
@@ -51,7 +51,7 @@ export const usePreview = (props: { usertourjsUrl: string }) => {
       if (message.kind === MESSAGE_CRX_OPEN_TARGET_REPLY) {
         let i = 0;
         const timer = setInterval(() => {
-          if (i == 10) {
+          if (i === 10) {
             clear();
             return;
           }
@@ -61,14 +61,14 @@ export const usePreview = (props: { usertourjsUrl: string }) => {
         setRetryTimer(timer);
       } else if (
         message.kind === MESSAGE_CONTENT_PREVIEW_SUCCESS &&
-        message?.data?.idempotentKey == idempotentKey
+        message?.data?.idempotentKey === idempotentKey
       ) {
         clear();
       }
     },
-    [retryTimer, isLoading, idempotentKey]
+    [retryTimer, isLoading, idempotentKey],
   );
-  useEvent("message", pageMessageListener, window, { capture: false });
+  useEvent('message', pageMessageListener, window, { capture: false });
 
   const preview = (url: string, params: any) => {
     setIdempotentKey(uuidV4());

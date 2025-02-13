@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { EnvironmentsResolver } from "./environments.resolver";
-import { EnvironmentsService } from "./environments.service";
-import { EnvironmentsGuard } from "./environments.guard";
-import { ProjectsModule } from "@/projects/projects.module";
+import { ProjectsModule } from '@/projects/projects.module';
+import { Module } from '@nestjs/common';
+import { EnvironmentsGuard } from './environments.guard';
+import { EnvironmentsResolver } from './environments.resolver';
+import { EnvironmentsService } from './environments.service';
 
 @Module({
   imports: [ProjectsModule],

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   MESSAGE_CRX_SEND_PROXY,
@@ -6,62 +6,54 @@ import {
   MESSAGE_IFRAME_CONTAINER_STYLE,
   MESSAGE_SELECTOR_OUTPUT,
   MESSAGE_SELECTOR_SWITCH,
-} from "@usertour-ui/constants";
-import { CSSProperties, useCallback, useEffect, useState } from "react";
-import { useEvent } from "react-use";
+} from '@usertour-ui/constants';
+import { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { useEvent } from 'react-use';
 
-import {
-  BuilderMode,
-  BuilderSelectorMode,
-  useBuilderContext,
-} from "../../contexts";
-import {
-  postMessageToWindow,
-  postProxyMessageToWindow,
-} from "../../utils/post-message";
+import { BuilderMode, BuilderSelectorMode, useBuilderContext } from '../../contexts';
+import { postMessageToWindow, postProxyMessageToWindow } from '../../utils/post-message';
 
-import { ElementSelector } from "../../components/element-selector";
-import { useAws } from "../../hooks/use-aws";
-import { dataURLtoFile } from "../../utils/aws";
-import { getInitParams } from "../../utils/storage";
+import { ElementSelector } from '../../components/element-selector';
+import { useAws } from '../../hooks/use-aws';
+import { dataURLtoFile } from '../../utils/aws';
+import { getInitParams } from '../../utils/storage';
 
 const elementSelectorStyle: CSSProperties = {
-  width: "60%",
-  maxWidth: "1024px",
-  height: "52px",
-  left: "0px",
-  right: "0px",
-  bottom: "10px",
-  margin: "0px auto",
-  position: "fixed",
+  width: '60%',
+  maxWidth: '1024px',
+  height: '52px',
+  left: '0px',
+  right: '0px',
+  bottom: '10px',
+  margin: '0px auto',
+  position: 'fixed',
   zIndex: 2147483001,
 };
 
 export const Selector = () => {
   const [enabledSelector, setEnabledSelector] = useState(true);
-  const { setSelectorOutput, currentMode, setCurrentMode } =
-    useBuilderContext();
+  const { setSelectorOutput, currentMode, setCurrentMode } = useBuilderContext();
 
   const { upload } = useAws();
 
   const onKeydown = useCallback(
     (event: any) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setEnabledSelector(false);
       }
     },
-    [enabledSelector]
+    [enabledSelector],
   );
-  useEvent("keydown", onKeydown, window, { capture: true });
+  useEvent('keydown', onKeydown, window, { capture: true });
 
   const handleOnPositionChange = (isBottom: boolean) => {
     const message = { ...elementSelectorStyle };
     if (isBottom) {
       message.top = undefined;
-      message.bottom = "10px";
+      message.bottom = '10px';
     } else {
       message.bottom = undefined;
-      message.top = "10px";
+      message.top = '10px';
     }
     postMessageToWindow(MESSAGE_IFRAME_CONTAINER_STYLE, message);
   };
@@ -80,10 +72,7 @@ export const Selector = () => {
   }, []);
 
   const handleOnCancel = useCallback(() => {
-    if (
-      currentMode.mode == BuilderMode.ELEMENT_SELECTOR &&
-      currentMode.backMode
-    ) {
+    if (currentMode?.mode === BuilderMode.ELEMENT_SELECTOR && currentMode?.backMode) {
       setCurrentMode({ mode: currentMode.backMode });
     } else {
       setCurrentMode({ mode: BuilderMode.FLOW });
@@ -93,17 +82,15 @@ export const Selector = () => {
   const handleSelectorOutput = useCallback(
     async (data: any) => {
       const { action, idempotentKey, url } = getInitParams() || {};
-      let miniUrl = "";
+      let miniUrl = '';
       if (data?.screenshot?.mini) {
-        miniUrl = await upload(
-          dataURLtoFile(data.screenshot.mini, "screenshot-mini.png")
-        );
+        miniUrl = await upload(dataURLtoFile(data.screenshot.mini, 'screenshot-mini.png'));
       }
-      if (action == "elementSelect") {
-        const output = { ...data, screenshot: { mini: miniUrl, full: "" } };
+      if (action === 'elementSelect') {
+        const output = { ...data, screenshot: { mini: miniUrl, full: '' } };
         const message = {
           kind: MESSAGE_CRX_SEND_PROXY,
-          direction: "targetToBuilder",
+          direction: 'targetToBuilder',
           message: {
             kind: MESSAGE_ELEMENT_SELECT_SUCCESS,
             data: {
@@ -114,12 +101,12 @@ export const Selector = () => {
         };
         postProxyMessageToWindow(message, url);
       } else {
-        if (currentMode.mode == BuilderMode.ELEMENT_SELECTOR) {
+        if (currentMode?.mode === BuilderMode.ELEMENT_SELECTOR) {
           const { backMode, mode, ...others } = currentMode;
           if (backMode) {
             setSelectorOutput({
               ...data,
-              screenshot: { mini: miniUrl, full: "" },
+              screenshot: { mini: miniUrl, full: '' },
             });
             setCurrentMode({ mode: backMode, ...others });
           } else {
@@ -129,16 +116,16 @@ export const Selector = () => {
         }
       }
     },
-    [currentMode]
+    [currentMode],
   );
 
   const onMessage = async (e: any) => {
     const { data } = e;
-    if (data.kind == MESSAGE_SELECTOR_OUTPUT) {
+    if (data.kind === MESSAGE_SELECTOR_OUTPUT) {
       handleSelectorOutput(data.data);
     }
   };
-  useEvent("message", onMessage, window, { capture: false });
+  useEvent('message', onMessage, window, { capture: false });
 
   return (
     <ElementSelector
@@ -151,4 +138,4 @@ export const Selector = () => {
   );
 };
 
-Selector.displayName = "Selector";
+Selector.displayName = 'Selector';

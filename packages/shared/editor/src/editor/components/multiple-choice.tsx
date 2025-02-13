@@ -1,22 +1,22 @@
-import { useCallback, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Button } from "@usertour-ui/button";
-import { Switch } from "@usertour-ui/switch";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { DeleteIcon, PlusIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
+import { Switch } from '@usertour-ui/switch';
+import { TooltipContent } from '@usertour-ui/tooltip';
+import { Tooltip, TooltipTrigger } from '@usertour-ui/tooltip';
+import { TooltipProvider } from '@usertour-ui/tooltip';
+import { RulesCondition } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
+import { ContentActions } from '../../actions';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,
-} from "../../types/editor";
-import { Checkbox } from "@usertour-ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@usertour-ui/radio-group";
-import { ContentActions } from "../../actions";
-import { RulesCondition } from "@usertour-ui/types";
-import { TooltipContent } from "@usertour-ui/tooltip";
-import { Tooltip, TooltipTrigger } from "@usertour-ui/tooltip";
-import { TooltipProvider } from "@usertour-ui/tooltip";
-import { DeleteIcon, PlusIcon } from "@usertour-ui/icons";
+} from '../../types/editor';
 export const ContentEditorMultipleChoice = (props: {
   element: ContentEditorMultipleChoiceElement;
   id: string;
@@ -35,22 +35,22 @@ export const ContentEditorMultipleChoice = (props: {
   const [isOpen, setIsOpen] = useState<boolean>();
 
   const handleDataChange = useCallback(
-    (data: Partial<ContentEditorMultipleChoiceElement["data"]>) => {
+    (data: Partial<ContentEditorMultipleChoiceElement['data']>) => {
       updateElement(
         {
           ...element,
           data: { ...element.data, ...data },
         },
-        id
+        id,
       );
     },
-    [element, id, updateElement]
+    [element, id, updateElement],
   );
 
   const handleOptionChange = (
     index: number,
     field: keyof ContentEditorMultipleChoiceOption,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     const newOptions = [...element.data.options];
     newOptions[index] = { ...newOptions[index], [field]: value };
@@ -59,10 +59,7 @@ export const ContentEditorMultipleChoice = (props: {
 
   const addOption = () => {
     handleDataChange({
-      options: [
-        ...element.data.options,
-        { label: "", value: "", checked: false },
-      ],
+      options: [...element.data.options, { label: '', value: '', checked: false }],
     });
   };
 
@@ -86,10 +83,10 @@ export const ContentEditorMultipleChoice = (props: {
                   <div className="flex items-center space-x-2" key={index}>
                     <RadioGroupItem
                       value={option.value}
-                      id={"r1" + index}
+                      id={`r1${index}`}
                       className="border-sdk-question text-sdk-foreground"
                     />
-                    <Label htmlFor={"r1" + index} className="cursor-pointer">
+                    <Label htmlFor={`r1${index}`} className="cursor-pointer">
                       {option.label || option.value}
                     </Label>
                   </div>
@@ -102,13 +99,9 @@ export const ContentEditorMultipleChoice = (props: {
                     <Checkbox
                       checked={option.checked}
                       className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-foreground"
-                      onCheckedChange={(checked) =>
-                        handleOptionChange(index, "checked", checked)
-                      }
+                      onCheckedChange={(checked) => handleOptionChange(index, 'checked', checked)}
                     />
-                    <span>
-                      {option.label || option.value || "Option " + (index + 1)}
-                    </span>
+                    <span>{option.label || option.value || `Option ${index + 1}`}</span>
                   </div>
                 ))}
               </div>
@@ -152,16 +145,12 @@ export const ContentEditorMultipleChoice = (props: {
                 <div key={index} className="flex gap-2">
                   <Input
                     value={option.value}
-                    onChange={(e) =>
-                      handleOptionChange(index, "value", e.target.value)
-                    }
+                    onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
                     placeholder="Value"
                   />
                   <Input
                     value={option.label}
-                    onChange={(e) =>
-                      handleOptionChange(index, "label", e.target.value)
-                    }
+                    onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
                     placeholder="Option label"
                   />
                   <TooltipProvider>
@@ -173,12 +162,10 @@ export const ContentEditorMultipleChoice = (props: {
                           size="sm"
                           onClick={() => removeOption(index)}
                         >
-                          <DeleteIcon className="fill-red-500"></DeleteIcon>
+                          <DeleteIcon className="fill-red-500" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        Remove option
-                      </TooltipContent>
+                      <TooltipContent className="max-w-xs">Remove option</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
@@ -187,7 +174,7 @@ export const ContentEditorMultipleChoice = (props: {
               <Button
                 onClick={addOption}
                 size="sm"
-                variant={"link"}
+                variant={'link'}
                 className="hover:no-underline	"
               >
                 <PlusIcon width={16} height={16} />
@@ -201,9 +188,7 @@ export const ContentEditorMultipleChoice = (props: {
                   id="shuffle"
                   checked={element.data.shuffleOptions}
                   className="data-[state=unchecked]:bg-muted"
-                  onCheckedChange={(checked) =>
-                    handleDataChange({ shuffleOptions: checked })
-                  }
+                  onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
                 />
                 <Label htmlFor="shuffle">Shuffle option order</Label>
               </div>
@@ -213,9 +198,7 @@ export const ContentEditorMultipleChoice = (props: {
                   id="other"
                   checked={element.data.enableOther}
                   className="data-[state=unchecked]:bg-muted"
-                  onCheckedChange={(checked) =>
-                    handleDataChange({ enableOther: checked })
-                  }
+                  onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
                 />
                 <Label htmlFor="other">Enable "Other" option</Label>
               </div>
@@ -225,9 +208,7 @@ export const ContentEditorMultipleChoice = (props: {
                   id="multiple"
                   checked={element.data.allowMultiple}
                   className="data-[state=unchecked]:bg-muted"
-                  onCheckedChange={(checked) =>
-                    handleDataChange({ allowMultiple: checked })
-                  }
+                  onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
                 />
                 <Label htmlFor="multiple">Allow multiple selection</Label>
               </div>
@@ -239,7 +220,7 @@ export const ContentEditorMultipleChoice = (props: {
   );
 };
 
-ContentEditorMultipleChoice.displayName = "ContentEditorMultipleChoice";
+ContentEditorMultipleChoice.displayName = 'ContentEditorMultipleChoice';
 
 export const ContentEditorMultipleChoiceSerialize = (props: {
   element: ContentEditorMultipleChoiceElement;
@@ -255,10 +236,10 @@ export const ContentEditorMultipleChoiceSerialize = (props: {
               <div className="flex items-center space-x-2" key={index}>
                 <RadioGroupItem
                   value={option.value}
-                  id={"r1" + index}
+                  id={`r1${index}`}
                   className="border-sdk-question text-sdk-foreground"
                 />
-                <Label htmlFor={"r1" + index} className="cursor-pointer">
+                <Label htmlFor={`r1${index}`} className="cursor-pointer">
                   {option.label || option.value}
                 </Label>
               </div>
@@ -272,9 +253,7 @@ export const ContentEditorMultipleChoiceSerialize = (props: {
                   checked={option.checked}
                   className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-foreground"
                 />
-                <span>
-                  {option.label || option.value || "Option " + (index + 1)}
-                </span>
+                <span>{option.label || option.value || `Option ${index + 1}`}</span>
               </div>
             ))}
           </div>
@@ -284,5 +263,4 @@ export const ContentEditorMultipleChoiceSerialize = (props: {
   );
 };
 
-ContentEditorMultipleChoiceSerialize.displayName =
-  "ContentEditorMultipleChoiceSerialize";
+ContentEditorMultipleChoiceSerialize.displayName = 'ContentEditorMultipleChoiceSerialize';
