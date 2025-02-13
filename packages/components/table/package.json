@@ -34,9 +34,6 @@
   "tsup": {
     "clean": true,
     "target": "es2019",
-    "format": [
-      "cjs",
-      "esm"
-    ]
+    "format": ["cjs", "esm"]
   }
 }
