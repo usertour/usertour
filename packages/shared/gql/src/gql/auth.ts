@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 export const createMagicLink = gql`
   mutation createMagicLink($email: String!) {

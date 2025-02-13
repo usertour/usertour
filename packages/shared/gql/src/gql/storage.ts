@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 export const createPresignedUrl = gql`
   mutation createPresignedUrl($fileName: String!, $storageType: String!) {
