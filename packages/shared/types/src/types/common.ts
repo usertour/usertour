@@ -24,8 +24,8 @@ export type ConditonElementState = {
 };
 
 export enum SDKSettingsMode {
-  NORMAL = "normal",
-  PREVIEW = "preview",
+  NORMAL = 'normal',
+  PREVIEW = 'preview',
 }
 export type SDKSettings = {
   mode: SDKSettingsMode;

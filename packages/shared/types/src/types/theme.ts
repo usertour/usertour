@@ -1,4 +1,4 @@
-import { ThemeTypesSetting } from "./theme-settings";
+import { ThemeTypesSetting } from './theme-settings';
 
 export type Theme = {
   id: string;
