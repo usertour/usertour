@@ -1,13 +1,12 @@
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { ThemeSettingSelect } from "@/components/molecules/theme/theme-setting-select";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
 import {
   ThemeSelectFont,
   ThemeSelectFontType,
-} from "@/components/molecules/theme/theme-select-font";
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
-import { fontItems } from "@/utils/webfonts";
-import { changeColor } from "@usertour-ui/ui-utils";
+} from '@/components/molecules/theme/theme-select-font';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
+import { fontItems } from '@/utils/webfonts';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsFont = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -82,7 +81,7 @@ export const ThemeSettingsFont = () => {
             name="link-color"
             defaultColor={settings.font.linkColor}
             showAutoButton={true}
-            isAutoColor={settings.font.linkColor == "Auto"}
+            isAutoColor={settings.font.linkColor === 'Auto'}
             autoColor={finalSettings?.brandColor.background}
             onChange={(value: string) => {
               update({ linkColor: value });
@@ -95,4 +94,4 @@ export const ThemeSettingsFont = () => {
   );
 };
 
-ThemeSettingsFont.displayName = "ThemeSettingsFont";
+ThemeSettingsFont.displayName = 'ThemeSettingsFont';

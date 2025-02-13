@@ -1,1 +1,1 @@
-declare module "@storybook/addon-knobs/react";
+declare module '@storybook/addon-knobs/react';

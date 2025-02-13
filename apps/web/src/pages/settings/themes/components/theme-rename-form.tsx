@@ -1,35 +1,28 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogTrigger,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { updateTheme } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect } from "react";
-import { Theme } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+  DialogTrigger,
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { updateTheme } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Theme } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface RenameFormProps {
   data: Theme;
@@ -40,7 +33,7 @@ interface RenameFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please input your theme name.",
+      required_error: 'Please input your theme name.',
     })
     .max(20)
     .min(1),
@@ -57,7 +50,7 @@ export const ThemeRenameForm = (props: RenameFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -65,7 +58,7 @@ export const ThemeRenameForm = (props: RenameFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: data.name },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -86,7 +79,7 @@ export const ThemeRenameForm = (props: RenameFormProps) => {
       });
 
       if (!ret.data?.updateTheme?.id) {
-        showError("Update environment failed.");
+        showError('Update environment failed.');
       }
     } catch (error) {
       showError(getErrorMessage(error));
@@ -115,10 +108,7 @@ export const ThemeRenameForm = (props: RenameFormProps) => {
                       <FormItem>
                         <FormLabel>Theme name</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter environment name"
-                            {...field}
-                          />
+                          <Input placeholder="Enter environment name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -134,9 +124,7 @@ export const ThemeRenameForm = (props: RenameFormProps) => {
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -147,4 +135,4 @@ export const ThemeRenameForm = (props: RenameFormProps) => {
   );
 };
 
-ThemeRenameForm.displayName = "ThemeRenameForm";
+ThemeRenameForm.displayName = 'ThemeRenameForm';

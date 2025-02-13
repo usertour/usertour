@@ -1,1 +1,1 @@
-export { SettingsAttributeList } from "./attribute-list";
+export { SettingsAttributeList } from './attribute-list';

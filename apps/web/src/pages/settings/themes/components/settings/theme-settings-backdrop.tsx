@@ -1,8 +1,8 @@
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { ThemeSettingSelect } from "@/components/molecules/theme/theme-setting-select";
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { ThemeSettingSlider } from "@/components/molecules/theme/theme-setting-slider";
-import { useThemeSettingsContext } from ".";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
+import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-slider';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsBackdrop = () => {
   const { settings, setSettings } = useThemeSettingsContext();
@@ -12,9 +12,7 @@ export const ThemeSettingsBackdrop = () => {
     setSettings((pre) => ({ ...pre, backdrop: { ...backdrop, ...data } }));
   };
 
-  const updateBackdropHighlight = (
-    data: Partial<typeof settings.backdrop.highlight>
-  ) => {
+  const updateBackdropHighlight = (data: Partial<typeof settings.backdrop.highlight>) => {
     const { backdrop } = settings;
     setSettings((pre) => ({
       ...pre,
@@ -50,8 +48,8 @@ export const ThemeSettingsBackdrop = () => {
               updateBackdropHighlight({ type: value });
             }}
             items={[
-              { name: "OutSide", value: "outside" },
-              { name: "InSide", value: "inside" },
+              { name: 'OutSide', value: 'outside' },
+              { name: 'InSide', value: 'inside' },
             ]}
           />
 
@@ -94,4 +92,4 @@ export const ThemeSettingsBackdrop = () => {
   );
 };
 
-ThemeSettingsBackdrop.displayName = "ThemeSettingsBackdrop";
+ThemeSettingsBackdrop.displayName = 'ThemeSettingsBackdrop';

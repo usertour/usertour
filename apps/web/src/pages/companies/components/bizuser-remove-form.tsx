@@ -1,6 +1,5 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteBizCompanyOnSegment } from "@usertour-ui/gql";
+import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,11 +9,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { Segment } from "@usertour-ui/types";
-import { useCallback } from "react";
-import { useCompanyListContext } from "@/contexts/company-list-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteBizCompanyOnSegment } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Segment } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback } from 'react';
 
 interface BizCompanyRemoveFormProps {
   bizCompanyIds: string[];
@@ -31,7 +31,7 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
   const { toast } = useToast();
 
   const handleSubmit = useCallback(async () => {
-    if (bizCompanyIds.length == 0) {
+    if (bizCompanyIds.length === 0) {
       return;
     }
     const data = {
@@ -42,7 +42,7 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
       const ret = await mutation({ variables: { data } });
       if (ret.data?.deleteBizCompanyOnSegment?.success) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `${ret.data?.deleteBizCompanyOnSegment.count} users has been successfully removed`,
         });
         await refetch();
@@ -51,7 +51,7 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -61,9 +61,7 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Confirm removing users from segment
-          </AlertDialogTitle>
+          <AlertDialogTitle>Confirm removing users from segment</AlertDialogTitle>
           <AlertDialogDescription>
             Confirm removing the selected users from {segment.name}?
           </AlertDialogDescription>
@@ -79,4 +77,4 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
   );
 };
 
-BizCompanyRemoveForm.displayName = "BizCompanyRemoveForm";
+BizCompanyRemoveForm.displayName = 'BizCompanyRemoveForm';

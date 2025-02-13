@@ -1,13 +1,12 @@
-import { createBrowserRouter, Navigate, RouteObject } from "react-router-dom";
-import config, { CustomRouteConfig } from "./config";
-import { useAppContext } from "@/contexts/app-context";
+import { useAppContext } from '@/contexts/app-context';
+import { Navigate, RouteObject, createBrowserRouter } from 'react-router-dom';
+import config, { CustomRouteConfig } from './config';
 
 const CustomRoute = ({
   loginRequired = true,
   redirectIfLogged = true,
   layout: Layout,
   component: Component,
-  title,
 }: CustomRouteConfig) => {
   const children = Layout ? (
     <Layout>
@@ -17,27 +16,16 @@ const CustomRoute = ({
     <Component />
   );
   const { userInfo } = useAppContext();
-  const isLoggedIn = userInfo ? true : false;
+  const isLoggedIn = !!userInfo;
 
   if (loginRequired) {
     if (isLoggedIn) {
       return children;
-    } else {
-      const redirectUri = window.location.pathname + window.location.search;
-      return (
-        <Navigate
-          to={`/auth/signin?redirect_uri=${encodeURIComponent(redirectUri)}`}
-          replace
-        />
-      );
     }
-  } else {
-    return isLoggedIn && redirectIfLogged ? (
-      <Navigate to="/env/1/flows" replace />
-    ) : (
-      children
-    );
+    const redirectUri = window.location.pathname + window.location.search;
+    return <Navigate to={`/auth/signin?redirect_uri=${encodeURIComponent(redirectUri)}`} replace />;
   }
+  return isLoggedIn && redirectIfLogged ? <Navigate to="/env/1/flows" replace /> : children;
 };
 
 const combineRoutes = () => {
@@ -48,6 +36,6 @@ const combineRoutes = () => {
   })) as RouteObject[];
 };
 
-const router = createBrowserRouter(combineRoutes(), { basename: "/" });
+const router = createBrowserRouter(combineRoutes(), { basename: '/' });
 
 export default router;

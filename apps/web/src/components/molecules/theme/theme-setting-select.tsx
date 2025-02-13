@@ -5,23 +5,23 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { HelpTooltip } from "@usertour-ui/shared-components";
+} from '@usertour-ui/select';
+import { HelpTooltip } from '@usertour-ui/shared-components';
 
 export type ThemeSettingSelectItemsType = {
   value: string;
   name: string;
 };
 const fontWeightItems = [
-  { value: "100", name: "Thin 100" },
-  { value: "200", name: "Extra light 200" },
-  { value: "300", name: "Light 300" },
-  { value: "400", name: "Normal 400" },
-  { value: "500", name: "Medium 500" },
-  { value: "600", name: "Semibold 600" },
-  { value: "700", name: "Bold 700" },
-  { value: "800", name: "Extra bold 800" },
-  { value: "900", name: "Black 900" },
+  { value: '100', name: 'Thin 100' },
+  { value: '200', name: 'Extra light 200' },
+  { value: '300', name: 'Light 300' },
+  { value: '400', name: 'Normal 400' },
+  { value: '500', name: 'Medium 500' },
+  { value: '600', name: 'Semibold 600' },
+  { value: '700', name: 'Bold 700' },
+  { value: '800', name: 'Extra bold 800' },
+  { value: '900', name: 'Black 900' },
 ];
 
 type ThemeSelectProps = {
@@ -37,7 +37,7 @@ type ThemeSelectProps = {
 export const ThemeSettingSelect = (props: ThemeSelectProps) => {
   const {
     text,
-    placeholder = "",
+    placeholder = '',
     defaultValue,
     onValueChange,
     name,
@@ -76,4 +76,4 @@ export const ThemeSettingSelect = (props: ThemeSelectProps) => {
   );
 };
 
-ThemeSettingSelect.displayName = "ThemeSettingSelect";
+ThemeSettingSelect.displayName = 'ThemeSettingSelect';

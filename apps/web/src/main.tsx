@@ -1,17 +1,17 @@
-import "./index.css";
+import './index.css';
 
-import { getApolloClient } from "@/apollo";
-import App from "@/app/index";
-import ReactDOM from "react-dom/client";
-import { I18nextProvider } from "react-i18next";
-import { ApolloProvider } from "@apollo/client";
-import createI18n from "./i18n/i18n";
-import { HelmetProvider } from "react-helmet-async";
-import { Toaster } from "@usertour-ui/toaster";
-import React from "react";
-import { AppProvider } from "@/contexts/app-context";
-import { PostHogProvider } from "posthog-js/react";
-import { posthogHost, posthogKey } from "./utils/env";
+import { getApolloClient } from '@/apollo';
+import App from '@/app/index';
+import { AppProvider } from '@/contexts/app-context';
+import { ApolloProvider } from '@apollo/client';
+import { Toaster } from '@usertour-ui/toaster';
+import { PostHogProvider } from 'posthog-js/react';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
+import { I18nextProvider } from 'react-i18next';
+import createI18n from './i18n/i18n';
+import { posthogHost, posthogKey } from './utils/env';
 
 const options = {
   api_host: posthogHost,
@@ -23,9 +23,7 @@ async function bootstrap() {
   // get the inital language from the store
   const i18n = await createI18n(client);
 
-  const rootElement = ReactDOM.createRoot(
-    document.getElementById("root") as HTMLElement
-  );
+  const rootElement = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
   const AppBundle = (
     <React.StrictMode>

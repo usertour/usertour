@@ -1,9 +1,9 @@
-import { Separator } from "@usertour-ui/separator";
-import { ThemeListProvider } from "@/contexts/theme-list-context";
-import { ThemeListContent } from "./components/theme-list-content";
-import { ThemeListHeader } from "./components/theme-list-header";
-import { SettingsContent } from "../components/content";
-import { useAppContext } from "@/contexts/app-context";
+import { useAppContext } from '@/contexts/app-context';
+import { ThemeListProvider } from '@/contexts/theme-list-context';
+import { Separator } from '@usertour-ui/separator';
+import { SettingsContent } from '../components/content';
+import { ThemeListContent } from './components/theme-list-content';
+import { ThemeListHeader } from './components/theme-list-header';
 
 export const SettingsThemeList = () => {
   const { project } = useAppContext();
@@ -19,4 +19,4 @@ export const SettingsThemeList = () => {
   );
 };
 
-SettingsThemeList.displayName = "SettingsThemeList";
+SettingsThemeList.displayName = 'SettingsThemeList';

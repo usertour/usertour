@@ -1,13 +1,7 @@
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { getContent } from "@usertour-ui/gql";
-import { Content } from "@usertour-ui/types";
+import { useQuery } from '@apollo/client';
+import { getContent } from '@usertour-ui/gql';
+import { Content } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 export interface ContentDetailProviderProps {
   children: ReactNode;
@@ -20,13 +14,9 @@ export interface ContentDetailContextValue {
   refetch: any;
   contentType: string | undefined;
 }
-export const ContentDetailContext = createContext<
-  ContentDetailContextValue | undefined
->(undefined);
+export const ContentDetailContext = createContext<ContentDetailContextValue | undefined>(undefined);
 
-export function ContentDetailProvider(
-  props: ContentDetailProviderProps
-): JSX.Element {
+export function ContentDetailProvider(props: ContentDetailProviderProps): JSX.Element {
   const { children, contentId, contentType } = props;
   const [content, setContent] = useState<Content | null>(null);
   const { data, refetch } = useQuery(getContent, {
@@ -45,19 +35,13 @@ export function ContentDetailProvider(
     contentType,
   };
 
-  return (
-    <ContentDetailContext.Provider value={value}>
-      {children}
-    </ContentDetailContext.Provider>
-  );
+  return <ContentDetailContext.Provider value={value}>{children}</ContentDetailContext.Provider>;
 }
 
 export function useContentDetailContext(): ContentDetailContextValue {
   const context = useContext(ContentDetailContext);
   if (!context) {
-    throw new Error(
-      `useContentDetailContext must be used within a ContentDetailProvider.`
-    );
+    throw new Error('useContentDetailContext must be used within a ContentDetailProvider.');
   }
   return context;
 }

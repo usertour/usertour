@@ -1,7 +1,7 @@
-import { Separator } from "@usertour-ui/separator";
-import { SettingsContent } from "../components/content";
-import { EnvironmentListHeader } from "./components/environment-list-header";
-import { EnvironmentListContent } from "./components/environment-list-content";
+import { Separator } from '@usertour-ui/separator';
+import { SettingsContent } from '../components/content';
+import { EnvironmentListContent } from './components/environment-list-content';
+import { EnvironmentListHeader } from './components/environment-list-header';
 
 export const SettingsEnvironmentList = () => {
   return (
@@ -13,4 +13,4 @@ export const SettingsEnvironmentList = () => {
   );
 };
 
-SettingsEnvironmentList.displayName = "SettingsEnvironmentList";
+SettingsEnvironmentList.displayName = 'SettingsEnvironmentList';

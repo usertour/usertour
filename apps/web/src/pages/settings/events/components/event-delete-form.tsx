@@ -1,6 +1,5 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteEvent } from "@usertour-ui/gql";
+import { Event } from '@/types/project';
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +9,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { Event } from "@/types/project";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteEvent } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
 
 export const EventDeleteForm = (props: {
   data: Event;
@@ -36,8 +36,8 @@ export const EventDeleteForm = (props: {
       });
       if (ret.data?.deleteEvent?.id) {
         toast({
-          variant: "success",
-          title: "The event has been successfully deleted",
+          variant: 'success',
+          title: 'The event has been successfully deleted',
         });
         onSubmit(true);
         return;
@@ -45,7 +45,7 @@ export const EventDeleteForm = (props: {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -58,21 +58,16 @@ export const EventDeleteForm = (props: {
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the event
-            <span className="font-bold text-foreground">
-              {data.displayName}
-            </span>
-            .
+            <span className="font-bold text-foreground">{data.displayName}</span>.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Submit
-          </AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteSubmit}>Submit</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 };
 
-EventDeleteForm.displayName = "EventDeleteForm";
+EventDeleteForm.displayName = 'EventDeleteForm';

@@ -1,42 +1,36 @@
-import { useNavigate } from "react-router-dom";
-import * as SharedPopper from "@usertour-ui/sdk";
-import { useRef, useState } from "react";
-import { Theme } from "@usertour-ui/types";
-import { ThemeTypesSetting } from "@/types/theme-settings";
-import { convertSettings, convertToCssVars } from "@/utils/convert-settings";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import { ThemeEditDropdownMenu } from "./theme-edit-dropmenu";
-import { useThemeListContext } from "@/contexts/theme-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { GoogleFontCss } from "@usertour-ui/shared-components";
-import {
-  ContentEditorSerialize,
-  createValue5,
-} from "@usertour-ui/shared-editor";
+import { useAppContext } from '@/contexts/app-context';
+import { useThemeListContext } from '@/contexts/theme-list-context';
+import { ThemeTypesSetting } from '@/types/theme-settings';
+import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import * as SharedPopper from '@usertour-ui/sdk';
+import { GoogleFontCss } from '@usertour-ui/shared-components';
+import { ContentEditorSerialize, createValue5 } from '@usertour-ui/shared-editor';
+import { Theme } from '@usertour-ui/types';
+import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
 
 type ThemeListPreviewProps = {
   theme: Theme;
 };
 export const ThemeListPreview = (props: ThemeListPreviewProps) => {
   const { theme } = props;
-  const ref = useRef(null);
   const containerRef = useRef(null);
 
   const { refetch } = useThemeListContext();
   const { project } = useAppContext();
-  const [settings, setSettings] = useState<ThemeTypesSetting>(theme.settings);
+  const [settings] = useState<ThemeTypesSetting>(theme.settings);
   const navigate = useNavigate();
   const handleOnClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = containerRef.current as any;
-    if (el && el.contains(e.target) && project) {
+    if (el.contains(e.target) && project) {
       navigate(`/project/${project.id}/settings/theme/${theme.id}`);
     }
   };
 
-  const handleOnSuccess = (action: string) => {
-    // if (action == "setAsDefault") {
+  const handleOnSuccess = () => {
     refetch();
-    // }
   };
 
   return (
@@ -73,11 +67,11 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
                 width: 20,
                 height: 10,
               }}
-              side={"top"}
-              align={"center"}
+              side={'top'}
+              align={'center'}
               showArrow={false}
-              width={"280px"}
-              height={"auto"}
+              width={'280px'}
+              height={'auto'}
             >
               <SharedPopper.PopperClose />
               <ContentEditorSerialize contents={createValue5 as any} />
@@ -89,4 +83,4 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
   );
 };
 
-ThemeListPreview.displayName = "ThemeListPreview";
+ThemeListPreview.displayName = 'ThemeListPreview';

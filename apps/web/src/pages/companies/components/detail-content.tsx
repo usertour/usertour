@@ -1,10 +1,10 @@
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { useCompanyListContext } from "@/contexts/company-list-context";
-import { ArrowLeftIcon } from "@radix-ui/react-icons";
-import { CompanyIcon, UserProfile } from "@usertour-ui/icons";
-import { AttributeBizTypes, BizCompany } from "@usertour-ui/types";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useCompanyListContext } from '@/contexts/company-list-context';
+import { ArrowLeftIcon } from '@radix-ui/react-icons';
+import { CompanyIcon, UserProfile } from '@usertour-ui/icons';
+import { AttributeBizTypes, BizCompany } from '@usertour-ui/types';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface CompanyDetailContentProps {
   environmentId: string;
@@ -27,20 +27,19 @@ export function CompanyDetailContent(props: CompanyDetailContentProps) {
     if (!edges || !pageInfo) {
       return;
     }
-    const company = edges.find((c: any) => c.node.id == companyId);
-    if (company && company.node) {
+    const company = edges.find((c: any) => c.node.id === companyId);
+    if (company?.node) {
       setBizCompany(company.node);
     }
   }, [bizCompanyList, companyId]);
 
   useEffect(() => {
     if (attributeList && bizCompany) {
-      let attrs = [];
+      const attrs = [];
       for (const key in bizCompany.data) {
         const value = (bizCompany.data as any)[key];
         const userAttr = attributeList?.find(
-          (attr) =>
-            attr.bizType == AttributeBizTypes.Company && attr.codeName == key
+          (attr) => attr.bizType === AttributeBizTypes.Company && attr.codeName === key,
         );
         if (userAttr) {
           attrs.push({
@@ -105,9 +104,7 @@ export function CompanyDetailContent(props: CompanyDetailContentProps) {
             </div>
             <div className="flex flex-col items-center w-full h-full justify-center">
               <img src="/images/rocket.png" />
-              <div className="text-muted-foreground text-base	">
-                Coming soon!
-              </div>
+              <div className="text-muted-foreground text-base	">Coming soon!</div>
             </div>
           </div>
         </div>
@@ -116,4 +113,4 @@ export function CompanyDetailContent(props: CompanyDetailContentProps) {
   );
 }
 
-CompanyDetailContent.displayName = "CompanyDetailContent";
+CompanyDetailContent.displayName = 'CompanyDetailContent';

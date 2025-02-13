@@ -1,21 +1,16 @@
-import { Button } from "@usertour-ui/button";
-import { Icons } from "@/components/atoms/icons";
-import {
-  ArrowLeftIcon,
-  DotsHorizontalIcon,
-  InfoCircledIcon,
-} from "@radix-ui/react-icons";
-import { useNavigate, useParams } from "react-router-dom";
-import { cn } from "@usertour-ui/ui-utils";
-import { useState } from "react";
-import { useMutation } from "@apollo/client";
-import { updateTheme } from "@usertour-ui/gql";
-import { ThemeEditDropdownMenu } from "./theme-edit-dropmenu";
-import { useThemeDetailContext } from "@/contexts/theme-detail-context";
-import { EditIcon } from "@usertour-ui/icons";
-import { ThemeRenameForm } from "./theme-rename-form";
-import { useToast } from "@usertour-ui/use-toast";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+import { Icons } from '@/components/atoms/icons';
+import { useThemeDetailContext } from '@/contexts/theme-detail-context';
+import { useMutation } from '@apollo/client';
+import { ArrowLeftIcon, DotsHorizontalIcon, InfoCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { updateTheme } from '@usertour-ui/gql';
+import { EditIcon } from '@usertour-ui/icons';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
+import { ThemeRenameForm } from './theme-rename-form';
 
 export const ThemeDetailHeader = () => {
   const { theme, settings, refetch } = useThemeDetailContext();
@@ -41,7 +36,7 @@ export const ThemeDetailHeader = () => {
       setIsLoading(false);
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -55,7 +50,7 @@ export const ThemeDetailHeader = () => {
   };
 
   const handleOnSubmit = (action: string) => {
-    if (action == "delete") {
+    if (action === 'delete') {
       navigateToThemesListPage();
     }
   };
@@ -63,10 +58,7 @@ export const ThemeDetailHeader = () => {
   return (
     <div className="border-b bg-white flex-col md:flex w-full fixed z-[100]">
       <div className="flex h-16 items-center px-4">
-        <ArrowLeftIcon
-          className="ml-4 h-6 w-8 cursor-pointer"
-          onClick={navigateToThemesListPage}
-        />
+        <ArrowLeftIcon className="ml-4 h-6 w-8 cursor-pointer" onClick={navigateToThemesListPage} />
         <span>{theme.name}</span>
         {theme.isSystem && (
           <>
@@ -89,9 +81,7 @@ export const ThemeDetailHeader = () => {
         {/* <MainNav className="mx-6" /> */}
         <div className="ml-auto flex items-center space-x-4">
           <Button onClick={handleSaveTheme} disabled={theme.isSystem}>
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
           <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSubmit}>
@@ -106,4 +96,4 @@ export const ThemeDetailHeader = () => {
   );
 };
 
-ThemeDetailHeader.displayName = "ThemeDetailHeader";
+ThemeDetailHeader.displayName = 'ThemeDetailHeader';

@@ -1,36 +1,29 @@
-"use client";
+'use client';
 
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@usertour-ui/use-toast";
-import { useOpenSelector } from "@usertour-ui/shared-hooks";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { createContent } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { getAuthToken, getErrorMessage } from "@usertour-ui/shared-utils";
-import { useAppContext } from "@/contexts/app-context";
-import { BuilderType, Content, ContentDataType } from "@usertour-ui/types";
-import { RadioGroup, RadioGroupItem } from "@usertour-ui/radio-group";
-import { useCallback, useState } from "react";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { createContent } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
+import { useOpenSelector } from '@usertour-ui/shared-hooks';
+import { getAuthToken, getErrorMessage } from '@usertour-ui/shared-utils';
+import { BuilderType, Content, ContentDataType } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 
 interface BannerCreateFormProps {
   isOpen: boolean;
@@ -40,13 +33,13 @@ interface BannerCreateFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please enter your flow name.",
+      required_error: 'Please enter your flow name.',
     })
     .max(30)
     .min(1),
   buildUrl: z
     .string({
-      required_error: "Please enter the URL you want to add an experience to",
+      required_error: 'Please enter the URL you want to add an experience to',
     })
     // .min(1)
     // .url()
@@ -57,15 +50,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  name: "",
-  buildUrl: "",
+  name: '',
+  buildUrl: '',
   type: BuilderType.EXTENSION,
 };
 
-export const BannerCreateForm = ({
-  onClose,
-  isOpen,
-}: BannerCreateFormProps) => {
+export const BannerCreateForm = ({ onClose, isOpen }: BannerCreateFormProps) => {
   const [createContentMutation] = useMutation(createContent);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const token = getAuthToken();
@@ -74,9 +64,7 @@ export const BannerCreateForm = ({
   const navigate = useNavigate();
   const onOpenedBuilder = useCallback(() => {
     if (currentContent) {
-      navigate(
-        `/env/${currentContent?.environmentId}/flows/${currentContent?.id}/detail`
-      );
+      navigate(`/env/${currentContent?.environmentId}/flows/${currentContent?.id}/detail`);
     }
   }, [currentContent]);
   const openTarget = useOpenSelector(token, onOpenedBuilder);
@@ -84,7 +72,7 @@ export const BannerCreateForm = ({
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -92,7 +80,7 @@ export const BannerCreateForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   async function handleOnSubmit(formValues: FormValues) {
@@ -107,24 +95,24 @@ export const BannerCreateForm = ({
       };
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
-        showError("Create flow failed.");
+        showError('Create flow failed.');
       }
       const content = ret.data?.createContent as Content;
       setCurrentContent(content);
-      if (type == BuilderType.WEB) {
+      if (type === BuilderType.WEB) {
         navigate(
-          `/env/${content?.environmentId}/banners/${content?.id}/builder/${content.editedVersionId}`
+          `/env/${content?.environmentId}/banners/${content?.id}/builder/${content.editedVersionId}`,
         );
         return;
       }
       if (!buildUrl) {
-        showError("Please enter the URL you want to add an experience to.");
+        showError('Please enter the URL you want to add an experience to.');
         return;
       }
       const initParams = {
         environmentId: environment?.id,
         contentId: content.id,
-        action: "editContent",
+        action: 'editContent',
         projectId: project?.id,
         versionId: content.editedVersionId,
         envToken: environment?.token,
@@ -152,9 +140,7 @@ export const BannerCreateForm = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                    <FormLabel className="w-32 flex-none">
-                      Banner name:
-                    </FormLabel>
+                    <FormLabel className="w-32 flex-none">Banner name:</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-x-1 w-full grow">
                         <Input placeholder="Enter flow  name" {...field} />
@@ -188,9 +174,7 @@ export const BannerCreateForm = ({
                           <FormControl>
                             <RadioGroupItem value={BuilderType.WEB} />
                           </FormControl>
-                          <FormLabel className="font-normal  cursor-pointer">
-                            Web Builder
-                          </FormLabel>
+                          <FormLabel className="font-normal  cursor-pointer">Web Builder</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -198,34 +182,30 @@ export const BannerCreateForm = ({
                 )}
               />
               <span className="text-xs text-muted-foreground">
-                {form.getValues("type") == BuilderType.EXTENSION &&
-                  "Open the builder in new tab for WYSIWYG editing experience"}
-                {form.getValues("type") == BuilderType.WEB &&
-                  "Open the builder in the current tab for convenient editing experience"}
+                {form.getValues('type') === BuilderType.EXTENSION &&
+                  'Open the builder in new tab for WYSIWYG editing experience'}
+                {form.getValues('type') === BuilderType.WEB &&
+                  'Open the builder in the current tab for convenient editing experience'}
               </span>
-              {form.getValues("type") == BuilderType.EXTENSION && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="buildUrl"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                        <FormLabel className="w-32 flex-none">
-                          Build Url
-                        </FormLabel>
-                        <FormControl>
-                          <div className="flex flex-col space-x-1 w-full grow">
-                            <Input
-                              placeholder="Enter the URL you want to add an experience to"
-                              {...field}
-                            />
-                            <FormMessage />
-                          </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </>
+              {form.getValues('type') === BuilderType.EXTENSION && (
+                <FormField
+                  control={form.control}
+                  name="buildUrl"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                      <FormLabel className="w-32 flex-none">Build Url</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-col space-x-1 w-full grow">
+                          <Input
+                            placeholder="Enter the URL you want to add an experience to"
+                            {...field}
+                          />
+                          <FormMessage />
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               )}
             </div>
             <DialogFooter>
@@ -233,9 +213,7 @@ export const BannerCreateForm = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -246,4 +224,4 @@ export const BannerCreateForm = ({
   );
 };
 
-BannerCreateForm.displayName = "BannerCreateForm";
+BannerCreateForm.displayName = 'BannerCreateForm';

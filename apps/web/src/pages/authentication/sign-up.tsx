@@ -1,43 +1,30 @@
-"use client";
+'use client';
 
-import { Button } from "@usertour-ui/button";
-import { useMutation } from "@apollo/client";
-import { createMagicLink } from "@usertour-ui/gql";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { createMagicLink } from '@usertour-ui/gql';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { Input } from "@usertour-ui/input";
-import { Link } from "react-router-dom";
 import {
   SignUpSuccess,
   SignUpSuccessProps,
-} from "@/pages/authentication/components/sign-up-success";
-import { useState } from "react";
-import { useToast } from "@usertour-ui/use-toast";
-import { SpinnerIcon } from "@usertour-ui/icons";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@/pages/authentication/components/sign-up-success';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const signupFormSchema = z.object({
   email: z
     .string({
-      required_error: "Please input an valid email.",
+      required_error: 'Please input an valid email.',
     })
     .email(),
 });
@@ -45,21 +32,19 @@ const signupFormSchema = z.object({
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
 const defaultValues: Partial<SignupFormValues> = {
-  email: "",
+  email: '',
 };
 
 export const SignUp = () => {
   const [signupMutation] = useMutation(createMagicLink);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [registerData, setRegisterData] = useState<SignUpSuccessProps | null>(
-    null
-  );
+  const [registerData, setRegisterData] = useState<SignUpSuccessProps | null>(null);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   async function onSubmit(formData: SignupFormValues) {
@@ -75,7 +60,7 @@ export const SignUp = () => {
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -84,7 +69,7 @@ export const SignUp = () => {
 
   return (
     <>
-      {registerData && <SignUpSuccess {...registerData}></SignUpSuccess>}
+      {registerData && <SignUpSuccess {...registerData} />}
       {!registerData && (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -103,11 +88,7 @@ export const SignUp = () => {
                       <FormItem>
                         <FormLabel>Work Email</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter your work email"
-                            type="email"
-                            {...field}
-                          />
+                          <Input placeholder="Enter your work email" type="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -117,19 +98,17 @@ export const SignUp = () => {
               </CardContent>
               <CardFooter className="flex flex-col">
                 <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading && (
-                    <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                   Play with Usertour
                 </Button>
                 <div className="pt-4 text-center text-sm text-muted-foreground">
-                  Already have an account?{" "}
+                  Already have an account?{' '}
                   <Link
                     to="/auth/signin"
                     className="underline underline-offset-4 hover:text-primary"
                   >
                     Sign in instead
-                  </Link>{" "}
+                  </Link>{' '}
                 </div>
               </CardFooter>
             </Card>
@@ -140,4 +119,4 @@ export const SignUp = () => {
   );
 };
 
-SignUp.displayName = "SignUp";
+SignUp.displayName = 'SignUp';

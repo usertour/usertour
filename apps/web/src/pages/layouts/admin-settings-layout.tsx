@@ -1,11 +1,8 @@
-import {
-  AdminLayoutNewContent,
-  AdminNewLayout,
-} from "./components/admin-layout";
-import { SettingsSidebarNav } from "./components/settings-sidebar-nav";
-import { AdminMainNewNav } from "./components/admin-main-nav";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { useParams } from "react-router-dom";
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { useParams } from 'react-router-dom';
+import { AdminLayoutNewContent, AdminNewLayout } from './components/admin-layout';
+import { AdminMainNewNav } from './components/admin-main-nav';
+import { SettingsSidebarNav } from './components/settings-sidebar-nav';
 
 interface SettingsLayoutProps {
   children: React.ReactNode;
@@ -17,9 +14,7 @@ export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
     <>
       <AdminNewLayout>
         <AdminMainNewNav />
-        <AdminLayoutNewContent
-          className={settingType === "account" ? "bg-slate-50" : ""}
-        >
+        <AdminLayoutNewContent className={settingType === 'account' ? 'bg-slate-50' : ''}>
           <SettingsSidebarNav />
           <ScrollArea className="h-full w-full ">{children}</ScrollArea>
         </AdminLayoutNewContent>
@@ -28,4 +23,4 @@ export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
   );
 };
 
-AdminSettingsLayout.displayName = "AdminSettingsLayout";
+AdminSettingsLayout.displayName = 'AdminSettingsLayout';

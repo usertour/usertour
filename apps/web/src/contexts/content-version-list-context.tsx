@@ -1,13 +1,7 @@
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { listContentVersions } from "@usertour-ui/gql";
-import { Content, ContentVersion } from "@usertour-ui/types";
+import { useQuery } from '@apollo/client';
+import { listContentVersions } from '@usertour-ui/gql';
+import { ContentVersion } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 export interface ContentVersionListProviderProps {
   children: ReactNode;
@@ -19,13 +13,11 @@ export interface ContentVersionListContextValue {
   refetch: any;
 }
 
-export const ContentVersionListContext = createContext<
-  ContentVersionListContextValue | undefined
->(undefined);
+export const ContentVersionListContext = createContext<ContentVersionListContextValue | undefined>(
+  undefined,
+);
 
-export function ContentVersionListProvider(
-  props: ContentVersionListProviderProps
-): JSX.Element {
+export function ContentVersionListProvider(props: ContentVersionListProviderProps): JSX.Element {
   const { children, contentId } = props;
   const [versionList, setVersionList] = useState<ContentVersion[]>([]);
 
@@ -34,7 +26,7 @@ export function ContentVersionListProvider(
   });
 
   useEffect(() => {
-    if (data && data.listContentVersions) {
+    if (data?.listContentVersions) {
       setVersionList(data.listContentVersions);
     }
   }, [data]);
@@ -61,7 +53,7 @@ export function useContentVersionListContext(): ContentVersionListContextValue {
   const context = useContext(ContentVersionListContext);
   if (!context) {
     throw new Error(
-      `useContentVersionListContext must be used within a ContentVersionListProvider.`
+      'useContentVersionListContext must be used within a ContentVersionListProvider.',
     );
   }
   return context;

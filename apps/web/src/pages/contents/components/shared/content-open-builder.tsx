@@ -1,26 +1,22 @@
-import { Button } from "@usertour-ui/button";
-import {
-  ChevronDownIcon,
-  OpenInNewWindowIcon,
-  EnterIcon,
-} from "@radix-ui/react-icons";
-import { ContentEditForm } from "./content-edit-form";
-import { BuilderType, Content } from "@usertour-ui/types";
+import { useMutation } from '@apollo/client';
+import { ChevronDownIcon, EnterIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { isInstalledExtension } from '@usertour-ui/builder';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { Separator } from "@usertour-ui/separator";
-import { useCallback, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useMutation } from "@apollo/client";
-import { createContentVersion } from "@usertour-ui/gql";
-import { useToast } from "@usertour-ui/use-toast";
-import { ExtensionInstallDialog } from "./extension-install-dialog";
-import { isInstalledExtension } from "@usertour-ui/builder";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dropdown-menu';
+import { createContentVersion } from '@usertour-ui/gql';
+import { Separator } from '@usertour-ui/separator';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { BuilderType, Content } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ContentEditForm } from './content-edit-form';
+import { ExtensionInstallDialog } from './extension-install-dialog';
 
 interface ContentDetailBuilderProps {
   content: Content;
@@ -30,7 +26,7 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
   const { content } = props;
   const [open, setOpen] = useState(false);
   const [showBuilderType, setShowBuilderType] = useState(true);
-  const { contentId = "", contentType } = useParams();
+  const { contentId = '', contentType } = useParams();
   const navigate = useNavigate();
   const [isOpenedInstall, setIsOpenedInstall] = useState(false);
   const [builderType, setBuilderType] = useState<BuilderType | undefined>();
@@ -45,10 +41,7 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
       return;
     }
     let versionId = content.editedVersionId;
-    if (
-      content?.published &&
-      content.editedVersionId == content.publishedVersionId
-    ) {
+    if (content?.published && content.editedVersionId === content.publishedVersionId) {
       const { data } = await createVersion({
         variables: {
           data: {
@@ -58,15 +51,13 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
       });
       if (!data?.createContentVersion?.id) {
         return toast({
-          variant: "destructive",
-          title: "Failed to create a new version.",
+          variant: 'destructive',
+          title: 'Failed to create a new version.',
         });
       }
       versionId = data?.createContentVersion?.id;
     }
-    navigate(
-      `/env/${content.environmentId}/${contentType}/${contentId}/builder/${versionId}`
-    );
+    navigate(`/env/${content.environmentId}/${contentType}/${contentId}/builder/${versionId}`);
   }, [content]);
 
   const handleOpenBuilder = async () => {
@@ -98,16 +89,16 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
     }
     setIsOpenedInstall(false);
     try {
-      if (builderType == BuilderType.ALL) {
+      if (builderType === BuilderType.ALL) {
         await handleOpenBuilder();
-      } else if (builderType == BuilderType.WEB) {
+      } else if (builderType === BuilderType.WEB) {
         await handleOpenWebBuilder();
-      } else if (builderType == BuilderType.EXTENSION) {
+      } else if (builderType === BuilderType.EXTENSION) {
         await handleOpenExtensionBuilder();
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -118,20 +109,17 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
       <div className="flex flex-row items-center min-w-52	">
         <Button
           type="button"
-          variant={"outline"}
+          variant={'outline'}
           onClick={handleOpenBuilder}
           className="rounded-r-none border-r-0 relative	"
         >
           <OpenInNewWindowIcon className="mr-2" />
           Edit In Builder
-          <Separator
-            orientation="vertical"
-            className="h-[20px] absolute right-0"
-          />
+          <Separator orientation="vertical" className="h-[20px] absolute right-0" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant={"outline"} className="rounded-l-none border-l-0	">
+            <Button variant={'outline'} className="rounded-l-none border-l-0	">
               <ChevronDownIcon className="h-4 w-4 text-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -157,8 +145,7 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
                 Edit In Web Builder
               </div>
               <div className="text-xs	 text-muted-foreground">
-                Open the builder in the current tab for convenient editing
-                experience
+                Open the builder in the current tab for convenient editing experience
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -179,4 +166,4 @@ export const ContentOpenBuilder = (props: ContentDetailBuilderProps) => {
   );
 };
 
-ContentOpenBuilder.displayName = "ContentOpenBuilder";
+ContentOpenBuilder.displayName = 'ContentOpenBuilder';

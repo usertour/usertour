@@ -1,18 +1,18 @@
-import { InMemoryCache, ApolloClient, DefaultOptions } from "@apollo/client";
-import { typeDefs } from "./type-defs";
-import link from "./middlewares";
-import initCache from "./cache";
+import { ApolloClient, DefaultOptions, InMemoryCache } from '@apollo/client';
+import initCache from './cache';
+import link from './middlewares';
+import { typeDefs } from './type-defs';
 
 let client: ApolloClient<any>;
 
 const defaultOptions: DefaultOptions = {
   watchQuery: {
-    fetchPolicy: "no-cache",
-    errorPolicy: "ignore",
+    fetchPolicy: 'no-cache',
+    errorPolicy: 'ignore',
   },
   query: {
-    fetchPolicy: "no-cache",
-    errorPolicy: "all",
+    fetchPolicy: 'no-cache',
+    errorPolicy: 'all',
   },
 };
 
@@ -24,7 +24,7 @@ export const getApolloClient = async (): Promise<ApolloClient<any>> => {
   const apolloClient: ApolloClient<any> = new ApolloClient({
     link,
     cache,
-    connectToDevTools: import.meta.env.MODE === "development",
+    connectToDevTools: import.meta.env.MODE === 'development',
     typeDefs,
     defaultOptions: defaultOptions,
   });

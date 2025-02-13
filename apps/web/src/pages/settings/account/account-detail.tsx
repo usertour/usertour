@@ -1,7 +1,7 @@
-import { AccountProfileForm } from "./components/account-profile-form";
-import { SettingsContent } from "../components/content";
-import { AccountEmailForm } from "./components/account-email-form";
-import { AccountPasswordForm } from "./components/account-password-form";
+import { SettingsContent } from '../components/content';
+import { AccountEmailForm } from './components/account-email-form';
+import { AccountPasswordForm } from './components/account-password-form';
+import { AccountProfileForm } from './components/account-profile-form';
 
 export const SettingsAccountDetail = () => {
   return (
@@ -19,4 +19,4 @@ export const SettingsAccountDetail = () => {
   );
 };
 
-SettingsAccountDetail.displayName = "SettingsAccountDetail";
+SettingsAccountDetail.displayName = 'SettingsAccountDetail';

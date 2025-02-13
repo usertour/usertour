@@ -1,33 +1,26 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { updateSegment } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect } from "react";
-import { Segment } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { updateSegment } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Segment } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface EditFormProps {
   isOpen: boolean;
@@ -38,17 +31,13 @@ interface EditFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please user segment name.",
+      required_error: 'Please user segment name.',
     })
     .max(20)
     .min(2),
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const defaultValues: Partial<FormValues> = {
-  name: "",
-};
 
 export const UserSegmentEditForm = (props: EditFormProps) => {
   const { onClose, isOpen, segment } = props;
@@ -58,7 +47,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -66,7 +55,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: segment?.name },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -86,7 +75,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
         };
         const response = await mutation({ variables: { data } });
         if (!response.data?.updateSegment?.id) {
-          showError("Update Segment failed.");
+          showError('Update Segment failed.');
         }
         onClose();
       } catch (error) {
@@ -94,7 +83,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
       }
       setIsLoading(false);
     },
-    [segment]
+    [segment],
   );
 
   return (
@@ -113,11 +102,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
                   <FormItem>
                     <FormLabel className="flex flex-row">Name</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Enter user segment name"
-                        className="w-full"
-                        {...field}
-                      />
+                      <Input placeholder="Enter user segment name" className="w-full" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -129,9 +114,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Save Segment
               </Button>
             </DialogFooter>
@@ -142,4 +125,4 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
   );
 };
 
-UserSegmentEditForm.displayName = "UserSegmentEditForm";
+UserSegmentEditForm.displayName = 'UserSegmentEditForm';

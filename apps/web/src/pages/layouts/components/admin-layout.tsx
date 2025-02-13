@@ -1,22 +1,21 @@
-import { Helmet } from "react-helmet-async";
+import { useAppContext } from '@/contexts/app-context';
+import { AttributeListProvider } from '@/contexts/attribute-list-context';
 import {
   EnvironmentListProvider,
   useEnvironmentListContext,
-} from "@/contexts/environment-list-context";
-import { AttributeListProvider } from "@/contexts/attribute-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { storage } from "@usertour-ui/shared-utils";
-import { Button } from "@usertour-ui/button";
-import { AdminMainNav } from "./admin-main-nav";
-import { AdminEnvSwitcher } from "./admin-env-switcher";
-import { AdminUserNav } from "./admin-user-nav";
-import { usePostHog } from "posthog-js/react";
-import { cn } from "@usertour-ui/ui-utils";
-import usertour from "usertour.js";
-import { userTourToken } from "@/utils/env";
-import { window } from "@usertour-ui/shared-utils";
+} from '@/contexts/environment-list-context';
+import { userTourToken } from '@/utils/env';
+import { Button } from '@usertour-ui/button';
+import { storage } from '@usertour-ui/shared-utils';
+import { cn } from '@usertour-ui/ui-utils';
+import { usePostHog } from 'posthog-js/react';
+import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useParams } from 'react-router-dom';
+import usertour from 'usertour.js';
+import { AdminEnvSwitcher } from './admin-env-switcher';
+import { AdminMainNav } from './admin-main-nav';
+import { AdminUserNav } from './admin-user-nav';
 
 export const AdminLayoutHeader = () => {
   return (
@@ -37,6 +36,7 @@ export const AdminLayoutHeader = () => {
           <a
             href="https://www.usertour.io/docs/developers/usertourjs-installation/"
             target="_blank"
+            rel="noreferrer"
           >
             <Button className="bg-gradient-to-r from-sky-100 to-sky-200 space-x-2 text-foreground">
               <img
@@ -55,7 +55,7 @@ export const AdminLayoutHeader = () => {
   );
 };
 
-AdminLayoutHeader.displayName = "AdminLayoutHeader";
+AdminLayoutHeader.displayName = 'AdminLayoutHeader';
 
 interface AdminLayoutBodyProps {
   children: React.ReactNode;
@@ -69,13 +69,12 @@ export const AdminLayoutContent = (props: AdminLayoutBodyProps) => {
   const { environmentList } = useEnvironmentListContext();
 
   useEffect(() => {
-    const _envId = envId || storage.getLocalStorage("environmentId");
+    const _envId = envId || storage.getLocalStorage('environmentId');
     if (environmentList) {
-      const currentEnv =
-        environmentList.find((env) => env.id === _envId) || environmentList[0];
+      const currentEnv = environmentList.find((env) => env.id === _envId) || environmentList[0];
       if (currentEnv) {
         setEnvironment(currentEnv);
-        storage.setLocalStorage("environmentId", currentEnv?.id);
+        storage.setLocalStorage('environmentId', currentEnv?.id);
       }
     }
   }, [envId, environmentList]);
@@ -83,54 +82,7 @@ export const AdminLayoutContent = (props: AdminLayoutBodyProps) => {
   return <div className="flex-col md:flex">{children}</div>;
 };
 
-AdminLayoutContent.displayName = "AdminLayoutContent";
-
-const AdminSidebarTemplate = () => {
-  return (
-    <div className="group peer text-foreground">
-      <div className="duration-200 bg-white border-gray-200/60 dark:bg-card dark:border-border/40 dark:shadow-inner dark:shadow-black/20 inset-y-0 z-10 hidden h-svh w-[15rem] transition-[left,right,width] ease-linear md:flex left-0 border-r ">
-        <div className="flex h-full w-full flex-col bg-background/10 dark:bg-background/80 ">
-          <div className="pt-4 pb-[18px] min-h-[66.86px] sidebar-header gap-2 flex items-center justify-between w-full border-b border-b-gray-200/30 dark:border-b-accent/5 !pl-5 !pr-3 bg-gradient-to-br dark:from-primary-modified/[6%] dark:to-transparent !text-[17px] text-gray-600 dark:text-gray-200">
-            <h2>Feedback</h2>
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-auto custom-scrollbar">
-            <div className="relative flex w-full min-w-0 flex-col p-2 px-3">
-              <div className="duration-200 flex pointer-events-none h-7 shrink-0 items-center rounded-md px-2 text-xs font-medium dark:text-foreground/70 text-foreground/80 outline-none ring-sidebar-ring transition-[margin,opa] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 ">
-                Status
-              </div>
-              <button className="inline-flex main-transition whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-transparent shadow-none select-none focus:!ring-0 dark:foucs:!ring-0 focus:outline-none dark:shadow-none items-center !text-[13px] w-full hover:bg-gray-200/40 dark:hover:bg-secondary/60 !text-foreground hover:!text-gray-600 dark:!text-foreground dark:hover:!text-dark-accent-foreground h-8 rounded-md px-2 text-xs justify-start">
-                Under Review
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="relative flex w-full min-w-0 flex-col p-2 px-3">
-              <div className="duration-200 flex pointer-events-none h-7 shrink-0 items-center rounded-md px-2 text-xs font-medium dark:text-foreground/70 text-foreground/80 outline-none ring-sidebar-ring transition-[margin,opa] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 ">
-                Resources
-              </div>
-              <a
-                target="_blank"
-                href="https://help.featurebase.app/collections/3118494-in-app-widgets-and-embeds"
-              >
-                <button className="inline-flex main-transition whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-transparent shadow-none select-none focus:!ring-0 dark:foucs:!ring-0 focus:outline-none dark:shadow-none items-center !text-[13px] w-full hover:bg-gray-200/40 dark:hover:bg-secondary/60 !text-foreground hover:!text-gray-600 dark:!text-foreground dark:hover:!text-dark-accent-foreground h-8 rounded-md px-2 text-xs justify-start">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="secondary-svg mr-2"
-                  >
-                    <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z"></path>
-                  </svg>
-                  Install Widget &amp; Embed
-                </button>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+AdminLayoutContent.displayName = 'AdminLayoutContent';
 
 interface AdminLayoutNewContentProps {
   children: React.ReactNode;
@@ -145,13 +97,12 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
   const { environmentList } = useEnvironmentListContext();
 
   useEffect(() => {
-    const _envId = envId || storage.getLocalStorage("environmentId");
+    const _envId = envId || storage.getLocalStorage('environmentId');
     if (environmentList) {
-      const currentEnv =
-        environmentList.find((env) => env.id === _envId) || environmentList[0];
+      const currentEnv = environmentList.find((env) => env.id === _envId) || environmentList[0];
       if (currentEnv) {
         setEnvironment(currentEnv);
-        storage.setLocalStorage("environmentId", currentEnv?.id);
+        storage.setLocalStorage('environmentId', currentEnv?.id);
       }
     }
   }, [envId, environmentList]);
@@ -160,19 +111,17 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
       <div
         className={cn(
-          "w-full min-w-0 overflow-hidden  flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60",
-          className
+          'w-full min-w-0 overflow-hidden  flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
+          className,
         )}
       >
-        <div className="group/sidebar-wrapper flex h-full w-full">
-          {children}
-        </div>
+        <div className="group/sidebar-wrapper flex h-full w-full">{children}</div>
       </div>
     </div>
   );
 };
 
-AdminLayoutNewContent.displayName = "AdminLayoutNewContent";
+AdminLayoutNewContent.displayName = 'AdminLayoutNewContent';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -196,7 +145,7 @@ const useUserTracking = (userInfo: any) => {
       email: userInfo.email,
     });
     if (userInfo.projectId) {
-      posthog?.group("company", userInfo.projectId);
+      posthog?.group('company', userInfo.projectId);
     }
   }, [userInfo, posthog]);
 };
@@ -216,9 +165,9 @@ export const AdminLayout = (props: AdminLayoutProps) => {
             <title>Usertour App</title>
             <body
               className={
-                type == "builder"
-                  ? "bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]"
-                  : "bg-slate-100"
+                type === 'builder'
+                  ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
+                  : 'bg-slate-100'
               }
             />
           </Helmet>
@@ -229,7 +178,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
   );
 };
 
-AdminLayout.displayName = "AdminLayout";
+AdminLayout.displayName = 'AdminLayout';
 
 export const AdminNewLayout = (props: AdminLayoutProps) => {
   const { children } = props;
@@ -246,9 +195,9 @@ export const AdminNewLayout = (props: AdminLayoutProps) => {
             <title>Usertour App</title>
             <body
               className={
-                type == "builder"
-                  ? "bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]"
-                  : "bg-slate-100"
+                type === 'builder'
+                  ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
+                  : 'bg-slate-100'
               }
             />
           </Helmet>
@@ -259,4 +208,4 @@ export const AdminNewLayout = (props: AdminLayoutProps) => {
   );
 };
 
-AdminNewLayout.displayName = "AdminNewLayout";
+AdminNewLayout.displayName = 'AdminNewLayout';

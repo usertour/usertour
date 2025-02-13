@@ -1,7 +1,7 @@
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { useThemeSettingsContext } from ".";
-import { ThemeColorPicker } from "@/components/molecules/theme/theme-color-picker";
-import { ThemeSettingSlider } from "@/components/molecules/theme/theme-setting-slider";
+import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-slider';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsLauncherIcons = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -29,7 +29,7 @@ export const ThemeSettingsLauncherIcons = () => {
             <ThemeColorPicker
               defaultColor={settings.launcherIcon.color.color}
               showAutoButton={true}
-              isAutoColor={settings.launcherIcon.color.color == "Auto"}
+              isAutoColor={settings.launcherIcon.color.color === 'Auto'}
               autoColor={finalSettings?.launcherIcon.color.color}
               onChange={(value: string) => {
                 update({
@@ -44,7 +44,7 @@ export const ThemeSettingsLauncherIcons = () => {
             <ThemeColorPicker
               defaultColor={settings.launcherIcon.color.hover}
               showAutoButton={true}
-              isAutoColor={settings.launcherIcon.color.hover == "Auto"}
+              isAutoColor={settings.launcherIcon.color.hover === 'Auto'}
               autoColor={finalSettings?.launcherIcon.color.hover}
               onChange={(value: string) => {
                 update({
@@ -59,7 +59,7 @@ export const ThemeSettingsLauncherIcons = () => {
             <ThemeColorPicker
               defaultColor={settings.launcherIcon.color.active}
               showAutoButton={true}
-              isAutoColor={settings.launcherIcon.color.active == "Auto"}
+              isAutoColor={settings.launcherIcon.color.active === 'Auto'}
               autoColor={finalSettings?.launcherIcon.color.active}
               onChange={(value: string) => {
                 update({
@@ -83,4 +83,4 @@ export const ThemeSettingsLauncherIcons = () => {
   );
 };
 
-ThemeSettingsLauncherIcons.displayName = "ThemeSettingsLauncherIcons";
+ThemeSettingsLauncherIcons.displayName = 'ThemeSettingsLauncherIcons';

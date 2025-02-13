@@ -1,5 +1,5 @@
-import { Slider } from "@usertour-ui/slider";
-import { useState } from "react";
+import { Slider } from '@usertour-ui/slider';
+import { useState } from 'react';
 
 type ThemeSettingSliderProps = {
   text: string;
@@ -9,7 +9,7 @@ type ThemeSettingSliderProps = {
   onValueChange?: (value: number[]) => void;
 };
 export const ThemeSettingSlider = (props: ThemeSettingSliderProps) => {
-  const { text, placeholder = "", name, defaultValue, onValueChange } = props;
+  const { text, name, defaultValue, onValueChange } = props;
   const [value, setValue] = useState(defaultValue);
 
   const handleValueChange = (v: number[]) => {
@@ -39,4 +39,4 @@ export const ThemeSettingSlider = (props: ThemeSettingSliderProps) => {
   );
 };
 
-ThemeSettingSlider.displayName = "ThemeSettingSlider";
+ThemeSettingSlider.displayName = 'ThemeSettingSlider';

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { AttributeCreateForm } from "./attribute-create-form";
-import { Button } from "@usertour-ui/button";
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { useState } from 'react';
+import { AttributeCreateForm } from './attribute-create-form';
 
 export const AttributeListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -19,9 +19,7 @@ export const AttributeListHeader = () => {
       <div className="relative ">
         <div className="flex flex-col space-y-2">
           <div className="flex flex-row justify-between ">
-            <h3 className="text-2xl font-semibold tracking-tight">
-              Attributes
-            </h3>
+            <h3 className="text-2xl font-semibold tracking-tight">Attributes</h3>
             <Button onClick={handleCreate}>New Attribute</Button>
           </div>
           <div className="text-sm text-muted-foreground">
@@ -31,6 +29,7 @@ export const AttributeListHeader = () => {
                 href="https://www.usertour.io/docs/developers/usertourjs-reference/overview/#attributes"
                 className="text-primary  "
                 target="_blank"
+                rel="noreferrer"
               >
                 <span>Read the Attributes guide</span>
                 <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
@@ -44,4 +43,4 @@ export const AttributeListHeader = () => {
   );
 };
 
-AttributeListHeader.displayName = "AttributeListHeader";
+AttributeListHeader.displayName = 'AttributeListHeader';

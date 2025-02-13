@@ -1,57 +1,29 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { updateLocalization } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
-import {
-  CompanyIcon,
-  UserIcon,
-  UserIcon2,
-  EventIcon2,
-} from "@usertour-ui/icons";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { Localization } from "@usertour-ui/types";
-import { LocateItem, LocateSelect } from "@usertour-ui/shared-components";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { updateLocalization } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { LocateItem, LocateSelect } from '@usertour-ui/shared-components';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Localization } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface EditFormProps {
   isOpen: boolean;
@@ -62,19 +34,19 @@ interface EditFormProps {
 const formSchema = z.object({
   locale: z
     .string({
-      required_error: "Please input locale.",
+      required_error: 'Please input locale.',
     })
     .max(20)
     .min(2),
   name: z
     .string({
-      required_error: "Please input name.",
+      required_error: 'Please input name.',
     })
     .max(20)
     .min(2),
   code: z
     .string({
-      required_error: "Please input code.",
+      required_error: 'Please input code.',
     })
     .max(20)
     .min(2),
@@ -90,7 +62,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -100,7 +72,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
     defaultValues: {
       ...localization,
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -120,7 +92,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
         const ret = await updateMutation({ variables: { data } });
 
         if (!ret.data?.updateLocalization?.id) {
-          showError("Update localization failed.");
+          showError('Update localization failed.');
         }
         onClose();
       } catch (error) {
@@ -128,7 +100,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
       }
       setIsLoading(false);
     },
-    [localization]
+    [localization],
   );
 
   return (
@@ -143,7 +115,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
               <FormField
                 control={form.control}
                 name="locale"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel className="flex flex-row">
                       Locale
@@ -160,14 +132,11 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                     </FormLabel>
                     <LocateSelect
                       popperContentClass="w-[450px]"
-                      defaultValue={form.getValues("locale")}
+                      defaultValue={form.getValues('locale')}
                       onSelect={(item: LocateItem) => {
-                        form.setValue(
-                          "name",
-                          item.language.name + "(" + item.country.code + ")"
-                        );
-                        form.setValue("code", item.locale);
-                        form.setValue("locale", item.locale);
+                        form.setValue('name', `${item.language.name} (${item.country.code})`);
+                        form.setValue('code', item.locale);
+                        form.setValue('locale', item.locale);
                       }}
                     />
                     <FormMessage />
@@ -212,12 +181,11 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                             <QuestionMarkCircledIcon className="ml-1 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs bg-slate-700">
-                            The value that users of this locale must have in
-                            their locale_code attribute in your Usertour.js
-                            installation. It's important that this code matches
-                            exactly. If a user has a missing or invalid locale
-                            code, they will be regarded as having no locale,
-                            which means they'll see the flow in the base locale.
+                            The value that users of this locale must have in their locale_code
+                            attribute in your Usertour.js installation. It's important that this
+                            code matches exactly. If a user has a missing or invalid locale code,
+                            they will be regarded as having no locale, which means they'll see the
+                            flow in the base locale.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -236,9 +204,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Save Localization
               </Button>
             </DialogFooter>
@@ -249,4 +215,4 @@ export const LocalizationEditForm = (props: EditFormProps) => {
   );
 };
 
-LocalizationEditForm.displayName = "LocalizationEditForm";
+LocalizationEditForm.displayName = 'LocalizationEditForm';

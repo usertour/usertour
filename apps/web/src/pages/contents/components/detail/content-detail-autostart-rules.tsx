@@ -1,47 +1,38 @@
-import { Label } from "@usertour-ui/label";
-import { Switch } from "@usertour-ui/switch";
-import { useCallback, useId, useState } from "react";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Label } from '@usertour-ui/label';
 import {
   Rules,
   RulesFrequency,
   RulesIfCompleted,
   RulesPriority,
   RulesWait,
-} from "@usertour-ui/shared-components";
+} from '@usertour-ui/shared-components';
+import { useContentListQuery } from '@usertour-ui/shared-hooks';
+import { getAuthToken } from '@usertour-ui/shared-utils';
+import { conditionsIsSame } from '@usertour-ui/shared-utils';
+import { Switch } from '@usertour-ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import {
-  autoStartRulesSetting,
   Content,
   ContentPriority,
   Frequency,
   RulesCondition,
-} from "@usertour-ui/types";
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { getAuthToken } from "@usertour-ui/shared-utils";
-import { conditionsIsSame } from "@usertour-ui/shared-utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import { useContentListQuery } from "@usertour-ui/shared-hooks";
+  autoStartRulesSetting,
+} from '@usertour-ui/types';
+import { useCallback, useId, useState } from 'react';
 
 export enum ContentDetailAutoStartRulesType {
-  START_RULES = "start-rules",
-  HIDE_RULES = "hide-rules",
+  START_RULES = 'start-rules',
+  HIDE_RULES = 'hide-rules',
 }
 
 interface ContentDetailAutoStartRulesProps {
   defaultEnabled: boolean;
   name: string;
   defaultConditions: RulesCondition[];
-  onDataChange: (
-    enabled: boolean,
-    conditions: RulesCondition[],
-    setting: any
-  ) => void;
+  onDataChange: (enabled: boolean, conditions: RulesCondition[], setting: any) => void;
   content: Content;
   setting: autoStartRulesSetting;
   type: ContentDetailAutoStartRulesType;
@@ -52,9 +43,7 @@ interface ContentDetailAutoStartRulesProps {
   showAtLeast?: boolean;
 }
 
-export const ContentDetailAutoStartRules = (
-  props: ContentDetailAutoStartRulesProps
-) => {
+export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesProps) => {
   const {
     defaultEnabled,
     name,
@@ -72,14 +61,14 @@ export const ContentDetailAutoStartRules = (
 
   const [enabled, setEnabled] = useState(defaultEnabled);
   const [conditions, setConditions] = useState<RulesCondition[]>(
-    JSON.parse(JSON.stringify(defaultConditions))
+    JSON.parse(JSON.stringify(defaultConditions)),
   );
 
   const updateSettings = useCallback(
     (updates: Partial<autoStartRulesSetting>) => {
       onDataChange(enabled, conditions, { ...setting, ...updates });
     },
-    [enabled, conditions, setting, onDataChange]
+    [enabled, conditions, setting, onDataChange],
   );
 
   const handleDataChange = useCallback(
@@ -90,7 +79,7 @@ export const ContentDetailAutoStartRules = (
       setConditions(newConditions);
       onDataChange(enabled, newConditions, setting);
     },
-    [conditions, enabled, setting, onDataChange]
+    [conditions, enabled, setting, onDataChange],
   );
 
   const handleEnabledChange = useCallback(
@@ -98,7 +87,7 @@ export const ContentDetailAutoStartRules = (
       setEnabled(checked);
       onDataChange(checked, conditions, setting);
     },
-    [conditions, setting, onDataChange]
+    [conditions, setting, onDataChange],
   );
 
   if (!content.environmentId) return null;
@@ -130,22 +119,20 @@ export const ContentDetailAutoStartRules = (
                 <QuestionMarkCircledIcon className="ml-1 cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-sm">
-                {type == ContentDetailAutoStartRulesType.START_RULES && (
+                {type === ContentDetailAutoStartRulesType.START_RULES && (
                   <>
-                    Automatically starts the {contentType} if the user matches
-                    the given condition. Example: Automatically start an{" "}
-                    {contentType} for all new users. <br />
+                    Automatically starts the {contentType} if the user matches the given condition.
+                    Example: Automatically start an {contentType} for all new users. <br />
                     <br />
-                    Once the {contentType} has started, the auto-start condition
-                    has no effect, meaning if the user no longer matches it, the{" "}
-                    {contentType} will stay open until otherwise dismissed.
+                    Once the {contentType} has started, the auto-start condition has no effect,
+                    meaning if the user no longer matches it, the {contentType} will stay open until
+                    otherwise dismissed.
                   </>
                 )}
-                {type == ContentDetailAutoStartRulesType.HIDE_RULES && (
+                {type === ContentDetailAutoStartRulesType.HIDE_RULES && (
                   <>
-                    Temporarily hides the {contentType} when this condition is
-                    true. Once the condition is no longer true, the{" "}
-                    {contentType} may be shown again. <br />
+                    Temporarily hides the {contentType} when this condition is true. Once the
+                    condition is no longer true, the {contentType} may be shown again. <br />
                     Example: Hide a {contentType} on certain pages.
                   </>
                 )}
@@ -180,21 +167,16 @@ export const ContentDetailAutoStartRules = (
               showAtLeast={showAtLeast}
             />
           )}
-          {showIfCompleted &&
-            setting.frequency?.frequency != Frequency.ONCE && (
-              <RulesIfCompleted
-                defaultValue={setting.startIfNotComplete ?? false}
-                contentType={contentType}
-                onCheckedChange={(checked) =>
-                  updateSettings({ startIfNotComplete: checked })
-                }
-              />
-            )}
+          {showIfCompleted && setting.frequency?.frequency !== Frequency.ONCE && (
+            <RulesIfCompleted
+              defaultValue={setting.startIfNotComplete ?? false}
+              contentType={contentType}
+              onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
+            />
+          )}
           {showPriority && (
             <RulesPriority
-              onChange={(priority) =>
-                updateSettings({ priority: priority as ContentPriority })
-              }
+              onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
               defaltValue={setting.priority ?? ContentPriority.MEDIUM}
             />
           )}
@@ -204,4 +186,4 @@ export const ContentDetailAutoStartRules = (
   );
 };
 
-ContentDetailAutoStartRules.displayName = "ContentDetailAutoStartRules";
+ContentDetailAutoStartRules.displayName = 'ContentDetailAutoStartRules';

@@ -1,10 +1,10 @@
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { useUserListContext } from "@/contexts/user-list-context";
-import { ArrowLeftIcon } from "@radix-ui/react-icons";
-import { UserIcon, UserProfile } from "@usertour-ui/icons";
-import { AttributeBizTypes, BizUser } from "@usertour-ui/types";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useUserListContext } from '@/contexts/user-list-context';
+import { ArrowLeftIcon } from '@radix-ui/react-icons';
+import { UserIcon, UserProfile } from '@usertour-ui/icons';
+import { AttributeBizTypes, BizUser } from '@usertour-ui/types';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -27,20 +27,19 @@ export function UserDetailContent(props: UserDetailContentProps) {
     if (!edges || !pageInfo) {
       return;
     }
-    const user = edges.find((c: any) => c.node.id == userId);
-    if (user && user.node) {
+    const user = edges.find((c: any) => c.node.id === userId);
+    if (user?.node) {
       setBizUser(user.node);
     }
   }, [bizUserList, userId]);
 
   useEffect(() => {
     if (attributeList && bizUser) {
-      let attrs = [];
+      const attrs = [];
       for (const key in bizUser.data) {
         const value = (bizUser.data as any)[key];
         const userAttr = attributeList?.find(
-          (attr) =>
-            attr.bizType == AttributeBizTypes.User && attr.codeName == key
+          (attr) => attr.bizType === AttributeBizTypes.User && attr.codeName === key,
         );
         if (userAttr) {
           attrs.push({
@@ -105,9 +104,7 @@ export function UserDetailContent(props: UserDetailContentProps) {
             </div>
             <div className="flex flex-col items-center w-full h-full justify-center">
               <img src="/images/rocket.png" />
-              <div className="text-muted-foreground text-base	">
-                Coming soon!
-              </div>
+              <div className="text-muted-foreground text-base	">Coming soon!</div>
             </div>
           </div>
         </div>
@@ -116,4 +113,4 @@ export function UserDetailContent(props: UserDetailContentProps) {
   );
 }
 
-UserDetailContent.displayName = "UserDetailContent";
+UserDetailContent.displayName = 'UserDetailContent';

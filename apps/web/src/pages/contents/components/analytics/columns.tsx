@@ -1,35 +1,26 @@
-"use client";
+'use client';
 
-import { ColumnDef, Row } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "./data-table-column-header";
-import {
-  BizEvents,
-  BizSessionObject,
-  ChecklistData,
-  ContentDataType,
-} from "@usertour-ui/types";
-import { formatDistanceStrict, formatDistanceToNow } from "date-fns";
-import { useEventListContext } from "@/contexts/event-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
-import { PlayIcon, CancelIcon } from "@usertour-ui/icons";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@usertour-ui/tooltip";
-import { TooltipProvider } from "@usertour-ui/tooltip";
-import { useContentVersionContext } from "@/contexts/content-version-context";
+import { useAppContext } from '@/contexts/app-context';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useEventListContext } from '@/contexts/event-list-context';
+import { ColumnDef, Row } from '@tanstack/react-table';
+import { CancelIcon, PlayIcon } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-ui/tooltip';
+import { TooltipProvider } from '@usertour-ui/tooltip';
+import { BizEvents, BizSessionObject, ChecklistData, ContentDataType } from '@usertour-ui/types';
+import { formatDistanceStrict, formatDistanceToNow } from 'date-fns';
+import { DataTableColumnHeader } from './data-table-column-header';
 
 const LauncherProgressColumn = ({ original }: Row<BizSessionObject>) => {
   const { bizEvent } = original;
   const { eventList } = useEventListContext();
-  if (!eventList || !bizEvent || bizEvent.length == 0) {
+  if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
   }
 
-  const activatedEvent = eventList?.find(
-    (e) => e.codeName === BizEvents.LAUNCHER_ACTIVATED
-  );
-  const dismissedEvent = eventList.find(
-    (e) => e.codeName === BizEvents.LAUNCHER_DISMISSED
-  );
+  const activatedEvent = eventList?.find((e) => e.codeName === BizEvents.LAUNCHER_ACTIVATED);
+  const dismissedEvent = eventList.find((e) => e.codeName === BizEvents.LAUNCHER_DISMISSED);
 
   if (!activatedEvent || !dismissedEvent) {
     return <></>;
@@ -74,19 +65,15 @@ const ChecklistProgressColumn = ({ original }: Row<BizSessionObject>) => {
   const { version } = useContentVersionContext();
   const data = version?.data as ChecklistData;
 
-  if (!eventList || !bizEvent || bizEvent.length == 0 || !data) {
+  if (!eventList || !bizEvent || bizEvent.length === 0 || !data) {
     return <></>;
   }
 
-  const completeEvent = eventList?.find(
-    (e) => e.codeName === BizEvents.CHECKLIST_COMPLETED
-  );
-  const dismissedEvent = eventList.find(
-    (e) => e.codeName === BizEvents.CHECKLIST_DISMISSED
-  );
+  const completeEvent = eventList?.find((e) => e.codeName === BizEvents.CHECKLIST_COMPLETED);
+  const dismissedEvent = eventList.find((e) => e.codeName === BizEvents.CHECKLIST_DISMISSED);
 
   const taskCompletedEvent = eventList.find(
-    (e) => e.codeName === BizEvents.CHECKLIST_TASK_COMPLETED
+    (e) => e.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
   );
 
   if (!completeEvent || !dismissedEvent) {
@@ -94,33 +81,24 @@ const ChecklistProgressColumn = ({ original }: Row<BizSessionObject>) => {
   }
 
   const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent.id);
-  const dismissedBizEvent = bizEvent.find(
-    (e) => e.eventId === dismissedEvent.id
-  );
+  const dismissedBizEvent = bizEvent.find((e) => e.eventId === dismissedEvent.id);
 
   // Sort events by creation time
   const firstEvent = bizEvent.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   )[0];
 
   const checklistItemIds = bizEvent
     .filter((e) => e.eventId === taskCompletedEvent?.id)
     .map((e) => e.data?.checklist_task_id);
 
-  const completedItemIds = data.items.filter((item) =>
-    checklistItemIds.includes(item.id)
-  );
+  const completedItemIds = data.items.filter((item) => checklistItemIds.includes(item.id));
 
-  const progress = Math.floor(
-    (completedItemIds.length / data.items.length) * 100
-  );
+  const progress = Math.floor((completedItemIds.length / data.items.length) * 100);
 
   const completeDate =
     completeBizEvent && firstEvent
-      ? formatDistanceStrict(
-          new Date(completeBizEvent.createdAt),
-          new Date(firstEvent.createdAt)
-        )
+      ? formatDistanceStrict(new Date(completeBizEvent.createdAt), new Date(firstEvent.createdAt))
       : null;
   const isComplete = !!completeBizEvent;
   const isDismissed = !!dismissedBizEvent;
@@ -150,9 +128,7 @@ const ChecklistProgressColumn = ({ original }: Row<BizSessionObject>) => {
       <div className="flex flex-col">
         {!isComplete && <span>{progress}%</span>}
         {isComplete && (
-          <div className="text-success font-bold text-left">
-            {`Completed in ${completeDate}`}
-          </div>
+          <div className="text-success font-bold text-left">{`Completed in ${completeDate}`}</div>
         )}
       </div>
     </div>
@@ -160,18 +136,14 @@ const ChecklistProgressColumn = ({ original }: Row<BizSessionObject>) => {
 };
 
 const FlowProgressColumn = ({ original }: Row<BizSessionObject>) => {
-  const { bizEvent, progress = 0 } = original;
+  const { bizEvent } = original;
   const { eventList } = useEventListContext();
-  if (!eventList || !bizEvent || bizEvent.length == 0) {
+  if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
   }
 
-  const completeEvent = eventList?.find(
-    (e) => e.codeName === BizEvents.FLOW_COMPLETED
-  );
-  const itemSeenEvent = eventList.find(
-    (e) => e.codeName === BizEvents.FLOW_STEP_SEEN
-  );
+  const completeEvent = eventList?.find((e) => e.codeName === BizEvents.FLOW_COMPLETED);
+  const itemSeenEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_STEP_SEEN);
 
   const endedEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_ENDED);
 
@@ -182,24 +154,18 @@ const FlowProgressColumn = ({ original }: Row<BizSessionObject>) => {
   const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent.id);
   const lastSeenBizEvent = bizEvent
     .filter((e) => e.eventId === itemSeenEvent.id)
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   // Sort events by creation time
   const firstEvent = bizEvent.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   )[0];
 
   const endedBizEvent = bizEvent.find((e) => e.eventId === endedEvent.id);
 
   const completeDate =
     completeBizEvent && firstEvent
-      ? formatDistanceStrict(
-          new Date(completeBizEvent.createdAt),
-          new Date(firstEvent.createdAt)
-        )
+      ? formatDistanceStrict(new Date(completeBizEvent.createdAt), new Date(firstEvent.createdAt))
       : null;
   const isComplete = !!completeBizEvent;
   const isDismissed = !!endedBizEvent;
@@ -227,13 +193,9 @@ const FlowProgressColumn = ({ original }: Row<BizSessionObject>) => {
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isComplete && (
-          <span>{lastSeenBizEvent?.data?.flow_step_progress ?? 0}%</span>
-        )}
+        {!isComplete && <span>{lastSeenBizEvent?.data?.flow_step_progress ?? 0}%</span>}
         {isComplete && (
-          <div className="text-success font-bold text-left">
-            {`Completed in ${completeDate}`}
-          </div>
+          <div className="text-success font-bold text-left">{`Completed in ${completeDate}`}</div>
         )}
         <div className="text-left text-muted-foreground">
           <div className="text-muted-foreground">
@@ -251,14 +213,14 @@ const ProgressColumn = (props: Row<BizSessionObject>) => {
   const { content } = useContentDetailContext();
   const contentType = content?.type;
 
-  if (contentType == ContentDataType.CHECKLIST) {
+  if (contentType === ContentDataType.CHECKLIST) {
     return <ChecklistProgressColumn {...props} />;
   }
 
-  if (contentType == ContentDataType.FLOW) {
+  if (contentType === ContentDataType.FLOW) {
     return <FlowProgressColumn {...props} />;
   }
-  if (contentType == ContentDataType.LAUNCHER) {
+  if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherProgressColumn {...props} />;
   }
 
@@ -278,9 +240,7 @@ const CreateAtColumn = ({ original }: Row<BizSessionObject>) => {
   }
 
   // Get the most recent event time using Math.max
-  const lastEventTime = Math.max(
-    ...bizEvent.map((event) => new Date(event.createdAt).getTime())
-  );
+  const lastEventTime = Math.max(...bizEvent.map((event) => new Date(event.createdAt).getTime()));
 
   return (
     <div className="flex space-x-2">
@@ -291,13 +251,11 @@ const CreateAtColumn = ({ original }: Row<BizSessionObject>) => {
 
 export const columns: ColumnDef<BizSessionObject>[] = [
   {
-    accessorKey: "bizUserId",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="User" />
-    ),
+    accessorKey: 'bizUserId',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
     cell: ({ row }) => {
       const { environment } = useAppContext();
-      const href = `/env/${environment?.id}/user/${row.getValue("bizUserId")}`;
+      const href = `/env/${environment?.id}/user/${row.getValue('bizUserId')}`;
       return (
         <a
           href={href}
@@ -311,18 +269,14 @@ export const columns: ColumnDef<BizSessionObject>[] = [
     enableHiding: true,
   },
   {
-    accessorKey: "progress",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Progress" />
-    ),
+    accessorKey: 'progress',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Progress" />,
     cell: ({ row }) => <ProgressColumn {...row} />,
     enableSorting: false,
   },
   {
-    accessorKey: "createdAt",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Last activity" />
-    ),
+    accessorKey: 'createdAt',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Last activity" />,
     cell: ({ row }) => <CreateAtColumn {...row} />,
     enableSorting: false,
   },

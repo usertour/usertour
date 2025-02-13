@@ -7,8 +7,8 @@ interface EmptyPlaceholderProps {
 export const EmptyPlaceholder = (props: EmptyPlaceholderProps) => {
   const {
     children,
-    name = "No flows added",
-    description = "You have not added any flows. Add one below.",
+    name = 'No flows added',
+    description = 'You have not added any flows. Add one below.',
   } = props;
   return (
     <div className="flex h-[450px] shrink-0 items-center justify-center rounded-md border border-dashed">
@@ -36,4 +36,4 @@ export const EmptyPlaceholder = (props: EmptyPlaceholderProps) => {
   );
 };
 
-EmptyPlaceholder.displayName = "EmptyPlaceholder";
+EmptyPlaceholder.displayName = 'EmptyPlaceholder';

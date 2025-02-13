@@ -1,10 +1,6 @@
-import { useThemeDetailContext } from "@/contexts/theme-detail-context";
-import {
-  LauncherContainer,
-  LauncherRoot,
-  LauncherView,
-} from "@usertour-ui/sdk/src/launcher";
-import { DEFAULT_LAUNCHER_DATA, LauncherDataType } from "@usertour-ui/types";
+import { useThemeDetailContext } from '@/contexts/theme-detail-context';
+import { LauncherContainer, LauncherRoot, LauncherView } from '@usertour-ui/sdk/src/launcher';
+import { DEFAULT_LAUNCHER_DATA, LauncherDataType } from '@usertour-ui/types';
 
 export const ThemePreviewLauncher = ({ type }: { type: LauncherDataType }) => {
   const { theme, settings } = useThemeDetailContext();
@@ -14,10 +10,7 @@ export const ThemePreviewLauncher = ({ type }: { type: LauncherDataType }) => {
   return (
     <div className="h-full w-full">
       <div className="flex flex-row items-center justify-center h-full ">
-        <LauncherRoot
-          data={DEFAULT_LAUNCHER_DATA}
-          theme={{ ...theme, settings }}
-        >
+        <LauncherRoot data={DEFAULT_LAUNCHER_DATA} theme={{ ...theme, settings }}>
           <LauncherContainer>
             <LauncherView
               type={type}
@@ -33,4 +26,4 @@ export const ThemePreviewLauncher = ({ type }: { type: LauncherDataType }) => {
   );
 };
 
-ThemePreviewLauncher.displayName = "ThemePreviewLauncher";
+ThemePreviewLauncher.displayName = 'ThemePreviewLauncher';

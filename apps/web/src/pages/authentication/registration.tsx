@@ -1,22 +1,15 @@
-"use client";
+'use client';
 
-import { Button } from "@usertour-ui/button";
-import { useMutation } from "@apollo/client";
-import { signUp } from "@usertour-ui/gql";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { getErrorMessage, setAuthToken } from "@usertour-ui/shared-utils";
-import { useToast } from "@usertour-ui/use-toast";
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { signUp } from '@usertour-ui/gql';
+import { getErrorMessage, setAuthToken } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 
 import {
   Card,
@@ -25,27 +18,27 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@usertour-ui/card";
-import { Input } from "@usertour-ui/input";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { Checkbox } from "@usertour-ui/checkbox";
+} from '@usertour-ui/card';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { Input } from '@usertour-ui/input';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 const registFormSchema = z.object({
   userName: z
     .string({
-      required_error: "Please input your full name.",
+      required_error: 'Please input your full name.',
     })
     .max(30)
     .min(4),
   companyName: z
     .string({
-      required_error: "Please input your company name.",
+      required_error: 'Please input your company name.',
     })
     .max(30)
     .min(4),
   password: z
     .string({
-      required_error: "Please input your password.",
+      required_error: 'Please input your password.',
     })
     .max(20)
     .min(8),
@@ -55,10 +48,10 @@ const registFormSchema = z.object({
 type RegistFormValues = z.infer<typeof registFormSchema>;
 
 const defaultValues: Partial<RegistFormValues> = {
-  userName: "",
+  userName: '',
   isAccept: false,
-  companyName: "",
-  password: "",
+  companyName: '',
+  password: '',
 };
 
 export const Registration = () => {
@@ -70,12 +63,12 @@ export const Registration = () => {
   const form = useForm<RegistFormValues>({
     resolver: zodResolver(registFormSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -83,7 +76,7 @@ export const Registration = () => {
   async function onSubmit(formData: RegistFormValues) {
     const { isAccept, ...others } = formData;
     if (!isAccept) {
-      showError("You must accept our terms of service and privacy policy.");
+      showError('You must accept our terms of service and privacy policy.');
       return;
     }
     try {
@@ -92,7 +85,7 @@ export const Registration = () => {
       });
       if (data.signup.accessToken) {
         setAuthToken(data.signup.accessToken, -1);
-        navigate("/env/1/flows");
+        navigate('/env/1/flows');
       }
     } catch (error) {
       showError(getErrorMessage(error));
@@ -150,11 +143,7 @@ export const Registration = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Pick a strong password"
-                        type="password"
-                        {...field}
-                      />
+                      <Input placeholder="Pick a strong password" type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -169,30 +158,21 @@ export const Registration = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <span className="text-sm text-muted-foreground pl-3">
-                  I accept Usertour's{" "}
-                  <Link
-                    to="/terms"
-                    className="underline underline-offset-4 hover:text-primary"
-                  >
+                  I accept Usertour's{' '}
+                  <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
                     Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    to="/privacy"
-                    className="underline underline-offset-4 hover:text-primary"
-                  >
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
                     Privacy Policy
-                  </Link>{" "}
+                  </Link>{' '}
                 </span>
               </div>
             </div>
@@ -208,4 +188,4 @@ export const Registration = () => {
   );
 };
 
-Registration.displayName = "Registration";
+Registration.displayName = 'Registration';

@@ -1,6 +1,4 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteTheme } from "@usertour-ui/gql";
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +8,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { Theme } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteTheme } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Theme } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
 
 export const ThemeDeleteForm = (props: {
   data: Theme;
@@ -36,8 +36,8 @@ export const ThemeDeleteForm = (props: {
       });
       if (ret.data?.deleteTheme?.id) {
         toast({
-          variant: "success",
-          title: "The theme has been successfully deleted",
+          variant: 'success',
+          title: 'The theme has been successfully deleted',
         });
         onSubmit(true);
         return;
@@ -45,7 +45,7 @@ export const ThemeDeleteForm = (props: {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -57,19 +57,17 @@ export const ThemeDeleteForm = (props: {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
+            This action cannot be undone. This will permanently delete your account and remove your
+            data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Submit
-          </AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteSubmit}>Submit</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 };
 
-ThemeDeleteForm.displayName = "ThemeDeleteForm";
+ThemeDeleteForm.displayName = 'ThemeDeleteForm';

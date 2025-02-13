@@ -1,1 +1,1 @@
-export { default as translation } from "./translation.json";
+export { default as translation } from './translation.json';

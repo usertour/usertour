@@ -1,38 +1,27 @@
-"use client";
+'use client';
 
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { createContent, updateContentVersion } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { useAppContext } from "@/contexts/app-context";
-import {
-  Content,
-  ContentDataType,
-  DEFAULT_CHECKLIST_DATA,
-} from "@usertour-ui/types";
-import { useState } from "react";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { createContent, updateContentVersion } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 
 interface ChecklistCreateFormProps {
   isOpen: boolean;
@@ -42,7 +31,7 @@ interface ChecklistCreateFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please enter your checklist name.",
+      required_error: 'Please enter your checklist name.',
     })
     .max(30)
     .min(1),
@@ -51,13 +40,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  name: "",
+  name: '',
 };
 
-export const ChecklistCreateForm = ({
-  onClose,
-  isOpen,
-}: ChecklistCreateFormProps) => {
+export const ChecklistCreateForm = ({ onClose, isOpen }: ChecklistCreateFormProps) => {
   const [createContentMutation] = useMutation(createContent);
   const [updateContentVersionMutation] = useMutation(updateContentVersion);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -67,7 +53,7 @@ export const ChecklistCreateForm = ({
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -75,12 +61,12 @@ export const ChecklistCreateForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const openBuilder = (content: Content) => {
     navigate(
-      `/env/${environment?.id}/checklists/${content?.id}/builder/${content?.editedVersionId}`
+      `/env/${environment?.id}/checklists/${content?.id}/builder/${content?.editedVersionId}`,
     );
   };
 
@@ -95,7 +81,7 @@ export const ChecklistCreateForm = ({
       };
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
-        showError("Create checklist failed.");
+        showError('Create checklist failed.');
       }
       const content = ret.data?.createContent as Content;
       const initVersion = await updateContentVersionMutation({
@@ -105,7 +91,7 @@ export const ChecklistCreateForm = ({
         },
       });
       if (!initVersion.data.updateContentVersion) {
-        showError("Create checklist failed.");
+        showError('Create checklist failed.');
       }
       openBuilder(content);
     } catch (error) {
@@ -128,9 +114,7 @@ export const ChecklistCreateForm = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                    <FormLabel className="w-32 flex-none">
-                      Checklist name:
-                    </FormLabel>
+                    <FormLabel className="w-32 flex-none">Checklist name:</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-x-1 w-full grow">
                         <Input placeholder="Enter checklist name" {...field} />
@@ -146,9 +130,7 @@ export const ChecklistCreateForm = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -159,4 +141,4 @@ export const ChecklistCreateForm = ({
   );
 };
 
-ChecklistCreateForm.displayName = "ChecklistCreateForm";
+ChecklistCreateForm.displayName = 'ChecklistCreateForm';

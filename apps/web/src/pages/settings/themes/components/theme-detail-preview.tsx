@@ -1,34 +1,29 @@
-import { Separator } from "@usertour-ui/separator";
-import { useEffect, useRef } from "react";
-import { convertSettings, convertToCssVars } from "@/utils/convert-settings";
-import { useSize } from "@usertour-ui/react-use-size";
-import { useThemeDetailContext } from "@/contexts/theme-detail-context";
-import { ThemePreviewSelector } from "./preview/theme-preview-selector";
-import { ThemePreviewPopper } from "./preview/theme-preview-popper";
-import { ThemePreviewModal } from "./preview/theme-preview-modal";
-import { ThemePreviewLauncher } from "./preview/theme-preview-launcher";
-import { LauncherDataType } from "@usertour-ui/types";
-import { ThemePreviewChecklist } from "./preview/theme-preview-checklist";
+import { useThemeDetailContext } from '@/contexts/theme-detail-context';
+import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
+import { useSize } from '@usertour-ui/react-use-size';
+import { Separator } from '@usertour-ui/separator';
+import { LauncherDataType } from '@usertour-ui/types';
+import { useEffect, useRef } from 'react';
+import { ThemePreviewChecklist } from './preview/theme-preview-checklist';
+import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
+import { ThemePreviewModal } from './preview/theme-preview-modal';
+import { ThemePreviewPopper } from './preview/theme-preview-popper';
+import { ThemePreviewSelector } from './preview/theme-preview-selector';
 
 export const ThemeDetailPreview = () => {
-  const { settings, setCustomStyle, setViewRect, selectedType } =
-    useThemeDetailContext();
+  const { settings, setCustomStyle, setViewRect, selectedType } = useThemeDetailContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRectSize = useSize(containerRef.current);
   useEffect(() => {
     if (settings) {
-      const style = convertToCssVars(
-        convertSettings(settings),
-        selectedType.type
-      );
+      const style = convertToCssVars(convertSettings(settings), selectedType.type);
       setCustomStyle(style);
     }
   }, [settings, selectedType.type]);
 
   useEffect(() => {
     if (containerRef.current) {
-      const { width, height, x, y } =
-        containerRef.current.getBoundingClientRect();
+      const { width, height, x, y } = containerRef.current.getBoundingClientRect();
       setViewRect({ width, height, x, y });
     }
   }, [containerRef, containerRectSize]);
@@ -43,21 +38,19 @@ export const ThemeDetailPreview = () => {
       </div>
       <Separator />
       <div className=" bg-blue-50 h-full overflow-hidden" ref={containerRef}>
-        {selectedType.type == "tooltip" && <ThemePreviewPopper />}
-        {selectedType.type == "modal" && <ThemePreviewModal />}
-        {selectedType.type == "launcher-icon" && (
+        {selectedType.type === 'tooltip' && <ThemePreviewPopper />}
+        {selectedType.type === 'modal' && <ThemePreviewModal />}
+        {selectedType.type === 'launcher-icon' && (
           <ThemePreviewLauncher type={LauncherDataType.ICON} />
         )}
-        {selectedType.type == "launcher-beacon" && (
+        {selectedType.type === 'launcher-beacon' && (
           <ThemePreviewLauncher type={LauncherDataType.BEACON} />
         )}
-        {selectedType.type == "checklist" && <ThemePreviewChecklist />}
-        {selectedType.type == "checklist-launcher" && (
-          <ThemePreviewChecklist open={false} />
-        )}
+        {selectedType.type === 'checklist' && <ThemePreviewChecklist />}
+        {selectedType.type === 'checklist-launcher' && <ThemePreviewChecklist open={false} />}
       </div>
     </div>
   );
 };
 
-ThemeDetailPreview.displayName = "ThemeDetailPreview";
+ThemeDetailPreview.displayName = 'ThemeDetailPreview';

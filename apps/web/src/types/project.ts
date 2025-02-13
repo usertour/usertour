@@ -1,1 +1,1 @@
-export type { Environment, Project, Attribute, Event } from "@usertour-ui/types";
+export type { Environment, Project, Attribute, Event } from '@usertour-ui/types';

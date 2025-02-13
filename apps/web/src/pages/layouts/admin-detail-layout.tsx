@@ -1,4 +1,4 @@
-import { AdminLayout, AdminLayoutContent } from "./components/admin-layout";
+import { AdminLayout, AdminLayoutContent } from './components/admin-layout';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -14,4 +14,4 @@ export const AdminDetailLayout = ({ children }: AdminLayoutProps) => {
   );
 };
 
-AdminDetailLayout.displayName = "AdminDetailLayout";
+AdminDetailLayout.displayName = 'AdminDetailLayout';

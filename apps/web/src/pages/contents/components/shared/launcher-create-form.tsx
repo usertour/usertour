@@ -1,34 +1,27 @@
-"use client";
+'use client';
 
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { createContent } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { useAppContext } from "@/contexts/app-context";
-import { Content, ContentDataType } from "@usertour-ui/types";
-import { useState } from "react";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { createContent } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Content, ContentDataType } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 
 interface LauncherCreateFormProps {
   isOpen: boolean;
@@ -38,7 +31,7 @@ interface LauncherCreateFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please enter your launcher name.",
+      required_error: 'Please enter your launcher name.',
     })
     .max(30)
     .min(1),
@@ -47,13 +40,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  name: "",
+  name: '',
 };
 
-export const LauncherCreateForm = ({
-  onClose,
-  isOpen,
-}: LauncherCreateFormProps) => {
+export const LauncherCreateForm = ({ onClose, isOpen }: LauncherCreateFormProps) => {
   const [createContentMutation] = useMutation(createContent);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { environment } = useAppContext();
@@ -62,7 +52,7 @@ export const LauncherCreateForm = ({
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -70,12 +60,12 @@ export const LauncherCreateForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const gotoBuilder = (content: Content) => {
     navigate(
-      `/env/${content?.environmentId}/launchers/${content?.id}/builder/${content?.editedVersionId}`
+      `/env/${content?.environmentId}/launchers/${content?.id}/builder/${content?.editedVersionId}`,
     );
   };
 
@@ -90,7 +80,7 @@ export const LauncherCreateForm = ({
       };
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
-        showError("Create launcher failed.");
+        showError('Create launcher failed.');
       }
       const content = ret.data?.createContent as Content;
       gotoBuilder(content);
@@ -114,9 +104,7 @@ export const LauncherCreateForm = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                    <FormLabel className="w-32 flex-none">
-                      Launcher name:
-                    </FormLabel>
+                    <FormLabel className="w-32 flex-none">Launcher name:</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-x-1 w-full grow">
                         <Input placeholder="Enter launcher name" {...field} />
@@ -132,9 +120,7 @@ export const LauncherCreateForm = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -145,4 +131,4 @@ export const LauncherCreateForm = ({
   );
 };
 
-LauncherCreateForm.displayName = "LauncherCreateForm";
+LauncherCreateForm.displayName = 'LauncherCreateForm';

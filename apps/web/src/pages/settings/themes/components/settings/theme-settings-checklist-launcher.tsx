@@ -1,16 +1,15 @@
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
-import { ThemeSettingSelect } from "@/components/molecules/theme/theme-setting-select";
-import { ModalPosition } from "@usertour-ui/types";
-import { ThemeColorPicker } from "@/components/molecules/theme/theme-color-picker";
+import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
+import { ModalPosition } from '@usertour-ui/types';
+import { useThemeSettingsContext } from '.';
 
 const placementItems = [
-  { name: "Top Left", value: ModalPosition.LeftTop },
-  { name: "Top Right", value: ModalPosition.RightTop },
-  { name: "Bottom Left", value: ModalPosition.LeftBottom },
-  { name: "Bottom Right", value: ModalPosition.RightBottom },
-  { name: "Center", value: ModalPosition.Center },
+  { name: 'Top Left', value: ModalPosition.LeftTop },
+  { name: 'Top Right', value: ModalPosition.RightTop },
+  { name: 'Bottom Left', value: ModalPosition.LeftBottom },
+  { name: 'Bottom Right', value: ModalPosition.RightBottom },
+  { name: 'Center', value: ModalPosition.Center },
 ];
 
 export const ThemeSettingsChecklistLauncher = () => {
@@ -46,7 +45,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               borderRadius: Number(value),
             });
           }}
-        />{" "}
+        />{' '}
         <ThemeSettingSelect
           text="Font weight"
           name="checklist-launcher-font-weight"
@@ -74,9 +73,7 @@ export const ThemeSettingsChecklistLauncher = () => {
           text="Offset right"
           name="checklist-launcher-offset-x"
           tooltip="How far in pixels from the horizontal edge of the browser window the checklist launcher should be positioned."
-          defaultValue={String(
-            settings.checklistLauncher.placement.positionOffsetX
-          )}
+          defaultValue={String(settings.checklistLauncher.placement.positionOffsetX)}
           onChange={(value: string) => {
             update({
               placement: {
@@ -89,9 +86,7 @@ export const ThemeSettingsChecklistLauncher = () => {
         <ThemeSettingInput
           text="Offset bottom"
           name="checklist-launcher-offset-y"
-          defaultValue={String(
-            settings.checklistLauncher.placement.positionOffsetY
-          )}
+          defaultValue={String(settings.checklistLauncher.placement.positionOffsetY)}
           tooltip="How far in pixels from the vertical edge of the browser window the checklist launcher should be positioned."
           onChange={(value: string) => {
             update({
@@ -101,14 +96,14 @@ export const ThemeSettingsChecklistLauncher = () => {
               },
             });
           }}
-        />{" "}
+        />{' '}
         <div className="space-y-1">
           <div className="text-sm">Font color</div>
           <div className="flex">
             <ThemeColorPicker
               defaultColor={settings.checklistLauncher.color.color}
               showAutoButton={true}
-              isAutoColor={settings.checklistLauncher.color.color == "Auto"}
+              isAutoColor={settings.checklistLauncher.color.color === 'Auto'}
               autoColor={finalSettings?.checklistLauncher.color.color}
               onChange={(color: string) => {
                 update({
@@ -125,9 +120,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               defaultColor={settings.checklistLauncher.color.background}
               className="rounded-r-none"
               showAutoButton={true}
-              isAutoColor={
-                settings.checklistLauncher.color.background == "Auto"
-              }
+              isAutoColor={settings.checklistLauncher.color.background === 'Auto'}
               autoColor={finalSettings?.checklistLauncher.color.background}
               onChange={(color: string) => {
                 update({
@@ -145,7 +138,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               defaultColor={settings.checklistLauncher.color.hover}
               className="rounded-none border-x-0"
               showAutoButton={true}
-              isAutoColor={settings.checklistLauncher.color.hover == "Auto"}
+              isAutoColor={settings.checklistLauncher.color.hover === 'Auto'}
               autoColor={finalSettings?.checklistLauncher.color.hover}
               onChange={(color: string) => {
                 update({
@@ -163,7 +156,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               defaultColor={settings.checklistLauncher.color.active}
               className="rounded-l-none"
               showAutoButton={true}
-              isAutoColor={settings.checklistLauncher.color.active == "Auto"}
+              isAutoColor={settings.checklistLauncher.color.active === 'Auto'}
               autoColor={finalSettings?.checklistLauncher.color.active}
               onChange={(color: string) => {
                 update({
@@ -175,14 +168,14 @@ export const ThemeSettingsChecklistLauncher = () => {
               }}
             />
           </div>
-        </div>{" "}
+        </div>{' '}
         <div className="space-y-1">
           <div className="text-sm">Counter font color</div>
           <div className="flex">
             <ThemeColorPicker
               defaultColor={settings.checklistLauncher.counter.color}
               showAutoButton={true}
-              isAutoColor={settings.checklistLauncher.counter.color == "Auto"}
+              isAutoColor={settings.checklistLauncher.counter.color === 'Auto'}
               autoColor={finalSettings?.checklistLauncher.counter.color}
               onChange={(color: string) => {
                 update({
@@ -198,9 +191,7 @@ export const ThemeSettingsChecklistLauncher = () => {
             <ThemeColorPicker
               defaultColor={settings.checklistLauncher.counter.background}
               showAutoButton={true}
-              isAutoColor={
-                settings.checklistLauncher.counter.background == "Auto"
-              }
+              isAutoColor={settings.checklistLauncher.counter.background === 'Auto'}
               autoColor={finalSettings?.checklistLauncher.counter.background}
               onChange={(color: string) => {
                 update({
@@ -218,4 +209,4 @@ export const ThemeSettingsChecklistLauncher = () => {
   );
 };
 
-ThemeSettingsChecklistLauncher.displayName = "ThemeSettingsChecklistLauncher";
+ThemeSettingsChecklistLauncher.displayName = 'ThemeSettingsChecklistLauncher';

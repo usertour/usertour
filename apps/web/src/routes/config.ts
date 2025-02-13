@@ -1,26 +1,15 @@
+import { PasswordReset, Registration, ResetPassword, SignIn, SignUp } from '@/pages/authentication';
+import { CompanyDetail, CompanyList } from '@/pages/companies';
+import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from '@/pages/contents';
+import { Dashboard } from '@/pages/dashboard';
 import {
-  SignIn,
-  SignUp,
-  ResetPassword,
-  Registration,
-  PasswordReset,
-} from "@/pages/authentication";
-import { Dashboard } from "@/pages/dashboard";
-import {
-  ContentDetail,
-  ContentList,
-  ContentBuilder,
-  ContentLocalization,
-} from "@/pages/contents";
-import { UserDetail, UserList } from "@/pages/users";
-import { CompanyList, CompanyDetail } from "@/pages/companies";
-import {
-  AuthLayout,
-  AdminListLayout,
   AdminDetailLayout,
+  AdminListLayout,
   AdminSettingsLayout,
-} from "@/pages/layouts";
-import { AdminSettings, SettingsThemeDetail } from "@/pages/settings";
+  AuthLayout,
+} from '@/pages/layouts';
+import { AdminSettings, SettingsThemeDetail } from '@/pages/settings';
+import { UserDetail, UserList } from '@/pages/users';
 
 export interface CustomRouteConfig {
   path: string;
@@ -35,178 +24,178 @@ export interface CustomRouteConfig {
 const config: CustomRouteConfig[] = [
   /* Signin */
   {
-    path: "/auth/signin",
+    path: '/auth/signin',
     component: SignIn,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "SignIn",
+    title: 'SignIn',
   },
   /* Signin */
   {
-    path: "/",
+    path: '/',
     component: SignIn,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "SignIn",
+    title: 'SignIn',
   },
   /* SignUp */
   {
-    path: "/auth/signup",
+    path: '/auth/signup',
     component: SignUp,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "SignUp",
+    title: 'SignUp',
   },
   /* ResetPassword */
   {
-    path: "/auth/reset-password",
+    path: '/auth/reset-password',
     component: ResetPassword,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "ResetPassword",
+    title: 'ResetPassword',
   },
   /* Registration */
   {
-    path: "/auth/registration/:registId",
+    path: '/auth/registration/:registId',
     component: Registration,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "Registration",
+    title: 'Registration',
   },
   /* PasswordReset */
   {
-    path: "/auth/password-reset/:code",
+    path: '/auth/password-reset/:code',
     component: PasswordReset,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "PasswordReset",
+    title: 'PasswordReset',
   },
   /* Dashboard */
   {
-    path: "/env/:envId/overview",
+    path: '/env/:envId/overview',
     component: Dashboard,
     layout: AdminListLayout,
-    id: "overview",
+    id: 'overview',
     loginRequired: true,
     redirectIfLogged: false,
-    title: "Dashboard",
+    title: 'Dashboard',
   },
   /* Dashboard */
   {
-    path: "/overview",
+    path: '/overview',
     component: Dashboard,
     layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "Dashboard",
+    title: 'Dashboard',
   },
   /* ContentList */
   {
-    id: "content",
-    path: "/env/:envId/:contentType",
+    id: 'content',
+    path: '/env/:envId/:contentType',
     component: ContentList,
     layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "ContentList",
+    title: 'ContentList',
   },
   /* ContentDetail */
   {
-    path: "/env/:envId/:contentType/:contentId/:type",
+    path: '/env/:envId/:contentType/:contentId/:type',
     component: ContentDetail,
     layout: AdminDetailLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "ContentDetail",
+    title: 'ContentDetail',
   },
   /* ContentLocalization */
   {
-    path: "/env/:envId/:contentType/:contentId/localization/:locateCode",
+    path: '/env/:envId/:contentType/:contentId/localization/:locateCode',
     component: ContentLocalization,
     layout: AdminDetailLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "ContentLocalization",
+    title: 'ContentLocalization',
   },
   /* ContentBuilder */
   {
-    path: "/env/:envId/:contentType/:contentId/:type/:versionId",
+    path: '/env/:envId/:contentType/:contentId/:type/:versionId',
     component: ContentBuilder,
     layout: AdminDetailLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "ContentBuilder",
+    title: 'ContentBuilder',
   },
   /* UserList */
   {
-    id: "users",
-    path: "/env/:envId/users",
+    id: 'users',
+    path: '/env/:envId/users',
     component: UserList,
     layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "UserList",
+    title: 'UserList',
   },
   /* CompanyList */
   {
-    id: "companies",
-    path: "/env/:envId/companies",
+    id: 'companies',
+    path: '/env/:envId/companies',
     component: CompanyList,
     layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "CompanyList",
+    title: 'CompanyList',
   },
   /* SettingsThemeDetail */
   {
-    path: "/project/:projectId/settings/theme/:themeId",
+    path: '/project/:projectId/settings/theme/:themeId',
     component: SettingsThemeDetail,
     layout: AdminDetailLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "SettingsThemeDetail",
+    title: 'SettingsThemeDetail',
   },
   /* UserDetail */
   {
-    path: "/env/:envId/user/:userId",
+    path: '/env/:envId/user/:userId',
     component: UserDetail,
     layout: AdminDetailLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "UserDetail",
+    title: 'UserDetail',
   },
   /* CompanyDetail */
   {
-    path: "/env/:envId/company/:companyId",
+    path: '/env/:envId/company/:companyId',
     component: CompanyDetail,
     layout: AdminDetailLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "CompanyDetail",
+    title: 'CompanyDetail',
   },
   /* Settings */
   {
-    id: "settings",
-    path: "/project/:projectId/settings/:settingType",
+    id: 'settings',
+    path: '/project/:projectId/settings/:settingType',
     layout: AdminSettingsLayout,
     component: AdminSettings,
     loginRequired: true,
     redirectIfLogged: false,
-    title: "Settings",
+    title: 'Settings',
   },
   {
-    path: "*",
+    path: '*',
     component: SignIn,
     layout: AuthLayout,
     loginRequired: false,
     redirectIfLogged: true,
-    title: "SignIn",
+    title: 'SignIn',
   },
 ];
 

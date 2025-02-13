@@ -1,6 +1,6 @@
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
-import { ThemeSettingInput } from "@/components/molecules/theme/theme-setting-input";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsBeacon = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -19,7 +19,7 @@ export const ThemeSettingsBeacon = () => {
           name="beacon-color"
           defaultColor={settings.launcherBeacon.color}
           showAutoButton={true}
-          isAutoColor={settings.launcherBeacon.color == "Auto"}
+          isAutoColor={settings.launcherBeacon.color === 'Auto'}
           autoColor={finalSettings?.launcherBeacon.color}
           onChange={(value: string) => {
             update({ color: value });
@@ -38,4 +38,4 @@ export const ThemeSettingsBeacon = () => {
   );
 };
 
-ThemeSettingsBeacon.displayName = "ThemeSettingsBeacon";
+ThemeSettingsBeacon.displayName = 'ThemeSettingsBeacon';

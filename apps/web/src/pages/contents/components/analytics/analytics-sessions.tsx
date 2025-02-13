@@ -1,23 +1,14 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 
-import { BizSessionsDataTable } from "./data-table";
+import { BizSessionsDataTable } from './data-table';
 
 export const AnalyticsSessions = () => {
-
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle className="space-between flex flex-row  items-center">
-            <div className="grow	">
-              Recent sessions
-            </div>
+            <div className="grow	">Recent sessions</div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -28,4 +19,4 @@ export const AnalyticsSessions = () => {
   );
 };
 
-AnalyticsSessions.displayName = "AnalyticsSessions";
+AnalyticsSessions.displayName = 'AnalyticsSessions';

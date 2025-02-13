@@ -1,21 +1,19 @@
-"use client";
-import { PlusIcon } from "@usertour-ui/icons";
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+'use client';
+import { getApolloClient } from '@/apollo';
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { Attribute } from '@/types/project';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { CloseIcon } from "@usertour-ui/icons";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+} from '@usertour-ui/dialog';
 import {
   Form,
   FormControl,
@@ -24,28 +22,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@usertour-ui/form";
-import { createEvent } from "@usertour-ui/gql";
-import { listAttributes } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useCallback, useEffect, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@usertour-ui/select";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { getApolloClient } from "@/apollo";
-import { Attribute } from "@/types/project";
-import { useAppContext } from "@/contexts/app-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/form';
+import { createEvent } from '@usertour-ui/gql';
+import { listAttributes } from '@usertour-ui/gql';
+import { PlusIcon } from '@usertour-ui/icons';
+import { CloseIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour-ui/select';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface CreateFormProps {
   isOpen: boolean;
@@ -55,13 +45,13 @@ interface CreateFormProps {
 const formSchema = z.object({
   displayName: z
     .string({
-      required_error: "Please input display name.",
+      required_error: 'Please input display name.',
     })
     .max(20)
     .min(2),
   codeName: z
     .string({
-      required_error: "Please input code name.",
+      required_error: 'Please input code name.',
     })
     .max(20)
     .min(2),
@@ -72,9 +62,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
-  description: "",
-  displayName: "",
-  codeName: "",
+  description: '',
+  displayName: '',
+  codeName: '',
   attributeIds: [],
 };
 
@@ -83,16 +73,14 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
-  const [selectAttributeStatus, setSelectAttributeStatus] =
-    useState<boolean>(false);
-  const [selectedAttributeValue, setSelectedAttributeValue] =
-    useState<string>("");
+  const [selectAttributeStatus, setSelectAttributeStatus] = useState<boolean>(false);
+  const [selectedAttributeValue, setSelectedAttributeValue] = useState<string>('');
   const { project } = useAppContext();
   const { toast } = useToast();
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -110,7 +98,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -132,7 +120,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
 
       const ret = await createMutation({ variables: { data } });
       if (!ret.data?.createEvent?.id) {
-        showError("Create Event failed.");
+        showError('Create Event failed.');
       }
       onClose();
     } catch (error) {
@@ -154,9 +142,9 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
         setSelectedAttributeValue(value);
       } else {
         toast({
-          description: "That attribute is already associated with the event.",
+          description: 'That attribute is already associated with the event.',
         });
-        setSelectedAttributeValue("");
+        setSelectedAttributeValue('');
       }
     },
     [
@@ -165,7 +153,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
       setEventsOnAttributes,
       setSelectAttributeStatus,
       setSelectedAttributeValue,
-    ]
+    ],
   );
 
   return (
@@ -193,21 +181,16 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs bg-slate-700">
                                 <p>
-                                  Human-friendly name shown in Usertour. we
-                                  recommend using Word Case (i.e.uppercasefrst
-                                  letter, spaces between words) such as"Billing
-                                  Plan".
+                                  Human-friendly name shown in Usertour. we recommend using Word
+                                  Case (i.e.uppercasefrst letter, spaces between words) such
+                                  as"Billing Plan".
                                 </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter display name"
-                            className="w-72"
-                            {...field}
-                          />
+                          <Input placeholder="Enter display name" className="w-72" {...field} />
                         </FormControl>
                         <FormDescription>Can be changed later</FormDescription>
                         <FormMessage />
@@ -228,26 +211,18 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs bg-slate-700">
                                 <p>
-                                  Code-friendly name used in Webhooks and
-                                  integrations to analytics providers. we
-                                  recommend using snake_case (i.e.
-                                  lowercaseletters with words separated by
-                                  underscore).
+                                  Code-friendly name used in Webhooks and integrations to analytics
+                                  providers. we recommend using snake_case (i.e. lowercaseletters
+                                  with words separated by underscore).
                                 </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter code name"
-                            className="w-72"
-                            {...field}
-                          />
+                          <Input placeholder="Enter code name" className="w-72" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          Can NOT be changed later
-                        </FormDescription>
+                        <FormDescription>Can NOT be changed later</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -266,20 +241,13 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                               <QuestionMarkCircledIcon className="ml-1 cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Put any additional information for your
-                                ownreference here.
-                              </p>
+                              <p>Put any additional information for your ownreference here.</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Optional description"
-                          className="w-full"
-                          {...field}
-                        />
+                        <Input placeholder="Optional description" className="w-full" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,25 +270,22 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs bg-slate-700">
                               <p>
-                                Determines what kind of values will be stored in
-                                this attribute.
+                                Determines what kind of values will be stored in this attribute.
                               </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
-                      <hr className="border-t"></hr>
+                      <hr className="border-t" />
 
                       {eventsOnAttributes.map((eventsOnAttribute, i) => {
                         return (
                           <div
                             className="relative group border-b border-gray-300 hover:bg-blue-100"
                             key={i}
-                            style={{ marginTop: "0" }}
+                            style={{ marginTop: '0' }}
                           >
-                            <div className="p-2">
-                              {eventsOnAttribute.displayName}
-                            </div>
+                            <div className="p-2">{eventsOnAttribute.displayName}</div>
                             <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
                               <CloseIcon
                                 width={16}
@@ -328,7 +293,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                                 className="mr-1 text-gray-600 hover:text-gray-800 hover:bg-red-200 w-6 h-6 p-1 rounded cursor-pointer"
                                 onClick={() =>
                                   setEventsOnAttributes((prev) =>
-                                    prev.filter((_, index) => index !== i)
+                                    prev.filter((_, index) => index !== i),
                                   )
                                 }
                               />
@@ -347,9 +312,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             <FormControl>
                               <SelectTrigger className="w-full">
                                 <span className="text-gray-500">
-                                  {selectedAttributeValue
-                                    ? ""
-                                    : "Select an attribute"}
+                                  {selectedAttributeValue ? '' : 'Select an attribute'}
                                 </span>
                               </SelectTrigger>
                             </FormControl>
@@ -357,10 +320,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                             <SelectContent className="w-full">
                               {eventAttrs.map((eventAttrs) => {
                                 return (
-                                  <SelectItem
-                                    value={String(eventAttrs.id)}
-                                    key={eventAttrs.id}
-                                  >
+                                  <SelectItem value={String(eventAttrs.id)} key={eventAttrs.id}>
                                     {eventAttrs.displayName}
                                   </SelectItem>
                                 );
@@ -380,7 +340,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                         <div
                           className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer"
                           onClick={() => {
-                            setSelectedAttributeValue("");
+                            setSelectedAttributeValue('');
                             setSelectAttributeStatus(true);
                           }}
                         >
@@ -399,9 +359,7 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Create Event
               </Button>
             </DialogFooter>
@@ -412,4 +370,4 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   );
 };
 
-EventCreateForm.displayName = "EventCreateForm";
+EventCreateForm.displayName = 'EventCreateForm';

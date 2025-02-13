@@ -1,12 +1,12 @@
-import { PlusCircledIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import { Separator } from "@usertour-ui/separator";
-import { EmptyPlaceholder } from "../shared/empty-placeholder";
-import { DataTable } from "./data-table";
-import { useState } from "react";
-import { useContentListContext } from "@/contexts/content-list-context";
-import { ContentListSkeleton } from "@/components/molecules/skeleton";
-import { LauncherCreateForm } from "../shared/launcher-create-form";
+import { ContentListSkeleton } from '@/components/molecules/skeleton';
+import { useContentListContext } from '@/contexts/content-list-context';
+import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { Separator } from '@usertour-ui/separator';
+import { useState } from 'react';
+import { EmptyPlaceholder } from '../shared/empty-placeholder';
+import { LauncherCreateForm } from '../shared/launcher-create-form';
+import { DataTable } from './data-table';
 
 export const LauncherListContent = () => {
   const [open, setOpen] = useState(false);
@@ -30,8 +30,8 @@ export const LauncherListContent = () => {
             <h3 className="text-2xl font-semibold tracking-tight">Launchers</h3>
             <div className="flex flex-row space-x-1">
               <p className="text-sm text-muted-foreground">
-                Launchers work well for: Highlighting key features with
-                hotspots, Showing helpful tips with tooltips.
+                Launchers work well for: Highlighting key features with hotspots, Showing helpful
+                tips with tooltips.
               </p>
             </div>
           </div>
@@ -43,7 +43,7 @@ export const LauncherListContent = () => {
       </div>
       <Separator className="my-6" />
       {isLoading && <ContentListSkeleton count={9} />}
-      {!isLoading && contents && contents.length == 0 && (
+      {!isLoading && contents && contents.length === 0 && (
         <EmptyPlaceholder
           name="No launchers added"
           description="You have not added any launchers. Add one below."
@@ -60,4 +60,4 @@ export const LauncherListContent = () => {
   );
 };
 
-LauncherListContent.displayName = "LauncherListContent";
+LauncherListContent.displayName = 'LauncherListContent';

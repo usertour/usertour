@@ -1,9 +1,8 @@
-import { Separator } from "@usertour-ui/separator";
-import { ThemeColorPicker } from "@/components/molecules/theme/theme-color-picker";
-import { useThemeSettingsContext } from ".";
-import { ThemeTypesSettingsColor } from "@/types/theme-settings";
-import { useEffect, useState } from "react";
-import { newShade, changeColor } from "@usertour-ui/ui-utils";
+import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ThemeTypesSettingsColor } from '@/types/theme-settings';
+import { Separator } from '@usertour-ui/separator';
+import { changeColor } from '@usertour-ui/ui-utils';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsBasicColor = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -56,7 +55,7 @@ export const ThemeSettingsBasicColor = () => {
               defaultColor={settings.brandColor.hover}
               className="rounded-none border-x-0"
               showAutoButton={true}
-              isAutoColor={settings.brandColor.hover == "Auto"}
+              isAutoColor={settings.brandColor.hover === 'Auto'}
               autoColor={finalSettings?.brandColor.hover}
               onChange={(color: string) => {
                 updateBrandColor({ hover: color });
@@ -69,7 +68,7 @@ export const ThemeSettingsBasicColor = () => {
               defaultColor={settings.brandColor.active}
               className="rounded-l-none"
               showAutoButton={true}
-              isAutoColor={settings.brandColor.active == "Auto"}
+              isAutoColor={settings.brandColor.active === 'Auto'}
               autoColor={finalSettings?.brandColor.active}
               onChange={(color: string) => {
                 updateBrandColor({ active: color });
@@ -108,7 +107,7 @@ export const ThemeSettingsBasicColor = () => {
             <ThemeColorPicker
               defaultColor={settings.mainColor.hover}
               showAutoButton={true}
-              isAutoColor={settings.mainColor.hover == "Auto"}
+              isAutoColor={settings.mainColor.hover === 'Auto'}
               autoColor={finalSettings?.mainColor.hover}
               onChange={(color: string) => {
                 updateMainColor({ hover: color });
@@ -121,7 +120,7 @@ export const ThemeSettingsBasicColor = () => {
             <ThemeColorPicker
               defaultColor={settings.mainColor.active}
               showAutoButton={true}
-              isAutoColor={settings.mainColor.active == "Auto"}
+              isAutoColor={settings.mainColor.active === 'Auto'}
               autoColor={finalSettings?.mainColor.active}
               onChange={(color: string) => {
                 updateMainColor({ active: color });
@@ -135,4 +134,4 @@ export const ThemeSettingsBasicColor = () => {
   );
 };
 
-ThemeSettingsBasicColor.displayName = "ThemeSettingsBasicColor";
+ThemeSettingsBasicColor.displayName = 'ThemeSettingsBasicColor';

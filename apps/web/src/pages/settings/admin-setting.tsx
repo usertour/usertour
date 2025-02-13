@@ -1,27 +1,30 @@
-import { SettingsAccountDetail } from "@/pages/settings";
-import { SettingsThemeList } from "@/pages/settings/themes";
-import { SettingsEnvironmentList } from "@/pages/settings/environments";
-import { SettingsAttributeList } from "@/pages/settings/attributes";
-import { SettingsEventsList } from "@/pages/settings/events";
-import { useParams } from "react-router-dom";
-import { SettingsLocalizationList } from "./localizations";
+import { SettingsAccountDetail } from '@/pages/settings';
+import { SettingsAttributeList } from '@/pages/settings/attributes';
+import { SettingsEnvironmentList } from '@/pages/settings/environments';
+import { SettingsEventsList } from '@/pages/settings/events';
+import { SettingsThemeList } from '@/pages/settings/themes';
+import { useParams } from 'react-router-dom';
+import { SettingsLocalizationList } from './localizations';
 
 export const AdminSettings = () => {
   const { settingType } = useParams();
 
-  if (settingType === "themes") {
+  if (settingType === 'themes') {
     return <SettingsThemeList />;
-  } else if (settingType === "environments") {
-    return <SettingsEnvironmentList />;
-  } else if (settingType === "attributes") {
-    return <SettingsAttributeList />;
-  } else if (settingType === "events") {
-    return <SettingsEventsList />;
-  } else if (settingType === "localizations") {
-    return <SettingsLocalizationList />;
-  } else {
-    return <SettingsAccountDetail />;
   }
+  if (settingType === 'environments') {
+    return <SettingsEnvironmentList />;
+  }
+  if (settingType === 'attributes') {
+    return <SettingsAttributeList />;
+  }
+  if (settingType === 'events') {
+    return <SettingsEventsList />;
+  }
+  if (settingType === 'localizations') {
+    return <SettingsLocalizationList />;
+  }
+  return <SettingsAccountDetail />;
 };
 
-AdminSettings.displayName = "AdminSettings";
+AdminSettings.displayName = 'AdminSettings';

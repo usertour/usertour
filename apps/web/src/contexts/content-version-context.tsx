@@ -1,3 +1,6 @@
+import { useQuery } from '@apollo/client';
+import { getContentVersion } from '@usertour-ui/gql';
+import { ContentVersion } from '@usertour-ui/types';
 import {
   Dispatch,
   ReactNode,
@@ -6,11 +9,8 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
-import { useQuery } from "@apollo/client";
-import { getContentVersion } from "@usertour-ui/gql";
-import { ContentVersion } from "@usertour-ui/types";
-import { useContentDetailContext } from "./content-detail-context";
+} from 'react';
+import { useContentDetailContext } from './content-detail-context';
 
 export interface ContentVersionProviderProps {
   children: ReactNode;
@@ -22,13 +22,11 @@ export interface ContentVersionContextValue {
   isSaveing: boolean;
   setIsSaveing: Dispatch<SetStateAction<boolean>>;
 }
-export const ContentVersionContext = createContext<
-  ContentVersionContextValue | undefined
->(undefined);
+export const ContentVersionContext = createContext<ContentVersionContextValue | undefined>(
+  undefined,
+);
 
-export function ContentVersionProvider(
-  props: ContentVersionProviderProps
-): JSX.Element {
+export function ContentVersionProvider(props: ContentVersionProviderProps): JSX.Element {
   const { children } = props;
   const { content } = useContentDetailContext();
   const [version, setVersion] = useState<ContentVersion | null>(null);
@@ -38,7 +36,7 @@ export function ContentVersionProvider(
   });
 
   useEffect(() => {
-    if (data && data.getContentVersion) {
+    if (data?.getContentVersion) {
       setVersion(data.getContentVersion);
     }
   }, [data]);
@@ -66,9 +64,7 @@ export function ContentVersionProvider(
 export function useContentVersionContext(): ContentVersionContextValue {
   const context = useContext(ContentVersionContext);
   if (!context) {
-    throw new Error(
-      `useContentVersionContext must be used within a ContentVersionProvider.`
-    );
+    throw new Error('useContentVersionContext must be used within a ContentVersionProvider.');
   }
   return context;
 }

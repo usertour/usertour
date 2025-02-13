@@ -1,35 +1,28 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@usertour-ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { Separator } from "@usertour-ui/separator";
-import { useMutation } from "@apollo/client";
-import { updateUser } from "@usertour-ui/gql";
-import { Icons } from "@/components/atoms/icons";
-import { useState } from "react";
-import { useAppContext } from "@/contexts/app-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { updateUser } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { Separator } from '@usertour-ui/separator';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 const accountFormSchema = z.object({
   name: z
     .string()
     .min(2, {
-      message: "Name must be at least 2 characters.",
+      message: 'Name must be at least 2 characters.',
     })
     .max(30, {
-      message: "Name must not be longer than 30 characters.",
+      message: 'Name must not be longer than 30 characters.',
     }),
 });
 
@@ -54,18 +47,18 @@ export const AccountProfileForm = () => {
       await updateMutation({
         variables: {
           name: data.name,
-          avatarUrl: "",
+          avatarUrl: '',
         },
       });
       await refetch();
       setIsLoading(false);
       toast({
-        variant: "success",
-        title: "The profile name has been successfully updated",
+        variant: 'success',
+        title: 'The profile name has been successfully updated',
       });
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -97,10 +90,8 @@ export const AccountProfileForm = () => {
             )}
           />
 
-          <Button type="submit" disabled={form.watch("name") == user?.name}>
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
+          <Button type="submit" disabled={form.watch('name') === user?.name}>
+            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </form>
@@ -109,4 +100,4 @@ export const AccountProfileForm = () => {
   );
 };
 
-AccountProfileForm.displayName = "AccountProfileForm";
+AccountProfileForm.displayName = 'AccountProfileForm';

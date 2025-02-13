@@ -1,14 +1,8 @@
-import { Environment, Project } from "@/types/project";
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { getUserInfo } from "@usertour-ui/gql";
-import { useQuery } from "@apollo/client";
-import { UserProfile } from "@usertour-ui/types";
+import { Environment, Project } from '@/types/project';
+import { useQuery } from '@apollo/client';
+import { getUserInfo } from '@usertour-ui/gql';
+import { UserProfile } from '@usertour-ui/types';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface AppContextProps {
   environment: Environment | null;
@@ -16,9 +10,7 @@ interface AppContextProps {
   project: Project | null;
   setProject: React.Dispatch<React.SetStateAction<Project | null>>;
   userInfo: UserProfile | null | undefined;
-  setUserInfo: React.Dispatch<
-    React.SetStateAction<UserProfile | null | undefined>
-  >;
+  setUserInfo: React.Dispatch<React.SetStateAction<UserProfile | null | undefined>>;
   refetch: any;
 }
 
@@ -32,9 +24,7 @@ export const AppProvider = (props: AppProviderProps) => {
   const { children } = props;
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [project, setProject] = useState<Project | null>(null);
-  const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(
-    undefined
-  );
+  const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
   const { data, refetch, loading, error } = useQuery(getUserInfo);
 
   useEffect(() => {
@@ -50,7 +40,7 @@ export const AppProvider = (props: AppProviderProps) => {
     }
     setUserInfo({ ...data.me });
     const activedProjects = data?.me?.projects.filter((p: any) => {
-      return p.actived == true;
+      return p.actived === true;
     });
     if (activedProjects && activedProjects.length > 0) {
       const userProject = activedProjects[0];
@@ -78,7 +68,7 @@ export const AppProvider = (props: AppProviderProps) => {
 export function useAppContext(): AppContextProps {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error(`useAppContext must be used within a AppProvider.`);
+    throw new Error('useAppContext must be used within a AppProvider.');
   }
   return context;
 }

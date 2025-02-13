@@ -1,19 +1,19 @@
-import { Button } from "@usertour-ui/button";
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { DotsHorizontalIcon, ResetIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
-import { PlaneIcon } from "@usertour-ui/icons";
-import { ContentVersion } from "@usertour-ui/types";
-import { ContentPublishForm } from "../shared/content-publish-form";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
-import { ContentRestoreForm } from "../shared/content-restore-form";
-import { useContentVersionListContext } from "@/contexts/content-version-list-context";
+} from '@usertour-ui/dropdown-menu';
+import { PlaneIcon } from '@usertour-ui/icons';
+import { ContentVersion } from '@usertour-ui/types';
+import { useState } from 'react';
+import { ContentPublishForm } from '../shared/content-publish-form';
+import { ContentRestoreForm } from '../shared/content-restore-form';
 
 type ContentVersionActionProps = {
   version: ContentVersion;
@@ -30,16 +30,13 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          >
+          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[100px]">
           <DropdownMenuItem
-            disabled={content?.publishedVersionId == version.id}
+            disabled={content?.publishedVersionId === version.id}
             onClick={() => {
               setOpenPublish(true);
             }}
@@ -50,7 +47,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={content?.editedVersionId == version.id}
+            disabled={content?.editedVersionId === version.id}
             onClick={() => {
               setOpenRestore(true);
             }}
@@ -65,7 +62,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         versionId={version.id}
         open={openPublish}
         onOpenChange={setOpenPublish}
-        onSubmit={(success: boolean) => {
+        onSubmit={() => {
           setOpenPublish(false);
           refetch();
         }}
@@ -74,7 +71,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         version={version}
         open={openRetore}
         onOpenChange={setOpenRestore}
-        onSubmit={(success: boolean) => {
+        onSubmit={() => {
           setOpenRestore(false);
           refetch();
           refetchVersionList();
@@ -84,4 +81,4 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
   );
 };
 
-ContentVersionAction.displayName = " ContentVersionAction";
+ContentVersionAction.displayName = ' ContentVersionAction';

@@ -1,15 +1,15 @@
-import { AnalyticsViews } from "../analytics/analytics-views";
-import { AnalyticsHeader } from "../analytics/analytics-header";
-import { AnalyticsDays } from "../analytics/analytics-days";
-import { AnalyticsProvider } from "@/contexts/analytics-context";
-import { AnalyticsSteps } from "../analytics/analytics-steps";
-import { AnalyticsSessions } from "../analytics/analytics-sessions";
-import { BizSessionProvider } from "@/contexts/biz-session-context";
-import { EventListProvider } from "@/contexts/event-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
-import { ContentDataType } from "@usertour-ui/types";
-import { AnalyticsTasks } from "../analytics/analytics-tasks";
+import { AnalyticsProvider } from '@/contexts/analytics-context';
+import { useAppContext } from '@/contexts/app-context';
+import { BizSessionProvider } from '@/contexts/biz-session-context';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { EventListProvider } from '@/contexts/event-list-context';
+import { ContentDataType } from '@usertour-ui/types';
+import { AnalyticsDays } from '../analytics/analytics-days';
+import { AnalyticsHeader } from '../analytics/analytics-header';
+import { AnalyticsSessions } from '../analytics/analytics-sessions';
+import { AnalyticsSteps } from '../analytics/analytics-steps';
+import { AnalyticsTasks } from '../analytics/analytics-tasks';
+import { AnalyticsViews } from '../analytics/analytics-views';
 
 export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const { contentId } = props;
@@ -31,9 +31,7 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
                 <AnalyticsViews />
                 <AnalyticsDays />
                 {contentType === ContentDataType.FLOW && <AnalyticsSteps />}
-                {contentType === ContentDataType.CHECKLIST && (
-                  <AnalyticsTasks />
-                )}
+                {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
                 <AnalyticsSessions />
               </div>
             </div>
@@ -44,4 +42,4 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
   );
 };
 
-ContentDetailAnalytics.displayName = "ContentDetailAnalytics";
+ContentDetailAnalytics.displayName = 'ContentDetailAnalytics';

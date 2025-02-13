@@ -1,39 +1,32 @@
-"use client";
+'use client';
 
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { createContentVersion, updateContent } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { BuilderType, Content } from "@usertour-ui/types";
-import { useToast } from "@usertour-ui/use-toast";
-import { getAuthToken, getErrorMessage } from "@usertour-ui/shared-utils";
-import { useOpenSelector } from "@usertour-ui/shared-hooks";
-import { useAppContext } from "@/contexts/app-context";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
-import { useCallback } from "react";
-import { useContentVersionListContext } from "@/contexts/content-version-list-context";
-import { RadioGroup, RadioGroupItem } from "@usertour-ui/radio-group";
-import { useNavigate } from "react-router-dom";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { createContentVersion, updateContent } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
+import { useOpenSelector } from '@usertour-ui/shared-hooks';
+import { getAuthToken, getErrorMessage } from '@usertour-ui/shared-utils';
+import { BuilderType, Content } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 
 interface ContentEditFormProps {
   content: Content;
@@ -45,7 +38,7 @@ interface ContentEditFormProps {
 const formSchema = z.object({
   buildUrl: z
     .string({
-      required_error: "Please enter a URL.",
+      required_error: 'Please enter a URL.',
     })
     .min(1),
   type: z.string(),
@@ -53,7 +46,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 const defaultValues: Partial<FormValues> = {
-  buildUrl: "",
+  buildUrl: '',
   type: BuilderType.EXTENSION,
 };
 
@@ -68,7 +61,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { ...defaultValues, buildUrl: content?.buildUrl },
-    mode: "onChange",
+    mode: 'onChange',
   });
   const token = getAuthToken();
   const openTarget = useOpenSelector(token, (isSuccess: boolean) => {
@@ -84,13 +77,10 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
     projectId: string,
     content: Content,
     type: string,
-    envToken: string
+    envToken: string,
   ) => {
     let versionId = content.editedVersionId;
-    if (
-      content?.published &&
-      content.editedVersionId == content.publishedVersionId
-    ) {
+    if (content?.published && content.editedVersionId === content.publishedVersionId) {
       const { data } = await createVersion({
         variables: {
           data: {
@@ -100,8 +90,8 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
       });
       if (!data?.createContentVersion?.id) {
         return toast({
-          variant: "destructive",
-          title: "Failed to create a new version.",
+          variant: 'destructive',
+          title: 'Failed to create a new version.',
         });
       }
       versionId = data?.createContentVersion?.id;
@@ -109,10 +99,8 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
       await refetchVersionList();
     }
 
-    if (type == BuilderType.WEB) {
-      navigate(
-        `/env/${content?.environmentId}/${contentType}/${content?.id}/builder/${versionId}`
-      );
+    if (type === BuilderType.WEB) {
+      navigate(`/env/${content?.environmentId}/${contentType}/${content?.id}/builder/${versionId}`);
       return;
     }
 
@@ -121,7 +109,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
       contentId: content.id,
       versionId,
       projectId,
-      action: "editContent",
+      action: 'editContent',
       envToken,
     };
     if (content?.buildUrl) {
@@ -138,25 +126,20 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
       });
       if (!content || !project?.id || !environment?.token) {
         return toast({
-          variant: "destructive",
-          title: "Failed to open builder.",
+          variant: 'destructive',
+          title: 'Failed to open builder.',
         });
       }
       try {
-        handleOpenEditor(
-          project?.id,
-          { ...content, buildUrl },
-          type,
-          environment?.token
-        );
+        handleOpenEditor(project?.id, { ...content, buildUrl }, type, environment?.token);
       } catch (error) {
         toast({
-          variant: "destructive",
+          variant: 'destructive',
           title: getErrorMessage(error),
         });
       }
     },
-    [content, environment]
+    [content, environment],
   );
 
   return (
@@ -186,9 +169,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                             >
                               <FormItem className="flex items-center space-x-3 space-y-0">
                                 <FormControl>
-                                  <RadioGroupItem
-                                    value={BuilderType.EXTENSION}
-                                  />
+                                  <RadioGroupItem value={BuilderType.EXTENSION} />
                                 </FormControl>
                                 <FormLabel className="font-normal cursor-pointer">
                                   Extension Builder
@@ -208,23 +189,21 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                       )}
                     />
                     <span className="text-xs text-muted-foreground">
-                      {form.getValues("type") == BuilderType.EXTENSION &&
-                        "Open the builder in new tab for WYSIWYG editing experience"}
-                      {form.getValues("type") == BuilderType.WEB &&
-                        "Open the builder in the current tab for convenient editing experience"}
+                      {form.getValues('type') === BuilderType.EXTENSION &&
+                        'Open the builder in new tab for WYSIWYG editing experience'}
+                      {form.getValues('type') === BuilderType.WEB &&
+                        'Open the builder in the current tab for convenient editing experience'}
                     </span>
                   </>
                 )}
-                {form.getValues("type") == BuilderType.EXTENSION && (
+                {form.getValues('type') === BuilderType.EXTENSION && (
                   <>
                     <FormField
                       control={form.control}
                       name="buildUrl"
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                          <FormLabel className="w-32 flex-none">
-                            Build Url
-                          </FormLabel>
+                          <FormLabel className="w-32 flex-none">Build Url</FormLabel>
                           <FormControl>
                             <div className="flex flex-col space-x-1 w-full grow">
                               <Input
@@ -238,10 +217,9 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                       )}
                     />
                     <p className="text-xs text-muted-foreground">
-                      This is the page URL where you build & edit the Flow. This
-                      URL is for yourself only, and will not affect the ‘page
-                      trigger’ conditions for the flow (where users see the Flow
-                      live).
+                      This is the page URL where you build & edit the Flow. This URL is for yourself
+                      only, and will not affect the ‘page trigger’ conditions for the flow (where
+                      users see the Flow live).
                     </p>
                   </>
                 )}
@@ -256,15 +234,13 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                   className="flex-none"
                   type="submit"
                   disabled={
-                    form.getValues("type") == BuilderType.EXTENSION &&
-                    openTarget.isLoading
+                    form.getValues('type') === BuilderType.EXTENSION && openTarget.isLoading
                   }
                   // onClick={handleOpenEditor}
                 >
-                  {form.getValues("type") == BuilderType.EXTENSION &&
-                    openTarget.isLoading && (
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                  {form.getValues('type') === BuilderType.EXTENSION && openTarget.isLoading && (
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Submit
                 </Button>
               </DialogFooter>
@@ -276,4 +252,4 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   );
 };
 
-ContentEditForm.displayName = "ContentEditForm";
+ContentEditForm.displayName = 'ContentEditForm';

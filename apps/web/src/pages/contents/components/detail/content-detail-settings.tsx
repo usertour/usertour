@@ -1,50 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useMutation } from "@apollo/client";
-import { createContentVersion, updateContentVersion } from "@usertour-ui/gql";
-import { useContentVersionContext } from "@/contexts/content-version-context";
-import { useToast } from "@usertour-ui/use-toast";
-import {
-  ContentDetailAutoStartRules,
-  ContentDetailAutoStartRulesType,
-} from "./content-detail-autostart-rules";
-import { useContentDetailContext } from "@/contexts/content-detail-context";
+import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useMutation } from '@apollo/client';
+import { createContentVersion, updateContentVersion } from '@usertour-ui/gql';
+import { defaultContentConfig, getErrorMessage } from '@usertour-ui/shared-utils';
 import {
   Content,
   ContentConfigObject,
   ContentDataType,
   ContentVersion,
   RulesCondition,
-} from "@usertour-ui/types";
+} from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { deepmerge } from 'deepmerge-ts';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  defaultContentConfig,
-  getErrorMessage,
-} from "@usertour-ui/shared-utils";
-import { deepmerge } from "deepmerge-ts";
+  ContentDetailAutoStartRules,
+  ContentDetailAutoStartRulesType,
+} from './content-detail-autostart-rules';
 
-const buildConfig = (
-  config: ContentConfigObject | undefined
-): ContentConfigObject => {
+const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
   return {
     ...defaultContentConfig,
     ...config,
     autoStartRulesSetting: deepmerge(
       defaultContentConfig.autoStartRulesSetting,
-      config?.autoStartRulesSetting || {}
+      config?.autoStartRulesSetting || {},
     ),
     hideRulesSetting: config?.hideRulesSetting || {},
   };
 };
 
 export const ContentDetailSettings = () => {
-  const {
-    version,
-    refetch: refetchVersion,
-    setIsSaveing,
-  } = useContentVersionContext();
+  const { version, refetch: refetchVersion, setIsSaveing } = useContentVersionContext();
   const { content, refetch: refetchContent } = useContentDetailContext();
-  const [config, setConfig] = useState<ContentConfigObject>(
-    buildConfig(version?.config)
-  );
+  const [config, setConfig] = useState<ContentConfigObject>(buildConfig(version?.config));
   const [mutation] = useMutation(updateContentVersion);
   const [createVersion] = useMutation(createContentVersion);
   const contentRef = useRef<Content | null>(content);
@@ -100,11 +89,11 @@ export const ContentDetailSettings = () => {
           }
         }
       } catch (error) {
-        console.error("Failed to process version:", error);
+        console.error('Failed to process version:', error);
       }
       return false;
     },
-    [createVersion, mutation, refetchContent, refetchVersion]
+    [createVersion, mutation, refetchContent, refetchVersion],
   );
 
   const updateVersion = async (cfg: ContentConfigObject) => {
@@ -114,14 +103,14 @@ export const ContentDetailSettings = () => {
       setIsSaveing(false);
       if (isSuccess) {
         toast({
-          variant: "success",
-          title: "The flow updated successfully.",
+          variant: 'success',
+          title: 'The flow updated successfully.',
         });
       }
     } catch (error) {
       setIsSaveing(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -141,7 +130,7 @@ export const ContentDetailSettings = () => {
       setConfig(newConfig);
       updateVersion(newConfig);
     },
-    [config]
+    [config],
   );
 
   const handleHideRulesDataChange = useCallback(
@@ -158,7 +147,7 @@ export const ContentDetailSettings = () => {
       setConfig(newConfig);
       updateVersion(newConfig);
     },
-    [config]
+    [config],
   );
 
   const contentType = content?.type;
@@ -177,9 +166,9 @@ export const ContentDetailSettings = () => {
         onDataChange={handleAutoStartRulesDataChange}
         content={content}
         type={ContentDetailAutoStartRulesType.START_RULES}
-        showIfCompleted={contentType == ContentDataType.LAUNCHER ? false : true}
-        showFrequency={contentType == ContentDataType.LAUNCHER ? false : true}
-        showAtLeast={contentType == ContentDataType.CHECKLIST ? false : true}
+        showIfCompleted={contentType !== ContentDataType.LAUNCHER}
+        showFrequency={contentType !== ContentDataType.LAUNCHER}
+        showAtLeast={contentType !== ContentDataType.CHECKLIST}
       />
       <ContentDetailAutoStartRules
         defaultConditions={config.hideRules}
@@ -198,4 +187,4 @@ export const ContentDetailSettings = () => {
   );
 };
 
-ContentDetailSettings.displayName = "ContentDetailSettings";
+ContentDetailSettings.displayName = 'ContentDetailSettings';

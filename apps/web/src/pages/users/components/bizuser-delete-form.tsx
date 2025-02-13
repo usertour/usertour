@@ -1,6 +1,6 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteBizUser } from "@usertour-ui/gql";
+import { useAppContext } from '@/contexts/app-context';
+import { useUserListContext } from '@/contexts/user-list-context';
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,12 +10,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { BizUser, Segment } from "@usertour-ui/types";
-import { useCallback } from "react";
-import { useUserListContext } from "@/contexts/user-list-context";
-import { useAppContext } from "@/contexts/app-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteBizUser } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback } from 'react';
 
 interface BizUserDeleteFormProps {
   bizUserIds: string[];
@@ -32,7 +31,7 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
   const { toast } = useToast();
 
   const handleDeleteSubmit = useCallback(async () => {
-    if (bizUserIds.length == 0 || !environment?.id) {
+    if (bizUserIds.length === 0 || !environment?.id) {
       return;
     }
     const data = {
@@ -43,7 +42,7 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
       const ret = await mutation({ variables: { data } });
       if (ret.data?.deleteBizUser?.success) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `${ret.data?.deleteBizUser.count} users has been successfully deleted`,
         });
         await refetch();
@@ -53,7 +52,7 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -65,8 +64,8 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
         <AlertDialogHeader>
           <AlertDialogTitle>Confirm deleting the users</AlertDialogTitle>
           <AlertDialogDescription>
-            This will delete all traces of the selected users from your account.
-            Including in analytics.
+            This will delete all traces of the selected users from your account. Including in
+            analytics.
             <br />
             Confirm deleting the users?
           </AlertDialogDescription>
@@ -82,4 +81,4 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
   );
 };
 
-BizUserDeleteForm.displayName = "BizUserDeleteForm";
+BizUserDeleteForm.displayName = 'BizUserDeleteForm';

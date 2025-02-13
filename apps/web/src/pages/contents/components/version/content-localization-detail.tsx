@@ -1,48 +1,41 @@
 import {
   ContentLocalizationListProvider,
   useContentLocalizationListContext,
-} from "@/contexts/content-localization-list-context";
-import { useContentVersionContext } from "@/contexts/content-version-context";
-import { useLocalizationListContext } from "@/contexts/localization-list-context";
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  KeyboardIcon,
-  ResetIcon,
-} from "@radix-ui/react-icons";
-import { Badge } from "@usertour-ui/badge";
-import { Button } from "@usertour-ui/button";
-import { Input } from "@usertour-ui/input";
-import { Separator } from "@usertour-ui/separator";
-import * as Popover from "@radix-ui/react-popover";
-import Upload from "rc-upload";
-import {
+} from '@/contexts/content-localization-list-context';
+import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useLocalizationListContext } from '@/contexts/localization-list-context';
+import { ArrowLeftIcon, ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
+import * as Popover from '@radix-ui/react-popover';
+import { Badge } from '@usertour-ui/badge';
+import { useAws } from '@usertour-ui/builder/src/hooks/use-aws';
+import { Button } from '@usertour-ui/button';
+import { ImageEditIcon, SpinnerIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Separator } from '@usertour-ui/separator';
+import type {
   ContentEditorButtonElement,
-  ContentEditorElementType,
   ContentEditorEmebedElement,
   ContentEditorImageElement,
   ContentEditorRoot,
   ContentEditorRootElement,
   ContentEditorTextElement,
   CustomElement,
-} from "@usertour-ui/shared-editor";
-import { ContentVersion, Localization, Step } from "@usertour-ui/types";
-import { ChangeEvent, ReactNode, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { ImageEditIcon, SpinnerIcon } from "@usertour-ui/icons";
-import { UploadRequestOption } from "rc-upload/lib/interface";
-import { useAws } from "@usertour-ui/builder/src/hooks/use-aws";
-import { cn } from "@usertour-ui/ui-utils";
-import React from "react";
+} from '@usertour-ui/shared-editor';
+import { ContentEditorElementType } from '@usertour-ui/shared-editor';
+import type { ContentVersion, Localization, Step } from '@usertour-ui/types';
+import { cn } from '@usertour-ui/ui-utils';
+import Upload from 'rc-upload';
+import { UploadRequestOption } from 'rc-upload/lib/interface';
+import { ChangeEvent, ReactNode, useState } from 'react';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface ContentLocalizationTemplateProps {
   children: ReactNode;
   name: string;
 }
 
-const ContentLocalizationTemplateContainer = (
-  props: ContentLocalizationTemplateProps
-) => {
+const ContentLocalizationTemplateContainer = (props: ContentLocalizationTemplateProps) => {
   const { children, name } = props;
   return (
     <>
@@ -54,9 +47,7 @@ const ContentLocalizationTemplateContainer = (
     </>
   );
 };
-const ContentLocalizationTemplateB1 = (
-  props: ContentLocalizationTemplateProps
-) => {
+const ContentLocalizationTemplateB1 = (props: ContentLocalizationTemplateProps) => {
   const { children, name } = props;
   return (
     <>
@@ -67,9 +58,7 @@ const ContentLocalizationTemplateB1 = (
     </>
   );
 };
-const ContentLocalizationTemplateB2 = (
-  props: ContentLocalizationTemplateProps
-) => {
+const ContentLocalizationTemplateB2 = (props: ContentLocalizationTemplateProps) => {
   const { children, name } = props;
   return (
     <>
@@ -81,29 +70,27 @@ const ContentLocalizationTemplateB2 = (
   );
 };
 
-export interface LocalizationButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface LocalizationButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   className?: string;
 }
-const LocalizationButton = React.forwardRef<
-  HTMLButtonElement,
-  LocalizationButtonProps
->(({ className, children, ...props }, ref) => {
-  return (
-    <Button
-      className={cn(
-        "flex-none flex flex-row text-primary h-auto w-auto p-1 hover:text-primary ",
-        className
-      )}
-      ref={ref}
-      variant="ghost"
-      {...props}
-    >
-      {children}
-    </Button>
-  );
-});
+const LocalizationButton = React.forwardRef<HTMLButtonElement, LocalizationButtonProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <Button
+        className={cn(
+          'flex-none flex flex-row text-primary h-auto w-auto p-1 hover:text-primary ',
+          className,
+        )}
+        ref={ref}
+        variant="ghost"
+        {...props}
+      >
+        {children}
+      </Button>
+    );
+  },
+);
 
 interface ContentLocalizationImageProps {
   defaultLocate: Localization;
@@ -115,8 +102,8 @@ interface ContentLocalizationImageProps {
 const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
   const { upload } = useAws();
-  const [imageUrl, setImageUrl] = useState<string>("");
-  const [remoteImageUrl, setRemoteImageUrl] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const handleCustomUploadRequest = async (option: UploadRequestOption) => {
     setIsLoading(true);
@@ -131,7 +118,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
   };
   return (
     <Popover.Root>
-      <ContentLocalizationTemplateContainer name={"Image"}>
+      <ContentLocalizationTemplateContainer name={'Image'}>
         <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
           <img src={element.url} className="max-w-64 max-h-64	" />
         </ContentLocalizationTemplateB1>
@@ -216,14 +203,14 @@ interface ContentLocalizationEmbedProps {
 }
 const ContentLocalizationEmbed = (props: ContentLocalizationEmbedProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
-  const [embedUrl, setEmbedUrl] = useState<string>("");
+  const [embedUrl, setEmbedUrl] = useState<string>('');
 
   const handleEmbedUrlChange = (url: string) => {
     setEmbedUrl(url);
     onChange({ ...element, url });
   };
   return (
-    <ContentLocalizationTemplateContainer name={"Video"}>
+    <ContentLocalizationTemplateContainer name={'Video'}>
       <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
         <div>{element.url}</div>
       </ContentLocalizationTemplateB1>
@@ -247,13 +234,13 @@ interface ContentLocalizationButtonProps {
 }
 const ContentLocalizationButton = (props: ContentLocalizationButtonProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
-  const [text, setText] = useState<string>("");
+  const [text, setText] = useState<string>('');
   const handleTextChange = (txt: string) => {
     setText(txt);
     onChange({ ...element, data: { ...element.data, text: txt } });
   };
   return (
-    <ContentLocalizationTemplateContainer name={"Button"}>
+    <ContentLocalizationTemplateContainer name={'Button'}>
       <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
         <div className="pl-3">{element.data.text}</div>
       </ContentLocalizationTemplateB1>
@@ -274,9 +261,9 @@ interface ContentLocalizationLeafProps {
   onChange: (text: string) => void;
 }
 const ContentLocalizationLeaf = (props: ContentLocalizationLeafProps) => {
-  const { text, onChange } = props;
+  const { text } = props;
 
-  const [inputValue, setInputValue] = useState<string>("");
+  const [inputValue, setInputValue] = useState<string>('');
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
@@ -305,21 +292,14 @@ const ContentLocalizationText = (props: ContentLocalizationRichTextProps) => {
     clone[i][ii].text = text;
     onChange({ ...element, data: clone });
   };
-  const handleSubChildTextChange = (
-    i: number,
-    ii: number,
-    iii: number,
-    text: string
-  ) => {
+  const handleSubChildTextChange = (i: number, ii: number, iii: number, text: string) => {
     clone[i][ii][iii].text = text;
     onChange({ ...element, data: clone });
   };
   return data.map((it, i: number) => {
     const item = it as CustomElement;
     const isNotEmpty = item.children.find(
-      (leaf: any) =>
-        (leaf.children && leaf.children.find((subLeaf: any) => subLeaf.text)) ||
-        leaf.text
+      (leaf: any) => leaf.children?.find((subLeaf: any) => subLeaf.text) || leaf.text,
     );
     return (
       <React.Fragment key={i}>
@@ -330,9 +310,7 @@ const ContentLocalizationText = (props: ContentLocalizationRichTextProps) => {
               <div className="w-40 flex-none">Content</div>
               <div className="flex flex-row space-x-1 grow ">
                 <div className="flex-none flex flex-col">
-                  <div className="w-40 bg-secondary rounded-sm p-2">
-                    {defaultLocate.name}
-                  </div>
+                  <div className="w-40 bg-secondary rounded-sm p-2">{defaultLocate.name}</div>
                   <div className="p-2">{currentLocalization.name}</div>
                 </div>
                 {item.children.map((leaf: any, ii: number) => {
@@ -342,16 +320,17 @@ const ContentLocalizationText = (props: ContentLocalizationRichTextProps) => {
                         onChange={(text: string) => {
                           handleChildTextChange(i, ii, text);
                         }}
-                        key={i + "-" + ii}
+                        key={`${i}-${ii}`}
                         text={leaf.text}
                       />
                     );
-                  } else if (leaf.children) {
+                  }
+                  if (leaf.children) {
                     return leaf.children.map((subLeaf: any, iii: number) => {
                       if (subLeaf.text) {
                         return (
                           <ContentLocalizationLeaf
-                            key={i + "-" + ii + "-" + iii}
+                            key={`${i}-${ii}-${iii}`}
                             onChange={(text: string) => {
                               handleSubChildTextChange(i, ii, iii, text);
                             }}
@@ -380,7 +359,7 @@ type ContentLocalizationItemProps = {
 
 const ContentLocalizationItem = (props: ContentLocalizationItemProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
-  if (element.element.type == ContentEditorElementType.TEXT) {
+  if (element.element.type === ContentEditorElementType.TEXT) {
     return (
       <ContentLocalizationText
         defaultLocate={defaultLocate}
@@ -391,7 +370,8 @@ const ContentLocalizationItem = (props: ContentLocalizationItemProps) => {
         element={element.element}
       />
     );
-  } else if (element.element.type == ContentEditorElementType.IMAGE) {
+  }
+  if (element.element.type === ContentEditorElementType.IMAGE) {
     return (
       <>
         <ContentLocalizationImage
@@ -404,7 +384,8 @@ const ContentLocalizationItem = (props: ContentLocalizationItemProps) => {
         />
       </>
     );
-  } else if (element.element.type == ContentEditorElementType.EMBED) {
+  }
+  if (element.element.type === ContentEditorElementType.EMBED) {
     return (
       <ContentLocalizationEmbed
         defaultLocate={defaultLocate}
@@ -415,7 +396,8 @@ const ContentLocalizationItem = (props: ContentLocalizationItemProps) => {
         }}
       />
     );
-  } else if (element.element.type == ContentEditorElementType.BUTTON) {
+  }
+  if (element.element.type === ContentEditorElementType.BUTTON) {
     return (
       <ContentLocalizationButton
         defaultLocate={defaultLocate}
@@ -438,17 +420,8 @@ interface ContentLocalizationDetailStepProps {
   onChange: (data: ContentEditorRoot[]) => void;
 }
 
-const ContentLocalizationDetailStep = (
-  props: ContentLocalizationDetailStepProps
-) => {
-  const {
-    currentStep,
-    index,
-    currentVersion,
-    localization,
-    localizedStepData,
-    onChange,
-  } = props;
+const ContentLocalizationDetailStep = (props: ContentLocalizationDetailStepProps) => {
+  const { currentStep, index, localization, localizedStepData, onChange } = props;
 
   const { localizationList } = useLocalizationListContext();
   const defaultLocate = localizationList?.find((localte) => localte.isDefault);
@@ -461,12 +434,7 @@ const ContentLocalizationDetailStep = (
     ? (JSON.parse(JSON.stringify(localizedStepData)) as ContentEditorRoot[])
     : [];
 
-  const handleChange = (
-    i: number,
-    ii: number,
-    iii: number,
-    element: ContentEditorRootElement
-  ) => {
+  const handleChange = (i: number, ii: number, iii: number, element: ContentEditorRootElement) => {
     cloneContents[i].children[ii].children[iii] = element;
     onChange(cloneContents);
   };
@@ -483,7 +451,7 @@ const ContentLocalizationDetailStep = (
               return column.children.map((element, iii) => {
                 return (
                   <ContentLocalizationItem
-                    key={i + "-" + ii + "-" + iii}
+                    key={`${i}-${ii}-${iii}`}
                     defaultLocate={defaultLocate}
                     currentLocalization={localization}
                     element={element}
@@ -505,9 +473,7 @@ interface ContentLocalizationDetailMainProps {
   locateCode: string;
 }
 
-const ContentLocalizationDetailMain = (
-  props: ContentLocalizationDetailMainProps
-) => {
+const ContentLocalizationDetailMain = (props: ContentLocalizationDetailMainProps) => {
   const { locateCode } = props;
   const navigator = useNavigate();
   const location = useLocation();
@@ -516,10 +482,10 @@ const ContentLocalizationDetailMain = (
   const { version } = useContentVersionContext();
 
   const localization = localizationList
-    ? localizationList.find((locate) => locate.locale == locateCode)
+    ? localizationList.find((locate) => locate.locale === locateCode)
     : undefined;
   const contentLocalization = contentLocalizationList.find(
-    (cl) => cl.localizationId == localization?.id
+    (cl) => cl.localizationId === localization?.id,
   );
   if (!version?.id || !contentLocalization || !localization) {
     return <></>;
@@ -534,34 +500,26 @@ const ContentLocalizationDetailMain = (
           <ArrowLeftIcon
             className="h-4 w-6 cursor-pointer flex-none"
             onClick={() => {
-              navigator(
-                location.pathname.replace("/" + localization.locale, "")
-              );
+              navigator(location.pathname.replace(`/${localization.locale}`, ''));
             }}
           />
           <h3 className="text-lg font-medium">{localization.name}</h3>
-          {!contentLocalization.enabled && (
-            <Badge variant={"destructive"}>Disabled</Badge>
-          )}
-          {contentLocalization.enabled && (
-            <Badge variant={"success"}>Enabled</Badge>
-          )}
+          {!contentLocalization.enabled && <Badge variant={'destructive'}>Disabled</Badge>}
+          {contentLocalization.enabled && <Badge variant={'success'}>Enabled</Badge>}
         </div>
-        {version &&
-          version?.steps &&
-          version.steps?.map((step, index) => {
-            return (
-              <ContentLocalizationDetailStep
-                currentStep={step}
-                index={index}
-                key={step.id}
-                currentVersion={version}
-                localization={localization}
-                localizedStepData={localized ? localized[index] : []}
-                onChange={(data) => {}}
-              />
-            );
-          })}
+        {version?.steps?.map((step, index) => {
+          return (
+            <ContentLocalizationDetailStep
+              currentStep={step}
+              index={index}
+              key={step.id}
+              currentVersion={version}
+              localization={localization}
+              localizedStepData={localized ? localized[index] : []}
+              onChange={() => {}}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -571,9 +529,7 @@ interface ContentLocalizationDetailProps {
   locateCode: string;
 }
 
-export const ContentLocalizationDetail = (
-  props: ContentLocalizationDetailProps
-) => {
+export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps) => {
   const { locateCode } = props;
   const { version } = useContentVersionContext();
 
@@ -590,4 +546,4 @@ export const ContentLocalizationDetail = (
   );
 };
 
-ContentLocalizationDetail.displayName = "ContentLocalizationDetail";
+ContentLocalizationDetail.displayName = 'ContentLocalizationDetail';

@@ -1,1 +1,1 @@
-export { SettingsEnvironmentList } from "./environment-list";
+export { SettingsEnvironmentList } from './environment-list';

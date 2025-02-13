@@ -1,35 +1,28 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-  DialogDescription,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { useMutation } from "@apollo/client";
-import { useEffect, useState } from "react";
-import { Content } from "@usertour-ui/types";
-import { duplicateContent } from "@usertour-ui/gql";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { duplicateContent } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Content } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface ContentDuplicateFormProps {
   content: Content;
@@ -42,7 +35,7 @@ interface ContentDuplicateFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please enter name.",
+      required_error: 'Please enter name.',
     })
     .max(30)
     .min(1),
@@ -57,7 +50,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   const { toast } = useToast();
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -65,7 +58,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: content.name },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -82,7 +75,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
       const ret = await mutation({ variables });
       if (ret.data.duplicateContent.id) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `The ${name} has been successfully created`,
         });
       }
@@ -115,10 +108,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                       <FormItem>
                         <FormLabel>Name</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder={`Enter ${name} name`}
-                            {...field}
-                          />
+                          <Input placeholder={`Enter ${name} name`} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -134,9 +124,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Create
               </Button>
             </DialogFooter>
@@ -147,4 +135,4 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   );
 };
 
-ContentDuplicateForm.displayName = "ContentDuplicateForm";
+ContentDuplicateForm.displayName = 'ContentDuplicateForm';

@@ -1,6 +1,6 @@
-const debugEnabled = (localStorage.getItem("debug") || "")
-  .split(",")
-  .some((v) => v === "*" || v.startsWith("usertour-web:*"));
+const debugEnabled = (localStorage.getItem('debug') || '')
+  .split(',')
+  .some((v) => v === '*' || v.startsWith('usertour-web:*'));
 
 let lastT: any;
 export const debug = (message: any, ...extra: any) => {
@@ -10,10 +10,10 @@ export const debug = (message: any, ...extra: any) => {
     lastT = now;
     console.log(
       `%cusertour-web %c${message} %c+${t}ms`,
-      "color:#1FDB7D;",
-      "",
-      "color:#1FDB7D;",
-      ...extra
+      'color:#1FDB7D;',
+      '',
+      'color:#1FDB7D;',
+      ...extra,
     );
   }
 };

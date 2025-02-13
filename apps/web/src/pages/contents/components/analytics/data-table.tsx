@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ColumnFiltersState,
@@ -12,30 +12,21 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@usertour-ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 
-import { DataTablePagination } from "./data-table-pagination";
-import { useNavigate } from "react-router-dom";
-import { columns } from "./columns";
-import { useBizSessionContext } from "@/contexts/biz-session-context";
-import { useState } from "react";
+import { useBizSessionContext } from '@/contexts/biz-session-context';
+import { useState } from 'react';
+import { columns } from './columns';
+import { DataTablePagination } from './data-table-pagination';
 
 export const BizSessionsDataTable = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, bizSessions } =
-    useBizSessionContext();
+  const { setPagination, pagination, pageCount, bizSessions } = useBizSessionContext();
 
   const table = useReactTable({
     data: bizSessions,
@@ -63,11 +54,6 @@ export const BizSessionsDataTable = () => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  const navigate = useNavigate();
-  const editHandler = (environmentId: string, id: string) => {
-    navigate(`/env/${environmentId}/content/${id}/detail`);
-  };
-
   return (
     <div className="space-y-4">
       <div className="rounded-md border-none">
@@ -80,10 +66,7 @@ export const BizSessionsDataTable = () => {
                     <TableHead key={header.id} className="w-1/3">
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -102,24 +85,18 @@ export const BizSessionsDataTable = () => {
                     //   row.getValue("id")
                     // );
                   }}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -132,4 +109,4 @@ export const BizSessionsDataTable = () => {
   );
 };
 
-BizSessionsDataTable.displayName = "BizSessionsDataTable";
+BizSessionsDataTable.displayName = 'BizSessionsDataTable';

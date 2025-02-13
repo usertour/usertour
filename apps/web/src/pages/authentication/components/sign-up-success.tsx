@@ -1,20 +1,14 @@
-"use client";
+'use client';
 
-import { Button } from "@usertour-ui/button";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { useMutation } from "@apollo/client";
-import { resendMagicLink } from "@usertour-ui/gql";
-import { useState } from "react";
-import { useToast } from "@usertour-ui/use-toast";
+import { useMutation } from '@apollo/client';
+import { Button } from '@usertour-ui/button';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { resendMagicLink } from '@usertour-ui/gql';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
 
-import { Icons } from "@/components/atoms/icons";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+import { Icons } from '@/components/atoms/icons';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
 
 export type SignUpSuccessProps = {
   registerId: string;
@@ -33,13 +27,13 @@ export const SignUpSuccess = ({ registerId, email }: SignUpSuccessProps) => {
       setIsLoading(false);
       if (!data?.resendMagicLink?.id) {
         toast({
-          variant: "destructive",
-          title: "Uh oh! Something went wrong.",
+          variant: 'destructive',
+          title: 'Uh oh! Something went wrong.',
         });
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -49,9 +43,7 @@ export const SignUpSuccess = ({ registerId, email }: SignUpSuccessProps) => {
   return (
     <Card>
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl  font-semibold tracking-tight">
-          Check your inbox
-        </CardTitle>
+        <CardTitle className="text-2xl  font-semibold tracking-tight">Check your inbox</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
           Click the email verification link we just send to <br />
           {email}
@@ -67,4 +59,4 @@ export const SignUpSuccess = ({ registerId, email }: SignUpSuccessProps) => {
   );
 };
 
-SignUpSuccess.displayName = "SignUpSuccess";
+SignUpSuccess.displayName = 'SignUpSuccess';

@@ -1,6 +1,4 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteContent } from "@usertour-ui/gql";
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +8,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { Content } from "@usertour-ui/types";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteContent } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Content } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
 
 export const ContentDeleteForm = (props: {
   content: Content;
@@ -34,7 +34,7 @@ export const ContentDeleteForm = (props: {
       });
       if (ret.data?.deleteContent?.success) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `The flow ${name} has been successfully deleted`,
         });
         onSubmit(true);
@@ -43,7 +43,7 @@ export const ContentDeleteForm = (props: {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -55,19 +55,16 @@ export const ContentDeleteForm = (props: {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone!The flow and all data associated with
-            it will be deleted.
+            This action cannot be undone!The flow and all data associated with it will be deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Delete flow
-          </AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteSubmit}>Delete flow</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 };
 
-ContentDeleteForm.displayName = "ContentDeleteForm";
+ContentDeleteForm.displayName = 'ContentDeleteForm';

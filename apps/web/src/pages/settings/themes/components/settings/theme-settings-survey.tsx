@@ -1,5 +1,5 @@
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsSurvey = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -21,7 +21,7 @@ export const ThemeSettingsSurvey = () => {
           name="survey-color"
           defaultColor={settings.survey.color}
           showAutoButton={true}
-          isAutoColor={settings.survey.color == "Auto"}
+          isAutoColor={settings.survey.color === 'Auto'}
           autoColor={finalSettings?.survey.color}
           onChange={(value: string) => {
             update({ color: value });
@@ -32,4 +32,4 @@ export const ThemeSettingsSurvey = () => {
   );
 };
 
-ThemeSettingsSurvey.displayName = "ThemeSettingsSurvey";
+ThemeSettingsSurvey.displayName = 'ThemeSettingsSurvey';

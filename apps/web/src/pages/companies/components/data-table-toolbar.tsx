@@ -1,44 +1,37 @@
-"use client";
+'use client';
 
-import { Cross2Icon } from "@radix-ui/react-icons";
-import { Table } from "@tanstack/react-table";
-import { Button } from "@usertour-ui/button";
-import { Input } from "@usertour-ui/input";
-import { DataTableViewOptions } from "./data-table-view-options";
-import { FilterIcon } from "@usertour-ui/icons";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { CompanySegmentCreateForm } from "./create-form";
-import { RulesCondition, Segment } from "@usertour-ui/types";
-import { Rules } from "@usertour-ui/shared-components";
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { useSegmentListContext } from "@/contexts/segment-list-context";
-import { AddCompanyManualSegment } from "./add-manual-segment";
-import { RemoveFromSegment } from "./remove-from-segment";
-import { DeleteCompanyFromSegment } from "./delete-user";
-import { conditionsIsSame } from "@usertour-ui/shared-utils";
-import { useCompanyListContext } from "@/contexts/company-list-context";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { Cross2Icon } from '@radix-ui/react-icons';
+import { Table } from '@tanstack/react-table';
+import { Button } from '@usertour-ui/button';
+import { Input } from '@usertour-ui/input';
+import { Rules } from '@usertour-ui/shared-components';
+import { conditionsIsSame } from '@usertour-ui/shared-utils';
+import { RulesCondition, Segment } from '@usertour-ui/types';
+import { ChangeEvent, useCallback, useState } from 'react';
+import { AddCompanyManualSegment } from './add-manual-segment';
+import { CompanySegmentCreateForm } from './create-form';
+import { DataTableViewOptions } from './data-table-view-options';
+import { DeleteCompanyFromSegment } from './delete-user';
+import { RemoveFromSegment } from './remove-from-segment';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   currentSegment: Segment;
 }
 
-export function DataTableToolbar<TData>({
-  table,
-  currentSegment,
-}: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0;
+export function DataTableToolbar<TData>({ table, currentSegment }: DataTableToolbarProps<TData>) {
   const { attributeList } = useAttributeListContext();
   const { setCurrentConditions } = useSegmentListContext();
   const { query, setQuery } = useCompanyListContext();
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState('');
   // const [mutation] = useMutation(updateSegment);
   // const { setQuery } = useCompanyListContext();
 
   const [open, setOpen] = useState(false);
-  const handleCreate = () => {
-    setOpen(true);
-  };
+
   const handleOnClose = () => {
     setOpen(false);
     // refetch();
@@ -52,14 +45,14 @@ export function DataTableToolbar<TData>({
       if (
         hasError ||
         !currentSegment ||
-        conditions.length == 0 ||
+        conditions.length === 0 ||
         conditionsIsSame(conditions, currentSegment.data)
       ) {
         return;
       }
       setCurrentConditions({ segmentId: currentSegment.id, data: conditions });
     },
-    [currentSegment, query]
+    [currentSegment, query],
   );
 
   const handleSearchChange = useCallback(
@@ -67,12 +60,12 @@ export function DataTableToolbar<TData>({
       setSearchValue(event.target.value);
       setQuery({ ...query, search: event.target.value });
     },
-    [query]
+    [query],
   );
 
   const handleSearchReset = useCallback(() => {
-    setSearchValue("");
-    setQuery({ ...query, search: "" });
+    setSearchValue('');
+    setQuery({ ...query, search: '' });
   }, [query]);
 
   return (
@@ -85,12 +78,8 @@ export function DataTableToolbar<TData>({
             onChange={handleSearchChange}
             className="h-8 w-[150px] lg:w-[250px]"
           />
-          {searchValue != "" && (
-            <Button
-              variant="ghost"
-              onClick={handleSearchReset}
-              className="h-8 px-2 lg:px-3"
-            >
+          {searchValue !== '' && (
+            <Button variant="ghost" onClick={handleSearchReset} className="h-8 px-2 lg:px-3">
               Reset
               <Cross2Icon className="ml-2 h-4 w-4" />
             </Button>
@@ -98,30 +87,24 @@ export function DataTableToolbar<TData>({
         </div>
         <DataTableViewOptions table={table} />
 
-        <CompanySegmentCreateForm
-          isOpen={open}
-          onClose={handleOnClose}
-          environmentId=""
-        />
+        <CompanySegmentCreateForm isOpen={open} onClose={handleOnClose} environmentId="" />
       </div>
       <div className="flex items-center justify-between">
         <Rules
           onDataChange={handleDataChange}
-          defaultConditions={JSON.parse(
-            JSON.stringify(currentSegment.data || [])
-          )}
+          defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
           isHorizontal={true}
           isShowIf={false}
           key={currentSegment.id}
-          filterItems={["group", "company-attr"]}
-          addButtonText={"Add filter"}
+          filterItems={['group', 'company-attr']}
+          addButtonText={'Add filter'}
           attributes={attributeList}
         />
       </div>
       {table.getFilteredSelectedRowModel().rows.length > 0 && (
         <div className="flex flex-row space-x-2">
           <AddCompanyManualSegment table={table} />
-          {currentSegment.dataType == "MANUAL" && (
+          {currentSegment.dataType === 'MANUAL' && (
             <RemoveFromSegment table={table} currentSegment={currentSegment} />
           )}
           <DeleteCompanyFromSegment table={table} />

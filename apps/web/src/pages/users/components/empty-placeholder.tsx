@@ -1,16 +1,3 @@
-import { Button } from "@usertour-ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { Label } from "@usertour-ui/label";
-
 export const EmptyPlaceholder = ({
   children,
 }: {
@@ -44,4 +31,4 @@ export const EmptyPlaceholder = ({
   );
 };
 
-EmptyPlaceholder.displayName = "EmptyPlaceholder";
+EmptyPlaceholder.displayName = 'EmptyPlaceholder';

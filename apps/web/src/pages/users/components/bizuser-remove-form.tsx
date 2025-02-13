@@ -1,6 +1,5 @@
-import { useToast } from "@usertour-ui/use-toast";
-import { useMutation } from "@apollo/client";
-import { deleteBizUserOnSegment } from "@usertour-ui/gql";
+import { useUserListContext } from '@/contexts/user-list-context';
+import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,11 +9,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@usertour-ui/alert-dialog";
-import { BizUser, Segment } from "@usertour-ui/types";
-import { useCallback } from "react";
-import { useUserListContext } from "@/contexts/user-list-context";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/alert-dialog';
+import { deleteBizUserOnSegment } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { Segment } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback } from 'react';
 
 interface BizUserRemoveFormProps {
   bizUserIds: string[];
@@ -31,7 +31,7 @@ export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
   const { toast } = useToast();
 
   const handleSubmit = useCallback(async () => {
-    if (bizUserIds.length == 0) {
+    if (bizUserIds.length === 0) {
       return;
     }
     const data = {
@@ -42,7 +42,7 @@ export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
       const ret = await mutation({ variables: { data } });
       if (ret.data?.deleteBizUserOnSegment?.success) {
         toast({
-          variant: "success",
+          variant: 'success',
           title: `${ret.data?.deleteBizUserOnSegment.count} users has been successfully removed`,
         });
         await refetch();
@@ -52,7 +52,7 @@ export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
     } catch (error) {
       onSubmit(false);
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -62,9 +62,7 @@ export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Confirm removing users from segment
-          </AlertDialogTitle>
+          <AlertDialogTitle>Confirm removing users from segment</AlertDialogTitle>
           <AlertDialogDescription>
             Confirm removing the selected users from {segment.name}?
           </AlertDialogDescription>
@@ -80,4 +78,4 @@ export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
   );
 };
 
-BizUserRemoveForm.displayName = "BizUserRemoveForm";
+BizUserRemoveForm.displayName = 'BizUserRemoveForm';

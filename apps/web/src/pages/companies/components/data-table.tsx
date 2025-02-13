@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useCompanyListContext } from '@/contexts/company-list-context';
 import {
   ColumnFiltersState,
   PaginationState,
@@ -14,26 +15,18 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@usertour-ui/table";
-import { DataTablePagination } from "../components/data-table-pagination";
-import { DataTableToolbar } from "../components/data-table-toolbar";
-import { columns, columnsSystem } from "../components/columns";
-import { useCompanyListContext } from "@/contexts/company-list-context";
-import { Pagination, Segment } from "@usertour-ui/types";
-import { useAttributeListContext } from "@/contexts/attribute-list-context";
-import { DataTableColumnHeader } from "./data-table-column-header";
-import { ColumnDef } from "@tanstack/react-table";
-import { Flow } from "../data/schema";
-import { useNavigate } from "react-router-dom";
-import { isUndefined } from "@usertour-ui/shared-utils";
+} from '@tanstack/react-table';
+import { ColumnDef } from '@tanstack/react-table';
+import { isUndefined } from '@usertour-ui/shared-utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import { Pagination, Segment } from '@usertour-ui/types';
+import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { columns, columnsSystem } from '../components/columns';
+import { DataTablePagination } from '../components/data-table-pagination';
+import { DataTableToolbar } from '../components/data-table-toolbar';
+import { Flow } from '../data/schema';
+import { DataTableColumnHeader } from './data-table-column-header';
 
 type PageInfo = {
   endCursor: string;
@@ -52,28 +45,22 @@ const defaultPagination = {
   pageSize: 10,
 };
 
-export function DataTable({ published, segment }: TableProps) {
+export function DataTable({ segment }: TableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({
     ...defaultPagination,
   });
-  const [currentPagination, setCurrentPagination] =
-    React.useState<PaginationState>({
-      ...defaultPagination,
-    });
+  const [currentPagination, setCurrentPagination] = React.useState<PaginationState>({
+    ...defaultPagination,
+  });
   const [currentPageInfo, setCurrentPageInfo] = React.useState<PageInfo>();
-  const { bizCompanyList, setRequestPagination, setQuery } =
-    useCompanyListContext();
+  const { bizCompanyList, setRequestPagination, setQuery } = useCompanyListContext();
   const [contents, setContents] = React.useState([]);
   const [pageCount, setPageCount] = React.useState(10);
-  const [customColumns, setCustomColumns] =
-    React.useState<typeof columns>(columns);
+  const [customColumns, setCustomColumns] = React.useState<typeof columns>(columns);
   const { attributeList } = useAttributeListContext();
   const navigate = useNavigate();
 
@@ -82,15 +69,15 @@ export function DataTable({ published, segment }: TableProps) {
     let varis: Pagination = { first: pageSize };
     if (
       currentPagination &&
-      pageSize == currentPagination.pageSize &&
-      pageIndex == currentPagination.pageIndex
+      pageSize === currentPagination.pageSize &&
+      pageIndex === currentPagination.pageIndex
     ) {
       return;
     }
 
-    if (pageIndex == 0) {
+    if (pageIndex === 0) {
       varis = { first: pageSize };
-    } else if (pageIndex + 1 == pageCount) {
+    } else if (pageIndex + 1 === pageCount) {
       varis = {
         last: pageSize,
       };
@@ -131,7 +118,7 @@ export function DataTable({ published, segment }: TableProps) {
   }, [segment]);
 
   React.useEffect(() => {
-    const attrList = attributeList?.filter((attr) => attr.bizType == 2);
+    const attrList = attributeList?.filter((attr) => attr.bizType === 2);
     if (attrList && attrList?.length > 0) {
       const _customColumns: ColumnDef<Flow>[] = [];
       const _columnVisibility: VisibilityState = {
@@ -140,18 +127,15 @@ export function DataTable({ published, segment }: TableProps) {
       };
       for (const attribute of attrList) {
         const displayName = attribute.displayName || attribute.codeName;
-        _columnVisibility[attribute.codeName] =
-          segment.columns && segment.columns[attribute.codeName] ? true : false;
+        _columnVisibility[attribute.codeName] = segment.columns[attribute.codeName] ?? false;
         _customColumns.push({
           accessorKey: attribute.codeName,
-          header: ({ column }) => (
-            <DataTableColumnHeader column={column} title={displayName} />
-          ),
+          header: ({ column }) => <DataTableColumnHeader column={column} title={displayName} />,
           cell: ({ row }) => (
             <div className="px-2">
               {!isUndefined(row.getValue(attribute.codeName))
                 ? `${row.getValue(attribute.codeName)}`
-                : ""}
+                : ''}
             </div>
           ),
           enableSorting: false,
@@ -206,10 +190,7 @@ export function DataTable({ published, segment }: TableProps) {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -222,35 +203,26 @@ export function DataTable({ published, segment }: TableProps) {
                 <TableRow
                   key={row.id}
                   className="cursor-pointer"
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       className="leading-8"
                       onClick={() => {
-                        if (cell.column.id != "select") {
-                          handlerOnClick(
-                            row.getValue("environmentId"),
-                            row.getValue("id")
-                          );
+                        if (cell.column.id !== 'select') {
+                          handlerOnClick(row.getValue('environmentId'), row.getValue('id'));
                         }
                       }}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={customColumns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={customColumns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>

@@ -1,5 +1,5 @@
-import { ThemeSelectColor } from "@/components/molecules/theme/theme-select-color";
-import { useThemeSettingsContext } from ".";
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsXbutton = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -17,7 +17,7 @@ export const ThemeSettingsXbutton = () => {
           name="xbutton-color"
           defaultColor={settings.xbutton.color}
           showAutoButton={true}
-          isAutoColor={settings.xbutton.color == "Auto"}
+          isAutoColor={settings.xbutton.color === 'Auto'}
           autoColor={finalSettings?.mainColor.color}
           onChange={(value: string) => {
             update({ color: value });
@@ -29,4 +29,4 @@ export const ThemeSettingsXbutton = () => {
   );
 };
 
-ThemeSettingsXbutton.displayName = "ThemeSettingsXbutton";
+ThemeSettingsXbutton.displayName = 'ThemeSettingsXbutton';

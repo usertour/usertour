@@ -1,5 +1,5 @@
-import { Separator } from "@usertour-ui/separator";
-import { ContentVersionTable } from "./content-version-table";
+import { Separator } from '@usertour-ui/separator';
+import { ContentVersionTable } from './content-version-table';
 
 export const ContentDetailVersion = () => {
   return (
@@ -17,4 +17,4 @@ export const ContentDetailVersion = () => {
   );
 };
 
-ContentDetailVersion.displayName = "ContentDetailVersion";
+ContentDetailVersion.displayName = 'ContentDetailVersion';

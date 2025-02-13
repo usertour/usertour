@@ -1,33 +1,26 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Icons } from "@/components/atoms/icons";
-import { Button } from "@usertour-ui/button";
+import { Icons } from '@/components/atoms/icons';
+import { Environment } from '@/types/project';
+import { useMutation } from '@apollo/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@usertour-ui/dialog";
-import { Input } from "@usertour-ui/input";
-import { useToast } from "@usertour-ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import { updateEnvironments } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useEffect } from "react";
-import { Environment } from "@/types/project";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { updateEnvironments } from '@usertour-ui/gql';
+import { Input } from '@usertour-ui/input';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface EditFormProps {
   isOpen: boolean;
@@ -38,7 +31,7 @@ interface EditFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: "Please input your environment name.",
+      required_error: 'Please input your environment name.',
     })
     .max(20)
     .min(1),
@@ -54,7 +47,7 @@ export const EnvironmentEditForm = (props: EditFormProps) => {
 
   const showError = (title: string) => {
     toast({
-      variant: "destructive",
+      variant: 'destructive',
       title,
     });
   };
@@ -62,7 +55,7 @@ export const EnvironmentEditForm = (props: EditFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: environment.name },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -101,10 +94,7 @@ export const EnvironmentEditForm = (props: EditFormProps) => {
                       <FormItem>
                         <FormLabel>Environment name</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter environment name"
-                            {...field}
-                          />
+                          <Input placeholder="Enter environment name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -118,9 +108,7 @@ export const EnvironmentEditForm = (props: EditFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -131,4 +119,4 @@ export const EnvironmentEditForm = (props: EditFormProps) => {
   );
 };
 
-EnvironmentEditForm.displayName = "EnvironmentEditForm";
+EnvironmentEditForm.displayName = 'EnvironmentEditForm';

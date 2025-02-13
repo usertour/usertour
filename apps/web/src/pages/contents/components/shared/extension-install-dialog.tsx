@@ -1,22 +1,18 @@
-"use client";
+'use client';
 
-import { DialogClose } from "@radix-ui/react-dialog";
-import { Button } from "@usertour-ui/button";
+import { DialogClose } from '@radix-ui/react-dialog';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from "@usertour-ui/dialog";
-import {
-  CheckedIcon,
-  IndeterminateCircleIcon,
-  WarningCircleIcon,
-} from "@usertour-ui/icons";
-import { useDetectExtension } from "@usertour-ui/shared-hooks";
-import { useEffect } from "react";
+} from '@usertour-ui/dialog';
+import { CheckedIcon, IndeterminateCircleIcon, WarningCircleIcon } from '@usertour-ui/icons';
+import { useDetectExtension } from '@usertour-ui/shared-hooks';
+import { useEffect } from 'react';
 
 interface ExtensionInstallFormProps {
   isOpen: boolean;
@@ -46,9 +42,7 @@ export const ExtensionInstallDialog = (props: ExtensionInstallFormProps) => {
       <DialogContent className="max-w-2xl	">
         <DialogHeader>
           <DialogTitle>Install the Usertour Builder</DialogTitle>
-          <DialogDescription>
-            Get the Chrome extension to continue.
-          </DialogDescription>
+          <DialogDescription>Get the Chrome extension to continue.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-row bg-muted/50 p-4 rounded-lg space-x-2">
           <img src="/images/install-6.png" className="h-24" />
@@ -61,22 +55,18 @@ export const ExtensionInstallDialog = (props: ExtensionInstallFormProps) => {
                   <span className="text-xs">Not installed</span>
                 </span>
               )}
-              {isInstalled && (
-                <CheckedIcon className="text-success" width={20} height={20} />
-              )}
+              {isInstalled && <CheckedIcon className="text-success" width={20} height={20} />}
             </div>
             <div className="text-sm text-muted-foreground">
-              The Usertour Builder Chrome extension lets you create and edit
-              in-app experiences for websites.
+              The Usertour Builder Chrome extension lets you create and edit in-app experiences for
+              websites.
             </div>
           </div>
         </div>
         {isTimeout && (
           <div className="text-destructive text-xs flex flex-row items-center space-x-1">
             <WarningCircleIcon width={16} height={16} />
-            <span>
-              Chrome extension not found, please try installing again.
-            </span>
+            <span>Chrome extension not found, please try installing again.</span>
           </div>
         )}
         <DialogFooter>
@@ -89,8 +79,8 @@ export const ExtensionInstallDialog = (props: ExtensionInstallFormProps) => {
             type="submit"
             onClick={() => {
               window.open(
-                "https://chromewebstore.google.com/detail/usertour/piokfnnpdpamccflfnecelimghgdmhei",
-                "_blank"
+                'https://chromewebstore.google.com/detail/usertour/piokfnnpdpamccflfnecelimghgdmhei',
+                '_blank',
               );
             }}
           >
@@ -102,4 +92,4 @@ export const ExtensionInstallDialog = (props: ExtensionInstallFormProps) => {
   );
 };
 
-ExtensionInstallDialog.displayName = "ExtensionInstallDialog";
+ExtensionInstallDialog.displayName = 'ExtensionInstallDialog';

@@ -1,7 +1,7 @@
-import { RouterProvider } from "react-router-dom";
+import { RouterProvider } from 'react-router-dom';
 
-import router from "@/routes/index";
-import { useAppContext } from "@/contexts/app-context";
+import { useAppContext } from '@/contexts/app-context';
+import router from '@/routes/index';
 
 const App = () => {
   const { userInfo } = useAppContext();
