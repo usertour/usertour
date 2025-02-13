@@ -66,8 +66,7 @@
   pointer-events: none;
   top: 0;
   left: 0;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   display: flex;
   flex-direction: column;
 }
@@ -99,7 +98,7 @@ _:future,
   overflow: hidden;
   border-radius: calc(
     var(--usertour-widget-popper-border-radius) -
-      var(--usertour-widget-popper-border-width)
+    var(--usertour-widget-popper-border-width)
   );
 }
 .usertour-widget-popper-frame-root {
@@ -121,10 +120,7 @@ _:future,
   right: 0;
   bottom: 0;
   left: 0;
-  background-color: rgba(
-    var(--usertour-backdrop-color-rgb),
-    var(--usertour-backdrop-opacity)
-  );
+  background-color: rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));
   visibility: hidden;
 }
 .usertour-widget-backdrop--visible {
@@ -133,15 +129,10 @@ _:future,
 .usertour-widget-popper-backdrop {
   position: fixed;
   border-radius: 2px;
-  box-shadow: var(--usertour-backdrop-highlight-inset) 0 0
-      var(--usertour-backdrop-highlight-radius)
-      var(--usertour-backdrop-highlight-spread)
-      rgba(
-        var(--usertour-backdrop-highlight-color-rgb),
-        var(--usertour-backdrop-highlight-opacity)
-      ),
-    0 0 0 1000vw
-      rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));
+  box-shadow: var(--usertour-backdrop-highlight-inset) 0 0 var(--usertour-backdrop-highlight-radius)
+    var(--usertour-backdrop-highlight-spread)
+    rgba(var(--usertour-backdrop-highlight-color-rgb), var(--usertour-backdrop-highlight-opacity)),
+    0 0 0 1000vw rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));
 
   visibility: hidden;
 }
@@ -236,8 +227,7 @@ _:future,
 }
 .usertour-widget-checklist-launcher {
   overflow: hidden;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   animation: usertour-widget-chrome-visible 200ms linear normal;
 }
 _::-webkit-full-page-media,
