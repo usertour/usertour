@@ -1,41 +1,24 @@
-"use client";
+'use client';
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { useId } from "react";
-import {
-  BuilderMode,
-  useBuilderContext,
-  useChecklistContext,
-} from "../../contexts";
-import { Button } from "@usertour-ui/button";
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
-import { SpinnerIcon } from "@usertour-ui/icons";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { ContentActions } from "@usertour-ui/shared-editor";
-import { Rules } from "@usertour-ui/shared-components";
-import { Switch } from "@usertour-ui/switch";
-import {
-  ChecklistItemType,
-  ContentActionsItemType,
-  RulesCondition,
-} from "@usertour-ui/types";
-import {
-  useAttributeListContext,
-  useContentListContext,
-} from "@usertour-ui/contexts";
-import { SidebarContainer } from "../sidebar";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { useToken } from "../../hooks/use-token";
-import { defaultRulesItems } from "@usertour-ui/shared-components";
-import { useSegmentListQuery } from "@usertour-ui/shared-hooks";
+import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { useAttributeListContext, useContentListContext } from '@usertour-ui/contexts';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { Rules } from '@usertour-ui/shared-components';
+import { defaultRulesItems } from '@usertour-ui/shared-components';
+import { ContentActions } from '@usertour-ui/shared-editor';
+import { useSegmentListQuery } from '@usertour-ui/shared-hooks';
+import { Switch } from '@usertour-ui/switch';
+import { ChecklistItemType, ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
+import { useId } from 'react';
+import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
+import { useToken } from '../../hooks/use-token';
+import { SidebarContainer } from '../sidebar';
 
 const ChecklistItemHeader = () => {
   const { setCurrentMode } = useBuilderContext();
@@ -69,22 +52,19 @@ const ChecklistItemBody = () => {
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const handleInputChange =
-    (field: keyof ChecklistItemType) =>
-    (e: React.ChangeEvent<HTMLInputElement> | boolean) => {
+    (field: keyof ChecklistItemType) => (e: React.ChangeEvent<HTMLInputElement> | boolean) => {
       setCurrentItem((prev) =>
         prev
           ? {
               ...prev,
-              [field]: typeof e === "boolean" ? e : e.target.value,
+              [field]: typeof e === 'boolean' ? e : e.target.value,
             }
-          : null
+          : null,
       );
     };
 
   const handleRulesChange =
-    (
-      field: "clickedActions" | "completeConditions" | "onlyShowTaskConditions"
-    ) =>
+    (field: 'clickedActions' | 'completeConditions' | 'onlyShowTaskConditions') =>
     (value: RulesCondition[]) => {
       setCurrentItem((prev) =>
         prev
@@ -92,7 +72,7 @@ const ChecklistItemBody = () => {
               ...prev,
               [field]: value,
             }
-          : null
+          : null,
       );
     };
 
@@ -107,21 +87,19 @@ const ChecklistItemBody = () => {
               className="bg-background-900"
               value={currentItem?.name}
               placeholder="None"
-              onChange={handleInputChange("name")}
+              onChange={handleInputChange('name')}
             />
           </div>
           <div className="flex flex-col space-y-2">
             <div className="flex justify-start items-center space-x-1	">
-              <Label htmlFor={`${formPrefix}-description`}>
-                Optional text below task name
-              </Label>
+              <Label htmlFor={`${formPrefix}-description`}>Optional text below task name</Label>
             </div>
             <Input
               id={`${formPrefix}-description`}
               className="bg-background-900"
               value={currentItem?.description}
               placeholder="None"
-              onChange={handleInputChange("description")}
+              onChange={handleInputChange('description')}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -138,7 +116,7 @@ const ChecklistItemBody = () => {
                 ContentActionsItemType.JAVASCRIPT_EVALUATE,
               ]}
               currentVersion={undefined}
-              onDataChange={handleRulesChange("clickedActions")}
+              onDataChange={handleRulesChange('clickedActions')}
               defaultConditions={currentItem?.clickedActions ?? []}
               attributes={attributeList}
               contents={contents}
@@ -147,9 +125,9 @@ const ChecklistItemBody = () => {
           <div className="flex flex-col space-y-2">
             <Label>Mark completed</Label>
             <Rules
-              onDataChange={handleRulesChange("completeConditions")}
+              onDataChange={handleRulesChange('completeConditions')}
               defaultConditions={currentItem?.completeConditions ?? []}
-              filterItems={[...defaultRulesItems, "task-is-clicked"]}
+              filterItems={[...defaultRulesItems, 'task-is-clicked']}
               attributes={attributeList}
               contents={contents}
               segments={segmentList}
@@ -158,19 +136,19 @@ const ChecklistItemBody = () => {
           </div>
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor={"dddd"} className="font-normal">
+              <Label htmlFor={'dddd'} className="font-normal">
                 Only show task
               </Label>
               <Switch
-                id={"dddd"}
+                id={'dddd'}
                 className="data-[state=unchecked]:bg-input"
                 checked={currentItem?.onlyShowTask}
-                onCheckedChange={handleInputChange("onlyShowTask")}
+                onCheckedChange={handleInputChange('onlyShowTask')}
               />
             </div>
             {currentItem?.onlyShowTask && (
               <Rules
-                onDataChange={handleRulesChange("onlyShowTaskConditions")}
+                onDataChange={handleRulesChange('onlyShowTaskConditions')}
                 defaultConditions={currentItem?.onlyShowTaskConditions ?? []}
                 attributes={attributeList}
                 contents={contents}
@@ -189,11 +167,7 @@ const ChecklistItemFooter = () => {
   const { saveCurrentItem, isLoading } = useChecklistContext();
   return (
     <CardFooter className="flex-none p-5">
-      <Button
-        className="w-full h-10"
-        disabled={isLoading}
-        onClick={saveCurrentItem}
-      >
+      <Button className="w-full h-10" disabled={isLoading} onClick={saveCurrentItem}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         Save
       </Button>
@@ -211,4 +185,4 @@ export const ChecklistItem = () => {
   );
 };
 
-ChecklistItem.displayName = "ChecklistItem";
+ChecklistItem.displayName = 'ChecklistItem';

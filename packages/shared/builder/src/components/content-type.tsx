@@ -1,13 +1,7 @@
-import { CubeIcon } from "@radix-ui/react-icons";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { ModelIcon, TooltipIcon } from "@usertour-ui/icons";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
+import { CubeIcon } from '@radix-ui/react-icons';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { ModelIcon, TooltipIcon } from '@usertour-ui/icons';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 
 interface ContentTypeProps {
   type: string;
@@ -40,8 +34,8 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
                 <span className="text-xs">Tooltip</span>
               </div>
               <p className="text-xs max-w-60">
-                A tooltip anchored to an element you select. Well-suited for
-                steps that request users to click a specific element.
+                A tooltip anchored to an element you select. Well-suited for steps that request
+                users to click a specific element.
               </p>
             </div>
           </SelectItem>
@@ -53,8 +47,8 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
                 <span className="text-xs">Modal</span>
               </div>
               <p className="text-xs max-w-60">
-                A modal dialog appearing in the center of the screen. A
-                semi-transparent backdrop will cover your app.
+                A modal dialog appearing in the center of the screen. A semi-transparent backdrop
+                will cover your app.
               </p>
             </div>
           </SelectItem>
@@ -63,4 +57,4 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
     </div>
   );
 };
-ContentType.displayName = "ContentType";
+ContentType.displayName = 'ContentType';

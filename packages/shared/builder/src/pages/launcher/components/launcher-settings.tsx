@@ -1,7 +1,7 @@
-import { Label } from "@usertour-ui/label";
-import { Switch } from "@usertour-ui/switch";
-import { LauncherTooltipSettings } from "@usertour-ui/types";
-import { useState, useCallback } from "react";
+import { Label } from '@usertour-ui/label';
+import { Switch } from '@usertour-ui/switch';
+import { LauncherTooltipSettings } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
 
 type SettingItem = {
   id: keyof LauncherTooltipSettings;
@@ -12,8 +12,8 @@ type SettingItem = {
 
 const SETTING_ITEMS: readonly SettingItem[] = [
   {
-    id: "dismissAfterFirstActivation",
-    label: "Dismiss after first activation",
+    id: 'dismissAfterFirstActivation',
+    label: 'Dismiss after first activation',
     checked: (data) => data.dismissAfterFirstActivation,
     onChange: (checked, update) =>
       update((pre) => ({ ...pre, dismissAfterFirstActivation: checked })),
@@ -38,9 +38,7 @@ const SETTING_ITEMS: readonly SettingItem[] = [
   // },
 ] as const;
 
-type UpdateFunction = (
-  fn: (pre: LauncherTooltipSettings) => LauncherTooltipSettings
-) => void;
+type UpdateFunction = (fn: (pre: LauncherTooltipSettings) => LauncherTooltipSettings) => void;
 
 export interface LauncherSettingsProps {
   data: LauncherTooltipSettings;
@@ -54,10 +52,7 @@ export interface LauncherSettingsProps {
  * @param props.type - Launcher type
  * @param props.onChange - Callback when settings change
  */
-export const LauncherSettings = ({
-  data: initialValue,
-  onChange,
-}: LauncherSettingsProps) => {
+export const LauncherSettings = ({ data: initialValue, onChange }: LauncherSettingsProps) => {
   const [data, setData] = useState<LauncherTooltipSettings>(initialValue);
 
   if (!initialValue) {
@@ -73,22 +68,19 @@ export const LauncherSettings = ({
           return v;
         });
       } catch (error) {
-        console.error("Failed to update settings:", error);
+        console.error('Failed to update settings:', error);
       }
     },
-    [onChange]
+    [onChange],
   );
 
   return (
-    <div className="space-y-3" role="group" aria-label="Launcher settings">
+    <div className="space-y-3" aria-label="Launcher settings">
       <h1 className="text-sm">Settings</h1>
       <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-2">
         {SETTING_ITEMS.map((item) => {
           return (
-            <div
-              key={item.id}
-              className="flex items-center justify-between space-x-2"
-            >
+            <div key={item.id} className="flex items-center justify-between space-x-2">
               <Label htmlFor={item.id} className="font-normal">
                 {item.label}
               </Label>
@@ -107,4 +99,4 @@ export const LauncherSettings = ({
   );
 };
 
-LauncherSettings.displayName = "LauncherSettings";
+LauncherSettings.displayName = 'LauncherSettings';

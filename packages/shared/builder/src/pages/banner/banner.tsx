@@ -1,35 +1,17 @@
-"use client";
+'use client';
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { EXTENSION_SIDEBAR_MAIN } from "@usertour-ui/constants";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { cn } from "@usertour-ui/ui-utils";
-import { useRef } from "react";
-import { BuilderMode, useBuilderContext } from "../../contexts";
-import { SidebarFooter } from "../sidebar/sidebar-footer";
-import { SidebarHeader } from "../sidebar/sidebar-header";
-import { SidebarMini } from "../sidebar/sidebar-mini";
-import { SidebarTheme } from "../sidebar/sidebar-theme";
-import {
-  useAttributeListContext,
-  useContentListContext,
-} from "@usertour-ui/contexts";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { EXTENSION_SIDEBAR_MAIN } from '@usertour-ui/constants';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { cn } from '@usertour-ui/ui-utils';
+import { useRef } from 'react';
+import { useBuilderContext } from '../../contexts';
+import { SidebarFooter } from '../sidebar/sidebar-footer';
+import { SidebarHeader } from '../sidebar/sidebar-header';
+import { SidebarMini } from '../sidebar/sidebar-mini';
+import { SidebarTheme } from '../sidebar/sidebar-theme';
 
 const BannerBuilderBody = () => {
-  const { setCurrentMode, zIndex, currentVersion } = useBuilderContext();
-  const { contents } = useContentListContext();
-  const { attributeList } = useAttributeListContext();
-
-  const handleContentTypeChange = (type: string) => {
-    //
-  };
-
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full ">
@@ -47,7 +29,7 @@ const BannerBuilderHeader = () => {
   return (
     <CardHeader className="flex-none p-4 space-y-3">
       <CardTitle className="flex h-8	">
-        <SidebarHeader title={currentContent?.name ?? ""} />
+        <SidebarHeader title={currentContent?.name ?? ''} />
       </CardTitle>
     </CardHeader>
   );
@@ -68,10 +50,7 @@ export const BannerBuilder = () => {
     <>
       <div
         style={{ zIndex: zIndex + EXTENSION_SIDEBAR_MAIN }}
-        className={cn(
-          "w-80 h-screen p-2 fixed top-0",
-          position == "left" ? "left-0" : "right-0"
-        )}
+        className={cn('w-80 h-screen p-2 fixed top-0', position === 'left' ? 'left-0' : 'right-0')}
         ref={sidbarRef}
       >
         <SidebarMini container={sidbarRef} />
@@ -85,4 +64,4 @@ export const BannerBuilder = () => {
   );
 };
 
-BannerBuilder.displayName = "BannerBuilder";
+BannerBuilder.displayName = 'BannerBuilder';

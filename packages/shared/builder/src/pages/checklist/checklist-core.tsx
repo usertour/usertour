@@ -1,21 +1,12 @@
-"use client";
+'use client';
 
-import {
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { uuidV4 } from "@usertour-ui/ui-utils";
-import { useBuilderContext, useChecklistContext } from "../../contexts";
-import { SidebarFooter } from "../sidebar/sidebar-footer";
-import { SidebarHeader } from "../sidebar/sidebar-header";
-import { SidebarTheme } from "../sidebar/sidebar-theme";
-import { ChecklistContents } from "./components/checklist-contents";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
+import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { ScrollArea } from '@usertour-ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -24,24 +15,24 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Switch } from "@usertour-ui/switch";
-import { Button } from "@usertour-ui/button";
-import { PlusCircledIcon } from "@radix-ui/react-icons";
-import { SidebarContainer } from "../sidebar";
-import {
-  ChecklistCompletionOrder,
-  ChecklistInitialDisplay,
-} from "@usertour-ui/types";
-import { useState } from "react";
+} from '@usertour-ui/select';
+import { Switch } from '@usertour-ui/switch';
+import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour-ui/types';
+import { uuidV4 } from '@usertour-ui/ui-utils';
+import { useBuilderContext, useChecklistContext } from '../../contexts';
+import { SidebarContainer } from '../sidebar';
+import { SidebarFooter } from '../sidebar/sidebar-footer';
+import { SidebarHeader } from '../sidebar/sidebar-header';
+import { SidebarTheme } from '../sidebar/sidebar-theme';
+import { ChecklistContents } from './components/checklist-contents';
 
 // Common styles
-const flexBetween = "flex items-center justify-between space-x-2";
-const labelStyles = "flex justify-start items-center space-x-1";
+const flexBetween = 'flex items-center justify-between space-x-2';
+const labelStyles = 'flex justify-start items-center space-x-1';
 
 const defaultItem = {
-  name: "New Item",
-  description: "New Item Description",
+  name: 'New Item',
+  description: 'New Item Description',
   clickedActions: [],
   isCompleted: false,
   completeConditions: [],
@@ -111,9 +102,7 @@ const ChecklistCoreBody = () => {
                   <SelectItem value={ChecklistInitialDisplay.EXPANDED}>
                     Expanded checklist
                   </SelectItem>
-                  <SelectItem value={ChecklistInitialDisplay.BUTTON}>
-                    Launcher button
-                  </SelectItem>
+                  <SelectItem value={ChecklistInitialDisplay.BUTTON}>Launcher button</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </SelectPortal>
@@ -137,12 +126,8 @@ const ChecklistCoreBody = () => {
             <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value={ChecklistCompletionOrder.ANY}>
-                    In any order
-                  </SelectItem>
-                  <SelectItem value={ChecklistCompletionOrder.ORDERED}>
-                    In order
-                  </SelectItem>
+                  <SelectItem value={ChecklistCompletionOrder.ANY}>In any order</SelectItem>
+                  <SelectItem value={ChecklistCompletionOrder.ORDERED}>In order</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </SelectPortal>
@@ -157,9 +142,7 @@ const ChecklistCoreBody = () => {
               id="prevent-dismiss-checklist"
               className="data-[state=unchecked]:bg-input"
               checked={localData.preventDismissChecklist}
-              onCheckedChange={(value) =>
-                updateLocalData({ preventDismissChecklist: value })
-              }
+              onCheckedChange={(value) => updateLocalData({ preventDismissChecklist: value })}
             />
           </div>
         </div>
@@ -173,7 +156,7 @@ const ChecklistCoreHeader = () => {
   return (
     <CardHeader className="flex-none p-4 space-y-3">
       <CardTitle className="flex h-8">
-        <SidebarHeader title={currentContent?.name ?? ""} />
+        <SidebarHeader title={currentContent?.name ?? ''} />
       </CardTitle>
     </CardHeader>
   );
@@ -197,4 +180,4 @@ export const ChecklistCore = () => {
   );
 };
 
-ChecklistCore.displayName = "ChecklistCore";
+ChecklistCore.displayName = 'ChecklistCore';

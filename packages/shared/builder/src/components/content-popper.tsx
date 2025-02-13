@@ -1,9 +1,6 @@
-import { EXTENSION_CONTENT_POPPER } from "@usertour-ui/constants";
-import {
-  ContentEditor,
-  ContentEditorElementType,
-  ContentEditorRoot,
-} from "@usertour-ui/shared-editor";
+import { useLazyQuery } from '@apollo/client';
+import { EXTENSION_CONTENT_POPPER } from '@usertour-ui/constants';
+import { queryOembedInfo } from '@usertour-ui/gql';
 import {
   Popper,
   PopperClose,
@@ -12,12 +9,13 @@ import {
   PopperMadeWith,
   PopperOverlay,
   PopperProgress,
-} from "@usertour-ui/sdk";
+} from '@usertour-ui/sdk';
 import {
-  convertSettings,
-  convertToCssVars,
-  loadGoogleFontCss,
-} from "@usertour-ui/shared-utils";
+  ContentEditor,
+  ContentEditorElementType,
+  ContentEditorRoot,
+} from '@usertour-ui/shared-editor';
+import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-ui/shared-utils';
 import {
   Align,
   Attribute,
@@ -29,11 +27,9 @@ import {
   Step,
   Theme,
   ThemeTypesSetting,
-} from "@usertour-ui/types";
-import { forwardRef, useEffect, useRef, useState } from "react";
-import { useAws } from "../hooks/use-aws";
-import { useLazyQuery } from "@apollo/client";
-import { queryOembedInfo } from "@usertour-ui/gql";
+} from '@usertour-ui/types';
+import { forwardRef, useEffect, useState } from 'react';
+import { useAws } from '../hooks/use-aws';
 
 export interface ContentPopperProps {
   currentStep: Step;
@@ -46,10 +42,7 @@ export interface ContentPopperProps {
   triggerRef?: React.RefObject<any> | undefined;
   currentIndex: number;
   currentContent: Content | undefined;
-  createStep: (
-    currentVersion: ContentVersion,
-    sequence: number
-  ) => Promise<Step | undefined>;
+  createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
 }
 
 export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
@@ -67,8 +60,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       createStep,
       currentContent,
     } = props;
-    const popperRef = useRef(null);
-    const [globalStyle, setGlobalStyle] = useState<string>("");
+    const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
@@ -103,7 +95,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     }, [themeSetting]);
 
     const getOembedInfo = async (url: string): Promise<ContentOmbedInfo> => {
-      const resp = { html: "", width: 0, height: 0 };
+      const resp = { html: '', width: 0, height: 0 };
       const ret = await queryOembed({ variables: { url } });
       if (ret?.data?.queryOembedInfo) {
         return ret?.data?.queryOembedInfo;
@@ -112,15 +104,12 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     };
 
     const progress = Math.min(
-      currentVersion?.steps?.length
-        ? (currentIndex + 1 / currentVersion?.steps?.length) * 100
-        : 0,
-      100
+      currentVersion?.steps?.length ? (currentIndex + 1 / currentVersion?.steps?.length) * 100 : 0,
+      100,
     );
 
     const enabledElementTypes =
-      contentType == ContentDataType.SURVEY ||
-      contentType == ContentDataType.NPS
+      contentType === ContentDataType.SURVEY || contentType === ContentDataType.NPS
         ? Object.values(ContentEditorElementType)
         : undefined;
 
@@ -131,34 +120,25 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     return (
       <>
         <div id="usertour-widget">
-          <Popper
-            triggerRef={triggerRef}
-            open={true}
-            zIndex={zIndex}
-            globalStyle={globalStyle}
-          >
+          <Popper triggerRef={triggerRef} open={true} zIndex={zIndex} globalStyle={globalStyle}>
             {currentStep.setting?.enabledBackdrop && (
-              <PopperOverlay
-                blockTarget={currentStep.setting.enabledBlockTarget}
-              ></PopperOverlay>
+              <PopperOverlay blockTarget={currentStep.setting.enabledBlockTarget} />
             )}
             <PopperContentPotal
               sideOffset={currentStep.setting.sideOffset}
               alignOffset={currentStep.setting.alignOffset}
               side={
-                currentStep.setting?.alignType == "auto"
-                  ? "bottom"
-                  : (currentStep.setting?.side as Side) ?? "bottom"
+                currentStep.setting?.alignType === 'auto'
+                  ? 'bottom'
+                  : ((currentStep.setting?.side as Side) ?? 'bottom')
               }
               align={
-                currentStep.setting?.alignType == "auto"
-                  ? "center"
-                  : (currentStep.setting?.align as Align) ?? "center"
+                currentStep.setting?.alignType === 'auto'
+                  ? 'center'
+                  : ((currentStep.setting?.align as Align) ?? 'center')
               }
-              avoidCollisions={
-                currentStep.setting?.alignType == "auto" ? true : false
-              }
-              width={currentStep.setting.width + "px"}
+              avoidCollisions={currentStep.setting?.alignType === 'auto'}
+              width={`${currentStep.setting.width}px`}
               arrowSize={{
                 width: themeSetting?.tooltip.notchSize ?? 20,
                 height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
@@ -180,7 +160,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                   onValueChange={handleEditorValueChange}
                   getOembedInfo={getOembedInfo}
                   createStep={createStep}
-                ></ContentEditor>
+                />
                 <PopperMadeWith />
                 <PopperProgress width={progress} />
               </PopperContent>
@@ -189,6 +169,6 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
         </div>
       </>
     );
-  }
+  },
 );
-ContentPopper.displayName = "ContentPopper";
+ContentPopper.displayName = 'ContentPopper';

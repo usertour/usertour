@@ -1,16 +1,9 @@
-"use client";
+'use client';
 
-import {
-  CubeIcon,
-  OpenInNewWindowIcon,
-  QuestionMarkCircledIcon,
-} from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import {
-  EXTENSION_SELECT,
-  MESSAGE_CRX_OPEN_NEW_TARGET,
-} from "@usertour-ui/constants";
-import { useThemeListContext } from "@usertour-ui/contexts";
+import { CubeIcon, OpenInNewWindowIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { EXTENSION_SELECT, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour-ui/constants';
+import { useThemeListContext } from '@usertour-ui/contexts';
 import {
   Select,
   SelectContent,
@@ -18,22 +11,17 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { Theme } from "@usertour-ui/types";
-import { useCallback, useEffect } from "react";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Theme } from '@usertour-ui/types';
+import { useCallback, useEffect } from 'react';
 
-import { useMutation } from "@apollo/client";
-import { updateContentVersion } from "@usertour-ui/gql";
-import { useToast } from "@usertour-ui/use-toast";
-import { getErrorMessage } from "@usertour-ui/shared-utils";
-import { postProxyMessageToWindow } from "../../utils/post-message";
-import { useBuilderContext } from "../../contexts";
+import { useMutation } from '@apollo/client';
+import { updateContentVersion } from '@usertour-ui/gql';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useToast } from '@usertour-ui/use-toast';
+import { useBuilderContext } from '../../contexts';
+import { postProxyMessageToWindow } from '../../utils/post-message';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeListContext();
@@ -52,11 +40,9 @@ export const SidebarTheme = () => {
 
   useEffect(() => {
     if (currentVersion && !currentVersion.themeId && themeList) {
-      const defaultThemeId = themeList.find((item) => item.isDefault == true);
+      const defaultThemeId = themeList.find((item) => item.isDefault === true);
       if (defaultThemeId) {
-        setCurrentVersion((pre) =>
-          pre ? { ...pre, themeId: defaultThemeId.id } : pre
-        );
+        setCurrentVersion((pre) => (pre ? { ...pre, themeId: defaultThemeId.id } : pre));
       }
     }
   }, [currentVersion, themeList]);
@@ -71,20 +57,17 @@ export const SidebarTheme = () => {
       });
       setIsLoading(true);
       if (ret.data.updateContentVersion && currentVersion?.contentId) {
-        await fetchContentAndVersion(
-          currentVersion?.contentId,
-          currentVersion?.id
-        );
+        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
       } else {
         return toast({
-          variant: "destructive",
-          title: "Failed to save theme!",
+          variant: 'destructive',
+          title: 'Failed to save theme!',
         });
       }
       setIsLoading(false);
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
       setIsLoading(false);
@@ -97,7 +80,7 @@ export const SidebarTheme = () => {
     }
     const url = `/project/${projectId}/settings/theme/${currentVersion.themeId}`;
     if (isWebBuilder) {
-      return window.open(url, "_blank");
+      return window.open(url, '_blank');
     }
     postProxyMessageToWindow({
       kind: MESSAGE_CRX_OPEN_NEW_TARGET,
@@ -116,18 +99,13 @@ export const SidebarTheme = () => {
                 <QuestionMarkCircledIcon />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                This is the flow theme that will be used by default in every
-                step
+                This is the flow theme that will be used by default in every step
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
 
-        <Button
-          variant="link"
-          onClick={handleEditTheme}
-          className="p-0 h-full	text-sm	"
-        >
+        <Button variant="link" onClick={handleEditTheme} className="p-0 h-full	text-sm	">
           Edit this theme
           <OpenInNewWindowIcon className="ml-1" />
         </Button>
@@ -139,7 +117,7 @@ export const SidebarTheme = () => {
           value={currentVersion.themeId}
         >
           <SelectTrigger className="justify-start flex h-8 text-xs	">
-            <CubeIcon className="flex-none mr-2"></CubeIcon>
+            <CubeIcon className="flex-none mr-2" />
             <div className="grow text-left">
               <SelectValue placeholder="Select" />
             </div>
@@ -147,16 +125,11 @@ export const SidebarTheme = () => {
 
           <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
             <SelectContent>
-              {themeList &&
-                themeList.map((theme: Theme) => (
-                  <SelectItem
-                    value={theme.id}
-                    key={theme.id}
-                    className="text-xs"
-                  >
-                    {theme.name}
-                  </SelectItem>
-                ))}
+              {themeList?.map((theme: Theme) => (
+                <SelectItem value={theme.id} key={theme.id} className="text-xs">
+                  {theme.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </SelectPortal>
         </Select>
@@ -164,4 +137,4 @@ export const SidebarTheme = () => {
     </>
   );
 };
-SidebarTheme.displayName = "SidebarTheme";
+SidebarTheme.displayName = 'SidebarTheme';

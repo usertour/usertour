@@ -1,46 +1,35 @@
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation } from '@apollo/client';
+import { addContentStep, addContentSteps, getContent, getContentVersion } from '@usertour-ui/gql';
+import { getErrorMessage, isEqual } from '@usertour-ui/shared-utils';
+import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-ui/types';
 import {
-  addContentStep,
-  addContentSteps,
-  getContent,
-  getContentVersion,
-} from "@usertour-ui/gql";
-import { getErrorMessage, isEqual } from "@usertour-ui/shared-utils";
-import {
-  Content,
-  ContentDataType,
-  ContentVersion,
-  Step,
-  Theme,
-} from "@usertour-ui/types";
-import {
-  createContext,
   ReactNode,
+  createContext,
   useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
-} from "react";
+} from 'react';
 
-import { debug } from "../utils/logger";
-import { SelectorOutput } from "../utils/screenshot";
-import { useToast } from "@usertour-ui/use-toast";
+import { useToast } from '@usertour-ui/use-toast';
+import { debug } from '../utils/logger';
+import { SelectorOutput } from '../utils/screenshot';
 
 export enum BuilderMode {
-  ELEMENT_SELECTOR = "element-selector",
-  FLOW_STEP_DETAIL = "flow-step-detail",
-  FLOW_STEP_TRIGGER = "flow-step-trigger",
-  FLOW = "flow",
-  LAUNCHER = "launcher",
-  CHECKLIST = "checklist",
-  BANNER = "banner",
-  NPS = "nps",
-  SURVEY = "survey",
-  LAUNCHER_TARGET = "launcher-target",
-  LAUNCHER_TOOLTIP = "launcher-tooltip",
-  CHECKLIST_ITEM = "checklist-item",
-  NONE = "none",
+  ELEMENT_SELECTOR = 'element-selector',
+  FLOW_STEP_DETAIL = 'flow-step-detail',
+  FLOW_STEP_TRIGGER = 'flow-step-trigger',
+  FLOW = 'flow',
+  LAUNCHER = 'launcher',
+  CHECKLIST = 'checklist',
+  BANNER = 'banner',
+  NPS = 'nps',
+  SURVEY = 'survey',
+  LAUNCHER_TARGET = 'launcher-target',
+  LAUNCHER_TOOLTIP = 'launcher-tooltip',
+  CHECKLIST_ITEM = 'checklist-item',
+  NONE = 'none',
 }
 
 export interface BuilderSelectorMode {
@@ -58,7 +47,7 @@ export interface BuilderSelectorMode {
 
 export interface BuilderTriggerMode {
   mode: BuilderMode.FLOW_STEP_TRIGGER;
-  data?: {};
+  data?: any;
   triggerConditionData?: {
     index: number;
     conditionIndex: number;
@@ -67,17 +56,11 @@ export interface BuilderTriggerMode {
 }
 
 export interface BuilderCommonMode {
-  mode: Exclude<
-    BuilderMode,
-    BuilderMode.FLOW_STEP_TRIGGER | BuilderMode.ELEMENT_SELECTOR
-  >;
-  data?: {};
+  mode: Exclude<BuilderMode, BuilderMode.FLOW_STEP_TRIGGER | BuilderMode.ELEMENT_SELECTOR>;
+  data?: any;
 }
 
-export type CurrentMode =
-  | BuilderCommonMode
-  | BuilderSelectorMode
-  | BuilderTriggerMode;
+export type CurrentMode = BuilderCommonMode | BuilderSelectorMode | BuilderTriggerMode;
 
 interface BuilderContextProps {
   currentMode: CurrentMode;
@@ -92,9 +75,7 @@ interface BuilderContextProps {
   currentIndex: number;
   setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
   selectorOutput?: SelectorOutput | null;
-  setSelectorOutput: React.Dispatch<
-    React.SetStateAction<SelectorOutput | null>
-  >;
+  setSelectorOutput: React.Dispatch<React.SetStateAction<SelectorOutput | null>>;
   position: string;
   setPosition: React.Dispatch<React.SetStateAction<string>>;
   isLoading: boolean;
@@ -106,9 +87,7 @@ interface BuilderContextProps {
   currentContent: Content | undefined;
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   currentVersion: ContentVersion | undefined;
-  setCurrentVersion: React.Dispatch<
-    React.SetStateAction<ContentVersion | undefined>
-  >;
+  setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   backupVersion: ContentVersion | undefined;
   setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
   currentTheme: Theme | undefined;
@@ -120,14 +99,8 @@ interface BuilderContextProps {
   isShowError: boolean;
   setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   contentRef: React.MutableRefObject<HTMLDivElement | undefined>;
-  fetchContentAndVersion: (
-    contentId: string,
-    versionId: string
-  ) => Promise<boolean | Content>;
-  createStep: (
-    currentVersion: ContentVersion,
-    step: Step
-  ) => Promise<Step | undefined>;
+  fetchContentAndVersion: (contentId: string, versionId: string) => Promise<boolean | Content>;
+  createStep: (currentVersion: ContentVersion, step: Step) => Promise<Step | undefined>;
 }
 
 export const BuilderContext = createContext<BuilderContextProps | null>(null);
@@ -141,46 +114,34 @@ export interface BuilderProviderProps {
 }
 
 export const BuilderProvider = (props: BuilderProviderProps) => {
-  const {
-    children,
-    webHost = "",
-    usertourjsUrl = "",
-    isWebBuilder = false,
-    onSaved,
-  } = props;
+  const { children, webHost = '', usertourjsUrl = '', isWebBuilder = false, onSaved } = props;
   const [currentStep, setCurrentStep] = useState<Step | null>(null);
-  const [environmentId, setEnvironmentId] = useState<string>("");
-  const [envToken, setEnvToken] = useState<string>("");
-  const [projectId, setProjectId] = useState<string>("");
+  const [environmentId, setEnvironmentId] = useState<string>('');
+  const [envToken, setEnvToken] = useState<string>('');
+  const [projectId, setProjectId] = useState<string>('');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [selectorOutput, setSelectorOutput] = useState<SelectorOutput | null>(
-    null
-  );
+  const [selectorOutput, setSelectorOutput] = useState<SelectorOutput | null>(null);
   const [isShowError, setIsShowError] = useState<boolean>(false);
-  const [position, setPosition] = useState("left");
+  const [position, setPosition] = useState('left');
   const [queryContent] = useLazyQuery(getContent);
   const [queryContentVersion] = useLazyQuery(getContentVersion);
   const [addContentStepsMutation] = useMutation(addContentSteps);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState("");
+  const [currentLocation, setCurrentLocation] = useState('');
   const [currentMode, setCurrentMode] = useState<CurrentMode>({
     mode: BuilderMode.NONE,
   });
   const [currentContent, setCurrentContent] = useState<Content | undefined>();
   const contentRef = useRef<HTMLDivElement | undefined>();
-  const [currentVersion, setCurrentVersion] = useState<
-    ContentVersion | undefined
-  >();
-  const [backupVersion, setBackupVersion] = useState<
-    ContentVersion | undefined
-  >();
+  const [currentVersion, setCurrentVersion] = useState<ContentVersion | undefined>();
+  const [backupVersion, setBackupVersion] = useState<ContentVersion | undefined>();
   const [addContentStepMutation] = useMutation(addContentStep);
   const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
   const { toast } = useToast();
 
   const updateCurrentStep = (fn: Step | ((pre: Step) => Step)) => {
     setCurrentStep((pre) => {
-      if (typeof fn === "function") {
+      if (typeof fn === 'function') {
         return pre ? fn(pre) : pre;
       }
       return fn;
@@ -209,10 +170,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     return version?.data?.getContentVersion as ContentVersion;
   };
 
-  const fetchContentAndVersion = async (
-    contentId: string,
-    versionId: string
-  ) => {
+  const fetchContentAndVersion = async (contentId: string, versionId: string) => {
     if (!contentId || !versionId) {
       return false;
     }
@@ -231,14 +189,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   };
 
   const initContent = async (message: any) => {
-    const {
-      contentId,
-      environmentId,
-      envToken,
-      url = "",
-      versionId,
-      projectId,
-    } = message;
+    const { contentId, environmentId, envToken, url = '', versionId, projectId } = message;
     if (!environmentId || (!isWebBuilder && !envToken)) {
       return false;
     }
@@ -258,7 +209,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     const versionMode = versionType as BuilderMode;
     const hasMode = Object.values(BuilderMode).includes(versionMode);
 
-    if (versionType != ContentDataType.FLOW && hasMode) {
+    if (versionType !== ContentDataType.FLOW && hasMode) {
       setCurrentMode({ mode: versionType as BuilderMode });
     } else {
       setCurrentMode({ mode: BuilderMode.FLOW });
@@ -267,25 +218,19 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   };
 
   const saveContent = useCallback(async () => {
-    if (
-      !currentVersion ||
-      !backupVersion ||
-      isEqual(currentVersion, backupVersion)
-    ) {
+    if (!currentVersion || !backupVersion || isEqual(currentVersion, backupVersion)) {
       return;
     }
-    debug("saveContent:", currentVersion);
+    debug('saveContent:', currentVersion);
     if (!currentVersion || !currentVersion.id) {
       return;
     }
     setIsLoading(true);
     const steps = currentVersion.steps
-      ? currentVersion.steps.map(
-          ({ updatedAt, createdAt, cvid, ...step }, index) => ({
-            ...step,
-            sequence: index,
-          })
-        )
+      ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
+          ...step,
+          sequence: index,
+        }))
       : [];
     const variables = {
       contentId: currentVersion.contentId,
@@ -298,14 +243,11 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         variables,
       });
       if (response.data.addContentSteps) {
-        await fetchContentAndVersion(
-          currentVersion.contentId,
-          currentVersion.id
-        );
+        await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -318,26 +260,19 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         variables: { data: { ...step, versionId: currentVersion.id } },
       });
       if (ret.data.addContentStep) {
-        await fetchContentAndVersion(
-          currentVersion.contentId,
-          currentVersion.id
-        );
+        await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
         return ret.data.addContentStep as Step;
       }
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
   };
 
   useEffect(() => {
-    if (
-      currentVersion &&
-      backupVersion &&
-      !isEqual(currentVersion, backupVersion)
-    ) {
+    if (currentVersion && backupVersion && !isEqual(currentVersion, backupVersion)) {
       saveContent();
     }
   }, [currentVersion, backupVersion]);
@@ -382,15 +317,13 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     createStep,
     envToken,
   };
-  return (
-    <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>
-  );
+  return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;
 };
 
 export function useBuilderContext(): BuilderContextProps {
   const context = useContext(BuilderContext);
   if (!context) {
-    throw new Error(`useBuilderContext must be used within a BuilderProvider.`);
+    throw new Error('useBuilderContext must be used within a BuilderProvider.');
   }
   return context;
 }

@@ -1,3 +1,10 @@
+import { useMutation } from '@apollo/client';
+import { updateContentVersion } from '@usertour-ui/gql';
+import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
+import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour-ui/types';
+import { useToast } from '@usertour-ui/use-toast';
+import { deepmerge } from 'deepmerge-ts';
+import { debounce, isEqual, isUndefined } from 'lodash';
 import {
   ReactNode,
   createContext,
@@ -6,19 +13,8 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react";
-import { BuilderMode, useBuilderContext } from "./builder-context";
-import { updateContentVersion } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useToast } from "@usertour-ui/use-toast";
-import { deepmerge } from "deepmerge-ts";
-import {
-  ChecklistData,
-  ChecklistItemType,
-  DEFAULT_CHECKLIST_DATA,
-} from "@usertour-ui/types";
-import { ContentEditorRoot, createValue1 } from "@usertour-ui/shared-editor";
-import { debounce, isEqual, isUndefined } from "lodash";
+} from 'react';
+import { BuilderMode, useBuilderContext } from './builder-context';
 
 export interface ChecklistProviderProps {
   children: ReactNode;
@@ -33,16 +29,12 @@ export interface ChecklistContextValue {
   addItem: (item: ChecklistItemType) => void;
   removeItem: (id: string) => void;
   reorderItems: (startIndex: number, endIndex: number) => void;
-  setCurrentItem: React.Dispatch<
-    React.SetStateAction<ChecklistItemType | null>
-  >;
+  setCurrentItem: React.Dispatch<React.SetStateAction<ChecklistItemType | null>>;
   currentItem: ChecklistItemType | null;
   saveCurrentItem: () => void;
 }
 
-export const ChecklistContext = createContext<
-  ChecklistContextValue | undefined
->(undefined);
+export const ChecklistContext = createContext<ChecklistContextValue | undefined>(undefined);
 
 export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
   const { children } = props;
@@ -60,14 +52,9 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       return null;
     }
 
-    const mergedData = deepmerge(
-      DEFAULT_CHECKLIST_DATA,
-      currentVersion?.data ?? {}
-    );
+    const mergedData = deepmerge(DEFAULT_CHECKLIST_DATA, currentVersion?.data ?? {});
     if (
-      (currentVersion?.data &&
-        currentVersion?.data?.content &&
-        currentVersion?.data?.content.length == 0) ||
+      (currentVersion?.data?.content && currentVersion?.data?.content.length === 0) ||
       isUndefined(currentVersion?.data?.content)
     ) {
       mergedData.content = createValue1 as ContentEditorRoot[];
@@ -78,33 +65,24 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
   const [updateContentVersionMutation] = useMutation(updateContentVersion);
   const { toast } = useToast();
   const [localData, setLocalData] = useState<ChecklistData | null>(data);
-  const [currentItem, setCurrentItem] = useState<ChecklistItemType | null>(
-    null
-  );
+  const [currentItem, setCurrentItem] = useState<ChecklistItemType | null>(null);
 
   const updateContentVersionData = useCallback(
     async (updates: Partial<ChecklistData>) => {
-      try {
-        if (!currentVersion) {
-          return;
-        }
-        const ret = await updateContentVersionMutation({
-          variables: {
-            versionId: currentVersion?.id,
-            content: { data: { ...data, ...updates } },
-          },
-        });
+      if (!currentVersion) {
+        return;
+      }
+      const ret = await updateContentVersionMutation({
+        variables: {
+          versionId: currentVersion?.id,
+          content: { data: { ...data, ...updates } },
+        },
+      });
 
-        if (ret.data.updateContentVersion && currentVersion?.contentId) {
-          await fetchContentAndVersion(
-            currentVersion?.contentId,
-            currentVersion?.id
-          );
-        } else {
-          throw new Error("Failed to update content version");
-        }
-      } catch (error) {
-        throw error;
+      if (ret.data.updateContentVersion && currentVersion?.contentId) {
+        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
+      } else {
+        throw new Error('Failed to update content version');
       }
     },
     [
@@ -113,7 +91,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       data,
       fetchContentAndVersion,
       updateContentVersionMutation,
-    ]
+    ],
   );
 
   const update = useCallback(
@@ -123,17 +101,14 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
         await updateContentVersionData(updates);
       } catch (error) {
         toast({
-          variant: "destructive",
-          title:
-            error instanceof Error
-              ? error.message
-              : "Failed to save checklist!",
+          variant: 'destructive',
+          title: error instanceof Error ? error.message : 'Failed to save checklist!',
         });
       } finally {
         setIsLoading(false);
       }
     },
-    [updateContentVersionData, toast, setIsLoading]
+    [updateContentVersionData, toast, setIsLoading],
   );
 
   const updateLocalData = (updates: Partial<ChecklistData>) => {
@@ -158,9 +133,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       }
       return {
         ...prev,
-        items: prev.items.map((item) =>
-          item.id === currentItem.id ? currentItem : item
-        ),
+        items: prev.items.map((item) => (item.id === currentItem.id ? currentItem : item)),
       };
     });
     setCurrentMode({ mode: BuilderMode.CHECKLIST });
@@ -209,7 +182,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
           update(newData);
         }
       }, 500),
-    [update, currentVersion?.data]
+    [update, currentVersion?.data],
   );
 
   useEffect(() => {
@@ -244,19 +217,13 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     saveCurrentItem,
   };
 
-  return (
-    <ChecklistContext.Provider value={value}>
-      {children}
-    </ChecklistContext.Provider>
-  );
+  return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>;
 }
 
 export function useChecklistContext(): ChecklistContextValue {
   const context = useContext(ChecklistContext);
   if (!context) {
-    throw new Error(
-      `useChecklistContext must be used within a ChecklistProvider.`
-    );
+    throw new Error('useChecklistContext must be used within a ChecklistProvider.');
   }
   return context;
 }

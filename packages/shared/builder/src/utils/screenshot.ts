@@ -1,5 +1,5 @@
-import { TargetResult, parserV2 } from "@usertour-ui/finder";
-import { sendToBackground } from "@plasmohq/messaging";
+import { sendToBackground } from '@plasmohq/messaging';
+import { TargetResult, parserV2 } from '@usertour-ui/finder';
 
 export interface SelectorOutput {
   screenshot: {
@@ -20,15 +20,15 @@ export const createScreenshot = async ({
   return new Promise((resolve) => {
     const ratio = devicePixelRatio || window.devicePixelRatio;
     // Create canvas of desired size
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = width * ratio;
     canvas.height = height * ratio;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
       return;
     }
     // Fill it with a black bg
-    ctx.fillStyle = "black";
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     // Load full image
     const fullImage = new Image();
@@ -47,7 +47,7 @@ export const createScreenshot = async ({
         0,
         // Destination width x height
         width * ratio,
-        height * ratio
+        height * ratio,
       );
       // All done!
       resolve(canvas.toDataURL());
@@ -57,7 +57,7 @@ export const createScreenshot = async ({
 };
 
 export const getImgSize = async (
-  fullDataUrl: string
+  fullDataUrl: string,
 ): Promise<{ width: number; height: number }> => {
   return new Promise((resolve) => {
     const fullImage = new Image();
@@ -88,18 +88,12 @@ export const createMiniScreenshot = async (node: Element, dataUrl: string) => {
     const wh = (w - params.width) / 2;
     params.width = w;
     params.x = params.x - wh;
-  } else if (
-    (params.height > h && params.width < w) ||
-    params.width / params.height < w / h
-  ) {
+  } else if ((params.height > h && params.width < w) || params.width / params.height < w / h) {
     const w1 = Math.min(rect.height * (w / h), fullRect.width - params.x);
     const rw = (w1 - params.width) / 2;
     params.width = w1;
     params.x = params.x - rw;
-  } else if (
-    (params.height < h && params.width > w) ||
-    params.width / params.height > w / h
-  ) {
+  } else if ((params.height < h && params.width > w) || params.width / params.height > w / h) {
     const h1 = Math.min(rect.width * (h / w), fullRect.height - params.y);
     const rh = (h1 - params.height) / 2;
     params.height = h1;
@@ -118,7 +112,7 @@ export const createSelectorOutput = async (node: HTMLElement) => {
   }
   try {
     const { dataUrl } = await sendToBackground({
-      name: "screenshot",
+      name: 'screenshot',
       body: {},
     } as any);
     const miniUrl = await createMiniScreenshot(node, dataUrl);

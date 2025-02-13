@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer } from 'react';
 
 export const Button = () => {
   const [count, increase] = useReducer((c) => c + 1, 0);
@@ -16,4 +16,4 @@ export const Button = () => {
   );
 };
 
-Button.displayName = "Button";
+Button.displayName = 'Button';

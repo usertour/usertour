@@ -1,19 +1,17 @@
-import { ChevronDownIcon, GearIcon } from "@radix-ui/react-icons";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
+import { ChevronDownIcon, GearIcon } from '@radix-ui/react-icons';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { useAttributeListContext } from '@usertour-ui/contexts';
+import { useContentListContext } from '@usertour-ui/contexts';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { ContentActions } from "@usertour-ui/shared-editor";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@usertour-ui/tabs";
-import { TooltipIcon } from "@usertour-ui/icons";
-import { useAttributeListContext } from "@usertour-ui/contexts";
-import { useBuilderContext, useLauncherContext } from "../../../contexts";
-import { BuilderMode } from "../../../contexts";
-import { useContentListContext } from "@usertour-ui/contexts";
+} from '@usertour-ui/dropdown-menu';
+import { TooltipIcon } from '@usertour-ui/icons';
+import { ContentActions } from '@usertour-ui/shared-editor';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
 import {
   ContentActionsItemType,
   LauncherActionType,
@@ -21,8 +19,10 @@ import {
   LauncherTriggerElement,
   LauncherTriggerEvent,
   RulesCondition,
-} from "@usertour-ui/types";
-import { useCallback } from "react";
+} from '@usertour-ui/types';
+import { useCallback } from 'react';
+import { useBuilderContext, useLauncherContext } from '../../../contexts';
+import { BuilderMode } from '../../../contexts';
 
 interface TriggerDropdownProps {
   value: string;
@@ -32,12 +32,7 @@ interface TriggerDropdownProps {
   label?: string;
 }
 
-const TriggerDropdown = ({
-  value,
-  options,
-  onChange,
-  zIndex,
-}: TriggerDropdownProps) => (
+const TriggerDropdown = ({ value, options, onChange, zIndex }: TriggerDropdownProps) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
@@ -45,10 +40,7 @@ const TriggerDropdown = ({
         <ChevronDownIcon width={16} height={16} />
       </div>
     </DropdownMenuTrigger>
-    <DropdownMenuContent
-      align="start"
-      style={{ zIndex: zIndex + EXTENSION_SELECT }}
-    >
+    <DropdownMenuContent align="start" style={{ zIndex: zIndex + EXTENSION_SELECT }}>
       <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
         {options.map((option) => (
           <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -61,25 +53,24 @@ const TriggerDropdown = ({
 );
 
 const TRIGGER_ELEMENT_OPTIONS = [
-  { value: LauncherTriggerElement.LAUNCHER, label: "Launcher" },
-  { value: LauncherTriggerElement.TARGET, label: "Target element" },
+  { value: LauncherTriggerElement.LAUNCHER, label: 'Launcher' },
+  { value: LauncherTriggerElement.TARGET, label: 'Target element' },
   {
     value: LauncherTriggerElement.TARGET_OR_LAUNCHER,
-    label: "Launcher or Target",
+    label: 'Launcher or Target',
   },
 ] as const;
 
 const TRIGGER_EVENT_OPTIONS = [
-  { value: LauncherTriggerEvent.HOVERED, label: "hovered" },
-  { value: LauncherTriggerEvent.CLICKED, label: "clicked" },
+  { value: LauncherTriggerEvent.HOVERED, label: 'hovered' },
+  { value: LauncherTriggerEvent.CLICKED, label: 'clicked' },
 ] as const;
 
 export const LauncherBehavior = () => {
   const { setCurrentMode, zIndex, currentVersion } = useBuilderContext();
   const { contents } = useContentListContext();
   const { attributeList } = useAttributeListContext();
-  const { localData, updateLocalDataBehavior, setLauncherTooltip } =
-    useLauncherContext();
+  const { localData, updateLocalDataBehavior, setLauncherTooltip } = useLauncherContext();
 
   const handleStateChange = useCallback(
     (key: keyof LauncherBehaviorType) => (value: string | RulesCondition[]) => {
@@ -87,7 +78,7 @@ export const LauncherBehavior = () => {
         [key]: value,
       });
     },
-    [updateLocalDataBehavior]
+    [updateLocalDataBehavior],
   );
 
   const handleSwitchToTooltip = useCallback(() => {
@@ -112,21 +103,21 @@ export const LauncherBehavior = () => {
           <TriggerDropdown
             value={localData.behavior.triggerElement}
             options={TRIGGER_ELEMENT_OPTIONS}
-            onChange={handleStateChange("triggerElement")}
+            onChange={handleStateChange('triggerElement')}
             zIndex={zIndex}
           />
           <span className="text-sm">is</span>
           <TriggerDropdown
             value={localData.behavior.triggerEvent}
             options={TRIGGER_EVENT_OPTIONS}
-            onChange={handleStateChange("triggerEvent")}
+            onChange={handleStateChange('triggerEvent')}
             zIndex={zIndex}
           />
         </div>
         <div className="text-sm">Then</div>
         <Tabs
           defaultValue={localData.behavior.actionType}
-          onValueChange={handleStateChange("actionType")}
+          onValueChange={handleStateChange('actionType')}
         >
           <TabsList className="grid w-full grid-cols-2 bg-background">
             <TabsTrigger
@@ -167,7 +158,7 @@ export const LauncherBehavior = () => {
               isShowLogic={false}
               currentStep={undefined}
               currentVersion={currentVersion}
-              onDataChange={handleStateChange("actions")}
+              onDataChange={handleStateChange('actions')}
               defaultConditions={localData.behavior.actions}
               attributes={attributeList}
               contents={contents}
@@ -184,4 +175,4 @@ export const LauncherBehavior = () => {
     </div>
   );
 };
-LauncherBehavior.displayName = "LauncherBehavior";
+LauncherBehavior.displayName = 'LauncherBehavior';

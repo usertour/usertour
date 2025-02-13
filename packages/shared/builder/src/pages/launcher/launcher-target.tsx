@@ -1,19 +1,14 @@
-"use client";
+'use client';
 
-import {
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import { Button } from "@usertour-ui/button";
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
-import { SpinnerIcon } from "@usertour-ui/icons";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { useLauncherContext } from "../../contexts";
-import { ContentAlignment } from "../../components/content-alignment";
-import { LauncherPlacement } from "./components/launcher-placement";
-import { SidebarContainer } from "../sidebar";
+import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { ContentAlignment } from '../../components/content-alignment';
+import { useLauncherContext } from '../../contexts';
+import { SidebarContainer } from '../sidebar';
+import { LauncherPlacement } from './components/launcher-placement';
 
 const LauncherTargetHeader = () => {
   const { backToLauncher, setLauncherTarget } = useLauncherContext();
@@ -72,13 +67,8 @@ const LauncherTargetBody = () => {
 };
 
 const LauncherTargetFooter = () => {
-  const {
-    isLoading,
-    launcherTarget,
-    backToLauncher,
-    updateLocalData,
-    setLauncherTarget,
-  } = useLauncherContext();
+  const { isLoading, launcherTarget, backToLauncher, updateLocalData, setLauncherTarget } =
+    useLauncherContext();
 
   const handleSave = () => {
     if (launcherTarget) {
@@ -108,4 +98,4 @@ export const LauncherTarget = () => {
   );
 };
 
-LauncherTarget.displayName = "LauncherTarget";
+LauncherTarget.displayName = 'LauncherTarget';

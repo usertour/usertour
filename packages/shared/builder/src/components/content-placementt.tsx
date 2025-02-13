@@ -1,8 +1,8 @@
-import { Crosshair2Icon, QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { Input } from "@usertour-ui/input";
-import { Label } from "@usertour-ui/label";
+import { Crosshair2Icon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -11,17 +11,12 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { SelectorDialog } from "@usertour-ui/shared-components";
-import { ContentActions } from "@usertour-ui/shared-editor";
-import { Switch } from "@usertour-ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@usertour-ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+} from '@usertour-ui/select';
+import { SelectorDialog } from '@usertour-ui/shared-components';
+import { ContentActions } from '@usertour-ui/shared-editor';
+import { Switch } from '@usertour-ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import {
   Attribute,
   Content,
@@ -30,13 +25,9 @@ import {
   RulesCondition,
   Step,
   StepScreenshot,
-} from "@usertour-ui/types";
-import { ChangeEvent } from "react";
-import {
-  ContentError,
-  ContentErrorAnchor,
-  ContentErrorContent,
-} from "./content-error";
+} from '@usertour-ui/types';
+import { ChangeEvent } from 'react';
+import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 
 export interface ContentPlacementProps {
   title?: string;
@@ -56,10 +47,7 @@ export interface ContentPlacementProps {
   isWebBuilder?: boolean;
   isShowError?: boolean;
   isShowActions?: boolean;
-  createStep?: (
-    currentVersion: ContentVersion,
-    sequence: number
-  ) => Promise<Step | undefined>;
+  createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
 }
 export const ContentPlacement = (props: ContentPlacementProps) => {
   const {
@@ -79,8 +67,8 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
     isShowActions = true,
     currentStep,
     createStep,
-    title = "Element",
-    subTitle = "Show tooltip on this element",
+    title = 'Element',
+    subTitle = 'Show tooltip on this element',
   } = props;
 
   const handleSequenceChange = (value: string) => {
@@ -121,10 +109,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
   return (
     <div className="space-y-3">
       <h1 className="text-sm">{title}</h1>
-      <Tabs
-        defaultValue={target?.type ?? "auto"}
-        onValueChange={handlePlacementTypeChange}
-      >
+      <Tabs defaultValue={target?.type ?? 'auto'} onValueChange={handlePlacementTypeChange}>
         <TabsList className="grid w-full grid-cols-2 bg-background-700">
           <TabsTrigger
             value="auto"
@@ -142,24 +127,18 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
         <div className="flex flex-col  bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
           <TabsContent value="auto">
             <ContentError
-              open={
-                isShowError &&
-                (!target?.selectors || target?.selectors.length == 0)
-              }
+              open={isShowError && (!target?.selectors || target?.selectors.length === 0)}
             >
               <div className="flex flex-col space-y-2">
                 <h1 className="text-sm">{subTitle}</h1>
                 {!isWebBuilder && (
-                  <div
-                    className="rounded-2xl flex-col overflow-hidden"
-                    onClick={onChangeElement}
-                  >
+                  <div className="rounded-2xl flex-col overflow-hidden" onClick={onChangeElement}>
                     <div className="w-[242px] h-[130px] overflow-hidden">
                       <img src={screenshot?.mini} alt="" />
                     </div>
                     <ContentErrorAnchor>
                       <Button className="w-full rounded-none">
-                        <Crosshair2Icon className="mr-2"></Crosshair2Icon>
+                        <Crosshair2Icon className="mr-2" />
                         Select another element
                       </Button>
                     </ContentErrorAnchor>
@@ -179,9 +158,9 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                       </div>
                       <ContentErrorAnchor>
                         <Button className="w-full rounded-none">
-                          <Crosshair2Icon className="mr-2"></Crosshair2Icon>
-                          {!target && "Select element"}
-                          {target && "Select another element"}
+                          <Crosshair2Icon className="mr-2" />
+                          {!target && 'Select element'}
+                          {target && 'Select another element'}
                         </Button>
                       </ContentErrorAnchor>
                     </div>
@@ -197,20 +176,16 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>
-                            How flexible Usertour should be when looking for the
-                            element. If Usertour can't find your element, try to
-                            make the precision looser. lf Usertour tends to find
-                            the wrong element, try to make the precision
+                            How flexible Usertour should be when looking for the element. If
+                            Usertour can't find your element, try to make the precision looser. lf
+                            Usertour tends to find the wrong element, try to make the precision
                             stricter.
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <Select
-                    onValueChange={handlePrecisionChange}
-                    defaultValue={target?.precision}
-                  >
+                  <Select onValueChange={handlePrecisionChange} defaultValue={target?.precision}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a distribute" />
                     </SelectTrigger>
@@ -242,10 +217,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                 </div>
                 <div className="flex items-center justify-between space-x-2">
                   <div className="flex space-x-2 grow">
-                    <Label
-                      htmlFor="dynamic-content"
-                      className="flex flex-col space-y-1"
-                    >
+                    <Label htmlFor="dynamic-content" className="flex flex-col space-y-1">
                       <span className="font-normal">Dynamic text</span>
                     </Label>
                     <TooltipProvider>
@@ -255,9 +227,8 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>
-                            If the element's text is dynamic and may change,
-                            enabled this switch to make Usertour find it without
-                            considering its current text.
+                            If the element's text is dynamic and may change, enabled this switch to
+                            make Usertour find it without considering its current text.
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -271,9 +242,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                   />
                 </div>
               </div>
-              <ContentErrorContent
-                style={{ zIndex: zIndex + EXTENSION_SELECT }}
-              >
+              <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
                 Please select an element
               </ContentErrorContent>
             </ContentError>
@@ -284,19 +253,14 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                 <h1 className="text-sm">{subTitle}</h1>
                 <div className="flex flex-col space-y-2">
                   <div className="flex justify-start items-center space-x-1	">
-                    <Label htmlFor="button-manual-element-text">
-                      Element text
-                    </Label>
+                    <Label htmlFor="button-manual-element-text">Element text</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <QuestionMarkCircledIcon />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p>
-                            Usertour will select an element containing the text
-                            you write here.
-                          </p>
+                          <p>Usertour will select an element containing the text you write here.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -309,9 +273,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                     onChange={handleElementTextChange}
                   />
                   <div className="flex justify-start items-center space-x-1	">
-                    <Label htmlFor="button-manual-css-selector">
-                      CSS selector
-                    </Label>
+                    <Label htmlFor="button-manual-css-selector">CSS selector</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -319,12 +281,10 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>
-                            Advanced feature: If possible, we recommend
-                            selecting elements using text. lf an element does
-                            not have text, or the text is very generic, you can
-                            select it using a CSS selector instead. lf both text
-                            and CSS selector is filled in, Usertour will select
-                            an element matching both.
+                            Advanced feature: If possible, we recommend selecting elements using
+                            text. lf an element does not have text, or the text is very generic, you
+                            can select it using a CSS selector instead. lf both text and CSS
+                            selector is filled in, Usertour will select an element matching both.
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -354,9 +314,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                     ))}
                   </div>
                   <div className="flex justify-start items-center space-x-1	">
-                    <Label htmlFor="button-manual-css-selector">
-                      If multiple matches
-                    </Label>
+                    <Label htmlFor="button-manual-css-selector">If multiple matches</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -364,23 +322,19 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>
-                            If multiple elements match your criteria, you can
-                            tell Usertour which of the elements to select.
+                            If multiple elements match your criteria, you can tell Usertour which of
+                            the elements to select.
                           </p>
                           <p>
-                            Elements are sorted first by vertical position and
-                            second by horizontal position. l.e. an element
-                            higher up on the page and more towards the left
-                            takes precedence.{" "}
+                            Elements are sorted first by vertical position and second by horizontal
+                            position. l.e. an element higher up on the page and more towards the
+                            left takes precedence.{' '}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <Select
-                    onValueChange={handleSequenceChange}
-                    defaultValue={target?.sequence}
-                  >
+                  <Select onValueChange={handleSequenceChange} defaultValue={target?.sequence}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a option" />
                     </SelectTrigger>
@@ -408,9 +362,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
                   </Select>
                 </div>
               </div>
-              <ContentErrorContent
-                style={{ zIndex: zIndex + EXTENSION_SELECT }}
-              >
+              <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
                 CSS selector is required
               </ContentErrorContent>
             </ContentError>
@@ -440,4 +392,4 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
     </div>
   );
 };
-ContentPlacement.displayName = "ContentPlacement";
+ContentPlacement.displayName = 'ContentPlacement';

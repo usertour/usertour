@@ -1,76 +1,50 @@
-"use client";
+'use client';
 
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@usertour-ui/card";
-import {
-  EXTENSION_CONTENT_SIDEBAR,
-  MESSAGE_CRX_OPEN_NEW_TARGET,
-} from "@usertour-ui/constants";
-import { OutlineInput } from "@usertour-ui/input";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { Separator } from "@usertour-ui/separator";
+import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { EXTENSION_CONTENT_SIDEBAR, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour-ui/constants';
+import { OutlineInput } from '@usertour-ui/input';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { Separator } from '@usertour-ui/separator';
 import {
   Align,
   ContentAlignmentData,
   ContentModalPlacementData,
   ContentVersion,
-  ModalPosition,
   Side,
   Step,
   Theme,
-} from "@usertour-ui/types";
-import { cn } from "@usertour-ui/ui-utils";
-import {
-  ChangeEvent,
-  Ref,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { BuilderMode, useBuilderContext } from "../../contexts";
-import { dataURLtoFile } from "../../utils/aws";
-import { ContentAlignment } from "../../components/content-alignment";
-import { ContentModal } from "../../components/content-modal";
-import { ContentModalPlacement } from "../../components/content-modal-placement";
-import { ContentPopper } from "../../components/content-popper";
-import {
-  ContentSettings,
-  ContentSettingsData,
-} from "../../components/content-settings";
-import { ContentTheme } from "../../components/content-theme";
-import { ContentWidth } from "../../components/content-width";
-import { SidebarMini } from "../sidebar/sidebar-mini";
-import { useAws } from "../../hooks/use-aws";
+} from '@usertour-ui/types';
+import { cn } from '@usertour-ui/ui-utils';
+import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { ContentAlignment } from '../../components/content-alignment';
+import { ContentModal } from '../../components/content-modal';
+import { ContentModalPlacement } from '../../components/content-modal-placement';
+import { ContentPopper } from '../../components/content-popper';
+import { ContentSettings, ContentSettingsData } from '../../components/content-settings';
+import { ContentTheme } from '../../components/content-theme';
+import { ContentWidth } from '../../components/content-width';
+import { SidebarMini } from '../sidebar/sidebar-mini';
 import {
   useAttributeListContext,
   useContentListContext,
   useThemeListContext,
-} from "@usertour-ui/contexts";
-import { postProxyMessageToWindow } from "../../utils/post-message";
-import { ContentEditorRoot, createValue1 } from "@usertour-ui/shared-editor";
-import { defaultStep, getErrorMessage } from "@usertour-ui/shared-utils";
-import { SpinnerIcon } from "@usertour-ui/icons";
-import { useMutation } from "@apollo/client";
-import { addContentStep, updateContentStep } from "@usertour-ui/gql";
-import { useToast } from "@usertour-ui/use-toast";
-import { ContentType } from "../../components/content-type";
-import {
-  ExtensionElementListener,
-  WebElementListener,
-} from "../../components/element-listener";
-import { FlowPlacement } from "./components/flow-placement";
+} from '@usertour-ui/contexts';
+import { postProxyMessageToWindow } from '../../utils/post-message';
+import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
+import { defaultStep, getErrorMessage } from '@usertour-ui/shared-utils';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { useMutation } from '@apollo/client';
+import { addContentStep, updateContentStep } from '@usertour-ui/gql';
+import { useToast } from '@usertour-ui/use-toast';
+import { ContentType } from '../../components/content-type';
+import { ExtensionElementListener, WebElementListener } from '../../components/element-listener';
+import { FlowPlacement } from './components/flow-placement';
 
 const FlowBuilderDetailHeader = () => {
-  const { setCurrentMode, currentStep, currentContent, updateCurrentStep } =
-    useBuilderContext();
+  const { setCurrentMode, currentStep, currentContent, updateCurrentStep } = useBuilderContext();
 
   const handleBackup = () => {
     setCurrentMode({ mode: BuilderMode.FLOW });
@@ -85,9 +59,7 @@ const FlowBuilderDetailHeader = () => {
 
   return (
     <CardHeader className="flex-none p-5 space-y-2">
-      <CardTitle className="text-base truncate ...">
-        {currentContent?.name}
-      </CardTitle>
+      <CardTitle className="text-base truncate ...">{currentContent?.name}</CardTitle>
       <div className="flex">
         <Button
           variant="link"
@@ -110,26 +82,17 @@ const FlowBuilderDetailHeader = () => {
 };
 
 const FlowBuilderDetailBody = () => {
-  const {
-    zIndex,
-    currentStep,
-    updateCurrentStep,
-    currentTheme,
-    projectId,
-    webHost,
-    isWebBuilder,
-  } = useBuilderContext();
+  const { zIndex, currentStep, updateCurrentStep, currentTheme, projectId, webHost, isWebBuilder } =
+    useBuilderContext();
   const { themeList } = useThemeListContext();
 
   const handleEditTheme = useCallback(() => {
     if (!currentStep || !currentTheme) {
       return false;
     }
-    const url = `/project/${projectId}/settings/theme/${
-      currentStep.themeId || currentTheme.id
-    }`;
+    const url = `/project/${projectId}/settings/theme/${currentStep.themeId || currentTheme.id}`;
     if (isWebBuilder) {
-      return window.open(url, "_blank");
+      return window.open(url, '_blank');
     }
     postProxyMessageToWindow({
       kind: MESSAGE_CRX_OPEN_NEW_TARGET,
@@ -202,24 +165,24 @@ const FlowBuilderDetailBody = () => {
             />
             <Separator />
             <ContentWidth
-              type={currentStep.type as "tooltip" | "modal"}
+              type={currentStep.type as 'tooltip' | 'modal'}
               width={currentStep.setting.width}
               onChange={handleWidthChange}
             />
-            {currentStep.type == "tooltip" && <FlowPlacement />}
-            {currentStep.type == "tooltip" && (
+            {currentStep.type === 'tooltip' && <FlowPlacement />}
+            {currentStep.type === 'tooltip' && (
               <ContentAlignment
                 initialValue={{
                   side: currentStep.setting.side as Side,
                   align: currentStep.setting.align as Align,
-                  alignType: currentStep.setting.alignType as "auto" | "fixed",
+                  alignType: currentStep.setting.alignType as 'auto' | 'fixed',
                   sideOffset: currentStep.setting.sideOffset,
                   alignOffset: currentStep.setting.alignOffset,
                 }}
                 onChange={handleAlignmentChange}
               />
             )}
-            {currentStep.type == "modal" && (
+            {currentStep.type === 'modal' && (
               <ContentModalPlacement
                 data={
                   {
@@ -259,43 +222,19 @@ const FlowBuilderDetailFooter = () => {
     contentRef,
   } = useBuilderContext();
   const [backupStepData] = useState(currentStep);
-  const { upload } = useAws();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [addContentStepMutation] = useMutation(addContentStep);
   const [updateContentStepMutation] = useMutation(updateContentStep);
   const { toast } = useToast();
-  const uploadScreenshot = async (currentStep: Step, backupStepData: Step) => {
-    if (!currentStep.screenshot) {
-      return;
-    }
-    const { mini, full } = currentStep.screenshot;
-    if (
-      backupStepData.screenshot &&
-      backupStepData.screenshot.mini &&
-      backupStepData.screenshot.mini == currentStep?.screenshot?.mini &&
-      mini.search(/^https/) !== -1
-    ) {
-      return { mini, full };
-    }
-    if (mini.search(/^https/) !== -1) {
-      return { mini, full };
-    }
-    const miniFile = dataURLtoFile(mini, "screenshot-mini.png");
-    // const fullFile = dataURLtoFile(full, "screenshot-full.png");
-    const miniUrl = await upload(miniFile);
-    // const fullUrl = await upload(fullFile);
-    return { mini: miniUrl, full: "" };
-  };
 
   const handleSave = useCallback(async () => {
     if (!currentStep || !backupStepData) {
       return;
     }
     if (
-      currentStep.type == "tooltip" &&
-      ((currentStep.target?.type == "auto" && !currentStep.target?.selectors) ||
-        (currentStep.target?.type == "manual" &&
-          !currentStep.target?.customSelector))
+      currentStep.type === 'tooltip' &&
+      ((currentStep.target?.type === 'auto' && !currentStep.target?.selectors) ||
+        (currentStep.target?.type === 'manual' && !currentStep.target?.customSelector))
     ) {
       setIsShowError(true);
       return;
@@ -313,7 +252,7 @@ const FlowBuilderDetailFooter = () => {
       //     : { mini: "", full: "" };
       const step = {
         ...currentStep,
-        screenshot: { mini: "", full: "" },
+        screenshot: { mini: '', full: '' },
         setting: { ...currentStep.setting, height },
       };
       if (!step.id) {
@@ -321,14 +260,11 @@ const FlowBuilderDetailFooter = () => {
           variables: { data: { ...step, versionId: currentVersion?.id } },
         });
         if (ret.data.addContentStep && currentVersion?.contentId) {
-          await fetchContentAndVersion(
-            currentVersion?.contentId,
-            currentVersion?.id
-          );
+          await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
         } else {
           return toast({
-            variant: "destructive",
-            title: "Failed to create step!",
+            variant: 'destructive',
+            title: 'Failed to create step!',
           });
         }
       } else {
@@ -337,20 +273,17 @@ const FlowBuilderDetailFooter = () => {
           variables: { stepId: step.id, data: updates },
         });
         if (ret.data.updateContentStep && currentVersion?.contentId) {
-          await fetchContentAndVersion(
-            currentVersion?.contentId,
-            currentVersion?.id
-          );
+          await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
         } else {
           return toast({
-            variant: "destructive",
-            title: "Failed to create step!",
+            variant: 'destructive',
+            title: 'Failed to create step!',
           });
         }
       }
     } catch (error) {
       return toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
@@ -390,8 +323,8 @@ const FlowBuilderDetailEmbed = () => {
   const createNewStep = (currentVersion: ContentVersion, sequence: number) => {
     const step: Step = {
       ...defaultStep,
-      type: "tooltip",
-      name: "Untitled",
+      type: 'tooltip',
+      name: 'Untitled',
       data: createValue1,
       sequence,
     };
@@ -404,10 +337,10 @@ const FlowBuilderDetailEmbed = () => {
     }
     if (themeList.length > 0) {
       let theme: Theme | undefined;
-      if (currentStep && currentStep.themeId) {
-        theme = themeList.find((item) => item.id == currentStep.themeId);
-      } else if (currentVersion) {
-        theme = themeList.find((item) => item.id == currentVersion.themeId);
+      if (currentStep?.themeId) {
+        theme = themeList.find((item) => item.id === currentStep.themeId);
+      } else if (currentVersion?.themeId) {
+        theme = themeList.find((item) => item.id === currentVersion.themeId);
       }
       if (theme) {
         setTheme(theme);
@@ -443,12 +376,10 @@ const FlowBuilderDetailEmbed = () => {
     return <></>;
   }
 
-  if (currentStep.type == "tooltip") {
+  if (currentStep.type === 'tooltip') {
     return (
       <>
-        {isWebBuilder && (
-          <WebElementListener ref={triggerRef} onMounted={handleOnMounted} />
-        )}
+        {isWebBuilder && <WebElementListener ref={triggerRef} onMounted={handleOnMounted} />}
         {!isWebBuilder && (
           <ExtensionElementListener
             ref={triggerRef}
@@ -502,10 +433,7 @@ export const FlowBuilderDetail = () => {
   return (
     <>
       <div
-        className={cn(
-          "w-80 h-screen p-2 fixed top-0",
-          position == "left" ? "left-0" : "right-0"
-        )}
+        className={cn('w-80 h-screen p-2 fixed top-0', position === 'left' ? 'left-0' : 'right-0')}
         style={{ zIndex: zIndex + EXTENSION_CONTENT_SIDEBAR }}
         ref={ref}
       >
@@ -521,4 +449,4 @@ export const FlowBuilderDetail = () => {
   );
 };
 
-FlowBuilderDetail.displayName = "FlowBuilderDetail";
+FlowBuilderDetail.displayName = 'FlowBuilderDetail';

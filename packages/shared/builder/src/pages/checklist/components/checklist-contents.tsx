@@ -1,23 +1,22 @@
 import {
-  closestCenter,
   DndContext,
   DragEndEvent,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  closestCenter,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
+  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { DragHandleDots2Icon, GearIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,24 +27,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@usertour-ui/alert-dialog";
-import { Delete2Icon } from "@usertour-ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { forwardRef, useState } from "react";
-import {
-  BuilderMode,
-  useBuilderContext,
-  useChecklistContext,
-} from "../../../contexts";
-import { ChecklistItemType } from "@usertour-ui/types";
+} from '@usertour-ui/alert-dialog';
+import { Button } from '@usertour-ui/button';
+import { Delete2Icon } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { ChecklistItemType } from '@usertour-ui/types';
+import { forwardRef, useState } from 'react';
+import { BuilderMode, useBuilderContext, useChecklistContext } from '../../../contexts';
 // Add interface for component props
 interface ChecklistContentProps {
-  onClick?: (action: "edit" | "delete", item: ChecklistItemType) => void;
+  onClick?: (action: 'edit' | 'delete', item: ChecklistItemType) => void;
   listeners?: Record<string, any>;
   attributes?: Record<string, any>;
   item: ChecklistItemType;
@@ -75,13 +66,13 @@ const DeleteDialog = ({
       <AlertDialogHeader>
         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
         <AlertDialogDescription>
-          After deletion, it will not be possible to access or recover the data
-          through any means. Please confirm.
+          After deletion, it will not be possible to access or recover the data through any means.
+          Please confirm.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction onClick={onDelete} variant={"destructive"}>
+        <AlertDialogAction onClick={onDelete} variant={'destructive'}>
           Delete
         </AlertDialogAction>
       </AlertDialogFooter>
@@ -115,7 +106,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>(
                     variant="ghost"
                     size="sm"
                     className="p-1 h-fit"
-                    onClick={() => onClick?.("edit", item)}
+                    onClick={() => onClick?.('edit', item)}
                   >
                     <GearIcon className="h-4 w-4" />
                   </Button>
@@ -124,7 +115,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>(
               </Tooltip>
             </TooltipProvider>
 
-            <DeleteDialog onDelete={() => onClick?.("delete", item)}>
+            <DeleteDialog onDelete={() => onClick?.('delete', item)}>
               <Button variant="ghost" size="sm" className="p-1 h-fit">
                 <Delete2Icon className="h-4 w-4 text-foreground" />
               </Button>
@@ -133,18 +124,13 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 const SortableItem = ({ id, onClick, item }: any) => {
-  const {
-    attributes,
-    listeners,
-    isDragging,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -160,14 +146,13 @@ const SortableItem = ({ id, onClick, item }: any) => {
       onClick={onClick}
       listeners={listeners}
       attributes={attributes}
-    ></ChecklistContent>
+    />
   );
 };
 
 export const ChecklistContents = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { localData, updateLocalData, setCurrentItem, removeItem } =
-    useChecklistContext();
+  const { localData, updateLocalData, setCurrentItem, removeItem } = useChecklistContext();
 
   if (!localData) {
     return null;
@@ -178,7 +163,7 @@ export const ChecklistContents = () => {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleEditItem = (item: ChecklistItemType) => {
@@ -186,10 +171,10 @@ export const ChecklistContents = () => {
     setCurrentMode({ mode: BuilderMode.CHECKLIST_ITEM });
   };
 
-  const handleOnClick = (action: string, item: ChecklistItemType) => {
-    if (action == "edit") {
+  const handleOnClick = (action: 'edit' | 'delete', item: ChecklistItemType) => {
+    if (action === 'edit') {
       handleEditItem(item);
-    } else if (action == "delete") {
+    } else if (action === 'delete') {
       removeItem(item.id);
     }
   };
@@ -221,25 +206,15 @@ export const ChecklistContents = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext
-          items={localData.items}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={localData.items} strategy={verticalListSortingStrategy}>
           {localData.items.map((item) => (
-            <SortableItem
-              id={item.id}
-              onClick={handleOnClick}
-              key={item.id}
-              item={item}
-            />
+            <SortableItem id={item.id} onClick={handleOnClick} key={item.id} item={item} />
           ))}
         </SortableContext>
-        <DragOverlay>
-          {activeItem ? <ChecklistContent item={activeItem} /> : null}
-        </DragOverlay>
+        <DragOverlay>{activeItem ? <ChecklistContent item={activeItem} /> : null}</DragOverlay>
       </DndContext>
     </>
   );
 };
 
-ChecklistContents.displayName = "ChecklistContents";
+ChecklistContents.displayName = 'ChecklistContents';

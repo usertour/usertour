@@ -1,3 +1,7 @@
+import { useMutation } from '@apollo/client';
+import { updateContentVersion } from '@usertour-ui/gql';
+import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour-ui/types';
+import { debounce, isEqual } from 'lodash';
 import {
   ReactNode,
   createContext,
@@ -6,13 +10,8 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react";
-import { BuilderMode, useBuilderContext } from "./builder-context";
-import { DEFAULT_LAUNCHER_DATA, LauncherData } from "@usertour-ui/types";
-import { updateContentVersion } from "@usertour-ui/gql";
-import { useMutation } from "@apollo/client";
-import { useToast } from "@usertour-ui/use-toast";
-import { debounce, isEqual } from "lodash";
+} from 'react';
+import { BuilderMode, useBuilderContext } from './builder-context';
 
 export interface LauncherProviderProps {
   children: ReactNode;
@@ -25,23 +24,17 @@ export interface LauncherContextValue {
   backToLauncher: () => void;
   gotoLauncherTarget: () => void;
   saveLocalData: () => Promise<void>;
-  updateLocalDataTooltip: (updates: Partial<LauncherData["tooltip"]>) => void;
+  updateLocalDataTooltip: (updates: Partial<LauncherData['tooltip']>) => void;
   updateLocalData: (data: Partial<LauncherData>) => void;
-  updateLocalDataTarget: (data: Partial<LauncherData["target"]>) => void;
-  updateLocalDataBehavior: (data: Partial<LauncherData["behavior"]>) => void;
-  launcherTooltip: LauncherData["tooltip"] | undefined;
-  setLauncherTooltip: React.Dispatch<
-    React.SetStateAction<LauncherData["tooltip"] | undefined>
-  >;
-  launcherTarget: LauncherData["target"] | undefined;
-  setLauncherTarget: React.Dispatch<
-    React.SetStateAction<LauncherData["target"] | undefined>
-  >;
+  updateLocalDataTarget: (data: Partial<LauncherData['target']>) => void;
+  updateLocalDataBehavior: (data: Partial<LauncherData['behavior']>) => void;
+  launcherTooltip: LauncherData['tooltip'] | undefined;
+  setLauncherTooltip: React.Dispatch<React.SetStateAction<LauncherData['tooltip'] | undefined>>;
+  launcherTarget: LauncherData['target'] | undefined;
+  setLauncherTarget: React.Dispatch<React.SetStateAction<LauncherData['target'] | undefined>>;
 }
 
-export const LauncherContext = createContext<LauncherContextValue | undefined>(
-  undefined
-);
+export const LauncherContext = createContext<LauncherContextValue | undefined>(undefined);
 
 export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
   const { children } = props;
@@ -58,34 +51,23 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
 
   const [localData, setLocalData] = useState<LauncherData | undefined>();
 
-  const [launcherTooltip, setLauncherTooltip] = useState<
-    LauncherData["tooltip"] | undefined
-  >();
-  const [launcherTarget, setLauncherTarget] = useState<
-    LauncherData["target"] | undefined
-  >();
+  const [launcherTooltip, setLauncherTooltip] = useState<LauncherData['tooltip'] | undefined>();
+  const [launcherTarget, setLauncherTarget] = useState<LauncherData['target'] | undefined>();
 
   const updateContentVersionData = useCallback(
     async (updates: Partial<LauncherData>) => {
       setIsLoading(true);
-      try {
-        const ret = await updateContentVersionMutation({
-          variables: {
-            versionId: currentVersion?.id,
-            content: { data: { ...localData, ...updates } },
-          },
-        });
+      const ret = await updateContentVersionMutation({
+        variables: {
+          versionId: currentVersion?.id,
+          content: { data: { ...localData, ...updates } },
+        },
+      });
 
-        if (ret.data.updateContentVersion && currentVersion?.contentId) {
-          await fetchContentAndVersion(
-            currentVersion?.contentId,
-            currentVersion?.id
-          );
-        } else {
-          throw new Error("Failed to update content version");
-        }
-      } catch (error) {
-        throw error;
+      if (ret.data.updateContentVersion && currentVersion?.contentId) {
+        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
+      } else {
+        throw new Error('Failed to update content version');
       }
       setIsLoading(false);
     },
@@ -95,7 +77,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
       localData,
       fetchContentAndVersion,
       updateContentVersionMutation,
-    ]
+    ],
   );
 
   const debouncedUpdate = useMemo(
@@ -105,12 +87,10 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
           updateContentVersionData(newData);
         }
       }, 500),
-    [updateContentVersionData, currentVersion?.data]
+    [updateContentVersionData, currentVersion?.data],
   );
 
-  const updateLocalDataTooltip = (
-    updates: Partial<LauncherData["tooltip"]>
-  ) => {
+  const updateLocalDataTooltip = (updates: Partial<LauncherData['tooltip']>) => {
     setLocalData((prev) => {
       if (prev) {
         return { ...prev, tooltip: { ...prev.tooltip, ...updates } };
@@ -118,9 +98,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     });
   };
 
-  const updateLocalDataBehavior = (
-    updates: Partial<LauncherData["behavior"]>
-  ) => {
+  const updateLocalDataBehavior = (updates: Partial<LauncherData['behavior']>) => {
     setLocalData((prev) => {
       if (prev) {
         return { ...prev, behavior: { ...prev.behavior, ...updates } };
@@ -136,7 +114,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     });
   };
 
-  const updateLocalDataTarget = (updates: Partial<LauncherData["target"]>) => {
+  const updateLocalDataTarget = (updates: Partial<LauncherData['target']>) => {
     setLocalData((prev) => {
       if (prev) {
         return { ...prev, target: { ...prev.target, ...updates } };
@@ -152,7 +130,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
       await updateContentVersionData(localData);
       setCurrentMode({ mode: BuilderMode.LAUNCHER });
     } catch (error) {
-      console.error("Failed to save changes:", error);
+      console.error('Failed to save changes:', error);
     }
   }, [localData, updateContentVersionData, setCurrentMode]);
 
@@ -206,19 +184,13 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     setLauncherTarget,
   };
 
-  return (
-    <LauncherContext.Provider value={value}>
-      {children}
-    </LauncherContext.Provider>
-  );
+  return <LauncherContext.Provider value={value}>{children}</LauncherContext.Provider>;
 }
 
 export function useLauncherContext(): LauncherContextValue {
   const context = useContext(LauncherContext);
   if (!context) {
-    throw new Error(
-      `useLauncherContext must be used within a LauncherProvider.`
-    );
+    throw new Error('useLauncherContext must be used within a LauncherProvider.');
   }
   return context;
 }

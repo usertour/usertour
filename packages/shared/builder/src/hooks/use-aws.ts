@@ -1,13 +1,10 @@
-import { useApolloClient } from "@apollo/client";
-import { createPresignedUrl } from "@usertour-ui/gql";
-import axios from "axios";
+import { useApolloClient } from '@apollo/client';
+import { createPresignedUrl } from '@usertour-ui/gql';
+import axios from 'axios';
 
 export const useAws = () => {
   const client = useApolloClient();
-  const getPresignedUrl = async (
-    fileName: string,
-    storageType: string = "S3"
-  ) => {
+  const getPresignedUrl = async (fileName: string, storageType = 'S3') => {
     const { data } = await client.mutate({
       mutation: createPresignedUrl,
       variables: {
@@ -25,18 +22,18 @@ export const useAws = () => {
       const { signedUrl, cdnUrl } = await getPresignedUrl(fileName);
 
       if (!signedUrl || !cdnUrl) {
-        throw new Error("Failed to get presigned URL");
+        throw new Error('Failed to get presigned URL');
       }
 
       await axios.put(signedUrl, file, {
-        headers: { "Content-Type": contentType },
+        headers: { 'Content-Type': contentType },
       });
 
       return cdnUrl;
     } catch (error) {
       // Log error for debugging
-      console.error("Upload failed:", error);
-      throw new Error("File upload failed");
+      console.error('Upload failed:', error);
+      throw new Error('File upload failed');
     }
   };
 

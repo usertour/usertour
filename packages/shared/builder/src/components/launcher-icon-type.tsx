@@ -1,11 +1,5 @@
-import { IconsList } from "@usertour-ui/sdk";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
+import { IconsList } from '@usertour-ui/sdk';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 
 interface LauncherIconTypeProps {
   type: string;
@@ -13,11 +7,7 @@ interface LauncherIconTypeProps {
   onChange: (value: string) => void;
 }
 
-export const LauncherIconType = ({
-  type,
-  zIndex,
-  onChange,
-}: LauncherIconTypeProps) => {
+export const LauncherIconType = ({ type, zIndex, onChange }: LauncherIconTypeProps) => {
   const ActiveIcon = IconsList.find((item) => item.name === type)?.ICON;
 
   return (
@@ -43,4 +33,4 @@ export const LauncherIconType = ({
     </Select>
   );
 };
-LauncherIconType.displayName = "LauncherIconType";
+LauncherIconType.displayName = 'LauncherIconType';

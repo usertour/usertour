@@ -1,8 +1,8 @@
-import { Label } from "@usertour-ui/label";
-import { ContentActions } from "@usertour-ui/shared-editor";
-import { useContentPlacement } from "./content-placement-context";
-import { EXTENSION_SELECT } from "@usertour-ui/constants";
-import { ContentVersion, Attribute, Content, Step } from "@usertour-ui/types";
+import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Label } from '@usertour-ui/label';
+import { ContentActions } from '@usertour-ui/shared-editor';
+import { Attribute, Content, ContentVersion, Step } from '@usertour-ui/types';
+import { useContentPlacement } from './content-placement-context';
 
 interface ContentPlacementActionsProps {
   children?: React.ReactNode;
@@ -10,10 +10,7 @@ interface ContentPlacementActionsProps {
   currentVersion?: ContentVersion;
   attributeList?: Attribute[];
   contents?: Content[];
-  createStep?: (
-    currentVersion: ContentVersion,
-    sequence: number
-  ) => Promise<Step | undefined>;
+  createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
 }
 
 export const ContentPlacementActions = ({

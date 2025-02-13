@@ -1,1 +1,1 @@
-export { SurveyBuilder } from "./survey";
+export { SurveyBuilder } from './survey';

@@ -1,8 +1,8 @@
-import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from "@usertour-ui/constants";
+import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from '@usertour-ui/constants';
 
 export const isInstalledExtension = async () => {
   let isInstalled = false;
-  return new Promise(function (resolve: (installed: boolean) => void) {
+  return new Promise((resolve: (installed: boolean) => void) => {
     const pageMessageListener = (e: MessageEvent) => {
       // Discard untrusted events
       if (!e.isTrusted) {
@@ -13,10 +13,10 @@ export const isInstalledExtension = async () => {
         isInstalled = true;
       }
     };
-    window.addEventListener("message", pageMessageListener);
+    window.addEventListener('message', pageMessageListener);
     window.postMessage({ kind: MESSAGE_CRX_PING }, window.location.href);
     let count = 0;
-    let timer = setInterval(() => {
+    const timer = setInterval(() => {
       if (isInstalled) {
         resolve(true);
         clearInterval(timer);
@@ -27,7 +27,5 @@ export const isInstalledExtension = async () => {
       }
       count++;
     }, 100);
-  }).then(function (isLoaded: boolean) {
-    return isLoaded;
-  });
+  }).then((isLoaded: boolean) => isLoaded);
 };

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Cross1Icon,
@@ -7,8 +7,9 @@ import {
   GlobeIcon,
   PinBottomIcon,
   PinTopIcon,
-} from "@radix-ui/react-icons";
-import { useEffect, useRef, useState } from "react";
+} from '@radix-ui/react-icons';
+import { cn } from '@usertour-ui/ui-utils';
+import { useEffect, useRef, useState } from 'react';
 
 interface ElementSelectorProps {
   onCancel: () => void;
@@ -27,16 +28,16 @@ export const ElementSelector = ({
 }: ElementSelectorProps) => {
   const selectRef = useRef(null);
   const navigateRef = useRef(null);
-  const [selectClass, setSelectClass] = useState("bg-primary");
-  const [navigateClass, setNavigateClass] = useState("bg-background-700");
-  const [isPinBottom, setIsPinBottom] = useState<Boolean>(isBottom);
+  const [selectClass, setSelectClass] = useState('bg-primary');
+  const [navigateClass, setNavigateClass] = useState('bg-background-700');
+  const [isPinBottom, setIsPinBottom] = useState<boolean>(isBottom);
 
-  const handleElementSelect = (event: React.MouseEvent<HTMLElement>) => {
+  const handleElementSelect = () => {
     if (setEnabledSelector) {
       setEnabledSelector(true);
     }
   };
-  const handleNavigatePage = (event: React.MouseEvent<HTMLElement>) => {
+  const handleNavigatePage = () => {
     if (setEnabledSelector) {
       setEnabledSelector(false);
     }
@@ -50,11 +51,11 @@ export const ElementSelector = ({
 
   useEffect(() => {
     if (enabledSelector) {
-      setSelectClass("bg-primary");
-      setNavigateClass("bg-background-700");
+      setSelectClass('bg-primary');
+      setNavigateClass('bg-background-700');
     } else {
-      setSelectClass("bg-background-700");
-      setNavigateClass("bg-primary");
+      setSelectClass('bg-background-700');
+      setNavigateClass('bg-primary');
     }
   }, [enabledSelector]);
 
@@ -68,7 +69,7 @@ export const ElementSelector = ({
   return (
     <div className="w-full h-[52px] flex text-slate-50 ">
       <div className="bg-gradient-to-r from-slate-700 to-slate-800 flex rounded-l-2xl flex-none items-center space-x-2 px-4 ">
-        <CubeIcon className="text-slate-50 opacity-70" width={16} height={16} />{" "}
+        <CubeIcon className="text-slate-50 opacity-70" width={16} height={16} />{' '}
         {isPinBottom && (
           <PinTopIcon
             className="text-slate-50 cursor-pointer"
@@ -96,10 +97,10 @@ export const ElementSelector = ({
         </div>
         <div className="flex-none flex py-2">
           <div
-            className={
-              "rounded-l-xl flex items-center space-x-2 px-4 cursor-pointer " +
-              navigateClass
-            }
+            className={cn(
+              'rounded-l-xl flex items-center space-x-2 px-4 cursor-pointer ',
+              navigateClass,
+            )}
             ref={navigateRef}
             onClick={handleNavigatePage}
           >
@@ -107,10 +108,10 @@ export const ElementSelector = ({
             <span>Navigate to another page</span>
           </div>
           <div
-            className={
-              "rounded-r-xl flex items-center space-x-2 px-4 cursor-pointer " +
-              selectClass
-            }
+            className={cn(
+              'rounded-r-xl flex items-center space-x-2 px-4 cursor-pointer ',
+              selectClass,
+            )}
             ref={selectRef}
             onClick={handleElementSelect}
           >
@@ -131,4 +132,4 @@ export const ElementSelector = ({
   );
 };
 
-ElementSelector.displayName = "ElementSelector";
+ElementSelector.displayName = 'ElementSelector';

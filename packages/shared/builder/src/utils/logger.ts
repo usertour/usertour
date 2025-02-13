@@ -1,9 +1,9 @@
 let lastT: any;
 export const isDebugEnabled = () => {
-  return (localStorage.getItem("debug") || sessionStorage.getItem("debug") || "")
-    .split(",")
-    .some((v) => v === "*" || v.startsWith("usertour-ext:*"));
-}
+  return (localStorage.getItem('debug') || sessionStorage.getItem('debug') || '')
+    .split(',')
+    .some((v) => v === '*' || v.startsWith('usertour-ext:*'));
+};
 
 export const debug = (message: any, ...extra: any) => {
   if (isDebugEnabled()) {
@@ -12,10 +12,10 @@ export const debug = (message: any, ...extra: any) => {
     lastT = now;
     console.log(
       `%cusertour-extension %c${message} %c+${t}ms`,
-      "color:#1FDB7D;",
-      "",
-      "color:#1FDB7D;",
-      ...extra
+      'color:#1FDB7D;',
+      '',
+      'color:#1FDB7D;',
+      ...extra,
     );
   }
 };

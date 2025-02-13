@@ -3,12 +3,12 @@ import {
   DoubleArrowRightIcon,
   SlideLeftIcon,
   SlideRightIcon,
-} from "@usertour-ui/icons";
-import { cn } from "@usertour-ui/ui-utils";
-import anime from "animejs/lib/anime.es.js";
-import { useEffect, useState } from "react";
+} from '@usertour-ui/icons';
+import { cn } from '@usertour-ui/ui-utils';
+import anime from 'animejs/lib/anime.es.js';
+import { useEffect, useState } from 'react';
 
-import { useBuilderContext } from "../../contexts";
+import { useBuilderContext } from '../../contexts';
 
 interface SideBarMiniProps {
   // container: React.MutableRefObject<HTMLDivElement>;
@@ -24,11 +24,10 @@ export const SidebarMini = (props: SideBarMiniProps) => {
     setIsMini(!isMini);
   };
   const getTranslateX = (isMini: boolean) => {
-    if (position == "left") {
-      return isMini ? `-${containerWidth}px` : "0px";
-    } else {
-      return isMini ? `${containerWidth}px` : "0px";
+    if (position === 'left') {
+      return isMini ? `-${containerWidth}px` : '0px';
     }
+    return isMini ? `${containerWidth}px` : '0px';
   };
   useEffect(() => {
     const translateX = getTranslateX(isMini);
@@ -36,7 +35,7 @@ export const SidebarMini = (props: SideBarMiniProps) => {
       targets: container.current,
       translateX,
       duration: 500,
-      easing: "easeInCubic",
+      easing: 'easeInCubic',
     });
   }, [isMini]);
 
@@ -51,33 +50,31 @@ export const SidebarMini = (props: SideBarMiniProps) => {
     <>
       <div
         className={cn(
-          "absolute w-8 h-16 bg-background-700 flex flex-col justify-around	 text-center items-center	top-6 ",
-          position == "right"
-            ? "-left-6 rounded-l-lg"
-            : "-right-6 rounded-r-lg "
+          'absolute w-8 h-16 bg-background-700 flex flex-col justify-around	 text-center items-center	top-6 ',
+          position === 'right' ? '-left-6 rounded-l-lg' : '-right-6 rounded-r-lg ',
         )}
       >
-        {position == "right" && (
+        {position === 'right' && (
           <SlideLeftIcon
             width={20}
             height={20}
             className="cursor-pointer"
             onClick={() => {
-              setPosition("left");
+              setPosition('left');
             }}
           />
         )}
-        {position == "left" && (
+        {position === 'left' && (
           <SlideRightIcon
             width={20}
             height={20}
             className="cursor-pointer"
             onClick={() => {
-              setPosition("right");
+              setPosition('right');
             }}
           />
         )}
-        {position == "left" && isMini && (
+        {position === 'left' && isMini && (
           <DoubleArrowRightIcon
             width={20}
             height={20}
@@ -85,7 +82,7 @@ export const SidebarMini = (props: SideBarMiniProps) => {
             onClick={handleHideSideBar}
           />
         )}
-        {position == "left" && !isMini && (
+        {position === 'left' && !isMini && (
           <DoubleArrowLeftIcon
             width={20}
             className="cursor-pointer"
@@ -93,7 +90,7 @@ export const SidebarMini = (props: SideBarMiniProps) => {
             onClick={handleHideSideBar}
           />
         )}
-        {position == "right" && isMini && (
+        {position === 'right' && isMini && (
           <DoubleArrowLeftIcon
             width={20}
             className="cursor-pointer"
@@ -101,7 +98,7 @@ export const SidebarMini = (props: SideBarMiniProps) => {
             onClick={handleHideSideBar}
           />
         )}
-        {position == "right" && !isMini && (
+        {position === 'right' && !isMini && (
           <DoubleArrowRightIcon
             width={20}
             height={20}
@@ -113,4 +110,4 @@ export const SidebarMini = (props: SideBarMiniProps) => {
     </>
   );
 };
-SidebarMini.displayName = "SidebarMini";
+SidebarMini.displayName = 'SidebarMini';

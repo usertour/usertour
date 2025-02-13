@@ -1,3 +1,5 @@
+import { Button } from '@usertour-ui/button';
+
 interface ElementPreviewProps {
   onClick: () => void;
   previewImageUrl?: string;
@@ -7,7 +9,7 @@ interface ElementPreviewProps {
 export const ElementPreview = ({
   onClick,
   previewImageUrl,
-  title = "Show launcher on this element",
+  title = 'Show launcher on this element',
 }: ElementPreviewProps) => {
   return (
     <section className="space-y-3">
@@ -15,7 +17,7 @@ export const ElementPreview = ({
         <h2 className="text-sm">Target</h2>
       </header>
 
-      <button
+      <Button
         className="w-full flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 cursor-pointer"
         onClick={onClick}
       >
@@ -27,15 +29,13 @@ export const ElementPreview = ({
                 <img src={previewImageUrl} alt={`Preview for ${title}`} />
               </div>
             ) : (
-              <p className="text-destructive text-sm">
-                No element selected yet.
-              </p>
+              <p className="text-destructive text-sm">No element selected yet.</p>
             )}
           </div>
         </div>
-      </button>
+      </Button>
     </section>
   );
 };
 
-ElementPreview.displayName = "ElementPreview";
+ElementPreview.displayName = 'ElementPreview';
