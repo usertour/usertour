@@ -1,0 +1,68 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "organizeImports": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useAltText": "off",
+        "useValidAnchor": "off",
+        "noSvgWithoutTitle": "off"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off"
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "error",
+        "useImportType": "off",
+        "noNonNullAssertion": "off"
+      },
+      "complexity": {
+        "useOptionalChain": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all",
+      "semicolons": "always"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "css": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "ignore": ["**/node_modules/**", "**/dist/**", "locate.ts", "webfonts.ts"]
+  }
+}
