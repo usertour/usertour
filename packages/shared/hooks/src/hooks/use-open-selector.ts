@@ -1,4 +1,3 @@
-import { uuidV4 } from "@usertour-ui/ui-utils";
 import {
   MESSAGE_APPLICATION_CLOSE,
   MESSAGE_APPLICATION_INIT,
@@ -7,23 +6,21 @@ import {
   MESSAGE_CRX_OPEN_TARGET_REPLY,
   MESSAGE_CRX_SEND_PROXY,
   MESSAGE_ELEMENT_SELECT_SUCCESS,
-} from "@usertour-ui/constants";
-import { useCallback, useState } from "react";
-import { useEvent } from "react-use";
+} from '@usertour-ui/constants';
+import { uuidV4 } from '@usertour-ui/ui-utils';
+import { useCallback, useState } from 'react';
+import { useEvent } from 'react-use';
 
-export const useOpenSelector = (
-  token: string,
-  onSuccess?: (data: any) => void
-) => {
+export const useOpenSelector = (token: string, onSuccess?: (data: any) => void) => {
   const [initParams, setInitParams] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [idempotentKey, setIdempotentKey] = useState("");
+  const [idempotentKey, setIdempotentKey] = useState('');
   const [retryTimer, setRetryTimer] = useState<any>(null);
   const postMessageForInit = useCallback(() => {
     window.postMessage(
       {
         kind: MESSAGE_CRX_SEND_PROXY,
-        direction: "builderToTarget",
+        direction: 'builderToTarget',
         message: {
           kind: MESSAGE_APPLICATION_INIT,
           data: {
@@ -33,7 +30,7 @@ export const useOpenSelector = (
           },
         },
       },
-      window.location.href
+      window.location.href,
     );
   }, [initParams, idempotentKey]);
 
@@ -44,7 +41,7 @@ export const useOpenSelector = (
         url: url,
         data: { idempotentKey },
       },
-      window.location.href
+      window.location.href,
     );
   };
 
@@ -58,11 +55,7 @@ export const useOpenSelector = (
   const pageMessageListener = useCallback(
     (e: any) => {
       const message = e.data;
-      if (
-        !message ||
-        !message.data ||
-        message.data.idempotentKey != idempotentKey
-      ) {
+      if (!message || !message.data || message.data.idempotentKey !== idempotentKey) {
         return;
       }
       if (message.kind === MESSAGE_CRX_OPEN_TARGET_REPLY) {
@@ -78,22 +71,22 @@ export const useOpenSelector = (
         setRetryTimer(timer);
       } else if (
         message.kind === MESSAGE_APPLICATION_INIT_SUCCESS &&
-        message?.data?.idempotentKey == idempotentKey
+        message?.data?.idempotentKey === idempotentKey
       ) {
         if (onSuccess) {
           onSuccess(true);
         }
         clear();
-      } else if (message.kind == MESSAGE_ELEMENT_SELECT_SUCCESS) {
+      } else if (message.kind === MESSAGE_ELEMENT_SELECT_SUCCESS) {
         // setOutput(message.output)
-        if (message && message.data && message.data.output) {
+        if (message?.data?.output) {
           if (onSuccess) {
             onSuccess(message.data.output);
           }
           window.postMessage(
             {
               kind: MESSAGE_CRX_SEND_PROXY,
-              direction: "builderToTarget",
+              direction: 'builderToTarget',
               message: {
                 kind: MESSAGE_APPLICATION_CLOSE,
                 data: {
@@ -102,14 +95,14 @@ export const useOpenSelector = (
                 },
               },
             },
-            window.location.href
+            window.location.href,
           );
         }
       }
     },
-    [retryTimer, isLoading, idempotentKey]
+    [retryTimer, isLoading, idempotentKey],
   );
-  useEvent("message", pageMessageListener, window, { capture: true });
+  useEvent('message', pageMessageListener, window, { capture: true });
 
   const open = (url: string, params: any) => {
     const key = uuidV4();

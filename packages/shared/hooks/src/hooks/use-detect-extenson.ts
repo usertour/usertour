@@ -1,11 +1,11 @@
-import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from "@usertour-ui/constants";
-import { useCallback, useState } from "react";
-import { useEvent, useInterval } from "react-use";
+import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from '@usertour-ui/constants';
+import { useCallback, useState } from 'react';
+import { useEvent, useInterval } from 'react-use';
 
 export const useDetectExtension = () => {
   const [isTimeout, setIsTimeout] = useState<boolean>(false);
   const [isInstalled, setIsInstalled] = useState<boolean>(false);
-  const [delay, setDelay] = useState<number>(1000);
+  const [delay, _] = useState<number>(1000);
   const [count, setCount] = useState<number>(0);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const maxCount = 60 * 60 * 8;
@@ -15,7 +15,7 @@ export const useDetectExtension = () => {
       {
         kind: MESSAGE_CRX_PING,
       },
-      window.location.href
+      window.location.href,
     );
   };
 
@@ -24,18 +24,19 @@ export const useDetectExtension = () => {
       if (isInstalled) {
         setIsRunning(false);
         return;
-      } else if (count >= 60) {
-        // setIsRunning(false);
+      }
+      if (count >= 60) {
         setIsTimeout(true);
         return;
-      } else if (count >= maxCount) {
+      }
+      if (count >= maxCount) {
         setIsRunning(false);
         return;
       }
       postMessage();
       setCount((c: number) => c + 1);
     },
-    isRunning ? delay : null
+    isRunning ? delay : null,
   );
 
   const start = () => {
@@ -57,10 +58,10 @@ export const useDetectExtension = () => {
         setIsInstalled(true);
       }
     },
-    [isRunning]
+    [isRunning],
   );
 
-  useEvent("message", pageMessageListener, window, { capture: true });
+  useEvent('message', pageMessageListener, window, { capture: true });
 
   return { isInstalled, isTimeout, start, stop };
 };
