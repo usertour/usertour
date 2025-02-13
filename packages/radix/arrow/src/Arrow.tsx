@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { Primitive } from '@usertour-ui/react-primitive';
+import * as React from 'react';
 
 import type * as Radix from '@usertour-ui/react-primitive';
 

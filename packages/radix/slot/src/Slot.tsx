@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { composeRefs } from '@usertour-ui/react-compose-refs';
 
 /* -------------------------------------------------------------------------------------------------
  * Slot
@@ -26,9 +25,9 @@ const Slot = React.forwardRef<HTMLElement, SlotProps>((props, forwardedRef) => {
         return React.isValidElement(newElement)
           ? (newElement.props.children as React.ReactNode)
           : null;
-      } else {
-        return child;
       }
+
+      return child;
     });
 
     return (

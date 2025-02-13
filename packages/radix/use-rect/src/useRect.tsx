@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { observeElementRect } from '@usertour-ui/rect';
+import * as React from 'react';
 
 import type { Measurable } from '@usertour-ui/rect';
 

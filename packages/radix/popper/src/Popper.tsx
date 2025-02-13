@@ -1,14 +1,13 @@
-import * as React from 'react';
 import {
-  useFloating,
+  arrow as floatingUIarrow,
   autoUpdate,
+  flip,
+  hide,
+  limitShift,
   offset,
   shift,
-  limitShift,
-  hide,
-  arrow as floatingUIarrow,
-  flip,
   size,
+  useFloating,
 } from '@floating-ui/react-dom';
 import * as ArrowPrimitive from '@usertour-ui/react-arrow';
 import { useComposedRefs } from '@usertour-ui/react-compose-refs';
@@ -17,17 +16,18 @@ import { Primitive } from '@usertour-ui/react-primitive';
 import { useCallbackRef } from '@usertour-ui/react-use-callback-ref';
 import { useLayoutEffect } from '@usertour-ui/react-use-layout-effect';
 import { useSize } from '@usertour-ui/react-use-size';
+import * as React from 'react';
 
-import type { Placement, Middleware } from '@floating-ui/react-dom';
-import type * as Radix from '@usertour-ui/react-primitive';
+import type { Middleware, Placement } from '@floating-ui/react-dom';
 import type { Scope } from '@usertour-ui/react-context';
+import type * as Radix from '@usertour-ui/react-primitive';
 import type { Measurable } from '@usertour-ui/rect';
 
 const SIDE_OPTIONS = ['top', 'right', 'bottom', 'left'] as const;
 const ALIGN_OPTIONS = ['start', 'center', 'end'] as const;
 
-type Side = typeof SIDE_OPTIONS[number];
-type Align = typeof ALIGN_OPTIONS[number];
+type Side = (typeof SIDE_OPTIONS)[number];
+type Align = (typeof ALIGN_OPTIONS)[number];
 
 /* -------------------------------------------------------------------------------------------------
  * Popper
@@ -86,7 +86,7 @@ const PopperAnchor = React.forwardRef<PopperAnchorElement, PopperAnchorProps>(
     });
 
     return virtualRef ? null : <Primitive.div {...anchorProps} ref={composedRefs} />;
-  }
+  },
 );
 
 PopperAnchor.displayName = ANCHOR_NAME;
@@ -155,7 +155,7 @@ const PopperContent = React.forwardRef<PopperContentElement, PopperContentProps>
     const arrowWidth = arrowSize?.width ?? 0;
     const arrowHeight = arrowSize?.height ?? 0;
 
-    const desiredPlacement = (side + (align !== 'center' ? '-' + align : '')) as Placement;
+    const desiredPlacement = `${side}${align !== 'center' ? `-${align}` : ''}` as Placement;
 
     const collisionPadding =
       typeof collisionPaddingProp === 'number'
@@ -274,7 +274,7 @@ const PopperContent = React.forwardRef<PopperContentElement, PopperContentProps>
         </PopperContentProvider>
       </div>
     );
-  }
+  },
 );
 
 PopperContent.displayName = CONTENT_NAME;
@@ -298,7 +298,7 @@ interface PopperArrowProps extends ArrowProps {}
 
 const PopperArrow = React.forwardRef<PopperArrowElement, PopperArrowProps>(function PopperArrow(
   props: ScopedProps<PopperArrowProps>,
-  forwardedRef
+  forwardedRef,
 ) {
   const { __scopePopper, ...arrowProps } = props;
   const contentContext = useContentContext(ARROW_NAME, __scopePopper);
@@ -324,7 +324,7 @@ const PopperArrow = React.forwardRef<PopperArrowElement, PopperArrowProps>(funct
         transform: {
           top: 'translateY(100%)',
           right: 'translateY(50%) rotate(90deg) translateX(-50%)',
-          bottom: `rotate(180deg)`,
+          bottom: 'rotate(180deg)',
           left: 'translateY(50%) rotate(-90deg) translateX(50%)',
         }[contentContext.placedSide],
         visibility: contentContext.shouldHideArrow ? 'hidden' : undefined,
