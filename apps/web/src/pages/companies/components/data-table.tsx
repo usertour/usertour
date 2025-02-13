@@ -127,7 +127,7 @@ export function DataTable({ segment }: TableProps) {
       };
       for (const attribute of attrList) {
         const displayName = attribute.displayName || attribute.codeName;
-        _columnVisibility[attribute.codeName] = segment.columns[attribute.codeName] ?? false;
+        _columnVisibility[attribute.codeName] = segment.columns?.[attribute.codeName] ?? false;
         _customColumns.push({
           accessorKey: attribute.codeName,
           header: ({ column }) => <DataTableColumnHeader column={column} title={displayName} />,
