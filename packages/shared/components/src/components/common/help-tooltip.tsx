@@ -1,10 +1,5 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 
 interface HelpTooltipProps {
   children: React.ReactNode;
@@ -21,4 +16,4 @@ export const HelpTooltip = ({ children }: HelpTooltipProps) => (
   </TooltipProvider>
 );
 
-HelpTooltip.displayName = "HelpTooltip";
+HelpTooltip.displayName = 'HelpTooltip';

@@ -1,32 +1,15 @@
-import { TextFillIcon } from "@usertour-ui/icons";
-import {
-  Dispatch,
-  SetStateAction,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { Crosshair2Icon, Pencil2Icon } from "@radix-ui/react-icons";
-
-import { Button } from "@usertour-ui/button";
-import { ElementSelector } from "../selector/element-selector";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import { ElementSelectorPropsData } from "@usertour-ui/types";
-import { getTextFillError } from "@usertour-ui/shared-utils";
-import { useRulesContext } from ".";
+import { TextFillIcon } from '@usertour-ui/icons';
+import { useEffect, useState } from 'react';
+import { getTextFillError } from '@usertour-ui/shared-utils';
+import { ElementSelectorPropsData } from '@usertour-ui/types';
+import { useRulesContext } from '.';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { ElementSelector } from '../selector/element-selector';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 interface RulesUserFillsProps {
   index: number;
@@ -42,16 +25,16 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
   const { index, data, type } = props;
   const [elementData, setElementData] = useState<ElementSelectorPropsData>(
     data.elementData || {
-      type: "auto",
-      precision: "strict",
+      type: 'auto',
+      precision: 'strict',
       isDynamicContent: false,
-      sequence: "1st",
-    }
+      sequence: '1st',
+    },
   );
   const [openError, setOpenError] = useState(false);
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange } = useRulesContext();
 
   useEffect(() => {
@@ -79,31 +62,27 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
             <RulesPopover onOpenChange={setOpen} open={open}>
               <RulesPopoverTrigger className="space-y-1">
                 <div className="grow pr-6 text-sm text-wrap break-all">
-                  User fills in this input{" "}
+                  User fills in this input{' '}
                 </div>
                 <div>
+                  {elementData && elementData.type === 'auto' && elementData.screenshot && (
+                    <img
+                      className="max-w-32	max-h-16 border rounded"
+                      src={elementData.screenshot}
+                    />
+                  )}
                   {elementData &&
-                    elementData.type == "auto" &&
-                    elementData.screenshot && (
-                      <img
-                        className="max-w-32	max-h-16 border rounded"
-                        src={elementData.screenshot}
-                      />
-                    )}
-                  {elementData &&
-                    elementData.type == "manual" &&
+                    elementData.type === 'manual' &&
                     (elementData.content || elementData.customSelector) && (
                       <span className="font-bold space-x-1">
                         {elementData.content} {elementData.customSelector}
                       </span>
                     )}
                   {elementData &&
-                    elementData.type == "manual" &&
-                    elementData.content == "" &&
-                    elementData.customSelector == "" && (
-                      <span className="font-bold text-destructive">
-                        No element selected yet
-                      </span>
+                    elementData.type === 'manual' &&
+                    elementData.content === '' &&
+                    elementData.customSelector === '' && (
+                      <span className="font-bold text-destructive">No element selected yet</span>
                     )}
                 </div>
               </RulesPopoverTrigger>
@@ -114,7 +93,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
                   <ElementSelector
                     data={{
                       ...elementData,
-                      type: elementData?.type || "auto",
+                      type: elementData?.type || 'auto',
                     }}
                     onDataChange={setElementData}
                     isInput={true}
@@ -140,4 +119,4 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
   );
 };
 
-RulesUserFills.displayName = "RulesUserFills";
+RulesUserFills.displayName = 'RulesUserFills';

@@ -1,21 +1,12 @@
-import { TaskClickedIcon, TimeIcon } from "@usertour-ui/icons";
-import { Calendar } from "@usertour-ui/calendar";
-import * as Popover from "@usertour-ui/popover";
-import { format } from "date-fns";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { CalendarIcon, TrackPreviousIcon } from "@radix-ui/react-icons";
-import { cn } from "@usertour-ui/ui-utils";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
+import { TaskClickedIcon } from '@usertour-ui/icons';
+import { RulesLogic } from './rules-logic';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 export interface RulesTaskIsClickedProps {
   index: number;
   type: string;
-  data?: {};
+  data?: any;
 }
 
 export const RulesTaskIsClicked = (props: RulesTaskIsClickedProps) => {
@@ -35,4 +26,4 @@ export const RulesTaskIsClicked = (props: RulesTaskIsClickedProps) => {
   );
 };
 
-RulesTaskIsClicked.displayName = "RulesTaskIsClicked";
+RulesTaskIsClicked.displayName = 'RulesTaskIsClicked';

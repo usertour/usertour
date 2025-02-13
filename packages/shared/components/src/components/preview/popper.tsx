@@ -1,12 +1,8 @@
-import * as SharedPopper from "@usertour-ui/sdk";
-import { convertSettings, convertToCssVars } from "@usertour-ui/shared-utils";
-import { Button } from "@usertour-ui/button";
-import { useRef, useState } from "react";
-import { defaultSettings, ThemeTypesSetting } from "@usertour-ui/types";
-import {
-  ContentEditorSerialize,
-  serializeData,
-} from "@usertour-ui/shared-editor";
+import * as SharedPopper from '@usertour-ui/sdk';
+import { ContentEditorSerialize } from '@usertour-ui/shared-editor';
+import { convertSettings, convertToCssVars } from '@usertour-ui/shared-utils';
+import { ThemeTypesSetting, defaultSettings } from '@usertour-ui/types';
+import { useRef } from 'react';
 
 type CreatePopperContentProps = {
   text: string;
@@ -21,16 +17,7 @@ type CreatePopperContentProps = {
 };
 
 export const PopperPreview = (props: CreatePopperContentProps) => {
-  const {
-    width,
-    height,
-    text,
-    data,
-    type,
-    onClick,
-    settings = defaultSettings,
-    scale = 1,
-  } = props;
+  const { width, height, text, data, type, onClick, scale = 1 } = props;
   const handleOnClick = () => {
     onClick(type, data);
   };
@@ -58,14 +45,14 @@ export const PopperPreview = (props: CreatePopperContentProps) => {
             }}
             customStyle={{ zoom: scale }}
             side="bottom"
-            showArrow={type == "tooltip" ? true : false}
+            showArrow={type === 'tooltip'}
             width={width}
             height={height}
             arrowColor={defaultSettings?.mainColor.background}
           >
             <SharedPopper.PopperClose />
             {/* {...serialize} */}
-            <ContentEditorSerialize contents={data}></ContentEditorSerialize>
+            <ContentEditorSerialize contents={data} />
           </SharedPopper.PopperStaticContent>
         </SharedPopper.Popper>
       </div>
@@ -76,4 +63,4 @@ export const PopperPreview = (props: CreatePopperContentProps) => {
   );
 };
 
-PopperPreview.displayName = "PopperPreview";
+PopperPreview.displayName = 'PopperPreview';

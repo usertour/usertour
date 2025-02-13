@@ -1,19 +1,19 @@
-import { useState } from "react";
-import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-import { PopoverProps } from "@radix-ui/react-popover";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import { PopoverProps } from '@radix-ui/react-popover';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
+import { useState } from 'react';
 
-import { cn } from "@usertour-ui/ui-utils";
-import { Button } from "@usertour-ui/button";
+import { Button } from '@usertour-ui/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@usertour-ui/command";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { locates } from "@usertour-ui/constants";
+} from '@usertour-ui/command';
+import { locates } from '@usertour-ui/constants';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { cn } from '@usertour-ui/ui-utils';
 
 export type LocateItem = (typeof locates)[0];
 
@@ -31,7 +31,7 @@ export const LocateSelect = ({
 }: LocateSelectProps) => {
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LocateItem | undefined>(
-    locates.find((item) => item.locale == defaultValue)
+    locates.find((item) => item.locale === defaultValue),
   );
 
   const handleOnSelected = (item: LocateItem) => {
@@ -47,20 +47,19 @@ export const LocateSelect = ({
       <PopoverPrimitive.Trigger asChild>
         <Button
           variant="outline"
-          role="combobox"
           aria-label="Load a locate..."
           aria-expanded={open}
           className="w-full justify-between "
         >
-          {selectedItem ? selectedItem.language.name : "Load a locate..."}
+          {selectedItem ? selectedItem.language.name : 'Load a locate...'}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Content
-        align={"start"}
+        align={'start'}
         className={cn(
-          "z-50 p-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          popperContentClass
+          'z-50 p-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          popperContentClass,
         )}
       >
         <Command>
@@ -78,10 +77,8 @@ export const LocateSelect = ({
                   {item.language.name}({item.country.name})
                   <CheckIcon
                     className={cn(
-                      "ml-auto h-4 w-4",
-                      selectedItem?.locale === item.locale
-                        ? "opacity-100"
-                        : "opacity-0"
+                      'ml-auto h-4 w-4',
+                      selectedItem?.locale === item.locale ? 'opacity-100' : 'opacity-0',
                     )}
                   />
                 </CommandItem>
@@ -94,4 +91,4 @@ export const LocateSelect = ({
   );
 };
 
-LocateSelect.displayName = "LocateSelect";
+LocateSelect.displayName = 'LocateSelect';

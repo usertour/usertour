@@ -1,12 +1,7 @@
-import { createContext, useContext, useEffect } from "react";
-import { RULES_ITEMS, RulesGroup } from "./rules-group";
-import {
-  Attribute,
-  Content,
-  RulesCondition,
-  Segment,
-} from "@usertour-ui/types";
-import { hasError } from "@usertour-ui/shared-utils";
+import { hasError } from '@usertour-ui/shared-utils';
+import { Attribute, Content, RulesCondition, Segment } from '@usertour-ui/types';
+import { createContext, useContext } from 'react';
+import { RulesGroup } from './rules-group';
 
 interface RulesProps {
   onDataChange?: (conds: RulesCondition[], hasError: boolean) => void;
@@ -38,29 +33,27 @@ interface RulesContextValue {
   token: string;
 }
 
-export const RulesContext = createContext<RulesContextValue | undefined>(
-  undefined
-);
+export const RulesContext = createContext<RulesContextValue | undefined>(undefined);
 
 export function useRulesContext(): RulesContextValue {
   const context = useContext(RulesContext);
   if (!context) {
-    throw new Error(`useRulesContext must be used within a RulesProvider.`);
+    throw new Error('useRulesContext must be used within a RulesProvider.');
   }
   return context;
 }
 
 export const defaultRulesItems: string[] = [
-  "user-attr",
-  "current-page",
-  "event",
-  "segment",
-  "content",
-  "element",
-  "text-input",
-  "text-fill",
-  "time",
-  "group",
+  'user-attr',
+  'current-page',
+  'event',
+  'segment',
+  'content',
+  'element',
+  'text-input',
+  'text-fill',
+  'time',
+  'group',
 ];
 export const Rules = (props: RulesProps) => {
   const {
@@ -69,13 +62,13 @@ export const Rules = (props: RulesProps) => {
     isHorizontal = false,
     isShowIf = true,
     filterItems = [...defaultRulesItems],
-    addButtonText = "Add condition",
+    addButtonText = 'Add condition',
     attributes = [],
     segments = [],
     contents = [],
     currentContent,
     saveBuildUrl,
-    token = "",
+    token = '',
     onElementChange,
   } = props;
 
@@ -102,12 +95,9 @@ export const Rules = (props: RulesProps) => {
 
   return (
     <RulesContext.Provider value={value}>
-      <RulesGroup
-        defaultConditions={defaultConditions}
-        onChange={handleOnChange}
-      />
+      <RulesGroup defaultConditions={defaultConditions} onChange={handleOnChange} />
     </RulesContext.Provider>
   );
 };
 
-Rules.displayName = "Rules";
+Rules.displayName = 'Rules';

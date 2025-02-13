@@ -1,5 +1,15 @@
-import { SegmentIcon } from "@usertour-ui/icons";
-import * as Popover from "@radix-ui/react-popover";
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import * as Popover from '@radix-ui/react-popover';
+import { SegmentIcon } from '@usertour-ui/icons';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-ui/select';
+import { cn } from '@usertour-ui/ui-utils';
 import {
   Dispatch,
   SetStateAction,
@@ -8,44 +18,27 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
-import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-import { cn } from "@usertour-ui/ui-utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from "@usertour-ui/select";
+} from 'react';
 
+import { Button } from '@usertour-ui/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@usertour-ui/command";
-import { Button } from "@usertour-ui/button";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import { useRulesContext } from ".";
-import { Segment } from "@usertour-ui/types";
-import { getSegmentError } from "@usertour-ui/shared-utils";
-import { EXTENSION_CONTENT_RULES } from "@usertour-ui/constants";
+} from '@usertour-ui/command';
+import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { getSegmentError } from '@usertour-ui/shared-utils';
+import { Segment } from '@usertour-ui/types';
+import { useRulesContext } from '.';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 export interface SelectItemType {
   id: string;
@@ -61,8 +54,8 @@ export interface RulesSegmentProps {
 }
 
 const conditions = [
-  { value: "is", name: "is in" },
-  { value: "not", name: "is not in" },
+  { value: 'is', name: 'is in' },
+  { value: 'not', name: 'is not in' },
 ];
 
 interface RulesSegmentContextValue {
@@ -73,16 +66,12 @@ interface RulesSegmentContextValue {
   segments: Segment[] | undefined;
 }
 
-const RulesSegmentContext = createContext<RulesSegmentContextValue | undefined>(
-  undefined
-);
+const RulesSegmentContext = createContext<RulesSegmentContextValue | undefined>(undefined);
 
 function useRulesSegmentContext(): RulesSegmentContextValue {
   const context = useContext(RulesSegmentContext);
   if (!context) {
-    throw new Error(
-      `useRulesSegmentContext must be used within a RulesSegmentContext.`
-    );
+    throw new Error('useRulesSegmentContext must be used within a RulesSegmentContext.');
   }
   return context;
 }
@@ -90,7 +79,7 @@ function useRulesSegmentContext(): RulesSegmentContextValue {
 const RulesSegmentName = () => {
   const [open, setOpen] = useState(false);
   const { segmentId, setSegmentId, segments } = useRulesSegmentContext();
-  const selectedSegment = segments?.find((segment) => segment.id == segmentId);
+  const selectedSegment = segments?.find((segment) => segment.id === segmentId);
   const handleOnSelected = (item: Segment) => {
     setSegmentId(item.id);
     setOpen(false);
@@ -99,25 +88,21 @@ const RulesSegmentName = () => {
   const handleFilter = useCallback(
     (value: string, search: string) => {
       if (segments) {
-        const segment = segments.find((item) => item.id == value);
-        if (segment && segment.name.includes(search)) {
+        const segment = segments.find((item) => item.id === value);
+        if (segment?.name.includes(search)) {
           return 1;
         }
       }
       return 0;
     },
-    [segments]
+    [segments],
   );
 
   return (
     <div className="flex flex-row">
       <Popover.Popover open={open} onOpenChange={setOpen}>
         <Popover.PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            className="flex-1 justify-between "
-          >
+          <Button variant="outline" className="flex-1 justify-between ">
             {selectedSegment?.name}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -128,50 +113,48 @@ const RulesSegmentName = () => {
             <CommandEmpty>No items found.</CommandEmpty>
             <ScrollArea className="h-72">
               <CommandGroup heading="User segment">
-                {segments &&
-                  segments
-                    .filter((item) => item.bizType == "USER")
-                    .map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        value={item.id}
-                        className="cursor-pointer"
-                        onSelect={() => {
-                          handleOnSelected(item);
-                        }}
-                      >
-                        {item.name}
-                        <CheckIcon
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            segmentId === item.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
+                {segments
+                  ?.filter((item) => item.bizType === 'USER')
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={item.id}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.name}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          segmentId === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
               </CommandGroup>
               <CommandGroup heading="Company segment">
-                {segments &&
-                  segments
-                    .filter((item) => item.bizType == "COMPANY")
-                    .map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        className="cursor-pointer"
-                        value={item.id}
-                        onSelect={() => {
-                          handleOnSelected(item);
-                        }}
-                      >
-                        {item.name}
-                        <CheckIcon
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            segmentId === item.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
+                {segments
+                  ?.filter((item) => item.bizType === 'COMPANY')
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.name}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          segmentId === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
               </CommandGroup>
             </ScrollArea>
           </Command>
@@ -188,7 +171,7 @@ const RulesSegmentCondition = () => {
       <Select defaultValue={conditionValue} onValueChange={setConditionValue}>
         <SelectTrigger className="justify-start flex h-9">
           <div className="grow text-left">
-            <SelectValue placeholder={""} />
+            <SelectValue placeholder={''} />
           </div>
         </SelectTrigger>
         <SelectPortal>
@@ -199,11 +182,7 @@ const RulesSegmentCondition = () => {
           >
             {conditions.map((item, index) => {
               return (
-                <SelectItem
-                  key={index}
-                  value={item.value}
-                  className="cursor-pointer"
-                >
+                <SelectItem key={index} value={item.value} className="cursor-pointer">
                   {item.name}
                 </SelectItem>
               );
@@ -218,16 +197,16 @@ const RulesSegmentCondition = () => {
 export const RulesSegment = (props: RulesSegmentProps) => {
   const { index, data } = props;
   const { segments } = useRulesContext();
-  const [segmentId, setSegmentId] = useState<string>(data?.segmentId ?? "");
-  const [conditionValue, setConditionValue] = useState(data?.logic ?? "is");
+  const [segmentId, setSegmentId] = useState<string>(data?.segmentId ?? '');
+  const [conditionValue, setConditionValue] = useState(data?.logic ?? 'is');
   const [openError, setOpenError] = useState(false);
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
 
   const selectedPreset =
     segments && data?.segmentId
-      ? segments.find((item: Segment) => item.id == data.segmentId)
+      ? segments.find((item: Segment) => item.id === data.segmentId)
       : undefined;
 
   const value = {
@@ -262,25 +241,21 @@ export const RulesSegment = (props: RulesSegmentProps) => {
               <RulesConditionIcon>
                 <SegmentIcon width={16} height={16} />
               </RulesConditionIcon>
-              <RulesPopover
-                onOpenChange={setOpen}
-                open={open}
-                defaultOpen={false}
-              >
+              <RulesPopover onOpenChange={setOpen} open={open} defaultOpen={false}>
                 <RulesPopoverTrigger>
-                  {selectedPreset == undefined && "User"}
-                  {selectedPreset?.bizType == "USER" && "User"}
-                  {selectedPreset?.bizType == "COMPANY" && "Company"}{" "}
-                  {conditions.find((c) => c.value == conditionValue)?.name}{" "}
+                  {selectedPreset === undefined && 'User'}
+                  {selectedPreset?.bizType === 'USER' && 'User'}
+                  {selectedPreset?.bizType === 'COMPANY' && 'Company'}{' '}
+                  {conditions.find((c) => c.value === conditionValue)?.name}{' '}
                   <span className="font-bold">{selectedPreset?.name} </span>
                 </RulesPopoverTrigger>
                 <RulesPopoverContent>
                   <div className=" flex flex-col space-y-2">
                     <div className=" flex flex-col space-y-1">
                       <div>
-                        {selectedPreset == undefined && "User"}
-                        {selectedPreset?.bizType == "USER" && "User"}
-                        {selectedPreset?.bizType == "COMPANY" && "Company"}
+                        {selectedPreset === undefined && 'User'}
+                        {selectedPreset?.bizType === 'USER' && 'User'}
+                        {selectedPreset?.bizType === 'COMPANY' && 'Company'}
                       </div>
                       <RulesSegmentCondition />
                       <RulesSegmentName />
@@ -298,4 +273,4 @@ export const RulesSegment = (props: RulesSegmentProps) => {
   );
 };
 
-RulesSegment.displayName = "RulesSegment";
+RulesSegment.displayName = 'RulesSegment';

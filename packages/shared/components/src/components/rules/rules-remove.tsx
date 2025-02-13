@@ -1,11 +1,6 @@
-import { CloseIcon } from "@usertour-ui/icons";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+import { CloseIcon } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
 
 type RulesRemoveProps = {
   index: number;
@@ -40,4 +35,4 @@ export const RulesRemove = (props: RulesRemoveProps) => {
   );
 };
 
-RulesRemove.displayName = "RulesRemove";
+RulesRemove.displayName = 'RulesRemove';

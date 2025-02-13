@@ -1,34 +1,17 @@
-import { ElementIcon } from "@usertour-ui/icons";
-import {
-  Dispatch,
-  SetStateAction,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { Crosshair2Icon, Pencil2Icon } from "@radix-ui/react-icons";
-import { RadioGroup, RadioGroupItem } from "@usertour-ui/radio-group";
-import { Label } from "@usertour-ui//label";
-
-import { Button } from "@usertour-ui/button";
-import { ElementSelector } from "../selector/element-selector";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import { getElementError, isValidSelector } from "@usertour-ui/shared-utils";
-import { ElementSelectorPropsData } from "@usertour-ui/types";
-import { useRulesContext } from ".";
+import { Label } from '@usertour-ui//label';
+import { ElementIcon } from '@usertour-ui/icons';
+import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
+import { Dispatch, SetStateAction, createContext, useContext, useEffect, useState } from 'react';
+import { getElementError } from '@usertour-ui/shared-utils';
+import { ElementSelectorPropsData } from '@usertour-ui/types';
+import { useRulesContext } from '.';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { ElementSelector } from '../selector/element-selector';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 interface RulesElementProps {
   index: number;
@@ -40,12 +23,12 @@ interface RulesElementProps {
 }
 
 const conditions = [
-  { value: "present", name: "is present" },
-  { value: "unpresent", name: "is not present" },
-  { value: "disabled", name: "is disabled" },
-  { value: "undisabled", name: "is not disabled" },
-  { value: "clicked", name: "is clicked" },
-  { value: "unclicked", name: "is not clicked" },
+  { value: 'present', name: 'is present' },
+  { value: 'unpresent', name: 'is not present' },
+  { value: 'disabled', name: 'is disabled' },
+  { value: 'undisabled', name: 'is not disabled' },
+  { value: 'clicked', name: 'is clicked' },
+  { value: 'unclicked', name: 'is not clicked' },
 ];
 
 interface RulesElementContextValue {
@@ -55,29 +38,24 @@ interface RulesElementContextValue {
   setElementData: Dispatch<SetStateAction<ElementSelectorPropsData>>;
 }
 
-const RulesElementContext = createContext<RulesElementContextValue | undefined>(
-  undefined
-);
+const RulesElementContext = createContext<RulesElementContextValue | undefined>(undefined);
 
 function useRulesElementContext(): RulesElementContextValue {
   const context = useContext(RulesElementContext);
   if (!context) {
-    throw new Error(
-      `useRulesElementContext must be used within a RulesElementContext.`
-    );
+    throw new Error('useRulesElementContext must be used within a RulesElementContext.');
   }
   return context;
 }
 
 const RulesElementRadios = () => {
-  const { conditionValue = "present", setConditionValue } =
-    useRulesElementContext();
+  const { conditionValue = 'present', setConditionValue } = useRulesElementContext();
   return (
     <RadioGroup defaultValue={conditionValue} onValueChange={setConditionValue}>
       {conditions.map((condition, index) => (
         <div className="flex items-center space-x-2" key={index}>
-          <RadioGroupItem value={condition.value} id={"r1" + index} />
-          <Label htmlFor={"r1" + index} className="cursor-pointer">
+          <RadioGroupItem value={condition.value} id={`r1${index}`} />
+          <Label htmlFor={`r1${index}`} className="cursor-pointer">
             {condition.name}
           </Label>
         </div>
@@ -87,27 +65,25 @@ const RulesElementRadios = () => {
 };
 
 const defaultData = {
-  logic: "present",
+  logic: 'present',
   elementData: {
-    type: "auto",
-    precision: "strict",
+    type: 'auto',
+    precision: 'strict',
     isDynamicContent: false,
-    sequence: "1st",
+    sequence: '1st',
   },
 };
 
 export const RulesElement = (props: RulesElementProps) => {
   const { index, data, type } = props;
-  const [conditionValue, setConditionValue] = useState(
-    data.logic || defaultData.logic
-  );
+  const [conditionValue, setConditionValue] = useState(data.logic || defaultData.logic);
   const [elementData, setElementData] = useState<ElementSelectorPropsData>(
-    data.elementData || defaultData.elementData
+    data.elementData || defaultData.elementData,
   );
   const [openError, setOpenError] = useState(false);
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange } = useRulesContext();
 
   const value = {
@@ -144,36 +120,30 @@ export const RulesElement = (props: RulesElementProps) => {
               <RulesPopover onOpenChange={setOpen} open={open}>
                 <RulesPopoverTrigger className="space-y-1">
                   <div className="grow pr-6 text-sm text-wrap break-all space-y-1">
-                    If this element{" "}
+                    If this element{' '}
                   </div>
                   <div>
+                    {elementData && elementData.type === 'auto' && elementData.screenshot && (
+                      <img
+                        className="max-w-32	max-h-16 border rounded"
+                        src={elementData.screenshot}
+                      />
+                    )}
                     {elementData &&
-                      elementData.type == "auto" &&
-                      elementData.screenshot && (
-                        <img
-                          className="max-w-32	max-h-16 border rounded"
-                          src={elementData.screenshot}
-                        />
-                      )}
-                    {elementData &&
-                      elementData.type == "manual" &&
+                      elementData.type === 'manual' &&
                       (elementData.content || elementData.customSelector) && (
                         <span className="font-bold space-x-1">
                           {elementData.content} {elementData.customSelector}
                         </span>
                       )}
                     {elementData &&
-                      elementData.type == "manual" &&
-                      elementData.content == "" &&
-                      elementData.customSelector == "" && (
-                        <span className="font-bold text-destructive">
-                          No element selected yet
-                        </span>
+                      elementData.type === 'manual' &&
+                      elementData.content === '' &&
+                      elementData.customSelector === '' && (
+                        <span className="font-bold text-destructive">No element selected yet</span>
                       )}
                   </div>
-                  <div>
-                    {conditions.find((c) => c.value == conditionValue)?.name}{" "}
-                  </div>
+                  <div>{conditions.find((c) => c.value === conditionValue)?.name} </div>
                 </RulesPopoverTrigger>
                 <RulesPopoverContent side="right">
                   <div className=" flex flex-col space-y-2">
@@ -206,4 +176,4 @@ export const RulesElement = (props: RulesElementProps) => {
   );
 };
 
-RulesElement.displayName = "RulesElement";
+RulesElement.displayName = 'RulesElement';

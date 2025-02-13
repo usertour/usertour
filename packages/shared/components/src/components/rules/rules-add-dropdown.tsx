@@ -1,4 +1,10 @@
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour-ui/dropdown-menu';
+import {
   ContentIcon,
   ElementIcon,
   EventIcon,
@@ -9,81 +15,75 @@ import {
   TextInputIcon,
   TimeIcon,
   UserIcon,
-} from "@usertour-ui/icons";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@usertour-ui/dropdown-menu";
-import { ReactNode } from "react";
-import { RulesUrlPattern } from "./rules-url-pattern";
-import { RulesUserAttribute } from "./rules-user-attribute";
-import { RulesContent } from "./rules-content";
-import { RulesSegment } from "./rules-segment";
-import { RulesCurrentTime } from "./rules-current-time";
-import { RulesElement } from "./rules-element";
-import { RulesTextInput } from "./rules-text-input";
-import { RulesUserFills } from "./rules-user-fills";
-import { RulesGroup } from "./rules-group";
+} from '@usertour-ui/icons';
+import { ReactNode } from 'react';
+import { RulesContent } from './rules-content';
+import { RulesCurrentTime } from './rules-current-time';
+import { RulesElement } from './rules-element';
+import { RulesGroup } from './rules-group';
+import { RulesSegment } from './rules-segment';
+import { RulesTextInput } from './rules-text-input';
+import { RulesUrlPattern } from './rules-url-pattern';
+import { RulesUserAttribute } from './rules-user-attribute';
+import { RulesUserFills } from './rules-user-fills';
 
 const RULES_ITEMS = [
   {
-    type: "user-attr",
-    text: "User attribute",
+    type: 'user-attr',
+    text: 'User attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: "current-page",
-    text: "Current page(Url)",
+    type: 'current-page',
+    text: 'Current page(Url)',
     IconElement: PagesIcon,
     RulesElement: RulesUrlPattern,
   },
   {
-    type: "event",
-    text: "Event",
+    type: 'event',
+    text: 'Event',
     IconElement: EventIcon,
   },
   {
-    type: "segment",
-    text: "Segment",
+    type: 'segment',
+    text: 'Segment',
     IconElement: SegmentIcon,
     RulesElement: RulesSegment,
   },
   {
-    type: "content",
-    text: "Flow",
+    type: 'content',
+    text: 'Flow',
     IconElement: ContentIcon,
     RulesElement: RulesContent,
   },
   {
-    type: "element",
-    text: "Element (present, clicked, disabled)",
+    type: 'element',
+    text: 'Element (present, clicked, disabled)',
     IconElement: ElementIcon,
     RulesElement: RulesElement,
   },
   {
-    type: "text-input",
-    text: "Text input value",
+    type: 'text-input',
+    text: 'Text input value',
     IconElement: TextInputIcon,
     RulesElement: RulesTextInput,
   },
   {
-    type: "text-fill",
-    text: "User fills in input",
+    type: 'text-fill',
+    text: 'User fills in input',
     IconElement: TextFillIcon,
     RulesElement: RulesUserFills,
   },
   {
-    type: "time",
-    text: "Current time",
+    type: 'time',
+    text: 'Current time',
     IconElement: TimeIcon,
     RulesElement: RulesCurrentTime,
   },
   {
-    type: "group",
-    text: "Logic group (and, or)",
+    type: 'group',
+    text: 'Logic group (and, or)',
     IconElement: GroupIcon,
     RulesElement: RulesGroup,
   },
@@ -116,4 +116,4 @@ export const RulesAddDropdown = (props: RulesAddDropdownProps) => {
   );
 };
 
-RulesAddDropdown.displayName = "RulesAddDropdown";
+RulesAddDropdown.displayName = 'RulesAddDropdown';

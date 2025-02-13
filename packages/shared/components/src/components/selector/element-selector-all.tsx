@@ -1,28 +1,22 @@
-import { Crosshair2Icon, QuestionMarkCircledIcon } from "@radix-ui/react-icons";
-import { Button } from "@usertour-ui/button";
-import { Input } from "@usertour-ui/input";
-import { Label } from "@usertour-ui/label";
+import { Crosshair2Icon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-ui/button';
+import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Switch } from "@usertour-ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@usertour-ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { ChangeEvent, useCallback, useRef, useState } from "react";
-import { SelectorDialog } from "./selector-dialog";
-import { Content, ElementSelectorPropsData } from "@usertour-ui/types";
-import { EXTENSION_CONTENT_RULES } from "@usertour-ui/constants";
+} from '@usertour-ui/select';
+import { Switch } from '@usertour-ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Content, ElementSelectorPropsData } from '@usertour-ui/types';
+import { ChangeEvent, useCallback, useRef, useState } from 'react';
+import { SelectorDialog } from './selector-dialog';
 
 export interface ElementSelectorProps {
   data: ElementSelectorPropsData;
@@ -34,29 +28,22 @@ export interface ElementSelectorProps {
 }
 
 export const ElementSelector = (props: ElementSelectorProps) => {
-  const {
-    data,
-    onDataChange,
-    isInput = false,
-    currentContent,
-    token,
-    onElementChange,
-  } = props;
+  const { data, onDataChange, isInput = false, currentContent, token, onElementChange } = props;
   const ref = useRef(null);
   const [innerData, setInnerData] = useState(data);
 
   const updateInnerData = useCallback(
     (props: Partial<ElementSelectorPropsData>) => {
       const _innerData = {
-        precision: "loose",
-        sequence: "1st",
+        precision: 'loose',
+        sequence: '1st',
         ...innerData,
         ...props,
       };
       setInnerData(_innerData);
       onDataChange(_innerData);
     },
-    [innerData]
+    [innerData],
   );
 
   const handleElementTextChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -91,11 +78,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
 
   return (
     <div className="space-y-3" ref={ref}>
-      <Tabs
-        defaultValue={innerData.type}
-        value={innerData.type}
-        onValueChange={handleTypeChange}
-      >
+      <Tabs defaultValue={innerData.type} value={innerData.type} onValueChange={handleTypeChange}>
         <TabsList className="grid w-full grid-cols-2 bg-background-700">
           <TabsTrigger
             value="auto"
@@ -111,23 +94,17 @@ export const ElementSelector = (props: ElementSelectorProps) => {
           </TabsTrigger>
         </TabsList>
         <div className="flex flex-col  bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
-          <TabsContent
-            value="auto"
-            className="focus-visible:ring-0 focus-visible:ring-offset-0"
-          >
+          <TabsContent value="auto" className="focus-visible:ring-0 focus-visible:ring-offset-0">
             <div className="flex flex-col space-y-2 focus:outline-none">
               <div className="rounded-2xl flex-col overflow-hidden border border-primary">
                 <div className="min-w-[242px] min-h-[130px] overflow-hidden">
                   <img src={innerData.screenshot} alt="" />
                 </div>
                 {onElementChange && (
-                  <Button
-                    className="w-full rounded-none"
-                    onClick={onElementChange}
-                  >
-                    <Crosshair2Icon className="mr-2"></Crosshair2Icon>
-                    {!innerData && "Select element"}
-                    {innerData && "Select another element"}
+                  <Button className="w-full rounded-none" onClick={onElementChange}>
+                    <Crosshair2Icon className="mr-2" />
+                    {!innerData && 'Select element'}
+                    {innerData && 'Select another element'}
                   </Button>
                 )}
                 {!onElementChange && (
@@ -139,9 +116,9 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                     isInput={isInput}
                   >
                     <Button className="w-full rounded-none">
-                      <Crosshair2Icon className="mr-2"></Crosshair2Icon>
-                      {!innerData && "Select element"}
-                      {innerData && "Select another element"}
+                      <Crosshair2Icon className="mr-2" />
+                      {!innerData && 'Select element'}
+                      {innerData && 'Select another element'}
                     </Button>
                   </SelectorDialog>
                 )}
@@ -156,10 +133,9 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs bg-foreground text-background">
                         <p>
-                          How flexible Usertour should be when looking for the
-                          element. If Usertour can't find your element, try to
-                          make the precision looser. lf Usertour tends to find
-                          the wrong element, try to make the precision stricter.
+                          How flexible Usertour should be when looking for the element. If Usertour
+                          can't find your element, try to make the precision looser. lf Usertour
+                          tends to find the wrong element, try to make the precision stricter.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -202,10 +178,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
               </div>
               <div className="flex items-center justify-between space-x-2">
                 <div className="flex space-x-2 grow">
-                  <Label
-                    htmlFor="dynamic-content"
-                    className="flex flex-col space-y-1"
-                  >
+                  <Label htmlFor="dynamic-content" className="flex flex-col space-y-1">
                     <span className="font-normal">Dynamic text</span>
                   </Label>
                   <TooltipProvider>
@@ -215,9 +188,8 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs bg-foreground text-background">
                         <p>
-                          If the element's text is dynamic and may change,
-                          enabled this switch to make Usertour find it without
-                          considering its current text.
+                          If the element's text is dynamic and may change, enabled this switch to
+                          make Usertour find it without considering its current text.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -232,40 +204,30 @@ export const ElementSelector = (props: ElementSelectorProps) => {
               </div>
             </div>
           </TabsContent>
-          <TabsContent
-            value="manual"
-            className="focus-visible:ring-0 focus-visible:ring-offset-0"
-          >
+          <TabsContent value="manual" className="focus-visible:ring-0 focus-visible:ring-offset-0">
             <div className="flex flex-col space-y-2">
               <div className="flex flex-col space-y-2">
                 <div className="flex justify-start items-center space-x-1	">
-                  <Label htmlFor="button-manual-element-text">
-                    Element text
-                  </Label>
+                  <Label htmlFor="button-manual-element-text">Element text</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <QuestionMarkCircledIcon />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs bg-foreground text-background">
-                        <p>
-                          Usertour will select an element containing the text
-                          you write here.
-                        </p>
+                        <p>Usertour will select an element containing the text you write here.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
                 <Input
                   id="button-manual-element-text"
-                  value={innerData.content || ""}
+                  value={innerData.content || ''}
                   placeholder="None"
                   onChange={handleElementTextChange}
                 />
                 <div className="flex justify-start items-center space-x-1	">
-                  <Label htmlFor="button-manual-css-selector">
-                    CSS selector
-                  </Label>
+                  <Label htmlFor="button-manual-css-selector">CSS selector</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -273,12 +235,10 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs bg-foreground text-background">
                         <p>
-                          Advanced feature: If possible, we recommend selecting
-                          elements using text. lf an element does not have text,
-                          or the text is very generic, you can select it using a
-                          CSS selector instead. lf both text and CSS selector is
-                          filled in, Usertour will select an element matching
-                          both.
+                          Advanced feature: If possible, we recommend selecting elements using text.
+                          lf an element does not have text, or the text is very generic, you can
+                          select it using a CSS selector instead. lf both text and CSS selector is
+                          filled in, Usertour will select an element matching both.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -286,7 +246,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                 </div>
                 <Input
                   id="button-manual-css-selector"
-                  value={innerData.customSelector || ""}
+                  value={innerData.customSelector || ''}
                   placeholder="None"
                   onChange={handleSelectorChange}
                 />
@@ -305,9 +265,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                   ))}
                 </div>
                 <div className="flex justify-start items-center space-x-1	">
-                  <Label htmlFor="button-manual-css-selector">
-                    If multiple matches
-                  </Label>
+                  <Label htmlFor="button-manual-css-selector">If multiple matches</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -315,23 +273,19 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs bg-foreground text-background">
                         <p>
-                          If multiple elements match your criteria, you can tell
-                          Usertour which of the elements to select.
+                          If multiple elements match your criteria, you can tell Usertour which of
+                          the elements to select.
                         </p>
                         <p>
-                          Elements are sorted first by vertical position and
-                          second by horizontal position. l.e. an element higher
-                          up on the page and more towards the left takes
-                          precedence.{" "}
+                          Elements are sorted first by vertical position and second by horizontal
+                          position. l.e. an element higher up on the page and more towards the left
+                          takes precedence.{' '}
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <Select
-                  onValueChange={handleSequenceValueChange}
-                  defaultValue={innerData.sequence}
-                >
+                <Select onValueChange={handleSequenceValueChange} defaultValue={innerData.sequence}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a option" />
                   </SelectTrigger>
@@ -367,4 +321,4 @@ export const ElementSelector = (props: ElementSelectorProps) => {
     </div>
   );
 };
-ElementSelector.displayName = "ElementSelector";
+ElementSelector.displayName = 'ElementSelector';

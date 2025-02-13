@@ -1,10 +1,7 @@
-import { TimeIcon } from "@usertour-ui/icons";
-import { Calendar } from "@usertour-ui/calendar";
-import * as Popover from "@usertour-ui/popover";
-import { format } from "date-fns";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { CalendarIcon } from "@radix-ui/react-icons";
-import { cn } from "@usertour-ui/ui-utils";
+import { CalendarIcon } from '@radix-ui/react-icons';
+import { Calendar } from '@usertour-ui/calendar';
+import { TimeIcon } from '@usertour-ui/icons';
+import * as Popover from '@usertour-ui/popover';
 import {
   Select,
   SelectContent,
@@ -12,25 +9,21 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
+} from '@usertour-ui/select';
+import { cn } from '@usertour-ui/ui-utils';
+import { format } from 'date-fns';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 
-import { Button } from "@usertour-ui/button";
-import { ScrollArea } from "@usertour-ui/scroll-area";
-import { RulesLogic } from "./rules-logic";
-import { RulesRemove } from "./rules-remove";
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from "./rules-error";
-import {
-  RulesPopover,
-  RulesPopoverContent,
-  RulesPopoverTrigger,
-} from "./rules-popper";
-import {
-  RulesConditionIcon,
-  RulesConditionRightContent,
-} from "./rules-template";
-import { useRulesGroupContext } from "../contexts/rules-group-context";
-import { getCurrentTimeError } from "@usertour-ui/shared-utils";
-import { EXTENSION_CONTENT_RULES } from "@usertour-ui/constants";
+import { Button } from '@usertour-ui/button';
+import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { getCurrentTimeError } from '@usertour-ui/shared-utils';
+import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
+import { RulesLogic } from './rules-logic';
+import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesRemove } from './rules-remove';
+import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 
 export interface SelectItemType {
   id: string;
@@ -60,14 +53,14 @@ const RulesCurrentTimeDatePicker = (props: {
     <Popover.Popover>
       <Popover.PopoverTrigger asChild>
         <Button
-          variant={"outline"}
+          variant={'outline'}
           className={cn(
-            "w-[240px] justify-start text-left font-normal h-9",
-            !date && "text-muted-foreground"
+            'w-[240px] justify-start text-left font-normal h-9',
+            !date && 'text-muted-foreground',
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
+          {date ? format(date, 'PPP') : <span>Pick a date</span>}
         </Button>
       </Popover.PopoverTrigger>
       <Popover.PopoverContent
@@ -77,12 +70,7 @@ const RulesCurrentTimeDatePicker = (props: {
           zIndex: EXTENSION_CONTENT_RULES,
         }}
       >
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          initialFocus
-        />
+        <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
       </Popover.PopoverContent>
     </Popover.Popover>
   );
@@ -93,10 +81,10 @@ const RulesCurrentTimeTimer = (props: {
   defaultValue: string;
   onValueChange?(value: string): void;
 }) => {
-  const { num, defaultValue = "00", onValueChange } = props;
+  const { num, defaultValue = '00', onValueChange } = props;
   const items = [];
   for (let index = 0; index < num; index++) {
-    items.push(index < 10 ? "0" + index : index);
+    items.push(index < 10 ? `0${index}` : index);
   }
   return (
     <Select defaultValue={defaultValue} onValueChange={onValueChange}>
@@ -113,11 +101,7 @@ const RulesCurrentTimeTimer = (props: {
           <ScrollArea className="h-60">
             {items.map((item, index) => {
               return (
-                <SelectItem
-                  key={index}
-                  value={item as string}
-                  className="cursor-pointer"
-                >
+                <SelectItem key={index} value={item as string} className="cursor-pointer">
                   {item}
                 </SelectItem>
               );
@@ -132,36 +116,30 @@ const RulesCurrentTimeTimer = (props: {
 export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   const { index, data } = props;
   const [startDate, setStartDate] = useState<Date | undefined>(
-    data?.startDate ? new Date(data?.startDate) : undefined
+    data?.startDate ? new Date(data?.startDate) : undefined,
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
-    data?.endDate ? new Date(data?.endDate) : undefined
+    data?.endDate ? new Date(data?.endDate) : undefined,
   );
-  const [startDateHour, setStartDateHour] = useState(
-    data?.startDateHour ?? "00"
-  );
-  const [startDateMinute, setStartDateMinute] = useState(
-    data?.startDateMinute ?? "00"
-  );
-  const [endDateHour, setEndDateHour] = useState(data?.endDateHour ?? "00");
-  const [endDateMinute, setEndDateMinute] = useState(
-    data?.endDateMinute ?? "00"
-  );
+  const [startDateHour, setStartDateHour] = useState(data?.startDateHour ?? '00');
+  const [startDateMinute, setStartDateMinute] = useState(data?.startDateMinute ?? '00');
+  const [endDateHour, setEndDateHour] = useState(data?.endDateHour ?? '00');
+  const [endDateMinute, setEndDateMinute] = useState(data?.endDateMinute ?? '00');
 
   const [openError, setOpenError] = useState(false);
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
-  const [errorInfo, setErrorInfo] = useState("");
+  const [errorInfo, setErrorInfo] = useState('');
 
   useEffect(() => {
     if (open) {
       return;
     }
     const updates = {
-      startDate: startDate ? format(startDate, "MM/dd/yyyy") : "",
+      startDate: startDate ? format(startDate, 'MM/dd/yyyy') : '',
       startDateHour,
       startDateMinute,
-      endDate: endDate ? format(endDate, "MM/dd/yyyy") : "",
+      endDate: endDate ? format(endDate, 'MM/dd/yyyy') : '',
       endDateHour,
       endDateMinute,
     };
@@ -169,15 +147,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
     setOpenError(showError);
     setErrorInfo(errorInfo);
     updateConditionData(index, updates);
-  }, [
-    startDate,
-    startDateHour,
-    startDateMinute,
-    endDate,
-    endDateHour,
-    endDateMinute,
-    open,
-  ]);
+  }, [startDate, startDateHour, startDateMinute, endDate, endDateHour, endDateMinute, open]);
 
   return (
     <RulesError open={openError}>
@@ -191,24 +161,16 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
             <RulesPopover onOpenChange={setOpen} open={open}>
               <RulesPopoverTrigger>
                 <div className="grow pr-6 text-sm text-wrap break-all">
-                  Current time is {endDate ? "between" : "after"}{" "}
+                  Current time is {endDate ? 'between' : 'after'}{' '}
                   {startDate && (
                     <span className="font-bold">
-                      {format(startDate, "PPP") +
-                        ", " +
-                        startDateHour +
-                        ":" +
-                        startDateMinute}
+                      {`${format(startDate, 'PPP')}, ${startDateHour}:${startDateMinute}`}
                     </span>
                   )}
-                  {endDate && " and "}
+                  {endDate && ' and '}
                   {endDate && (
                     <span className="font-bold">
-                      {format(endDate, "PPP") +
-                        ", " +
-                        endDateHour +
-                        ":" +
-                        endDateMinute}
+                      {`${format(endDate, 'PPP')}, ${endDateHour}:${endDateMinute}`}
                     </span>
                   )}
                 </div>
@@ -217,10 +179,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
                 <div className=" flex flex-col space-y-1">
                   <div>Start time </div>
                   <div className="flex flex-row space-x-2 items-center">
-                    <RulesCurrentTimeDatePicker
-                      date={startDate}
-                      setDate={setStartDate}
-                    />
+                    <RulesCurrentTimeDatePicker date={startDate} setDate={setStartDate} />
                     <RulesCurrentTimeTimer
                       num={24}
                       defaultValue={startDateHour}
@@ -235,10 +194,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
                   </div>
                   <div>End time </div>
                   <div className="flex flex-row space-x-2 items-center">
-                    <RulesCurrentTimeDatePicker
-                      date={endDate}
-                      setDate={setEndDate}
-                    />
+                    <RulesCurrentTimeDatePicker date={endDate} setDate={setEndDate} />
                     <RulesCurrentTimeTimer
                       num={24}
                       defaultValue={endDateHour}
@@ -263,4 +219,4 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   );
 };
 
-RulesCurrentTime.displayName = "RulesCurrentTime";
+RulesCurrentTime.displayName = 'RulesCurrentTime';

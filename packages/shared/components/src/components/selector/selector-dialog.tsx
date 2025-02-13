@@ -1,29 +1,22 @@
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@usertour-ui/form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useToast } from "@usertour-ui/use-toast";
-import { useOpenSelector } from "@usertour-ui/shared-hooks";
-import { Button } from "@usertour-ui/button";
-import { Input } from "@usertour-ui/input";
-import { useCallback, useState } from "react";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogTrigger,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@usertour-ui/dialog";
-import { SpinnerIcon } from "@usertour-ui/icons";
+  DialogTrigger,
+} from '@usertour-ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { SpinnerIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { useOpenSelector } from '@usertour-ui/shared-hooks';
+import { useToast } from '@usertour-ui/use-toast';
+import { useCallback, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 interface SelectorDialogProps {
   children: React.ReactNode;
@@ -46,19 +39,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 const defaultValues: Partial<FormValues> = {
-  buildUrl: "",
+  buildUrl: '',
 };
 
 export const SelectorDialog = (props: SelectorDialogProps) => {
-  const {
-    children,
-    onSuccess,
-    token,
-    buildUrl = "",
-    onFailed,
-    isInput,
-    zIndex = 1000,
-  } = props;
+  const { children, onSuccess, token, buildUrl = '', onFailed, isInput, zIndex = 1000 } = props;
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [currentBuildUrl, setCurrentBuildUrl] = useState(buildUrl);
@@ -72,7 +57,7 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
       }
       setOpen(false);
     },
-    [currentBuildUrl]
+    [currentBuildUrl],
   );
 
   const openTarget = useOpenSelector(token, handleSelectorSuccess);
@@ -80,7 +65,7 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { ...defaultValues, buildUrl },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const handleOnSubmit = useCallback(
@@ -88,18 +73,18 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
       const { buildUrl } = formData;
       if (!buildUrl) {
         return toast({
-          variant: "destructive",
+          variant: 'destructive',
           title: "The url you willl open can't empty.",
         });
       }
       const initParams = {
-        action: "elementSelect",
+        action: 'elementSelect',
         isInput: isInput,
       };
       setCurrentBuildUrl(buildUrl);
       openTarget.open(buildUrl, initParams);
     },
-    [isInput]
+    [isInput],
   );
 
   return (
@@ -131,8 +116,8 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
                 <p className="text-sm text-muted-foreground">
                   Enter the URL where the element appears in your app.
                   <br />
-                  Next, you'll be able to point and click at the element and
-                  have Usertour automatically select it.
+                  Next, you'll be able to point and click at the element and have Usertour
+                  automatically select it.
                 </p>
               </div>
             </div>
@@ -148,9 +133,7 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
                 disabled={openTarget.isLoading}
                 // onClick={handleOpenEditor}
               >
-                {openTarget.isLoading && (
-                  <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {openTarget.isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>
@@ -161,4 +144,4 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
   );
 };
 
-SelectorDialog.displayName = "SelectorDialog";
+SelectorDialog.displayName = 'SelectorDialog';
