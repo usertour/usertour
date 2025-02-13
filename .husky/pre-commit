@@ -1,2 +1,1 @@
-#!/usr/bin/env sh
-pnpm lint
+lint-staged

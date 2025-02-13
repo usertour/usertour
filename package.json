@@ -14,13 +14,13 @@
     "build:sdk:dev": "pnpm --filter ./apps/sdk build:dev",
     "build:sdk:dev:iife": "pnpm --filter ./apps/sdk build:dev:iife",
     "build:server": "pnpm --filter ./apps/server build",
-    "prepare": "husky install",
     "lint": "biome lint .",
     "lint:fix": "biome lint . --write",
     "format": "biome format .",
     "format:fix": "biome format . --write",
     "check": "biome check .",
-    "check:fix": "biome check . --write"
+    "check:fix": "biome check . --write",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
@@ -39,5 +39,9 @@
   "dependencies": {
     "rimraf": "^5.0.5",
     "tailwindcss-animate": "^1.0.7"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": ["biome check --write"],
+    "*.json": ["biome format --write"]
   }
 }
