@@ -1,30 +1,25 @@
-import { useCallback } from "react";
-import { ColorResult, SketchPicker } from "react-color";
-import * as Popover from "@radix-ui/react-popover";
-import { getTextProps, setTextProps } from "../../lib/text";
-import { useSlate } from "slate-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useCallback } from 'react';
+import { ColorResult, SketchPicker } from 'react-color';
+import { useSlate } from 'slate-react';
+import { getTextProps, setTextProps } from '../../lib/text';
 
 interface ColorPickerProps {
   container: HTMLElement | null;
 }
 
-const TYPE = "color";
-const DEFAULT_COLOR = "#000000";
+const TYPE = 'color';
+const DEFAULT_COLOR = '#000000';
 
 export const ColorPicker = ({ container }: ColorPickerProps) => {
   const editor = useSlate();
 
   const handleChange = useCallback(
     (color: ColorResult) => {
-      setTextProps(editor, "color", color.hex);
+      setTextProps(editor, 'color', color.hex);
     },
-    [editor]
+    [editor],
   );
 
   return (
@@ -41,7 +36,7 @@ export const ColorPicker = ({ container }: ColorPickerProps) => {
                   height={15}
                   style={{ fill: getTextProps(editor, TYPE, DEFAULT_COLOR) }}
                 >
-                  <path d="M15.2459 14H8.75407L7.15407 18H5L11 3H13L19 18H16.8459L15.2459 14ZM14.4459 12L12 5.88516L9.55407 12H14.4459ZM3 20H21V22H3V20Z"></path>
+                  <path d="M15.2459 14H8.75407L7.15407 18H5L11 3H13L19 18H16.8459L15.2459 14ZM14.4459 12L12 5.88516L9.55407 12H14.4459ZM3 20H21V22H3V20Z" />
                 </svg>
               </Popover.Trigger>
             </TooltipTrigger>
@@ -64,4 +59,4 @@ export const ColorPicker = ({ container }: ColorPickerProps) => {
   );
 };
 
-ColorPicker.displayName = "ColorPicker";
+ColorPicker.displayName = 'ColorPicker';

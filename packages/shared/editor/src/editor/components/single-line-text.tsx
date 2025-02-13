@@ -1,13 +1,13 @@
-import { useCallback, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Button } from "@usertour-ui/button";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { Switch } from "@usertour-ui/switch";
-import { ContentEditorSingleLineTextElement } from "../../types/editor";
-import { ContentActions } from "../..";
-import { RulesCondition } from "@usertour-ui/types";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { Switch } from '@usertour-ui/switch';
+import { RulesCondition } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
+import { ContentActions } from '../..';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ContentEditorSingleLineTextElement } from '../../types/editor';
 
 // Define the element type
 export const ContentEditorSingleLineText = (props: {
@@ -34,10 +34,10 @@ export const ContentEditorSingleLineText = (props: {
           ...element,
           data: { ...element.data, ...updates },
         },
-        id
+        id,
       );
     },
-    [element, id, updateElement]
+    [element, id, updateElement],
   );
 
   const handleActionChange = (actions: RulesCondition[]) => {
@@ -49,12 +49,12 @@ export const ContentEditorSingleLineText = (props: {
       <Popover.Trigger asChild>
         <div className="flex flex-col gap-2 items-center w-full">
           <Input
-            placeholder={element.data.placeholder || "Enter text..."}
+            placeholder={element.data.placeholder || 'Enter text...'}
             className="grow h-auto"
           />
           <div className="flex justify-end w-full">
             <Button forSdk={true} size="sm" className="flex-none">
-              {element.data.buttonText || "Submit"}
+              {element.data.buttonText || 'Submit'}
             </Button>
           </div>
         </div>
@@ -94,9 +94,7 @@ export const ContentEditorSingleLineText = (props: {
               <Input
                 id="placeholder"
                 value={element.data.placeholder}
-                onChange={(e) =>
-                  handleDataChange({ placeholder: e.target.value })
-                }
+                onChange={(e) => handleDataChange({ placeholder: e.target.value })}
                 placeholder="Enter placeholder text"
               />
             </div>
@@ -106,9 +104,7 @@ export const ContentEditorSingleLineText = (props: {
               <Input
                 id="button-text"
                 value={element.data.buttonText}
-                onChange={(e) =>
-                  handleDataChange({ buttonText: e.target.value })
-                }
+                onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                 placeholder="Enter button text"
               />
             </div>
@@ -119,9 +115,7 @@ export const ContentEditorSingleLineText = (props: {
                 id="required"
                 className="data-[state=unchecked]:bg-muted"
                 checked={element.data.required}
-                onCheckedChange={(checked) =>
-                  handleDataChange({ required: checked })
-                }
+                onCheckedChange={(checked) => handleDataChange({ required: checked })}
               />
             </div>
           </div>
@@ -131,7 +125,7 @@ export const ContentEditorSingleLineText = (props: {
   );
 };
 
-ContentEditorSingleLineText.displayName = "ContentEditorSingleLineText";
+ContentEditorSingleLineText.displayName = 'ContentEditorSingleLineText';
 
 export const ContentEditorSingleLineTextSerialize = (props: {
   element: ContentEditorSingleLineTextElement;
@@ -141,23 +135,14 @@ export const ContentEditorSingleLineTextSerialize = (props: {
 
   return (
     <div className="flex flex-col gap-2 items-center w-full">
-      <Input
-        placeholder={element.data.placeholder || "Enter text..."}
-        className="grow h-auto"
-      />
+      <Input placeholder={element.data.placeholder || 'Enter text...'} className="grow h-auto" />
       <div className="flex justify-end w-full">
-        <Button
-          forSdk={true}
-          size="sm"
-          className="flex-none"
-          onClick={() => onClick?.(element)}
-        >
-          {element.data.buttonText || "Submit"}
+        <Button forSdk={true} size="sm" className="flex-none" onClick={() => onClick?.(element)}>
+          {element.data.buttonText || 'Submit'}
         </Button>
       </div>
     </div>
   );
 };
 
-ContentEditorSingleLineTextSerialize.displayName =
-  "ContentEditorSingleLineTextSerialize";
+ContentEditorSingleLineTextSerialize.displayName = 'ContentEditorSingleLineTextSerialize';

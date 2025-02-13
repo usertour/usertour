@@ -1,14 +1,14 @@
-import { useCallback, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Textarea } from "@usertour-ui/textarea";
-import { Button } from "@usertour-ui/button";
-import { Switch } from "@usertour-ui/switch";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { ContentEditorMultiLineTextElement } from "../../types/editor";
-import { ContentActions } from "../..";
-import { RulesCondition } from "@usertour-ui/types";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { Switch } from '@usertour-ui/switch';
+import { Textarea } from '@usertour-ui/textarea';
+import { RulesCondition } from '@usertour-ui/types';
+import { useCallback, useState } from 'react';
+import { ContentActions } from '../..';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ContentEditorMultiLineTextElement } from '../../types/editor';
 
 export const ContentEditorMultiLineText = (props: {
   element: ContentEditorMultiLineTextElement;
@@ -28,16 +28,16 @@ export const ContentEditorMultiLineText = (props: {
   const [isOpen, setIsOpen] = useState<boolean>();
 
   const handleDataChange = useCallback(
-    (data: Partial<ContentEditorMultiLineTextElement["data"]>) => {
+    (data: Partial<ContentEditorMultiLineTextElement['data']>) => {
       updateElement(
         {
           ...element,
           data: { ...element.data, ...data },
         },
-        id
+        id,
       );
     },
-    [element.data, path, updateElement]
+    [element.data, path, updateElement],
   );
 
   const handleActionChange = (actions: RulesCondition[]) => {
@@ -49,13 +49,13 @@ export const ContentEditorMultiLineText = (props: {
       <Popover.Trigger asChild>
         <div className="flex flex-col gap-2 items-center w-full">
           <Textarea
-            placeholder={element.data.placeholder || "Enter text..."}
+            placeholder={element.data.placeholder || 'Enter text...'}
             className="border-sdk-question"
             disabled
           />
           <div className="flex justify-end w-full">
             <Button forSdk={true} size="sm" className="flex-none">
-              {element.data.buttonText || "Submit"}
+              {element.data.buttonText || 'Submit'}
             </Button>
           </div>
         </div>
@@ -95,9 +95,7 @@ export const ContentEditorMultiLineText = (props: {
               <Input
                 id="placeholder"
                 value={element.data.placeholder}
-                onChange={(e) =>
-                  handleDataChange({ placeholder: e.target.value })
-                }
+                onChange={(e) => handleDataChange({ placeholder: e.target.value })}
                 placeholder="Enter placeholder text"
               />
             </div>
@@ -107,9 +105,7 @@ export const ContentEditorMultiLineText = (props: {
               <Input
                 id="button-text"
                 value={element.data.buttonText}
-                onChange={(e) =>
-                  handleDataChange({ buttonText: e.target.value })
-                }
+                onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                 placeholder="Enter button text"
               />
             </div>
@@ -118,9 +114,7 @@ export const ContentEditorMultiLineText = (props: {
               <Switch
                 id="required"
                 checked={element.data.required}
-                onCheckedChange={(checked) =>
-                  handleDataChange({ required: checked })
-                }
+                onCheckedChange={(checked) => handleDataChange({ required: checked })}
               />
               <Label htmlFor="required">Required</Label>
             </div>
@@ -131,7 +125,7 @@ export const ContentEditorMultiLineText = (props: {
   );
 };
 
-ContentEditorMultiLineText.displayName = "ContentEditorMultiLineText";
+ContentEditorMultiLineText.displayName = 'ContentEditorMultiLineText';
 
 export const ContentEditorMultiLineTextSerialize = (props: {
   element: ContentEditorMultiLineTextElement;
@@ -142,22 +136,16 @@ export const ContentEditorMultiLineTextSerialize = (props: {
   return (
     <div className="flex flex-col gap-2 items-center w-full">
       <Textarea
-        placeholder={element.data.placeholder || "Enter text..."}
+        placeholder={element.data.placeholder || 'Enter text...'}
         className="border-sdk-question"
       />
       <div className="flex justify-end w-full">
-        <Button
-          forSdk={true}
-          size="sm"
-          className="flex-none"
-          onClick={() => onClick?.(element)}
-        >
-          {element.data.buttonText || "Submit"}
+        <Button forSdk={true} size="sm" className="flex-none" onClick={() => onClick?.(element)}>
+          {element.data.buttonText || 'Submit'}
         </Button>
       </div>
     </div>
   );
 };
 
-ContentEditorMultiLineTextSerialize.displayName =
-  "ContentEditorMultiLineTextSerialize";
+ContentEditorMultiLineTextSerialize.displayName = 'ContentEditorMultiLineTextSerialize';

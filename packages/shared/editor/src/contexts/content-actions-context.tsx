@@ -1,4 +1,3 @@
-import { ReactNode, createContext, useContext } from "react";
 import {
   Attribute,
   Content,
@@ -6,7 +5,8 @@ import {
   RulesCondition,
   Segment,
   Step,
-} from "@usertour-ui/types";
+} from '@usertour-ui/types';
+import { ReactNode, createContext, useContext } from 'react';
 
 export interface ContentActionsProviderProps {
   onDataChange?: (conds: RulesCondition[], hasError: boolean) => void;
@@ -26,10 +26,7 @@ export interface ContentActionsProviderProps {
   token?: string;
   children?: ReactNode;
   zIndex: number;
-  createStep?: (
-    currentVersion: ContentVersion,
-    sequence: number
-  ) => Promise<Step | undefined>;
+  createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
 }
 
 // export interface ContentActionsContextValue {
@@ -46,19 +43,19 @@ export interface ContentActionsProviderProps {
 //   token: string;
 // }
 export type ContentActionsContextValue = ContentActionsProviderProps & {};
-export const ContentActionsContext = createContext<
-  ContentActionsContextValue | undefined
->(undefined);
+export const ContentActionsContext = createContext<ContentActionsContextValue | undefined>(
+  undefined,
+);
 
 export function ContentActionsProvider(props: ContentActionsProviderProps) {
   const {
     isHorizontal = false,
     isShowIf = true,
-    addButtonText = "Add action",
+    addButtonText = 'Add action',
     attributes,
     segments,
     contents,
-    token = "",
+    token = '',
     isShowLogic = true,
     children,
   } = props;
@@ -75,19 +72,13 @@ export function ContentActionsProvider(props: ContentActionsProviderProps) {
     isShowLogic,
   };
 
-  return (
-    <ContentActionsContext.Provider value={value}>
-      {children}
-    </ContentActionsContext.Provider>
-  );
+  return <ContentActionsContext.Provider value={value}>{children}</ContentActionsContext.Provider>;
 }
 
 export function useContentActionsContext(): ContentActionsContextValue {
   const context = useContext(ContentActionsContext);
   if (!context) {
-    throw new Error(
-      `useContentActionsContext must be used within a ContentActionsProvider.`
-    );
+    throw new Error('useContentActionsContext must be used within a ContentActionsProvider.');
   }
   return context;
 }

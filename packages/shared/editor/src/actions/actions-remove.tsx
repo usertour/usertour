@@ -1,11 +1,6 @@
-import { CloseIcon } from "@usertour-ui/icons";
-import { useActionsGroupContext } from "../contexts/actions-group-context";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+import { CloseIcon } from '@usertour-ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { useActionsGroupContext } from '../contexts/actions-group-context';
 
 type ContentActionsRemoveProps = {
   index: number;
@@ -40,4 +35,4 @@ export const ContentActionsRemove = (props: ContentActionsRemoveProps) => {
   );
 };
 
-ContentActionsRemove.displayName = "ContentActionsRemove";
+ContentActionsRemove.displayName = 'ContentActionsRemove';

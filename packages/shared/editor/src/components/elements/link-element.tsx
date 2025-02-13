@@ -1,28 +1,19 @@
-import { ReactEditor, RenderElementProps, useSlateStatic } from "slate-react";
-import * as Popover from "@radix-ui/react-popover";
-import {
-  PopperEditorMini,
-  serializeMini,
-  usePopperEditorContext,
-} from "../editor";
-import { DeleteIcon } from "@usertour-ui/icons";
-import { MouseEvent, useCallback, useState } from "react";
-import { LinkElementType } from "../../types/slate";
-import { Descendant, Transforms } from "slate";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { Button } from "@usertour-ui/button";
-import { EDITOR_RICH_ACTION_CONTENT } from "@usertour-ui/constants";
-import { Tabs, TabsList, TabsTrigger } from "@usertour-ui/tabs";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
+import { DeleteIcon } from '@usertour-ui/icons';
+import { Tabs, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { MouseEvent, useCallback, useState } from 'react';
+import { Descendant, Transforms } from 'slate';
+import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
+import { LinkElementType } from '../../types/slate';
+import { PopperEditorMini, serializeMini, usePopperEditorContext } from '../editor';
 
 const initialValue: Descendant[] = [
   {
-    type: "paragraph",
-    children: [{ text: "https://" }],
+    type: 'paragraph',
+    children: [{ text: 'https://' }],
   },
 ];
 export const LinkElement = (props: RenderElementProps) => {
@@ -31,7 +22,7 @@ export const LinkElement = (props: RenderElementProps) => {
   const editor = useSlateStatic();
   const [open, setOpen] = useState<boolean>(false);
   const [data, setData] = useState(element.data ?? initialValue);
-  const [openType, setOpenType] = useState(element.openType || "same");
+  const [openType, setOpenType] = useState(element.openType || 'same');
 
   const path = ReactEditor.findPath(editor, element);
 
@@ -48,10 +39,10 @@ export const LinkElement = (props: RenderElementProps) => {
           data,
           url: data ? data.map((v) => serializeMini(v)).join() : undefined,
         },
-        { at: path }
+        { at: path },
       );
     },
-    [openType, data]
+    [openType, data],
   );
 
   const handleDelete = () => {
@@ -73,15 +64,11 @@ export const LinkElement = (props: RenderElementProps) => {
 
   return (
     <Popover.Root open={open} onOpenChange={handleOnOpenChange}>
-      <Popover.Trigger
-        onMouseDown={handleMouseDown}
-        onClick={handleOnClick}
-        asChild
-      >
+      <Popover.Trigger onMouseDown={handleMouseDown} onClick={handleOnClick} asChild>
         <span
           {...props.attributes}
           className="underline"
-          style={{ color: "var(--usertour-link-color)" }}
+          style={{ color: 'var(--usertour-link-color)' }}
         >
           {props.children}
         </span>
@@ -114,7 +101,7 @@ export const LinkElement = (props: RenderElementProps) => {
                       size="icon"
                       onClick={handleDelete}
                     >
-                      <DeleteIcon className="fill-red-500"></DeleteIcon>
+                      <DeleteIcon className="fill-red-500" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -123,11 +110,7 @@ export const LinkElement = (props: RenderElementProps) => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <Tabs
-              className="w-full"
-              defaultValue={openType}
-              onValueChange={setOpenType}
-            >
+            <Tabs className="w-full" defaultValue={openType} onValueChange={setOpenType}>
               <TabsList className="h-auto w-full	">
                 <TabsTrigger
                   value="same"
@@ -149,7 +132,7 @@ export const LinkElement = (props: RenderElementProps) => {
     </Popover.Root>
   );
 };
-LinkElement.displayName = "LinkElement";
+LinkElement.displayName = 'LinkElement';
 
 type LinkElementSerializeType = {
   children: React.ReactNode;
@@ -159,10 +142,10 @@ type LinkElementSerializeType = {
 export const LinkElementSerialize = (props: LinkElementSerializeType) => {
   const { element, children } = props;
   return (
-    <a href={element.url} target="_blank">
+    <a href={element.url} target="_blank" rel="noreferrer">
       {children}
     </a>
   );
 };
 
-LinkElementSerialize.displayName = "LinkElementSerialize";
+LinkElementSerialize.displayName = 'LinkElementSerialize';

@@ -1,14 +1,14 @@
 import {
   Attribute,
   Content,
+  ContentOmbedInfo,
   ContentVersion,
   RulesCondition,
-  ContentOmbedInfo,
   Step,
-} from "@usertour-ui/types";
-import { CSSProperties, ReactNode } from "react";
-import { UseMeasureRect } from "react-use/lib/useMeasure";
-import { Descendant } from "slate";
+} from '@usertour-ui/types';
+import { CSSProperties, ReactNode } from 'react';
+import { UseMeasureRect } from 'react-use/lib/useMeasure';
+import { Descendant } from 'slate';
 
 type ContentEditorElementWidth = {
   type?: string;
@@ -24,24 +24,24 @@ type ContentEditorElementMargin = {
 };
 
 export enum ContentEditorElementType {
-  TEXT = "text",
-  IMAGE = "image",
-  BUTTON = "button",
-  EMBED = "embed",
-  COLUMN = "column",
-  GROUP = "group",
-  NPS = "nps",
-  STAR_RATING = "star-rating",
-  SCALE = "scale",
-  SINGLE_LINE_TEXT = "single-line-text",
-  MULTI_LINE_TEXT = "multi-line-text",
-  MULTIPLE_CHOICE = "multiple-choice",
+  TEXT = 'text',
+  IMAGE = 'image',
+  BUTTON = 'button',
+  EMBED = 'embed',
+  COLUMN = 'column',
+  GROUP = 'group',
+  NPS = 'nps',
+  STAR_RATING = 'star-rating',
+  SCALE = 'scale',
+  SINGLE_LINE_TEXT = 'single-line-text',
+  MULTI_LINE_TEXT = 'multi-line-text',
+  MULTIPLE_CHOICE = 'multiple-choice',
 }
 
 export enum ContentEditorSideBarType {
-  TOP = "top",
-  RIGHT = "right",
-  BOTTOM = "bottom",
+  TOP = 'top',
+  RIGHT = 'right',
+  BOTTOM = 'bottom',
 }
 
 export interface ContentEditorUploadRequestOption {
@@ -51,9 +51,7 @@ export interface ContentEditorUploadRequestOption {
   file: File;
 }
 
-export type ContentEditorUploadFunc = (
-  options: ContentEditorUploadRequestOption
-) => void;
+export type ContentEditorUploadFunc = (options: ContentEditorUploadRequestOption) => void;
 
 export type ContentEditorButtonData = {
   type: string;
@@ -236,10 +234,7 @@ export interface ContentEditorProps {
   currentVersion?: ContentVersion;
   currentStep?: Step;
   actionItems?: string[] | undefined;
-  createStep?: (
-    currentVersion: ContentVersion,
-    sequence: number
-  ) => Promise<Step | undefined>;
+  createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
   enabledElementTypes?: ContentEditorElementType[];
 }
 
@@ -248,8 +243,8 @@ export type ContentEditorContextProviderProps = ContentEditorProps & {
 };
 
 export enum ContentEditorElementInsertDirection {
-  RIGHT = "right",
-  LEFT = "left",
+  RIGHT = 'right',
+  LEFT = 'left',
 }
 
 export type ContentEditorContextProps = ContentEditorProps & {
@@ -262,21 +257,18 @@ export type ContentEditorContextProps = ContentEditorProps & {
   insertColumnInGroup: (
     element: ContentEditorElement,
     path: number[],
-    direction: ContentEditorElementInsertDirection
+    direction: ContentEditorElementInsertDirection,
   ) => void;
   insertGroupAtTop: (element: ContentEditorElement) => void;
   insertGroupAtBottom: (element: ContentEditorElement) => void;
   insertElementInColumn: (
     element: ContentEditorElement,
     path: number[],
-    direction: ContentEditorElementInsertDirection
+    direction: ContentEditorElementInsertDirection,
   ) => void;
   updateElement: (
-    element:
-      | ContentEditorElement
-      | ContentEditorColumnElement
-      | ContentEditorGroupElement,
-    id: string
+    element: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
+    id: string,
   ) => void;
   deleteElementInColumn: (path: number[]) => void;
   deleteColumn: (path: number[]) => void;

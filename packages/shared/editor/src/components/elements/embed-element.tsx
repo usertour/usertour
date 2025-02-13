@@ -1,60 +1,45 @@
-/* eslint-disable @next/next/no-img-element */
-import { Path, Transforms } from "slate";
-import { ReactEditor, RenderElementProps, useSlateStatic } from "slate-react";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { VideoIcon } from '@usertour-ui/icons';
 import {
-  EmbedElementType,
-  ImageElementType,
-  UploadRequestOption,
-} from "../../types/slate";
-import { ImageIcon, VideoIcon } from "@usertour-ui/icons";
-import { promiseUploadFunc } from "../../utils/promiseUploadFunc";
-import Upload from "rc-upload";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Checkbox } from "@usertour-ui/checkbox";
+  ArrowRightIcon,
+  DeleteIcon,
+  InsertColumnLeftIcon,
+  InsertColumnRightIcon,
+} from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectPortal,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { usePopperEditorContext } from "../editor";
-import { Button } from "@usertour-ui/button";
-import {
-  ArrowRightIcon,
-  CloseCircleIcon,
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import {
-  CSSProperties,
-  ChangeEvent,
-  FormEvent,
-  MouseEvent,
-  useEffect,
-  useState,
-} from "react";
+} from '@usertour-ui/select';
+import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
+/* eslint-disable @next/next/no-img-element */
+import { Path, Transforms } from 'slate';
+import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
+import { EmbedElementType } from '../../types/slate';
+import { usePopperEditorContext } from '../editor';
 
 const marginKeyMapping = {
-  left: "marginLeft",
-  top: "marginTop",
-  bottom: "marginBottom",
-  right: "marginRight",
+  left: 'marginLeft',
+  top: 'marginTop',
+  bottom: 'marginBottom',
+  right: 'marginRight',
 };
 
 const transformsStyle = (element: EmbedElementType) => {
-  let _style: any = {};
+  const _style: any = {};
   if (element.width?.value) {
-    if (element.width?.type == "percent") {
-      _style.width = element.width.value + "%";
+    if (element.width?.type === 'percent') {
+      _style.width = `${element.width.value}%`;
     } else {
-      _style.width = element.width.value + "px";
+      _style.width = `${element.width.value}px`;
     }
   }
   if (element.margin) {
@@ -63,7 +48,7 @@ const transformsStyle = (element: EmbedElementType) => {
       const marginName = marginKeyMapping[key];
       if (element.margin[key]) {
         if (element.margin.enabled) {
-          _style[marginName] = element.margin[key] + "px";
+          _style[marginName] = `${element.margin[key]}px`;
         } else {
           _style[marginName] = null;
         }
@@ -89,14 +74,14 @@ export const EmbedElement = (props: RenderElementProps) => {
     Transforms.insertNodes(
       editor,
       {
-        type: "embed",
-        url: "",
-        width: { type: "percent", value: 100 },
-        children: [{ text: "" }],
+        type: 'embed',
+        url: '',
+        width: { type: 'percent', value: 100 },
+        children: [{ text: '' }],
       },
       {
         at: path,
-      }
+      },
     );
   };
   const handleAddRight = () => {
@@ -104,14 +89,14 @@ export const EmbedElement = (props: RenderElementProps) => {
     Transforms.insertNodes(
       editor,
       {
-        type: "embed",
-        url: "",
-        width: { type: "percent", value: 100 },
-        children: [{ text: "" }],
+        type: 'embed',
+        url: '',
+        width: { type: 'percent', value: 100 },
+        children: [{ text: '' }],
       },
       {
         at: Path.next(path),
-      }
+      },
     );
   };
 
@@ -122,7 +107,7 @@ export const EmbedElement = (props: RenderElementProps) => {
       {
         width: { ...element.width, type },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -134,7 +119,7 @@ export const EmbedElement = (props: RenderElementProps) => {
       {
         width: { ...element.width, value },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -147,7 +132,7 @@ export const EmbedElement = (props: RenderElementProps) => {
       {
         margin: { ...element.margin, [position]: value } as any,
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -158,7 +143,7 @@ export const EmbedElement = (props: RenderElementProps) => {
       {
         margin: { ...element.margin, enabled: checked },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -170,7 +155,7 @@ export const EmbedElement = (props: RenderElementProps) => {
       {
         url: value,
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -182,7 +167,7 @@ export const EmbedElement = (props: RenderElementProps) => {
       {
         parsedUrl: element.url,
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -197,18 +182,18 @@ export const EmbedElement = (props: RenderElementProps) => {
       <Popover.Root>
         {element.parsedUrl && (
           <Popover.Trigger asChild>
-            <div style={{ position: "relative", ...style }}>
+            <div style={{ position: 'relative', ...style }}>
               <iframe
+                title={`Embedded content from ${element.parsedUrl}`}
                 src={element.parsedUrl}
                 width="100%"
                 height="100%"
                 frameBorder="0"
                 allow="accelerometer; autoplay; fullscreen; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen={true}
-                // allowTransparency={true}
                 tabIndex={-1}
-                style={{ display: "block", pointerEvents: "none" }}
-              ></iframe>
+                style={{ display: 'block', pointerEvents: 'none' }}
+              />
             </div>
           </Popover.Trigger>
         )}
@@ -254,7 +239,7 @@ export const EmbedElement = (props: RenderElementProps) => {
                 />
                 <Select
                   onValueChange={handleWidthTypeChange}
-                  defaultValue={element.width?.type ?? "percent"}
+                  defaultValue={element.width?.type ?? 'percent'}
                 >
                   <SelectTrigger className="shrink w-56">
                     <SelectValue placeholder="Select a distribute" />
@@ -284,7 +269,7 @@ export const EmbedElement = (props: RenderElementProps) => {
                       value={element.margin?.left}
                       placeholder="Left"
                       onChange={(e) => {
-                        handleMarginValueChange(e, "left");
+                        handleMarginValueChange(e, 'left');
                       }}
                       className="bg-background flex-none w-20"
                     />
@@ -293,7 +278,7 @@ export const EmbedElement = (props: RenderElementProps) => {
                     <Input
                       value={element.margin?.top}
                       onChange={(e) => {
-                        handleMarginValueChange(e, "top");
+                        handleMarginValueChange(e, 'top');
                       }}
                       placeholder="Top"
                       className="bg-background flex-none w-20"
@@ -301,7 +286,7 @@ export const EmbedElement = (props: RenderElementProps) => {
                     <Input
                       value={element.margin?.bottom}
                       onChange={(e) => {
-                        handleMarginValueChange(e, "bottom");
+                        handleMarginValueChange(e, 'bottom');
                       }}
                       placeholder="Bottom"
                       className="bg-background flex-none w-20"
@@ -312,7 +297,7 @@ export const EmbedElement = (props: RenderElementProps) => {
                       value={element.margin?.right}
                       placeholder="Right"
                       onChange={(e) => {
-                        handleMarginValueChange(e, "right");
+                        handleMarginValueChange(e, 'right');
                       }}
                       className="bg-background flex-none w-20"
                     />
@@ -327,25 +312,15 @@ export const EmbedElement = (props: RenderElementProps) => {
                   size="icon"
                   onClick={handleDelete}
                 >
-                  <DeleteIcon className="fill-red-700"></DeleteIcon>
+                  <DeleteIcon className="fill-red-700" />
                 </Button>
-                <div className="grow"></div>
-                <Button
-                  className="flex-none"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleAddLeft}
-                >
-                  <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                <div className="grow" />
+                <Button className="flex-none" variant="ghost" size="icon" onClick={handleAddLeft}>
+                  <InsertColumnLeftIcon className="fill-foreground" />
                 </Button>
                 <div className="flex-none mx-1 leading-10">Embed URL</div>
-                <Button
-                  className="flex-none"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleAddRight}
-                >
-                  <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                <Button className="flex-none" variant="ghost" size="icon" onClick={handleAddRight}>
+                  <InsertColumnRightIcon className="fill-foreground" />
                 </Button>
               </div>
             </div>
@@ -363,7 +338,7 @@ type EmbedElementSerializeType = {
   element: EmbedElementType;
 };
 export const EmbedElementSerialize = (props: EmbedElementSerializeType) => {
-  const { className, children, element } = props;
+  const { element } = props;
   const [style, setStyle] = useState<CSSProperties | null>(null);
 
   useEffect(() => {
@@ -373,25 +348,23 @@ export const EmbedElementSerialize = (props: EmbedElementSerializeType) => {
   return (
     <>
       {element.parsedUrl && (
-        <div style={{ position: "relative", ...style }}>
+        <div style={{ position: 'relative', ...style }}>
           <iframe
+            title={`Embedded content from ${element.parsedUrl}`}
             src={element.parsedUrl}
             width="100%"
             height="100%"
             frameBorder="0"
             allow="accelerometer; autoplay; fullscreen; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen={true}
-            // allowTransparency={true}
             tabIndex={-1}
-            style={{ display: "block", pointerEvents: "none" }}
-          ></iframe>
+            style={{ display: 'block', pointerEvents: 'none' }}
+          />
         </div>
       )}
-      {!element.parsedUrl && (
-        <VideoIcon className="fill-slate-300" width={200} height={200} />
-      )}
+      {!element.parsedUrl && <VideoIcon className="fill-slate-300" width={200} height={200} />}
     </>
   );
 };
 
-EmbedElement.display = "EmbedElement";
+EmbedElement.display = 'EmbedElement';

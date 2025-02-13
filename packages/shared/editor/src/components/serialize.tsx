@@ -1,21 +1,18 @@
-import { uuidV4 } from "@usertour-ui/ui-utils";
-import { useEffect, useState } from "react";
-import { ELEMENTS } from "./elements";
-import type { ButtonData, CustomElementStrings } from "../types/slate";
-import { serializeLeaf, isText, ALIGN_MAPPING } from "./editor";
+import { uuidV4 } from '@usertour-ui/ui-utils';
+import { useEffect, useState } from 'react';
+import type { ButtonData, CustomElementStrings } from '../types/slate';
+import { ALIGN_MAPPING, isText, serializeLeaf } from './editor';
+import { ELEMENTS } from './elements';
 
-type ALIGN_TYPE = "left" | "right" | "center" | "justify";
+type ALIGN_TYPE = 'left' | 'right' | 'center' | 'justify';
 
-export const serialize = (
-  node: any,
-  callback?: (type: string, params: ButtonData) => void
-) => {
+export const serialize = (node: any, callback?: (type: string, params: ButtonData) => void) => {
   const key = uuidV4();
   if (isText(node)) {
     return serializeLeaf(node, key);
   }
   const children = node.children.map((n: any) => serialize(n));
-  const cls = "align" in node ? ALIGN_MAPPING[node.align as ALIGN_TYPE] : "";
+  const cls = 'align' in node ? ALIGN_MAPPING[node.align as ALIGN_TYPE] : '';
   const type = node.type as CustomElementStrings;
   const Comp = ELEMENTS[type]?.serialize;
   if (!Comp) {
@@ -37,15 +34,13 @@ export const serialize = (
 
 export const serializeData = (data: any): React.ReactNode[] => {
   const s: React.ReactNode[] = [];
-  data.forEach((d: any) => {
+  for (const d of data) {
     s.push(serialize(d));
-  });
+  }
   return s;
 };
 
-export const useSerialize = (
-  callback?: (type: string, params: ButtonData) => void
-) => {
+export const useSerialize = (callback?: (type: string, params: ButtonData) => void) => {
   const [data, setData] = useState<any | null>(null);
   const [serializeData, setSerializeData] = useState<React.ReactNode[]>();
 
@@ -54,9 +49,9 @@ export const useSerialize = (
       return;
     }
     const s: React.ReactNode[] = [];
-    data.forEach((d: any) => {
+    for (const d of data) {
       s.push(serialize(d, callback));
-    });
+    }
     setSerializeData(s);
   }, [data]);
 

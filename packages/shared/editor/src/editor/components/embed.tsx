@@ -1,13 +1,16 @@
-/* eslint-disable @next/next/no-img-element */
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { EDITOR_SELECT } from '@usertour-ui/constants';
+import { VideoIcon } from '@usertour-ui/icons';
 import {
-  ContentEditorElementInsertDirection,
-  ContentEditorEmebedElement,
-} from "../../types/editor";
-import { VideoIcon } from "@usertour-ui/icons";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Checkbox } from "@usertour-ui/checkbox";
+  ArrowRightIcon,
+  DeleteIcon,
+  InsertColumnLeftIcon,
+  InsertColumnRightIcon,
+} from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
@@ -16,50 +19,41 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Button } from "@usertour-ui/button";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { ContentOmbedInfo } from '@usertour-ui/types';
+import { ChangeEvent, useCallback } from 'react';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+/* eslint-disable @next/next/no-img-element */
 import {
-  ArrowRightIcon,
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import { ChangeEvent, useCallback } from "react";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { EDITOR_SELECT } from "@usertour-ui/constants";
-import { parseUrlToEmbed } from "@usertour-ui/ui-utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { ContentOmbedInfo } from "@usertour-ui/types";
+  ContentEditorElementInsertDirection,
+  ContentEditorEmebedElement,
+} from '../../types/editor';
 
 const marginKeyMapping = {
-  left: "marginLeft",
-  top: "marginTop",
-  bottom: "marginBottom",
-  right: "marginRight",
+  left: 'marginLeft',
+  top: 'marginTop',
+  bottom: 'marginBottom',
+  right: 'marginRight',
 };
 
 const transformsStyle = (element: ContentEditorEmebedElement) => {
-  let _style: any = {};
+  const _style: any = {};
   let rate = 0;
   if (element.oembed?.width && element.oembed?.height) {
     rate = element.oembed.height / element.oembed.width;
   }
-  if (!element.width || element.width?.type == "percent") {
+  if (!element.width || element.width?.type === 'percent') {
     const width = element?.width?.value ? element.width.value : 100;
     _style.width = `calc(${width}% + 0px)`;
     if (element.oembed?.width && element.oembed?.height) {
-      _style.height = `0px`;
+      _style.height = '0px';
       _style.paddingBottom = `calc(${rate * width}% + 0px)`;
     }
   } else if (element?.width?.value) {
-    _style.width = element.width.value + "px";
+    _style.width = `${element.width.value}px`;
     _style.height = `${element.width.value * rate}px`;
-    _style.paddingBottom = `0px`;
+    _style.paddingBottom = '0px';
   }
 
   if (element.margin) {
@@ -68,7 +62,7 @@ const transformsStyle = (element: ContentEditorEmebedElement) => {
       const marginName = marginKeyMapping[key];
       if (element.margin[key]) {
         if (element.margin.enabled) {
-          _style[marginName] = element.margin[key] + "px";
+          _style[marginName] = `${element.margin[key]}px`;
         } else {
           _style[marginName] = null;
         }
@@ -85,37 +79,24 @@ export interface ContentEditorEmbedProps {
 }
 export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
   const { element, path, id } = props;
-  const {
-    zIndex,
-    insertElementInColumn,
-    deleteElementInColumn,
-    updateElement,
-    getOembedInfo,
-  } = useContentEditorContext();
+  const { zIndex, insertElementInColumn, deleteElementInColumn, updateElement, getOembedInfo } =
+    useContentEditorContext();
 
   const handleDelete = () => {
     deleteElementInColumn(path);
   };
   const handleAddLeft = () => {
-    insertElementInColumn(
-      element,
-      path,
-      ContentEditorElementInsertDirection.LEFT
-    );
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.LEFT);
   };
   const handleAddRight = () => {
-    insertElementInColumn(
-      element,
-      path,
-      ContentEditorElementInsertDirection.RIGHT
-    );
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.RIGHT);
   };
 
   const handleWidthTypeChange = useCallback(
     (type: string) => {
       updateElement({ ...element, width: { ...element.width, type } }, id);
     },
-    [element]
+    [element],
   );
 
   const handleWidthValueChange = useCallback(
@@ -123,7 +104,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
       const value = e.target.value;
       updateElement({ ...element, width: { ...element.width, value } }, id);
     },
-    [element]
+    [element],
   );
 
   const handleMarginValueChange = useCallback(
@@ -132,17 +113,14 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
       const margin = { ...element.margin, [position]: value } as any;
       updateElement({ ...element, margin }, id);
     },
-    [element]
+    [element],
   );
 
   const handleMarginCheckedChange = useCallback(
     (checked: boolean) => {
-      updateElement(
-        { ...element, margin: { ...element.margin, enabled: checked } },
-        id
-      );
+      updateElement({ ...element, margin: { ...element.margin, enabled: checked } }, id);
     },
-    [element]
+    [element],
   );
 
   const handleUrlChange = useCallback(
@@ -150,7 +128,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
       const value = e.target.value;
       updateElement({ ...element, url: value }, id);
     },
-    [element]
+    [element],
   );
 
   const handleSubmitUrl = useCallback(async () => {
@@ -161,7 +139,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
         oembed = { ...resp };
       }
     }
-    let _element = { ...element, parsedUrl: element.url };
+    const _element = { ...element, parsedUrl: element.url };
     if (oembed) {
       _element.oembed = oembed;
     }
@@ -174,32 +152,33 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
         <Popover.Trigger asChild>
           <div
             style={{
-              position: "relative",
+              position: 'relative',
               ...transformsStyle(element),
             }}
           >
             <div
               style={{
-                position: "absolute",
-                top: "0px",
-                left: "0px",
-                display: "block",
-                width: "100%",
-                height: "100%",
+                position: 'absolute',
+                top: '0px',
+                left: '0px',
+                display: 'block',
+                width: '100%',
+                height: '100%',
               }}
               className="[&>iframe]:pointer-events-none [&>video]:pointer-events-none	 "
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
               dangerouslySetInnerHTML={{
                 __html: element.oembed.html
                   .replace(/width=[0-9,\"\']+/, 'width="100%"')
                   .replace(/height=[0-9,\"\']+/, 'height="100%"'),
               }}
-            ></div>
+            />
           </div>
         </Popover.Trigger>
       )}
       {!element.oembed?.html && element.parsedUrl && (
         <Popover.Trigger asChild>
-          <div style={{ position: "relative", ...transformsStyle(element) }}>
+          <div style={{ position: 'relative', ...transformsStyle(element) }}>
             <iframe
               src={element.parsedUrl}
               width="100%"
@@ -209,8 +188,9 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               allowFullScreen={true}
               // allowTransparency={true}
               tabIndex={-1}
-              style={{ display: "block" }}
-            ></iframe>
+              style={{ display: 'block' }}
+              title="embed"
+            />
           </div>
         </Popover.Trigger>
       )}
@@ -257,7 +237,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               />
               <Select
                 onValueChange={handleWidthTypeChange}
-                defaultValue={element.width?.type ?? "percent"}
+                defaultValue={element.width?.type ?? 'percent'}
               >
                 <SelectTrigger className="shrink w-56">
                   <SelectValue placeholder="Select a distribute" />
@@ -287,7 +267,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                     value={element.margin?.left}
                     placeholder="Left"
                     onChange={(e) => {
-                      handleMarginValueChange(e, "left");
+                      handleMarginValueChange(e, 'left');
                     }}
                     className="bg-background flex-none w-20"
                   />
@@ -296,7 +276,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                   <Input
                     value={element.margin?.top}
                     onChange={(e) => {
-                      handleMarginValueChange(e, "top");
+                      handleMarginValueChange(e, 'top');
                     }}
                     placeholder="Top"
                     className="bg-background flex-none w-20"
@@ -304,7 +284,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                   <Input
                     value={element.margin?.bottom}
                     onChange={(e) => {
-                      handleMarginValueChange(e, "bottom");
+                      handleMarginValueChange(e, 'bottom');
                     }}
                     placeholder="Bottom"
                     className="bg-background flex-none w-20"
@@ -315,7 +295,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                     value={element.margin?.right}
                     placeholder="Right"
                     onChange={(e) => {
-                      handleMarginValueChange(e, "right");
+                      handleMarginValueChange(e, 'right');
                     }}
                     className="bg-background flex-none w-20"
                   />
@@ -333,7 +313,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                       size="icon"
                       onClick={handleDelete}
                     >
-                      <DeleteIcon className="fill-red-700"></DeleteIcon>
+                      <DeleteIcon className="fill-red-700" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -342,7 +322,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                 </Tooltip>
               </TooltipProvider>
 
-              <div className="grow"></div>
+              <div className="grow" />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -352,7 +332,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                       size="icon"
                       onClick={handleAddLeft}
                     >
-                      <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                      <InsertColumnLeftIcon className="fill-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -370,7 +350,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                       size="icon"
                       onClick={handleAddRight}
                     >
-                      <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                      <InsertColumnRightIcon className="fill-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -387,7 +367,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
   );
 };
 
-ContentEditorEmbed.displayName = "ContentEditorEmbed";
+ContentEditorEmbed.displayName = 'ContentEditorEmbed';
 
 export type ContentEditorEmbedSerializeType = {
   className?: string;
@@ -395,40 +375,39 @@ export type ContentEditorEmbedSerializeType = {
   element: ContentEditorEmebedElement;
 };
 
-export const ContentEditorEmbedSerialize = (
-  props: ContentEditorEmbedSerializeType
-) => {
+export const ContentEditorEmbedSerialize = (props: ContentEditorEmbedSerializeType) => {
   const { element } = props;
 
   return (
     <>
-      {" "}
+      {' '}
       {element.oembed?.html && element.parsedUrl && (
         <div
           style={{
-            position: "relative",
+            position: 'relative',
             ...transformsStyle(element),
           }}
         >
           <div
             style={{
-              position: "absolute",
-              top: "0px",
-              left: "0px",
-              display: "block",
-              width: "100%",
-              height: "100%",
+              position: 'absolute',
+              top: '0px',
+              left: '0px',
+              display: 'block',
+              width: '100%',
+              height: '100%',
             }}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
               __html: element.oembed.html
                 .replace(/width=[0-9,\"\']+/, 'width="100%"')
                 .replace(/height=[0-9,\"\']+/, 'height="100%"'),
             }}
-          ></div>
+          />
         </div>
       )}
       {!element.oembed?.html && element.parsedUrl && (
-        <div style={{ position: "relative", ...transformsStyle(element) }}>
+        <div style={{ position: 'relative', ...transformsStyle(element) }}>
           <iframe
             src={element.parsedUrl}
             width="100%"
@@ -438,14 +417,13 @@ export const ContentEditorEmbedSerialize = (
             allowFullScreen={true}
             // allowTransparency={true}
             tabIndex={-1}
-          ></iframe>
+            title="embed"
+          />
         </div>
       )}
-      {!element.parsedUrl && (
-        <VideoIcon className="fill-slate-300" width={200} height={200} />
-      )}
+      {!element.parsedUrl && <VideoIcon className="fill-slate-300" width={200} height={200} />}
     </>
   );
 };
 
-ContentEditorEmbedSerialize.displayName = "ContentEditorEmbedSerialize";
+ContentEditorEmbedSerialize.displayName = 'ContentEditorEmbedSerialize';

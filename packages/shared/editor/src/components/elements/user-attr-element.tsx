@@ -1,35 +1,23 @@
-import { ReactEditor, RenderElementProps, useSlateStatic } from "slate-react";
-import * as Popover from "@radix-ui/react-popover";
-import { usePopperEditorContext } from "../editor";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { DeleteIcon, UserIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { DeleteIcon, UserIcon } from "@usertour-ui/icons";
-import {
-  ChangeEvent,
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-import { UserAttributeElementType } from "../../types/slate";
-import { Transforms } from "slate";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { Button } from "@usertour-ui/button";
-import { Attribute } from "@usertour-ui/types";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Attribute } from '@usertour-ui/types';
+import { ChangeEvent, MouseEvent, useCallback, useEffect, useState } from 'react';
+import { Transforms } from 'slate';
+import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
+import { UserAttributeElementType } from '../../types/slate';
+import { usePopperEditorContext } from '../editor';
 
 export const UserAttributeElement = (props: RenderElementProps) => {
   const { zIndex, attributes } = usePopperEditorContext();
@@ -46,7 +34,7 @@ export const UserAttributeElement = (props: RenderElementProps) => {
       {
         attrCode,
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -58,8 +46,8 @@ export const UserAttributeElement = (props: RenderElementProps) => {
   useEffect(() => {
     if (attributes && attributes.length > 0 && element.attrCode) {
       const attr = attributes
-        .filter((attr: Attribute) => attr.bizType == 1)
-        .find((attr: Attribute) => attr.codeName == element.attrCode);
+        ?.filter((attr: Attribute) => attr.bizType === 1)
+        ?.find((attr: Attribute) => attr.codeName === element.attrCode);
       if (attr) {
         setAttrName(attr.displayName);
       }
@@ -76,11 +64,11 @@ export const UserAttributeElement = (props: RenderElementProps) => {
           {
             fallback,
           },
-          { at: path }
+          { at: path },
         );
       }
     },
-    [fallback]
+    [fallback],
   );
 
   const handleDelete = () => {
@@ -103,11 +91,7 @@ export const UserAttributeElement = (props: RenderElementProps) => {
 
   return (
     <Popover.Root open={open} onOpenChange={handleOnOpenChange}>
-      <Popover.Trigger
-        onMouseDown={handleMouseDown}
-        onClick={handleOnClick}
-        asChild
-      >
+      <Popover.Trigger onMouseDown={handleMouseDown} onClick={handleOnClick} asChild>
         <span
           {...props.attributes}
           className="cursor-pointer	bg-accent text-accent-foreground rounded text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 px-2 "
@@ -128,23 +112,19 @@ export const UserAttributeElement = (props: RenderElementProps) => {
           alignOffset={-2}
         >
           <div className="flex flex-col gap-2.5">
-            <Select
-              onValueChange={handleButtonActionChange}
-              defaultValue={element.attrCode}
-            >
+            <Select onValueChange={handleButtonActionChange} defaultValue={element.attrCode}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a distribute" />
               </SelectTrigger>
               <SelectPortal style={{ zIndex: zIndex + 2 }}>
                 <SelectContent>
-                  {attributes &&
-                    attributes
-                      .filter((attr: Attribute) => attr.bizType == 1)
-                      .map((attr: Attribute) => (
-                        <SelectItem value={attr.codeName} key={attr.id}>
-                          {attr.displayName}
-                        </SelectItem>
-                      ))}
+                  {attributes
+                    ?.filter((attr: Attribute) => attr.bizType === 1)
+                    .map((attr: Attribute) => (
+                      <SelectItem value={attr.codeName} key={attr.id}>
+                        {attr.displayName}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </SelectPortal>
             </Select>
@@ -166,7 +146,7 @@ export const UserAttributeElement = (props: RenderElementProps) => {
                     size="icon"
                     onClick={handleDelete}
                   >
-                    <DeleteIcon className="fill-red-500"></DeleteIcon>
+                    <DeleteIcon className="fill-red-500" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
@@ -180,18 +160,16 @@ export const UserAttributeElement = (props: RenderElementProps) => {
     </Popover.Root>
   );
 };
-UserAttributeElement.displayName = "UserElement";
+UserAttributeElement.displayName = 'UserElement';
 
 type TodoElementSerializeType = {
   className?: string;
   children: React.ReactNode;
   element: UserAttributeElementType;
 };
-export const UserAttributeElementSerialize = (
-  props: TodoElementSerializeType
-) => {
-  const { className, children, element } = props;
+export const UserAttributeElementSerialize = (props: TodoElementSerializeType) => {
+  const { element } = props;
   return <span>{element.value}</span>;
 };
 
-UserAttributeElementSerialize.displayName = "UserAttributeElementSerialize";
+UserAttributeElementSerialize.displayName = 'UserAttributeElementSerialize';

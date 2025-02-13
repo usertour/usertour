@@ -1,55 +1,43 @@
-/* eslint-disable @next/next/no-img-element */
-import { Path, Transforms } from "slate";
-import { ReactEditor, RenderElementProps, useSlateStatic } from "slate-react";
-import { ImageElementType, UploadRequestOption } from "../../types/slate";
-import { ImageEditIcon, ImageIcon } from "@usertour-ui/icons";
-import { promiseUploadFunc } from "../../utils/promiseUploadFunc";
-import Upload from "rc-upload";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Checkbox } from "@usertour-ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { ImageEditIcon, ImageIcon } from '@usertour-ui/icons';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectPortal,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { usePopperEditorContext } from "../editor";
-import { Button } from "@usertour-ui/button";
-import {
-  ArrowRightIcon,
-  CloseCircleIcon,
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import { CSSProperties, useEffect, useState } from "react";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import Upload from 'rc-upload';
+import { CSSProperties, useEffect, useState } from 'react';
+/* eslint-disable @next/next/no-img-element */
+import { Path, Transforms } from 'slate';
+import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
+import { ImageElementType, UploadRequestOption } from '../../types/slate';
+import { promiseUploadFunc } from '../../utils/promiseUploadFunc';
+import { usePopperEditorContext } from '../editor';
 
 const marginKeyMapping = {
-  left: "marginLeft",
-  top: "marginTop",
-  bottom: "marginBottom",
-  right: "marginRight",
+  left: 'marginLeft',
+  top: 'marginTop',
+  bottom: 'marginBottom',
+  right: 'marginRight',
 };
 
 const transformsStyle = (element: ImageElementType) => {
-  let _style: any = {};
+  const _style: any = {};
   if (element.width?.value) {
-    if (element.width?.type == "percent") {
-      _style.width = element.width.value + "%";
+    if (element.width?.type === 'percent') {
+      _style.width = `${element.width.value}%`;
     } else {
-      _style.width = element.width.value + "px";
+      _style.width = `${element.width.value}px`;
     }
   }
   if (element.margin) {
@@ -58,7 +46,7 @@ const transformsStyle = (element: ImageElementType) => {
       const marginName = marginKeyMapping[key];
       if (element.margin[key]) {
         if (element.margin.enabled) {
-          _style[marginName] = element.margin[key] + "px";
+          _style[marginName] = `${element.margin[key]}px`;
         } else {
           _style[marginName] = null;
         }
@@ -76,7 +64,7 @@ const ImageElement = (props: RenderElementProps) => {
   const [style, setStyle] = useState<CSSProperties | null>(null);
 
   const insertImg = async (option: UploadRequestOption) => {
-    let url = "";
+    let url = '';
     if (customUploadRequest) {
       url = await customUploadRequest(option.file as File);
     } else {
@@ -95,7 +83,7 @@ const ImageElement = (props: RenderElementProps) => {
       {
         url,
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -110,14 +98,14 @@ const ImageElement = (props: RenderElementProps) => {
     Transforms.insertNodes(
       editor,
       {
-        type: "image",
-        url: "",
-        width: { type: "percent", value: 100 },
-        children: [{ text: "" }],
+        type: 'image',
+        url: '',
+        width: { type: 'percent', value: 100 },
+        children: [{ text: '' }],
       },
       {
         at: path,
-      }
+      },
     );
   };
   const handleAddRight = () => {
@@ -125,14 +113,14 @@ const ImageElement = (props: RenderElementProps) => {
     Transforms.insertNodes(
       editor,
       {
-        type: "image",
-        url: "",
-        width: { type: "percent", value: 100 },
-        children: [{ text: "" }],
+        type: 'image',
+        url: '',
+        width: { type: 'percent', value: 100 },
+        children: [{ text: '' }],
       },
       {
         at: Path.next(path),
-      }
+      },
     );
   };
 
@@ -143,7 +131,7 @@ const ImageElement = (props: RenderElementProps) => {
       {
         width: { ...element.width, type },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -155,7 +143,7 @@ const ImageElement = (props: RenderElementProps) => {
       {
         width: { ...element.width, value },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -168,7 +156,7 @@ const ImageElement = (props: RenderElementProps) => {
       {
         margin,
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -179,7 +167,7 @@ const ImageElement = (props: RenderElementProps) => {
       {
         margin: { ...element.margin, enabled: checked },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -189,20 +177,12 @@ const ImageElement = (props: RenderElementProps) => {
   }, [element.width, element.margin]);
 
   return (
-    <div
-      {...props.attributes}
-      className="group relative flex max-w-lg flex-col"
-    >
+    <div {...props.attributes} className="group relative flex max-w-lg flex-col">
       {props.children}
       {element.url && (
         <Popover.Root modal={true}>
           <Popover.Trigger asChild>
-            <img
-              alt="image"
-              src={element.url}
-              style={{ ...style }}
-              className="cursor-pointer"
-            />
+            <img src={element.url} style={{ ...style }} className="cursor-pointer" />
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
@@ -223,7 +203,7 @@ const ImageElement = (props: RenderElementProps) => {
                   />
                   <Select
                     onValueChange={handleWidthTypeChange}
-                    defaultValue={element.width?.type ?? "percent"}
+                    defaultValue={element.width?.type ?? 'percent'}
                   >
                     <SelectTrigger className="shrink">
                       <SelectValue placeholder="Select a distribute" />
@@ -253,7 +233,7 @@ const ImageElement = (props: RenderElementProps) => {
                         value={element.margin?.left}
                         placeholder="Left"
                         onChange={(e) => {
-                          handleMarginValueChange(e, "left");
+                          handleMarginValueChange(e, 'left');
                         }}
                         className="bg-background flex-none w-20"
                       />
@@ -262,7 +242,7 @@ const ImageElement = (props: RenderElementProps) => {
                       <Input
                         value={element.margin?.top}
                         onChange={(e) => {
-                          handleMarginValueChange(e, "top");
+                          handleMarginValueChange(e, 'top');
                         }}
                         placeholder="Top"
                         className="bg-background flex-none w-20"
@@ -270,7 +250,7 @@ const ImageElement = (props: RenderElementProps) => {
                       <Input
                         value={element.margin?.bottom}
                         onChange={(e) => {
-                          handleMarginValueChange(e, "bottom");
+                          handleMarginValueChange(e, 'bottom');
                         }}
                         placeholder="Bottom"
                         className="bg-background flex-none w-20"
@@ -281,7 +261,7 @@ const ImageElement = (props: RenderElementProps) => {
                         value={element.margin?.right}
                         placeholder="Right"
                         onChange={(e) => {
-                          handleMarginValueChange(e, "right");
+                          handleMarginValueChange(e, 'right');
                         }}
                         className="bg-background flex-none w-20"
                       />
@@ -299,7 +279,7 @@ const ImageElement = (props: RenderElementProps) => {
                           size="icon"
                           onClick={handleDelete}
                         >
-                          <DeleteIcon className="fill-red-500"></DeleteIcon>
+                          <DeleteIcon className="fill-red-500" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -310,11 +290,7 @@ const ImageElement = (props: RenderElementProps) => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none"
-                          variant="ghost"
-                          size="icon"
-                        >
+                        <Button className="flex-none" variant="ghost" size="icon">
                           <Upload
                             accept="image/*"
                             customRequest={(option) => {
@@ -330,7 +306,7 @@ const ImageElement = (props: RenderElementProps) => {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <div className="grow"></div>
+                  <div className="grow" />
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -340,7 +316,7 @@ const ImageElement = (props: RenderElementProps) => {
                           size="icon"
                           onClick={handleAddLeft}
                         >
-                          <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                          <InsertColumnLeftIcon className="fill-foreground" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -358,7 +334,7 @@ const ImageElement = (props: RenderElementProps) => {
                           size="icon"
                           onClick={handleAddRight}
                         >
-                          <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                          <InsertColumnRightIcon className="fill-foreground" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -394,7 +370,7 @@ type ImageElementSerializeType = {
 };
 
 export const ImageElementSerialize = (props: ImageElementSerializeType) => {
-  const { className, children, element } = props;
+  const { element } = props;
   const [style, setStyle] = useState<CSSProperties | null>(null);
 
   useEffect(() => {
@@ -403,7 +379,7 @@ export const ImageElementSerialize = (props: ImageElementSerializeType) => {
 
   return (
     <>
-      <img alt="image" src={element.url} style={{ ...style }} />
+      <img src={element.url} style={{ ...style }} />
     </>
   );
 };

@@ -1,10 +1,6 @@
-import { Editor } from "slate";
+import { Editor } from 'slate';
 
-export const getTextProps = (
-  editor: Editor,
-  format: string,
-  defaultValue: any = false
-) => {
+export const getTextProps = (editor: Editor, format: string, defaultValue: any = false) => {
   const marks = Editor.marks(editor);
   if (marks) {
     return marks[format as keyof typeof marks];

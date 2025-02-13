@@ -1,15 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ContentEditorGroup,
-  ContentEditorGroupOverlay,
-  ContentEditorGroupSerialize,
-} from "./components/group";
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MeasuringStrategy,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import {
-  ContentEditorColumn,
-  ContentEditorColumnOverlay,
-  ContentEditorColumnSerialize,
-} from "./components/column";
-import { ContentEditorSideBar } from "./components/sidebar";
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { EDITOR_OVERLAY } from '@usertour-ui/constants';
+import { isUndefined } from '@usertour-ui/shared-utils';
+import { BizUserInfo } from '@usertour-ui/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Descendant } from 'slate';
+import {
+  ContentEditorContextProvider,
+  useContentEditorContext,
+} from '../contexts/content-editor-context';
 import {
   ContentEditorButtonElement,
   ContentEditorElementType,
@@ -18,74 +34,36 @@ import {
   ContentEditorRootColumn,
   ContentEditorRootElement,
   ContentEditorSideBarType,
-} from "../types/editor";
-import { defaultInitialValue } from "../utils/helper";
+} from '../types/editor';
+import { defaultInitialValue } from '../utils/helper';
+import { ContentEditorButton, ContentEditorButtonSerialize } from './components/button';
 import {
-  ContentEditorContextProvider,
-  useContentEditorContext,
-} from "../contexts/content-editor-context";
+  ContentEditorColumn,
+  ContentEditorColumnOverlay,
+  ContentEditorColumnSerialize,
+} from './components/column';
+import { ContentEditorEmbed, ContentEditorEmbedSerialize } from './components/embed';
 import {
-  ContentEditorButton,
-  ContentEditorButtonSerialize,
-} from "./components/button";
-import {
-  ContentEditorImage,
-  ContentEditorImageSerialize,
-} from "./components/image";
-import {
-  ContentEditorEmbed,
-  ContentEditorEmbedSerialize,
-} from "./components/embed";
-import {
-  ContentEditorRichText,
-  ContentEditorRichTextSerialize,
-} from "./components/rich-text";
-import {
-  closestCenter,
-  closestCorners,
-  CollisionDetection,
-  defaultDropAnimation,
-  defaultDropAnimationSideEffects,
-  DndContext,
-  DragOverlay,
-  DropAnimation,
-  getFirstCollision,
-  KeyboardSensor,
-  MeasuringStrategy,
-  PointerSensor,
-  pointerWithin,
-  rectIntersection,
-  UniqueIdentifier,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  horizontalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { restrictToWindowEdges } from "@dnd-kit/modifiers";
-import { createPortal } from "react-dom";
-import { EDITOR_OVERLAY } from "@usertour-ui/constants";
-import { BizUserInfo } from "@usertour-ui/types";
-import { CustomElement } from "../types/slate";
-import { Descendant } from "slate";
-import { isUndefined } from "@usertour-ui/shared-utils";
-import { ContentEditorNPS, ContentEditorNPSSerialize } from "./components/nps";
-import { ContentEditorStarRatingSerialize } from "./components/star-rating";
-import { ContentEditorStarRating } from "./components/star-rating";
-import { ContentEditorScale } from "./components/scale";
-import { ContentEditorScaleSerialize } from "./components/scale";
-import { ContentEditorSingleLineTextSerialize } from "./components/single-line-text";
-import { ContentEditorSingleLineText } from "./components/single-line-text";
-import { ContentEditorMultiLineText } from "./components/multi-line-text";
-import { ContentEditorMultiLineTextSerialize } from "./components/multi-line-text";
+  ContentEditorGroup,
+  ContentEditorGroupOverlay,
+  ContentEditorGroupSerialize,
+} from './components/group';
+import { ContentEditorImage, ContentEditorImageSerialize } from './components/image';
+import { ContentEditorMultiLineText } from './components/multi-line-text';
+import { ContentEditorMultiLineTextSerialize } from './components/multi-line-text';
 import {
   ContentEditorMultipleChoice,
   ContentEditorMultipleChoiceSerialize,
-} from "./components/multiple-choice";
+} from './components/multiple-choice';
+import { ContentEditorNPS, ContentEditorNPSSerialize } from './components/nps';
+import { ContentEditorRichText, ContentEditorRichTextSerialize } from './components/rich-text';
+import { ContentEditorScale } from './components/scale';
+import { ContentEditorScaleSerialize } from './components/scale';
+import { ContentEditorSideBar } from './components/sidebar';
+import { ContentEditorSingleLineTextSerialize } from './components/single-line-text';
+import { ContentEditorSingleLineText } from './components/single-line-text';
+import { ContentEditorStarRatingSerialize } from './components/star-rating';
+import { ContentEditorStarRating } from './components/star-rating';
 
 export const contentEditorElements = [
   {
@@ -151,48 +129,44 @@ export const contentEditorElements = [
 ];
 
 const getLinkUrl = (value: Descendant[], userInfo: BizUserInfo) => {
-  let url = "";
+  let url = '';
   try {
-    value.forEach((v: any) => {
-      v.children.forEach((vc: any) => {
-        if (vc.type == "user-attribute") {
-          if (userInfo) {
-            url += userInfo.data[vc.attrCode] || vc.fallback;
+    for (const v of value) {
+      if ('children' in v) {
+        for (const vc of v.children) {
+          if ('type' in vc && vc.type === 'user-attribute') {
+            if (userInfo) {
+              url += userInfo.data[vc.attrCode] || vc.fallback;
+            }
+          } else if ('text' in vc) {
+            url += vc.text;
           }
-        } else {
-          url += vc.text;
         }
-      });
-    });
-  } catch (error) {}
+      }
+    }
+  } catch (_) {}
   return url;
 };
 
-const replaceUserAttrForElement = (
-  data: Descendant[],
-  userInfo: BizUserInfo
-) => {
+const replaceUserAttrForElement = (data: Descendant[], userInfo: BizUserInfo) => {
   return data.map((v: any) => {
     if (v.children) {
       v.children = replaceUserAttrForElement(v.children, userInfo);
     }
-    if (v.type == "user-attribute" && userInfo.data) {
+    if (v.type === 'user-attribute' && userInfo.data) {
       const value = userInfo.data[v.attrCode] || v.fallback;
       if (!isUndefined(value)) {
         v.value = String(value);
       }
     }
-    if (v.type == "link" && userInfo.data) {
-      v.url = v.data ? getLinkUrl(v.data, userInfo) : "";
+    if (v.type === 'link' && userInfo.data) {
+      v.url = v.data ? getLinkUrl(v.data, userInfo) : '';
     }
     return v;
   });
 };
 
-export const replaceUserAttr = (
-  editorContents: ContentEditorRoot[],
-  userInfo: BizUserInfo
-) => {
+export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: BizUserInfo) => {
   return editorContents.map((editorContent: ContentEditorRoot) => {
     if (!editorContent.children) {
       return editorContent;
@@ -206,15 +180,12 @@ export const replaceUserAttr = (
         return {
           ...column,
           children: column.children.map((element) => {
-            if (element.element.type == ContentEditorElementType.TEXT) {
+            if (element.element.type === ContentEditorElementType.TEXT) {
               return {
                 ...element,
                 element: {
                   ...element.element,
-                  data: replaceUserAttrForElement(
-                    element.element.data,
-                    userInfo
-                  ),
+                  data: replaceUserAttrForElement(element.element.data, userInfo),
                 },
               };
             }
@@ -232,9 +203,7 @@ export const ContentEditorSerialize = (props: {
   onClick?: (element: ContentEditorButtonElement) => void;
 }) => {
   const { contents, onClick, userInfo } = props;
-  const editorContents = userInfo
-    ? replaceUserAttr(contents, userInfo)
-    : contents;
+  const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;
 
   return (
     <>
@@ -243,13 +212,11 @@ export const ContentEditorSerialize = (props: {
           {content.children.map((column, ii) => (
             <ContentEditorColumnSerialize element={column.element} key={ii}>
               {column.children.map((element, iii) => {
-                const mapping = contentEditorElements.find(
-                  (e) => e.type == element.element.type
-                );
+                const mapping = contentEditorElements.find((e) => e.type === element.element.type);
                 if (!mapping) {
                   return <></>;
                 }
-                if (mapping.type == ContentEditorElementType.BUTTON) {
+                if (mapping.type === ContentEditorElementType.BUTTON) {
                   return (
                     <ContentEditorButtonSerialize
                       element={element.element as ContentEditorButtonElement}
@@ -279,21 +246,12 @@ const ContentEditorRenderElement = (props: ContentEditorRenderElementProps) => {
   return (
     <>
       {elements.map((c, i) => {
-        const mapping = contentEditorElements.find(
-          (e) => e.type == c.element.type
-        );
+        const mapping = contentEditorElements.find((e) => e.type === c.element.type);
         if (!mapping) {
           return <></>;
         }
         const Comp = mapping.render as any;
-        return (
-          <Comp
-            element={c.element}
-            key={c.id}
-            path={[...parentPath, i]}
-            id={c.id}
-          />
-        );
+        return <Comp element={c.element} key={c.id} path={[...parentPath, i]} id={c.id} />;
       })}
     </>
   );
@@ -313,13 +271,10 @@ const ContentEditorRenderColumn = (props: ContentEditorRenderColumnProps) => {
         <ContentEditorColumn
           element={column.element}
           key={column.id}
-          id={column.id ?? ""}
+          id={column.id ?? ''}
           path={[...parentPath, i]}
         >
-          <ContentEditorRenderElement
-            elements={column.children}
-            parentPath={[...parentPath, i]}
-          />
+          <ContentEditorRenderElement elements={column.children} parentPath={[...parentPath, i]} />
         </ContentEditorColumn>
       ))}
     </>
@@ -329,7 +284,7 @@ const ContentEditorRenderColumn = (props: ContentEditorRenderColumnProps) => {
 const ContentEditorDragOverlay = () => {
   const { contents, activeId } = useContentEditorContext();
 
-  const group = contents.find((c) => c.id == activeId);
+  const group = contents.find((c) => c.id === activeId);
 
   if (group) {
     return (
@@ -340,65 +295,61 @@ const ContentEditorDragOverlay = () => {
             key={content.id}
             items={content.children.map((c) => ({ id: c.id }))}
             path={[i]}
-            id={content.id ?? ""}
+            id={content.id ?? ''}
           >
             {content.children.map((column, ii) => (
               <ContentEditorColumnOverlay
                 element={column.element}
-                className={"h-full"}
+                className={'h-full'}
                 key={column.id}
                 isInGroup={true}
-                id={column.id ?? ""}
+                id={column.id ?? ''}
                 path={[i, ii]}
               >
-                <ContentEditorRenderElement
-                  elements={column.children}
-                  parentPath={[i, ii]}
-                />
+                <ContentEditorRenderElement elements={column.children} parentPath={[i, ii]} />
               </ContentEditorColumnOverlay>
             ))}
           </ContentEditorGroupOverlay>
         ))}
       </>
     );
-  } else {
-    return (
-      <>
-        {contents.map((content, index) => {
-          const column = content.children.find((cn) => cn.id == activeId);
-          const columnIndex = content.children.indexOf(column as any);
-          if (column) {
-            return (
-              <ContentEditorColumnOverlay
-                element={column.element}
-                className={"h-full"}
-                key={column.id}
-                id={column.id ?? ""}
-                path={[index, columnIndex]}
-              >
-                <ContentEditorRenderElement
-                  elements={column.children}
-                  parentPath={[index, columnIndex]}
-                />
-              </ContentEditorColumnOverlay>
-            );
-          }
-        })}
-      </>
-    );
   }
+  return (
+    <>
+      {contents.map((content, index) => {
+        const column = content.children.find((cn) => cn.id === activeId);
+        const columnIndex = content.children.indexOf(column as any);
+        if (column) {
+          return (
+            <ContentEditorColumnOverlay
+              element={column.element}
+              className={'h-full'}
+              key={column.id}
+              id={column.id ?? ''}
+              path={[index, columnIndex]}
+            >
+              <ContentEditorRenderElement
+                elements={column.children}
+                parentPath={[index, columnIndex]}
+              />
+            </ContentEditorColumnOverlay>
+          );
+        }
+      })}
+    </>
+  );
 };
 
-const dropAnimation: DropAnimation = {
-  ...defaultDropAnimation,
-  sideEffects: defaultDropAnimationSideEffects({
-    styles: {
-      active: {
-        opacity: "0.5",
-      },
-    },
-  }),
-};
+// const dropAnimation: DropAnimation = {
+//   ...defaultDropAnimation,
+//   sideEffects: defaultDropAnimationSideEffects({
+//     styles: {
+//       active: {
+//         opacity: '0.5',
+//       },
+//     },
+//   }),
+// };
 const Editor = () => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -418,66 +369,65 @@ const Editor = () => {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
-  const lastOverId = useRef<UniqueIdentifier | null>(null);
+  // const lastOverId = useRef<UniqueIdentifier | null>(null);
 
-  const collisionDetectionStrategy: CollisionDetection = useCallback(
-    (args) => {
-      if (activeId && contents.find((c) => c.id == activeId)) {
-        return closestCenter({
-          ...args,
-          droppableContainers: args.droppableContainers.filter((container) =>
-            contents.find((c) => c.id == container.id)
-          ),
-        });
-      }
+  // const collisionDetectionStrategy: CollisionDetection = useCallback(
+  //   (args) => {
+  //     if (activeId && contents.find((c) => c.id == activeId)) {
+  //       return closestCenter({
+  //         ...args,
+  //         droppableContainers: args.droppableContainers.filter((container) =>
+  //           contents.find((c) => c.id == container.id),
+  //         ),
+  //       });
+  //     }
 
-      // Start by finding any intersecting droppable
-      const pointerIntersections = pointerWithin(args);
-      const intersections =
-        pointerIntersections.length > 0
-          ? // If there are droppables intersecting with the pointer, return those
-            pointerIntersections
-          : rectIntersection(args);
-      let overId = getFirstCollision(intersections, "id");
+  //     // Start by finding any intersecting droppable
+  //     const pointerIntersections = pointerWithin(args);
+  //     const intersections =
+  //       pointerIntersections.length > 0
+  //         ? // If there are droppables intersecting with the pointer, return those
+  //           pointerIntersections
+  //         : rectIntersection(args);
+  //     let overId = getFirstCollision(intersections, 'id');
 
-      if (overId != null) {
-        if (contents.find((c) => c.id == overId)) {
-          const containerItems = contents.find((c) => c.id == overId)?.children;
+  //     if (overId != null) {
+  //       if (contents.find((c) => c.id == overId)) {
+  //         const containerItems = contents.find((c) => c.id == overId)?.children;
 
-          // If a container is matched and it contains items (columns 'A', 'B', 'C')
-          if (containerItems && containerItems.length > 0) {
-            // Return the closest droppable within that container
-            overId = closestCorners({
-              ...args,
-              droppableContainers: args.droppableContainers.filter(
-                (container) =>
-                  container.id !== overId &&
-                  containerItems.find((c) => c.id == container.id)
-              ),
-            })[0]?.id;
-          }
-        }
+  //         // If a container is matched and it contains items (columns 'A', 'B', 'C')
+  //         if (containerItems && containerItems.length > 0) {
+  //           // Return the closest droppable within that container
+  //           overId = closestCorners({
+  //             ...args,
+  //             droppableContainers: args.droppableContainers.filter(
+  //               (container) =>
+  //                 container.id !== overId && containerItems.find((c) => c.id == container.id),
+  //             ),
+  //           })[0]?.id;
+  //         }
+  //       }
 
-        lastOverId.current = overId;
+  //       lastOverId.current = overId;
 
-        return [{ id: overId }];
-      }
+  //       return [{ id: overId }];
+  //     }
 
-      // When a draggable item moves to a new container, the layout may shift
-      // and the `overId` may become `null`. We manually set the cached `lastOverId`
-      // to the id of the draggable item that was moved to the new container, otherwise
-      // the previous `overId` will be returned which can cause items to incorrectly shift positions
-      // if (recentlyMovedToNewContainer.current) {
-      //   lastOverId.current = activeId;
-      // }
+  //     // When a draggable item moves to a new container, the layout may shift
+  //     // and the `overId` may become `null`. We manually set the cached `lastOverId`
+  //     // to the id of the draggable item that was moved to the new container, otherwise
+  //     // the previous `overId` will be returned which can cause items to incorrectly shift positions
+  //     // if (recentlyMovedToNewContainer.current) {
+  //     //   lastOverId.current = activeId;
+  //     // }
 
-      // If no droppable is matched, return the last match
-      return lastOverId.current ? [{ id: lastOverId.current }] : [];
-    },
-    [activeId, contents]
-  );
+  //     // If no droppable is matched, return the last match
+  //     return lastOverId.current ? [{ id: lastOverId.current }] : [];
+  //   },
+  //   [activeId, contents],
+  // );
 
   function handleDragStart(event: any) {
     const { active } = event;
@@ -486,22 +436,20 @@ const Editor = () => {
 
   const findContainer = useCallback(
     (id: string) => {
-      const container = contents.find((content) => content.id == id);
+      const container = contents.find((content) => content.id === id);
       if (container) {
         return container;
       }
-      return contents.find((content) =>
-        content.children.find((c) => c.id == id)
-      );
+      return contents.find((content) => content.children.find((c) => c.id === id));
     },
-    [contents]
+    [contents],
   );
 
   const isContainer = useCallback(
     (id: string) => {
-      return contents.find((content) => content.id == id);
+      return contents.find((content) => content.id === id);
     },
-    [contents]
+    [contents],
   );
 
   const handleDragOver = ({ active, over }: any) => {
@@ -515,49 +463,39 @@ const Editor = () => {
     //group
     if (isContainer(activeId)) {
       setContents((pre) => {
-        const oldIndex = pre.indexOf(
-          contents.find((c) => c.id == activeId) as any
-        );
-        const newIndex = pre.indexOf(
-          contents.find((c) => c.id == overContainer?.id) as any
-        );
+        const oldIndex = pre.indexOf(contents.find((c) => c.id === activeId) as any);
+        const newIndex = pre.indexOf(contents.find((c) => c.id === overContainer?.id) as any);
         return arrayMove(pre, oldIndex, newIndex);
       });
       return;
     }
-    if (
-      !activeContainer ||
-      !overContainer ||
-      activeContainer.id == overContainer.id
-    ) {
+    if (!activeContainer || !overContainer || activeContainer.id === overContainer.id) {
       return;
     }
 
     setContents((pre) => {
       const contents = JSON.parse(JSON.stringify(pre)) as typeof pre;
-      const activeContent = contents.find((c) => c.id == activeContainer.id);
-      const overContent = contents.find((c) => c.id == overContainer.id);
-      const activeColumn = activeContent?.children.find(
-        (c) => c.id == activeId
-      );
+      const activeContent = contents.find((c) => c.id === activeContainer.id);
+      const overContent = contents.find((c) => c.id === overContainer.id);
+      const activeColumn = activeContent?.children.find((c) => c.id === activeId);
       let overIndex = 0;
-      if (contents.find((c) => c.id == overId)) {
-        overIndex = contents.find((c) => c.id == overId)?.children.length ?? 0;
+      if (contents.find((c) => c.id === overId)) {
+        overIndex = contents.find((c) => c.id === overId)?.children.length ?? 0;
       } else {
-        const overColumn = overContent?.children.find((c) => c.id == overId);
+        const overColumn = overContent?.children.find((c) => c.id === overId);
         if (overColumn && overContent) {
           overIndex = overContent.children.indexOf(overColumn);
         }
       }
-      let c: ContentEditorRoot[] = [];
+      const c: ContentEditorRoot[] = [];
       for (let index = 0; index < pre.length; index++) {
         const content = pre[index];
-        if (activeContent && content.id == activeContent?.id) {
+        if (activeContent && content.id === activeContent?.id) {
           c.push({
             ...content,
-            children: activeContent.children.filter((c) => c.id != activeId),
+            children: activeContent.children.filter((c) => c.id !== activeId),
           });
-        } else if (overContent && content.id == overContent.id) {
+        } else if (overContent && content.id === overContent.id) {
           c.push({
             ...content,
             children: [
@@ -570,14 +508,14 @@ const Editor = () => {
           c.push(content);
         }
       }
-      return c.filter((cc) => cc.children.length != 0);
+      return c.filter((cc) => cc.children.length !== 0);
     });
   };
 
   const handleDragEnd = ({ active, over }: any) => {
     const activeId = active.id;
     const overId = over?.id;
-    if (!overId || activeId == overId) {
+    if (!overId || activeId === overId) {
       setActiveId(undefined);
       return;
     }
@@ -591,24 +529,20 @@ const Editor = () => {
     //group
     if (isContainer(activeId)) {
       setContents((pre) => {
-        const oldIndex = pre.indexOf(
-          contents.find((c) => c.id == activeId) as any
-        );
-        const newIndex = pre.indexOf(
-          contents.find((c) => c.id == overContainer.id) as any
-        );
+        const oldIndex = pre.indexOf(contents.find((c) => c.id === activeId) as any);
+        const newIndex = pre.indexOf(contents.find((c) => c.id === overContainer.id) as any);
         return arrayMove(pre, oldIndex, newIndex);
       });
       setActiveId(undefined);
       return;
     }
     //column
-    if (isContainer(overId) || activeContainer.id != overContainer.id) {
+    if (isContainer(overId) || activeContainer.id !== overContainer.id) {
       setActiveId(undefined);
       return;
     }
-    const activeColumn = overContainer.children.find((cc) => cc.id == activeId);
-    const overColumn = overContainer.children.find((cc) => cc.id == overId);
+    const activeColumn = overContainer.children.find((cc) => cc.id === activeId);
+    const overColumn = overContainer.children.find((cc) => cc.id === overId);
     if (!activeColumn || !overColumn) {
       return;
     }
@@ -617,7 +551,7 @@ const Editor = () => {
     setContents((pre) => {
       return pre
         .map((content) => {
-          if (content.id == overContainer.id) {
+          if (content.id === overContainer.id) {
             return {
               ...content,
               children: arrayMove(content.children, activeIndex, overIndex),
@@ -625,7 +559,7 @@ const Editor = () => {
           }
           return content;
         })
-        .filter((c) => c.children.length != 0);
+        .filter((c) => c.children.length !== 0);
     });
 
     setActiveId(undefined);
@@ -635,7 +569,7 @@ const Editor = () => {
   useEffect(() => {
     if (ref.current) {
       const el = ref.current as HTMLElement;
-      const parentNode = el.closest(".usertour-widget-root") as HTMLElement;
+      const parentNode = el.closest('.usertour-widget-root') as HTMLElement;
       if (parentNode) {
         setContainerNode(parentNode);
       }
@@ -650,6 +584,8 @@ const Editor = () => {
         setIsEditorHover(true);
       }}
       onMouseOut={() => setIsEditorHover(false)}
+      onFocus={() => setIsEditorHover(true)}
+      onBlur={() => setIsEditorHover(false)}
     >
       {!activeId && (isEditorHover || isOpen) && (
         <ContentEditorSideBar
@@ -682,29 +618,23 @@ const Editor = () => {
               key={content.id}
               path={[i]}
               items={content.children.map((c) => ({ id: c.id }))}
-              id={content.id ?? ""}
+              id={content.id ?? ''}
             >
               <SortableContext
                 items={content.children.map((c) => ({ id: c.id })) as any}
                 strategy={horizontalListSortingStrategy}
               >
-                <ContentEditorRenderColumn
-                  columns={content.children}
-                  parentPath={[i]}
-                />
+                <ContentEditorRenderColumn columns={content.children} parentPath={[i]} />
               </SortableContext>
             </ContentEditorGroup>
           ))}
         </SortableContext>
         {containerNode &&
           createPortal(
-            <DragOverlay
-              dropAnimation={null}
-              style={{ zIndex: zIndex + EDITOR_OVERLAY }}
-            >
+            <DragOverlay dropAnimation={null} style={{ zIndex: zIndex + EDITOR_OVERLAY }}>
               {<ContentEditorDragOverlay />}
             </DragOverlay>,
-            containerNode
+            containerNode,
           )}
       </DndContext>
       {!activeId && (isEditorHover || isOpen) && (

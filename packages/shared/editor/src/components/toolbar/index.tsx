@@ -1,1 +1,1 @@
-export { EditorToolbar } from "./toolbar";
+export { EditorToolbar } from './toolbar';

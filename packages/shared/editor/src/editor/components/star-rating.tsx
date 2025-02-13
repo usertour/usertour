@@ -1,13 +1,13 @@
-import { useCallback, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { ContentEditorStarRatingElement } from "../../types/editor";
-import { cn } from "@usertour-ui/ui-utils";
-import { ContentActions } from "../..";
-import { RulesCondition } from "@usertour-ui/types";
-import { QuestionTooltip } from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { RulesCondition } from '@usertour-ui/types';
+import { cn } from '@usertour-ui/ui-utils';
+import { useCallback, useState } from 'react';
+import { ContentActions } from '../..';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ContentEditorStarRatingElement } from '../../types/editor';
 
 const StarButton = ({
   className,
@@ -19,7 +19,7 @@ const StarButton = ({
   onMouseLeave?: () => void;
 }) => (
   <svg
-    className={cn("w-8 h-8 cursor-pointer", className)}
+    className={cn('w-8 h-8 cursor-pointer', className)}
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"
@@ -60,10 +60,10 @@ export const ContentEditorStarRating = (props: {
           ...element,
           data: { ...element.data, name: e.target.value },
         },
-        id
+        id,
       );
     },
-    [element, id]
+    [element, id],
   );
 
   const handleActionChange = (actions: RulesCondition[]) => {
@@ -80,7 +80,7 @@ export const ContentEditorStarRating = (props: {
         <div>
           <div
             className="grid gap-2"
-            style={{ gridTemplateColumns: "repeat(5, minmax(0px, 1fr))" }}
+            style={{ gridTemplateColumns: 'repeat(5, minmax(0px, 1fr))' }}
             data-relin-paragraph="655"
             onMouseLeave={() => setHoveredIndex(null)}
           >
@@ -88,8 +88,7 @@ export const ContentEditorStarRating = (props: {
               <StarButton
                 key={i}
                 className={cn({
-                  "text-sdk-question":
-                    hoveredIndex !== null && i <= hoveredIndex,
+                  'text-sdk-question': hoveredIndex !== null && i <= hoveredIndex,
                 })}
                 onMouseEnter={() => handleStarHover(i)}
               />
@@ -136,22 +135,21 @@ export const ContentEditorStarRating = (props: {
                 type="number"
                 value={element.data.lowRange}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "lowRange")}
+                onChange={(e) => handleLabelChange(e.target.value, 'lowRange')}
               />
               <p>-</p>
               <Input
                 type="number"
                 value={element.data.highRange}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "highRange")}
+                onChange={(e) => handleLabelChange(e.target.value, 'highRange')}
               />
             </div>
             <Label className="flex items-center gap-1">
               Labels
               <QuestionTooltip>
-                Below each option, provide labels to clearly convey their
-                meaning, such as "Bad" positioned under the left option and
-                "Good" under the right.
+                Below each option, provide labels to clearly convey their meaning, such as "Bad"
+                positioned under the left option and "Good" under the right.
               </QuestionTooltip>
             </Label>
             <div className="flex flex-row gap-2">
@@ -159,13 +157,13 @@ export const ContentEditorStarRating = (props: {
                 type="text"
                 value={element.data.lowLabel}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "lowLabel")}
+                onChange={(e) => handleLabelChange(e.target.value, 'lowLabel')}
               />
               <Input
                 type="text"
                 value={element.data.highLabel}
                 placeholder="Default"
-                onChange={(e) => handleLabelChange(e.target.value, "highLabel")}
+                onChange={(e) => handleLabelChange(e.target.value, 'highLabel')}
               />
             </div>
           </div>
@@ -175,34 +173,24 @@ export const ContentEditorStarRating = (props: {
   );
 };
 
-ContentEditorStarRating.displayName = "ContentEditorStarRating";
+ContentEditorStarRating.displayName = 'ContentEditorStarRating';
 
 export const ContentEditorStarRatingSerialize = (props: {
   element: ContentEditorStarRatingElement;
   onClick?: (element: ContentEditorStarRatingElement) => void;
 }) => {
-  const { element, onClick } = props;
-  const [isOpen, setIsOpen] = useState<boolean>();
+  const { element } = props;
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const handleStarHover = useCallback((index: number) => {
     setHoveredIndex(index);
   }, []);
 
-  const handleClick = (rating: number) => {
-    if (onClick) {
-      onClick({
-        ...element,
-        data: { ...element.data, rating },
-      });
-    }
-  };
-
   return (
     <div>
       <div
         className="grid gap-2"
-        style={{ gridTemplateColumns: "repeat(5, minmax(0px, 1fr))" }}
+        style={{ gridTemplateColumns: 'repeat(5, minmax(0px, 1fr))' }}
         data-relin-paragraph="655"
         onMouseLeave={() => setHoveredIndex(null)}
       >
@@ -210,7 +198,7 @@ export const ContentEditorStarRatingSerialize = (props: {
           <StarButton
             key={i}
             className={cn({
-              "text-sdk-question": hoveredIndex !== null && i <= hoveredIndex,
+              'text-sdk-question': hoveredIndex !== null && i <= hoveredIndex,
             })}
             onMouseEnter={() => handleStarHover(i)}
           />
@@ -226,5 +214,4 @@ export const ContentEditorStarRatingSerialize = (props: {
   );
 };
 
-ContentEditorStarRatingSerialize.displayName =
-  "ContentEditorStarRatingSerialize";
+ContentEditorStarRatingSerialize.displayName = 'ContentEditorStarRatingSerialize';

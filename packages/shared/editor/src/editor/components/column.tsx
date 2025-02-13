@@ -1,16 +1,14 @@
-import { cn } from "@usertour-ui/button/src/utils";
-import { DragHandleDots2Icon, GearIcon } from "@radix-ui/react-icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import { forwardRef, ReactNode, useCallback, useRef, useState } from "react";
-import { useEvent } from "react-use";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { cn } from '@usertour-ui/button/src/utils';
+import { EDITOR_SELECT } from '@usertour-ui/constants';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
+import { useComposedRefs } from '@usertour-ui/react-compose-refs';
 import {
   Select,
   SelectContent,
@@ -18,41 +16,34 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Button } from "@usertour-ui/button";
-import {
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { ReactNode, forwardRef, useCallback, useRef, useState } from 'react';
+import { useEvent } from 'react-use';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorColumnElement,
   ContentEditorElement,
   ContentEditorElementInsertDirection,
-} from "../../types/editor";
-import { ContentEditorSideBarPopper } from "./sidebar";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { useComposedRefs } from "@usertour-ui/react-compose-refs";
-import { EDITOR_SELECT } from "@usertour-ui/constants";
+} from '../../types/editor';
+import { ContentEditorSideBarPopper } from './sidebar';
 
-const activeClasses = "outline-1 outline-primary outline";
-const hoverClasses = "outline-1 outline-primary outline-dashed";
+const activeClasses = 'outline-1 outline-primary outline';
+const hoverClasses = 'outline-1 outline-primary outline-dashed';
 
 const transformsStyle = (element: any) => {
   const _style: any = {
-    marginBottom: "0px",
-    marginRight: element.style?.marginRight + "px",
-    width: "auto",
-    flex: "auto",
+    marginBottom: '0px',
+    marginRight: `${element.style?.marginRight}px`,
+    width: 'auto',
+    flex: 'auto',
   };
-  if (element.width?.type == "percent") {
+  if (element.width?.type === 'percent') {
     _style.width = `${element.width?.value}%`;
-  } else if (element.width?.type == "pixels") {
+  } else if (element.width?.type === 'pixels') {
     _style.width = `${element.width?.value}px`;
   } else {
-    _style.flex = "1 0 0px";
+    _style.flex = '1 0 0px';
   }
   // if (showToolbar) {
   //   _style.borderRadius = "2px";
@@ -92,33 +83,21 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
   };
   const onMousedown = useCallback(
     (event: MouseEvent) => {
-      if (
-        !isOpen &&
-        ref.current &&
-        !ref.current.contains(event.target as any)
-      ) {
+      if (!isOpen && ref.current && !ref.current.contains(event.target as any)) {
         setIsActive(false);
       }
     },
-    [isOpen, ref]
+    [isOpen, ref],
   ) as any;
-  useEvent("mousedown", onMousedown, window, { capture: false });
+  useEvent('mousedown', onMousedown, window, { capture: false });
   const handleDelete = () => {
     deleteColumn(path);
   };
   const handleAddLeftColumn = (element: ContentEditorElement) => {
-    insertColumnInGroup(
-      element,
-      path,
-      ContentEditorElementInsertDirection.LEFT
-    );
+    insertColumnInGroup(element, path, ContentEditorElementInsertDirection.LEFT);
   };
   const handleAddRightColumn = (element: ContentEditorElement) => {
-    insertColumnInGroup(
-      element,
-      path,
-      ContentEditorElementInsertDirection.RIGHT
-    );
+    insertColumnInGroup(element, path, ContentEditorElementInsertDirection.RIGHT);
   };
 
   const handleDistributeValueChange = (justifyContent: string) => {
@@ -127,11 +106,6 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
 
   const handleAlignValueChange = (alignItems: string) => {
     updateElement({ ...element, alignItems }, id);
-  };
-
-  const handleSpaceValueChange = (e: any) => {
-    const marginRight = e.target.value;
-    updateElement({ ...element, style: { ...element.style, marginRight } }, id);
   };
 
   const handleWidthTypeChange = (type: string) => {
@@ -151,22 +125,18 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
         style={{ ...transformsStyle(element), ...dragStyle }}
         ref={composedRefs}
         className={cn(
-          "flex relative flex-column",
+          'flex relative flex-column',
           element?.justifyContent,
           element?.alignItems,
-          !activeId
-            ? isActive
-              ? activeClasses
-              : isHover
-              ? hoverClasses
-              : ""
-            : "",
-          isDragging ? hoverClasses : "",
-          className
+          !activeId ? (isActive ? activeClasses : isHover ? hoverClasses : '') : '',
+          isDragging ? hoverClasses : '',
+          className,
         )}
         onMouseOver={() => setIsHover(true)}
         onMouseOut={() => setIsHover(false)}
         onMouseDown={() => setIsActive(true)}
+        onFocus={() => setIsActive(true)}
+        onBlur={() => setIsActive(false)}
       >
         {!isDragging && isActive && (
           <div className="absolute -top-4 -left-[1px] h-4 px-1 rounded-none rounded-t bg-primary flex flex-row text-primary-foreground items-center justify-center">
@@ -199,7 +169,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
             <div className="flex flex-col gap-2.5">
               <Label>Column width</Label>
               <div className="flex gap-x-2">
-                {element.width?.type != "fill" && (
+                {element.width?.type !== 'fill' && (
                   <Input
                     type="width"
                     value={element.width?.value}
@@ -210,7 +180,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                 )}
                 <Select
                   onValueChange={handleWidthTypeChange}
-                  defaultValue={element.width?.type ?? "percent"}
+                  defaultValue={element.width?.type ?? 'percent'}
                 >
                   <SelectTrigger className="shrink">
                     <SelectValue placeholder="Select a distribute" />
@@ -237,19 +207,14 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                     <SelectItem value="justify-start">Left</SelectItem>
                     <SelectItem value="justify-center">Center</SelectItem>
                     <SelectItem value="justify-end">Right</SelectItem>
-                    <SelectItem value="justify-between">
-                      Space Between
-                    </SelectItem>
+                    <SelectItem value="justify-between">Space Between</SelectItem>
                     <SelectItem value="justify-evenly">Space Evenly</SelectItem>
                     <SelectItem value="justify-around">Space Around</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
               <Label>Align Items</Label>
-              <Select
-                onValueChange={handleAlignValueChange}
-                defaultValue={element.alignItems}
-              >
+              <Select onValueChange={handleAlignValueChange} defaultValue={element.alignItems}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a distribute" />
                 </SelectTrigger>
@@ -281,7 +246,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                         size="icon"
                         onClick={handleDelete}
                       >
-                        <DeleteIcon className="fill-red-700"></DeleteIcon>
+                        <DeleteIcon className="fill-red-700" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
@@ -289,17 +254,13 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <div className="grow"></div>
+                <div className="grow" />
                 <TooltipProvider>
                   <Tooltip>
                     <ContentEditorSideBarPopper onClick={handleAddLeftColumn}>
                       <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none"
-                          variant="ghost"
-                          size="icon"
-                        >
-                          <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                        <Button className="flex-none" variant="ghost" size="icon">
+                          <InsertColumnLeftIcon className="fill-foreground" />
                         </Button>
                       </TooltipTrigger>
                     </ContentEditorSideBarPopper>
@@ -313,12 +274,8 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                   <Tooltip>
                     <ContentEditorSideBarPopper onClick={handleAddRightColumn}>
                       <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none"
-                          variant="ghost"
-                          size="icon"
-                        >
-                          <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                        <Button className="flex-none" variant="ghost" size="icon">
+                          <InsertColumnRightIcon className="fill-foreground" />
                         </Button>
                       </TooltipTrigger>
                     </ContentEditorSideBarPopper>
@@ -337,68 +294,61 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
   );
 };
 
-ContentEditorColumn.displayName = "ContentEditorColumn";
+ContentEditorColumn.displayName = 'ContentEditorColumn';
 
 type ContentEditorColumnOverlay = ContentEditorColumnProps & {
   isInGroup?: boolean;
 };
 
-export const ContentEditorColumnOverlay = forwardRef<
-  HTMLDivElement,
-  ContentEditorColumnOverlay
->((props: ContentEditorColumnOverlay, ref) => {
-  const { className, children, isInGroup = false, element } = props;
+export const ContentEditorColumnOverlay = forwardRef<HTMLDivElement, ContentEditorColumnOverlay>(
+  (props: ContentEditorColumnOverlay, ref) => {
+    const { className, children, isInGroup = false, element } = props;
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "flex relative flex-column",
-        element?.justifyContent,
-        element?.alignItems,
-        !isInGroup ? hoverClasses : "",
-        className
-      )}
-      style={{ ...transformsStyle(element) }}
-    >
-      {!isInGroup && (
-        <div className="absolute -top-4 -left-[1px] h-4 px-1 rounded-none rounded-t bg-primary flex flex-row text-primary-foreground items-center justify-center">
-          <div className="flex flex-row !text-[10px] items-center justify-center">
-            column
-            <GearIcon className="ml-1 h-3 w-3" />
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'flex relative flex-column',
+          element?.justifyContent,
+          element?.alignItems,
+          !isInGroup ? hoverClasses : '',
+          className,
+        )}
+        style={{ ...transformsStyle(element) }}
+      >
+        {!isInGroup && (
+          <div className="absolute -top-4 -left-[1px] h-4 px-1 rounded-none rounded-t bg-primary flex flex-row text-primary-foreground items-center justify-center">
+            <div className="flex flex-row !text-[10px] items-center justify-center">
+              column
+              <GearIcon className="ml-1 h-3 w-3" />
+            </div>
+            <div className="items-center justify-center cursor-move	">
+              <DragHandleDots2Icon className="h-3" />
+            </div>
           </div>
-          <div className="items-center justify-center cursor-move	">
-            <DragHandleDots2Icon className="h-3" />
-          </div>
-        </div>
-      )}
-      {children}
-    </div>
-  );
-});
+        )}
+        {children}
+      </div>
+    );
+  },
+);
 
-ContentEditorColumnOverlay.displayName = "ContentEditorColumnOverlay";
+ContentEditorColumnOverlay.displayName = 'ContentEditorColumnOverlay';
 
 export type ContentEditorColumnSerializeType = {
   children: React.ReactNode;
   element: ContentEditorColumnElement;
 };
 
-export const ContentEditorColumnSerialize = (
-  props: ContentEditorColumnSerializeType
-) => {
+export const ContentEditorColumnSerialize = (props: ContentEditorColumnSerializeType) => {
   const { element, children } = props;
   return (
     <div
-      className={cn(
-        "flex relative flex-column",
-        element?.justifyContent,
-        element?.alignItems
-      )}
+      className={cn('flex relative flex-column', element?.justifyContent, element?.alignItems)}
       style={{ ...transformsStyle(element) }}
     >
       {children}
     </div>
   );
 };
-ContentEditorColumnSerialize.displayName = "ContentEditorColumnSerialize";
+ContentEditorColumnSerialize.displayName = 'ContentEditorColumnSerialize';

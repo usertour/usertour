@@ -1,4 +1,4 @@
-import { RenderElementProps } from "slate-react";
+import { RenderElementProps } from 'slate-react';
 
 const TodoElement = (props: RenderElementProps) => {
   return (
@@ -18,7 +18,7 @@ type TodoElementSerializeType = {
   children: React.ReactNode;
 };
 export const TodoElementSerialize = (props: TodoElementSerializeType) => {
-  const { className, children } = props;
+  const { children } = props;
   return (
     <div className="mb-4 flex items-center">
       <input

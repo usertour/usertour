@@ -1,36 +1,19 @@
-"use client";
+'use client';
 
-import { usePopperEditorContext } from "../editor";
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { Editor, Element as SlateElement, Transforms } from "slate";
-import { useSlate } from "slate-react";
-import * as Toolbar from "@radix-ui/react-toolbar";
-import * as Popover from "@radix-ui/react-popover";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import {
-  TextAlignLeftIcon,
-  TextAlignCenterIcon,
-  TextAlignRightIcon,
+  CodeIcon,
   FontBoldIcon,
   FontItalicIcon,
-  UnderlineIcon,
-  CodeIcon,
   Link1Icon,
-} from "@radix-ui/react-icons";
-import { ColorPicker } from "./color-picker";
-import { getTextProps, toggleTextProps } from "../../lib/text";
-import { cn } from "@usertour-ui/button/src/utils";
+  TextAlignCenterIcon,
+  TextAlignLeftIcon,
+  TextAlignRightIcon,
+  UnderlineIcon,
+} from '@radix-ui/react-icons';
+import * as Popover from '@radix-ui/react-popover';
+import * as Toolbar from '@radix-ui/react-toolbar';
+import { cn } from '@usertour-ui/button/src/utils';
+import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour-ui/constants';
 import {
   H1Icon,
   H2Icon,
@@ -38,33 +21,27 @@ import {
   ListUnOrderIcon,
   MoreIcon,
   UserIcon,
-} from "@usertour-ui/icons";
-import {
-  inertUserAttributeBlock,
-  insertLink,
-  isLinkActive,
-} from "../../lib/editorHelper";
-import { useEvent, useMeasure } from "react-use";
-import { useComposedRefs } from "@usertour-ui/react-compose-refs";
-import {
-  EDITOR_RICH_TOOLBAR,
-  EDITOR_RICH_TOOLBAR_MORE,
-} from "@usertour-ui/constants";
-import { CustomEditor } from "../../types/slate";
+} from '@usertour-ui/icons';
+import { useComposedRefs } from '@usertour-ui/react-compose-refs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { useEvent, useMeasure } from 'react-use';
+import { Editor, Element as SlateElement, Transforms } from 'slate';
+import { useSlate } from 'slate-react';
+import { inertUserAttributeBlock, insertLink, isLinkActive } from '../../lib/editorHelper';
+import { getTextProps, toggleTextProps } from '../../lib/text';
+import { CustomEditor } from '../../types/slate';
+import { usePopperEditorContext } from '../editor';
+import { ColorPicker } from './color-picker';
 
-interface ToolbarProps {
-  // open: boolean;
-  // container: HTMLElement;
-}
-
-const LIST_TYPES = ["numbered-list", "bulleted-list"];
-const TEXT_ALIGN_TYPES = ["left", "center", "right", "justify"];
+const LIST_TYPES = ['numbered-list', 'bulleted-list'];
+const TEXT_ALIGN_TYPES = ['left', 'center', 'right', 'justify'];
 
 const toggleBlock = (editor: CustomEditor, format: any) => {
   const isActive = isBlockActive(
     editor,
     format,
-    TEXT_ALIGN_TYPES.includes(format) ? "align" : "type"
+    TEXT_ALIGN_TYPES.includes(format) ? 'align' : 'type',
   );
   const isList = LIST_TYPES.includes(format);
 
@@ -83,7 +60,7 @@ const toggleBlock = (editor: CustomEditor, format: any) => {
     };
   } else {
     newProperties = {
-      type: isActive ? "paragraph" : isList ? "list-item" : format,
+      type: isActive ? 'paragraph' : isList ? 'list-item' : format,
     };
   }
   Transforms.setNodes<SlateElement>(editor, newProperties);
@@ -94,11 +71,7 @@ const toggleBlock = (editor: CustomEditor, format: any) => {
   }
 };
 
-const isBlockActive = (
-  editor: CustomEditor,
-  format: any,
-  blockType: string = "type"
-) => {
+const isBlockActive = (editor: CustomEditor, format: any, blockType = 'type') => {
   const { selection } = editor;
   if (!selection) return false;
 
@@ -109,7 +82,7 @@ const isBlockActive = (
         !Editor.isEditor(n) &&
         SlateElement.isElement(n) &&
         n[blockType as keyof typeof n] === format,
-    })
+    }),
   );
 
   return !!match;
@@ -124,28 +97,24 @@ interface ToggleItemBlockButtonProps {
   children: ReactNode;
   tips: string;
 }
-const ToggleItemBlockButton = ({
-  format,
-  children,
-  tips = "",
-}: ToggleItemBlockButtonProps) => {
+const ToggleItemBlockButton = ({ format, children, tips = '' }: ToggleItemBlockButtonProps) => {
   const editor = useSlate();
   let isActive = isBlockActive(
     editor,
     format,
-    TEXT_ALIGN_TYPES.includes(format) ? "align" : "type"
+    TEXT_ALIGN_TYPES.includes(format) ? 'align' : 'type',
   );
 
-  if (format == "link") {
+  if (format === 'link') {
     isActive = isLinkActive(editor);
   }
 
   const handleMouseDown = (event: any) => {
     event.preventDefault();
-    if (format == "user-attribute") {
+    if (format === 'user-attribute') {
       inertUserAttributeBlock(editor);
-    } else if (format == "link") {
-      insertLink(editor, "");
+    } else if (format === 'link') {
+      insertLink(editor, '');
     } else {
       toggleBlock(editor, format);
     }
@@ -157,8 +126,8 @@ const ToggleItemBlockButton = ({
         <TooltipTrigger asChild>
           <Toolbar.ToggleItem
             className={cn(
-              "flex-shrink-0 flex-grow-0 basis-auto text-mauve11 h-[25px] px-[5px] rounded inline-flex text-[13px] leading-none items-center justify-center ml-0.5 outline-none hover:bg-violet3 hover:text-violet11 focus:relative focus:shadow-[0_0_0_2px] focus:shadow-violet7 first:ml-0 data-[state=on]:bg-violet5 data-[state=on]:text-violet11 text-slate-900",
-              isActive ? "" : "opacity-50"
+              'flex-shrink-0 flex-grow-0 basis-auto text-mauve11 h-[25px] px-[5px] rounded inline-flex text-[13px] leading-none items-center justify-center ml-0.5 outline-none hover:bg-violet3 hover:text-violet11 focus:relative focus:shadow-[0_0_0_2px] focus:shadow-violet7 first:ml-0 data-[state=on]:bg-violet5 data-[state=on]:text-violet11 text-slate-900',
+              isActive ? '' : 'opacity-50',
             )}
             value={format}
             aria-label={format}
@@ -178,7 +147,7 @@ const ToggleItemBlockButton = ({
 const MarkButton = ({
   format,
   Comp,
-  tips = "",
+  tips = '',
 }: {
   format: any;
   Comp: any;
@@ -190,7 +159,7 @@ const MarkButton = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Comp
-            className={isMarkActive(editor, format) ? "" : "opacity-50"}
+            className={isMarkActive(editor, format) ? '' : 'opacity-50'}
             onMouseDown={(event: any) => {
               event.preventDefault();
               toggleTextProps(editor, format);
@@ -228,73 +197,55 @@ const ToolbarToggleItem = ({
 export const EditorToolbar = () => {
   const ref = useRef<HTMLElement | null>(null);
   const refPopper = useRef<HTMLDivElement | null>(null);
-  const editor = useSlate();
-  const { zIndex, setShowToolbar, showToolbar, container } =
-    usePopperEditorContext();
+  const { zIndex, setShowToolbar, showToolbar } = usePopperEditorContext();
 
   const [isShowMore, setIsShowMore] = useState(false);
 
   const itemMapping = [
-    <ToolbarToggleItem value="bold" label="Bold" key={"bold"}>
+    <ToolbarToggleItem value="bold" label="Bold" key={'bold'}>
       <MarkButton format="bold" Comp={FontBoldIcon} tips="Bold ⌘ B" />
     </ToolbarToggleItem>,
-    <ToolbarToggleItem value="italic" label="Italic" key={"italic"}>
+    <ToolbarToggleItem value="italic" label="Italic" key={'italic'}>
       <MarkButton format="italic" Comp={FontItalicIcon} tips="Italic ⌘ I" />
     </ToolbarToggleItem>,
-    <ToolbarToggleItem value="underline" label="Underline" key={"underline"}>
-      <MarkButton
-        format="underline"
-        Comp={UnderlineIcon}
-        tips="Underline ⌘ U"
-      />
+    <ToolbarToggleItem value="underline" label="Underline" key={'underline'}>
+      <MarkButton format="underline" Comp={UnderlineIcon} tips="Underline ⌘ U" />
     </ToolbarToggleItem>,
-    <ToolbarToggleItem value="color" label="Color" key={"color"}>
+    <ToolbarToggleItem value="color" label="Color" key={'color'}>
       <ColorPicker container={ref.current} />
     </ToolbarToggleItem>,
-    <ToggleItemBlockButton format="code" key={"code"} tips="Code ⌘ `">
+    <ToggleItemBlockButton format="code" key={'code'} tips="Code ⌘ `">
       <CodeIcon />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="h1" key={"h1"} tips="H1">
+    <ToggleItemBlockButton format="h1" key={'h1'} tips="H1">
       <H1Icon />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="h2" key={"h2"} tips="H2">
+    <ToggleItemBlockButton format="h2" key={'h2'} tips="H2">
       <H2Icon />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="link" key={"link"} tips="Link">
+    <ToggleItemBlockButton format="link" key={'link'} tips="Link">
       <Link1Icon height={15} width={15} />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton
-      format="user-attribute"
-      key={"user-attribute"}
-      tips="User attribute"
-    >
+    <ToggleItemBlockButton format="user-attribute" key={'user-attribute'} tips="User attribute">
       <UserIcon height={15} width={15} />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton
-      format="numbered-list"
-      key={"numbered-list"}
-      tips="Numbered list"
-    >
+    <ToggleItemBlockButton format="numbered-list" key={'numbered-list'} tips="Numbered list">
       <ListOrderIcon />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton
-      format="bulleted-list"
-      key={"bulleted-list"}
-      tips="Bulleted list"
-    >
+    <ToggleItemBlockButton format="bulleted-list" key={'bulleted-list'} tips="Bulleted list">
       <ListUnOrderIcon />
     </ToggleItemBlockButton>,
   ];
 
   const alignItem = [
-    <ToggleItemBlockButton format="left" key={"left"} tips="Align left">
-      <TextAlignLeftIcon></TextAlignLeftIcon>
+    <ToggleItemBlockButton format="left" key={'left'} tips="Align left">
+      <TextAlignLeftIcon />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="center" key={"center"} tips="Align center">
-      <TextAlignCenterIcon></TextAlignCenterIcon>
+    <ToggleItemBlockButton format="center" key={'center'} tips="Align center">
+      <TextAlignCenterIcon />
     </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="right" key={"right"} tips="Align right">
-      <TextAlignRightIcon></TextAlignRightIcon>
+    <ToggleItemBlockButton format="right" key={'right'} tips="Align right">
+      <TextAlignRightIcon />
     </ToggleItemBlockButton>,
   ];
 
@@ -306,21 +257,17 @@ export const EditorToolbar = () => {
 
   const onClick = useCallback(
     (event: MouseEvent) => {
-      const isInToolbar =
-        ref.current && ref.current.contains(event.target as any);
-      const isInPopper =
-        refPopper.current && refPopper.current.contains(event.target as any);
-      const parentNode = ref.current && ref.current.parentNode;
-      const isInEditor = parentNode
-        ? parentNode.contains(event.target as any)
-        : false;
+      const isInToolbar = ref.current?.contains(event.target as any);
+      const isInPopper = refPopper.current?.contains(event.target as any);
+      const parentNode = ref.current?.parentNode;
+      const isInEditor = parentNode ? parentNode.contains(event.target as any) : false;
       if (!isInToolbar && !isInPopper && !isInEditor) {
         setShowToolbar(false);
       }
     },
-    [refPopper, ref]
+    [refPopper, ref],
   ) as any;
-  useEvent("click", onClick, window, { capture: false });
+  useEvent('click', onClick, window, { capture: false });
 
   useEffect(() => {
     if (rect.width < 360) {
@@ -337,8 +284,8 @@ export const EditorToolbar = () => {
   return (
     <div
       className={cn(
-        "fixed -top-8 left-0 flex p-[10px] w-full min-w-max rounded-t-lg bg-editor-toolbar border-b-editor-border border-b border-solid h-10	",
-        showToolbar ? "" : "hidden"
+        'fixed -top-8 left-0 flex p-[10px] w-full min-w-max rounded-t-lg bg-editor-toolbar border-b-editor-border border-b border-solid h-10	',
+        showToolbar ? '' : 'hidden',
       )}
       ref={composedRefs}
       style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR }}
@@ -354,11 +301,7 @@ export const EditorToolbar = () => {
         {!isShowMore && (
           <>
             <Toolbar.Separator className="w-[1px] bg-primary/30 mx-[10px] my-[3px]" />
-            <Toolbar.ToggleGroup
-              type="single"
-              defaultValue="center"
-              aria-label="Text alignment"
-            >
+            <Toolbar.ToggleGroup type="single" defaultValue="center" aria-label="Text alignment">
               {...alignItem}
             </Toolbar.ToggleGroup>
           </>
@@ -370,7 +313,7 @@ export const EditorToolbar = () => {
         {isShowMore && (
           <Popover.Trigger
             className={cn(
-              "flex-shrink-0 flex-grow-0 basis-auto text-mauve11 h-[25px] px-[5px] rounded inline-flex text-[13px] leading-none items-center justify-center ml-0.5 outline-none hover:bg-violet3 hover:text-violet11 focus:relative focus:shadow-[0_0_0_2px] focus:shadow-violet7 first:ml-0 data-[state=on]:bg-violet5 data-[state=on]:text-violet11"
+              'flex-shrink-0 flex-grow-0 basis-auto text-mauve11 h-[25px] px-[5px] rounded inline-flex text-[13px] leading-none items-center justify-center ml-0.5 outline-none hover:bg-violet3 hover:text-violet11 focus:relative focus:shadow-[0_0_0_2px] focus:shadow-violet7 first:ml-0 data-[state=on]:bg-violet5 data-[state=on]:text-violet11',
             )}
           >
             <MoreIcon className="fill-black" />
@@ -450,8 +393,8 @@ export const EditorToolbar = () => {
           >
             <Toolbar.Root
               className={cn(
-                "flex p-[5px] w-full min-w-max rounded-lg bg-[#f4f8fb] border-b-[#dfeaf1] border-b border-solid",
-                isShowMore ? "" : "hidden"
+                'flex p-[5px] w-full min-w-max rounded-lg bg-[#f4f8fb] border-b-[#dfeaf1] border-b border-solid',
+                isShowMore ? '' : 'hidden',
               )}
               // ref={ref}
               style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR }}
@@ -469,11 +412,7 @@ export const EditorToolbar = () => {
                   <Toolbar.Separator className="w-[1px] bg-primary/30 mx-[10px] my-[3px]" />
                 </>
               )}
-              <Toolbar.ToggleGroup
-                type="single"
-                defaultValue="center"
-                aria-label="Text alignment"
-              >
+              <Toolbar.ToggleGroup type="single" defaultValue="center" aria-label="Text alignment">
                 {...alignItem}
               </Toolbar.ToggleGroup>
             </Toolbar.Root>
@@ -485,4 +424,4 @@ export const EditorToolbar = () => {
   );
 };
 
-EditorToolbar.displayName = "EditorToolbar";
+EditorToolbar.displayName = 'EditorToolbar';

@@ -1,49 +1,27 @@
-import { cn } from "@usertour-ui/button/src/utils";
-import {
-  ReactEditor,
-  RenderElementProps,
-  useSlate,
-  useSlateStatic,
-} from "slate-react";
-import { Cross2Icon, GearIcon } from "@radix-ui/react-icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
-import {
-  CSSProperties,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { useEvent } from "react-use";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
+import { GearIcon } from '@radix-ui/react-icons';
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { cn } from '@usertour-ui/button/src/utils';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectPortal,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { usePopperEditorContext } from "../editor";
-import { Button } from "@usertour-ui/button";
-import {
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import { Path, Transforms, Node, Editor, Element as SlateElement } from "slate";
-import { ColumnElementType } from "../../types/slate";
-import { updateNodeStatus } from "../../lib/editorHelper";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { useEvent } from 'react-use';
+import { Editor, Element as SlateElement, Node, Path, Transforms } from 'slate';
+import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
+import { updateNodeStatus } from '../../lib/editorHelper';
+import { ColumnElementType } from '../../types/slate';
+import { usePopperEditorContext } from '../editor';
 
 type ColumnElementSerializeType = {
   children: React.ReactNode;
@@ -57,21 +35,21 @@ export const ColumnElementSerialize = (props: ColumnElementSerializeType) => {
 
 const transformsStyle = (element: ColumnElementType) => {
   const _style: CSSProperties = {
-    display: "flex",
-    position: "relative",
-    flexDirection: "column",
-    marginBottom: "0px",
+    display: 'flex',
+    position: 'relative',
+    flexDirection: 'column',
+    marginBottom: '0px',
     justifyContent: element.style?.justifyContent,
-    marginRight: element.style?.marginRight + "px",
-    width: "auto",
-    flex: "auto",
+    marginRight: `${element.style?.marginRight}px`,
+    width: 'auto',
+    flex: 'auto',
   };
-  if (element.width?.type == "percent") {
+  if (element.width?.type === 'percent') {
     _style.width = `${element.width?.value}%`;
-  } else if (element.width?.type == "pixels") {
+  } else if (element.width?.type === 'pixels') {
     _style.width = `${element.width?.value}px`;
   } else {
-    _style.flex = "1 0 0px";
+    _style.flex = '1 0 0px';
   }
   // if (showToolbar) {
   //   _style.borderRadius = "2px";
@@ -80,10 +58,7 @@ const transformsStyle = (element: ColumnElementType) => {
   return _style;
 };
 
-export const ColumnElement = (
-  props: RenderElementProps & { className?: string }
-) => {
-  const { className } = props;
+export const ColumnElement = (props: RenderElementProps & { className?: string }) => {
   const { zIndex, showToolbar } = usePopperEditorContext();
   const element = props.element as ColumnElementType;
   const [style, setStyle] = useState<CSSProperties | null>(null);
@@ -93,44 +68,33 @@ export const ColumnElement = (
   const [isActive, setIsActive] = useState(false);
   const onMousedown = useCallback(
     (event: MouseEvent) => {
-      if (
-        !isOpen &&
-        ref.current &&
-        !ref.current.contains(event.target as any)
-      ) {
+      if (!isOpen && ref.current && !ref.current.contains(event.target as any)) {
         setIsActive(false);
       }
     },
-    [isOpen, ref]
+    [isOpen, ref],
   ) as EventListenerOrEventListenerObject;
-  useEvent("mousedown", onMousedown, window, { capture: false });
+  useEvent('mousedown', onMousedown, window, { capture: false });
   // const editor = useSlate();
   const editor = useSlateStatic();
   const handleDelete = () => {
     const path = ReactEditor.findPath(editor, element);
     const parentPath = Path.parent(path);
     const parent = Node.get(editor, parentPath);
-    const isLastChild =
-      SlateElement.isElement(parent) && parent.children.length == 1;
+    const isLastChild = SlateElement.isElement(parent) && parent.children.length === 1;
 
     if (isLastChild) {
       Transforms.removeNodes(editor, {
         at: parentPath,
         // match:
         voids: true,
-        match: (n) =>
-          !Editor.isEditor(n) &&
-          SlateElement.isElement(n) &&
-          n.type === "group",
+        match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'group',
       });
     } else {
       Transforms.removeNodes(editor, {
         at: path,
         voids: true,
-        match: (n) =>
-          !Editor.isEditor(n) &&
-          SlateElement.isElement(n) &&
-          n.type === "column",
+        match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'column',
       });
       // const nextNodePath = [0];
       // if (Node.has(editor, nextNodePath)) {
@@ -147,18 +111,18 @@ export const ColumnElement = (
     Transforms.insertNodes(
       editor,
       {
-        type: "column",
+        type: 'column',
         style: element.style,
         children: [
           {
-            type: "paragraph",
-            children: [{ text: "" }],
+            type: 'paragraph',
+            children: [{ text: '' }],
           },
         ],
       },
       {
         at: path,
-      }
+      },
     );
   };
   const handleAddRightColumn = () => {
@@ -166,18 +130,18 @@ export const ColumnElement = (
     Transforms.insertNodes(
       editor,
       {
-        type: "column",
+        type: 'column',
         style: element.style,
         children: [
           {
-            type: "paragraph",
-            children: [{ text: "" }],
+            type: 'paragraph',
+            children: [{ text: '' }],
           },
         ],
       },
       {
         at: Path.next(path),
-      }
+      },
     );
   };
 
@@ -188,7 +152,7 @@ export const ColumnElement = (
       {
         style: { ...element.style, justifyContent },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -200,7 +164,7 @@ export const ColumnElement = (
       {
         style: { ...element.style, marginRight },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -211,7 +175,7 @@ export const ColumnElement = (
       {
         width: { ...element.width, type },
       },
-      { at: path }
+      { at: path },
     );
   };
 
@@ -223,18 +187,13 @@ export const ColumnElement = (
       {
         width: { ...element.width, value },
       },
-      { at: path }
+      { at: path },
     );
   };
 
   useEffect(() => {
     setStyle(transformsStyle(element));
-  }, [
-    element.style.justifyContent,
-    element.style.marginRight,
-    element.width,
-    showToolbar,
-  ]);
+  }, [element.style.justifyContent, element.style.marginRight, element.width, showToolbar]);
 
   const handleOnClick = () => {
     setIsActive(true);
@@ -246,12 +205,14 @@ export const ColumnElement = (
         {...props.attributes}
         style={{ ...style }}
         className={cn(
-          "relative",
-          isActive ? "outline" : isHover ? "outline-dashed " : "outline-none",
-          isActive || isHover ? "outline-1 outline-primary" : ""
+          'relative',
+          isActive ? 'outline' : isHover ? 'outline-dashed ' : 'outline-none',
+          isActive || isHover ? 'outline-1 outline-primary' : '',
         )}
         onMouseOver={() => setIsHover(true)}
         onMouseOut={() => setIsHover(false)}
+        onFocus={() => setIsHover(true)}
+        onBlur={() => setIsHover(false)}
         onClick={handleOnClick}
       >
         <Popover.Anchor asChild>
@@ -260,8 +221,8 @@ export const ColumnElement = (
               ref={ref}
               variant="default"
               className={cn(
-                "h-3 p-2 absolute -top-4 -left-[1px] !text-[10px] rounded-none rounded-t hover:bg-primary ",
-                isActive ? "" : "hidden"
+                'h-3 p-2 absolute -top-4 -left-[1px] !text-[10px] rounded-none rounded-t hover:bg-primary ',
+                isActive ? '' : 'hidden',
               )}
             >
               column
@@ -282,7 +243,7 @@ export const ColumnElement = (
             <div className="flex flex-col gap-2.5">
               <Label>Column width</Label>
               <div className="flex gap-x-2">
-                {element.width?.type != "fill" && (
+                {element.width?.type !== 'fill' && (
                   <Input
                     type="width"
                     value={element.width?.value}
@@ -293,7 +254,7 @@ export const ColumnElement = (
                 )}
                 <Select
                   onValueChange={handleWidthTypeChange}
-                  defaultValue={element.width?.type ?? "percent"}
+                  defaultValue={element.width?.type ?? 'percent'}
                 >
                   <SelectTrigger className="shrink">
                     <SelectValue placeholder="Select a distribute" />
@@ -323,9 +284,7 @@ export const ColumnElement = (
                       <SelectItem value="start">Top</SelectItem>
                       <SelectItem value="center">Center</SelectItem>
                       <SelectItem value="end">Bottom</SelectItem>
-                      <SelectItem value="space-between">
-                        Space Between
-                      </SelectItem>
+                      <SelectItem value="space-between">Space Between</SelectItem>
                       <SelectItem value="space-evenly">Space Evenly</SelectItem>
                       <SelectItem value="space-around">Space Around</SelectItem>
                     </SelectGroup>
@@ -351,7 +310,7 @@ export const ColumnElement = (
                         size="icon"
                         onClick={handleDelete}
                       >
-                        <DeleteIcon className="fill-red-700"></DeleteIcon>
+                        <DeleteIcon className="fill-red-700" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
@@ -359,7 +318,7 @@ export const ColumnElement = (
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <div className="grow"></div>
+                <div className="grow" />
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -369,7 +328,7 @@ export const ColumnElement = (
                         size="icon"
                         onClick={handleAddLeftColumn}
                       >
-                        <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                        <InsertColumnLeftIcon className="fill-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
@@ -387,7 +346,7 @@ export const ColumnElement = (
                         size="icon"
                         onClick={handleAddRightColumn}
                       >
-                        <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                        <InsertColumnRightIcon className="fill-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
@@ -405,4 +364,4 @@ export const ColumnElement = (
   );
 };
 
-ColumnElement.display = "ColumnElement";
+ColumnElement.display = 'ColumnElement';

@@ -1,56 +1,46 @@
-/* eslint-disable @next/next/no-img-element */
-import {
-  ContentEditorElementInsertDirection,
-  ContentEditorImageElement,
-  ContentEditorUploadRequestOption,
-} from "../../types/editor";
-import { ImageEditIcon, ImageIcon, SpinnerIcon } from "@usertour-ui/icons";
-import { promiseUploadFunc } from "../../utils/promiseUploadFunc";
-import Upload from "rc-upload";
-import * as Popover from "@radix-ui/react-popover";
-import { Label } from "@usertour-ui/label";
-import { Input } from "@usertour-ui/input";
-import { Checkbox } from "@usertour-ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@usertour-ui/tooltip";
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-ui/button';
+import { Checkbox } from '@usertour-ui/checkbox';
+import { EDITOR_SELECT } from '@usertour-ui/constants';
+import { ImageEditIcon, ImageIcon, SpinnerIcon } from '@usertour-ui/icons';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
+import { Input } from '@usertour-ui/input';
+import { Label } from '@usertour-ui/label';
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectPortal,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@usertour-ui/select";
-import { Button } from "@usertour-ui/button";
+} from '@usertour-ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import Upload from 'rc-upload';
+import { CSSProperties, useEffect, useState } from 'react';
+import { useContentEditorContext } from '../../contexts/content-editor-context';
+/* eslint-disable @next/next/no-img-element */
 import {
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from "@usertour-ui/icons";
-import { CSSProperties, useEffect, useState } from "react";
-import { useContentEditorContext } from "../../contexts/content-editor-context";
-import { EDITOR_SELECT } from "@usertour-ui/constants";
+  ContentEditorElementInsertDirection,
+  ContentEditorImageElement,
+  ContentEditorUploadRequestOption,
+} from '../../types/editor';
+import { promiseUploadFunc } from '../../utils/promiseUploadFunc';
 
 const marginKeyMapping = {
-  left: "marginLeft",
-  top: "marginTop",
-  bottom: "marginBottom",
-  right: "marginRight",
+  left: 'marginLeft',
+  top: 'marginTop',
+  bottom: 'marginBottom',
+  right: 'marginRight',
 };
 
 const transformsStyle = (element: ContentEditorImageElement) => {
-  let _style: any = {};
+  const _style: any = {};
   if (element.width?.value) {
-    if (element.width?.type == "percent") {
-      _style.width = element.width.value + "%";
+    if (element.width?.type === 'percent') {
+      _style.width = `${element.width.value}%`;
     } else {
-      _style.width = element.width.value + "px";
+      _style.width = `${element.width.value}px`;
     }
   }
   if (element.margin) {
@@ -59,7 +49,7 @@ const transformsStyle = (element: ContentEditorImageElement) => {
       const marginName = marginKeyMapping[key];
       if (element.margin[key]) {
         if (element.margin.enabled) {
-          _style[marginName] = element.margin[key] + "px";
+          _style[marginName] = `${element.margin[key]}px`;
         } else {
           _style[marginName] = null;
         }
@@ -87,7 +77,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const insertImg = async (option: ContentEditorUploadRequestOption) => {
-    let url = "";
+    let url = '';
     if (customUploadRequest) {
       url = await customUploadRequest(option.file as File);
     } else {
@@ -108,18 +98,10 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
     deleteElementInColumn(path);
   };
   const handleAddLeft = () => {
-    insertElementInColumn(
-      element,
-      path,
-      ContentEditorElementInsertDirection.LEFT
-    );
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.LEFT);
   };
   const handleAddRight = () => {
-    insertElementInColumn(
-      element,
-      path,
-      ContentEditorElementInsertDirection.RIGHT
-    );
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.RIGHT);
   };
 
   const handleWidthTypeChange = (type: string) => {
@@ -154,7 +136,6 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
             <Popover.Root modal={true}>
               <Popover.Trigger asChild>
                 <img
-                  alt="image"
                   src={element.url}
                   style={{ ...transformsStyle(element) }}
                   className="cursor-pointer"
@@ -180,14 +161,12 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                       />
                       <Select
                         onValueChange={handleWidthTypeChange}
-                        defaultValue={element.width?.type ?? "percent"}
+                        defaultValue={element.width?.type ?? 'percent'}
                       >
                         <SelectTrigger className="shrink">
                           <SelectValue placeholder="Select a distribute" />
                         </SelectTrigger>
-                        <SelectPortal
-                          style={{ zIndex: zIndex + EDITOR_SELECT }}
-                        >
+                        <SelectPortal style={{ zIndex: zIndex + EDITOR_SELECT }}>
                           <SelectContent>
                             <SelectGroup>
                               <SelectItem value="percent">%</SelectItem>
@@ -212,7 +191,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                             value={element.margin?.left}
                             placeholder="Left"
                             onChange={(e) => {
-                              handleMarginValueChange(e, "left");
+                              handleMarginValueChange(e, 'left');
                             }}
                             className="bg-background flex-none w-20"
                           />
@@ -221,7 +200,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                           <Input
                             value={element.margin?.top}
                             onChange={(e) => {
-                              handleMarginValueChange(e, "top");
+                              handleMarginValueChange(e, 'top');
                             }}
                             placeholder="Top"
                             className="bg-background flex-none w-20"
@@ -229,7 +208,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                           <Input
                             value={element.margin?.bottom}
                             onChange={(e) => {
-                              handleMarginValueChange(e, "bottom");
+                              handleMarginValueChange(e, 'bottom');
                             }}
                             placeholder="Bottom"
                             className="bg-background flex-none w-20"
@@ -240,7 +219,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                             value={element.margin?.right}
                             placeholder="Right"
                             onChange={(e) => {
-                              handleMarginValueChange(e, "right");
+                              handleMarginValueChange(e, 'right');
                             }}
                             className="bg-background flex-none w-20"
                           />
@@ -258,7 +237,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                               size="icon"
                               onClick={handleDelete}
                             >
-                              <DeleteIcon className="fill-red-500"></DeleteIcon>
+                              <DeleteIcon className="fill-red-500" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
@@ -269,19 +248,13 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              className="flex-none"
-                              variant="ghost"
-                              size="icon"
-                            >
+                            <Button className="flex-none" variant="ghost" size="icon">
                               <Upload
                                 accept="image/*"
                                 customRequest={(option) => {
                                   (async () => {
                                     setIsLoading(true);
-                                    await insertImg(
-                                      option as ContentEditorUploadRequestOption
-                                    );
+                                    await insertImg(option as ContentEditorUploadRequestOption);
                                     setIsLoading(false);
                                   })();
                                 }}
@@ -295,7 +268,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <div className="grow"></div>
+                      <div className="grow" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -305,7 +278,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                               size="icon"
                               onClick={handleAddLeft}
                             >
-                              <InsertColumnLeftIcon className="fill-foreground"></InsertColumnLeftIcon>
+                              <InsertColumnLeftIcon className="fill-foreground" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
@@ -313,9 +286,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <div className="flex-none mx-1 leading-10">
-                        Insert image
-                      </div>
+                      <div className="flex-none mx-1 leading-10">Insert image</div>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -325,7 +296,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                               size="icon"
                               onClick={handleAddRight}
                             >
-                              <InsertColumnRightIcon className="fill-foreground"></InsertColumnRightIcon>
+                              <InsertColumnRightIcon className="fill-foreground" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
@@ -343,32 +314,30 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
         </>
       )}
       {!element.url && (
-        <>
-          <Upload
-            accept="image/*"
-            disabled={isLoading}
-            customRequest={(option) => {
-              (async () => {
-                setIsLoading(true);
-                await insertImg(option as ContentEditorUploadRequestOption);
-                setIsLoading(false);
-              })();
-            }}
-          >
-            {isLoading && (
-              <div className="flex items-center w-40	h-40 justify-center">
-                <SpinnerIcon className="mr-2 h-10 w-10 animate-spin" />
-              </div>
-            )}
-            {!isLoading && <ImageIcon className="fill-slate-300 w-40	h-40" />}
-          </Upload>
-        </>
+        <Upload
+          accept="image/*"
+          disabled={isLoading}
+          customRequest={(option) => {
+            (async () => {
+              setIsLoading(true);
+              await insertImg(option as ContentEditorUploadRequestOption);
+              setIsLoading(false);
+            })();
+          }}
+        >
+          {isLoading && (
+            <div className="flex items-center w-40	h-40 justify-center">
+              <SpinnerIcon className="mr-2 h-10 w-10 animate-spin" />
+            </div>
+          )}
+          {!isLoading && <ImageIcon className="fill-slate-300 w-40	h-40" />}
+        </Upload>
       )}
     </div>
   );
 };
 
-ContentEditorImage.displayName = "ContentEditorImage";
+ContentEditorImage.displayName = 'ContentEditorImage';
 
 export type ContentEditorImageSerializeType = {
   className?: string;
@@ -376,10 +345,8 @@ export type ContentEditorImageSerializeType = {
   element: ContentEditorImageElement;
 };
 
-export const ContentEditorImageSerialize = (
-  props: ContentEditorImageSerializeType
-) => {
-  const { className, children, element } = props;
+export const ContentEditorImageSerialize = (props: ContentEditorImageSerializeType) => {
+  const { element } = props;
   const [style, setStyle] = useState<CSSProperties | null>(null);
 
   useEffect(() => {
@@ -388,9 +355,9 @@ export const ContentEditorImageSerialize = (
 
   return (
     <>
-      <img alt="image" src={element.url} style={{ ...style }} />
+      <img src={element.url} style={{ ...style }} />
     </>
   );
 };
 
-ContentEditorImageSerialize.displayName = "ContentEditorImageSerialize";
+ContentEditorImageSerialize.displayName = 'ContentEditorImageSerialize';
