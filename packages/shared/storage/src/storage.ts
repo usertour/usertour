@@ -1,4 +1,4 @@
-type Storage_Type = "localStorage" | "sessionStorage";
+type Storage_Type = 'localStorage' | 'sessionStorage';
 
 export interface StorageDataShape {
   value: unknown;
@@ -7,14 +7,14 @@ export interface StorageDataShape {
 }
 
 export class AppStorage {
-  prefix: string = "TOURLY_STORAGE@0.0.1";
-  defaultExpire: number = 5;
+  prefix = 'TOURLY_STORAGE@0.0.1';
+  defaultExpire = 5;
 
   constructor(prefix?: string, defaultExpire?: number) {
-    if (prefix != undefined) {
+    if (prefix !== undefined) {
       this.prefix = prefix;
     }
-    if (defaultExpire != undefined) {
+    if (defaultExpire !== undefined) {
       this.defaultExpire = defaultExpire;
     }
   }
@@ -26,18 +26,14 @@ export class AppStorage {
   private setStorage = (
     type: Storage_Type,
     key: string,
-    value: unknown,
-    expire: number = -1
+    inputValue: unknown,
+    inputExpire = -1,
   ): void => {
-    if (value == "" || value == undefined) {
-      value = null;
-    }
-    if (isNaN(expire)) {
-      expire = this.defaultExpire;
-    }
+    const value = inputValue === '' || inputValue === undefined ? null : inputValue;
+    const expire = Number.isNaN(inputExpire) ? this.defaultExpire : inputExpire;
 
-    let data: StorageDataShape = {
-      value: value,
+    const data: StorageDataShape = {
+      value,
       time: Date.now(),
       expire,
     };
@@ -58,7 +54,7 @@ export class AppStorage {
     let storage: StorageDataShape | undefined = undefined;
     try {
       const stringifyData = window[type].getItem(prefixKey);
-      if (stringifyData == undefined) {
+      if (stringifyData === null || stringifyData === undefined) {
         return undefined;
       }
       storage = JSON.parse(stringifyData);
@@ -67,22 +63,18 @@ export class AppStorage {
       return undefined;
     }
 
-    let nowTime = Date.now();
+    const nowTime = Date.now();
 
-    if (storage == undefined) {
+    if (storage === undefined) {
       return undefined;
     }
 
-    if (
-      storage.expire > -1 &&
-      storage.expire * 60 * 1000 < nowTime - storage.time
-    ) {
+    if (storage.expire > -1 && storage.expire * 60 * 1000 < nowTime - storage.time) {
       this.removeStorage(type, key);
       return undefined;
-    } else {
-      this.setStorage(type, key, storage.value, storage.expire);
-      return storage.value;
     }
+    this.setStorage(type, key, storage.value, storage.expire);
+    return storage.value;
   };
 
   private clearStorage = (type: Storage_Type) => {
@@ -94,34 +86,34 @@ export class AppStorage {
   };
 
   public setLocalStorage = (key: string, value: unknown, expire?: number) => {
-    this.setStorage("localStorage", key, value, expire);
+    this.setStorage('localStorage', key, value, expire);
   };
 
   public getLocalStorage = (key: string): unknown => {
-    return this.getStorage("localStorage", key);
+    return this.getStorage('localStorage', key);
   };
 
   public clearLocalStorage = () => {
-    this.clearStorage("localStorage");
+    this.clearStorage('localStorage');
   };
 
   public removeLocalStorage = (key: string) => {
-    this.removeStorage("localStorage", key);
+    this.removeStorage('localStorage', key);
   };
 
   public setSessionStorage = (key: string, value: unknown, expire?: number) => {
-    this.setStorage("sessionStorage", key, value, expire);
+    this.setStorage('sessionStorage', key, value, expire);
   };
 
   public getSessionStorage = (key: string): unknown => {
-    return this.getStorage("sessionStorage", key);
+    return this.getStorage('sessionStorage', key);
   };
 
   public clearSessionStorage = () => {
-    this.clearStorage("sessionStorage");
+    this.clearStorage('sessionStorage');
   };
 
   public removeSessionStorage = (key: string) => {
-    this.removeStorage("sessionStorage", key);
+    this.removeStorage('sessionStorage', key);
   };
 }
