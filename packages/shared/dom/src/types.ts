@@ -6,11 +6,11 @@ export type Strategy = 'absolute' | 'fixed';
 export type Axis = 'x' | 'y';
 export type Length = 'width' | 'height';
 
-export type Coords = {[key in Axis]: number};
+export type Coords = { [key in Axis]: number };
 
-export type SideObject = {[key in Side]: number};
+export type SideObject = { [key in Side]: number };
 
-export type Dimensions = {[key in Length]: number};
+export type Dimensions = { [key in Length]: number };
 
 export type Rect = Coords & Dimensions;
 /**

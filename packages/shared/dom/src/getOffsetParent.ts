@@ -1,24 +1,13 @@
-import {getComputedStyle} from './getComputedStyle';
-import {getParentNode} from './getParentNode';
-import {getWindow} from './getWindow';
-import {
-  isContainingBlock,
-  isHTMLElement,
-  isLastTraversableNode,
-  isTableElement,
-} from './is';
-import {getNodeName} from './node';
+import { getComputedStyle } from './getComputedStyle';
+import { getParentNode } from './getParentNode';
+import { getWindow } from './getWindow';
+import { isContainingBlock, isHTMLElement, isLastTraversableNode, isTableElement } from './is';
+import { getNodeName } from './node';
 
 type Polyfill = (element: HTMLElement) => Element | null;
 
-function getTrueOffsetParent(
-  element: Element,
-  polyfill: Polyfill | undefined
-): Element | null {
-  if (
-    !isHTMLElement(element) ||
-    getComputedStyle(element).position === 'fixed'
-  ) {
+function getTrueOffsetParent(element: Element, polyfill: Polyfill | undefined): Element | null {
+  if (!isHTMLElement(element) || getComputedStyle(element).position === 'fixed') {
     return null;
   }
 
@@ -35,9 +24,8 @@ function getContainingBlock(element: Element) {
   while (isHTMLElement(currentNode) && !isLastTraversableNode(currentNode)) {
     if (isContainingBlock(currentNode)) {
       return currentNode;
-    } else {
-      currentNode = getParentNode(currentNode);
     }
+    currentNode = getParentNode(currentNode);
   }
 
   return null;
@@ -45,10 +33,7 @@ function getContainingBlock(element: Element) {
 
 // Gets the closest ancestor positioned element. Handles some edge cases,
 // such as table ancestors and cross browser bugs.
-export function getOffsetParent(
-  element: Element,
-  polyfill?: Polyfill
-): Element | Window {
+export function getOffsetParent(element: Element, polyfill?: Polyfill): Element | Window {
   const window = getWindow(element);
 
   if (!isHTMLElement(element)) {

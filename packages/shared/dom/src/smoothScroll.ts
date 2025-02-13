@@ -3,19 +3,16 @@ interface ScrollOptions extends ScrollIntoViewOptions {
   timeout?: number;
 }
 
-export const smoothScroll = (
-  elem: Element | null,
-  options: ScrollOptions = {}
-): Promise<void> => {
+export const smoothScroll = (elem: Element | null, options: ScrollOptions = {}): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Handle null element
     if (!elem) {
-      reject(new Error("Element is null"));
+      reject(new Error('Element is null'));
       return;
     }
 
     if (!(elem instanceof Element)) {
-      reject(new TypeError("Argument 1 must be an Element"));
+      reject(new TypeError('Argument 1 must be an Element'));
       return;
     }
 
@@ -25,7 +22,7 @@ export const smoothScroll = (
 
     // Set default options
     const scrollOptions = {
-      behavior: "smooth" as ScrollBehavior,
+      behavior: 'smooth' as ScrollBehavior,
       timeout: 1000,
       ...options,
     };

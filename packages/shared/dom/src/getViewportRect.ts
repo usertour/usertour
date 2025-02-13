@@ -1,8 +1,8 @@
-import type {Rect, Strategy} from './types';
+import type { Rect, Strategy } from './types';
 
-import {getDocumentElement} from './getDocumentElement';
-import {getWindow} from './getWindow';
-import {isSafari} from './is';
+import { getDocumentElement } from './getDocumentElement';
+import { getWindow } from './getWindow';
+import { isSafari } from './is';
 
 export function getViewportRect(element: Element, strategy: Strategy): Rect {
   const win = getWindow(element);

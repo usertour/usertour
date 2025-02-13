@@ -5,10 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "description": "The package is copy from Floating UI",
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "sideEffects": false,
   "scripts": {
     "build": "tsup src --dts",
@@ -20,10 +17,7 @@
   "tsup": {
     "clean": true,
     "target": "es2019",
-    "format": [
-      "cjs",
-      "esm"
-    ]
+    "format": ["cjs", "esm"]
   },
   "dependencies": {
     "@babel/runtime": "^7.13.10",
