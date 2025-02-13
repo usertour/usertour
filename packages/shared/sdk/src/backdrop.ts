@@ -1,25 +1,24 @@
-import { getComputedStyle } from "@usertour-ui/dom";
+import { getComputedStyle } from '@usertour-ui/dom';
 
-import type { Rect, SideObject, Dimensions } from "@floating-ui/dom";
+import type { Rect, SideObject } from '@floating-ui/dom';
 
 function getBodyZoom() {
   const styles: any = getComputedStyle(window.document.body);
-  if (styles.zoom && "1" !== styles.zoom) {
-    const z = parseFloat(styles.zoom);
-    if (!isNaN(z)) {
+  if (styles.zoom && '1' !== styles.zoom) {
+    const z = Number.parseFloat(styles.zoom);
+    if (!Number.isNaN(z)) {
       return z;
     }
   }
   return 1;
 }
 
-function parseCssPropertyToFloat(str: string) {
-  return str ? parseFloat(str.replace(/px$/, "")) : 0;
-}
+// function parseCssPropertyToFloat(str: string) {
+//   return str ? parseFloat(str.replace(/px$/, '')) : 0;
+// }
 
 function parseOpeningPadding(openingPadding: any) {
-  const isHasKeys =
-    openingPadding && Object.keys(openingPadding).length > 0 ? true : false;
+  const isHasKeys = openingPadding && Object.keys(openingPadding).length > 0;
   const singlePadding = isHasKeys ? 0 : openingPadding;
   const padding = {
     paddingLeft: singlePadding,
@@ -35,15 +34,11 @@ function parseOpeningPadding(openingPadding: any) {
 
 export const getViewportRect = (): Rect => {
   const width =
-    ("BackCompat" == document.compatMode
-      ? document.body
-      : document.documentElement
-    ).clientWidth || window.innerWidth;
+    ('BackCompat' === document.compatMode ? document.body : document.documentElement).clientWidth ||
+    window.innerWidth;
   const height =
-    ("BackCompat" == document.compatMode
-      ? document.body
-      : document.documentElement
-    ).clientHeight || window.innerHeight;
+    ('BackCompat' === document.compatMode ? document.body : document.documentElement)
+      .clientHeight || window.innerHeight;
   return { width, height, x: 0, y: 0 };
 };
 
@@ -53,7 +48,7 @@ export function positionModal(
   zIndex: number,
   viewportRect: Rect,
   modalOverlayOpeningPadding?: number,
-  modalOverlayOpeningRadius?: any
+  modalOverlayOpeningRadius?: any,
 ) {
   // const { y, height } = _getVisibleHeight(targetElement, scrollParent);
   // const { x, width, left } = targetElement.getBoundingClientRect();
@@ -70,10 +65,8 @@ export function positionModal(
   };
   const borderRadius = modalOverlayOpeningRadius || targetBorderRadius;
   const openingPadding = parseOpeningPadding(modalOverlayOpeningPadding);
-  const horizontalPadding =
-    openingPadding.paddingLeft + openingPadding.paddingRight;
-  const verticalPadding =
-    openingPadding.paddingTop + openingPadding.paddingBottom;
+  const horizontalPadding = openingPadding.paddingLeft + openingPadding.paddingRight;
+  const verticalPadding = openingPadding.paddingTop + openingPadding.paddingBottom;
 
   // getBoundingClientRect is not consistent. Some browsers use x and y, while others use left and top
   const rrect = {
