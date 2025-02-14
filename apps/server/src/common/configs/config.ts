@@ -60,6 +60,20 @@ const config: Config = {
       domain: process.env.AWS_S3_DOMAIN,
     },
   },
+  auth: {
+    github: {
+      enabled: process.env.GITHUB_AUTH_ENABLED === 'true',
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackUrl: process.env.GITHUB_CALLBACK_URL,
+    },
+    google: {
+      enabled: process.env.GOOGLE_AUTH_ENABLED === 'true',
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+    },
+  },
 };
 
 export default (): Config => config;

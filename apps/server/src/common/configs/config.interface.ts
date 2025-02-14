@@ -58,4 +58,18 @@ export interface Config {
       domain: string;
     };
   };
+  auth: {
+    github: {
+      enabled: boolean;
+      clientId: string;
+      clientSecret: string;
+      callbackUrl: string;
+    };
+    google: {
+      enabled: boolean;
+      clientId: string;
+      clientSecret: string;
+      callbackUrl: string;
+    };
+  };
 }
