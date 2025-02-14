@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import type { NestConfig } from '@/common/configs/config.interface';
 import { NestApplicationOptions, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -29,8 +28,6 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
 
   const configService = app.get(ConfigService);
-  const nestConfig = configService.get<NestConfig>('nest');
-
   // Uncomment these lines to use the Redis adapter:
   const adapter = new RedisIoAdapter(app);
   await adapter.connectToRedis();
@@ -48,7 +45,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.NEST_SERVER_PORT || nestConfig.port || 3000);
+  await app.listen(configService.get('nest.port'));
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 

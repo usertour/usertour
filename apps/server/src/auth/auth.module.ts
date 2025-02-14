@@ -1,5 +1,4 @@
-import { GqlAuthGuard } from '@/auth/gql-auth.guard';
-import { SecurityConfig } from '@/common/configs/config.interface';
+import { GqlAuthGuard } from '@/auth/guard/gql-auth.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -15,11 +14,10 @@ import { PasswordService } from './password.service';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => {
-        const securityConfig = configService.get<SecurityConfig>('security');
         return {
-          secret: configService.get<string>('JWT_ACCESS_SECRET'),
+          secret: configService.get('security.jwtAccessSecret'),
           signOptions: {
-            expiresIn: securityConfig.expiresIn,
+            expiresIn: configService.get('security.expiresIn'),
           },
         };
       },

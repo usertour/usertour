@@ -10,11 +10,11 @@ export class PostgresIoAdapter extends IoAdapter {
 
   async connectToPostgres(): Promise<void> {
     const pool = new pg.Pool({
-      user: process.env.POSTGRES_USER,
-      host: process.env.DB_HOST,
-      database: process.env.POSTGRES_DB,
-      password: process.env.POSTGRES_PASSWORD,
-      port: Number(process.env.DB_PORT),
+      user: this.configService.get('database.user'),
+      host: this.configService.get('database.host'),
+      database: this.configService.get('database.database'),
+      password: this.configService.get('database.password'),
+      port: this.configService.get('database.port'),
       // ssl: true,
     });
     pool.query(`

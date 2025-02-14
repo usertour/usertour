@@ -4,13 +4,12 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { ValidationError } from 'class-validator';
-import { GraphqlConfig } from './common/configs/config.interface';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
   constructor(private configService: ConfigService) {}
   createGqlOptions(): ApolloDriverConfig {
-    const graphqlConfig = this.configService.get<GraphqlConfig>('graphql');
+    const graphqlConfig = this.configService.get('graphql');
     return {
       // schema options
       autoSchemaFile: graphqlConfig.schemaDestination || './src/schema.graphql',

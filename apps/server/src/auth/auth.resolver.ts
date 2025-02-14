@@ -13,10 +13,33 @@ import { Auth } from './models/auth.model';
 import { Common } from './models/common.model';
 import { Register } from './models/register.model';
 import { Token } from './models/token.model';
+import { UseGuards } from '@nestjs/common';
+import { GithubOauthGuard } from './guard/github-oauth.guard';
+import { GoogleOauthGuard } from './guard/google-oauth.guard';
 
 @Resolver(() => Auth)
 export class AuthResolver {
   constructor(private readonly auth: AuthService) {}
+
+  @UseGuards(GithubOauthGuard)
+  @Public()
+  async github() {
+    // auth guard will automatically handle this
+  }
+
+  @UseGuards(GoogleOauthGuard)
+  @Public()
+  async google() {
+    // auth guard will automatically handle this
+  }
+
+  @UseGuards(GithubOauthGuard)
+  @Public()
+  async githubAuthCallback() {}
+
+  @UseGuards(GoogleOauthGuard)
+  @Public()
+  async googleAuthCallback() {}
 
   @Mutation(() => Register)
   @Public()

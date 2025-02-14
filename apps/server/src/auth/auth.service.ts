@@ -1,5 +1,4 @@
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { SecurityConfig } from '@/common/configs/config.interface';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { initialization, initializationThemes } from '@/common/initialization/initialization';
 import {
@@ -18,6 +17,7 @@ import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
 import { Token } from './models/token.model';
 import { PasswordService } from './password.service';
+import { Profile } from 'passport-google-oauth20';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +27,19 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
   ) {}
+
+  async oauthValidate(accessToken: string, refreshToken: string, profile: Profile) {
+    const { name, emails, photos } = profile;
+    const user = {
+      email: emails[0].value,
+      firstName: name.givenName,
+      lastName: name.familyName,
+      picture: photos[0].value,
+      accessToken,
+      refreshToken,
+    };
+    return user;
+  }
 
   async createMagicLink(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -194,10 +207,9 @@ export class AuthService {
   }
 
   private generateRefreshToken(payload: { userId: string }): string {
-    const securityConfig = this.configService.get<SecurityConfig>('security');
     return this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
-      expiresIn: securityConfig.refreshIn,
+      secret: this.configService.get('security.jwtRefreshSecret'),
+      expiresIn: this.configService.get('security.refreshIn'),
     });
   }
 
@@ -229,7 +241,7 @@ export class AuthService {
   }
 
   async sendMagicLinkEmail(code: string, email: string) {
-    const link = `${process.env.APP_HOMEPAGE_URL}/auth/registration/${code}`;
+    const link = `${this.configService.get('app.homepageUrl')}/auth/registration/${code}`;
     const template = await compileEmailTemplate({
       fileName: 'verifyEmail.mjml',
       data: {
@@ -246,7 +258,7 @@ export class AuthService {
   }
 
   async sendResetPasswordEmail(id: string, email: string, name: string) {
-    const link = `${process.env.APP_HOMEPAGE_URL}/auth/password-reset/${id}`;
+    const link = `${this.configService.get('app.homepageUrl')}/auth/password-reset/${id}`;
     const template = await compileEmailTemplate({
       fileName: 'forgotPassword.mjml',
       data: {
