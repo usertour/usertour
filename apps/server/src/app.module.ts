@@ -26,7 +26,12 @@ import { LocalizationsModule } from './localizations/localizations.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: [config] }),
+    ConfigModule.forRoot({
+      load: [config],
+      isGlobal: true,
+      cache: true,
+      expandVariables: true,
+    }),
     PrismaModule.forRoot({
       isGlobal: true,
       prismaServiceOptions: {

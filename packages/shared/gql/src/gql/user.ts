@@ -48,3 +48,9 @@ export const changePassword = gql`
     }
   }
 `;
+
+export const logout = gql`
+  mutation logout {
+    logout
+  }
+`;

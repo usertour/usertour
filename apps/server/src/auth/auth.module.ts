@@ -1,5 +1,4 @@
-import { GqlAuthGuard } from '@/auth/gql-auth.guard';
-import { SecurityConfig } from '@/common/configs/config.interface';
+import { GqlAuthGuard } from '@/auth/guard/gql-auth.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -9,17 +8,19 @@ import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { PasswordService } from './password.service';
+import { AuthController } from './auth.controller';
+import { GithubOauthStrategy } from './strategy/github-oauth.strategy';
+import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => {
-        const securityConfig = configService.get<SecurityConfig>('security');
         return {
-          secret: configService.get<string>('JWT_ACCESS_SECRET'),
+          secret: configService.get('auth.jwt.secret'),
           signOptions: {
-            expiresIn: securityConfig.expiresIn,
+            expiresIn: configService.get('auth.jwt.expiresIn'),
           },
         };
       },
@@ -32,10 +33,13 @@ import { PasswordService } from './password.service';
     JwtStrategy,
     GqlAuthGuard,
     PasswordService,
+    GithubOauthStrategy,
+    GoogleOauthStrategy,
     {
       provide: APP_GUARD,
       useClass: GqlAuthGuard,
     },
   ],
+  controllers: [AuthController],
 })
 export class AuthModule {}

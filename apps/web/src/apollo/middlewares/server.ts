@@ -19,7 +19,7 @@ const authLink = setContext((_, { headers }) => {
 });
 
 const httpLink = createHttpLink({
-  uri: apiUrl,
+  uri: `${apiUrl}/graphql`,
 });
 
 export const serverLink = authLink.concat(httpLink);

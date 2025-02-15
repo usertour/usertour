@@ -1,14 +1,15 @@
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { SecurityConfig } from '@/common/configs/config.interface';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { initialization, initializationThemes } from '@/common/initialization/initialization';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
@@ -18,15 +19,256 @@ import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
 import { Token } from './models/token.model';
 import { PasswordService } from './password.service';
+import { Profile } from 'passport-google-oauth20';
+import { CookieOptions, Response } from 'express';
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
+import { TokenData } from './dto/auth.dto';
+import { omit } from '@/utils/typesafe';
+import ms from 'ms';
+import { AuthConfigItem } from './models/auth.model';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
   ) {}
+
+  getAuthConfig(): AuthConfigItem[] {
+    const items: AuthConfigItem[] = [];
+    if (this.configService.get('auth.email.enabled')) {
+      items.push({ provider: 'email' });
+    }
+    if (this.configService.get('auth.google.enabled')) {
+      items.push({ provider: 'google' });
+    }
+    if (this.configService.get('auth.github.enabled')) {
+      items.push({ provider: 'github' });
+    }
+    return items;
+  }
+
+  cookieOptions(key: string): CookieOptions {
+    const baseOptions: CookieOptions = {
+      domain: this.configService.get('auth.cookieDomain') ?? '',
+      secure: true,
+      sameSite: 'strict',
+      path: '/',
+    };
+
+    switch (key) {
+      case UID_COOKIE:
+        return {
+          ...baseOptions,
+          expires: new Date(Date.now() + ms(this.configService.get('auth.jwt.refreshExpiresIn'))),
+        };
+      case ACCESS_TOKEN_COOKIE:
+        return {
+          ...baseOptions,
+          httpOnly: true,
+          expires: new Date(Date.now() + ms(this.configService.get('auth.jwt.expiresIn'))),
+        };
+      case REFRESH_TOKEN_COOKIE:
+        return {
+          ...baseOptions,
+          httpOnly: true,
+          expires: new Date(Date.now() + ms(this.configService.get('auth.jwt.refreshExpiresIn'))),
+        };
+      default:
+        return baseOptions;
+    }
+  }
+
+  setAuthCookie(res: Response, { uid, accessToken, refreshToken }: TokenData) {
+    return res
+      .cookie(UID_COOKIE, uid, this.cookieOptions(UID_COOKIE))
+      .cookie(ACCESS_TOKEN_COOKIE, accessToken, this.cookieOptions(ACCESS_TOKEN_COOKIE))
+      .cookie(REFRESH_TOKEN_COOKIE, refreshToken, this.cookieOptions(REFRESH_TOKEN_COOKIE));
+  }
+
+  clearAuthCookie(res: Response) {
+    const clearOptions = omit(this.cookieOptions(UID_COOKIE), ['expires']);
+
+    return res
+      .clearCookie(UID_COOKIE, clearOptions)
+      .clearCookie(ACCESS_TOKEN_COOKIE, clearOptions)
+      .clearCookie(REFRESH_TOKEN_COOKIE, clearOptions);
+  }
+
+  async oauthValidate(accessToken: string, refreshToken: string, profile: Profile) {
+    this.logger.log(
+      `oauth accessToken: ${accessToken}, refreshToken: ${refreshToken}, profile: ${JSON.stringify(
+        profile,
+      )}`,
+    );
+    const { provider, id, emails, displayName, photos } = profile;
+
+    // Check if there is an authentication account record
+    const account = await this.prisma.account.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId: id,
+        },
+      },
+    });
+
+    // If there is an authentication account record and corresponding user, return directly
+    if (account) {
+      this.logger.log(`account found for provider ${provider}, account id: ${id}`);
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: account.userId,
+        },
+      });
+      if (user) {
+        return user;
+      }
+
+      this.logger.log(
+        `user ${account.userId} not found for provider ${provider} account id: ${id}`,
+      );
+    }
+
+    // oauth profile returns no email, this is invalid
+    if (emails?.length === 0) {
+      this.logger.warn('emails is empty, invalid oauth');
+      throw new BadRequestException('emails is empty, invalid oauth');
+    }
+    const email = emails[0].value;
+
+    // Return user if this email has been registered
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (user) {
+      this.logger.log(`user ${user.id} already registered for email ${email}`);
+      return user;
+    }
+
+    // download avatar if profile photo exists
+    let avatar: string;
+    try {
+      if (photos?.length > 0) {
+        // avatar = (await this.miscService.dumpFileFromURL({ uid }, photos[0].value)).url;
+      }
+    } catch (e) {
+      this.logger.warn(`failed to download avatar: ${e}`);
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: displayName || email,
+          email,
+          avatarUrl: avatar,
+          emailVerified: new Date(),
+        },
+      });
+
+      this.logger.log(`user created: ${newUser.id}`);
+
+      const newAccount = await tx.account.create({
+        data: {
+          type: 'oauth',
+          userId: newUser.id,
+          provider,
+          providerAccountId: id,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        },
+      });
+      this.logger.log(`new account created for ${newAccount.id}`);
+
+      const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
+      await initialization(tx, project.id);
+      return newUser;
+    });
+  }
+
+  private async generateRefreshToken(userId: string): Promise<string> {
+    const jti = randomBytes(32).toString('hex');
+
+    // Create a standard JWT refresh token
+    const refreshToken = this.jwtService.sign(
+      {
+        userId,
+        jti,
+        tokenType: 'refresh',
+      },
+      {
+        secret: this.configService.get('auth.jwt.refreshSecret'), // 使用单独的 refresh token 密钥
+        expiresIn: this.configService.get('auth.jwt.refreshExpiresIn'),
+      },
+    );
+
+    // Store token metadata in database for revocation support
+    await this.prisma.refreshToken.create({
+      data: {
+        jti,
+        userId,
+        hashedToken: refreshToken,
+        expiresAt: new Date(Date.now() + ms(this.configService.get('auth.jwt.refreshExpiresIn'))),
+      },
+    });
+
+    return refreshToken;
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      // Verify the refresh token
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get('auth.jwt.refreshSecret'),
+      });
+
+      // Check if token has been revoked
+      const storedToken = await this.prisma.refreshToken.findUnique({
+        where: { jti: payload.jti },
+      });
+
+      if (!storedToken || storedToken.revoked || storedToken.expiresAt < new Date()) {
+        throw new UnauthorizedException('Refresh token is invalid or expired');
+      }
+
+      // Revoke the current refresh token (one-time use)
+      await this.prisma.refreshToken.update({
+        where: { jti: payload.jti },
+        data: { revoked: true },
+      });
+
+      // Generate new tokens
+      return this.login(payload.userId);
+    } catch (_) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  async login(userId: string): Promise<TokenData> {
+    const payload = { userId };
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.get('auth.jwt.secret'),
+      expiresIn: this.configService.get('auth.jwt.expiresIn'),
+    });
+
+    // Generate refresh token
+    const refreshToken = await this.generateRefreshToken(userId);
+
+    return {
+      uid: userId,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async revokeAllRefreshTokens(userId: string) {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { revoked: true },
+    });
+  }
 
   async createMagicLink(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -75,14 +317,15 @@ export class AuthService {
     const hashedPassword = await this.passwordService.hashPassword(password);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const user = await this.prisma.$transaction(async (tx) => {
         const user = await this.createUser(tx, userName, register.email, hashedPassword);
+        await this.createAccount(tx, 'email', user.id, 'email', register.email);
         const project = await this.createProject(tx, companyName, user.id);
         await initialization(tx, project.id);
-        return this.generateTokens({
-          userId: user.id,
-        });
+        return user;
       });
+      this.logger.log(`User ${user.id} created`);
+      return this.login(user.id);
     } catch (e) {
       console.log(e);
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -92,10 +335,10 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string): Promise<Token> {
+  async emailLogin(email: string, password: string): Promise<TokenData> {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { projects: true },
+      include: { projects: true, accounts: true },
     });
 
     if (!user) {
@@ -107,15 +350,27 @@ export class AuthService {
       await initialization(this.prisma, project.id);
     }
 
-    const passwordValid = await this.passwordService.validatePassword(password, user.password);
+    let hashedPassword: string = user.password;
+    if (user.accounts.length === 0) {
+      await this.prisma.$transaction(async (tx) => {
+        await this.createAccount(tx, 'email', user.id, 'email', user.email);
+        hashedPassword = await this.passwordService.hashPassword(password);
+        await tx.user.update({
+          data: {
+            password: hashedPassword,
+          },
+          where: { id: user.id },
+        });
+      });
+    }
+
+    const passwordValid = await this.passwordService.validatePassword(password, hashedPassword);
 
     if (!passwordValid) {
       throw new BadRequestException('Invalid password');
     }
 
-    return this.generateTokens({
-      userId: user.id,
-    });
+    return this.login(user.id);
   }
 
   async resetUserPassword(email: string): Promise<Common> {
@@ -182,39 +437,6 @@ export class AuthService {
     return await this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  generateTokens(payload: { userId: string }): Token {
-    return {
-      accessToken: this.generateAccessToken(payload),
-      refreshToken: this.generateRefreshToken(payload),
-    };
-  }
-
-  private generateAccessToken(payload: { userId: string }): string {
-    return this.jwtService.sign(payload);
-  }
-
-  private generateRefreshToken(payload: { userId: string }): string {
-    const securityConfig = this.configService.get<SecurityConfig>('security');
-    return this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
-      expiresIn: securityConfig.refreshIn,
-    });
-  }
-
-  refreshToken(token: string) {
-    try {
-      const { userId } = this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-      });
-
-      return this.generateTokens({
-        userId,
-      });
-    } catch (_) {
-      throw new UnauthorizedException();
-    }
-  }
-
   async sendEmail(data: any) {
     const transporter = createTransport({
       host: this.configService.get('EMAIL_HOST'),
@@ -229,7 +451,7 @@ export class AuthService {
   }
 
   async sendMagicLinkEmail(code: string, email: string) {
-    const link = `${process.env.APP_HOMEPAGE_URL}/auth/registration/${code}`;
+    const link = `${this.configService.get('app.homepageUrl')}/auth/registration/${code}`;
     const template = await compileEmailTemplate({
       fileName: 'verifyEmail.mjml',
       data: {
@@ -246,7 +468,7 @@ export class AuthService {
   }
 
   async sendResetPasswordEmail(id: string, email: string, name: string) {
-    const link = `${process.env.APP_HOMEPAGE_URL}/auth/password-reset/${id}`;
+    const link = `${this.configService.get('app.homepageUrl')}/auth/password-reset/${id}`;
     const template = await compileEmailTemplate({
       fileName: 'forgotPassword.mjml',
       data: {
@@ -268,6 +490,23 @@ export class AuthService {
         name,
         email,
         password,
+      },
+    });
+  }
+
+  async createAccount(
+    tx: Prisma.TransactionClient,
+    type: string,
+    userId: string,
+    provider: string,
+    providerAccountId: string,
+  ) {
+    await tx.account.create({
+      data: {
+        type,
+        userId,
+        provider,
+        providerAccountId,
       },
     });
   }

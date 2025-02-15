@@ -2,16 +2,38 @@
 //// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 //// ------------------------------------------------------
 
+Table Account {
+  id String [pk, note: 'Primary key']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [not null, note: 'Update timestamp']
+  user User [not null, note: 'User']
+  userId String [not null, note: 'User ID']
+  type String [not null, note: 'Account type']
+  provider String [not null, note: 'Provider  ']
+  providerAccountId String [not null, note: 'Provider account ID']
+  refreshToken String [note: 'Refresh token']
+  accessToken String [note: 'Access token']
+  expiresAt Int [note: 'Token expiration timestamp']
+  scope String [note: 'Scope']
+
+  indexes {
+    (provider, providerAccountId) [unique]
+  }
+}
+
 Table User {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  email String [unique, not null]
-  password String [not null]
+  email String [unique]
+  emailVerified DateTime
+  password String
   avatarUrl String
   name String
   projects UserOnProject [not null]
   codes Code [not null]
+  accounts Account [not null]
+  refreshTokens RefreshToken [not null]
 }
 
 Table Register {
@@ -378,11 +400,25 @@ Table BizEvent {
   bizSessionId String
 }
 
+Table RefreshToken {
+  id String [pk, note: 'Primary key']
+  jti String [unique, not null, note: 'Token ID']
+  user User [not null, note: 'User']
+  userId String [not null, note: 'User ID']
+  hashedToken String [not null, note: 'Hashed refresh token']
+  revoked Boolean [not null, default: false, note: 'Whether the token has been revoked']
+  expiresAt DateTime [not null, note: 'Expiration timestamp']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [not null, note: 'Update timestamp']
+}
+
 Enum Role {
   ADMIN
   USER
   OWNER
 }
+
+Ref: Account.userId > User.id
 
 Ref: Code.userId > User.id
 
@@ -453,3 +489,5 @@ Ref: BizEvent.eventId > Event.id
 Ref: BizEvent.bizUserId > BizUser.id
 
 Ref: BizEvent.bizSessionId > BizSession.id
+
+Ref: RefreshToken.userId > User.id

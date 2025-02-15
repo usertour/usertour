@@ -1,36 +1,80 @@
 export interface Config {
-  nest: NestConfig;
-  cors: CorsConfig;
-  swagger: SwaggerConfig;
-  graphql: GraphqlConfig;
-  security: SecurityConfig;
-}
-
-export interface NestConfig {
-  port: number;
-}
-
-export interface CorsConfig {
-  enabled: boolean;
-}
-
-export interface SwaggerConfig {
-  enabled: boolean;
-  title: string;
-  description: string;
-  version: string;
-  path: string;
-}
-
-export interface GraphqlConfig {
-  playgroundEnabled: boolean;
-  debug: boolean;
-  schemaDestination: string;
-  sortSchema: boolean;
-}
-
-export interface SecurityConfig {
-  expiresIn: string;
-  refreshIn: string;
-  bcryptSaltOrRound: string | number;
+  nest: {
+    port: number;
+  };
+  cors: {
+    enabled: boolean;
+  };
+  swagger: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    version: string;
+    path: string;
+  };
+  graphql: {
+    playgroundEnabled: boolean;
+    debug: boolean;
+    schemaDestination: string;
+    sortSchema: boolean;
+  };
+  database: {
+    host: string;
+    port: number;
+    user: string;
+    password: string;
+    database: string;
+    schema: string;
+    url: string;
+  };
+  email: {
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+  };
+  redis: {
+    host: string;
+    port: number;
+    password: string;
+  };
+  app: {
+    homepageUrl: string;
+  };
+  aws: {
+    s3: {
+      region: string;
+      endpoint: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+      bucket: string;
+      domain: string;
+    };
+  };
+  auth: {
+    cookieDomain: string;
+    redirectUrl: string;
+    email: {
+      enabled: boolean;
+      sender: string;
+      resendApiKey: string;
+    };
+    jwt: {
+      secret: string;
+      expiresIn: string;
+      refreshExpiresIn: string;
+    };
+    github: {
+      enabled: boolean;
+      clientId: string;
+      clientSecret: string;
+      callbackUrl: string;
+    };
+    google: {
+      enabled: boolean;
+      clientId: string;
+      clientSecret: string;
+      callbackUrl: string;
+    };
+  };
 }

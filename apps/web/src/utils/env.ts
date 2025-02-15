@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export const apiUrl = import.meta.env.VITE_API_URL || window?.ENV?.API_URL || '/graphql';
+export const apiUrl = import.meta.env.VITE_API_URL || window?.ENV?.API_URL || '';
 
 export const userTourToken = import.meta.env.VITE_USERTOUR_TOKEN || window?.ENV?.USERTOUR_TOKEN;
 
