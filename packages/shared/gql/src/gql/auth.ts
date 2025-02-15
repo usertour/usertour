@@ -37,6 +37,14 @@ export const login = gql`
   }
 `;
 
+export const getAuthConfig = gql`
+  query getAuthConfig {
+    getAuthConfig {
+      provider
+    }
+  }
+`;
+
 export const signUp = gql`
   mutation signUp(
     $code: String!

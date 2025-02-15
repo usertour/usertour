@@ -1,9 +1,9 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
-import { login } from '@usertour-ui/gql';
+import { getAuthConfig, login } from '@usertour-ui/gql';
 import { getErrorMessage, setAuthToken } from '@usertour-ui/shared-utils';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -32,10 +32,18 @@ const defaultValues: Partial<SigninFormValues> = {
   password: '',
 };
 
+type AuthProvider = 'email' | 'google' | 'github';
+type AuthConfigItem = {
+  provider: AuthProvider;
+};
+
 export const SignIn = () => {
   const [loginMutation] = useMutation(login);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { data } = useQuery(getAuthConfig);
+  const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState<boolean>(false);
+  const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
 
   const form = useForm<SigninFormValues>({
     resolver: zodResolver(signinFormSchema),
@@ -64,8 +72,23 @@ export const SignIn = () => {
   };
 
   const handleLogin = (provider: 'github' | 'google') => {
+    if (provider === 'google') {
+      setIsGoogleAuthLoading(true);
+    } else if (provider === 'github') {
+      setIsGithubAuthLoading(true);
+    }
     window.location.href = `http://localhost:3000/api/auth/${provider}`;
   };
+
+  const isEmailAuthEnabled = data?.getAuthConfig.some(
+    (item: AuthConfigItem) => item.provider === 'email',
+  );
+  const isGithubAuthEnabled = data?.getAuthConfig.some(
+    (item: AuthConfigItem) => item.provider === 'github',
+  );
+  const isGoogleAuthEnabled = data?.getAuthConfig.some(
+    (item: AuthConfigItem) => item.provider === 'google',
+  );
 
   return (
     <Form {...form}>
@@ -75,78 +98,87 @@ export const SignIn = () => {
             <CardTitle className="text-2xl  font-semibold tracking-tight">
               Sign in to UserTour
             </CardTitle>
-            {/* <CardDescription className="text-sm text-muted-foreground">
-              Enter your email and password below to login your account
-            </CardDescription> */}
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="flex flex-row gap-2 w-full">
-              <Button
-                variant="outline"
-                className="flex-1"
-                type="button"
-                onClick={() => handleLogin('google')}
-              >
-                <GoogleIcon className="w-4 h-4 mr-2" />
-                Continue with Google
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                type="button"
-                onClick={() => handleLogin('github')}
-              >
-                <GithubIcon className="w-4 h-4 mr-2" />
-                Continue with Github
-              </Button>
+              {isGoogleAuthEnabled && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  type="button"
+                  onClick={() => handleLogin('google')}
+                  disabled={isGoogleAuthLoading}
+                >
+                  {isGoogleAuthLoading && <SpinnerIcon className="w-4 h-4 animate-spin mr-1" />}
+                  <GoogleIcon className="w-4 h-4 mr-2" />
+                  {isGoogleAuthLoading ? 'Signing in...' : 'Continue with Google'}
+                </Button>
+              )}
+              {isGithubAuthEnabled && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  type="button"
+                  onClick={() => handleLogin('github')}
+                  disabled={isGithubAuthLoading}
+                >
+                  {isGithubAuthLoading && <SpinnerIcon className="w-4 h-4 animate-spin mr-1" />}
+                  <GithubIcon className="w-4 h-4 mr-2" />
+                  {isGithubAuthLoading ? 'Signing in...' : 'Continue with Github'}
+                </Button>
+              )}
             </div>
-            <div className="relative w-full">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-100 text-gray-50 dark:border-border" />
+            {(isGoogleAuthEnabled || isGithubAuthEnabled) && isEmailAuthEnabled && (
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-100 text-gray-50 dark:border-border" />
+                </div>
+                <div className="relative flex justify-center text-sm leading-5">
+                  <span className="px-2 font-medium bg-white text-background-accent dark:text-foreground/60 dark:bg-background">
+                    Or login with email
+                  </span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-sm leading-5">
-                <span className="px-2 font-medium bg-white text-background-accent dark:text-foreground/60 dark:bg-background">
-                  Or login with email
-                </span>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>Email</FormLabel> */}
-                    <FormControl>
-                      <Input placeholder="Enter your email" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid gap-2">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="Enter your password" type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    <div className="flex flex-row justify-end">
-                      {/* <FormLabel>Password</FormLabel> */}
-                      <span className="text-sm font-medium text-muted-foreground leading-none">
-                        <Link to="/auth/reset-password" className="hover:text-primary">
-                          Forgot your password?
-                        </Link>
-                      </span>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
+            )}
+            {isEmailAuthEnabled && (
+              <>
+                <div className="grid gap-2">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input placeholder="Enter your email" type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input placeholder="Enter your password" type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        <div className="flex flex-row justify-end">
+                          <span className="text-sm font-medium text-muted-foreground leading-none">
+                            <Link to="/auth/reset-password" className="hover:text-primary">
+                              Forgot your password?
+                            </Link>
+                          </span>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
             <Button className="w-full" type="submit" disabled={isLoading}>
