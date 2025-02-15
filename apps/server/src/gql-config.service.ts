@@ -1,12 +1,13 @@
 import { isArray, isValid } from '@/utils/helper';
 import { ApolloDriverConfig, UserInputError } from '@nestjs/apollo';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { ValidationError } from 'class-validator';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
+  private readonly logger = new Logger(GqlConfigService.name);
   constructor(private configService: ConfigService) {}
   createGqlOptions(): ApolloDriverConfig {
     const graphqlConfig = this.configService.get('graphql');
@@ -22,6 +23,7 @@ export class GqlConfigService implements GqlOptionsFactory {
       includeStacktraceInErrorResponses: graphqlConfig.debug,
       playground: graphqlConfig.playgroundEnabled,
       formatError: (e) => {
+        this.logger.error(e);
         if (e instanceof ValidationError || e instanceof UserInputError) {
           return {
             code: e.extensions.code,

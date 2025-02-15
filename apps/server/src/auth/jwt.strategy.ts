@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -10,6 +10,7 @@ import { ACCESS_TOKEN_COOKIE } from '@/utils/cookie';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
   constructor(
     private readonly authService: AuthService,
     readonly configService: ConfigService,
@@ -44,6 +45,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Try to get token from cookie
     const token = request.cookies?.[ACCESS_TOKEN_COOKIE];
+    this.logger.log(`Token from cookie: ${token}`);
     if (token) {
       return token;
     }
