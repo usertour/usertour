@@ -15,6 +15,7 @@ import { Input } from '@usertour-ui/input';
 import { useToast } from '@usertour-ui/use-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiUrl } from '@/utils/env';
 
 const signinFormSchema = z.object({
   email: z
@@ -77,7 +78,7 @@ export const SignIn = () => {
     } else if (provider === 'github') {
       setIsGithubAuthLoading(true);
     }
-    window.location.href = `http://localhost:3000/api/auth/${provider}`;
+    window.location.href = `${apiUrl}/api/auth/${provider}`;
   };
 
   const isEmailAuthEnabled = data?.getAuthConfig.some(

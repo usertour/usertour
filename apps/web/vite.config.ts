@@ -22,6 +22,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/graphql/, ''),
       },
+      '/api': {
+        target: 'http://localhost:3000/api',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
   },
 });
