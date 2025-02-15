@@ -157,29 +157,34 @@ export class AuthService {
       this.logger.warn(`failed to download avatar: ${e}`);
     }
 
-    const newUser = await this.prisma.user.create({
-      data: {
-        name: displayName || email,
-        email,
-        avatarUrl: avatar,
-        emailVerified: new Date(),
-      },
-    });
-    this.logger.log(`user created: ${newUser.id}`);
+    return await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: displayName || email,
+          email,
+          avatarUrl: avatar,
+          emailVerified: new Date(),
+        },
+      });
 
-    const newAccount = await this.prisma.account.create({
-      data: {
-        type: 'oauth',
-        userId: newUser.id,
-        provider,
-        providerAccountId: id,
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      },
-    });
-    this.logger.log(`new account created for ${newAccount.id}`);
+      this.logger.log(`user created: ${newUser.id}`);
 
-    return newUser;
+      const newAccount = await tx.account.create({
+        data: {
+          type: 'oauth',
+          userId: newUser.id,
+          provider,
+          providerAccountId: id,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        },
+      });
+      this.logger.log(`new account created for ${newAccount.id}`);
+
+      const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
+      await initialization(tx, project.id);
+      return newUser;
+    });
   }
 
   private async generateRefreshToken(userId: string): Promise<string> {

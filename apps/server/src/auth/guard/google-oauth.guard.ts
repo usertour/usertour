@@ -5,6 +5,8 @@ import { AuthGuard } from '@nestjs/passport';
 export class GoogleOauthGuard extends AuthGuard('google') {
   handleRequest(err: any, user: any) {
     if (err || !user) {
+      console.log('err', err);
+      console.log('user', user);
       throw new UnauthorizedException();
     }
     return user;

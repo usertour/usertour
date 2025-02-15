@@ -3,11 +3,9 @@ import { NestApplicationOptions, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { rateLimit } from 'express-rate-limit';
 import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filter';
-import { ms } from './utils/hs';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -42,13 +40,13 @@ async function bootstrap() {
    * Limit the number of user's requests
    * 1000 requests per minute
    */
-  app.use(
-    rateLimit({
-      headers: false,
-      windowMs: ms('1m'),
-      max: 1000,
-    }),
-  );
+  // app.use(
+  //   rateLimit({
+  //     headers: false,
+  //     windowMs: ms('1m'),
+  //     max: 1000,
+  //   }),
+  // );
 
   await app.listen(configService.get('nest.port'));
   console.log(`Application is running on: ${await app.getUrl()}`);
