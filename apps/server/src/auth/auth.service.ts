@@ -317,13 +317,15 @@ export class AuthService {
     const hashedPassword = await this.passwordService.hashPassword(password);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const user = await this.prisma.$transaction(async (tx) => {
         const user = await this.createUser(tx, userName, register.email, hashedPassword);
         await this.createAccount(tx, 'email', user.id, 'email', register.email);
         const project = await this.createProject(tx, companyName, user.id);
         await initialization(tx, project.id);
-        return this.login(user.id);
+        return user;
       });
+      this.logger.log(`User ${user.id} created`);
+      return this.login(user.id);
     } catch (e) {
       console.log(e);
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
