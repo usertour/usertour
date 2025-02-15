@@ -508,8 +508,8 @@ type Mutation {
   deleteTheme(data: DeleteThemeInput!): Theme!
   duplicateContent(data: ContentDuplicateInput!): Content!
   login(data: LoginInput!): Auth!
+  logout: Boolean!
   publishedContentVersion(data: VersionIdInput!): Version!
-  refreshToken(token: JWT!): Token!
   resendMagicLink(data: ResendLinkInput!): Register!
   resetUserPassword(data: ResetPasswordInput!): Common!
   resetUserPasswordByCode(data: ResetPasswordByCodeInput!): Common!
@@ -704,14 +704,6 @@ type Theme {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
-}
-
-type Token {
-  """JWT access token"""
-  accessToken: JWT!
-
-  """JWT refresh token"""
-  refreshToken: JWT!
 }
 
 input UpdateAttributeInput {

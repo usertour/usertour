@@ -18,13 +18,6 @@ export interface Config {
     schemaDestination: string;
     sortSchema: boolean;
   };
-  security: {
-    expiresIn: string;
-    refreshIn: string;
-    bcryptSaltOrRound: number;
-    jwtAccessSecret: string;
-    jwtRefreshSecret: string;
-  };
   database: {
     host: string;
     port: number;
@@ -59,6 +52,18 @@ export interface Config {
     };
   };
   auth: {
+    cookieDomain: string;
+    redirectUrl: string;
+    email: {
+      enabled: boolean;
+      sender: string;
+      resendApiKey: string;
+    };
+    jwt: {
+      secret: string;
+      expiresIn: string;
+      refreshExpiresIn: string;
+    };
     github: {
       enabled: boolean;
       clientId: string;

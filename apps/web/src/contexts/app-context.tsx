@@ -1,6 +1,7 @@
 import { Environment, Project } from '@/types/project';
-import { useQuery } from '@apollo/client';
-import { getUserInfo } from '@usertour-ui/gql';
+import { useMutation, useQuery } from '@apollo/client';
+import { getUserInfo, logout } from '@usertour-ui/gql';
+import { removeAuthToken } from '@usertour-ui/shared-utils';
 import { UserProfile } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
@@ -12,6 +13,7 @@ interface AppContextProps {
   userInfo: UserProfile | null | undefined;
   setUserInfo: React.Dispatch<React.SetStateAction<UserProfile | null | undefined>>;
   refetch: any;
+  handleLogout: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextProps | null>(null);
@@ -26,6 +28,17 @@ export const AppProvider = (props: AppProviderProps) => {
   const [project, setProject] = useState<Project | null>(null);
   const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
   const { data, refetch, loading, error } = useQuery(getUserInfo);
+  const [logoutMutation] = useMutation(logout);
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation();
+      removeAuthToken();
+      setUserInfo(null);
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
+  };
 
   useEffect(() => {
     if (loading || error) {
@@ -60,6 +73,7 @@ export const AppProvider = (props: AppProviderProps) => {
     userInfo,
     setUserInfo,
     refetch,
+    handleLogout,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

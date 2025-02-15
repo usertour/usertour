@@ -8,6 +8,7 @@ import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filter';
 import { ms } from './utils/hs';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const options: NestApplicationOptions = {};
@@ -27,11 +28,15 @@ async function bootstrap() {
   // Validation
   app.useGlobalPipes(new ValidationPipe());
 
+  // trust proxy
+  app.set('trust proxy', true);
+
   const configService = app.get(ConfigService);
   // Uncomment these lines to use the Redis adapter:
   const adapter = new RedisIoAdapter(app);
   await adapter.connectToRedis();
   app.useWebSocketAdapter(adapter);
+  app.use(cookieParser());
 
   /**
    * Limit the number of user's requests

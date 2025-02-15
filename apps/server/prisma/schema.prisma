@@ -14,16 +14,48 @@ generator dbml {
   provider = "prisma-dbml-generator"
 }
 
+model Account {
+  /// Primary key
+  id                String   @id @default(cuid())
+  /// Create timestamp
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  /// Update timestamp
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+  /// User
+  user              User     @relation(fields: [userId], references: [id])
+  /// User ID
+  userId            String
+  /// Account type
+  type              String
+  /// Provider  
+  provider          String
+  /// Provider account ID
+  providerAccountId String
+  /// Refresh token
+  refreshToken      String?
+  /// Access token
+  accessToken       String?
+  /// Token expiration timestamp
+  expiresAt         Int?
+  /// Scope
+  scope             String?
+
+  @@unique([provider, providerAccountId])
+}
+
 model User {
-  id        String          @id @default(cuid())
-  createdAt DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime        @updatedAt @db.Timestamptz(6)
-  email     String          @unique
-  password  String
-  avatarUrl String?
-  name      String?
-  projects  UserOnProject[]
-  codes     Code[]
+  id            String          @id @default(cuid())
+  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
+  email         String?         @unique
+  emailVerified DateTime?       @db.Timestamptz()
+  password      String?
+  avatarUrl     String?
+  name          String?
+  projects      UserOnProject[]
+  codes         Code[]
+  accounts      Account[]
+  refreshTokens RefreshToken[]
 }
 
 model Register {
@@ -382,4 +414,27 @@ model BizEvent {
 
   @@index([bizUserId])
   @@index([bizSessionId])
+}
+
+model RefreshToken {
+  /// Primary key
+  id          String   @id @default(cuid())
+  /// Token ID
+  jti         String   @unique
+  /// User
+  user        User     @relation(fields: [userId], references: [id])
+  /// User ID
+  userId      String
+  /// Hashed refresh token
+  hashedToken String
+  /// Whether the token has been revoked
+  revoked     Boolean  @default(false)
+  /// Expiration timestamp
+  expiresAt   DateTime @db.Timestamptz()
+  /// Create timestamp
+  createdAt   DateTime @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt   DateTime @updatedAt @db.Timestamptz()
+
+  @@index([userId])
 }

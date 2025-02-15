@@ -20,13 +20,6 @@ const config: Config = {
     schemaDestination: './src/schema.graphql',
     sortSchema: true,
   },
-  security: {
-    expiresIn: '7d',
-    refreshIn: '7d',
-    bcryptSaltOrRound: 10,
-    jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
-    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
-  },
   database: {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT ? Number.parseInt(process.env.DB_PORT) : 5432,
@@ -61,17 +54,29 @@ const config: Config = {
     },
   },
   auth: {
+    cookieDomain: process.env.USERTOUR_COOKIE_DOMAIN || 'localhost',
+    redirectUrl: process.env.LOGIN_REDIRECT_URL,
+    email: {
+      enabled: process.env.EMAIL_AUTH_ENABLED === 'true' || true,
+      sender: process.env.EMAIL_SENDER || 'UserTour <support@usertour.io>',
+      resendApiKey: process.env.RESEND_API_KEY,
+    },
+    jwt: {
+      secret: process.env.JWT_SECRET || 'test',
+      expiresIn: process.env.JWT_EXPIRATION_TIME || '1h',
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME || '7d',
+    },
     github: {
-      enabled: process.env.GITHUB_AUTH_ENABLED === 'true',
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackUrl: process.env.GITHUB_CALLBACK_URL,
+      enabled: process.env.GITHUB_AUTH_ENABLED === 'true' || false,
+      clientId: process.env.GITHUB_CLIENT_ID || 'test',
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || 'test',
+      callbackUrl: process.env.GITHUB_CALLBACK_URL || 'test',
     },
     google: {
-      enabled: process.env.GOOGLE_AUTH_ENABLED === 'true',
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+      enabled: process.env.GOOGLE_AUTH_ENABLED === 'true' || false,
+      clientId: process.env.GOOGLE_CLIENT_ID || 'test',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'test',
+      callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'test',
     },
   },
 };

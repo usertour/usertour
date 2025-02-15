@@ -8,6 +8,9 @@ import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { PasswordService } from './password.service';
+import { AuthController } from './auth.controller';
+import { GithubOauthStrategy } from './strategy/github-oauth.strategy';
+import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
 
 @Module({
   imports: [
@@ -15,9 +18,9 @@ import { PasswordService } from './password.service';
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => {
         return {
-          secret: configService.get('security.jwtAccessSecret'),
+          secret: configService.get('auth.jwt.secret'),
           signOptions: {
-            expiresIn: configService.get('security.expiresIn'),
+            expiresIn: configService.get('auth.jwt.expiresIn'),
           },
         };
       },
@@ -30,10 +33,13 @@ import { PasswordService } from './password.service';
     JwtStrategy,
     GqlAuthGuard,
     PasswordService,
+    GithubOauthStrategy,
+    GoogleOauthStrategy,
     {
       provide: APP_GUARD,
       useClass: GqlAuthGuard,
     },
   ],
+  controllers: [AuthController],
 })
 export class AuthModule {}

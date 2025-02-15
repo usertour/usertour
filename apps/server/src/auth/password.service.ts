@@ -1,22 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { compare, hash } from 'bcryptjs';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class PasswordService {
-  get bcryptSaltRounds(): string | number {
-    const saltOrRounds = this.configService.get('security.bcryptSaltOrRound');
-
-    return Number.isInteger(Number(saltOrRounds)) ? Number(saltOrRounds) : saltOrRounds;
-  }
-
-  constructor(private configService: ConfigService) {}
-
   validatePassword(password: string, hashedPassword: string): Promise<boolean> {
-    return compare(password, hashedPassword);
+    return argon2.verify(hashedPassword, password);
   }
 
   hashPassword(password: string): Promise<string> {
-    return hash(password, this.bcryptSaltRounds);
+    return argon2.hash(password);
   }
 }

@@ -12,22 +12,20 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
-import { removeAuthToken } from '@usertour-ui/shared-utils';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';
 import { useNavigate } from 'react-router-dom';
 import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
-  const { userInfo: user, setUserInfo } = useAppContext();
+  const { userInfo: user, handleLogout } = useAppContext();
   const { project } = useAppContext();
   const posthog = usePostHog();
 
   const navigate = useNavigate();
 
-  const logoutHandler = () => {
-    removeAuthToken();
-    setUserInfo(null);
+  const logoutHandler = async () => {
+    await handleLogout();
     posthog?.capture('clicked_log_in');
     return navigate('/auth/signin');
   };
