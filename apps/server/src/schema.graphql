@@ -69,6 +69,10 @@ type Auth {
   user: User!
 }
 
+type AuthConfigItem {
+  provider: String!
+}
+
 input BizCompanyOnSegmentInput {
   bizCompanyId: String!
   data: JSON
@@ -566,6 +570,7 @@ type Project {
 
 type Query {
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
+  getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
   getTheme(themeId: String!): Theme!

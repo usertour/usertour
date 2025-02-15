@@ -22,9 +22,10 @@ import { PasswordService } from './password.service';
 import { Profile } from 'passport-google-oauth20';
 import { CookieOptions, Response } from 'express';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
-import { AuthConfigItem, TokenData } from './dto/auth.dto';
+import { TokenData } from './dto/auth.dto';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
+import { AuthConfigItem } from './models/auth.model';
 
 @Injectable()
 export class AuthService {
