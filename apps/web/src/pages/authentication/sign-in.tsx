@@ -84,15 +84,17 @@ export const SignIn = () => {
     window.location.href = `${apiUrl}/api/auth/${provider}`;
   };
 
-  const isEmailAuthEnabled = data?.getAuthConfig.some(
-    (item: AuthConfigItem) => item.provider === 'email',
-  );
-  const isGithubAuthEnabled = data?.getAuthConfig.some(
-    (item: AuthConfigItem) => item.provider === 'github',
-  );
-  const isGoogleAuthEnabled = data?.getAuthConfig.some(
-    (item: AuthConfigItem) => item.provider === 'google',
-  );
+  // Show all auth options by default when config is loading
+  // Only disable if explicitly set to false in config
+  const isEmailAuthEnabled =
+    !data?.getAuthConfig ||
+    data.getAuthConfig.some((item: AuthConfigItem) => item.provider === 'email');
+  const isGithubAuthEnabled =
+    !data?.getAuthConfig ||
+    data.getAuthConfig.some((item: AuthConfigItem) => item.provider === 'github');
+  const isGoogleAuthEnabled =
+    !data?.getAuthConfig ||
+    data.getAuthConfig.some((item: AuthConfigItem) => item.provider === 'google');
 
   return (
     <Form {...form}>
