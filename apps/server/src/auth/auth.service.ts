@@ -17,7 +17,6 @@ import { PrismaService } from 'nestjs-prisma';
 import { createTransport } from 'nodemailer';
 import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
-import { Token } from './models/token.model';
 import { PasswordService } from './password.service';
 import { Profile } from 'passport-google-oauth20';
 import { CookieOptions, Response } from 'express';
@@ -306,7 +305,7 @@ export class AuthService {
     }
   }
 
-  async signup(payload: SignupInput): Promise<Token> {
+  async signup(payload: SignupInput): Promise<TokenData> {
     const { code, userName, companyName, password } = payload;
     const register = await this.prisma.register.findFirst({
       where: { code },

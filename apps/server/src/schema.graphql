@@ -63,6 +63,7 @@ type AttributeOnEvent {
 type Auth {
   """JWT access token"""
   accessToken: JWT!
+  redirectUrl: String
 
   """JWT refresh token"""
   refreshToken: JWT!

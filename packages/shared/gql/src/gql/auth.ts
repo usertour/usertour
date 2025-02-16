@@ -29,6 +29,7 @@ export const login = gql`
     login(data: { email: $email, password: $password }) {
       accessToken
       refreshToken
+      redirectUrl
       user {
         id
         email
@@ -62,6 +63,7 @@ export const signUp = gql`
     ) {
       accessToken
       refreshToken
+      redirectUrl
       user {
         id
         email
