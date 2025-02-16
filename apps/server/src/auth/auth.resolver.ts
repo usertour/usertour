@@ -52,11 +52,13 @@ export class AuthResolver {
 
   @Mutation(() => Auth)
   @Public()
-  async signup(@Args('data') data: SignupInput) {
-    const { accessToken, refreshToken } = await this.auth.signup(data);
+  async signup(@Args('data') data: SignupInput, @Context() context: { res: Response }) {
+    const tokens = await this.auth.signup(data);
+    this.auth.setAuthCookie(context.res, tokens);
+
     return {
-      accessToken,
-      refreshToken,
+      ...tokens,
+      redirectUrl: this.configService.get('auth.redirectUrl'),
     };
   }
 
@@ -73,6 +75,7 @@ export class AuthResolver {
 
     return {
       ...tokens,
+      redirectUrl: this.configService.get('auth.redirectUrl'),
     };
   }
 

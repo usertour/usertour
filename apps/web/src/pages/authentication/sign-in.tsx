@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
 import { getAuthConfig, login } from '@usertour-ui/gql';
-import { getErrorMessage, setAuthToken } from '@usertour-ui/shared-utils';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -63,9 +63,12 @@ export const SignIn = () => {
     try {
       setIsLoading(true);
       const ret = await loginMutation({ variables: data });
+      if (ret.data.login.redirectUrl) {
+        window.location.href = ret.data.login.redirectUrl;
+      }
+      // setAuthToken(ret.data.login.accessToken, -1);
+      // window.location.href = '/env/1/flows';
       setIsLoading(false);
-      setAuthToken(ret.data.login.accessToken, -1);
-      window.location.href = '/env/1/flows';
     } catch (error) {
       showError(getErrorMessage(error));
       setIsLoading(false);

@@ -4,7 +4,7 @@ import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
 import { signUp } from '@usertour-ui/gql';
-import { getErrorMessage, setAuthToken } from '@usertour-ui/shared-utils';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { useToast } from '@usertour-ui/use-toast';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -21,7 +21,7 @@ import {
 } from '@usertour-ui/card';
 import { Checkbox } from '@usertour-ui/checkbox';
 import { Input } from '@usertour-ui/input';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 const registFormSchema = z.object({
   userName: z
@@ -56,7 +56,6 @@ const defaultValues: Partial<RegistFormValues> = {
 
 export const Registration = () => {
   const [signUpMutation] = useMutation(signUp);
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { registId } = useParams();
 
@@ -83,10 +82,13 @@ export const Registration = () => {
       const { data } = await signUpMutation({
         variables: { ...others, code: registId },
       });
-      if (data.signup.accessToken) {
-        setAuthToken(data.signup.accessToken, -1);
-        navigate('/env/1/flows');
+      if (data.signup.redirectUrl) {
+        window.location.href = data.signup.redirectUrl;
       }
+      // if (data.signup.accessToken) {
+      //   setAuthToken(data.signup.accessToken, -1);
+      //   navigate('/env/1/flows');
+      // }
     } catch (error) {
       showError(getErrorMessage(error));
     }

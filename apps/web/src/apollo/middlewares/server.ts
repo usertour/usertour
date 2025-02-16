@@ -4,16 +4,16 @@ import { setContext } from '@apollo/client/link/context';
 /**
  * This file setup the connection to a graphql server
  */
-import { getAuthToken } from '@usertour-ui/shared-utils';
+// import { getAuthToken } from '@usertour-ui/shared-utils';
 
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
-  const token = getAuthToken();
+  // const token = getAuthToken();
   // return the headers to the context so httpLink can read them
   return {
     headers: {
       ...headers,
-      Authorization: token ? `Bearer ${token}` : '',
+      // Authorization: token ? `Bearer ${token}` : '',
     },
   };
 });

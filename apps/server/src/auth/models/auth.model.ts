@@ -4,6 +4,9 @@ import { Token } from './token.model';
 
 @ObjectType()
 export class Auth extends Token {
+  @Field(() => String, { nullable: true })
+  redirectUrl?: string;
+
   @Field(() => User)
   user: User;
 }
