@@ -116,6 +116,6 @@ If you have any questions, feel free to reach out to us. One of the best places 
 
 To protect your privacy, please avoid posting security-related issues on GitHub. Instead, send your questions to [support@usertour.io](mailto:support@usertour.io), and we will provide you with a more detailed response.
 
-## License
+## License 
 
 Usertour is open-source under the GNU Affero General Public License v3.0 (AGPL-3.0), you will find more information about the license and how to comply with it [here](./LICENSE)
