@@ -59,7 +59,7 @@ export const AdminEnvSwitcher = () => {
           >
             <Avatar className="h-8 w-8">
               {/* <AvatarImage src="https://avatar.vercel.sh/monsters.png" alt={environment?.name} /> */}
-              <AvatarFallback className="bg-slate-400 text-background">
+              <AvatarFallback className="bg-blue-800 text-background">
                 {/* Get first two characters of environment name if available */}
 
                 {environment?.name?.slice(0, 2)}
