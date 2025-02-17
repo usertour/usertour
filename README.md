@@ -27,7 +27,6 @@
 ## Quick Start
 
 ### Self-deploy with Docker
-
 Deploy your own feature-rich, unlimited version of Usertour using Docker.
 
 To start deployment:
@@ -39,9 +38,10 @@ docker compose up -d
 
 Visit http://localhost:8011 to start using Usertour.
 
-### Local Development
-
 View details in [Self-hosting](https://www.usertour.io/docs/open-source/self-hosting/).
+
+### Local Development
+View details in [CONTRIBUTING](./CONTRIBUTING.md).
 
 ## Features
 
