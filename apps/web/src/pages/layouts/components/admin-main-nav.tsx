@@ -117,7 +117,7 @@ export const AdminMainNewNav = ({ className, ...props }: React.HTMLAttributes<HT
 
   return (
     <div className="pt-5 pb-3 px-2 items-center flex flex-col min-h-screen flex-shrink-0">
-      <AdminEnvSwitcher className="inline-flex main-transition items-center justify-center whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border dark:hover:border-dark-accent hover:shadow hover:border-input hover:bg-background !text-foreground hover:!text-foreground dark:!text-foreground dark:hover:!text-dark-accent-foreground h-9 w-9 p-0 relative unstyled-button border-transparent shadow-none bg-transparent dark:shadow-none dark:bg-transparent dark:hover:bg-secondary" />
+      <AdminEnvSwitcher />
 
       <div className="flex flex-col justify-between gap-3 h-full">
         <div className="flex flex-col gap-3 mt-6">
