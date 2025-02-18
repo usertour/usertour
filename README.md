@@ -53,7 +53,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 📄 **Supports multi-page apps**: Whether it's a single-page application or spans across multiple pages, Usertour fits perfectly.
 - 🎯 **Advanced user targeting**: Define custom user attributes and track events to segment and engage your audience effectively.
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/831c6790-7cde-4820-9408-fa781a8ba887" width="100%" />
+  <video src="https://github.com/user-attachments/assets/24d87d35-8238-463e-8be9-eac659ba818a" width="100%" />
 </p>
 
 ### Built for professional workflows with version control and environments
