@@ -8,7 +8,7 @@ let client: ApolloClient<any>;
 const defaultOptions: DefaultOptions = {
   watchQuery: {
     fetchPolicy: 'no-cache',
-    errorPolicy: 'ignore',
+    errorPolicy: 'all',
   },
   query: {
     fetchPolicy: 'no-cache',

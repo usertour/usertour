@@ -1,4 +1,5 @@
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator';
+import { AuthenticationExpiredError } from '@/common/errors';
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
@@ -13,7 +14,16 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
     const ctx = GqlExecutionContext.create(context);
     return ctx.getContext().req;
   }
-  canActivate(context: ExecutionContext) {
+  // Override handleRequest to catch Passport errors
+  handleRequest(err: any, user: any) {
+    // Check for authentication errors
+    if (err || !user) {
+      throw new AuthenticationExpiredError();
+    }
+
+    return user;
+  }
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -21,6 +31,6 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
-    return super.canActivate(context);
+    return (await super.canActivate(context)) as boolean;
   }
 }
