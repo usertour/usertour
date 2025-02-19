@@ -1,6 +1,7 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateProjectInput } from './dto/createProject.input';
+import { ParamsError } from '@/common/errors';
 
 @Injectable()
 export class ProjectsService {
@@ -10,7 +11,7 @@ export class ProjectsService {
     const projects = await this.prisma.user.findUnique({ where: { id: userId } }).projects();
     // const hasProject = projects.some((pro) => pro.userId == userId);
     if (projects.length > 0) {
-      throw new ConflictException('The user already create project.');
+      throw new ParamsError();
     }
     return this.prisma.project.create({
       data: {

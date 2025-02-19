@@ -1,14 +1,7 @@
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { initialization, initializationThemes } from '@/common/initialization/initialization';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -25,6 +18,15 @@ import { TokenData } from './dto/auth.dto';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
 import { AuthConfigItem } from './models/auth.model';
+import {
+  AccountNotFoundError,
+  AuthenticationExpiredError,
+  EmailAlreadyRegistered,
+  InvalidVerificationSession,
+  OAuthError,
+  PasswordIncorrect,
+  UnknownError,
+} from '@/common/errors';
 
 @Injectable()
 export class AuthService {
@@ -136,7 +138,7 @@ export class AuthService {
     // oauth profile returns no email, this is invalid
     if (emails?.length === 0) {
       this.logger.warn('emails is empty, invalid oauth');
-      throw new BadRequestException('emails is empty, invalid oauth');
+      throw new OAuthError();
     }
     const email = emails[0].value;
 
@@ -229,7 +231,7 @@ export class AuthService {
       });
 
       if (!storedToken || storedToken.revoked || storedToken.expiresAt < new Date()) {
-        throw new UnauthorizedException('Refresh token is invalid or expired');
+        throw new AuthenticationExpiredError();
       }
 
       // Revoke the current refresh token (one-time use)
@@ -241,7 +243,7 @@ export class AuthService {
       // Generate new tokens
       return this.login(payload.userId);
     } catch (_) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new AuthenticationExpiredError();
     }
   }
 
@@ -272,10 +274,7 @@ export class AuthService {
   async createMagicLink(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
-      throw new ConflictException({
-        code: '10001',
-        msg: `The email ${email} is registed`,
-      });
+      throw new EmailAlreadyRegistered();
     }
 
     try {
@@ -286,22 +285,21 @@ export class AuthService {
       });
       await this.sendMagicLinkEmail(result.code, email);
       return result;
-    } catch (e) {
-      console.log(e);
-      throw new BadRequestException('Failed to create margin link!!', e);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
   async resendMargicLink(id: string) {
     const data = await this.prisma.register.findUnique({ where: { id } });
     if (!data) {
-      throw new BadRequestException('Bad margic link id!');
+      throw new InvalidVerificationSession();
     }
     try {
       await this.sendMagicLinkEmail(data.code, data.email);
       return data;
     } catch (_) {
-      throw new BadRequestException('Failed to create margin link!!');
+      throw new UnknownError();
     }
   }
 
@@ -311,7 +309,7 @@ export class AuthService {
       where: { code },
     });
     if (!register) {
-      throw new BadRequestException(`The code ${code} is not exist!`);
+      throw new InvalidVerificationSession();
     }
     const hashedPassword = await this.passwordService.hashPassword(password);
 
@@ -326,11 +324,10 @@ export class AuthService {
       this.logger.log(`User ${user.id} created`);
       return this.login(user.id);
     } catch (e) {
-      console.log(e);
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-        throw new ConflictException(`Email ${register.email} already used.`);
+        throw new EmailAlreadyRegistered();
       }
-      throw new Error(e);
+      throw new UnknownError();
     }
   }
 
@@ -341,7 +338,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException(`No user found for email: ${email}`);
+      throw new AccountNotFoundError();
     }
 
     if (user.projects.length === 0) {
@@ -366,7 +363,7 @@ export class AuthService {
     const passwordValid = await this.passwordService.validatePassword(password, hashedPassword);
 
     if (!passwordValid) {
-      throw new BadRequestException('Invalid password');
+      throw new PasswordIncorrect();
     }
 
     return this.login(user.id);
@@ -375,10 +372,7 @@ export class AuthService {
   async resetUserPassword(email: string): Promise<Common> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new ConflictException({
-        code: '10002',
-        msg: `The email ${email} is not registed`,
-      });
+      throw new AccountNotFoundError();
     }
 
     try {
@@ -389,28 +383,22 @@ export class AuthService {
       });
       await this.sendResetPasswordEmail(result.id, email, user.name);
       return { success: true };
-    } catch (e) {
-      throw new BadRequestException('Failed to resete password!!', e);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
   async resetUserPasswordByCode(code: string, password: string): Promise<Common> {
     const data = await this.prisma.code.findUnique({ where: { id: code } });
     if (!data) {
-      throw new ConflictException({
-        code: '10003',
-        msg: 'The not is invalid',
-      });
+      throw new InvalidVerificationSession();
     }
 
     const user = await this.prisma.user.findUnique({
       where: { id: data.userId },
     });
     if (!user) {
-      throw new ConflictException({
-        code: '10003',
-        msg: 'The user is empay',
-      });
+      throw new AccountNotFoundError();
     }
 
     try {
@@ -422,8 +410,8 @@ export class AuthService {
         where: { id: user.id },
       });
       return { success: true };
-    } catch (e) {
-      throw new BadRequestException('Failed to resete password!!', e);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 

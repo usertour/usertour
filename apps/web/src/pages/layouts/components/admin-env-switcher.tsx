@@ -19,11 +19,7 @@ import { cn } from '@usertour-ui/ui-utils';
 import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>;
-
-interface EnvSwitcherProps extends PopoverTriggerProps {}
-
-export const AdminEnvSwitcher = ({ className }: EnvSwitcherProps) => {
+export const AdminEnvSwitcher = () => {
   const [open, setOpen] = React.useState(false);
   const [showNewEnvDialog, setShowNewEnvDialog] = React.useState(false);
   const navigate = useNavigate();
@@ -58,14 +54,16 @@ export const AdminEnvSwitcher = ({ className }: EnvSwitcherProps) => {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
-            aria-expanded={open}
-            aria-label="Select a team"
-            className={cn(className)}
+            variant="ghost"
+            className="flex p-0 text-sm rounded-full shadow-none dark:bg-transparent ring-transparent hover:bg-transparent focus:ring-0"
           >
-            <Avatar className="h-5 w-5">
-              <AvatarImage src="https://avatar.vercel.sh/monsters.png" alt={environment?.name} />
-              <AvatarFallback>SC</AvatarFallback>
+            <Avatar className="h-8 w-8">
+              {/* <AvatarImage src="https://avatar.vercel.sh/monsters.png" alt={environment?.name} /> */}
+              <AvatarFallback className="bg-blue-800 text-background">
+                {/* Get first two characters of environment name if available */}
+
+                {environment?.name?.slice(0, 2)}
+              </AvatarFallback>
             </Avatar>
             {/* {environment?.name} */}
             {/* <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" /> */}

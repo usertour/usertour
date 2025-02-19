@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { ContentStepsInput } from './dto/content-steps.input';
 import { UpdateContentInput } from './dto/content-update.input';
@@ -6,6 +6,7 @@ import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
+import { ParamsError, UnknownError } from '@/common/errors';
 
 @Injectable()
 export class ContentsService {
@@ -39,9 +40,8 @@ export class ContentsService {
         });
         return await tx.content.findUnique({ where: { id: content.id } });
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Create content failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -61,7 +61,7 @@ export class ContentsService {
       versionId !== content.editedVersionId ||
       content.publishedVersionId === versionId
     ) {
-      throw new BadRequestException('The request is invalid!');
+      throw new ParamsError();
     }
 
     try {
@@ -98,9 +98,8 @@ export class ContentsService {
           data: { themeId },
         });
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Create step failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -111,7 +110,7 @@ export class ContentsService {
     });
     const content = await this.getContent(version.contentId);
     if (!content || content.publishedVersionId === version.id) {
-      throw new BadRequestException('The data is invalid!');
+      throw new ParamsError();
     }
 
     try {
@@ -147,9 +146,8 @@ export class ContentsService {
           data: { ...data, versionId },
         });
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Create step failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -157,7 +155,7 @@ export class ContentsService {
     const version = await this.prisma.step.findUnique({ where: { id: stepId } }).version();
     const content = await this.getContent(version.contentId);
     if (!content || content.publishedVersionId === version.id) {
-      throw new BadRequestException('The data is invalid!');
+      throw new ParamsError();
     }
     return await this.prisma.step.update({
       where: { id: stepId },
@@ -215,9 +213,8 @@ export class ContentsService {
         });
         return version;
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Create content failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -229,7 +226,7 @@ export class ContentsService {
       where: { id: { in: stepIds }, versionId },
     });
     if (steps.length !== stepIds.length) {
-      throw new BadRequestException('The stepsIds is invalid');
+      throw new ParamsError();
     }
 
     try {
@@ -254,9 +251,8 @@ export class ContentsService {
           }
         }
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Update step sequence failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -322,7 +318,7 @@ export class ContentsService {
       where: { id: contentId },
     });
     if (!duplicateContent || duplicateContent.deleted) {
-      throw new BadRequestException('Invalid content!');
+      throw new ParamsError();
     }
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -359,9 +355,8 @@ export class ContentsService {
         });
         return content;
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Create content failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -402,9 +397,8 @@ export class ContentsService {
         });
         return version;
       });
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Create content failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -431,7 +425,7 @@ export class ContentsService {
       where: { id: versionId },
     });
     if (!version) {
-      throw new BadRequestException('The version does not exist');
+      throw new ParamsError();
     }
     const contentItem = await this.prisma.content.findUnique({
       where: { id: version.contentId },
@@ -440,7 +434,7 @@ export class ContentsService {
       contentItem.editedVersionId !== versionId ||
       (contentItem.published && contentItem.publishedVersionId === version.id)
     ) {
-      throw new BadRequestException('The version has been published');
+      throw new ParamsError();
     }
 
     return true;
@@ -485,13 +479,13 @@ export class ContentsService {
   async upsertVersionLocationData(input: VersionUpdateLocalizationInput) {
     const { versionId, localizationId, localized, backup, enabled } = input;
     if (!(await this.contentVersionIsEditable(versionId))) {
-      throw new BadRequestException('The request is invalid!');
+      throw new ParamsError();
     }
     const relation = await this.prisma.versionOnLocalization.findFirst({
       where: { versionId, localizationId },
     });
     if (!relation) {
-      throw new BadRequestException('The request is invalid!');
+      throw new ParamsError();
     }
     return await this.prisma.versionOnLocalization.update({
       where: { id: relation.id },

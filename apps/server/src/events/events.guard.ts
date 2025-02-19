@@ -1,10 +1,11 @@
-import { BadRequestException, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
 import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { ProjectsService } from '@/projects/projects.service';
 import { EventsService } from './events.service';
+import { NoPermissionError } from '@/common/errors';
 
 export class EventsGuard implements CanActivate {
   private readonly reflector: Reflector;
@@ -34,14 +35,14 @@ export class EventsGuard implements CanActivate {
     if (eventId) {
       const data = await this.eventsService.get(eventId);
       if (!data || (projectId && data && projectId !== data.projectId)) {
-        throw new BadRequestException('Please make sure you have permission to access this event');
+        throw new NoPermissionError();
       }
       projectId = data.projectId;
     }
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {
-      throw new BadRequestException('Please make sure you have permission to access this event');
+      throw new NoPermissionError();
     }
 
     return true;

@@ -5,7 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filter';
+// import { AllExceptionsFilter } from './common/filter';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -21,7 +21,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // Catch all exceptions
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // app.useGlobalFilters(new AllExceptionsFilter());
 
   // Validation
   app.useGlobalPipes(new ValidationPipe());

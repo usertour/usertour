@@ -1,9 +1,10 @@
-import { isArray, isValid } from '@/utils/helper';
-import { ApolloDriverConfig, UserInputError } from '@nestjs/apollo';
-import { Injectable, Logger } from '@nestjs/common';
+import { ApolloDriverConfig } from '@nestjs/apollo';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
-import { ValidationError } from 'class-validator';
+import { STATUS_CODES } from 'node:http';
+import { GraphQLError } from 'graphql';
+import { BaseError } from './common/errors';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -22,41 +23,26 @@ export class GqlConfigService implements GqlOptionsFactory {
       installSubscriptionHandlers: true,
       includeStacktraceInErrorResponses: graphqlConfig.debug,
       playground: graphqlConfig.playgroundEnabled,
-      formatError: (e) => {
-        this.logger.error(e);
-        if (e instanceof ValidationError || e instanceof UserInputError) {
+      formatError: (formattedError, error) => {
+        // @ts-expect-error allow assign
+        formattedError.extensions ??= {};
+        // Debug log
+        // Handle BaseError instances
+        if (error instanceof GraphQLError && error.originalError instanceof BaseError) {
           return {
-            code: e.extensions.code,
-            message: e.message,
+            message: error.originalError.getMessage('en'),
+            extensions: {
+              code: error.originalError.code,
+            },
           };
         }
 
-        //@ts-ignore
-        const response = e.extensions.exception?.response;
-        let code = e.extensions.code;
-        let message = e.message as string;
-
-        if (isValid(response)) {
-          if (isValid(response.code)) {
-            code = response.code;
-          } else if (isValid(response.error)) {
-            code = response.error.replace(/\s+/g, '_').toUpperCase();
-          }
-
-          if (isValid(response.message)) {
-            message = isArray(response.message) ? response.message[0] : response.message;
-          }
-        }
-
-        //@ts-ignore
-        e.extensions.exception.response = undefined;
-
         return {
-          code,
-          message: e.message,
-          //@ts-ignore
-          ...e.extensions.exception,
-          ...{ message },
+          message: 'Internal Server Error',
+          extensions: {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            code: STATUS_CODES[HttpStatus.INTERNAL_SERVER_ERROR],
+          },
         };
       },
       context: ({ req, res }) => ({ req, res }),
