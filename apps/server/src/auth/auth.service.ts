@@ -323,8 +323,11 @@ export class AuthService {
       });
       this.logger.log(`User ${user.id} created`);
       return this.login(user.id);
-    } catch (_) {
-      throw new EmailAlreadyRegistered();
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new EmailAlreadyRegistered();
+      }
+      throw new UnknownError();
     }
   }
 
