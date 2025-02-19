@@ -1,4 +1,4 @@
-import { BadRequestException, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
@@ -7,6 +7,7 @@ import { ContentsService } from '@/contents/contents.service';
 import { EnvironmentsService } from '@/environments/environments.service';
 import { LocalizationsService } from '@/localizations/localizations.service';
 import { ProjectsService } from '@/projects/projects.service';
+import { NoPermissionError } from '@/common/errors';
 
 export class ContentsGuard implements CanActivate {
   private readonly reflector: Reflector;
@@ -49,7 +50,7 @@ export class ContentsGuard implements CanActivate {
       const content = await this.contentsService.getContent(contentId);
       if (content) {
         if (environmentId && environmentId !== content.environmentId) {
-          throw new BadRequestException('The request is invalid!');
+          throw new NoPermissionError();
         }
         environmentId = content.environmentId;
       }
@@ -58,7 +59,7 @@ export class ContentsGuard implements CanActivate {
       const version = await this.contentsService.getContentVersion(versionId);
       if (version?.content) {
         if (environmentId && environmentId !== version.content.environmentId) {
-          throw new BadRequestException('The request is invalid!');
+          throw new NoPermissionError();
         }
         environmentId = version.content.environmentId;
       }
@@ -67,18 +68,18 @@ export class ContentsGuard implements CanActivate {
       const stepContent = await this.contentsService.getContentByStepId(stepId);
       if (stepContent) {
         if (environmentId && environmentId !== stepContent.environmentId) {
-          throw new BadRequestException('The request is invalid!');
+          throw new NoPermissionError();
         }
         environmentId = stepContent.environmentId;
       }
     }
 
     if (!environmentId) {
-      throw new BadRequestException('Please make sure you have permission to access this project');
+      throw new NoPermissionError();
     }
     const environment = await this.environmentsService.get(environmentId);
     if (!environment) {
-      throw new BadRequestException('Please make sure you have permission to access this project');
+      throw new NoPermissionError();
     }
     const projectId = environment.projectId;
 
@@ -86,14 +87,14 @@ export class ContentsGuard implements CanActivate {
       const localization = await this.localizationsService.get(localizationId);
       if (localization) {
         if (projectId && projectId !== localization.projectId) {
-          throw new BadRequestException('The request is invalid!');
+          throw new NoPermissionError();
         }
       }
     }
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {
-      throw new BadRequestException('Please make sure you have permission to access this project');
+      throw new NoPermissionError();
     }
 
     return true;

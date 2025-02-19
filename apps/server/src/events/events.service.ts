@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
 import { CreateEventInput, UpdateEventInput } from './dto/events.input';
+import { ParamsError, UnknownError } from '@/common/errors';
 
 @Injectable()
 export class EventsService {
@@ -19,7 +20,7 @@ export class EventsService {
         });
 
         if (!createEvent || !createEvent.id) {
-          throw new BadRequestException('Failed to create event or get event ID');
+          throw new ParamsError();
         }
 
         const eventId = createEvent.id;
@@ -33,13 +34,13 @@ export class EventsService {
         });
 
         if (!createAttributeOnEvent) {
-          throw new BadRequestException('Failed to create attributes for event');
+          throw new ParamsError();
         }
 
         return createEvent;
       });
     } catch (_) {
-      throw new BadRequestException('Failed to create event');
+      throw new UnknownError();
     }
   }
 

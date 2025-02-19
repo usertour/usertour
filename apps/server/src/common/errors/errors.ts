@@ -112,6 +112,14 @@ export class UnsupportedFileTypeError extends BaseError {
   };
 }
 
+export class NoPermissionError extends BaseError {
+  code = 'E0013';
+  messageDict = {
+    en: 'You do not have permission to access this project',
+    'zh-CN': '您没有权限访问该项目',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -126,6 +134,7 @@ const errorMap = {
   E0010: OperationTooFrequent,
   E0011: AuthenticationExpiredError,
   E0012: UnsupportedFileTypeError,
+  E0013: NoPermissionError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

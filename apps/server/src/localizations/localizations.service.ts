@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateLocalizationInput, UpdateLocalizationInput } from './dto/localization.input';
+import { ParamsError } from '@/common/errors';
 
 @Injectable()
 export class LocalizationsService {
@@ -15,7 +16,7 @@ export class LocalizationsService {
   async setDefault(id: string) {
     const item = await this.prisma.localization.findFirst({ where: { id } });
     if (!item) {
-      throw new BadRequestException('Localization is not exist!');
+      throw new ParamsError();
     }
     await this.prisma.localization.updateMany({
       where: { isDefault: true, projectId: item.projectId },
@@ -38,7 +39,7 @@ export class LocalizationsService {
   async delete(id: string) {
     const item = await this.prisma.localization.findUnique({ where: { id } });
     if (!item || item.isDefault) {
-      throw new BadRequestException('Invalid request!');
+      throw new ParamsError();
     }
     return await this.prisma.localization.delete({
       where: { id },

@@ -1,4 +1,4 @@
-import { BadRequestException, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
@@ -6,6 +6,7 @@ import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { ContentsService } from '@/contents/contents.service';
 import { EnvironmentsService } from '@/environments/environments.service';
 import { ProjectsService } from '@/projects/projects.service';
+import { NoPermissionError } from '@/common/errors';
 
 export class AnalyticsGuard implements CanActivate {
   private readonly reflector: Reflector;
@@ -42,17 +43,17 @@ export class AnalyticsGuard implements CanActivate {
       }
     }
     if (!environmentId) {
-      throw new BadRequestException('Please make sure you have permission to access this project');
+      throw new NoPermissionError();
     }
     const environment = await this.environmentsService.get(environmentId);
     if (!environment) {
-      throw new BadRequestException('Please make sure you have permission to access this project');
+      throw new NoPermissionError();
     }
     const projectId = environment.projectId;
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {
-      throw new BadRequestException('Please make sure you have permission to access this project');
+      throw new NoPermissionError();
     }
 
     return true;

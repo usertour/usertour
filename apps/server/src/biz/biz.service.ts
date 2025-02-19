@@ -4,7 +4,7 @@ import { createConditionsFilter } from '@/common/attribute/filter';
 import { BizAttributeTypes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
@@ -19,6 +19,7 @@ import {
   UpdateSegment,
 } from './dto/segment.input';
 import { Segment, SegmentDataType } from './models/segment.model';
+import { ParamsError, UnknownError } from '@/common/errors';
 
 @Injectable()
 export class BizService {
@@ -223,9 +224,8 @@ export class BizService {
         deleteCompaniesOnSegment,
         deleteSegment,
       ]);
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('deleteBizUser failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 
@@ -238,11 +238,11 @@ export class BizService {
 
   async createBizUserOnSegment(data: BizUserOnSegmentInput[]) {
     if (!data.every((item) => item.segmentId === data[0].segmentId)) {
-      throw new BadRequestException('Invalid data');
+      throw new ParamsError();
     }
     const segment = await this.getSegment(data[0].segmentId);
     if (!segment) {
-      throw new BadRequestException('Invalid data');
+      throw new ParamsError();
     }
     const inserts = data.filter(async (item) => {
       return await this.prisma.bizUser.findFirst({
@@ -253,7 +253,7 @@ export class BizService {
       });
     });
     if (inserts.length === 0) {
-      throw new BadRequestException('Invalid data');
+      throw new ParamsError();
     }
 
     return await this.prisma.bizUserOnSegment.createMany({
@@ -272,11 +272,11 @@ export class BizService {
 
   async createBizCompanyOnSegment(data: BizCompanyOnSegmentInput[]) {
     if (!data.every((item) => item.segmentId === data[0].segmentId)) {
-      throw new BadRequestException('Invalid data');
+      throw new ParamsError();
     }
     const segment = await this.getSegment(data[0].segmentId);
     if (!segment) {
-      throw new BadRequestException('Invalid data');
+      throw new ParamsError();
     }
     const inserts = data.filter(async (item) => {
       return await this.prisma.bizCompany.findFirst({
@@ -287,7 +287,7 @@ export class BizService {
       });
     });
     if (inserts.length === 0) {
-      throw new BadRequestException('Invalid data');
+      throw new ParamsError();
     }
     return await this.prisma.bizCompanyOnSegment.createMany({
       data: inserts,
@@ -313,7 +313,7 @@ export class BizService {
       });
       const deleteIds = bizUsers.map((bizUser) => bizUser.id);
       if (deleteIds.length === 0) {
-        throw new BadRequestException('Invalid bizUsers failed!');
+        throw new ParamsError();
       }
       const deleteUsersOnCompany = this.prisma.bizUserOnCompany.deleteMany({
         where: { bizUserId: { in: deleteIds } },
@@ -331,9 +331,8 @@ export class BizService {
         deleteUsersOnSegment,
         deleteUsers,
       ]);
-    } catch (err) {
-      console.log(err);
-      throw new BadRequestException('deleteBizUser failed!', err);
+    } catch (_) {
+      throw new UnknownError();
     }
   }
 

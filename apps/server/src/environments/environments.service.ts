@@ -1,7 +1,8 @@
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
+import { ParamsError } from '@/common/errors';
 
 @Injectable()
 export class EnvironmentsService {
@@ -36,7 +37,7 @@ export class EnvironmentsService {
       where: { id: input.id },
     });
     if (!env) {
-      throw new BadRequestException('Invalid ProjectId');
+      throw new ParamsError();
     }
     return await this.prisma.environment.update({
       where: { id: env.id },

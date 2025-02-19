@@ -1,10 +1,11 @@
 import { ThemesService } from '@/themes/themes.service';
-import { BadRequestException, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
 import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { ProjectsService } from '@/projects/projects.service';
+import { NoPermissionError } from '@/common/errors';
 
 export class ThemesGuard implements CanActivate {
   private readonly reflector: Reflector;
@@ -33,14 +34,14 @@ export class ThemesGuard implements CanActivate {
     if (themeId) {
       const theme = await this.themeService.getTheme(themeId);
       if (!theme || (projectId && theme && projectId !== theme.projectId)) {
-        throw new BadRequestException('Please make sure you have permission to access this theme');
+        throw new NoPermissionError();
       }
       projectId = theme.projectId;
     }
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {
-      throw new BadRequestException('Please make sure you have permission to access this theme');
+      throw new NoPermissionError();
     }
 
     return true;

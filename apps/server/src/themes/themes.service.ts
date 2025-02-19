@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CopyThemeInput, CreateThemeInput, UpdateThemeInput } from './dto/theme.input';
+import { ParamsError } from '@/common/errors';
 
 @Injectable()
 export class ThemesService {
@@ -25,7 +26,7 @@ export class ThemesService {
   async setDefaultTheme(themeId: string) {
     const theme = await this.prisma.theme.findFirst({ where: { id: themeId } });
     if (!theme) {
-      throw new BadRequestException('Theme is not exist!');
+      throw new ParamsError();
     }
     await this.unsetThemeDefault(theme.projectId);
     return await this.prisma.theme.update({
@@ -38,7 +39,7 @@ export class ThemesService {
     const { id, isDefault, ...others } = data;
     const theme = await this.prisma.theme.findFirst({ where: { id: data.id } });
     if (!theme || theme.isSystem) {
-      throw new BadRequestException('This is a standard theme, managed by Usertour!');
+      throw new ParamsError();
     }
     return await this.prisma.theme.update({
       where: { id },
@@ -55,7 +56,7 @@ export class ThemesService {
   async deleteTheme(id: string) {
     const theme = await this.prisma.theme.findFirst({ where: { id } });
     if (theme.isSystem) {
-      throw new BadRequestException('This is a standard theme, only custom themes can be deleted!');
+      throw new ParamsError();
     }
     return await this.prisma.theme.delete({
       where: { id },

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Res, BadRequestException } from '@nestjs/common';
+import { Controller, Get, UseGuards, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { GithubOauthGuard } from './guard/github-oauth.guard';
@@ -8,6 +8,7 @@ import { UserEntity } from '../common/decorators/user.decorator';
 import { Response } from 'express';
 import { Logger } from '@nestjs/common';
 import { User } from '@/users/models/user.model';
+import { OAuthError } from '@/common/errors';
 
 @Controller('api/auth')
 export class AuthController {
@@ -43,7 +44,7 @@ export class AuthController {
       this.auth.setAuthCookie(res, tokens).redirect(this.configService.get('auth.redirectUrl'));
     } catch (error) {
       this.logger.error('GitHub OAuth callback failed:', error.stack);
-      throw new BadRequestException('GitHub OAuth callback failed');
+      throw new OAuthError();
     }
   }
 
@@ -58,7 +59,7 @@ export class AuthController {
       this.auth.setAuthCookie(res, tokens).redirect(this.configService.get('auth.redirectUrl'));
     } catch (error) {
       this.logger.error('Google OAuth callback failed:', error.stack);
-      throw new BadRequestException('Google OAuth callback failed');
+      throw new OAuthError();
     }
   }
 }
