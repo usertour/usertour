@@ -26,7 +26,7 @@ export const AttributeListHeader = () => {
             <p>You can send user/company attributes via the Usertour.js</p>
             <p>
               <a
-                href="https://www.usertour.io/docs/developers/usertourjs-reference/overview/#attributes"
+                href="https://docs.usertour.io/developers/usertourjs-reference/overview/#attributes"
                 className="text-primary  "
                 target="_blank"
                 rel="noreferrer"

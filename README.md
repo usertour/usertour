@@ -11,7 +11,7 @@
 <a href="https://www.producthunt.com/posts/usertour?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-usertour" target="_blank">Support with Upvote ❤️<br/><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=839855&theme=light&t=1738576180129" alt="Usertour - open source user onboarding platform | Product Hunt" style="width: 250px; height: 60px;" width="250" height="60" /></a>
 </p>
 <p align="center">
-  <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://www.usertour.io/docs">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a> | <a target="_blank" href="https://discord.gg/WPVJPX8fJh">Discord</a>
+  <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://docs.usertour.io">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a> | <a target="_blank" href="https://discord.gg/WPVJPX8fJh">Discord</a>
 </p>
 <p align="center">
     <a href="https://www.usertour.io" target="_blank">
@@ -38,7 +38,7 @@ docker compose up -d
 
 Visit http://localhost:8011 to start using Usertour.
 
-View details in [Self-hosting](https://www.usertour.io/docs/open-source/self-hosting/).
+View details in [Self-hosting](https://docs.usertour.io/open-source/self-hosting/).
 
 ### Local Development
 View details in [CONTRIBUTING](./CONTRIBUTING.md).
@@ -88,7 +88,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - **Cloud**
   - We've deployed a Usertour Cloud version that allows zero-configuration usage, offering all capabilities of the self-hosted version. Visit [https://www.usertour.io/](https://www.usertour.io/) to get started.
 - **Self-hosting Usertour Community Edition**
-  - Get started quickly with our [Self-hosting Guide](https://www.usertour.io/docs/open-source/self-hosting/) to run Usertour in your environment. For more detailed references and in-depth instructions, please refer to our documentation.
+  - Get started quickly with our [Self-hosting Guide](https://docs.usertour.io/open-source/self-hosting/) to run Usertour in your environment. For more detailed references and in-depth instructions, please refer to our documentation.
 - **Usertour for enterprise / organizations**
   - Please contact us at [support@usertour.io](mailto:support@usertour.io) for private deployment solutions.
 
@@ -96,7 +96,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 
 | Bug Reports                                                                 | Feature Requests                                                     | Issues/Discussions                                                          | Usertour Community                                           |
 | --------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Create Bug Report](https://github.com/usertour/usertour/issues/new/choose) | [Submit Feature Request](https://github.com/usertour/usertour/pulls) | [View GitHub Discussions](https://github.com/usertour/usertour/discussions) | [Visit Usertour Community](https://www.usertour.io/docs/faq) |
+| [Create Bug Report](https://github.com/usertour/usertour/issues/new/choose) | [Submit Feature Request](https://github.com/usertour/usertour/pulls) | [View GitHub Discussions](https://github.com/usertour/usertour/discussions) | [Visit Usertour Community](https://docs.usertour.io/faq) |
 | Something isn't working as expected                                         | Ideas for new features or improvements                               | Discuss and raise questions                                                 | A place to ask questions, learn, and connect with others     |
 
 Calling all developers, testers, tech writers and more! Contributions of all types are more than welcome, please feel free to browse our [GitHub issues](https://github.com/usertour/usertour/issues) to show us what you can do.

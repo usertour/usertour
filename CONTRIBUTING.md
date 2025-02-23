@@ -143,6 +143,6 @@ And that's it! Once your PR is merged, you will be featured as a contributor in 
 If you ever get stuck or have questions while contributing, you can:
 
 - Join our [Discord](https://discord.gg/WPVJPX8fJh)
-- Check [Documentation](https://www.usertour.io/docs)
+- Check [Documentation](https://docs.usertour.io)
 - Ask in [GitHub Discussions](https://github.com/usertour/usertour/discussions)
 - Follow us on [Twitter](https://x.com/usertourio)

@@ -3,7 +3,8 @@ import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
 import { getUrlPatternError } from '@usertour-ui/shared-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
@@ -75,7 +76,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
     setOpenError(showError);
     setErrorInfo(errorInfo);
     updateConditionData(index, updates);
-  }, [filterExcludesValues, filterIncludesValues, open]);
+  }, [filterExcludesValues, filterIncludesValues, open, index, updateConditionData]);
 
   return (
     <RulesError open={openError}>
@@ -116,41 +117,44 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                         </TooltipProvider>
                       </div>
                     </div>
-                    {includesValues.map((value, index) => (
-                      <div className="flex flex-row" key={index}>
-                        <div className="grow">
-                          <Input
-                            type="text"
-                            className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
-                            defaultValue={value}
-                            placeholder={''}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                              const value = e.target.value;
-                              handleIncludeOnChange(value, index);
-                            }}
-                          />
+                    {includesValues.map((value, index) => {
+                      const key = `index-${index}`;
+                      return (
+                        <div className="flex flex-row" key={key}>
+                          <div className="grow">
+                            <Input
+                              type="text"
+                              className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
+                              defaultValue={value}
+                              placeholder={''}
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                const value = e.target.value;
+                                handleIncludeOnChange(value, index);
+                              }}
+                            />
+                          </div>
+                          <div className="flex-none inline-flex px-2 items-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Delete2Icon
+                                    width={16}
+                                    height={16}
+                                    onClick={() => {
+                                      deleteIncludeItem(index);
+                                    }}
+                                    className="cursor-pointer"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs bg-foreground text-background">
+                                  Remove URL pattern
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
-                        <div className="flex-none inline-flex px-2 items-center">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Delete2Icon
-                                  width={16}
-                                  height={16}
-                                  onClick={() => {
-                                    deleteIncludeItem(index);
-                                  }}
-                                  className="cursor-pointer"
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-foreground text-background">
-                                Remove URL pattern
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className=" flex flex-col space-y-1">
                     <div className="flex flex-row">
@@ -175,44 +179,47 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
                         </TooltipProvider>
                       </div>
                     </div>
-                    {excludesValues.map((value, index) => (
-                      <div className="flex flex-row" key={index}>
-                        <div className="grow">
-                          <Input
-                            type="text"
-                            className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
-                            defaultValue={value}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                              const value = e.target.value;
-                              handleExcludeOnChange(value, index);
-                            }}
-                            placeholder={''}
-                          />
+                    {excludesValues.map((value, index) => {
+                      const key = `index-${index}`;
+                      return (
+                        <div className="flex flex-row" key={key}>
+                          <div className="grow">
+                            <Input
+                              type="text"
+                              className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
+                              defaultValue={value}
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                const value = e.target.value;
+                                handleExcludeOnChange(value, index);
+                              }}
+                              placeholder={''}
+                            />
+                          </div>
+                          <div className="flex-none inline-flex px-2 items-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Delete2Icon
+                                    width={16}
+                                    height={16}
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                      deleteExcludeItem(index);
+                                    }}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs bg-foreground text-background">
+                                  Remove URL pattern
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
-                        <div className="flex-none inline-flex px-2 items-center">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Delete2Icon
-                                  width={16}
-                                  height={16}
-                                  className="cursor-pointer"
-                                  onClick={() => {
-                                    deleteExcludeItem(index);
-                                  }}
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-foreground text-background">
-                                Remove URL pattern
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <a
-                    href="https://www.usertour.io/docs/how-to-guides/urls/"
+                    href="https://docs.usertour.io/how-to-guides/urls/"
                     className="text-primary flex flex-row items-center space-x-1 text-xs"
                     target="_blank"
                     rel="noreferrer"

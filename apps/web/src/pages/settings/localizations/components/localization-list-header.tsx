@@ -35,7 +35,7 @@ export const LocalizationListHeader = () => {
             </p>
             <p>
               <a
-                href="https://www.usertour.io/docs/building-experiences/creating-your-first-flow/"
+                href="https://docs.usertour.io/building-experiences/creating-your-first-flow/"
                 className="text-primary  "
                 target="_blank"
                 rel="noreferrer"

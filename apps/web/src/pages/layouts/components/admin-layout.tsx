@@ -34,7 +34,7 @@ export const AdminLayoutHeader = () => {
         <AdminMainNav className="mx-6" />
         <div className="ml-auto flex items-center space-x-4">
           <a
-            href="https://www.usertour.io/docs/developers/usertourjs-installation/"
+            href="https://docs.usertour.io/developers/usertourjs-installation/"
             target="_blank"
             rel="noreferrer"
           >
@@ -77,7 +77,7 @@ export const AdminLayoutContent = (props: AdminLayoutBodyProps) => {
         storage.setLocalStorage('environmentId', currentEnv?.id);
       }
     }
-  }, [envId, environmentList]);
+  }, [envId, environmentList, setEnvironment]);
 
   return <div className="flex-col md:flex">{children}</div>;
 };
@@ -105,7 +105,7 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
         storage.setLocalStorage('environmentId', currentEnv?.id);
       }
     }
-  }, [envId, environmentList]);
+  }, [envId, environmentList, setEnvironment]);
 
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
@@ -128,6 +128,7 @@ interface AdminLayoutProps {
 }
 
 // Add new custom hook
+//biome-ignore lint/suspicious/noExplicitAny: <explanation>
 const useUserTracking = (userInfo: any) => {
   const posthog = usePostHog();
 

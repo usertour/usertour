@@ -73,7 +73,7 @@ export const EnvironmentListContent = () => {
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs bg-foreground text-background">
                       You need this when installing Usertour.js in your web app. See
-                      https://www.usertour.io/docs for more details.
+                      https://docs.usertour.io for more details.
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

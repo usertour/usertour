@@ -62,7 +62,7 @@ export const FlowPlacement = () => {
 
   const handleAboutPlacement = () => {
     window?.open(
-      'https://www.usertour.io/docs/building-experiences/creating-your-first-flow/#edit-flow',
+      'https://docs.usertour.io/building-experiences/creating-your-first-flow/#edit-flow',
       '_blank',
     );
   };

@@ -31,7 +31,7 @@ export const EnvironmentListHeader = () => {
             </p>
             <p>
               <a
-                href="https://www.usertour.io/docs/how-to-guides/environments/"
+                href="https://docs.usertour.io/how-to-guides/environments/"
                 className="text-primary  "
                 target="_blank"
                 rel="noreferrer"
