@@ -24,7 +24,7 @@ const MemberListContentTableRow = (props: MemberListContentTableRowProps) => {
     toast({
       title: `"${data.token}" copied to clipboard`,
     });
-  }, [data.token]);
+  }, [data.token, copyToClipboard, toast]);
 
   return (
     <TableRow className="cursor-pointer">

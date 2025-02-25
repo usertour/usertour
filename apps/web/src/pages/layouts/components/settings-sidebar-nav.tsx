@@ -58,9 +58,9 @@ export const SettingsSidebarNav = () => {
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <AdminSidebarBodyTitleTemplate>General</AdminSidebarBodyTitleTemplate>
-        {items.map((item, index) => (
+        {items.map((item) => (
           <AdminSidebarBodyItemTemplate
-            key={index}
+            key={item.href}
             onClick={() => {
               navigate(item.href);
             }}
