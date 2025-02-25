@@ -41,6 +41,8 @@ Table Register {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   code String [not null]
+  project Project
+  projectId String
   email String [not null]
 }
 
@@ -65,6 +67,7 @@ Table Project {
   attributes Attribute [not null]
   events Event [not null]
   localizations Localization [not null]
+  Register Register [not null]
 }
 
 Table UserOnProject {
@@ -414,11 +417,14 @@ Table RefreshToken {
 
 Enum Role {
   ADMIN
+  VIEWER
   USER
   OWNER
 }
 
 Ref: Account.userId > User.id
+
+Ref: Register.projectId > Project.id
 
 Ref: Code.userId > User.id
 

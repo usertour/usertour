@@ -622,6 +622,7 @@ enum Role {
   ADMIN
   OWNER
   USER
+  VIEWER
 }
 
 type Segment {
