@@ -63,6 +63,8 @@ model Register {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   code      String   @default(cuid())
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
   email     String
 }
 
@@ -87,6 +89,7 @@ model Project {
   attributes    Attribute[]
   events        Event[]
   localizations Localization[]
+  Register      Register[]
 }
 
 model UserOnProject {
@@ -231,6 +234,7 @@ model VersionOnLocalization {
 
 enum Role {
   ADMIN
+  VIEWER
   USER
   OWNER
 }
