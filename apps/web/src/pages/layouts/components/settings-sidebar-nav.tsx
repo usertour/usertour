@@ -33,6 +33,10 @@ const sidebarNavItems = [
     href: '/settings/events',
   },
   {
+    title: 'Team',
+    href: '/settings/team',
+  },
+  {
     title: 'Account',
     href: '/settings/account',
   },

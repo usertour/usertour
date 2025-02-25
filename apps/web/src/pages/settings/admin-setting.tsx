@@ -5,6 +5,7 @@ import { SettingsEventsList } from '@/pages/settings/events';
 import { SettingsThemeList } from '@/pages/settings/themes';
 import { useParams } from 'react-router-dom';
 import { SettingsLocalizationList } from './localizations';
+import { SettingsMemberList } from './members';
 
 export const AdminSettings = () => {
   const { settingType } = useParams();
@@ -23,6 +24,9 @@ export const AdminSettings = () => {
   }
   if (settingType === 'localizations') {
     return <SettingsLocalizationList />;
+  }
+  if (settingType === 'team') {
+    return <SettingsMemberList />;
   }
   return <SettingsAccountDetail />;
 };
