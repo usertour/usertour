@@ -5,16 +5,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, User } from '@prisma/client';
+import { User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { createTransport } from 'nodemailer';
 import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
-import { PasswordService } from './password.service';
 import { Profile } from 'passport-google-oauth20';
 import { CookieOptions, Response } from 'express';
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { TokenData } from './dto/auth.dto';
+import { PasswordService } from './password.service';
+import { createTransport } from 'nodemailer';
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
 import { AuthConfigItem } from './models/auth.model';
@@ -424,14 +425,14 @@ export class AuthService {
     return await this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  async sendEmail(data: any) {
+  async sendEmail(data: unknown) {
     const transporter = createTransport({
-      host: this.configService.get('EMAIL_HOST'),
-      port: this.configService.get('EMAIL_PORT'),
+      host: this.configService.get('email.host'),
+      port: this.configService.get('email.port'),
       secure: true,
       auth: {
-        user: this.configService.get('EMAIL_USER'),
-        pass: this.configService.get('EMAIL_PASS'),
+        user: this.configService.get('email.user'),
+        pass: this.configService.get('email.pass'),
       },
     });
     return await transporter.sendMail(data);
@@ -447,7 +448,7 @@ export class AuthService {
       },
     });
     return await this.sendEmail({
-      from: '"support" support@usertour.io', // sender address
+      from: this.configService.get('auth.email.sender'), // sender address
       to: email, // list of receivers
       subject: 'Welcome to Usertour, verify your email', // Subject line
       html: template, // html body
@@ -464,7 +465,7 @@ export class AuthService {
       },
     });
     return await this.sendEmail({
-      from: '"support" support@appnps.com', // sender address
+      from: this.configService.get('auth.email.sender'), // sender address
       to: email, // list of receivers
       subject: 'Set up a new password for Usertour', // Subject line
       html: template, // html body

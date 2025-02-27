@@ -446,6 +446,30 @@ type Events {
   updatedAt: DateTime!
 }
 
+type Invite {
+  code: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  email: String!
+  expired: Boolean!
+  id: ID!
+  name: String!
+  projectId: String!
+  role: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+  userId: String!
+}
+
+input InviteTeamMemberInput {
+  email: String!
+  name: String!
+  projectId: String!
+  role: Role!
+}
+
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
@@ -512,6 +536,7 @@ type Mutation {
   deleteSegment(data: DeleteSegment!): Common!
   deleteTheme(data: DeleteThemeInput!): Theme!
   duplicateContent(data: ContentDuplicateInput!): Content!
+  inviteTeamMember(data: InviteTeamMemberInput!): Boolean!
   login(data: LoginInput!): Auth!
   logout: Boolean!
   publishedContentVersion(data: VersionIdInput!): Version!
@@ -574,6 +599,8 @@ type Query {
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
+  getInvites(projectId: String!): [Invite!]!
+  getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
   hello(name: String!): String!
   helloWorld: String!
@@ -807,6 +834,7 @@ type UserOnProject {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  user: User
 }
 
 type Version {

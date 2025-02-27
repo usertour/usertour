@@ -1,5 +1,6 @@
 import { BaseModel } from '@/common/models/base.model';
 import { Project } from '@/projects/models/project.model';
+import { User } from '@/users/models/user.model';
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Role } from '@prisma/client';
 
@@ -18,4 +19,7 @@ export class UserOnProject extends BaseModel {
 
   @Field(() => Project)
   project: Project;
+
+  @Field(() => User, { nullable: true })
+  user?: User;
 }
