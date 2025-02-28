@@ -73,8 +73,10 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   });
 
   useEffect(() => {
-    form.reset();
-  }, [isOpen]);
+    if (isOpen) {
+      form.reset();
+    }
+  }, [form, isOpen]);
 
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);

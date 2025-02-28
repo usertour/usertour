@@ -14,7 +14,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { useChangeTeamMemberRoleMutation } from '@usertour-ui/shared-hooks';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { TeamMember, TeamMemberRole } from '@usertour-ui/types';
+import type { TeamMember } from '@usertour-ui/types';
+import { TeamMemberRole } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -58,8 +59,10 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
   });
 
   useEffect(() => {
-    form.reset();
-  }, [isOpen]);
+    if (isOpen) {
+      form.reset();
+    }
+  }, [form, isOpen]);
 
   async function handleOnSubmit({ role }: FormValues) {
     setIsLoading(true);

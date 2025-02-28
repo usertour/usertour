@@ -9,7 +9,8 @@ import {
 } from '@usertour-ui/dropdown-menu';
 import { Delete2Icon, EditIcon } from '@usertour-ui/icons';
 import { useState } from 'react';
-import { TeamMember, TeamMemberRole } from '@/types/theme-settings';
+import type { TeamMember } from '@/types/theme-settings';
+import { TeamMemberRole } from '@usertour-ui/types';
 import { CancelInviteDialog } from './member-cancel-dialog';
 import { useAppContext } from '@/contexts/app-context';
 import { useMemberContext } from '@/contexts/member-context';
