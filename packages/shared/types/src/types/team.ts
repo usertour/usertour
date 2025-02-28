@@ -4,6 +4,7 @@ export type TeamMember = {
   email: string;
   role: TeamMemberRole;
   createdAt: string;
+  isInvite?: boolean;
   logo?: string;
 };
 

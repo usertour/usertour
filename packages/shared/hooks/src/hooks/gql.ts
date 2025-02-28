@@ -68,6 +68,7 @@ export const useQueryTeamMemberListQuery = (projectId: string) => {
       email: item.user.email,
       role: item.role,
       logo: item.user.logo,
+      isInvite: false,
       createdAt: item.createdAt,
     })) ?? [];
 
@@ -86,6 +87,7 @@ export const useQueryInviteListQuery = (projectId: string) => {
       name: item.name,
       email: item.email,
       role: item.role,
+      isInvite: true,
       createdAt: item.createdAt,
     })) ?? [];
 
