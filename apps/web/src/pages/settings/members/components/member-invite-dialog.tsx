@@ -142,18 +142,14 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
                         <FormLabel>Role</FormLabel>
                         <FormControl>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormItem>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a role" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value={TeamMemberRole.ADMIN}>Admin</SelectItem>
-                                <SelectItem value={TeamMemberRole.VIEWER}>Viewer</SelectItem>
-                                <SelectItem value={TeamMemberRole.OWNER}>Owner</SelectItem>
-                              </SelectContent>
-                            </FormItem>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={TeamMemberRole.ADMIN}>Admin</SelectItem>
+                              <SelectItem value={TeamMemberRole.VIEWER}>Viewer</SelectItem>
+                              <SelectItem value={TeamMemberRole.OWNER}>Owner</SelectItem>
+                            </SelectContent>
                           </Select>
                         </FormControl>
                         <FormMessage />
