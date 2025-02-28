@@ -61,14 +61,15 @@ export const useQueryTeamMemberListQuery = (projectId: string) => {
   });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const teamMembers: TeamMember[] = data?.getTeamMembers?.map((item: any) => ({
-    id: item.user.id,
-    name: item.user.name,
-    email: item.user.email,
-    role: item.role,
-    logo: item.user.logo,
-    createdAt: item.createdAt,
-  }));
+  const teamMembers: TeamMember[] =
+    data?.getTeamMembers?.map((item: any) => ({
+      id: item.user.id,
+      name: item.user.name,
+      email: item.user.email,
+      role: item.role,
+      logo: item.user.logo,
+      createdAt: item.createdAt,
+    })) ?? [];
 
   return { teamMembers, refetch, loading, error };
 };
@@ -79,26 +80,31 @@ export const useQueryInviteListQuery = (projectId: string) => {
   });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const invites: TeamMember[] = data?.getInvites?.map((item: any) => ({
-    id: item.id,
-    name: item.name,
-    email: item.email,
-    role: item.role,
-    createdAt: item.createdAt,
-  }));
+  const invites: TeamMember[] =
+    data?.getInvites?.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      email: item.email,
+      role: item.role,
+      createdAt: item.createdAt,
+    })) ?? [];
 
   return { invites, refetch, loading, error };
 };
 
-export const useInviteTeamMemberMutation = async (
-  projectId: string,
-  name: string,
-  email: string,
-  role: string,
-) => {
+export const useInviteTeamMemberMutation = () => {
   const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation);
-  const success = await inviteTeamMember({
-    variables: { projectId, name, email, role },
-  });
-  return { success, loading, error };
+  const invite = async (
+    projectId: string,
+    name: string,
+    email: string,
+    role: string,
+  ): Promise<boolean> => {
+    const response = await inviteTeamMember({
+      variables: { projectId, name, email, role },
+    });
+    return !!response.data?.inviteTeamMember;
+  };
+
+  return { invite, loading, error };
 };

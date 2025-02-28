@@ -29,7 +29,7 @@ export const getInvites = gql`
 `;
 
 export const inviteTeamMember = gql`
-  mutation inviteTeamMember($projectId: String!, $name: String!, $email: String!, $role: String!) {
+  mutation inviteTeamMember($projectId: String!, $name: String!, $email: String!, $role: Role!) {
     inviteTeamMember(
       data: {
         name: $name

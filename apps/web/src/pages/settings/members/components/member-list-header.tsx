@@ -1,11 +1,11 @@
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useMemberContext } from '@/contexts/member-context';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
 import { MemberCreateForm } from './member-create-form';
 
 export const MemberListHeader = () => {
   const [open, setOpen] = useState(false);
-  const { refetch } = useEnvironmentListContext();
+  const { refetch } = useMemberContext();
   const handleCreate = () => {
     setOpen(true);
   };

@@ -2,8 +2,8 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { format } from 'date-fns';
 import { MemberListAction } from './member-list-action';
-import { useQueryInviteListQuery, useQueryTeamMemberListQuery } from '@usertour-ui/shared-hooks';
 import type { TeamMember } from '@usertour-ui/types';
+import { useMemberContext } from '@/contexts/member-context';
 interface MemberListContentTableRowProps {
   data: TeamMember;
 }
@@ -22,17 +22,13 @@ const MemberListContentTableRow = (props: MemberListContentTableRowProps) => {
   );
 };
 
-interface MemberListContentProps {
-  projectId: string;
-}
+export const MemberListContent = () => {
+  const { members, loading } = useMemberContext();
 
-export const MemberListContent = ({ projectId }: MemberListContentProps) => {
-  const { teamMembers, loading } = useQueryTeamMemberListQuery(projectId);
-  const { invites, loading: invitesLoading } = useQueryInviteListQuery(projectId);
-
-  if (loading || invitesLoading) {
+  if (loading) {
     return <ListSkeleton />;
   }
+  const isEmpty = members && members.length === 0;
 
   return (
     <>
@@ -47,15 +43,11 @@ export const MemberListContent = ({ projectId }: MemberListContentProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invites?.length > 0 &&
-              invites.map((invite: TeamMember) => (
-                <MemberListContentTableRow data={invite} key={invite.id} />
-              ))}
-            {teamMembers?.length > 0 &&
-              teamMembers.map((member: TeamMember) => (
+            {!isEmpty &&
+              members?.map((member: TeamMember) => (
                 <MemberListContentTableRow data={member} key={member.id} />
               ))}
-            {invites?.length === 0 && teamMembers?.length === 0 && (
+            {isEmpty && (
               <TableRow>
                 <TableCell className="h-24 text-center">No results.</TableCell>
               </TableRow>

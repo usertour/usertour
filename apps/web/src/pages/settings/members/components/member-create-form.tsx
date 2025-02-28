@@ -2,7 +2,6 @@
 
 import { Icons } from '@/components/atoms/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
 import {
@@ -13,9 +12,11 @@ import {
   DialogTitle,
 } from '@usertour-ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { createMember } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import { useInviteTeamMemberMutation } from '@usertour-ui/shared-hooks';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { TeamMemberRole } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -34,16 +35,26 @@ const formSchema = z.object({
     })
     .max(20)
     .min(1),
+  email: z
+    .string({
+      required_error: 'Please input your Member email.',
+    })
+    .email(),
+  role: z.string({
+    required_error: 'Please select your Member role.',
+  }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 const defaultValues: Partial<FormValues> = {
   name: '',
+  email: '',
+  role: TeamMemberRole.ADMIN,
 };
 
 export const MemberCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
-  const [createMutation] = useMutation(createMember);
+  const { invite } = useInviteTeamMemberMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
   const { toast } = useToast();
@@ -68,10 +79,13 @@ export const MemberCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
     try {
-      const data = { name: formValues.name, projectId: project?.id };
-      const ret = await createMutation({ variables: data });
-
-      if (!ret.data?.createMembers?.id) {
+      const success = await invite(
+        project?.id as string,
+        formValues.name,
+        formValues.email,
+        formValues.role,
+      );
+      if (!success) {
         showError('Create Member failed.');
       }
       onClose();
@@ -97,9 +111,48 @@ export const MemberCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Member name</FormLabel>
+                        <FormLabel>Name</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter Member name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter Member email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormItem>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value={TeamMemberRole.ADMIN}>Admin</SelectItem>
+                                <SelectItem value={TeamMemberRole.VIEWER}>Viewer</SelectItem>
+                                <SelectItem value={TeamMemberRole.OWNER}>Owner</SelectItem>
+                              </SelectContent>
+                            </FormItem>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
