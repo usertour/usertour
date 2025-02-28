@@ -1,4 +1,3 @@
-import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,9 +8,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
-import { deleteMember } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
 
 export const MemberDeleteForm = (props: {
   data: any;
@@ -19,33 +15,33 @@ export const MemberDeleteForm = (props: {
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
 }) => {
-  const { data, open, onOpenChange, onSubmit } = props;
-  const [deleteMutation] = useMutation(deleteMember);
-  const { toast } = useToast();
+  const { data, open, onOpenChange } = props;
+  // const [deleteMutation] = useMutation(deleteMember);
+  // const { toast } = useToast();
 
   const handleDeleteSubmit = async () => {
     if (!data) {
       return;
     }
     try {
-      const ret = await deleteMutation({
-        variables: {
-          id: data.id,
-        },
-      });
-      if (ret.data?.deleteMembers?.id) {
-        toast({
-          variant: 'success',
-          title: 'The Member has been successfully deleted',
-        });
-        onSubmit(true);
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
+      // const ret = await deleteMutation({
+      //   variables: {
+      //     id: data.id,
+      //   },
+      // });
+      // if (ret.data?.deleteMembers?.id) {
+      //   toast({
+      //     variant: 'success',
+      //     title: 'The Member has been successfully deleted',
+      //   });
+      //   onSubmit(true);
+      // }
+    } catch (_) {
+      // onSubmit(false);
+      // toast({
+      //   variant: 'destructive',
+      //   title: getErrorMessage(error),
+      // });
     }
   };
 
