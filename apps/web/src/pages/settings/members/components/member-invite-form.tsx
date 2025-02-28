@@ -23,7 +23,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-interface CreateFormProps {
+interface InviteFormProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -53,7 +53,7 @@ const defaultValues: Partial<FormValues> = {
   role: TeamMemberRole.ADMIN,
 };
 
-export const MemberCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
+export const MemberInviteForm = ({ onClose, isOpen }: InviteFormProps) => {
   const { invite } = useInviteTeamMemberMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
@@ -167,7 +167,7 @@ export const MemberCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
-                Submit
+                Send invite
               </Button>
             </DialogFooter>
           </form>
@@ -177,4 +177,4 @@ export const MemberCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   );
 };
 
-MemberCreateForm.displayName = 'MemberCreateForm';
+MemberInviteForm.displayName = 'MemberInviteForm';
