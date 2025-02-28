@@ -17,25 +17,25 @@ export class EnvironmentsResolver {
   constructor(private environmentsService: EnvironmentsService) {}
 
   @Mutation(() => Environment)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async createEnvironments(@Args('data') newData: CreateEnvironmentInput) {
     return this.environmentsService.create(newData);
   }
 
   @Mutation(() => Environment)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async updateEnvironments(@Args('data') input: UpdateEnvironmentInput) {
     return this.environmentsService.update(input);
   }
 
   @Mutation(() => Environment)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async deleteEnvironments(@Args('data') { id }: DeleteEnvironmentInput) {
     return await this.environmentsService.delete(id);
   }
 
   @Query(() => [Environment])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   userEnvironments(@Args() { projectId }: ProjectIdArgs) {
     return this.environmentsService.listEnvsByProjectId(projectId);
   }
