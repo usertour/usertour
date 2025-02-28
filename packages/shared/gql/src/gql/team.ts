@@ -40,3 +40,21 @@ export const inviteTeamMember = gql`
     )
  }
 `;
+
+export const cancelInvite = gql`
+  mutation cancelInvite($projectId: String!, $inviteId: String!) {
+    cancelInvite(data: { projectId: $projectId, inviteId: $inviteId } )
+  }
+`;
+
+export const removeTeamMember = gql`
+  mutation removeTeamMember($projectId: String!, $userId: String!) {
+    removeTeamMember(data: { projectId: $projectId, userId: $userId } )
+  }
+`;
+
+export const changeTeamMemberRole = gql`
+  mutation changeTeamMemberRole($projectId: String!, $userId: String!, $role: Role!) {
+    changeTeamMemberRole(data: { projectId: $projectId, userId: $userId, role: $role } )
+  }
+`;

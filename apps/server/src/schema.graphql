@@ -178,6 +178,11 @@ input BizUserOrCompanyIdsInput {
   ids: [String!]!
 }
 
+input CancelInviteInput {
+  inviteId: String!
+  projectId: String!
+}
+
 input ChangeEmailInput {
   email: String!
   password: String!
@@ -186,6 +191,12 @@ input ChangeEmailInput {
 input ChangePasswordInput {
   newPassword: String!
   oldPassword: String!
+}
+
+input ChangeTeamMemberRoleInput {
+  projectId: String!
+  role: Role!
+  userId: String!
 }
 
 type Common {
@@ -507,8 +518,10 @@ input MagicLinkInput {
 type Mutation {
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
+  cancelInvite(data: CancelInviteInput!): Boolean!
   changeEmail(data: ChangeEmailInput!): User!
   changePassword(data: ChangePasswordInput!): User!
+  changeTeamMemberRole(data: ChangeTeamMemberRoleInput!): Boolean!
   copyTheme(data: CopyThemeInput!): Theme!
   createAttribute(data: CreateAttributeInput!): Attribute!
   createBizCompany(data: CreateBizCompanyInput!): Common!
@@ -540,6 +553,7 @@ type Mutation {
   login(data: LoginInput!): Auth!
   logout: Boolean!
   publishedContentVersion(data: VersionIdInput!): Version!
+  removeTeamMember(data: RemoveTeamMemberInput!): Boolean!
   resendMagicLink(data: ResendLinkInput!): Register!
   resetUserPassword(data: ResetPasswordInput!): Common!
   resetUserPasswordByCode(data: ResetPasswordByCodeInput!): Common!
@@ -629,6 +643,11 @@ type Register {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+}
+
+input RemoveTeamMemberInput {
+  projectId: String!
+  userId: String!
 }
 
 input ResendLinkInput {

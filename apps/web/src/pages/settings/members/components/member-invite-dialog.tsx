@@ -23,7 +23,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-interface InviteFormProps {
+interface InviteDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -53,8 +53,8 @@ const defaultValues: Partial<FormValues> = {
   role: TeamMemberRole.ADMIN,
 };
 
-export const MemberInviteForm = ({ onClose, isOpen }: InviteFormProps) => {
-  const { invite } = useInviteTeamMemberMutation();
+export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
+  const { invoke } = useInviteTeamMemberMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
   const { toast } = useToast();
@@ -79,7 +79,7 @@ export const MemberInviteForm = ({ onClose, isOpen }: InviteFormProps) => {
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
     try {
-      const success = await invite(
+      const success = await invoke(
         project?.id as string,
         formValues.name,
         formValues.email,
@@ -177,4 +177,4 @@ export const MemberInviteForm = ({ onClose, isOpen }: InviteFormProps) => {
   );
 };
 
-MemberInviteForm.displayName = 'MemberInviteForm';
+MemberInviteDialog.displayName = 'MemberInviteDialog';

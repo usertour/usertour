@@ -29,6 +29,53 @@ export class TeamService {
     });
   }
 
+  async cancelInvite(inviteId: string) {
+    return await this.prisma.invite.update({
+      where: { id: inviteId },
+      data: { canceled: true },
+    });
+  }
+
+  async changeTeamMemberRole(userId: string, projectId: string, role: Role) {
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+
+    // if the user is not a member of the project, throw an error
+    if (!userOnProject) {
+      throw new ParamsError();
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      if (role === Role.OWNER) {
+        // set the owner to admin before changing the role to owner
+        await tx.userOnProject.updateMany({
+          where: { projectId, role: Role.OWNER },
+          data: { role: Role.ADMIN },
+        });
+      }
+      await tx.userOnProject.updateMany({
+        where: { id: userOnProject.id },
+        data: { role },
+      });
+    });
+  }
+
+  async removeTeamMember(userId: string, projectId: string) {
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+
+    // if the user is the only owner of the project, throw an error
+    if (!userOnProject || userOnProject.role === Role.OWNER) {
+      throw new ParamsError();
+    }
+
+    return await this.prisma.userOnProject.deleteMany({
+      where: { userId, projectId },
+    });
+  }
+
   async inviteTeamMember(
     senderUserId: string,
     email: string,
@@ -37,6 +84,9 @@ export class TeamService {
     role: Role,
   ) {
     try {
+      if (role === Role.OWNER) {
+        throw new ParamsError();
+      }
       const sender = await this.prisma.user.findUnique({
         where: { id: senderUserId },
       });

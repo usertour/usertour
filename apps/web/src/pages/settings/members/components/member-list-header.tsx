@@ -1,7 +1,7 @@
 import { useMemberContext } from '@/contexts/member-context';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
-import { MemberInviteForm } from './member-invite-form';
+import { MemberInviteDialog } from './member-invite-dialog';
 
 export const MemberListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -25,7 +25,7 @@ export const MemberListHeader = () => {
           </div>
         </div>
       </div>
-      <MemberInviteForm isOpen={open} onClose={handleOnClose} />
+      <MemberInviteDialog isOpen={open} onClose={handleOnClose} />
     </>
   );
 };

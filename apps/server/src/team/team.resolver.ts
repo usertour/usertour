@@ -2,7 +2,12 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { User } from '@/users/models/user.model';
 import { TeamService } from './team.service';
 import { UserOnProject } from './models/useronproject.model';
-import { InviteTeamMemberInput } from './dto/inviteTeamMember.input';
+import {
+  CancelInviteInput,
+  ChangeTeamMemberRoleInput,
+  InviteTeamMemberInput,
+  RemoveTeamMemberInput,
+} from './dto/member.input';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { Role } from '@prisma/client';
 import { Logger } from '@nestjs/common';
@@ -33,7 +38,24 @@ export class TeamResolver {
       data.name,
       data.role as Role,
     );
-    this.logger.log(`Successfully invited team member: ${user.id}`);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async removeTeamMember(@Args('data') data: RemoveTeamMemberInput) {
+    await this.teamService.removeTeamMember(data.userId, data.projectId);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async changeTeamMemberRole(@Args('data') data: ChangeTeamMemberRoleInput) {
+    await this.teamService.changeTeamMemberRole(data.userId, data.projectId, data.role);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async cancelInvite(@Args('data') data: CancelInviteInput) {
+    await this.teamService.cancelInvite(data.inviteId);
     return true;
   }
 }

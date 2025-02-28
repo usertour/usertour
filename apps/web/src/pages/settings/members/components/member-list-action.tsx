@@ -7,34 +7,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
-import { CloseIcon, EditIcon } from '@usertour-ui/icons';
+import { Delete2Icon, EditIcon } from '@usertour-ui/icons';
 import { useState } from 'react';
-import { MemberDeleteForm } from './member-delete-form';
-import { MemberEditForm } from './member-edit-form';
+import { TeamMember, TeamMemberRole } from '@/types/theme-settings';
+import { CancelInviteDialog } from './member-cancel-dialog';
+import { useAppContext } from '@/contexts/app-context';
+import { useMemberContext } from '@/contexts/member-context';
+import { MemberChangeRoleDialog } from './member-change-role-dialog';
+import { MemberRemoveDialog } from './member-remove-dialog';
 
 type MemberListActionProps = {
-  data: any;
+  data: TeamMember;
 };
 
 export const MemberListAction = (props: MemberListActionProps) => {
   const { data } = props;
   const [open, setOpen] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  // const { refetch } = useMemberListContext();
-  const handleOpen = () => {
-    setOpen(true);
-  };
-  const handleOnClose = () => {
-    setOpen(false);
-    // refetch();
-  };
-  const handleDeleteOpen = () => {
-    setOpenDeleteDialog(true);
-  };
-  const handleDeleteClose = () => {
-    setOpenDeleteDialog(false);
-    // refetch();
-  };
+  const { project } = useAppContext();
+  const { refetch } = useMemberContext();
+  const [openChangeRoleDialog, setOpenChangeRoleDialog] = useState(false);
+  const [openRemoveDialog, setOpenRemoveDialog] = useState(false);
+
   return (
     <>
       <DropdownMenu>
@@ -44,23 +37,64 @@ export const MemberListAction = (props: MemberListActionProps) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[200px]">
-          <DropdownMenuItem onClick={handleOpen}>
-            <EditIcon className="w-6" width={12} height={12} />
-            Rename environment
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleDeleteOpen}>
-            <CloseIcon className="w-6" width={16} height={16} />
-            Delete
-          </DropdownMenuItem>
+          {data.isInvite && (
+            <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+              onClick={() => setOpen(true)}
+            >
+              <Delete2Icon className="w-6" width={16} height={16} />
+              <span>Cancel invite</span>
+            </DropdownMenuItem>
+          )}
+          {!data.isInvite && (
+            <>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                disabled={data.role === TeamMemberRole.OWNER}
+                onClick={() => setOpenChangeRoleDialog(true)}
+              >
+                <EditIcon className="w-6" width={16} height={16} />
+                Change role
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                disabled={data.role === TeamMemberRole.OWNER}
+                onClick={() => setOpenRemoveDialog(true)}
+              >
+                <Delete2Icon className="w-6" width={16} height={16} />
+                Remove member
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <MemberEditForm data={data} isOpen={open} onClose={handleOnClose} />
-      <MemberDeleteForm
+      <CancelInviteDialog
+        projectId={project?.id as string}
         data={data}
-        open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
-        onSubmit={handleDeleteClose}
+        isOpen={open}
+        onClose={() => {
+          setOpen(false);
+          refetch();
+        }}
+      />
+      <MemberChangeRoleDialog
+        projectId={project?.id as string}
+        isOpen={openChangeRoleDialog}
+        data={data}
+        onClose={() => {
+          setOpenChangeRoleDialog(false);
+          refetch();
+        }}
+      />
+      <MemberRemoveDialog
+        projectId={project?.id as string}
+        isOpen={openRemoveDialog}
+        data={data}
+        onClose={() => {
+          setOpenRemoveDialog(false);
+          refetch();
+        }}
       />
     </>
   );

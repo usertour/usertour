@@ -1,5 +1,6 @@
 export type TeamMember = {
-  id?: string;
+  inviteId?: string;
+  userId?: string;
   name: string;
   email: string;
   role: TeamMemberRole;

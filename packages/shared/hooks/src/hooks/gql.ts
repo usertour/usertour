@@ -1,10 +1,13 @@
 import { useMutation, useQuery } from '@apollo/client';
 import {
+  cancelInvite,
+  changeTeamMemberRole as changeTeamMemberRoleMutation,
   getInvites,
   getTeamMembers,
   inviteTeamMember as inviteTeamMemberMutation,
   listSegment,
   queryContents,
+  removeTeamMember,
 } from '@usertour-ui/gql';
 import type { Content, ContentDataType, Pagination, Segment, TeamMember } from '@usertour-ui/types';
 
@@ -63,7 +66,7 @@ export const useQueryTeamMemberListQuery = (projectId: string) => {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const teamMembers: TeamMember[] =
     data?.getTeamMembers?.map((item: any) => ({
-      id: item.user.id,
+      userId: item.user.id,
       name: item.user.name,
       email: item.user.email,
       role: item.role,
@@ -83,7 +86,7 @@ export const useQueryInviteListQuery = (projectId: string) => {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const invites: TeamMember[] =
     data?.getInvites?.map((item: any) => ({
-      id: item.id,
+      inviteId: item.id,
       name: item.name,
       email: item.email,
       role: item.role,
@@ -96,7 +99,7 @@ export const useQueryInviteListQuery = (projectId: string) => {
 
 export const useInviteTeamMemberMutation = () => {
   const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation);
-  const invite = async (
+  const invoke = async (
     projectId: string,
     name: string,
     email: string,
@@ -108,5 +111,35 @@ export const useInviteTeamMemberMutation = () => {
     return !!response.data?.inviteTeamMember;
   };
 
-  return { invite, loading, error };
+  return { invoke, loading, error };
+};
+
+export const useCancelInviteMutation = () => {
+  const [mutation, { loading, error }] = useMutation(cancelInvite);
+  const invoke = async (projectId: string, inviteId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { projectId, inviteId } });
+    return !!response.data?.cancelInvite;
+  };
+
+  return { invoke, loading, error };
+};
+
+export const useRemoveTeamMemberMutation = () => {
+  const [mutation, { loading, error }] = useMutation(removeTeamMember);
+  const invoke = async (projectId: string, userId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { projectId, userId } });
+    return !!response.data?.removeTeamMember;
+  };
+
+  return { invoke, loading, error };
+};
+
+export const useChangeTeamMemberRoleMutation = () => {
+  const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation);
+  const invoke = async (projectId: string, userId: string, role: string): Promise<boolean> => {
+    const response = await mutation({ variables: { projectId, userId, role } });
+    return !!response.data?.changeTeamMemberRole;
+  };
+
+  return { invoke, loading, error };
 };

@@ -57,9 +57,10 @@ export const MemberListContent = () => {
           </TableHeader>
           <TableBody>
             {!isEmpty &&
-              members?.map((member: TeamMember) => (
-                <MemberListContentTableRow data={member} key={member.id} />
-              ))}
+              members?.map((member: TeamMember) => {
+                const key = member.isInvite ? member.inviteId : member.userId;
+                return <MemberListContentTableRow data={member} key={key} />;
+              })}
             {isEmpty && (
               <TableRow>
                 <TableCell className="h-24 text-center">No results.</TableCell>
