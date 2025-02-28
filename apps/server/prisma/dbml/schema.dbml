@@ -51,6 +51,7 @@ Table Invite {
   updatedAt DateTime [not null]
   code String [not null]
   expired Boolean [not null, default: false]
+  canceled Boolean [not null, default: false]
   email String [not null]
   name String [not null]
   role Role [not null]

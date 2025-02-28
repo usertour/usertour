@@ -73,6 +73,7 @@ model Invite {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   code      String   @default(cuid())
   expired   Boolean  @default(false)
+  canceled  Boolean  @default(false)
   email     String
   name      String
   role      Role

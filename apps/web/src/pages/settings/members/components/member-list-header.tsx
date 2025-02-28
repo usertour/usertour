@@ -20,11 +20,8 @@ export const MemberListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Team</h3>
             <Button onClick={handleCreate} className="flex-none">
-              New Member
+              Invite team member
             </Button>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p>With members, you can invite other users to your project.</p>
           </div>
         </div>
       </div>
