@@ -50,7 +50,7 @@ export const AdminUserNav = () => {
   };
   useEvent('keydown', handleKeyEvent, window, { capture: true });
 
-  const avatarUrl = user?.avatarUrl ?? (user?.email ? getGravatarUrl(user?.email) : '');
+  const avatarUrl = user?.email ? getGravatarUrl(user?.email) : '';
 
   return (
     <DropdownMenu>
@@ -60,7 +60,7 @@ export const AdminUserNav = () => {
           className="flex p-0 text-sm rounded-full shadow-none dark:bg-transparent ring-transparent hover:bg-transparent focus:ring-0"
         >
           <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarUrl} alt="@shadcn" />
+            <AvatarImage src={avatarUrl} alt={user?.name ?? ''} />
             <AvatarFallback className="bg-white">T</AvatarFallback>
           </Avatar>
         </Button>
