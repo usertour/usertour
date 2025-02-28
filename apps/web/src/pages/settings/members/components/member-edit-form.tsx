@@ -1,7 +1,6 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
 import {
@@ -12,7 +11,6 @@ import {
   DialogTitle,
 } from '@usertour-ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { updateMember } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { useToast } from '@usertour-ui/use-toast';
@@ -40,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const MemberEditForm = (props: EditFormProps) => {
   const { onClose, isOpen, data } = props;
-  const [updateMutation] = useMutation(updateMember);
+  // const [updateMutation] = useMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
 
@@ -65,10 +63,11 @@ export const MemberEditForm = (props: EditFormProps) => {
     setIsLoading(true);
     try {
       const variables = { name: formValues.name, id: data.id };
-      const response = await updateMutation({ variables });
-      if (response.data?.updateMembers?.id) {
-        onClose();
-      }
+      console.log(variables);
+      // const response = await updateMutation({ variables });
+      // if (response.data?.updateMembers?.id) {
+      //   onClose();
+      // }
     } catch (error) {
       showError(getErrorMessage(error));
     }
