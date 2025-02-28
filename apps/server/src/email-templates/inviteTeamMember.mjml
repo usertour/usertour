@@ -9,15 +9,25 @@
     </mj-section>
     <mj-section background-color="#fff">
       <mj-column>
-        <mj-text font-size="30px" align="center">
-          Team Invitation
+        <mj-text font-size="24px" align="center">
+          {{inviterName}} invited you to Usertour
         </mj-text>
-        <mj-text font-size="18px" align="center" color="#555" line-height="30px">
-          You have been invited to join team "{{teamName}}"
+        <mj-text font-size="18px" align="left">
+          Hi {{name}},
+        </mj-text>
+        <mj-text align="left" color="#555" line-height="30px">
+          {{inviterName}} with {{teamName}} has invited you to join their Usertour account to collaborate on flows, checklists and other onboarding content. Use the button below to set up your account and get started:
         </mj-text>
         <mj-button background-color="#5534ff" border-radius="50px" color="white" font-size="15px" href="{{url}}">
-          Join
+          Set up account
         </mj-button>
+        <mj-text align="left" color="#555" line-height="20px">
+          Welcome aboard, <br />
+          The Usertour Team
+        </mj-text>
+        <mj-text align="left" color="#555" line-height="20px">
+          P.S. Need help getting started? Check out our <a href="https://docs.usertour.io" target="_blank">help documentation</a> .
+        </mj-text>
 
         <mj-divider border-color="#5534ff" border-width="2px"></mj-divider>
         <mj-text font-size="12px" color="#555">

@@ -11,6 +11,7 @@ type Props = {
     url?: string;
     teamName?: string;
     link?: string;
+    inviterName?: string;
   };
 };
 

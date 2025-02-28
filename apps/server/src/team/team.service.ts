@@ -55,7 +55,7 @@ export class TeamService {
           userId: sender.id,
         },
       });
-      await this.sendInviteEmail(result.code, email, sender.name, project.name);
+      await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
     } catch (error) {
       this.logger.error(error);
       throw new UnknownError();
@@ -75,11 +75,19 @@ export class TeamService {
     return await transporter.sendMail(data);
   }
 
-  async sendInviteEmail(code: string, email: string, fromUserName: string, teamName: string) {
+  async sendInviteEmail(
+    code: string,
+    email: string,
+    fromUserName: string,
+    teamName: string,
+    toUserName: string,
+  ) {
     const url = `${this.configService.get('app.homepageUrl')}/auth/invite/${code}`;
     const template = await compileEmailTemplate({
       fileName: 'inviteTeamMember.mjml',
       data: {
+        inviterName: fromUserName,
+        name: toUserName,
         teamName,
         url,
       },
