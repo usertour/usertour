@@ -14,6 +14,7 @@ import { Checkbox } from '@usertour-ui/checkbox';
 import { Input } from '@usertour-ui/input';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-ui/icons';
+import { cn } from '@usertour-ui/ui-utils';
 
 // Form validation schema
 const registFormSchema = z.object({
@@ -147,8 +148,8 @@ const RegistrationRoot = ({
 RegistrationRoot.displayName = 'RegistrationRoot';
 
 // Form Fields component
-const RegistrationForm = () => {
-  const { form, isLoading, hideCompanyName } = useRegistrationContext();
+const RegistrationFormFields = () => {
+  const { form, hideCompanyName } = useRegistrationContext();
 
   return (
     <>
@@ -219,14 +220,29 @@ const RegistrationForm = () => {
           </Link>
         </span>
       </div>
-      <Button className="w-full" type="submit" disabled={isLoading}>
-        {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Let's get started
-      </Button>
     </>
   );
 };
 
-RegistrationForm.displayName = 'RegistrationForm';
+RegistrationFormFields.displayName = 'RegistrationFormFields';
 
-export { RegistrationForm, RegistrationRoot };
+interface RegistrationSubmitButtonProps {
+  text?: string;
+  className?: string;
+}
+
+const RegistrationSubmitButton = (props: RegistrationSubmitButtonProps) => {
+  const { text = "Let's get started", className } = props;
+  const { isLoading } = useRegistrationContext();
+
+  return (
+    <Button className={cn('w-full', className)} type="submit" disabled={isLoading}>
+      {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+      {text}
+    </Button>
+  );
+};
+
+RegistrationSubmitButton.displayName = 'RegistrationSubmitButton';
+
+export { RegistrationFormFields, RegistrationSubmitButton, RegistrationRoot };

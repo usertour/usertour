@@ -224,7 +224,12 @@ const SignInDivider = () => {
 SignInDivider.displayName = 'SignInDivider';
 
 // Form component
-const SignInForm = () => {
+interface SignInFormProps {
+  buttonText?: string;
+}
+
+const SignInForm = (props: SignInFormProps) => {
+  const { buttonText = 'Login' } = props;
   const { form, isLoading, isEmailAuthEnabled } = useSignInContext();
 
   // Don't render form if email auth is disabled
@@ -269,7 +274,7 @@ const SignInForm = () => {
       </div>
       <Button className="w-full" type="submit" disabled={isLoading}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Login
+        {buttonText}
       </Button>
     </>
   );

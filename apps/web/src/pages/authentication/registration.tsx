@@ -1,13 +1,18 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour-ui/card';
-import { RegistrationForm, RegistrationRoot } from './components/registration-form';
+import {
+  RegistrationFormFields,
+  RegistrationRoot,
+  RegistrationSubmitButton,
+} from './components/registration-form';
 
 const RegistrationBody = () => {
   return (
     <RegistrationRoot>
       <CardContent className="grid gap-4">
-        <RegistrationForm />
+        <RegistrationFormFields />
+        <RegistrationSubmitButton />
       </CardContent>
     </RegistrationRoot>
   );

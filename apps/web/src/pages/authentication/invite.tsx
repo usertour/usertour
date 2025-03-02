@@ -8,7 +8,11 @@ import {
   SignInRoot,
 } from './components/sign-in-form';
 import { Card, CardHeader, CardTitle } from '@usertour-ui/card';
-import { RegistrationForm, RegistrationRoot } from './components/registration-form';
+import {
+  RegistrationFormFields,
+  RegistrationRoot,
+  RegistrationSubmitButton,
+} from './components/registration-form';
 import React from 'react';
 
 const InviteHeader = ({ inviteId }: { inviteId: string }) => {
@@ -49,12 +53,13 @@ const SignInFooter = () => {
     <CardFooter>
       <div className="text-center text-sm text-muted-foreground">
         No account yet?{' '}
-        <a
+        <button
+          type="button"
           className="underline underline-offset-4 hover:text-primary cursor-pointer"
           onClick={() => setShowRegistration(true)}
         >
           Create account
-        </a>
+        </button>
       </div>
     </CardFooter>
   );
@@ -66,12 +71,13 @@ const RegistrationFooter = () => {
     <CardFooter>
       <div className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <a
+        <button
+          type="button"
           className="underline underline-offset-4 hover:text-primary cursor-pointer"
           onClick={() => setShowRegistration(false)}
         >
           Sign in instead
-        </a>
+        </button>
       </div>
     </CardFooter>
   );
@@ -83,7 +89,8 @@ const InviteBody = () => {
     return (
       <RegistrationRoot hideCompanyName={true}>
         <CardContent className="grid gap-4">
-          <RegistrationForm />
+          <RegistrationFormFields />
+          <RegistrationSubmitButton text="Create account and join" />
           <RegistrationFooter />
         </CardContent>
       </RegistrationRoot>
@@ -94,7 +101,7 @@ const InviteBody = () => {
       <CardContent className="grid gap-4">
         <SignInSocialProviders />
         <SignInDivider />
-        <SignInForm />
+        <SignInForm buttonText="Login and join" />
         <SignInFooter />
       </CardContent>
     </SignInRoot>
