@@ -227,18 +227,18 @@ const RegistrationFormFields = () => {
 RegistrationFormFields.displayName = 'RegistrationFormFields';
 
 interface RegistrationSubmitButtonProps {
-  text?: string;
+  buttonText?: string;
   className?: string;
 }
 
 const RegistrationSubmitButton = (props: RegistrationSubmitButtonProps) => {
-  const { text = "Let's get started", className } = props;
+  const { buttonText = "Let's get started", className } = props;
   const { isLoading } = useRegistrationContext();
 
   return (
     <Button className={cn('w-full', className)} type="submit" disabled={isLoading}>
       {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-      {text}
+      {buttonText}
     </Button>
   );
 };

@@ -40,16 +40,12 @@ SignInBody.displayName = 'SignInBody';
 
 const SignIn = () => {
   return (
-    <SignInRoot>
-      <Card>
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            Sign in to UserTour
-          </CardTitle>
-        </CardHeader>
-        <SignInBody />
-      </Card>
-    </SignInRoot>
+    <Card>
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-semibold tracking-tight">Sign in to UserTour</CardTitle>
+      </CardHeader>
+      <SignInBody />
+    </Card>
   );
 };
 

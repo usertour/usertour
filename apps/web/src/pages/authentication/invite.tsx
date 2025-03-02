@@ -90,7 +90,7 @@ const InviteBody = () => {
       <RegistrationRoot hideCompanyName={true}>
         <CardContent className="grid gap-4">
           <RegistrationFormFields />
-          <RegistrationSubmitButton text="Create account and join" />
+          <RegistrationSubmitButton buttonText="Create account and join" />
           <RegistrationFooter />
         </CardContent>
       </RegistrationRoot>
