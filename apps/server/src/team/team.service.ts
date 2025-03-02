@@ -29,6 +29,13 @@ export class TeamService {
     });
   }
 
+  async getInvite(inviteId: string) {
+    return await this.prisma.invite.findFirst({
+      where: { code: inviteId },
+      include: { user: true, project: true },
+    });
+  }
+
   async cancelInvite(inviteId: string) {
     return await this.prisma.invite.update({
       where: { id: inviteId },

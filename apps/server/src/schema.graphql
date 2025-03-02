@@ -466,11 +466,13 @@ type Invite {
   expired: Boolean!
   id: ID!
   name: String!
+  project: Project
   projectId: String!
   role: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  user: User
   userId: String!
 }
 
@@ -613,6 +615,7 @@ type Query {
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
+  getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!

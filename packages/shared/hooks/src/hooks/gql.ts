@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import {
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
+  getInvite,
   getInvites,
   getTeamMembers,
   inviteTeamMember as inviteTeamMemberMutation,
@@ -142,4 +143,11 @@ export const useChangeTeamMemberRoleMutation = () => {
   };
 
   return { invoke, loading, error };
+};
+
+export const useGetInviteQuery = (inviteId: string) => {
+  const { data, loading, error } = useQuery(getInvite, {
+    variables: { inviteId },
+  });
+  return { data: data?.getInvite, loading, error };
 };

@@ -12,6 +12,7 @@ import { UserEntity } from '@/common/decorators/user.decorator';
 import { Role } from '@prisma/client';
 import { Logger } from '@nestjs/common';
 import { Invite } from './models/invite.model';
+import { Public } from '@/common/decorators/public.decorator';
 
 @Resolver()
 export class TeamResolver {
@@ -26,6 +27,12 @@ export class TeamResolver {
   @Query(() => [UserOnProject])
   async getTeamMembers(@Args('projectId') projectId: string) {
     return this.teamService.getTeamMembers(projectId);
+  }
+
+  @Query(() => Invite)
+  @Public()
+  async getInvite(@Args('inviteId') inviteId: string) {
+    return this.teamService.getInvite(inviteId);
   }
 
   @Mutation(() => Boolean)

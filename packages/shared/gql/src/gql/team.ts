@@ -58,3 +58,25 @@ export const changeTeamMemberRole = gql`
     changeTeamMemberRole(data: { projectId: $projectId, userId: $userId, role: $role } )
   }
 `;
+
+export const getInvite = gql`
+  query getInvite($inviteId: String!) {
+    getInvite(inviteId: $inviteId) {
+      id
+      name
+      email
+      role
+      createdAt
+      user {
+        id
+        name
+        email
+        avatarUrl
+      }
+      project {
+        id
+        name
+      }
+    }
+  }
+`;
