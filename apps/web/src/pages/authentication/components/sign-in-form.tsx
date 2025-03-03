@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
-import { getAuthConfig, login } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -14,6 +12,7 @@ import { Input } from '@usertour-ui/input';
 import { useToast } from '@usertour-ui/use-toast';
 import { Link } from 'react-router-dom';
 import { apiUrl } from '@/utils/env';
+import { useGetAuthConfigQuery, useLoginMutation } from '@usertour-ui/shared-hooks';
 
 // Form validation schema
 const signinFormSchema = z.object({
@@ -49,9 +48,7 @@ type SignInContextType = {
   isGithubAuthEnabled: boolean;
   isEmailAuthEnabled: boolean;
   handleLogin: (provider: 'github' | 'google') => void;
-  loginMutation: ReturnType<typeof useMutation<any>>[0];
   toast: ReturnType<typeof useToast>['toast'];
-  authConfig: any;
   showError: (title: string) => void;
   form: ReturnType<typeof useForm<SigninFormValues>>;
   onSubmit: (data: SigninFormValues) => Promise<void>;
@@ -74,21 +71,18 @@ const SignInRoot = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState<boolean>(false);
   const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
-  const [loginMutation] = useMutation(login);
+  const { invoke } = useLoginMutation();
   const { toast } = useToast();
-  const { data: authConfig } = useQuery(getAuthConfig);
+  const { data: authConfig } = useGetAuthConfigQuery();
 
   // Show all auth options by default when config is loading
   // Only disable if explicitly set to false in config
   const isEmailAuthEnabled =
-    !authConfig?.getAuthConfig ||
-    authConfig.getAuthConfig.some((item: AuthConfigItem) => item.provider === 'email');
+    !authConfig || authConfig.some((item: AuthConfigItem) => item.provider === 'email');
   const isGithubAuthEnabled =
-    !authConfig?.getAuthConfig ||
-    authConfig.getAuthConfig.some((item: AuthConfigItem) => item.provider === 'github');
+    !authConfig || authConfig.some((item: AuthConfigItem) => item.provider === 'github');
   const isGoogleAuthEnabled =
-    !authConfig?.getAuthConfig ||
-    authConfig.getAuthConfig.some((item: AuthConfigItem) => item.provider === 'google');
+    !authConfig || authConfig.some((item: AuthConfigItem) => item.provider === 'google');
 
   const form = useForm<SigninFormValues>({
     resolver: zodResolver(signinFormSchema),
@@ -115,9 +109,9 @@ const SignInRoot = ({ children }: { children: React.ReactNode }) => {
   const onSubmit = async (data: SigninFormValues) => {
     try {
       setIsLoading(true);
-      const ret = await loginMutation({ variables: data });
-      if (ret.data.login.redirectUrl) {
-        window.location.href = ret.data.login.redirectUrl;
+      const ret = await invoke(data);
+      if (ret.redirectUrl) {
+        window.location.href = ret.redirectUrl;
       }
       setIsLoading(false);
     } catch (error) {
@@ -136,9 +130,7 @@ const SignInRoot = ({ children }: { children: React.ReactNode }) => {
         setIsGoogleAuthLoading,
         setIsGithubAuthLoading,
         handleLogin,
-        loginMutation,
         toast,
-        authConfig,
         showError,
         form,
         onSubmit,

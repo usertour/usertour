@@ -2,11 +2,13 @@ import { useMutation, useQuery } from '@apollo/client';
 import {
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
+  getAuthConfig,
   getInvite,
   getInvites,
   getTeamMembers,
   inviteTeamMember as inviteTeamMemberMutation,
   listSegment,
+  login,
   queryContents,
   removeTeamMember,
 } from '@usertour-ui/gql';
@@ -150,4 +152,18 @@ export const useGetInviteQuery = (inviteId: string) => {
     variables: { inviteId },
   });
   return { data: data?.getInvite, loading, error };
+};
+
+export const useGetAuthConfigQuery = () => {
+  const { data, loading, error } = useQuery(getAuthConfig);
+  return { data: data?.getAuthConfig, loading, error };
+};
+
+export const useLoginMutation = () => {
+  const [mutation, { loading, error }] = useMutation(login);
+  const invoke = async (variables: any) => {
+    const response = await mutation({ variables });
+    return response.data?.login;
+  };
+  return { invoke, loading, error };
 };
