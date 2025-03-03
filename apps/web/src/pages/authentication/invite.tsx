@@ -15,8 +15,9 @@ import {
 } from './components/registration-form';
 import React from 'react';
 
-const InviteHeader = ({ inviteId }: { inviteId: string }) => {
-  const { data } = useGetInviteQuery(inviteId as string);
+const InviteHeader = () => {
+  const { inviteId } = useInviteContext();
+  const { data } = useGetInviteQuery(inviteId);
   return (
     <CardHeader className="space-y-1 text-center">
       <CardTitle>
@@ -33,6 +34,7 @@ const InviteHeader = ({ inviteId }: { inviteId: string }) => {
 type InviteContextType = {
   showRegistration: boolean;
   setShowRegistration: (show: boolean) => void;
+  inviteId: string;
 };
 
 const InviteContext = React.createContext<InviteContextType | undefined>(undefined);
@@ -113,10 +115,20 @@ export const Invite = () => {
   const { inviteId } = useParams();
   const [showRegistration, setShowRegistration] = React.useState(false);
 
+  if (!inviteId) {
+    return null;
+  }
+
+  const value = {
+    showRegistration,
+    setShowRegistration,
+    inviteId,
+  };
+
   return (
-    <InviteContext.Provider value={{ showRegistration, setShowRegistration }}>
+    <InviteContext.Provider value={value}>
       <Card>
-        <InviteHeader inviteId={inviteId as string} />
+        <InviteHeader />
         <InviteBody />
       </Card>
     </InviteContext.Provider>
