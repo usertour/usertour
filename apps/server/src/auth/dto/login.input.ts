@@ -11,4 +11,7 @@ export class LoginInput {
   @IsNotEmpty()
   @MinLength(8)
   password: string;
+
+  @Field({ nullable: true })
+  inviteId?: string;
 }

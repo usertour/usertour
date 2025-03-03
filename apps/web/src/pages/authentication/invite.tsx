@@ -86,10 +86,11 @@ const RegistrationFooter = () => {
 };
 
 const InviteBody = () => {
-  const { showRegistration } = useInviteContext();
+  const { showRegistration, inviteId } = useInviteContext();
+
   if (showRegistration) {
     return (
-      <RegistrationRoot hideCompanyName={true}>
+      <RegistrationRoot inviteId={inviteId}>
         <CardContent className="grid gap-4">
           <RegistrationFormFields />
           <RegistrationSubmitButton buttonText="Create account and join" />
@@ -99,7 +100,7 @@ const InviteBody = () => {
     );
   }
   return (
-    <SignInRoot>
+    <SignInRoot inviteId={inviteId}>
       <CardContent className="grid gap-4">
         <SignInSocialProviders />
         <SignInDivider />

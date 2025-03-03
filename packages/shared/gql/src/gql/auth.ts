@@ -51,7 +51,8 @@ export const signUp = gql`
     $code: String!
     $password: String!
     $userName: String!
-    $companyName: String!
+    $isInvite: Boolean!
+    $companyName: String
   ) {
     signup(
       data: {
@@ -59,6 +60,7 @@ export const signUp = gql`
         password: $password
         userName: $userName
         companyName: $companyName
+        isInvite: $isInvite
       }
     ) {
       accessToken

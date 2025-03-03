@@ -63,6 +63,7 @@ type AttributeOnEvent {
 type Auth {
   """JWT access token"""
   accessToken: JWT!
+  projectId: String
   redirectUrl: String
 
   """JWT refresh token"""
@@ -510,6 +511,7 @@ type Localization {
 
 input LoginInput {
   email: String!
+  inviteId: String
   password: String!
 }
 
@@ -703,7 +705,8 @@ enum SegmentDataType {
 
 input SignupInput {
   code: String!
-  companyName: String!
+  companyName: String
+  isInvite: Boolean!
   password: String!
   userName: String!
 }

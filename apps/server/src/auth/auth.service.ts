@@ -305,19 +305,29 @@ export class AuthService {
   }
 
   async signup(payload: SignupInput): Promise<TokenData> {
-    const { code, userName, companyName, password } = payload;
-    const register = await this.prisma.register.findFirst({
-      where: { code },
-    });
-    if (!register) {
+    const { code, userName, companyName, password, isInvite } = payload;
+    const register = !isInvite
+      ? await this.prisma.register.findFirst({
+          where: { code },
+        })
+      : null;
+    const invite = isInvite
+      ? await this.prisma.invite.findFirst({
+          where: { code, expired: false, canceled: false },
+        })
+      : null;
+
+    if (!register && !invite) {
       throw new InvalidVerificationSession();
     }
+
+    const email = register?.email || invite?.email;
     const hashedPassword = await this.passwordService.hashPassword(password);
 
     try {
       const user = await this.prisma.$transaction(async (tx) => {
-        const user = await this.createUser(tx, userName, register.email, hashedPassword);
-        await this.createAccount(tx, 'email', user.id, 'email', register.email);
+        const user = await this.createUser(tx, userName, email, hashedPassword);
+        await this.createAccount(tx, 'email', user.id, 'email', email);
         const project = await this.createProject(tx, companyName, user.id);
         await initialization(tx, project.id);
         return user;
@@ -543,6 +553,33 @@ export class AuthService {
       },
       include: {
         environments: true,
+      },
+    });
+  }
+
+  async joinProject(code: string, userId: string) {
+    const invite = await this.prisma.invite.findFirst({
+      where: { code, expired: false, canceled: false },
+    });
+    if (!invite) {
+      throw new InvalidVerificationSession();
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new AccountNotFoundError();
+    }
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId: invite.projectId },
+    });
+    if (userOnProject) {
+      return;
+    }
+    await this.prisma.userOnProject.create({
+      data: {
+        userId,
+        projectId: invite.projectId,
+        role: invite.role,
+        actived: true,
       },
     });
   }

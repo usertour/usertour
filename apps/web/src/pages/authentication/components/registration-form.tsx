@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
-import { signUp } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { useToast } from '@usertour-ui/use-toast';
 import { useForm } from 'react-hook-form';
@@ -15,6 +13,7 @@ import { Input } from '@usertour-ui/input';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-ui/icons';
 import { cn } from '@usertour-ui/ui-utils';
+import { useSignupMutation } from '@usertour-ui/shared-hooks';
 
 // Form validation schema
 const registFormSchema = z.object({
@@ -29,7 +28,8 @@ const registFormSchema = z.object({
       required_error: 'Please input your company name.',
     })
     .max(30)
-    .min(4),
+    .min(4)
+    .optional(),
   password: z
     .string({
       required_error: 'Please input your password.',
@@ -56,7 +56,7 @@ type RegistrationContextType = {
   onSubmit: (data: RegistFormValues) => Promise<void>;
   showError: (title: string) => void;
   registId: string | undefined;
-  hideCompanyName: boolean;
+  inviteId: string | undefined;
 };
 
 // Create context
@@ -74,25 +74,24 @@ const useRegistrationContext = () => {
 // Root component with context provider
 const RegistrationRoot = ({
   children,
-  hideCompanyName = false,
+  inviteId,
 }: {
   children: React.ReactNode;
-  hideCompanyName?: boolean;
+  inviteId?: string;
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [signUpMutation] = useMutation(signUp);
+  // const [signUpMutation] = useMutation(signUp);
+  const { invoke } = useSignupMutation();
   const { toast } = useToast();
   const { registId } = useParams();
 
-  const formSchema = hideCompanyName
-    ? registFormSchema.omit({ companyName: true })
-    : registFormSchema;
+  const formSchema = inviteId ? registFormSchema.omit({ companyName: true }) : registFormSchema;
 
   const form = useForm<RegistFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
-      ...(hideCompanyName && { companyName: undefined }),
+      ...(inviteId && { companyName: undefined }),
     },
     mode: 'onChange',
   });
@@ -106,18 +105,31 @@ const RegistrationRoot = ({
 
   const onSubmit = async (formData: RegistFormValues) => {
     const { isAccept, ...others } = formData;
-    if (!isAccept) {
+    const code = inviteId ? inviteId : registId;
+    const isInvite = !!inviteId;
+
+    if (!isAccept || !code) {
       showError('You must accept our terms of service and privacy policy.');
       return;
     }
     try {
       setIsLoading(true);
-      const submitData = hideCompanyName ? { ...others, companyName: undefined } : others;
-      const { data } = await signUpMutation({
-        variables: { ...submitData, code: registId },
-      });
-      if (data.signup.redirectUrl) {
-        window.location.href = data.signup.redirectUrl;
+      const baseVariables = {
+        userName: others.userName,
+        password: others.password,
+        code,
+        isInvite,
+      };
+
+      const variables = isInvite
+        ? baseVariables
+        : {
+            ...baseVariables,
+            companyName: others.companyName,
+          };
+      const { data } = await invoke(variables);
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
       }
     } catch (error) {
       showError(getErrorMessage(error));
@@ -135,7 +147,7 @@ const RegistrationRoot = ({
         onSubmit,
         showError,
         registId,
-        hideCompanyName,
+        inviteId,
       }}
     >
       <Form {...form}>
@@ -149,7 +161,7 @@ RegistrationRoot.displayName = 'RegistrationRoot';
 
 // Form Fields component
 const RegistrationFormFields = () => {
-  const { form, hideCompanyName } = useRegistrationContext();
+  const { form, inviteId } = useRegistrationContext();
 
   return (
     <>
@@ -167,7 +179,7 @@ const RegistrationFormFields = () => {
             </FormItem>
           )}
         />
-        {!hideCompanyName && (
+        {!inviteId && (
           <FormField
             control={form.control}
             name="companyName"

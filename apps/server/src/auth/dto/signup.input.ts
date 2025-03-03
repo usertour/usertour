@@ -3,20 +3,22 @@ import { IsNotEmpty, MinLength } from 'class-validator';
 
 @InputType()
 export class SignupInput {
-  @Field()
+  @Field(() => String, { nullable: false })
   @IsNotEmpty()
   code: string;
 
-  @Field()
+  @Field(() => String, { nullable: false })
   @IsNotEmpty()
   @MinLength(8)
   password: string;
 
-  @Field()
+  @Field(() => String, { nullable: false })
   @IsNotEmpty()
   userName: string;
 
-  @Field()
-  @IsNotEmpty()
-  companyName: string;
+  @Field(() => String, { nullable: true })
+  companyName?: string;
+
+  @Field(() => Boolean, { nullable: false })
+  isInvite: boolean;
 }

@@ -12,7 +12,11 @@ import { Input } from '@usertour-ui/input';
 import { useToast } from '@usertour-ui/use-toast';
 import { Link } from 'react-router-dom';
 import { apiUrl } from '@/utils/env';
-import { useGetAuthConfigQuery, useLoginMutation } from '@usertour-ui/shared-hooks';
+import {
+  LoginMutationVariables,
+  useGetAuthConfigQuery,
+  useLoginMutation,
+} from '@usertour-ui/shared-hooks';
 
 // Form validation schema
 const signinFormSchema = z.object({
@@ -67,7 +71,13 @@ const useSignInContext = () => {
 };
 
 // Root component with context provider
-const SignInRoot = ({ children }: { children: React.ReactNode }) => {
+interface SignInRootProps {
+  children: React.ReactNode;
+  inviteId?: string;
+}
+
+const SignInRoot = (props: SignInRootProps) => {
+  const { children, inviteId } = props;
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState<boolean>(false);
   const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
@@ -109,7 +119,11 @@ const SignInRoot = ({ children }: { children: React.ReactNode }) => {
   const onSubmit = async (data: SigninFormValues) => {
     try {
       setIsLoading(true);
-      const ret = await invoke(data);
+      const variables: LoginMutationVariables = { ...data };
+      if (inviteId) {
+        variables.inviteId = inviteId;
+      }
+      const ret = await invoke(variables);
       if (ret.redirectUrl) {
         window.location.href = ret.redirectUrl;
       }
@@ -145,6 +159,8 @@ const SignInRoot = ({ children }: { children: React.ReactNode }) => {
     </SignInContext.Provider>
   );
 };
+
+SignInRoot.displayName = 'SignInRoot';
 
 // Social providers component
 const SignInSocialProviders = () => {

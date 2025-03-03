@@ -11,6 +11,7 @@ import {
   login,
   queryContents,
   removeTeamMember,
+  signUp,
 } from '@usertour-ui/gql';
 import type { Content, ContentDataType, Pagination, Segment, TeamMember } from '@usertour-ui/types';
 
@@ -159,11 +160,34 @@ export const useGetAuthConfigQuery = () => {
   return { data: data?.getAuthConfig, loading, error };
 };
 
+export type LoginMutationVariables = {
+  email: string;
+  password: string;
+  inviteId?: string;
+};
+
 export const useLoginMutation = () => {
   const [mutation, { loading, error }] = useMutation(login);
-  const invoke = async (variables: any) => {
+  const invoke = async (variables: LoginMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.login;
+  };
+  return { invoke, loading, error };
+};
+
+export type SignupMutationVariables = {
+  code: string;
+  password: string;
+  userName: string;
+  companyName?: string;
+  isInvite: boolean;
+};
+
+export const useSignupMutation = () => {
+  const [mutation, { loading, error }] = useMutation(signUp);
+  const invoke = async (variables: SignupMutationVariables) => {
+    const response = await mutation({ variables });
+    return response.data?.signUp;
   };
   return { invoke, loading, error };
 };

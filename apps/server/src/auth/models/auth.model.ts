@@ -7,6 +7,9 @@ export class Auth extends Token {
   @Field(() => String, { nullable: true })
   redirectUrl?: string;
 
+  @Field(() => String, { nullable: true })
+  projectId?: string;
+
   @Field(() => User)
   user: User;
 }
