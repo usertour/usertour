@@ -1,6 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { getGravatarUrl } from '@/utils/avatar';
 import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
+import { Badge } from '@usertour-ui/badge';
 import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
@@ -8,8 +9,12 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
 import isHotkey from 'is-hotkey';
@@ -19,7 +24,7 @@ import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
   const { userInfo: user, handleLogout } = useAppContext();
-  const { project } = useAppContext();
+  const { project, projects } = useAppContext();
   const posthog = usePostHog();
 
   const navigate = useNavigate();
@@ -91,6 +96,24 @@ export const AdminUserNav = () => {
           >
             Environments
           </DropdownMenuItem>
+          {/* <DropdownMenuSeparator />
+          <DropdownMenuLabel className="font-normal">My Organizations</DropdownMenuLabel> */}
+          <DropdownMenuSeparator />
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>My Organizations</DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent className="w-56">
+                {projects.map((p) => (
+                  <DropdownMenuItem
+                    key={p.id}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    {p.name} {p.actived && <Badge variant={'success'}>Current</Badge>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logoutHandler}>
