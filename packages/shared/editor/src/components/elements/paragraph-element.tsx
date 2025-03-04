@@ -4,7 +4,7 @@ import { RenderElementProps } from 'slate-react';
 const ParagraphElement = (props: RenderElementProps & { className?: string }) => {
   const { className, attributes, children } = props;
   return (
-    <p className={cn('w-full', className)} style={{ wordBreak: 'break-all' }} {...attributes}>
+    <p className={cn('w-full whitespace-pre-wrap break-words', className)} {...attributes}>
       {children}
     </p>
   );
@@ -16,11 +16,7 @@ type ParagraphElementSerializeType = {
 };
 export const ParagraphElementSerialize = (props: ParagraphElementSerializeType) => {
   const { className, children } = props;
-  return (
-    <p className={cn('w-full ', className)} style={{ wordBreak: 'break-all' }}>
-      {children}
-    </p>
-  );
+  return <p className={cn('w-full whitespace-pre-wrap break-words', className)}>{children}</p>;
 };
 
 export default ParagraphElement;
