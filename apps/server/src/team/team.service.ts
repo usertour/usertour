@@ -24,7 +24,7 @@ export class TeamService {
 
   async getInvites(projectId: string) {
     return await this.prisma.invite.findMany({
-      where: { projectId, expired: false, canceled: false },
+      where: { projectId, expired: false, canceled: false, deleted: false },
       orderBy: { createdAt: 'desc' },
     });
   }
