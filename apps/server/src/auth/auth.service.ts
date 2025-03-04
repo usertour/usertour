@@ -321,7 +321,8 @@ export class AuthService {
 
         // Handle project assignment
         if (isInvite) {
-          await this.assignUserToProject(tx, user.id, projectId, role, code);
+          await this.assignUserToProject(tx, user.id, projectId, role);
+          await this.deleteInvite(tx, code);
         } else {
           const project = await this.createProject(tx, companyName, user.id);
           await initialization(tx, project.id);
@@ -589,9 +590,8 @@ export class AuthService {
     userId: string,
     projectId: string,
     role: string,
-    code: string,
   ) {
-    await tx.userOnProject.create({
+    return await tx.userOnProject.create({
       data: {
         userId,
         projectId,
@@ -599,11 +599,19 @@ export class AuthService {
         actived: true,
       },
     });
-    await tx.invite.updateMany({
+  }
+
+  private async deleteInvite(tx: Prisma.TransactionClient, code: string) {
+    return await tx.invite.updateMany({
       where: { code },
-      data: {
-        deleted: true,
-      },
+      data: { deleted: true },
+    });
+  }
+
+  private async cancelActiveProject(tx: Prisma.TransactionClient, userId: string) {
+    return await tx.userOnProject.updateMany({
+      where: { userId },
+      data: { actived: false },
     });
   }
 
@@ -612,7 +620,10 @@ export class AuthService {
     if (!invite) {
       throw new InvalidVerificationSession();
     }
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { projects: true },
+    });
     if (!user) {
       throw new AccountNotFoundError();
     }
@@ -624,7 +635,11 @@ export class AuthService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      await this.assignUserToProject(tx, user.id, invite.projectId, invite.role, invite.code);
+      if (user.projects.length > 0) {
+        await this.cancelActiveProject(tx, userId);
+      }
+      await this.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      await this.deleteInvite(tx, invite.code);
     });
   }
 }
