@@ -13,5 +13,5 @@ export class LoginInput {
   password: string;
 
   @Field({ nullable: true })
-  inviteId?: string;
+  inviteCode?: string;
 }

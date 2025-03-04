@@ -67,7 +67,7 @@ const config: CustomRouteConfig[] = [
   },
   /* Invite */
   {
-    path: '/auth/invite/:inviteId',
+    path: '/auth/invite/:inviteCode',
     component: Invite,
     layout: AuthLayout,
     loginRequired: false,
@@ -76,7 +76,7 @@ const config: CustomRouteConfig[] = [
   },
   /* Registration */
   {
-    path: '/auth/registration/:registId',
+    path: '/auth/registration/:registrationCode',
     component: Registration,
     layout: AuthLayout,
     loginRequired: false,

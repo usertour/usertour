@@ -511,7 +511,7 @@ type Localization {
 
 input LoginInput {
   email: String!
-  inviteId: String
+  inviteCode: String
   password: String!
 }
 

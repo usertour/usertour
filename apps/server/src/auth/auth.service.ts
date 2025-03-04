@@ -5,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { SignupInput } from './dto/signup.input';
@@ -306,43 +306,66 @@ export class AuthService {
 
   async signup(payload: SignupInput): Promise<TokenData> {
     const { code, userName, companyName, password, isInvite } = payload;
-    const register = !isInvite
-      ? await this.prisma.register.findFirst({
-          where: { code },
-        })
-      : null;
-    const invite = isInvite
-      ? await this.prisma.invite.findFirst({
-          where: { code, expired: false, canceled: false },
-        })
-      : null;
 
-    if (!register && !invite) {
-      throw new InvalidVerificationSession();
-    }
+    // Validate verification code
+    const { email, projectId, role } = await this.validateSignupCode(code, isInvite);
 
-    const email = register?.email || invite?.email;
+    // Hash password
     const hashedPassword = await this.passwordService.hashPassword(password);
 
     try {
       const user = await this.prisma.$transaction(async (tx) => {
+        // Create user and account
         const user = await this.createUser(tx, userName, email, hashedPassword);
         await this.createAccount(tx, 'email', user.id, 'email', email);
-        const project = await this.createProject(tx, companyName, user.id);
-        await initialization(tx, project.id);
+
+        // Handle project assignment
+        if (isInvite) {
+          await this.assignUserToProject(tx, user.id, projectId, role, code);
+        } else {
+          const project = await this.createProject(tx, companyName, user.id);
+          await initialization(tx, project.id);
+        }
+
         return user;
       });
+
       this.logger.log(`User ${user.id} created`);
       return this.login(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
       }
+      this.logger.error('Failed to signup user', e);
       throw new UnknownError();
     }
   }
 
-  async emailLogin(email: string, password: string): Promise<TokenData> {
+  private async getValidInviteByCode(code: string) {
+    const invite = await this.prisma.invite.findFirst({
+      where: { code, expired: false, canceled: false, deleted: false },
+    });
+    return invite;
+  }
+
+  // Add new helper methods
+  private async validateSignupCode(code: string, isInvite: boolean) {
+    const register = !isInvite ? await this.prisma.register.findFirst({ where: { code } }) : null;
+
+    const invite = isInvite ? await this.getValidInviteByCode(code) : null;
+
+    if (!register && !invite) {
+      throw new InvalidVerificationSession();
+    }
+
+    return {
+      email: register?.email || invite?.email,
+      projectId: invite?.projectId,
+      role: invite?.role,
+    };
+  }
+
+  async emailLogin(email: string, password: string, inviteCode?: string): Promise<TokenData> {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { projects: true, accounts: true },
@@ -355,6 +378,10 @@ export class AuthService {
     if (user.projects.length === 0) {
       const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
       await initialization(this.prisma, project.id);
+    }
+
+    if (inviteCode) {
+      await this.joinProject(inviteCode, user.id);
     }
 
     let hashedPassword: string = user.password;
@@ -557,10 +584,31 @@ export class AuthService {
     });
   }
 
-  async joinProject(code: string, userId: string) {
-    const invite = await this.prisma.invite.findFirst({
-      where: { code, expired: false, canceled: false },
+  private async assignUserToProject(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    projectId: string,
+    role: string,
+    code: string,
+  ) {
+    await tx.userOnProject.create({
+      data: {
+        userId,
+        projectId,
+        role: role as Role,
+        actived: true,
+      },
     });
+    await tx.invite.updateMany({
+      where: { code },
+      data: {
+        deleted: true,
+      },
+    });
+  }
+
+  async joinProject(code: string, userId: string) {
+    const invite = await this.getValidInviteByCode(code);
     if (!invite) {
       throw new InvalidVerificationSession();
     }
@@ -574,13 +622,9 @@ export class AuthService {
     if (userOnProject) {
       return;
     }
-    await this.prisma.userOnProject.create({
-      data: {
-        userId,
-        projectId: invite.projectId,
-        role: invite.role,
-        actived: true,
-      },
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.assignUserToProject(tx, user.id, invite.projectId, invite.role, invite.code);
     });
   }
 }

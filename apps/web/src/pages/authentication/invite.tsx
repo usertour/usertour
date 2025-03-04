@@ -16,8 +16,8 @@ import {
 import React from 'react';
 
 const InviteHeader = () => {
-  const { inviteId } = useInviteContext();
-  const { data } = useGetInviteQuery(inviteId);
+  const { inviteCode } = useInviteContext();
+  const { data } = useGetInviteQuery(inviteCode);
   return (
     <CardHeader className="space-y-1 text-center">
       <CardTitle>
@@ -34,7 +34,7 @@ const InviteHeader = () => {
 type InviteContextType = {
   showRegistration: boolean;
   setShowRegistration: (show: boolean) => void;
-  inviteId: string;
+  inviteCode: string;
 };
 
 const InviteContext = React.createContext<InviteContextType | undefined>(undefined);
@@ -86,11 +86,11 @@ const RegistrationFooter = () => {
 };
 
 const InviteBody = () => {
-  const { showRegistration, inviteId } = useInviteContext();
+  const { showRegistration, inviteCode } = useInviteContext();
 
   if (showRegistration) {
     return (
-      <RegistrationRoot inviteId={inviteId}>
+      <RegistrationRoot inviteCode={inviteCode}>
         <CardContent className="grid gap-4">
           <RegistrationFormFields />
           <RegistrationSubmitButton buttonText="Create account and join" />
@@ -100,7 +100,7 @@ const InviteBody = () => {
     );
   }
   return (
-    <SignInRoot inviteId={inviteId}>
+    <SignInRoot inviteCode={inviteCode}>
       <CardContent className="grid gap-4">
         <SignInSocialProviders />
         <SignInDivider />
@@ -113,17 +113,17 @@ const InviteBody = () => {
 
 // Update Invite component
 export const Invite = () => {
-  const { inviteId } = useParams();
+  const { inviteCode } = useParams();
   const [showRegistration, setShowRegistration] = React.useState(false);
 
-  if (!inviteId) {
+  if (!inviteCode) {
     return null;
   }
 
   const value = {
     showRegistration,
     setShowRegistration,
-    inviteId,
+    inviteCode,
   };
 
   return (

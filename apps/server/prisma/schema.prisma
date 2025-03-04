@@ -71,9 +71,10 @@ model Invite {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  code      String   @default(cuid())
+  code      String   @unique @default(cuid())
   expired   Boolean  @default(false)
   canceled  Boolean  @default(false)
+  deleted   Boolean  @default(false)
   email     String
   name      String
   role      Role

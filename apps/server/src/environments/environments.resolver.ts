@@ -35,7 +35,7 @@ export class EnvironmentsResolver {
   }
 
   @Query(() => [Environment])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   userEnvironments(@Args() { projectId }: ProjectIdArgs) {
     return this.environmentsService.listEnvsByProjectId(projectId);
   }

@@ -55,8 +55,8 @@ type RegistrationContextType = {
   form: ReturnType<typeof useForm<RegistFormValues>>;
   onSubmit: (data: RegistFormValues) => Promise<void>;
   showError: (title: string) => void;
-  registId: string | undefined;
-  inviteId: string | undefined;
+  registrationCode: string | undefined;
+  inviteCode: string | undefined;
 };
 
 // Create context
@@ -74,24 +74,24 @@ const useRegistrationContext = () => {
 // Root component with context provider
 const RegistrationRoot = ({
   children,
-  inviteId,
+  inviteCode,
 }: {
   children: React.ReactNode;
-  inviteId?: string;
+  inviteCode?: string;
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // const [signUpMutation] = useMutation(signUp);
   const { invoke } = useSignupMutation();
   const { toast } = useToast();
-  const { registId } = useParams();
+  const { registrationCode } = useParams();
 
-  const formSchema = inviteId ? registFormSchema.omit({ companyName: true }) : registFormSchema;
+  const formSchema = inviteCode ? registFormSchema.omit({ companyName: true }) : registFormSchema;
 
   const form = useForm<RegistFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
-      ...(inviteId && { companyName: undefined }),
+      ...(inviteCode && { companyName: undefined }),
     },
     mode: 'onChange',
   });
@@ -105,8 +105,8 @@ const RegistrationRoot = ({
 
   const onSubmit = async (formData: RegistFormValues) => {
     const { isAccept, ...others } = formData;
-    const code = inviteId ? inviteId : registId;
-    const isInvite = !!inviteId;
+    const code = inviteCode ? inviteCode : registrationCode;
+    const isInvite = !!inviteCode;
 
     if (!isAccept || !code) {
       showError('You must accept our terms of service and privacy policy.');
@@ -127,7 +127,7 @@ const RegistrationRoot = ({
             ...baseVariables,
             companyName: others.companyName,
           };
-      const { data } = await invoke(variables);
+      const data = await invoke(variables);
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       }
@@ -146,8 +146,8 @@ const RegistrationRoot = ({
         form,
         onSubmit,
         showError,
-        registId,
-        inviteId,
+        registrationCode,
+        inviteCode,
       }}
     >
       <Form {...form}>
@@ -161,7 +161,7 @@ RegistrationRoot.displayName = 'RegistrationRoot';
 
 // Form Fields component
 const RegistrationFormFields = () => {
-  const { form, inviteId } = useRegistrationContext();
+  const { form, inviteCode } = useRegistrationContext();
 
   return (
     <>
@@ -179,7 +179,7 @@ const RegistrationFormFields = () => {
             </FormItem>
           )}
         />
-        {!inviteId && (
+        {!inviteCode && (
           <FormField
             control={form.control}
             name="companyName"

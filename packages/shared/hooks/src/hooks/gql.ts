@@ -163,7 +163,7 @@ export const useGetAuthConfigQuery = () => {
 export type LoginMutationVariables = {
   email: string;
   password: string;
-  inviteId?: string;
+  inviteCode?: string;
 };
 
 export const useLoginMutation = () => {
@@ -187,7 +187,7 @@ export const useSignupMutation = () => {
   const [mutation, { loading, error }] = useMutation(signUp);
   const invoke = async (variables: SignupMutationVariables) => {
     const response = await mutation({ variables });
-    return response.data?.signUp;
+    return response.data?.signup;
   };
   return { invoke, loading, error };
 };

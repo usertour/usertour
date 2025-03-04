@@ -54,9 +54,6 @@ export class AuthResolver {
   @Public()
   async signup(@Args('data') data: SignupInput, @Context() context: { res: Response }) {
     const tokens = await this.auth.signup(data);
-    if (data.isInvite && tokens.uid) {
-      await this.auth.joinProject(data.code, tokens.uid);
-    }
     this.auth.setAuthCookie(context.res, tokens);
 
     return {
@@ -68,13 +65,10 @@ export class AuthResolver {
   @Mutation(() => Auth)
   @Public()
   async login(
-    @Args('data') { email, password, inviteId }: LoginInput,
+    @Args('data') { email, password, inviteCode }: LoginInput,
     @Context() context: { res: Response },
   ) {
-    const tokens = await this.auth.emailLogin(email.toLowerCase(), password);
-    if (inviteId && tokens.uid) {
-      await this.auth.joinProject(inviteId, tokens.uid);
-    }
+    const tokens = await this.auth.emailLogin(email.toLowerCase(), password, inviteCode);
     this.logger.log(`Login successful for email: ${email}`);
 
     this.auth.setAuthCookie(context.res, tokens);

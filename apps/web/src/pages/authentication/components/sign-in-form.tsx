@@ -73,11 +73,11 @@ const useSignInContext = () => {
 // Root component with context provider
 interface SignInRootProps {
   children: React.ReactNode;
-  inviteId?: string;
+  inviteCode?: string;
 }
 
 const SignInRoot = (props: SignInRootProps) => {
-  const { children, inviteId } = props;
+  const { children, inviteCode } = props;
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState<boolean>(false);
   const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
@@ -120,8 +120,8 @@ const SignInRoot = (props: SignInRootProps) => {
     try {
       setIsLoading(true);
       const variables: LoginMutationVariables = { ...data };
-      if (inviteId) {
-        variables.inviteId = inviteId;
+      if (inviteCode) {
+        variables.inviteCode = inviteCode;
       }
       const ret = await invoke(variables);
       if (ret.redirectUrl) {
