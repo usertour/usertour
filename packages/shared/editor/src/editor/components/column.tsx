@@ -36,7 +36,8 @@ const transformsStyle = (element: any) => {
     marginBottom: '0px',
     marginRight: `${element.style?.marginRight}px`,
     width: 'auto',
-    flex: 'auto',
+    flex: '0 0 auto',
+    minWidth: 0,
   };
   if (element.width?.type === 'percent') {
     _style.width = `${element.width?.value}%`;
@@ -125,7 +126,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
         style={{ ...transformsStyle(element), ...dragStyle }}
         ref={composedRefs}
         className={cn(
-          'flex relative flex-column',
+          'flex relative flex-row ',
           element?.justifyContent,
           element?.alignItems,
           !activeId ? (isActive ? activeClasses : isHover ? hoverClasses : '') : '',
@@ -135,8 +136,8 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
         onMouseOver={() => setIsHover(true)}
         onMouseOut={() => setIsHover(false)}
         onMouseDown={() => setIsActive(true)}
-        onFocus={() => setIsActive(true)}
-        onBlur={() => setIsActive(false)}
+        onFocus={() => setIsHover(true)}
+        onBlur={() => setIsHover(false)}
       >
         {!isDragging && isActive && (
           <div className="absolute -top-4 -left-[1px] h-4 px-1 rounded-none rounded-t bg-primary flex flex-row text-primary-foreground items-center justify-center">
@@ -308,7 +309,7 @@ export const ContentEditorColumnOverlay = forwardRef<HTMLDivElement, ContentEdit
       <div
         ref={ref}
         className={cn(
-          'flex relative flex-column',
+          'flex relative flex-row ',
           element?.justifyContent,
           element?.alignItems,
           !isInGroup ? hoverClasses : '',
@@ -344,7 +345,7 @@ export const ContentEditorColumnSerialize = (props: ContentEditorColumnSerialize
   const { element, children } = props;
   return (
     <div
-      className={cn('flex relative flex-column', element?.justifyContent, element?.alignItems)}
+      className={cn('flex relative flex-row ', element?.justifyContent, element?.alignItems)}
       style={{ ...transformsStyle(element) }}
     >
       {children}
