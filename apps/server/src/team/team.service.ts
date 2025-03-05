@@ -1,6 +1,6 @@
 import { ParamsError, UnknownError } from '@/common/errors';
 import { Injectable, Logger } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { createTransport } from 'nodemailer';
 import compileEmailTemplate from '@/common/email/compile-email-template';
@@ -155,6 +155,48 @@ export class TeamService {
       to: email, // list of receivers
       subject: `${fromUserName} invited you to Usertour`, // Subject line
       html: template, // html body
+    });
+  }
+
+  async assignUserToProject(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    projectId: string,
+    role: string,
+  ) {
+    return await tx.userOnProject.create({
+      data: {
+        userId,
+        projectId,
+        role: role as Role,
+        actived: true,
+      },
+    });
+  }
+
+  async deleteInvite(tx: Prisma.TransactionClient, code: string) {
+    return await tx.invite.updateMany({
+      where: { code },
+      data: { deleted: true },
+    });
+  }
+
+  async cancelActiveProject(tx: Prisma.TransactionClient, userId: string) {
+    return await tx.userOnProject.updateMany({
+      where: { userId },
+      data: { actived: false },
+    });
+  }
+
+  async getValidInviteByCode(code: string) {
+    return await this.prisma.invite.findFirst({
+      where: { code, expired: false, canceled: false, deleted: false },
+    });
+  }
+
+  async getUserOnProject(userId: string, projectId: string) {
+    return await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
     });
   }
 }

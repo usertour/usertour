@@ -11,7 +11,7 @@ import { PasswordService } from './password.service';
 import { AuthController } from './auth.controller';
 import { GithubOauthStrategy } from './strategy/github-oauth.strategy';
 import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
-
+import { TeamModule } from '@/team/team.module';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -26,6 +26,7 @@ import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
       },
       inject: [ConfigService],
     }),
+    TeamModule,
   ],
   providers: [
     AuthService,

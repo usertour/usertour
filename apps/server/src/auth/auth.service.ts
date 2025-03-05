@@ -5,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Role, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { SignupInput } from './dto/signup.input';
@@ -28,6 +28,7 @@ import {
   PasswordIncorrect,
   UnknownError,
 } from '@/common/errors';
+import { TeamService } from '@/team/team.service';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
+    private readonly teamService: TeamService,
   ) {}
 
   getAuthConfig(): AuthConfigItem[] {
@@ -321,8 +323,8 @@ export class AuthService {
 
         // Handle project assignment
         if (isInvite) {
-          await this.assignUserToProject(tx, user.id, projectId, role);
-          await this.deleteInvite(tx, code);
+          await this.teamService.assignUserToProject(tx, user.id, projectId, role);
+          await this.teamService.deleteInvite(tx, code);
         } else {
           const project = await this.createProject(tx, companyName, user.id);
           await initialization(tx, project.id);
@@ -342,18 +344,11 @@ export class AuthService {
     }
   }
 
-  private async getValidInviteByCode(code: string) {
-    const invite = await this.prisma.invite.findFirst({
-      where: { code, expired: false, canceled: false, deleted: false },
-    });
-    return invite;
-  }
-
   // Add new helper methods
   private async validateSignupCode(code: string, isInvite: boolean) {
     const register = !isInvite ? await this.prisma.register.findFirst({ where: { code } }) : null;
 
-    const invite = isInvite ? await this.getValidInviteByCode(code) : null;
+    const invite = isInvite ? await this.teamService.getValidInviteByCode(code) : null;
 
     if (!register && !invite) {
       throw new InvalidVerificationSession();
@@ -585,38 +580,8 @@ export class AuthService {
     });
   }
 
-  private async assignUserToProject(
-    tx: Prisma.TransactionClient,
-    userId: string,
-    projectId: string,
-    role: string,
-  ) {
-    return await tx.userOnProject.create({
-      data: {
-        userId,
-        projectId,
-        role: role as Role,
-        actived: true,
-      },
-    });
-  }
-
-  private async deleteInvite(tx: Prisma.TransactionClient, code: string) {
-    return await tx.invite.updateMany({
-      where: { code },
-      data: { deleted: true },
-    });
-  }
-
-  private async cancelActiveProject(tx: Prisma.TransactionClient, userId: string) {
-    return await tx.userOnProject.updateMany({
-      where: { userId },
-      data: { actived: false },
-    });
-  }
-
   async joinProject(code: string, userId: string) {
-    const invite = await this.getValidInviteByCode(code);
+    const invite = await this.teamService.getValidInviteByCode(code);
     if (!invite) {
       throw new InvalidVerificationSession();
     }
@@ -627,19 +592,17 @@ export class AuthService {
     if (!user) {
       throw new AccountNotFoundError();
     }
-    const userOnProject = await this.prisma.userOnProject.findFirst({
-      where: { userId, projectId: invite.projectId },
-    });
+    const userOnProject = await this.teamService.getUserOnProject(userId, invite.projectId);
     if (userOnProject) {
       return;
     }
 
     await this.prisma.$transaction(async (tx) => {
       if (user.projects.length > 0) {
-        await this.cancelActiveProject(tx, userId);
+        await this.teamService.cancelActiveProject(tx, userId);
       }
-      await this.assignUserToProject(tx, user.id, invite.projectId, invite.role);
-      await this.deleteInvite(tx, invite.code);
+      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      await this.teamService.deleteInvite(tx, invite.code);
     });
   }
 }
