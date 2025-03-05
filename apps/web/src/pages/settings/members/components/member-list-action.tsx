@@ -17,6 +17,7 @@ import { useMemberContext } from '@/contexts/member-context';
 import { MemberChangeRoleDialog } from './member-change-role-dialog';
 import { MemberRemoveDialog } from './member-remove-dialog';
 import { TransferOwnerDialog } from './member-transfer-owner-dialog';
+import { ArrowLeftRightIcon } from 'lucide-react';
 
 type MemberListActionProps = {
   data: TeamMember;
@@ -64,7 +65,7 @@ export const MemberListAction = (props: MemberListActionProps) => {
                 disabled={data.role === TeamMemberRole.OWNER}
                 onClick={() => setOpenTransferOwnerDialog(true)}
               >
-                <EditIcon className="w-6" width={16} height={16} />
+                <ArrowLeftRightIcon className="w-6" width={16} height={16} />
                 Transfer ownership to this user
               </DropdownMenuItem>
               <DropdownMenuSeparator />
