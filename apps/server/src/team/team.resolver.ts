@@ -14,18 +14,25 @@ import { Role } from '@prisma/client';
 import { Logger } from '@nestjs/common';
 import { Invite } from './models/invite.model';
 import { Public } from '@/common/decorators/public.decorator';
+import { UseGuards } from '@nestjs/common';
+import { TeamGuard } from './team.guard';
+import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
 
 @Resolver()
+@UseGuards(TeamGuard)
 export class TeamResolver {
   private readonly logger = new Logger(TeamResolver.name);
   constructor(private teamService: TeamService) {}
 
   @Query(() => [Invite])
+  @Roles([RolesScopeEnum.OWNER])
   async getInvites(@Args('projectId') projectId: string) {
     return await this.teamService.getInvites(projectId);
   }
 
   @Query(() => [UserOnProject])
+  @Roles([RolesScopeEnum.OWNER])
   async getTeamMembers(@Args('projectId') projectId: string) {
     return this.teamService.getTeamMembers(projectId);
   }
@@ -37,6 +44,7 @@ export class TeamResolver {
   }
 
   @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER])
   async inviteTeamMember(@UserEntity() user: User, @Args('data') data: InviteTeamMemberInput) {
     this.logger.log(`Inviting team member: ${user.id}`);
     await this.teamService.inviteTeamMember(
@@ -50,18 +58,21 @@ export class TeamResolver {
   }
 
   @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER])
   async removeTeamMember(@Args('data') data: RemoveTeamMemberInput) {
     await this.teamService.removeTeamMember(data.userId, data.projectId);
     return true;
   }
 
   @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER])
   async changeTeamMemberRole(@Args('data') data: ChangeTeamMemberRoleInput) {
     await this.teamService.changeTeamMemberRole(data.userId, data.projectId, data.role);
     return true;
   }
 
   @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER])
   async cancelInvite(@Args('data') data: CancelInviteInput) {
     await this.teamService.cancelInvite(data.inviteId);
     return true;
