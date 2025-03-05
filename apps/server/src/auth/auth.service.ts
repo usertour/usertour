@@ -29,6 +29,7 @@ import {
   UnknownError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
+import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 
 @Injectable()
 export class AuthService {
@@ -537,7 +538,7 @@ export class AuthService {
       data: {
         name,
         users: {
-          create: [{ userId, role: 'ADMIN', actived: true }],
+          create: [{ userId, role: RolesScopeEnum.OWNER, actived: true }],
         },
         environments: {
           create: [

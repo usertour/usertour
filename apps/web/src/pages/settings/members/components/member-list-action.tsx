@@ -16,6 +16,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useMemberContext } from '@/contexts/member-context';
 import { MemberChangeRoleDialog } from './member-change-role-dialog';
 import { MemberRemoveDialog } from './member-remove-dialog';
+import { TransferOwnerDialog } from './member-transfer-owner-dialog';
 
 type MemberListActionProps = {
   data: TeamMember;
@@ -28,6 +29,7 @@ export const MemberListAction = (props: MemberListActionProps) => {
   const { refetch } = useMemberContext();
   const [openChangeRoleDialog, setOpenChangeRoleDialog] = useState(false);
   const [openRemoveDialog, setOpenRemoveDialog] = useState(false);
+  const [openTransferOwnerDialog, setOpenTransferOwnerDialog] = useState(false);
 
   return (
     <>
@@ -37,7 +39,7 @@ export const MemberListAction = (props: MemberListActionProps) => {
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[200px]">
+        <DropdownMenuContent align="end" className="min-w-[200px]">
           {data.isInvite && (
             <DropdownMenuItem
               className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
@@ -56,6 +58,14 @@ export const MemberListAction = (props: MemberListActionProps) => {
               >
                 <EditIcon className="w-6" width={16} height={16} />
                 Change role
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                disabled={data.role === TeamMemberRole.OWNER}
+                onClick={() => setOpenTransferOwnerDialog(true)}
+              >
+                <EditIcon className="w-6" width={16} height={16} />
+                Transfer ownership to this user
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -95,6 +105,16 @@ export const MemberListAction = (props: MemberListActionProps) => {
         onClose={() => {
           setOpenRemoveDialog(false);
           refetch();
+        }}
+      />
+      <TransferOwnerDialog
+        projectId={project?.id as string}
+        isOpen={openTransferOwnerDialog}
+        data={data}
+        onClose={() => {
+          setOpenTransferOwnerDialog(false);
+          window.location.reload();
+          // refetch();
         }}
       />
     </>
