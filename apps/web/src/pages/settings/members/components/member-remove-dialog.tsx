@@ -20,11 +20,12 @@ interface MemberRemoveDialogProps {
   projectId: string;
   isOpen: boolean;
   data: TeamMember;
-  onClose: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
-  const { onClose, isOpen, data, projectId } = props;
+  const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { invoke } = useRemoveTeamMemberMutation();
@@ -44,7 +45,7 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
       }
       const response = await invoke(projectId, data.userId);
       if (response) {
-        onClose();
+        onSuccess();
       }
     } catch (error) {
       showError(getErrorMessage(error));
@@ -53,14 +54,14 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirm </DialogTitle>
         </DialogHeader>
         <DialogDescription>Confirm removing member, {data.email}?</DialogDescription>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => onClose()}>
+          <Button variant="outline" type="button" onClick={onCancel}>
             Canel
           </Button>
           <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>

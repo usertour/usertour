@@ -148,7 +148,6 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
                             <SelectContent>
                               <SelectItem value={TeamMemberRole.ADMIN}>Admin</SelectItem>
                               <SelectItem value={TeamMemberRole.VIEWER}>Viewer</SelectItem>
-                              <SelectItem value={TeamMemberRole.OWNER}>Owner</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>

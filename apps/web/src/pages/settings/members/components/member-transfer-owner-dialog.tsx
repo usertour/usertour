@@ -20,11 +20,12 @@ interface EditFormProps {
   projectId: string;
   isOpen: boolean;
   data: TeamMember;
-  onClose: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 export const TransferOwnerDialog = (props: EditFormProps) => {
-  const { onClose, isOpen, data, projectId } = props;
+  const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { invoke } = useChangeTeamMemberRoleMutation();
@@ -44,7 +45,7 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
       }
       const response = await invoke(projectId, data.userId, TeamMemberRole.OWNER);
       if (response) {
-        onClose();
+        onSuccess();
       }
     } catch (error) {
       showError(getErrorMessage(error));
@@ -53,7 +54,7 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Transfer account ownership</DialogTitle>
@@ -63,7 +64,7 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
           can't undo it. Confirm transferring account ownership to {data.name}?
         </DialogDescription>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => onClose()}>
+          <Button variant="outline" type="button" onClick={onCancel}>
             Cancel
           </Button>
           <Button

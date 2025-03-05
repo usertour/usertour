@@ -20,11 +20,12 @@ interface EditFormProps {
   projectId: string;
   isOpen: boolean;
   data: TeamMember;
-  onClose: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 export const CancelInviteDialog = (props: EditFormProps) => {
-  const { onClose, isOpen, data, projectId } = props;
+  const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { invoke } = useCancelInviteMutation();
@@ -44,7 +45,7 @@ export const CancelInviteDialog = (props: EditFormProps) => {
       }
       const response = await invoke(projectId, data.inviteId);
       if (response) {
-        onClose();
+        onSuccess();
       }
     } catch (error) {
       showError(getErrorMessage(error));
@@ -53,14 +54,14 @@ export const CancelInviteDialog = (props: EditFormProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirm </DialogTitle>
         </DialogHeader>
         <DialogDescription>Confirm canceling invite to {data.email}?</DialogDescription>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => onClose()}>
+          <Button variant="outline" type="button" onClick={onCancel}>
             No, do nothing
           </Button>
           <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>

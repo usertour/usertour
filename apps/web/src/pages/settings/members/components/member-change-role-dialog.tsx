@@ -24,7 +24,8 @@ import { z } from 'zod';
 
 interface MemberChangeRoleDialogProps {
   isOpen: boolean;
-  onClose: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
   data: TeamMember;
   projectId: string;
 }
@@ -38,7 +39,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
-  const { isOpen, onClose, data, projectId } = props;
+  const { isOpen, onSuccess, onCancel, data, projectId } = props;
   const { invoke } = useChangeTeamMemberRoleMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -75,7 +76,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
       if (!success) {
         showError('Change role failed.');
       }
-      onClose();
+      onSuccess();
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -83,7 +84,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -122,7 +123,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
+              <Button variant="outline" type="button" onClick={onCancel}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>

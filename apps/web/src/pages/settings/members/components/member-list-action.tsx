@@ -84,37 +84,48 @@ export const MemberListAction = (props: MemberListActionProps) => {
         projectId={project?.id as string}
         data={data}
         isOpen={open}
-        onClose={() => {
+        onSuccess={() => {
           setOpen(false);
           refetch();
+        }}
+        onCancel={() => {
+          setOpen(false);
         }}
       />
       <MemberChangeRoleDialog
         projectId={project?.id as string}
         isOpen={openChangeRoleDialog}
         data={data}
-        onClose={() => {
+        onSuccess={() => {
           setOpenChangeRoleDialog(false);
           refetch();
+        }}
+        onCancel={() => {
+          setOpenChangeRoleDialog(false);
         }}
       />
       <MemberRemoveDialog
         projectId={project?.id as string}
         isOpen={openRemoveDialog}
         data={data}
-        onClose={() => {
+        onSuccess={() => {
           setOpenRemoveDialog(false);
           refetch();
+        }}
+        onCancel={() => {
+          setOpenRemoveDialog(false);
         }}
       />
       <TransferOwnerDialog
         projectId={project?.id as string}
         isOpen={openTransferOwnerDialog}
         data={data}
-        onClose={() => {
+        onSuccess={() => {
           setOpenTransferOwnerDialog(false);
           window.location.reload();
-          // refetch();
+        }}
+        onCancel={() => {
+          setOpenTransferOwnerDialog(false);
         }}
       />
     </>
