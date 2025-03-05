@@ -158,6 +158,20 @@ export class TeamService {
     });
   }
 
+  async activeUserProject(userId: string, projectId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      await this.cancelActiveProject(tx, userId);
+      await this.activeUserOnProject(tx, userId, projectId);
+    });
+  }
+
+  async activeUserOnProject(tx: Prisma.TransactionClient, userId: string, projectId: string) {
+    return await tx.userOnProject.updateMany({
+      where: { userId, projectId },
+      data: { actived: true },
+    });
+  }
+
   async assignUserToProject(
     tx: Prisma.TransactionClient,
     userId: string,

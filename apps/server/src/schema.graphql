@@ -2,6 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input ActiveUserProjectInput {
+  projectId: String!
+  userId: String!
+}
+
 type Analytics {
   totalCompletions: Int!
   totalViews: Int!
@@ -520,6 +525,7 @@ input MagicLinkInput {
 }
 
 type Mutation {
+  activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
   cancelInvite(data: CancelInviteInput!): Boolean!

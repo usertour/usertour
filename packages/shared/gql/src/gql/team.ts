@@ -80,3 +80,9 @@ export const getInvite = gql`
     }
   }
 `;
+
+export const activeUserProject = gql`
+  mutation activeUserProject($userId: String!, $projectId: String!) {
+    activeUserProject(data: { userId: $userId, projectId: $projectId })
+  }
+`;

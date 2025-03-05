@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@apollo/client';
 import {
+  activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   getAuthConfig,
@@ -188,6 +189,15 @@ export const useSignupMutation = () => {
   const invoke = async (variables: SignupMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.signup;
+  };
+  return { invoke, loading, error };
+};
+
+export const useActiveUserProjectMutation = () => {
+  const [mutation, { loading, error }] = useMutation(activeUserProject);
+  const invoke = async (userId: string, projectId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { userId, projectId } });
+    return !!response.data?.activeUserProject;
   };
   return { invoke, loading, error };
 };

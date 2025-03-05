@@ -7,6 +7,7 @@ import {
   ChangeTeamMemberRoleInput,
   InviteTeamMemberInput,
   RemoveTeamMemberInput,
+  ActiveUserProjectInput,
 } from './dto/member.input';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { Role } from '@prisma/client';
@@ -63,6 +64,12 @@ export class TeamResolver {
   @Mutation(() => Boolean)
   async cancelInvite(@Args('data') data: CancelInviteInput) {
     await this.teamService.cancelInvite(data.inviteId);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async activeUserProject(@Args('data') data: ActiveUserProjectInput) {
+    await this.teamService.activeUserProject(data.userId, data.projectId);
     return true;
   }
 }
