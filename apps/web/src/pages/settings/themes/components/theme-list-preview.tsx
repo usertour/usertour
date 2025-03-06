@@ -19,7 +19,7 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
   const containerRef = useRef(null);
 
   const { refetch } = useThemeListContext();
-  const { project } = useAppContext();
+  const { project, isViewOnly } = useAppContext();
   const [settings] = useState<ThemeTypesSetting>(theme.settings);
   const navigate = useNavigate();
   const handleOnClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -52,7 +52,7 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
               </span>
             )}
           </div>
-          <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSuccess}>
+          <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSuccess} disabled={isViewOnly}>
             <DotsHorizontalIcon className="h-4 w-4" />
           </ThemeEditDropdownMenu>
         </div>

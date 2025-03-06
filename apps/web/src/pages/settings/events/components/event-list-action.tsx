@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usert
 import { useState } from 'react';
 import { EventDeleteForm } from './event-delete-form';
 import { EventEditForm } from './event-edit-form';
-
+import { useAppContext } from '@/contexts/app-context';
 type EventListActionProps = {
   event: Event;
 };
@@ -23,6 +23,7 @@ export const EventListAction = (props: EventListActionProps) => {
   const [open, setOpen] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const { refetch } = useEventListContext();
+  const { isViewOnly } = useAppContext();
   const handleOpen = () => {
     setOpen(true);
   };
@@ -46,6 +47,7 @@ export const EventListAction = (props: EventListActionProps) => {
             <Button
               variant="ghost"
               className="flex h-8 w-8 p-0 data-[state=open]:bg-muted opacity-50"
+              disabled={isViewOnly}
             >
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>
@@ -62,7 +64,11 @@ export const EventListAction = (props: EventListActionProps) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
+          <Button
+            variant="ghost"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            disabled={isViewOnly}
+          >
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

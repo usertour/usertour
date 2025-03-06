@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
 import { ThemeRenameForm } from './theme-rename-form';
+import { useAppContext } from '@/contexts/app-context';
 
 export const ThemeDetailHeader = () => {
   const { theme, settings, refetch } = useThemeDetailContext();
@@ -19,6 +20,7 @@ export const ThemeDetailHeader = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigator = useNavigate();
   const { toast } = useToast();
+  const { isViewOnly } = useAppContext();
   const handleSaveTheme = async () => {
     if (!theme) {
       return;
@@ -75,17 +77,19 @@ export const ThemeDetailHeader = () => {
               refetch();
             }}
           >
-            <EditIcon className="ml-1 cursor-pointer" width={16} height={16} />
+            <Button variant={'ghost'} className="hover:bg-transparent" disabled={isViewOnly}>
+              <EditIcon className="cursor-pointer" width={16} height={16} />
+            </Button>
           </ThemeRenameForm>
         )}
         {/* <MainNav className="mx-6" /> */}
         <div className="ml-auto flex items-center space-x-4">
-          <Button onClick={handleSaveTheme} disabled={theme.isSystem}>
+          <Button onClick={handleSaveTheme} disabled={theme.isSystem || isViewOnly}>
             {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
           <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSubmit}>
-            <Button variant="secondary">
+            <Button variant="secondary" disabled={isViewOnly}>
               <span className="sr-only">Actions</span>
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>
