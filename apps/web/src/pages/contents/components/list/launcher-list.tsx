@@ -7,9 +7,11 @@ import { useState } from 'react';
 import { EmptyPlaceholder } from '../shared/empty-placeholder';
 import { LauncherCreateForm } from '../shared/launcher-create-form';
 import { DataTable } from './data-table';
+import { useAppContext } from '@/contexts/app-context';
 
 export const LauncherListContent = () => {
   const [open, setOpen] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   const openCreateFormHandler = async () => {
     setOpen(true);
@@ -35,7 +37,7 @@ export const LauncherListContent = () => {
               </p>
             </div>
           </div>
-          <Button onClick={openCreateFormHandler} className="flex-none">
+          <Button onClick={openCreateFormHandler} className="flex-none" disabled={isViewOnly}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Launcher
           </Button>

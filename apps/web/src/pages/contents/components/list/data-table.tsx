@@ -32,9 +32,12 @@ import {
 } from '../shared/content-preview';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
+import { useAppContext } from '@/contexts/app-context';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
+  const { isViewOnly } = useAppContext();
+
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
       <div className="flex-none flex flex-row justify-between items-center space-x-4">
@@ -47,6 +50,7 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
           onSubmit={() => {
             refetch();
           }}
+          disabled={isViewOnly}
         >
           <DotsHorizontalIcon className="h-4 w-4 flex-none" />
         </ContentEditDropdownMenu>

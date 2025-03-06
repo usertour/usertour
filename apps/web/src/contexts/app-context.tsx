@@ -2,7 +2,7 @@ import { Environment, Project } from '@/types/project';
 import { useMutation, useQuery } from '@apollo/client';
 import { getUserInfo, logout } from '@usertour-ui/gql';
 import { removeAuthToken } from '@usertour-ui/shared-utils';
-import { UserProfile } from '@usertour-ui/types';
+import { TeamMemberRole, UserProfile } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface AppContextProps {
@@ -14,6 +14,7 @@ interface AppContextProps {
   refetch: any;
   handleLogout: () => Promise<void>;
   projects: Project[];
+  isViewOnly: boolean;
 }
 
 export const AppContext = createContext<AppContextProps | null>(null);
@@ -61,6 +62,7 @@ export const AppProvider = (props: AppProviderProps) => {
     })) ?? [];
 
   const project: Project | null = projects.find((p: Project) => p.actived) ?? null;
+  const isViewOnly = !!(project && project.role === TeamMemberRole.VIEWER);
 
   const value = {
     environment,
@@ -71,6 +73,7 @@ export const AppProvider = (props: AppProviderProps) => {
     refetch,
     handleLogout,
     projects,
+    isViewOnly,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

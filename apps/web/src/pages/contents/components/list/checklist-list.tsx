@@ -7,9 +7,11 @@ import { useState } from 'react';
 import { ChecklistCreateForm } from '../shared/checklist-create-form';
 import { EmptyPlaceholder } from '../shared/empty-placeholder';
 import { DataTable } from './data-table';
+import { useAppContext } from '@/contexts/app-context';
 
 export const ChecklistListContent = () => {
   const [open, setOpen] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   const openCreateFormHandler = async () => {
     setOpen(true);
@@ -34,7 +36,7 @@ export const ChecklistListContent = () => {
               </p>
             </div>
           </div>
-          <Button onClick={openCreateFormHandler} className="flex-none">
+          <Button onClick={openCreateFormHandler} className="flex-none" disabled={isViewOnly}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Checklist
           </Button>
@@ -48,7 +50,7 @@ export const ChecklistListContent = () => {
           name="No checklists added"
           description="You have not added any checklists. Add one below."
         >
-          <Button onClick={openCreateFormHandler}>
+          <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Checklist
           </Button>

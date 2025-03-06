@@ -7,9 +7,11 @@ import { useState } from 'react';
 import { ContentCreateForm } from '../shared/content-create-form';
 import { EmptyPlaceholder } from '../shared/empty-placeholder';
 import { DataTable } from './data-table';
+import { useAppContext } from '@/contexts/app-context';
 
 export const FlowListContent = () => {
   const [open, setOpen] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   const openCreateFormHandler = async () => {
     setOpen(true);
@@ -43,7 +45,12 @@ export const FlowListContent = () => {
               </p>
             </div>
           </div>
-          <Button onClick={openCreateFormHandler} className="flex-none" id="create-flow-button">
+          <Button
+            onClick={openCreateFormHandler}
+            className="flex-none"
+            id="create-flow-button"
+            disabled={isViewOnly}
+          >
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Flow
           </Button>
@@ -53,7 +60,7 @@ export const FlowListContent = () => {
       {isLoading && <ContentListSkeleton count={9} />}
       {!isLoading && contents && contents.length === 0 && (
         <EmptyPlaceholder>
-          <Button onClick={openCreateFormHandler}>
+          <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Flow
           </Button>

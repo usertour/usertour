@@ -10,10 +10,12 @@ import { BannerCreateForm } from '../shared/banner-create-form';
 import { EmptyPlaceholder } from '../shared/empty-placeholder';
 import { ExtensionInstallDialog } from '../shared/extension-install-dialog';
 import { DataTable } from './data-table';
+import { useAppContext } from '@/contexts/app-context';
 
 export const BannerListContent = () => {
   const [open, setOpen] = useState(false);
   const [isOpenedInstall, setIsOpenedInstall] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   const openCreateFormHandler = async () => {
     const isInstalled = await isInstalledExtension();
@@ -66,7 +68,7 @@ export const BannerListContent = () => {
             <TabsTrigger value="published">Published</TabsTrigger>
           </TabsList>
           <div className="ml-auto">
-            <Button onClick={openCreateFormHandler}>
+            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-4 w-4" />
               Create Banner
             </Button>
@@ -78,7 +80,7 @@ export const BannerListContent = () => {
             name="No banners added"
             description="You have not added any banners. Add one below."
           >
-            <Button onClick={openCreateFormHandler}>
+            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-4 w-4" />
               Create Banner
             </Button>
