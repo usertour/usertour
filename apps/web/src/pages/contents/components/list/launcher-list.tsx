@@ -50,7 +50,7 @@ export const LauncherListContent = () => {
           name="No launchers added"
           description="You have not added any launchers. Add one below."
         >
-          <Button onClick={openCreateFormHandler}>
+          <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Launcher
           </Button>

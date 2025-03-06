@@ -13,9 +13,10 @@ type UserEditDropdownMenuProps = {
   segment: Segment;
   children: ReactNode;
   onSubmit: (action: string) => void;
+  disabled?: boolean;
 };
 export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
-  const { segment, children, onSubmit } = props;
+  const { segment, children, onSubmit, disabled = false } = props;
   const [openDelete, setOpenDelete] = useState(false);
 
   const handleOnClick = () => {
@@ -25,7 +26,9 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild disabled={disabled}>
+          {children}
+        </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
           <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={handleOnClick}>
             <Delete2Icon className="mr-1" />

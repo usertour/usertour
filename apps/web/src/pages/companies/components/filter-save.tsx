@@ -1,3 +1,4 @@
+import { useAppContext } from '@/contexts/app-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useMutation } from '@apollo/client';
 import {
@@ -22,6 +23,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const [mutation] = useMutation(updateSegment);
   const { refetch, currentConditions } = useSegmentListContext();
   const { toast } = useToast();
+  const { isViewOnly } = useAppContext();
 
   const [open, setOpen] = useState(false);
   const [isShowButton, setIsShowButton] = useState(false);
@@ -80,6 +82,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           className="h-8 ml-3 text-primary hover:text-primary"
           variant={'ghost'}
           onClick={handleOnClick}
+          disabled={isViewOnly}
         >
           Save filter
         </Button>

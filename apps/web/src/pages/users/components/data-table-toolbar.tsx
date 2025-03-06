@@ -16,7 +16,7 @@ import { UserSegmentCreateForm } from './create-form';
 import { DataTableViewOptions } from './data-table-view-options';
 import { DeleteUserFromSegment } from './delete-user';
 import { RemoveFromSegment } from './remove-from-segment';
-
+import { useAppContext } from '@/contexts/app-context';
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   currentSegment: Segment;
@@ -27,6 +27,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
   const { setCurrentConditions } = useSegmentListContext();
   const { query, setQuery } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
+  const { isViewOnly } = useAppContext();
   // const [mutation] = useMutation(updateSegment);
   // const { setQuery } = useUserListContext();
 
@@ -98,6 +99,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
           filterItems={['group', 'user-attr']}
           addButtonText={'Add filter'}
           attributes={attributeList}
+          disabled={isViewOnly}
         />
       </div>
       {table.getFilteredSelectedRowModel().rows.length > 0 && (

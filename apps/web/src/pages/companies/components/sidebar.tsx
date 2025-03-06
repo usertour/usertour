@@ -14,10 +14,12 @@ import { Segment } from '@usertour-ui/types';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CompanySegmentCreateForm } from './create-form';
+import { useAppContext } from '@/contexts/app-context';
 
 export function CompanyListSidebar() {
   const { segmentList, refetch, environmentId, currentSegment } = useSegmentListContext();
   const [_, setSearchParams] = useSearchParams();
+  const { isViewOnly } = useAppContext();
 
   const [open, setOpen] = useState(false);
   const handleCreate = () => {
@@ -50,6 +52,7 @@ export function CompanyListSidebar() {
                   variant={'ghost'}
                   className="p-1 h-auto text-primary"
                   onClick={handleCreate}
+                  disabled={isViewOnly}
                 >
                   <PLUSIcon width={16} height={16} /> New
                 </Button>

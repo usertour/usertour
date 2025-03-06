@@ -370,12 +370,13 @@ export const ContentDetailContent = () => {
           />
         )}
         {contentType === ContentTypeName.FLOWS && (
-          <div
+          <Button
             onClick={() => openBuilder(content, contentType)}
-            className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer "
+            className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer w-auto h-auto hover:bg-white "
+            disabled={isViewOnly}
           >
             <AddIcon width={40} height={40} className="text-primary" />
-          </div>
+          </Button>
         )}
         <ContentEditForm
           content={content}
