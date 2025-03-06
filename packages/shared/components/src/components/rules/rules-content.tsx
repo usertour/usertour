@@ -161,7 +161,7 @@ const RulesContentRadios = () => {
 export const RulesContent = (props: RulesContentProps) => {
   const { index, data } = props;
   const { updateConditionData } = useRulesGroupContext();
-  const { contents } = useRulesContext();
+  const { contents, disabled } = useRulesContext();
   const item = contents.find((item) => item.id === data?.contentId);
   const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(
     item ? { id: item.id, name: item.name || '' } : null,
@@ -202,9 +202,9 @@ export const RulesContent = (props: RulesContentProps) => {
     <RulesContentContext.Provider value={value}>
       <RulesError open={openError}>
         <div className="flex flex-row space-x-3">
-          <RulesLogic index={index} />
+          <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
-            <RulesConditionRightContent>
+            <RulesConditionRightContent disabled={disabled}>
               <RulesConditionIcon>
                 <ContentIcon width={16} height={16} />
               </RulesConditionIcon>

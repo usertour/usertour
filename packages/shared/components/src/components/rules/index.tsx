@@ -17,6 +17,7 @@ interface RulesProps {
   saveBuildUrl?: () => boolean;
   token?: string;
   onElementChange?: (conditionIndex: number, type: string) => void;
+  disabled?: boolean;
 }
 
 interface RulesContextValue {
@@ -31,6 +32,7 @@ interface RulesContextValue {
   saveBuildUrl?: () => boolean;
   onElementChange?: (conditionIndex: number, type: string) => void;
   token: string;
+  disabled: boolean;
 }
 
 export const RulesContext = createContext<RulesContextValue | undefined>(undefined);
@@ -70,6 +72,7 @@ export const Rules = (props: RulesProps) => {
     saveBuildUrl,
     token = '',
     onElementChange,
+    disabled = false,
   } = props;
 
   const handleOnChange = (conds: RulesCondition[]) => {
@@ -91,6 +94,7 @@ export const Rules = (props: RulesProps) => {
     saveBuildUrl,
     token,
     onElementChange,
+    disabled,
   };
 
   return (

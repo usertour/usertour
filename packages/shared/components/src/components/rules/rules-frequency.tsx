@@ -35,9 +35,10 @@ interface RulesFrequencyUnitsProps {
   frequency: Frequency;
   onChange?: (frequency: Frequency) => void;
   contentType: ContentDataType;
+  disabled?: boolean;
 }
 const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
-  const { frequency: _frequency, onChange, contentType } = props;
+  const { frequency: _frequency, onChange, contentType, disabled = false } = props;
 
   const handleValueChange = (value: string) => {
     setFrequency(value as Frequency);
@@ -49,7 +50,7 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild disabled={disabled}>
         <div className="flex flex-row items-center space-x-2">
           <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
             <span>{itemsMapping.find((item) => item.key === frequency)?.value}</span>
@@ -85,9 +86,10 @@ interface RulesFrequencyEveryProps {
   defaultValue: RulesFrequencyValueEvery;
   onChange?: (value: RulesFrequencyValueEvery) => void;
   contentType: ContentDataType;
+  disabled?: boolean;
 }
 const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
-  const { defaultValue, frequency, onChange, contentType } = props;
+  const { defaultValue, frequency, onChange, contentType, disabled = false } = props;
   const [data, setData] = useState<RulesFrequencyValueEvery>(defaultValue);
 
   const update = (params: Partial<RulesFrequencyValueEvery>) => {
@@ -110,10 +112,11 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
     update({ unit: value as FrequencyUnits });
   };
 
-  const EveryTimes = () => {
+  const EveryTimes = (props: { disabled?: boolean }) => {
+    const { disabled = false } = props;
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild disabled={disabled}>
           <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer">
             <span>{data.unit}</span>
             <ChevronDownIcon width={16} height={16} />
@@ -145,6 +148,7 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
           name={'Border width'}
           onChange={handleTimesInputOnChange}
           value={data.times}
+          disabled={disabled}
           className="rounded-lg text-sm w-16 h-6 "
           placeholder={''}
         />
@@ -155,10 +159,11 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
           name={'Border width'}
           onChange={handleDurationInputOnChange}
           value={data.duration}
+          disabled={disabled}
           className="rounded-lg text-sm w-16 h-6 "
           placeholder={''}
         />
-        <EveryTimes />
+        <EveryTimes disabled={disabled} />
         <span className="text-sm">apart </span>
         <TooltipProvider>
           <Tooltip>
@@ -201,10 +206,11 @@ interface RulesFrequencyAtLeastProps {
   defaultValue: RulesFrequencyValueAtLeast;
   onChange?: (value: RulesFrequencyValueAtLeast) => void;
   contentType: ContentDataType;
+  disabled?: boolean;
 }
 
 const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
-  const { defaultValue, onChange, contentType } = props;
+  const { defaultValue, onChange, contentType, disabled = false } = props;
   const [data, setData] = useState<RulesFrequencyValueAtLeast>(defaultValue);
 
   const update = (params: Partial<RulesFrequencyValueAtLeast>) => {
@@ -231,12 +237,13 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
         id={'border-width'}
         name={'Border width'}
         onChange={handleInputOnChange}
+        disabled={disabled}
         value={data.duration}
         className="rounded-lg text-sm w-16 h-6 "
         placeholder={''}
       />
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild disabled={disabled}>
           <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer">
             <span>{data.unit}</span>
             <ChevronDownIcon width={16} height={16} />
@@ -287,9 +294,16 @@ export interface RulesFrequencyProps {
   onChange: (value: RulesFrequencyValue) => void;
   showAtLeast?: boolean;
   contentType?: ContentDataType;
+  disabled?: boolean;
 }
 export const RulesFrequency = (props: RulesFrequencyProps) => {
-  const { onChange, defaultValue, showAtLeast = true, contentType = ContentDataType.FLOW } = props;
+  const {
+    onChange,
+    defaultValue,
+    showAtLeast = true,
+    contentType = ContentDataType.FLOW,
+    disabled = false,
+  } = props;
 
   const initialData: RulesFrequencyValue = {
     ...(defaultValue || initialValue),
@@ -319,6 +333,7 @@ export const RulesFrequency = (props: RulesFrequencyProps) => {
           update({ frequency: v });
         }}
         contentType={contentType}
+        disabled={disabled}
       />
       <RulesFrequencyEvery
         frequency={data.frequency}
@@ -327,6 +342,7 @@ export const RulesFrequency = (props: RulesFrequencyProps) => {
           update({ every: value });
         }}
         contentType={contentType}
+        disabled={disabled}
       />
       {showAtLeast && data.atLeast && (
         <RulesFrequencyAtLeast
@@ -335,6 +351,7 @@ export const RulesFrequency = (props: RulesFrequencyProps) => {
             update({ atLeast: value });
           }}
           contentType={contentType}
+          disabled={disabled}
         />
       )}
     </>

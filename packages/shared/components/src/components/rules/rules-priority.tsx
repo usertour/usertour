@@ -21,9 +21,10 @@ const itemsMapping = [
 interface RulesPriorityProps {
   defaltValue: ContentPriority;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }
 export const RulesPriority = (props: RulesPriorityProps) => {
-  const { defaltValue = ContentPriority.MEDIUM, onChange } = props;
+  const { defaltValue = ContentPriority.MEDIUM, onChange, disabled = false } = props;
   const [value, setValue] = useState(defaltValue);
 
   const handleOnValueChange = (value: string) => {
@@ -33,7 +34,7 @@ export const RulesPriority = (props: RulesPriorityProps) => {
   return (
     <div className="flex flex-row items-center space-x-2">
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild disabled={disabled}>
           <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
             <span>{itemsMapping.find((item) => item.key === value)?.value}</span>
             <ChevronDownIcon width={16} height={16} />
