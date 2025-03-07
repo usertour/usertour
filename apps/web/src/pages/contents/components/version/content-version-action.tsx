@@ -14,13 +14,14 @@ import { ContentVersion } from '@usertour-ui/types';
 import { useState } from 'react';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
-
+import { useAppContext } from '@/contexts/app-context';
 type ContentVersionActionProps = {
   version: ContentVersion;
 };
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
   const { refetch, content } = useContentDetailContext();
+  const { isViewOnly } = useAppContext();
 
   const { refetch: refetchVersionList } = useContentVersionListContext();
   const [openPublish, setOpenPublish] = useState(false);
@@ -30,7 +31,11 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
+          <Button
+            variant="ghost"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            disabled={isViewOnly}
+          >
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

@@ -24,7 +24,7 @@ export const AdminEnvSwitcher = () => {
   const [showNewEnvDialog, setShowNewEnvDialog] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { setEnvironment, environment } = useAppContext();
+  const { setEnvironment, environment, isViewOnly } = useAppContext();
 
   const { environmentList, refetch } = useEnvironmentListContext();
 
@@ -104,7 +104,7 @@ export const AdminEnvSwitcher = () => {
             <CommandSeparator />
             <CommandList>
               <CommandGroup>
-                <CommandItem onSelect={handleCreate}>
+                <CommandItem onSelect={handleCreate} disabled={isViewOnly}>
                   <PlusCircledIcon className="mr-2 h-5 w-5" />
                   Create Environment
                 </CommandItem>
