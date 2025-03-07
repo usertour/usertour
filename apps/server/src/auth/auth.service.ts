@@ -104,11 +104,16 @@ export class AuthService {
       .clearCookie(REFRESH_TOKEN_COOKIE, clearOptions);
   }
 
-  async oauthValidate(accessToken: string, refreshToken: string, profile: Profile) {
+  async oauthValidate(
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+    inviteCode?: string,
+  ) {
     this.logger.log(
       `oauth accessToken: ${accessToken}, refreshToken: ${refreshToken}, profile: ${JSON.stringify(
         profile,
-      )}`,
+      )}, inviteCode: ${inviteCode}`,
     );
     const { provider, id, emails, displayName, photos } = profile;
 
@@ -126,11 +131,13 @@ export class AuthService {
     if (account) {
       this.logger.log(`account found for provider ${provider}, account id: ${id}`);
       const user = await this.prisma.user.findUnique({
-        where: {
-          id: account.userId,
-        },
+        where: { id: account.userId },
       });
       if (user) {
+        // inviteCode is not empty, join project
+        if (inviteCode) {
+          await this.joinProject(inviteCode, user.id);
+        }
         return user;
       }
 
@@ -150,6 +157,10 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
       this.logger.log(`user ${user.id} already registered for email ${email}`);
+      // inviteCode is not empty, join project
+      if (inviteCode) {
+        await this.joinProject(inviteCode, user.id);
+      }
       return user;
     }
 
@@ -187,8 +198,18 @@ export class AuthService {
       });
       this.logger.log(`new account created for ${newAccount.id}`);
 
-      const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
-      await initialization(tx, project.id);
+      // inviteCode is not empty, join project
+      if (inviteCode) {
+        const invite = await this.teamService.getValidInviteByCode(inviteCode);
+        if (invite) {
+          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
+          await this.teamService.deleteInvite(tx, inviteCode);
+        }
+      } else {
+        const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
+        await initialization(tx, project.id);
+      }
+
       return newUser;
     });
   }

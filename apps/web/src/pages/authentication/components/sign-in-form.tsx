@@ -113,7 +113,12 @@ const SignInRoot = (props: SignInRootProps) => {
     } else if (provider === 'github') {
       setIsGithubAuthLoading(true);
     }
-    window.location.href = `${apiUrl}/api/auth/${provider}`;
+    if (inviteCode) {
+      console.log('sign in inviteCode', inviteCode);
+      window.location.href = `${apiUrl}/api/auth/${provider}?inviteCode=${inviteCode}`;
+    } else {
+      window.location.href = `${apiUrl}/api/auth/${provider}`;
+    }
   };
 
   const onSubmit = async (data: SigninFormValues) => {

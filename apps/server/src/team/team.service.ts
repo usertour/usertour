@@ -78,8 +78,21 @@ export class TeamService {
       throw new ParamsError();
     }
 
-    return await this.prisma.userOnProject.deleteMany({
-      where: { userId, projectId },
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.userOnProject.delete({
+        where: { id: userOnProject.id },
+      });
+      if (userOnProject.actived) {
+        const otherUserOnProject = await tx.userOnProject.findFirst({
+          where: { userId },
+        });
+        if (otherUserOnProject) {
+          await tx.userOnProject.update({
+            where: { id: otherUserOnProject.id },
+            data: { actived: true },
+          });
+        }
+      }
     });
   }
 
