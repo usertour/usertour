@@ -23,7 +23,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
 import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './localizations/localizations.module';
-
+import { TeamModule } from './team/team.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -63,6 +63,7 @@ import { LocalizationsModule } from './localizations/localizations.module';
     BizModule,
     AnalyticsModule,
     LocalizationsModule,
+    TeamModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, PrismaService],

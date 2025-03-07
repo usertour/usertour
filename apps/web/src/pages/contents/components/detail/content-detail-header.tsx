@@ -65,10 +65,9 @@ export const ContentDetailHeader = () => {
   const { content, refetch, contentType } = useContentDetailContext();
   const [openPublish, setOpenPublish] = useState(false);
   const { version, isSaveing } = useContentVersionContext();
-  const { environment } = useAppContext();
+  const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
   const [_, setSearchParams] = useSearchParams();
-
   if (!contentType || !content) return null;
 
   const isDisabled =
@@ -94,7 +93,9 @@ export const ContentDetailHeader = () => {
                 refetch();
               }}
             >
-              <EditIcon className="ml-1 cursor-pointer" width={16} height={16} />
+              <Button variant={'ghost'} className="hover:bg-transparent" disabled={isViewOnly}>
+                <EditIcon className="ml-1 cursor-pointer" width={16} height={16} />
+              </Button>
             </ContentRenameForm>
             <MainNav className="mx-6" />
             <div className="ml-auto flex items-center space-x-4">
@@ -116,12 +117,13 @@ export const ContentDetailHeader = () => {
                 variant={'outline'}
                 onClick={() => openBuilder(content, contentType)}
                 className="flex-none"
+                disabled={isViewOnly}
               >
                 <EnterIcon className="mr-2" />
                 Edit In Builder
               </Button>
               <Button
-                disabled={isDisabled}
+                disabled={isDisabled || isViewOnly}
                 onClick={() => {
                   setOpenPublish(true);
                 }}
@@ -132,6 +134,7 @@ export const ContentDetailHeader = () => {
               {content && (
                 <ContentEditDropdownMenu
                   content={content}
+                  disabled={isViewOnly}
                   onSubmit={() => {
                     refetch();
                   }}

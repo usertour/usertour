@@ -14,3 +14,4 @@ export * from './types/user';
 export * from './types/localizations';
 export * from './types/launcher';
 export * from './types/checklist';
+export * from './types/team';

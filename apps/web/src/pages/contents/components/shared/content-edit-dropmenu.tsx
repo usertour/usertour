@@ -11,14 +11,14 @@ import { ReactNode, useState } from 'react';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
-
 type ContentEditDropdownMenuProps = {
   content: Content;
   children: ReactNode;
   onSubmit: (action: string) => void;
+  disabled: boolean;
 };
 export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => {
-  const { content, children, onSubmit } = props;
+  const { content, children, onSubmit, disabled } = props;
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
   const [openUnpublish, setOpenUnpublish] = useState(false);
@@ -50,12 +50,16 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
           <DropdownMenuItem
             onClick={handleUnpublishOpen}
             className="cursor-pointer"
-            disabled={!content.published}
+            disabled={!content.published || disabled}
           >
             <UnPublishIcon className="mr-1" width={14} height={14} />
             Unpublish
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDuplicateOpen} className="cursor-pointer">
+          <DropdownMenuItem
+            onClick={handleDuplicateOpen}
+            className="cursor-pointer"
+            disabled={disabled}
+          >
             <CopyIcon className="mr-1" width={15} height={15} />
             Duplicate flow
           </DropdownMenuItem>
@@ -63,7 +67,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
           <DropdownMenuItem
             className="text-red-600 cursor-pointer"
             onClick={handleOnClick}
-            disabled={content.published}
+            disabled={content.published || disabled}
           >
             <Delete2Icon className="mr-1" />
             Delete flow

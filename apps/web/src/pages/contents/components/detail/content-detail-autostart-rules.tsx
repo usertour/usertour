@@ -41,6 +41,7 @@ interface ContentDetailAutoStartRulesProps {
   showIfCompleted?: boolean;
   showPriority?: boolean;
   showAtLeast?: boolean;
+  disabled?: boolean;
 }
 
 export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesProps) => {
@@ -57,6 +58,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     showIfCompleted = true,
     showPriority = true,
     showAtLeast = true,
+    disabled = false,
   } = props;
 
   const [enabled, setEnabled] = useState(defaultEnabled);
@@ -107,6 +109,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
           <Switch
             id={id}
             checked={enabled}
+            disabled={disabled}
             className="data-[state=unchecked]:bg-input"
             onCheckedChange={handleEnabledChange}
           />
@@ -150,6 +153,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               contents={contents}
               currentContent={content}
               token={getAuthToken()}
+              disabled={disabled}
             />
           )}
 
@@ -157,6 +161,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             <RulesWait
               defaultValue={setting.wait ?? 0}
               onValueChange={(value) => updateSettings({ wait: value })}
+              disabled={disabled}
             />
           )}
           {showFrequency && (
@@ -165,6 +170,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               defaultValue={setting.frequency}
               contentType={contentType}
               showAtLeast={showAtLeast}
+              disabled={disabled}
             />
           )}
           {showIfCompleted && setting.frequency?.frequency !== Frequency.ONCE && (
@@ -172,12 +178,14 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               defaultValue={setting.startIfNotComplete ?? false}
               contentType={contentType}
               onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
+              disabled={disabled}
             />
           )}
           {showPriority && (
             <RulesPriority
               onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
               defaltValue={setting.priority ?? ContentPriority.MEDIUM}
+              disabled={disabled}
             />
           )}
         </div>

@@ -34,7 +34,7 @@ export class AnalyticsGuard implements CanActivate {
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
     if (!roles) {
-      return false;
+      return true;
     }
     if (contentId) {
       const content = await this.contentsService.getContent(contentId);

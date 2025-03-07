@@ -20,9 +20,10 @@ type ThemeEditDropdownMenuProps = {
   theme: Theme;
   children: ReactNode;
   onSubmit: (action: string) => void;
+  disabled?: boolean;
 };
 export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
-  const { theme, children, onSubmit } = props;
+  const { theme, children, onSubmit, disabled = false } = props;
   const [setDefaultThemeMutation] = useMutation(setDefaultTheme);
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
@@ -63,7 +64,9 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild disabled={disabled}>
+          {children}
+        </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
           <DropdownMenuItem onClick={handleSetAsDefault}>
             <StarFilledIcon className="mr-1" width={15} height={15} />

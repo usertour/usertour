@@ -10,10 +10,12 @@ import { EmptyPlaceholder } from '../shared/empty-placeholder';
 import { ExtensionInstallDialog } from '../shared/extension-install-dialog';
 import { NpsCreateForm } from '../shared/nps-create-form';
 import { DataTable } from './data-table';
+import { useAppContext } from '@/contexts/app-context';
 
 export const NpsListContent = () => {
   const [open, setOpen] = useState(false);
   const [isOpenedInstall, setIsOpenedInstall] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   const openCreateFormHandler = async () => {
     const isInstalled = await isInstalledExtension();
@@ -66,7 +68,7 @@ export const NpsListContent = () => {
             <TabsTrigger value="published">Published</TabsTrigger>
           </TabsList>
           <div className="ml-auto">
-            <Button onClick={openCreateFormHandler}>
+            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-4 w-4" />
               Create Nps
             </Button>
@@ -78,7 +80,7 @@ export const NpsListContent = () => {
             name="No nps added"
             description="You have not added any nps. Add one below."
           >
-            <Button onClick={openCreateFormHandler}>
+            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-4 w-4" />
               Create Nps
             </Button>

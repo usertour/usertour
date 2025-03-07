@@ -4,6 +4,7 @@ import { ReactNode, forwardRef } from 'react';
 type TemplateSharedProps = {
   children: ReactNode;
   className?: string;
+  disabled?: boolean;
 };
 
 export const RulesConditionIcon = forwardRef<HTMLDivElement, TemplateSharedProps>((props, ref) => {
@@ -21,11 +22,12 @@ RulesConditionIcon.displayName = 'RulesConditionIcon';
 
 export const RulesConditionRightContent = forwardRef<HTMLDivElement, TemplateSharedProps>(
   (props, ref) => {
-    const { children } = props;
+    const { children, disabled = false } = props;
     return (
       <div
         className={cn(
           'grow bg-muted rounded cursor-pointer flex flex-row relative hover:bg-secondary-hover',
+          disabled && 'cursor-default pointer-events-none opacity-50',
           props.className,
         )}
         ref={ref}

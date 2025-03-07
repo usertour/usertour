@@ -1,5 +1,6 @@
 'use client';
 
+import { useAppContext } from '@/contexts/app-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useMutation } from '@apollo/client';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
@@ -25,6 +26,7 @@ interface DataTableViewOptionsProps<TData> {
 
 export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
   const { refetch, currentSegment } = useSegmentListContext();
+  const { isViewOnly } = useAppContext();
 
   const [mutation] = useMutation(updateSegment);
   const { toast } = useToast();
@@ -55,7 +57,12 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-auto hidden h-8 lg:flex">
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto hidden h-8 lg:flex"
+          disabled={isViewOnly}
+        >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
           View
         </Button>

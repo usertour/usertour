@@ -1,4 +1,3 @@
-import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { User } from '@/users/models/user.model';
@@ -18,7 +17,6 @@ export class AnalyticsResolver {
   constructor(private service: AnalyticsService) {}
 
   @Query(() => Analytics)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async queryContentAnalytics(
     @UserEntity() user: User,
     @Args()
@@ -28,7 +26,6 @@ export class AnalyticsResolver {
   }
 
   @Query(() => BizSessionConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async queryBizSession(
     @UserEntity() user: User,
     @Args() pagination: PaginationArgs,

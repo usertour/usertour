@@ -132,7 +132,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   const [errorInfo, setErrorInfo] = useState('');
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
-  const { currentContent, token, onElementChange } = useRulesContext();
+  const { currentContent, token, onElementChange, disabled } = useRulesContext();
 
   useEffect(() => {
     if (open) {
@@ -162,9 +162,9 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
     <RulesTextInputContext.Provider value={value}>
       <RulesError open={openError}>
         <div className="flex flex-row space-x-3">
-          <RulesLogic index={index} />
+          <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
-            <RulesConditionRightContent>
+            <RulesConditionRightContent disabled={disabled}>
               <RulesConditionIcon>
                 <TextInputIcon width={16} height={16} />
               </RulesConditionIcon>

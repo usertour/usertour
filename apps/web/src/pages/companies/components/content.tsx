@@ -11,7 +11,7 @@ import { DataTable } from './data-table';
 import { UserEditDropdownMenu } from './edit-dropmenu';
 import { UserSegmentEditForm } from './edit-form';
 import { UserSegmentFilterSave } from './filter-save';
-
+import { useAppContext } from '@/contexts/app-context';
 export function CompanyListContent(props: {
   environmentId: string | undefined;
 }) {
@@ -19,6 +19,8 @@ export function CompanyListContent(props: {
   const [open, setOpen] = useState(false);
   const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
+  const { isViewOnly } = useAppContext();
+
   const handleOnClose = () => {
     setOpen(false);
     refetch();
@@ -34,14 +36,17 @@ export function CompanyListContent(props: {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <EditIcon
+                    <Button
+                      variant={'ghost'}
+                      size={'icon'}
+                      className="w-8 h-8 ml-2 cursor-pointer"
+                      disabled={isViewOnly}
                       onClick={() => {
                         setOpen(true);
                       }}
-                      className="ml-2 cursor-pointer"
-                      width={16}
-                      height={16}
-                    />
+                    >
+                      <EditIcon className="w-4 h-4" />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-slate-700">
                     <p>Edit company segment name</p>
@@ -54,6 +59,7 @@ export function CompanyListContent(props: {
           {currentSegment && currentSegment.dataType !== 'ALL' && (
             <UserEditDropdownMenu
               segment={currentSegment}
+              disabled={isViewOnly}
               onSubmit={async () => {
                 await refetch();
                 navigate(`/env/${environmentId}/companies`);

@@ -35,7 +35,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
-  const { currentContent, token, onElementChange } = useRulesContext();
+  const { currentContent, token, onElementChange, disabled } = useRulesContext();
 
   useEffect(() => {
     if (open) {
@@ -53,9 +53,9 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
   return (
     <RulesError open={openError}>
       <div className="flex flex-row space-x-3">
-        <RulesLogic index={index} />
+        <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
-          <RulesConditionRightContent>
+          <RulesConditionRightContent disabled={disabled}>
             <RulesConditionIcon>
               <TextFillIcon width={16} height={16} />
             </RulesConditionIcon>

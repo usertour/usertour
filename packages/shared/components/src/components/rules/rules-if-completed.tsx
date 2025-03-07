@@ -9,10 +9,11 @@ interface RulesIfCompletedProps {
   defaultValue: boolean;
   onCheckedChange: (checked: boolean) => void;
   contentType: ContentDataType;
+  disabled?: boolean;
 }
 
 export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
-  const { defaultValue, onCheckedChange, contentType } = props;
+  const { defaultValue, onCheckedChange, contentType, disabled = false } = props;
   const [checked, setChecked] = useState(defaultValue);
   const id = useId();
   return (
@@ -20,6 +21,7 @@ export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
       <Checkbox
         id={id}
         checked={checked}
+        disabled={disabled}
         className="data-[state=unchecked]:bg-input"
         onCheckedChange={(checked) => {
           const isChecked = checked === true;

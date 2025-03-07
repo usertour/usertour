@@ -8,10 +8,11 @@ export interface RulesCurrentTimeProps {
   defaultValue: number;
   onValueChange: (value: number) => void;
   maxSeconds?: number;
+  disabled?: boolean;
 }
 
 export const RulesWait = (props: RulesCurrentTimeProps) => {
-  const { defaultValue, onValueChange, maxSeconds = 300 } = props;
+  const { defaultValue, onValueChange, maxSeconds = 300, disabled = false } = props;
   const [openError, setOpenError] = useState(false);
   const [inputValue, setInputValue] = useState<number>(defaultValue ?? 0);
 
@@ -39,6 +40,7 @@ export const RulesWait = (props: RulesCurrentTimeProps) => {
               value={inputValue}
               className="rounded-lg text-sm w-16 h-6 "
               placeholder={''}
+              disabled={disabled}
             />
           </RulesErrorAnchor>
           <div className="text-muted-foreground text-sm">second before starting</div>

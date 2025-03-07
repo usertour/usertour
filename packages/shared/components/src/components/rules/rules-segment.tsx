@@ -196,7 +196,7 @@ const RulesSegmentCondition = () => {
 
 export const RulesSegment = (props: RulesSegmentProps) => {
   const { index, data } = props;
-  const { segments } = useRulesContext();
+  const { segments, disabled } = useRulesContext();
   const [segmentId, setSegmentId] = useState<string>(data?.segmentId ?? '');
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'is');
   const [openError, setOpenError] = useState(false);
@@ -235,9 +235,9 @@ export const RulesSegment = (props: RulesSegmentProps) => {
     <RulesSegmentContext.Provider value={value}>
       <RulesError open={openError}>
         <div className="flex flex-row space-x-3">
-          <RulesLogic index={index} />
+          <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
-            <RulesConditionRightContent>
+            <RulesConditionRightContent disabled={disabled}>
               <RulesConditionIcon>
                 <SegmentIcon width={16} height={16} />
               </RulesConditionIcon>

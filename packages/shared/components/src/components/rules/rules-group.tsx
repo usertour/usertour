@@ -113,13 +113,16 @@ interface RulesAddDropdownProps {
   children: ReactNode;
   onSelect: (type: string) => void;
   items: typeof RULES_ITEMS;
+  disabled?: boolean;
 }
 
 const RulesAddDropdown = (props: RulesAddDropdownProps) => {
-  const { children, onSelect, items } = props;
+  const { children, onSelect, items, disabled = false } = props;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild disabled={disabled}>
+        {children}
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="start" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
         {items?.map(({ type, text, IconElement }, index) => (
           <DropdownMenuItem
@@ -149,7 +152,7 @@ interface RulesGroupProps {
 }
 export const RulesGroup = (props: RulesGroupProps) => {
   const { isSubItems = false, onChange, defaultConditions } = props;
-  const { isHorizontal, filterItems, addButtonText } = useRulesContext();
+  const { isHorizontal, filterItems, addButtonText, disabled } = useRulesContext();
 
   const [conditions, setConditions] = useState<RulesCondition[]>(
     JSON.parse(JSON.stringify(defaultConditions)),
@@ -244,7 +247,7 @@ export const RulesGroup = (props: RulesGroupProps) => {
                 }
                 key={i}
               >
-                <RulesLogic index={i} />
+                <RulesLogic index={i} disabled={disabled} />
                 <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
                   <RulesGroup
                     isSubItems={true}
@@ -264,9 +267,10 @@ export const RulesGroup = (props: RulesGroupProps) => {
           return null;
         })}
         <div className="flex flex-row space-x-3">
-          <RulesLogic index={conditions.length} disabled={conditions.length > 0} />
+          <RulesLogic index={conditions.length} disabled={conditions.length > 0 || disabled} />
           <RulesAddDropdown
             onSelect={handleOnSelect}
+            disabled={disabled}
             items={
               isSubItems
                 ? rulesItems.filter((item) => item.type !== 'group' && item.type !== 'wait')

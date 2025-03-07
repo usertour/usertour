@@ -10,10 +10,12 @@ import { EmptyPlaceholder } from '../shared/empty-placeholder';
 import { ExtensionInstallDialog } from '../shared/extension-install-dialog';
 import { SurveyCreateForm } from '../shared/survey-create-form';
 import { DataTable } from './data-table';
+import { useAppContext } from '@/contexts/app-context';
 
 export const SurveyListContent = () => {
   const [open, setOpen] = useState(false);
   const [isOpenedInstall, setIsOpenedInstall] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   const openCreateFormHandler = async () => {
     const isInstalled = await isInstalledExtension();
@@ -66,7 +68,7 @@ export const SurveyListContent = () => {
             <TabsTrigger value="published">Published</TabsTrigger>
           </TabsList>
           <div className="ml-auto">
-            <Button onClick={openCreateFormHandler}>
+            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-4 w-4" />
               Create veys
             </Button>
@@ -78,7 +80,7 @@ export const SurveyListContent = () => {
             name="No surveys added"
             description="You have not added any surveys. Add one below."
           >
-            <Button onClick={openCreateFormHandler}>
+            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-4 w-4" />
               Create Surveys
             </Button>

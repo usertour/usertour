@@ -65,10 +65,10 @@ export class AuthResolver {
   @Mutation(() => Auth)
   @Public()
   async login(
-    @Args('data') { email, password }: LoginInput,
+    @Args('data') { email, password, inviteCode }: LoginInput,
     @Context() context: { res: Response },
   ) {
-    const tokens = await this.auth.emailLogin(email.toLowerCase(), password);
+    const tokens = await this.auth.emailLogin(email.toLowerCase(), password, inviteCode);
     this.logger.log(`Login successful for email: ${email}`);
 
     this.auth.setAuthCookie(context.res, tokens);

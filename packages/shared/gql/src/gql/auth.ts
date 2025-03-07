@@ -25,8 +25,8 @@ export const signOut = gql`
 `;
 
 export const login = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(data: { email: $email, password: $password }) {
+  mutation Login($email: String!, $password: String!, $inviteCode: String) {
+    login(data: { email: $email, password: $password, inviteCode: $inviteCode }) {
       accessToken
       refreshToken
       redirectUrl
@@ -51,7 +51,8 @@ export const signUp = gql`
     $code: String!
     $password: String!
     $userName: String!
-    $companyName: String!
+    $isInvite: Boolean!
+    $companyName: String
   ) {
     signup(
       data: {
@@ -59,6 +60,7 @@ export const signUp = gql`
         password: $password
         userName: $userName
         companyName: $companyName
+        isInvite: $isInvite
       }
     ) {
       accessToken

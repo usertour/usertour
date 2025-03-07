@@ -36,107 +36,103 @@ export class ContentsResolver {
   ) {}
 
   @Mutation(() => Content)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async createContent(@Args('data') data: ContentInput) {
     return await this.contentsService.createContent(data);
   }
 
   @Mutation(() => Content)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async updateContent(@Args('data') data: ContentUpdateInput) {
     return await this.contentsService.updateContent(data.contentId, data.content);
   }
 
   @Mutation(() => Content)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
     return await this.contentsService.duplicateContent(data.contentId, data.name);
   }
 
   @Query(() => Content)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async getContent(@Args() { contentId }: ContentIdArgs) {
     return await this.contentsService.getContentById(contentId);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async createContentVersion(@Args('data') data: ContentVersionInput) {
     return await this.contentsService.createContentVersion(data);
   }
 
   @Query(() => Version)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async getContentVersion(@Args() { versionId }: VersionIdArgs) {
     return await this.contentsService.getContentVersionById(versionId);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async updateContentVersion(@Args('data') input: VersionUpdateInput) {
     return await this.contentsService.updateContentVersion(input);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async restoreContentVersion(@Args('data') { versionId }: VersionIdInput) {
     return await this.contentsService.restoreContentVersion(versionId);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async publishedContentVersion(@Args('data') { versionId }: VersionIdInput) {
     return await this.contentsService.publishedContentVersion(versionId);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async unpublishedContentVersion(@Args('data') { contentId }: ContentIdInput) {
     await this.contentsService.unpublishedContentVersion(contentId);
     return { success: true };
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async deleteContent(@Args('data') { contentId }: ContentIdInput) {
     await this.contentsService.deleteContent(contentId);
     return { success: true };
   }
 
   @Query(() => [Version])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async listContentVersions(@Args() { contentId }: ContentIdArgs) {
     return await this.contentsService.listContentVersions(contentId);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async addContentSteps(@Args('data') contentStepsInput: ContentStepsInput) {
     await this.contentsService.addContentSteps(contentStepsInput);
     return { success: true };
   }
 
   @Mutation(() => Step)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async addContentStep(@Args('data') step: CreateStepInput) {
     return await this.contentsService.addContentStep(step);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async updateContentStep(@Args('stepId') stepId: string, @Args('data') step: UpdateStepInput) {
     await this.contentsService.updateContentStep(stepId, step);
     return { success: true };
   }
 
   @Query(() => [VersionOnLocalization])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async findManyVersionLocations(@Args() { versionId }: VersionIdArgs) {
     return await this.contentsService.findManyVersionLocations(versionId);
   }
 
   @Mutation(() => VersionOnLocalization)
-  @Roles([RolesScopeEnum.ADMIN])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async updateVersionLocationData(@Args('data') input: VersionUpdateLocalizationInput) {
     return await this.contentsService.upsertVersionLocationData(input);
   }
@@ -152,7 +148,6 @@ export class ContentsResolver {
   // }
 
   @Query(() => ContentConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.USER])
   async queryContents(
     @Args() { after, before, first, last }: PaginationArgs,
     @Args({ name: 'query', type: () => ContentQuery, nullable: true })

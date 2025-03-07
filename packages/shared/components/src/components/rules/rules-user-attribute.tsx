@@ -389,6 +389,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   const [displayValue, setDisplayValue] = useState<string>('');
 
   const [isUpdate, setIsUpdate] = useState(!data?.attrId);
+  const { disabled } = useRulesContext();
 
   useEffect(() => {
     if (attributes && data?.attrId) {
@@ -471,9 +472,9 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
     <RulesUserAttributeContext.Provider value={value}>
       <RulesError open={openError}>
         <div className={cn('flex flex-row ', isHorizontal ? 'mr-1 mb-1 space-x-1 ' : 'space-x-3 ')}>
-          <RulesLogic index={index} />
+          <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
-            <RulesConditionRightContent>
+            <RulesConditionRightContent disabled={disabled}>
               <RulesConditionIcon>
                 <UserIcon width={16} height={16} />
               </RulesConditionIcon>

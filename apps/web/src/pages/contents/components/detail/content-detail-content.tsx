@@ -30,12 +30,15 @@ import {
   LauncherPreview,
   ScaledPreviewContainer,
 } from '../shared/content-preview';
+import { useAppContext } from '@/contexts/app-context';
+import { Button } from '@usertour-ui/button';
 
 interface ContentDetailContentStepProps {
   currentStep: Step;
   index: number;
   currentVersion: ContentVersion;
   onEdit: () => void;
+  disabled: boolean;
 }
 
 const ContentBadge = ({
@@ -79,6 +82,7 @@ const ContentDetailContentStep = ({
   index,
   currentVersion,
   onEdit,
+  disabled,
 }: ContentDetailContentStepProps) => {
   const currentTheme = useThemeHandler(currentVersion, currentStep.themeId);
   const [contentRect, setContentRect] = useState<DOMRect | null>(null);
@@ -116,7 +120,9 @@ const ContentDetailContentStep = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <EditIcon className="w-4 h-4 cursor-pointer" onClick={onEdit} />
+                  <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
+                    <EditIcon className="w-4 h-4 cursor-pointer" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
               </Tooltip>
@@ -162,6 +168,7 @@ interface LauncherContentPreviewProps {
   currentVersion: ContentVersion;
   content: Content;
   onEdit: () => void;
+  disabled: boolean;
 }
 
 // Simplified LauncherContentPreview
@@ -169,6 +176,7 @@ const LauncherContentPreview = ({
   currentVersion,
   content,
   onEdit,
+  disabled,
 }: LauncherContentPreviewProps) => {
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as LauncherData;
@@ -187,7 +195,9 @@ const LauncherContentPreview = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <EditIcon className="w-4 h-4 cursor-pointer" onClick={onEdit} />
+                  <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
+                    <EditIcon className="w-4 h-4 cursor-pointer" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
               </Tooltip>
@@ -226,6 +236,7 @@ interface ChecklistContentPreviewProps {
   currentVersion: ContentVersion;
   content: Content;
   onEdit: () => void;
+  disabled: boolean;
 }
 
 // Simplified ChecklistContentPreview
@@ -233,6 +244,7 @@ const ChecklistContentPreview = ({
   currentVersion,
   content,
   onEdit,
+  disabled,
 }: ChecklistContentPreviewProps) => {
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as ChecklistData;
@@ -272,7 +284,9 @@ const ChecklistContentPreview = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <EditIcon className="w-4 h-4 cursor-pointer" onClick={onEdit} />
+                  <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
+                    <EditIcon className="w-4 h-4 cursor-pointer" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
               </Tooltip>
@@ -316,7 +330,7 @@ export const ContentDetailContent = () => {
     isLoading: false,
   });
   const { openBuilder } = useContentBuilder();
-
+  const { isViewOnly } = useAppContext();
   if (!version || !content || !contentType) return null;
   return (
     <>
@@ -336,6 +350,7 @@ export const ContentDetailContent = () => {
               index={index}
               key={index}
               currentVersion={version}
+              disabled={isViewOnly}
             />
           ))}
         {contentType === ContentTypeName.LAUNCHERS && content && (
@@ -343,6 +358,7 @@ export const ContentDetailContent = () => {
             currentVersion={version}
             content={content}
             onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
           />
         )}
         {contentType === ContentTypeName.CHECKLISTS && content && version.data && (
@@ -350,15 +366,17 @@ export const ContentDetailContent = () => {
             currentVersion={version}
             content={content}
             onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
           />
         )}
         {contentType === ContentTypeName.FLOWS && (
-          <div
+          <Button
             onClick={() => openBuilder(content, contentType)}
-            className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer "
+            className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer w-auto h-auto hover:bg-white "
+            disabled={isViewOnly}
           >
             <AddIcon width={40} height={40} className="text-primary" />
-          </div>
+          </Button>
         )}
         <ContentEditForm
           content={content}

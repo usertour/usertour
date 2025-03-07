@@ -56,6 +56,7 @@ model User {
   codes         Code[]
   accounts      Account[]
   refreshTokens RefreshToken[]
+  invites       Invite[]
 }
 
 model Register {
@@ -64,6 +65,23 @@ model Register {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   code      String   @default(cuid())
   email     String
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  code      String   @unique @default(cuid())
+  expired   Boolean  @default(false)
+  canceled  Boolean  @default(false)
+  deleted   Boolean  @default(false)
+  email     String
+  name      String
+  role      Role
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
 }
 
 model Code {
@@ -87,6 +105,7 @@ model Project {
   attributes    Attribute[]
   events        Event[]
   localizations Localization[]
+  invites       Invite[]
 }
 
 model UserOnProject {
@@ -231,6 +250,7 @@ model VersionOnLocalization {
 
 enum Role {
   ADMIN
+  VIEWER
   USER
   OWNER
 }

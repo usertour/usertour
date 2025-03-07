@@ -2,6 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input ActiveUserProjectInput {
+  projectId: String!
+  userId: String!
+}
+
 type Analytics {
   totalCompletions: Int!
   totalViews: Int!
@@ -63,6 +68,7 @@ type AttributeOnEvent {
 type Auth {
   """JWT access token"""
   accessToken: JWT!
+  projectId: String
   redirectUrl: String
 
   """JWT refresh token"""
@@ -178,6 +184,11 @@ input BizUserOrCompanyIdsInput {
   ids: [String!]!
 }
 
+input CancelInviteInput {
+  inviteId: String!
+  projectId: String!
+}
+
 input ChangeEmailInput {
   email: String!
   password: String!
@@ -186,6 +197,12 @@ input ChangeEmailInput {
 input ChangePasswordInput {
   newPassword: String!
   oldPassword: String!
+}
+
+input ChangeTeamMemberRoleInput {
+  projectId: String!
+  role: Role!
+  userId: String!
 }
 
 type Common {
@@ -446,6 +463,32 @@ type Events {
   updatedAt: DateTime!
 }
 
+type Invite {
+  code: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  email: String!
+  expired: Boolean!
+  id: ID!
+  name: String!
+  project: Project
+  projectId: String!
+  role: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+  user: User
+  userId: String!
+}
+
+input InviteTeamMemberInput {
+  email: String!
+  name: String!
+  projectId: String!
+  role: Role!
+}
+
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
@@ -473,6 +516,7 @@ type Localization {
 
 input LoginInput {
   email: String!
+  inviteCode: String
   password: String!
 }
 
@@ -481,10 +525,13 @@ input MagicLinkInput {
 }
 
 type Mutation {
+  activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
+  cancelInvite(data: CancelInviteInput!): Boolean!
   changeEmail(data: ChangeEmailInput!): User!
   changePassword(data: ChangePasswordInput!): User!
+  changeTeamMemberRole(data: ChangeTeamMemberRoleInput!): Boolean!
   copyTheme(data: CopyThemeInput!): Theme!
   createAttribute(data: CreateAttributeInput!): Attribute!
   createBizCompany(data: CreateBizCompanyInput!): Common!
@@ -512,9 +559,11 @@ type Mutation {
   deleteSegment(data: DeleteSegment!): Common!
   deleteTheme(data: DeleteThemeInput!): Theme!
   duplicateContent(data: ContentDuplicateInput!): Content!
+  inviteTeamMember(data: InviteTeamMemberInput!): Boolean!
   login(data: LoginInput!): Auth!
   logout: Boolean!
   publishedContentVersion(data: VersionIdInput!): Version!
+  removeTeamMember(data: RemoveTeamMemberInput!): Boolean!
   resendMagicLink(data: ResendLinkInput!): Register!
   resetUserPassword(data: ResetPasswordInput!): Common!
   resetUserPasswordByCode(data: ResetPasswordByCodeInput!): Common!
@@ -574,6 +623,9 @@ type Query {
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
+  getInvite(inviteId: String!): Invite!
+  getInvites(projectId: String!): [Invite!]!
+  getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
   hello(name: String!): String!
   helloWorld: String!
@@ -604,6 +656,11 @@ type Register {
   updatedAt: DateTime!
 }
 
+input RemoveTeamMemberInput {
+  projectId: String!
+  userId: String!
+}
+
 input ResendLinkInput {
   id: String!
 }
@@ -622,6 +679,7 @@ enum Role {
   ADMIN
   OWNER
   USER
+  VIEWER
 }
 
 type Segment {
@@ -653,7 +711,8 @@ enum SegmentDataType {
 
 input SignupInput {
   code: String!
-  companyName: String!
+  companyName: String
+  isInvite: Boolean!
   password: String!
   userName: String!
 }
@@ -806,6 +865,7 @@ type UserOnProject {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  user: User
 }
 
 type Version {

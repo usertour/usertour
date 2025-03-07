@@ -17,6 +17,7 @@ import {
   ContentDetailAutoStartRules,
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
+import { useAppContext } from '@/contexts/app-context';
 
 const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
   return {
@@ -39,6 +40,7 @@ export const ContentDetailSettings = () => {
   const contentRef = useRef<Content | null>(content);
   const versionRef = useRef<ContentVersion | null>(version);
   const { toast } = useToast();
+  const { isViewOnly } = useAppContext();
 
   useEffect(() => {
     contentRef.current = content;
@@ -169,6 +171,7 @@ export const ContentDetailSettings = () => {
         showIfCompleted={contentType !== ContentDataType.LAUNCHER}
         showFrequency={contentType !== ContentDataType.LAUNCHER}
         showAtLeast={contentType !== ContentDataType.CHECKLIST}
+        disabled={isViewOnly}
       />
       <ContentDetailAutoStartRules
         defaultConditions={config.hideRules}
@@ -182,6 +185,7 @@ export const ContentDetailSettings = () => {
         showFrequency={false}
         showIfCompleted={false}
         showPriority={false}
+        disabled={isViewOnly}
       />
     </div>
   );

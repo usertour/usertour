@@ -1,3 +1,4 @@
+import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
@@ -5,6 +6,7 @@ import { useState } from 'react';
 import { EnvironmentCreateForm } from './environment-create-form';
 
 export const EnvironmentListHeader = () => {
+  const { isViewOnly } = useAppContext();
   const [open, setOpen] = useState(false);
   const { refetch } = useEnvironmentListContext();
   const handleCreate = () => {
@@ -20,7 +22,7 @@ export const EnvironmentListHeader = () => {
         <div className="flex flex-col space-y-2">
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Environments</h3>
-            <Button onClick={handleCreate} className="flex-none">
+            <Button onClick={handleCreate} className="flex-none" disabled={isViewOnly}>
               New Environment
             </Button>
           </div>

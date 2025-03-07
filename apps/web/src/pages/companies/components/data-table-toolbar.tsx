@@ -16,6 +16,7 @@ import { CompanySegmentCreateForm } from './create-form';
 import { DataTableViewOptions } from './data-table-view-options';
 import { DeleteCompanyFromSegment } from './delete-user';
 import { RemoveFromSegment } from './remove-from-segment';
+import { useAppContext } from '@/contexts/app-context';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -26,6 +27,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
   const { attributeList } = useAttributeListContext();
   const { setCurrentConditions } = useSegmentListContext();
   const { query, setQuery } = useCompanyListContext();
+  const { isViewOnly } = useAppContext();
   const [searchValue, setSearchValue] = useState('');
   // const [mutation] = useMutation(updateSegment);
   // const { setQuery } = useCompanyListContext();
@@ -99,6 +101,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
           filterItems={['group', 'company-attr']}
           addButtonText={'Add filter'}
           attributes={attributeList}
+          disabled={isViewOnly}
         />
       </div>
       {table.getFilteredSelectedRowModel().rows.length > 0 && (

@@ -1,5 +1,5 @@
 import { BaseModel } from '@/common/models/base.model';
-import { UserOnProject } from '@/projects/models/useronproject.model';
+import { UserOnProject } from '@/team/models/useronproject.model';
 import { Field, HideField, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Role } from '@prisma/client';
 import { IsEmail } from 'class-validator';

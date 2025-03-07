@@ -34,6 +34,7 @@ Table User {
   codes Code [not null]
   accounts Account [not null]
   refreshTokens RefreshToken [not null]
+  invites Invite [not null]
 }
 
 Table Register {
@@ -42,6 +43,23 @@ Table Register {
   updatedAt DateTime [not null]
   code String [not null]
   email String [not null]
+}
+
+Table Invite {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  code String [unique, not null]
+  expired Boolean [not null, default: false]
+  canceled Boolean [not null, default: false]
+  deleted Boolean [not null, default: false]
+  email String [not null]
+  name String [not null]
+  role Role [not null]
+  user User [not null]
+  userId String [not null]
+  project Project [not null]
+  projectId String [not null]
 }
 
 Table Code {
@@ -65,6 +83,7 @@ Table Project {
   attributes Attribute [not null]
   events Event [not null]
   localizations Localization [not null]
+  invites Invite [not null]
 }
 
 Table UserOnProject {
@@ -414,11 +433,16 @@ Table RefreshToken {
 
 Enum Role {
   ADMIN
+  VIEWER
   USER
   OWNER
 }
 
 Ref: Account.userId > User.id
+
+Ref: Invite.userId > User.id
+
+Ref: Invite.projectId > Project.id
 
 Ref: Code.userId > User.id
 

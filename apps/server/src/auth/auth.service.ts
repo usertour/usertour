@@ -5,16 +5,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, User } from '@prisma/client';
+import { User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { createTransport } from 'nodemailer';
 import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
-import { PasswordService } from './password.service';
 import { Profile } from 'passport-google-oauth20';
 import { CookieOptions, Response } from 'express';
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { TokenData } from './dto/auth.dto';
+import { PasswordService } from './password.service';
+import { createTransport } from 'nodemailer';
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
 import { AuthConfigItem } from './models/auth.model';
@@ -27,6 +28,8 @@ import {
   PasswordIncorrect,
   UnknownError,
 } from '@/common/errors';
+import { TeamService } from '@/team/team.service';
+import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +40,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
+    private readonly teamService: TeamService,
   ) {}
 
   getAuthConfig(): AuthConfigItem[] {
@@ -100,11 +104,16 @@ export class AuthService {
       .clearCookie(REFRESH_TOKEN_COOKIE, clearOptions);
   }
 
-  async oauthValidate(accessToken: string, refreshToken: string, profile: Profile) {
+  async oauthValidate(
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+    inviteCode?: string,
+  ) {
     this.logger.log(
       `oauth accessToken: ${accessToken}, refreshToken: ${refreshToken}, profile: ${JSON.stringify(
         profile,
-      )}`,
+      )}, inviteCode: ${inviteCode}`,
     );
     const { provider, id, emails, displayName, photos } = profile;
 
@@ -122,11 +131,13 @@ export class AuthService {
     if (account) {
       this.logger.log(`account found for provider ${provider}, account id: ${id}`);
       const user = await this.prisma.user.findUnique({
-        where: {
-          id: account.userId,
-        },
+        where: { id: account.userId },
       });
       if (user) {
+        // inviteCode is not empty, join project
+        if (inviteCode) {
+          await this.joinProject(inviteCode, user.id);
+        }
         return user;
       }
 
@@ -146,6 +157,10 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
       this.logger.log(`user ${user.id} already registered for email ${email}`);
+      // inviteCode is not empty, join project
+      if (inviteCode) {
+        await this.joinProject(inviteCode, user.id);
+      }
       return user;
     }
 
@@ -183,8 +198,18 @@ export class AuthService {
       });
       this.logger.log(`new account created for ${newAccount.id}`);
 
-      const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
-      await initialization(tx, project.id);
+      // inviteCode is not empty, join project
+      if (inviteCode) {
+        const invite = await this.teamService.getValidInviteByCode(inviteCode);
+        if (invite) {
+          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
+          await this.teamService.deleteInvite(tx, inviteCode);
+        }
+      } else {
+        const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
+        await initialization(tx, project.id);
+      }
+
       return newUser;
     });
   }
@@ -304,34 +329,61 @@ export class AuthService {
   }
 
   async signup(payload: SignupInput): Promise<TokenData> {
-    const { code, userName, companyName, password } = payload;
-    const register = await this.prisma.register.findFirst({
-      where: { code },
-    });
-    if (!register) {
-      throw new InvalidVerificationSession();
-    }
+    const { code, userName, companyName, password, isInvite } = payload;
+
+    // Validate verification code
+    const { email, projectId, role } = await this.validateSignupCode(code, isInvite);
+
+    // Hash password
     const hashedPassword = await this.passwordService.hashPassword(password);
 
     try {
       const user = await this.prisma.$transaction(async (tx) => {
-        const user = await this.createUser(tx, userName, register.email, hashedPassword);
-        await this.createAccount(tx, 'email', user.id, 'email', register.email);
-        const project = await this.createProject(tx, companyName, user.id);
-        await initialization(tx, project.id);
+        // Create user and account
+        const user = await this.createUser(tx, userName, email, hashedPassword);
+        await this.createAccount(tx, 'email', user.id, 'email', email);
+
+        // Handle project assignment
+        if (isInvite) {
+          await this.teamService.assignUserToProject(tx, user.id, projectId, role);
+          await this.teamService.deleteInvite(tx, code);
+        } else {
+          const project = await this.createProject(tx, companyName, user.id);
+          await initialization(tx, project.id);
+        }
+
         return user;
       });
+
       this.logger.log(`User ${user.id} created`);
       return this.login(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
       }
+      this.logger.error('Failed to signup user', e);
       throw new UnknownError();
     }
   }
 
-  async emailLogin(email: string, password: string): Promise<TokenData> {
+  // Add new helper methods
+  private async validateSignupCode(code: string, isInvite: boolean) {
+    const register = !isInvite ? await this.prisma.register.findFirst({ where: { code } }) : null;
+
+    const invite = isInvite ? await this.teamService.getValidInviteByCode(code) : null;
+
+    if (!register && !invite) {
+      throw new InvalidVerificationSession();
+    }
+
+    return {
+      email: register?.email || invite?.email,
+      projectId: invite?.projectId,
+      role: invite?.role,
+    };
+  }
+
+  async emailLogin(email: string, password: string, inviteCode?: string): Promise<TokenData> {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { projects: true, accounts: true },
@@ -344,6 +396,10 @@ export class AuthService {
     if (user.projects.length === 0) {
       const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
       await initialization(this.prisma, project.id);
+    }
+
+    if (inviteCode) {
+      await this.joinProject(inviteCode, user.id);
     }
 
     let hashedPassword: string = user.password;
@@ -424,14 +480,14 @@ export class AuthService {
     return await this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  async sendEmail(data: any) {
+  async sendEmail(data: unknown) {
     const transporter = createTransport({
-      host: this.configService.get('EMAIL_HOST'),
-      port: this.configService.get('EMAIL_PORT'),
+      host: this.configService.get('email.host'),
+      port: this.configService.get('email.port'),
       secure: true,
       auth: {
-        user: this.configService.get('EMAIL_USER'),
-        pass: this.configService.get('EMAIL_PASS'),
+        user: this.configService.get('email.user'),
+        pass: this.configService.get('email.pass'),
       },
     });
     return await transporter.sendMail(data);
@@ -447,7 +503,7 @@ export class AuthService {
       },
     });
     return await this.sendEmail({
-      from: '"support" support@usertour.io', // sender address
+      from: this.configService.get('auth.email.sender'), // sender address
       to: email, // list of receivers
       subject: 'Welcome to Usertour, verify your email', // Subject line
       html: template, // html body
@@ -464,7 +520,7 @@ export class AuthService {
       },
     });
     return await this.sendEmail({
-      from: '"support" support@appnps.com', // sender address
+      from: this.configService.get('auth.email.sender'), // sender address
       to: email, // list of receivers
       subject: 'Set up a new password for Usertour', // Subject line
       html: template, // html body
@@ -503,7 +559,7 @@ export class AuthService {
       data: {
         name,
         users: {
-          create: [{ userId, role: 'ADMIN', actived: true }],
+          create: [{ userId, role: RolesScopeEnum.OWNER, actived: true }],
         },
         environments: {
           create: [
@@ -543,6 +599,32 @@ export class AuthService {
       include: {
         environments: true,
       },
+    });
+  }
+
+  async joinProject(code: string, userId: string) {
+    const invite = await this.teamService.getValidInviteByCode(code);
+    if (!invite) {
+      throw new InvalidVerificationSession();
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { projects: true },
+    });
+    if (!user) {
+      throw new AccountNotFoundError();
+    }
+    const userOnProject = await this.teamService.getUserOnProject(userId, invite.projectId);
+    if (userOnProject) {
+      return;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      if (user.projects.length > 0) {
+        await this.teamService.cancelActiveProject(tx, userId);
+      }
+      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      await this.teamService.deleteInvite(tx, invite.code);
     });
   }
 }

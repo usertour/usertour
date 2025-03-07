@@ -1,4 +1,5 @@
 import { useEventListContext } from '@/contexts/event-list-context';
+import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
 import { EventCreateForm } from './event-create-form';
@@ -6,6 +7,7 @@ import { EventCreateForm } from './event-create-form';
 export const EventListHeader = () => {
   const [open, setOpen] = useState(false);
   const { refetch } = useEventListContext();
+  const { isViewOnly } = useAppContext();
   const handleCreate = () => {
     setOpen(true);
   };
@@ -19,7 +21,9 @@ export const EventListHeader = () => {
         <div className="flex flex-col space-y-2">
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Events</h3>
-            <Button onClick={handleCreate}>New Events</Button>
+            <Button onClick={handleCreate} disabled={isViewOnly}>
+              New Events
+            </Button>
           </div>
         </div>
       </div>

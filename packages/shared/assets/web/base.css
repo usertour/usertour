@@ -2,7 +2,7 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.9 84% 4.9%;
-    --success: 141.9 69.2% 58%;
+    --success: 142.1 70.6% 45.3%;
     --warning: 38 92% 50%;
     --warning-foreground: 48 96% 89%;
     --background-400: 212.7 26.8% 83.9%;
@@ -58,7 +58,7 @@
   .dark {
     --background: 221.5 46.4% 11%;
     --foreground: 0 0% 98%;
-    --success: 141.9 69.2% 58%;
+    --success: 142.1 70.6% 45.3%;
     --warning: 48 96% 89%;
     --warning-foreground: 38 92% 50%;
 

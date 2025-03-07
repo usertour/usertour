@@ -1,4 +1,11 @@
-import { PasswordReset, Registration, ResetPassword, SignIn, SignUp } from '@/pages/authentication';
+import {
+  PasswordReset,
+  Registration,
+  ResetPassword,
+  SignIn,
+  SignUp,
+  Invite,
+} from '@/pages/authentication';
 import { CompanyDetail, CompanyList } from '@/pages/companies';
 import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from '@/pages/contents';
 import { Dashboard } from '@/pages/dashboard';
@@ -58,9 +65,18 @@ const config: CustomRouteConfig[] = [
     redirectIfLogged: true,
     title: 'ResetPassword',
   },
+  /* Invite */
+  {
+    path: '/auth/invite/:inviteCode',
+    component: Invite,
+    layout: AuthLayout,
+    loginRequired: false,
+    redirectIfLogged: true,
+    title: 'Invite',
+  },
   /* Registration */
   {
-    path: '/auth/registration/:registId',
+    path: '/auth/registration/:registrationCode',
     component: Registration,
     layout: AuthLayout,
     loginRequired: false,

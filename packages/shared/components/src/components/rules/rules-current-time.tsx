@@ -24,6 +24,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { useRulesContext } from '.';
 
 export interface SelectItemType {
   id: string;
@@ -130,6 +131,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
+  const { disabled } = useRulesContext();
 
   useEffect(() => {
     if (open) {
@@ -152,9 +154,9 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   return (
     <RulesError open={openError}>
       <div className="flex flex-row space-x-3">
-        <RulesLogic index={index} />
+        <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
-          <RulesConditionRightContent>
+          <RulesConditionRightContent disabled={disabled}>
             <RulesConditionIcon>
               <TimeIcon width={16} height={16} />
             </RulesConditionIcon>
