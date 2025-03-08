@@ -8,7 +8,7 @@ import {
 } from '@/components/templates/admin-sidebar-template';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { Button } from '@usertour-ui/button';
-import { CompanyIcon, FilterIcon2, PLUSIcon, UserIcon3 } from '@usertour-ui/icons';
+import { Archive2LineIcon, Filter2LineIcon, Group2LineIcon, PLUSIcon } from '@usertour-ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { Segment } from '@usertour-ui/types';
 import { useCallback, useState } from 'react';
@@ -78,13 +78,13 @@ export function CompanyListSidebar() {
               }
             >
               {segment.dataType === 'CONDITION' && (
-                <FilterIcon2 width={16} height={16} className="mr-1" />
+                <Filter2LineIcon width={16} height={16} className="mr-1" />
               )}
               {segment.dataType === 'ALL' && (
-                <CompanyIcon width={16} height={16} className="mr-1" />
+                <Group2LineIcon width={16} height={16} className="mr-1" />
               )}
               {segment.dataType === 'MANUAL' && (
-                <UserIcon3 width={16} height={16} className="mr-1" />
+                <Archive2LineIcon width={16} height={16} className="mr-1" />
               )}
               {segment.name}
             </AdminSidebarBodyItemTemplate>

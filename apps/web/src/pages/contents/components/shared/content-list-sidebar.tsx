@@ -7,6 +7,7 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/templates/admin-sidebar-template';
 import { useContentListContext } from '@/contexts/content-list-context';
+import { FileEditLineIcon, BaseStationLineIcon } from '@usertour-ui/icons';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 export function ContentListSidebar() {
@@ -39,6 +40,7 @@ export function ContentListSidebar() {
           variant={query.published === false ? 'secondary' : 'ghost'}
           className={getItemClassName(query.published === false)}
         >
+          <FileEditLineIcon className="w-4 h-4 mr-1" />
           Draft
         </AdminSidebarBodyItemTemplate>
         <AdminSidebarBodyItemTemplate
@@ -46,6 +48,7 @@ export function ContentListSidebar() {
           variant={query.published === true ? 'secondary' : 'ghost'}
           className={getItemClassName(query.published === true)}
         >
+          <BaseStationLineIcon className="w-4 h-4 mr-1" />
           Published
         </AdminSidebarBodyItemTemplate>
       </AdminSidebarBodyTemplate>
