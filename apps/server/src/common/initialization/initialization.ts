@@ -81,16 +81,46 @@ export const initializationThemes: InitThemeInput[] = [
         borderRadius: 3,
       },
       tooltip: { width: 300, notchSize: 20 },
-      xbutton: { color: '#f5a623' },
+      xbutton: { color: 'Auto' },
       progress: {
-        color: '#f5a623',
+        color: 'Auto',
         height: 2,
+      },
+      checklist: {
+        width: 360,
+        zIndex: 1000,
+        placement: {
+          position: 'rightBottom',
+          positionOffsetX: 100,
+          positionOffsetY: 20,
+        },
+        checkmarkColor: '#1d4ed8',
+      },
+      checklistLauncher: {
+        color: {
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
+          background: 'Auto',
+        },
+        height: 48,
+        counter: {
+          color: 'Auto',
+          background: 'Auto',
+        },
+        placement: {
+          position: 'rightBottom',
+          positionOffsetX: 100,
+          positionOffsetY: 20,
+        },
+        fontWeight: 400,
+        borderRadius: 24,
       },
       backdrop: {
         color: '#020617',
         opacity: 18,
         highlight: {
-          type: 'inset',
+          type: 'inside',
           color: '#8b572a',
           radius: 3,
           spread: 3,
@@ -194,16 +224,46 @@ export const initializationThemes: InitThemeInput[] = [
         borderRadius: 3,
       },
       tooltip: { width: 300, notchSize: 20 },
-      xbutton: { color: '#f5a623' },
+      xbutton: { color: 'Auto' },
       progress: {
-        color: '#f5a623',
+        color: 'Auto',
         height: 2,
+      },
+      checklist: {
+        width: 360,
+        zIndex: 1000,
+        placement: {
+          position: 'rightBottom',
+          positionOffsetX: 100,
+          positionOffsetY: 20,
+        },
+        checkmarkColor: '#1d4ed8',
+      },
+      checklistLauncher: {
+        color: {
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
+          background: 'Auto',
+        },
+        height: 48,
+        counter: {
+          color: 'Auto',
+          background: 'Auto',
+        },
+        placement: {
+          position: 'rightBottom',
+          positionOffsetX: 100,
+          positionOffsetY: 20,
+        },
+        fontWeight: 400,
+        borderRadius: 24,
       },
       backdrop: {
         color: '#020617',
         opacity: 18,
         highlight: {
-          type: 'inset',
+          type: 'inside',
           color: '#8b572a',
           radius: 3,
           spread: 3,
