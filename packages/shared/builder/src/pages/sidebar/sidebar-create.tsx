@@ -7,6 +7,7 @@ import { createValue1, createValue2, createValue3, createValue4 } from '@usertou
 import { defaultStep } from '@usertour-ui/shared-utils';
 import { useCallback } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
+import { ContentDataType } from '@usertour-ui/types';
 
 const contentList: any[] = [
   {
@@ -59,11 +60,12 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
     zIndex,
     setCurrentStep,
     isWebBuilder,
+    currentContent,
   } = useBuilderContext();
   const { container } = props;
 
   const handleCreateStep = useCallback(
-    (type: string, content: string) => {
+    (type: string, content: any) => {
       if (!currentVersion) {
         return;
       }
@@ -92,6 +94,19 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
     },
     [currentVersion],
   );
+
+  if (currentContent?.type === ContentDataType.NPS) {
+    return (
+      <Button
+        className="w-full h-10"
+        variant="secondary"
+        onClick={() => handleCreateStep('modal', createValue4)}
+      >
+        <PlusCircledIcon className="mr-2" />
+        Create
+      </Button>
+    );
+  }
 
   return (
     <Popover.Root modal={true}>
