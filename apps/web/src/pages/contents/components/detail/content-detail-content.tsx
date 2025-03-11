@@ -332,6 +332,10 @@ export const ContentDetailContent = () => {
   const { openBuilder } = useContentBuilder();
   const { isViewOnly } = useAppContext();
   if (!version || !content || !contentType) return null;
+
+  const showAddButton =
+    contentType === ContentTypeName.FLOWS || contentType === ContentTypeName.NPS;
+
   return (
     <>
       {state.isLoading && (
@@ -369,7 +373,7 @@ export const ContentDetailContent = () => {
             disabled={isViewOnly}
           />
         )}
-        {contentType === ContentTypeName.FLOWS && (
+        {showAddButton && (
           <Button
             onClick={() => openBuilder(content, contentType)}
             className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer w-auto h-auto hover:bg-white "
