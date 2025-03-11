@@ -227,7 +227,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                       </div>
                     )}
 
-                    <div className="flex">
+                    <div className="flex items-center">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>

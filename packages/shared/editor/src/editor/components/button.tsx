@@ -232,7 +232,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                   contents={contentList}
                   createStep={createStep}
                 />
-                <div className="flex">
+                <div className="flex items-center">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

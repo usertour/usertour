@@ -300,7 +300,7 @@ export const ColumnElement = (props: RenderElementProps & { className?: string }
                 placeholder="Column spacing"
                 onChange={handleSpaceValueChange}
               />
-              <div className="flex">
+              <div className="flex items-center">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

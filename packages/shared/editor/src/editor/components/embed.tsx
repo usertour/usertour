@@ -303,7 +303,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               </div>
             )}
 
-            <div className="flex">
+            <div className="flex items-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
