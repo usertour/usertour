@@ -1,9 +1,11 @@
 import { Environment, Project } from '@/types/project';
 import { useMutation, useQuery } from '@apollo/client';
+import { UID_COOKIE } from '@usertour-ui/constants';
 import { getUserInfo, logout } from '@usertour-ui/gql';
 import { removeAuthToken } from '@usertour-ui/shared-utils';
 import { TeamMemberRole, UserProfile } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { useCookie } from 'react-use';
 
 interface AppContextProps {
   environment: Environment | null;
@@ -27,8 +29,27 @@ export const AppProvider = (props: AppProviderProps) => {
   const { children } = props;
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
-  const { data, refetch, loading, error } = useQuery(getUserInfo);
+  const [uid] = useCookie(UID_COOKIE);
+  const { data, refetch, loading, error } = useQuery(getUserInfo, {
+    skip: !uid,
+  });
   const [logoutMutation] = useMutation(logout);
+
+  useEffect(() => {
+    // Reset user info if no uid or error occurs
+    if (!uid || error || !data?.me) {
+      setUserInfo(null);
+      return;
+    }
+
+    // Skip if still loading
+    if (loading) {
+      return;
+    }
+
+    // Set user info when data is available
+    setUserInfo({ ...data.me });
+  }, [data, loading, error, uid]);
 
   const handleLogout = async () => {
     try {
@@ -39,20 +60,6 @@ export const AppProvider = (props: AppProviderProps) => {
       console.error('Logout failed', error);
     }
   };
-
-  useEffect(() => {
-    if (loading || error) {
-      if (error) {
-        setUserInfo(null);
-      }
-      return;
-    }
-    if (!data || !data?.me) {
-      setUserInfo(null);
-      return;
-    }
-    setUserInfo({ ...data.me });
-  }, [data, loading, error]);
 
   const projects: Project[] =
     data?.me?.projects?.map((p: any) => ({
