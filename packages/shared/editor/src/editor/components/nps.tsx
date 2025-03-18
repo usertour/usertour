@@ -12,11 +12,13 @@ import { Button } from '@usertour-ui/button';
 const buttonBaseClass =
   'flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30  rounded-md main-transition p-2 py-2 text-base justify-center';
 
-export const ContentEditorNPS = (props: {
+interface ContentEditorNPSProps {
   element: ContentEditorNPSElement;
   id: string;
   path: number[];
-}) => {
+}
+
+export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
   const { element, id } = props;
   const {
     updateElement,
