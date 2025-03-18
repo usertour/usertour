@@ -10,6 +10,7 @@ import { ContentEditorNPSElement } from '../../types/editor';
 import { Button } from '@usertour-ui/button';
 import { EditorError, EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
+import { isEmptyString } from '@usertour-ui/shared-utils';
 
 const buttonBaseClass =
   'flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30  rounded-md main-transition p-2 py-2 text-base justify-center';
@@ -57,11 +58,8 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
   };
 
   useEffect(() => {
-    if (isOpen === false && element.data.name === '') {
-      setIsShowError(true);
-    } else {
-      setIsShowError(false);
-    }
+    const shouldShowError = isOpen === false && isEmptyString(element.data.name);
+    setIsShowError(shouldShowError);
   }, [isOpen, element?.data?.name]);
 
   return (

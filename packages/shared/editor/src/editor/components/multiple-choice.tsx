@@ -10,18 +10,25 @@ import { TooltipContent } from '@usertour-ui/tooltip';
 import { Tooltip, TooltipTrigger } from '@usertour-ui/tooltip';
 import { TooltipProvider } from '@usertour-ui/tooltip';
 import { RulesCondition } from '@usertour-ui/types';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../../actions';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,
 } from '../../types/editor';
-export const ContentEditorMultipleChoice = (props: {
+import { EditorErrorAnchor } from '../../components/editor-error';
+import { EditorErrorContent } from '../../components/editor-error';
+import { EditorError } from '../../components/editor-error';
+import { isEmptyString } from '@usertour-ui/shared-utils';
+
+interface ContentEditorMultipleChoiceProps {
   element: ContentEditorMultipleChoiceElement;
   id: string;
   path: number[];
-}) => {
+}
+
+export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoiceProps) => {
   const { element, id } = props;
   const {
     updateElement,
@@ -33,7 +40,7 @@ export const ContentEditorMultipleChoice = (props: {
     createStep,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
-
+  const [isShowError, setIsShowError] = useState<boolean>(false);
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorMultipleChoiceElement['data']>) => {
       updateElement(
@@ -72,151 +79,165 @@ export const ContentEditorMultipleChoice = (props: {
     handleDataChange({ actions });
   };
 
+  useEffect(() => {
+    const shouldShowError = isOpen === false && isEmptyString(element.data.name);
+    setIsShowError(shouldShowError);
+  }, [isOpen, element?.data?.name]);
+
   return (
-    <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
-      <Popover.Trigger asChild>
-        <div className="flex flex-col gap-2 w-full">
-          <div className="space-y-2">
-            {!element.data.allowMultiple ? (
-              <RadioGroup defaultValue={element.data.options[0].value}>
-                {element.data.options.map((option, index) => (
-                  <div className="flex items-center space-x-2" key={index}>
-                    <RadioGroupItem
-                      value={option.value}
-                      id={`r1${index}`}
-                      className="border-sdk-question text-sdk-foreground"
-                    />
-                    <Label htmlFor={`r1${index}`} className="cursor-pointer">
-                      {option.label || option.value}
-                    </Label>
+    <EditorError open={isShowError}>
+      <EditorErrorAnchor className="w-full">
+        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+          <Popover.Trigger asChild>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="space-y-2">
+                {!element.data.allowMultiple ? (
+                  <RadioGroup defaultValue={element.data.options[0].value}>
+                    {element.data.options.map((option, index) => (
+                      <div className="flex items-center space-x-2" key={index}>
+                        <RadioGroupItem
+                          value={option.value}
+                          id={`r1${index}`}
+                          className="border-sdk-question text-sdk-foreground"
+                        />
+                        <Label htmlFor={`r1${index}`} className="cursor-pointer">
+                          {option.label || option.value}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {element.data.options.map((option, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={option.checked}
+                          className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-foreground"
+                          onCheckedChange={(checked) =>
+                            handleOptionChange(index, 'checked', checked)
+                          }
+                        />
+                        <span>{option.label || option.value || `Option ${index + 1}`}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </RadioGroup>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {element.data.options.map((option, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={option.checked}
-                      className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-foreground"
-                      onCheckedChange={(checked) => handleOptionChange(index, 'checked', checked)}
-                    />
-                    <span>{option.label || option.value || `Option ${index + 1}`}</span>
-                  </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      </Popover.Trigger>
-
-      <Popover.Portal>
-        <Popover.Content
-          className="z-50 w-96 rounded-md border bg-background p-4"
-          style={{ zIndex }}
-        >
-          <div className="flex flex-col gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="question-name">Question name</Label>
-              <Input
-                id="question-name"
-                value={element.data.name}
-                onChange={(e) => handleDataChange({ name: e.target.value })}
-                placeholder="Enter question name"
-              />
             </div>
-            <Label>When answer is submitted</Label>
-            <ContentActions
-              zIndex={zIndex}
-              isShowIf={false}
-              isShowLogic={false}
-              currentStep={currentStep}
-              currentVersion={currentVersion}
-              onDataChange={handleActionChange}
-              defaultConditions={element?.data?.actions || []}
-              attributes={attributes}
-              contents={contentList}
-              createStep={createStep}
-            />
+          </Popover.Trigger>
 
-            <div className="space-y-2">
-              <Label>Options</Label>
-              {element.data.options.map((option, index) => (
-                <div key={index} className="flex gap-2">
+          <Popover.Portal>
+            <Popover.Content
+              className="z-50 w-96 rounded-md border bg-background p-4"
+              style={{ zIndex }}
+            >
+              <div className="flex flex-col gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="question-name">Question name</Label>
                   <Input
-                    value={option.value}
-                    onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-                    placeholder="Value"
+                    id="question-name"
+                    value={element.data.name}
+                    onChange={(e) => handleDataChange({ name: e.target.value })}
+                    placeholder="Enter question name"
                   />
-                  <Input
-                    value={option.label}
-                    onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-                    placeholder="Option label"
-                  />
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none hover:bg-red-200"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeOption(index)}
-                        >
-                          <DeleteIcon className="fill-red-500" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">Remove option</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
-              ))}
-
-              <Button
-                onClick={addOption}
-                size="sm"
-                variant={'link'}
-                className="hover:no-underline	"
-              >
-                <PlusIcon width={16} height={16} />
-                Add answer option
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="shuffle"
-                  checked={element.data.shuffleOptions}
-                  className="data-[state=unchecked]:bg-muted"
-                  onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
+                <Label>When answer is submitted</Label>
+                <ContentActions
+                  zIndex={zIndex}
+                  isShowIf={false}
+                  isShowLogic={false}
+                  currentStep={currentStep}
+                  currentVersion={currentVersion}
+                  onDataChange={handleActionChange}
+                  defaultConditions={element?.data?.actions || []}
+                  attributes={attributes}
+                  contents={contentList}
+                  createStep={createStep}
                 />
-                <Label htmlFor="shuffle">Shuffle option order</Label>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="other"
-                  checked={element.data.enableOther}
-                  className="data-[state=unchecked]:bg-muted"
-                  onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
-                />
-                <Label htmlFor="other">Enable "Other" option</Label>
-              </div>
+                <div className="space-y-2">
+                  <Label>Options</Label>
+                  {element.data.options.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={option.value}
+                        onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                        placeholder="Value"
+                      />
+                      <Input
+                        value={option.label}
+                        onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                        placeholder="Option label"
+                      />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              className="flex-none hover:bg-red-200"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeOption(index)}
+                            >
+                              <DeleteIcon className="fill-red-500" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">Remove option</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  ))}
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="multiple"
-                  checked={element.data.allowMultiple}
-                  className="data-[state=unchecked]:bg-muted"
-                  onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
-                />
-                <Label htmlFor="multiple">Allow multiple selection</Label>
+                  <Button
+                    onClick={addOption}
+                    size="sm"
+                    variant={'link'}
+                    className="hover:no-underline	"
+                  >
+                    <PlusIcon width={16} height={16} />
+                    Add answer option
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="shuffle"
+                      checked={element.data.shuffleOptions}
+                      className="data-[state=unchecked]:bg-muted"
+                      onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
+                    />
+                    <Label htmlFor="shuffle">Shuffle option order</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="other"
+                      checked={element.data.enableOther}
+                      className="data-[state=unchecked]:bg-muted"
+                      onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
+                    />
+                    <Label htmlFor="other">Enable "Other" option</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="multiple"
+                      checked={element.data.allowMultiple}
+                      className="data-[state=unchecked]:bg-muted"
+                      onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
+                    />
+                    <Label htmlFor="multiple">Allow multiple selection</Label>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+      </EditorErrorAnchor>
+      <EditorErrorContent side="bottom" style={{ zIndex }}>
+        Question name is required
+      </EditorErrorContent>
+    </EditorError>
   );
 };
 

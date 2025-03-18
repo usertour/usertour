@@ -36,14 +36,15 @@ export const AppProvider = (props: AppProviderProps) => {
   const [logoutMutation] = useMutation(logout);
 
   useEffect(() => {
-    // Reset user info if no uid or error occurs
-    if (!uid || error || !data?.me) {
-      setUserInfo(null);
+    // Skip if still loading
+    if (loading) {
       return;
     }
 
-    // Skip if still loading
-    if (loading) {
+    // Reset user info if no uid or error occurs
+    if (!uid || error || !data?.me) {
+      console.log('reset user info');
+      setUserInfo(null);
       return;
     }
 

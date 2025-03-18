@@ -119,7 +119,7 @@ const ContentDetailContentStep = ({
           <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
                     <EditIcon className="w-4 h-4 cursor-pointer" />
                   </Button>
@@ -194,7 +194,7 @@ const LauncherContentPreview = ({
           <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
                     <EditIcon className="w-4 h-4 cursor-pointer" />
                   </Button>
@@ -283,7 +283,7 @@ const ChecklistContentPreview = ({
           <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
                     <EditIcon className="w-4 h-4 cursor-pointer" />
                   </Button>
