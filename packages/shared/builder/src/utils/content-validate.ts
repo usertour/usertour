@@ -1,4 +1,10 @@
-import { ContentEditorElementType, ContentEditorRoot } from '@usertour-ui/shared-editor';
+import {
+  ContentEditorButtonElement,
+  ContentEditorElementType,
+  ContentEditorQuestionElement,
+  ContentEditorRoot,
+  isRestrictedType,
+} from '@usertour-ui/shared-editor';
 import { ContentActionsItemType, Step } from '@usertour-ui/types';
 
 export const stepIsReachable = (steps: Step[], currentStep: Step) => {
@@ -40,9 +46,15 @@ export const stepIsReachable = (steps: Step[], currentStep: Step) => {
       for (const d of data) {
         for (const column of d.children) {
           for (const element of column.children) {
-            if (element.element.type === ContentEditorElementType.BUTTON) {
-              if (element.element.data.actions) {
-                for (const action of element.element.data.actions) {
+            if (
+              element.element.type === ContentEditorElementType.BUTTON ||
+              isRestrictedType(element.element.type)
+            ) {
+              const elementData = element.element as
+                | ContentEditorQuestionElement
+                | ContentEditorButtonElement;
+              if (elementData.data.actions) {
+                for (const action of elementData.data.actions) {
                   if (
                     action.type === ContentActionsItemType.STEP_GOTO &&
                     action.data.stepCvid === currentStep.cvid
