@@ -694,10 +694,11 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
   },
 );
 
+// We can add our own branding here
 const PopperMadeWith = forwardRef<HTMLDivElement>((_, ref) => {
   return (
     <>
-      <div ref={ref} className="absolute bottom-2 left-3 text-xs	opacity-50	hover:opacity-75		">
+      {/* <div ref={ref} className="absolute bottom-2 left-3 text-xs	opacity-50	hover:opacity-75		">
         <a
           href="https://www.usertour.io"
           className="!text-sdk-foreground !no-underline	 flex flex-row space-x-0.5 items-center !font-sans "
@@ -708,7 +709,7 @@ const PopperMadeWith = forwardRef<HTMLDivElement>((_, ref) => {
           <UsertourIcon width={14} height={14} />
           <span>Made with Usertour</span>
         </a>
-      </div>
+      </div> */}
     </>
   );
 });
