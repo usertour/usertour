@@ -1,9 +1,13 @@
 import { uuidV4 } from '@usertour-ui/ui-utils';
 import {
+  ContentEditorElement,
+  ContentEditorElementType,
+  ContentEditorQuestionElement,
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
 } from '../types/editor';
+import { isEmptyString } from '@usertour-ui/shared-utils';
 
 export const EmptyGroup = {
   element: { type: 'group' },
@@ -846,3 +850,40 @@ export const createValue6 = [
     ],
   },
 ];
+
+// Helper function to check if type is restricted
+export const isRestrictedType = (type: ContentEditorElementType): boolean => {
+  const restrictedTypes = [
+    ContentEditorElementType.NPS,
+    ContentEditorElementType.STAR_RATING,
+    ContentEditorElementType.SCALE,
+    ContentEditorElementType.SINGLE_LINE_TEXT,
+    ContentEditorElementType.MULTI_LINE_TEXT,
+    ContentEditorElementType.MULTIPLE_CHOICE,
+  ];
+  return restrictedTypes.includes(type);
+};
+
+export const isMissingRequiredData = (element: ContentEditorElement) => {
+  if (isRestrictedType(element.type)) {
+    return isEmptyString((element as ContentEditorQuestionElement).data?.name);
+  }
+  if (element.type === ContentEditorElementType.BUTTON) {
+    if (isEmptyString((element as any).data?.text)) {
+      return true;
+    }
+    if (!element?.data?.actions || element?.data?.actions.length === 0) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const hasMissingRequiredData = (contents: ContentEditorRoot[]) => {
+  // If the new element is a restricted type, check if any restricted type already exists
+  return contents.some((group) =>
+    group.children.some((column) =>
+      column.children.some((item) => isMissingRequiredData(item.element)),
+    ),
+  );
+};

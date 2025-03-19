@@ -63,9 +63,8 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
   const scaleLength = element.data.highRange - element.data.lowRange + 1;
 
   useEffect(() => {
-    const shouldShowError = isOpen === false && isEmptyString(element.data.name);
-    setIsShowError(shouldShowError);
-  }, [isOpen, element?.data?.name]);
+    setIsShowError(isEmptyString(element.data.name));
+  }, [element?.data?.name]);
 
   return (
     <EditorError open={isShowError}>

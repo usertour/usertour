@@ -49,9 +49,8 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
   };
 
   useEffect(() => {
-    const shouldShowError = isOpen === false && isEmptyString(element.data.name);
-    setIsShowError(shouldShowError);
-  }, [isOpen, element?.data?.name]);
+    setIsShowError(isEmptyString(element.data.name));
+  }, [element?.data?.name]);
 
   return (
     <EditorError open={isShowError}>

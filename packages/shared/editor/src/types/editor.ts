@@ -207,6 +207,14 @@ export type ContentEditorElement =
   | ContentEditorMultiLineTextElement
   | ContentEditorMultipleChoiceElement;
 
+export type ContentEditorQuestionElement =
+  | ContentEditorNPSElement
+  | ContentEditorStarRatingElement
+  | ContentEditorScaleElement
+  | ContentEditorSingleLineTextElement
+  | ContentEditorMultiLineTextElement
+  | ContentEditorMultipleChoiceElement;
+
 export type ContentEditorRootElement = {
   id?: string;
   element: ContentEditorElement;

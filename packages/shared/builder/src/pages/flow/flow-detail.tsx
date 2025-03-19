@@ -33,7 +33,11 @@ import {
   useThemeListContext,
 } from '@usertour-ui/contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
-import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
+import {
+  ContentEditorRoot,
+  createValue1,
+  hasMissingRequiredData,
+} from '@usertour-ui/shared-editor';
 import { defaultStep, getErrorMessage } from '@usertour-ui/shared-utils';
 import { SpinnerIcon } from '@usertour-ui/icons';
 import { useMutation } from '@apollo/client';
@@ -229,6 +233,9 @@ const FlowBuilderDetailFooter = () => {
 
   const handleSave = useCallback(async () => {
     if (!currentStep || !backupStepData) {
+      return;
+    }
+    if (hasMissingRequiredData(currentStep.data)) {
       return;
     }
     if (
