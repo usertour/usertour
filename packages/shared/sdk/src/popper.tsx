@@ -695,7 +695,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
 );
 
 // We can add our own branding here
-const PopperMadeWith = forwardRef<HTMLDivElement>((_, ref) => {
+const PopperMadeWith = forwardRef<HTMLDivElement>((_, __) => {
   return (
     <>
       {/* <div ref={ref} className="absolute bottom-2 left-3 text-xs	opacity-50	hover:opacity-75		">
