@@ -7,7 +7,6 @@ import {
   GroupIcon2,
   LauncherIcon,
   SettingsIcon,
-  SurveyIcon,
 } from '@usertour-ui/icons';
 import { TooltipContent } from '@usertour-ui/tooltip';
 import { TooltipTrigger } from '@usertour-ui/tooltip';
@@ -32,13 +31,6 @@ const navigations = [
     contentType: 'flows',
     routeIds: ['content'],
     icon: FlowIcon,
-  },
-  {
-    name: 'Nps',
-    href: '/nps',
-    contentType: 'nps',
-    routeIds: ['nps'],
-    icon: SurveyIcon,
   },
   {
     name: 'Launchers',
