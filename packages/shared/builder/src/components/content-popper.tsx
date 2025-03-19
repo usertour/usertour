@@ -20,7 +20,6 @@ import {
   Align,
   Attribute,
   Content,
-  ContentDataType,
   ContentOmbedInfo,
   ContentVersion,
   Side,
@@ -58,13 +57,11 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       triggerRef,
       currentIndex,
       createStep,
-      currentContent,
     } = props;
     const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const contentType = currentContent?.type as ContentDataType;
 
     const { upload } = useAws();
 
@@ -108,10 +105,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       100,
     );
 
-    const enabledElementTypes =
-      contentType === ContentDataType.SURVEY || contentType === ContentDataType.NPS
-        ? Object.values(ContentEditorElementType)
-        : undefined;
+    const enabledElementTypes = Object.values(ContentEditorElementType);
 
     if (!triggerRef?.current) {
       return <></>;

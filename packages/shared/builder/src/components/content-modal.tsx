@@ -18,7 +18,6 @@ import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-
 import {
   Attribute,
   Content,
-  ContentDataType,
   ContentOmbedInfo,
   ContentVersion,
   Step,
@@ -52,7 +51,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       onChange,
       contents,
       currentIndex,
-      currentContent,
       createStep,
     } = props;
     const [globalStyle, setGlobalStyle] = useState<string>('');
@@ -60,7 +58,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const contentType = currentContent?.type as ContentDataType;
 
     useEffect(() => {
       if (theme) {
@@ -97,10 +94,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       currentVersion?.steps?.length ? (currentIndex + 1 / currentVersion?.steps?.length) * 100 : 0,
       100,
     );
-    const enabledElementTypes =
-      contentType === ContentDataType.SURVEY || contentType === ContentDataType.NPS
-        ? Object.values(ContentEditorElementType)
-        : undefined;
+    const enabledElementTypes = Object.values(ContentEditorElementType);
 
     return (
       <>

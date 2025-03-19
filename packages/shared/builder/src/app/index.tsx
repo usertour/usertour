@@ -56,11 +56,7 @@ const Container = () => {
   if (currentMode.mode === BuilderMode.BANNER) {
     return <BannerBuilder />;
   }
-  if (
-    currentMode.mode === BuilderMode.FLOW ||
-    currentMode.mode === BuilderMode.NPS ||
-    currentMode.mode === BuilderMode.SURVEY
-  ) {
+  if (currentMode.mode === BuilderMode.FLOW) {
     return <BuilderSideBar />;
   }
   return <></>;
