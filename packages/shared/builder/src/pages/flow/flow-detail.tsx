@@ -155,24 +155,28 @@ const FlowBuilderDetailBody = () => {
       <ScrollArea className="h-full ">
         <div className="flex-col space-y-6 p-4">
           <>
-            <ContentTheme
-              themeList={themeList}
-              onEdited={handleEditTheme}
-              zIndex={zIndex}
-              themeId={currentStep.themeId}
-              onChange={handleThemeChange}
-            />
             <ContentType
               type={currentStep.type}
               zIndex={zIndex}
               onChange={handleContentTypeChange}
             />
+            {currentStep.type !== 'hidden' && (
+              <ContentTheme
+                themeList={themeList}
+                onEdited={handleEditTheme}
+                zIndex={zIndex}
+                themeId={currentStep.themeId}
+                onChange={handleThemeChange}
+              />
+            )}
             <Separator />
-            <ContentWidth
-              type={currentStep.type as 'tooltip' | 'modal'}
-              width={currentStep.setting.width}
-              onChange={handleWidthChange}
-            />
+            {currentStep.type !== 'hidden' && (
+              <ContentWidth
+                type={currentStep.type as 'tooltip' | 'modal'}
+                width={currentStep.setting.width}
+                onChange={handleWidthChange}
+              />
+            )}
             {currentStep.type === 'tooltip' && <FlowPlacement />}
             {currentStep.type === 'tooltip' && (
               <ContentAlignment
@@ -198,16 +202,20 @@ const FlowBuilderDetailBody = () => {
                 onChange={handlePositionChange}
               />
             )}
-            <Separator />
-            <ContentSettings
-              data={{
-                enabledBackdrop: currentStep.setting.enabledBackdrop,
-                skippable: currentStep.setting.skippable,
-                enabledBlockTarget: currentStep.setting.enabledBlockTarget,
-              }}
-              onChange={handleSettingsChange}
-              type={currentStep.type}
-            />
+            {currentStep.type !== 'hidden' && (
+              <>
+                <Separator />
+                <ContentSettings
+                  data={{
+                    enabledBackdrop: currentStep.setting.enabledBackdrop,
+                    skippable: currentStep.setting.skippable,
+                    enabledBlockTarget: currentStep.setting.enabledBlockTarget,
+                  }}
+                  onChange={handleSettingsChange}
+                  type={currentStep.type}
+                />
+              </>
+            )}
           </>
         </div>
       </ScrollArea>
@@ -414,23 +422,27 @@ const FlowBuilderDetailEmbed = () => {
     );
   }
 
-  return (
-    <>
-      <ContentModal
-        theme={theme}
-        ref={contentRef as Ref<HTMLDivElement> | undefined}
-        attributeList={attributeList}
-        contents={contents}
-        zIndex={zIndex}
-        currentIndex={currentIndex}
-        currentStep={currentStep}
-        currentVersion={currentVersion}
-        onChange={handleContentChange}
-        createStep={createNewStep}
-        currentContent={currentContent}
-      />
-    </>
-  );
+  if (currentStep.type === 'modal') {
+    return (
+      <>
+        <ContentModal
+          theme={theme}
+          ref={contentRef as Ref<HTMLDivElement> | undefined}
+          attributeList={attributeList}
+          contents={contents}
+          zIndex={zIndex}
+          currentIndex={currentIndex}
+          currentStep={currentStep}
+          currentVersion={currentVersion}
+          onChange={handleContentChange}
+          createStep={createNewStep}
+          currentContent={currentContent}
+        />
+      </>
+    );
+  }
+
+  return <></>;
 };
 
 export const FlowBuilderDetail = () => {

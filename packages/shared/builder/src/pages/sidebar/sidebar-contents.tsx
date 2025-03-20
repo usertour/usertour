@@ -68,7 +68,7 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
             {step.type === 'modal' && <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5" />}
             {step.type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mx-0.5" />}
             <span className="w-36 truncate ...">
-              {index + 1}.{step.name}
+              {index + 1}. {step.name}
             </span>
           </div>
           <div className="flex-none">
