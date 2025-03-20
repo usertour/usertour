@@ -54,8 +54,8 @@ const config: Config = {
     },
   },
   auth: {
-    cookieDomain: process.env.USERTOUR_COOKIE_DOMAIN || 'localhost',
-    redirectUrl: process.env.LOGIN_REDIRECT_URL,
+    cookieDomain: process.env.USERTOUR_COOKIE_DOMAIN,
+    redirectUrl: process.env.LOGIN_REDIRECT_URL || '/env/1/flows',
     email: {
       enabled: process.env.EMAIL_AUTH_ENABLED === 'true' || true,
       sender: process.env.EMAIL_SENDER || 'UserTour <support@usertour.io>',
