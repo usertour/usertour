@@ -36,9 +36,7 @@ const config: Config = {
     pass: process.env.EMAIL_PASS,
   },
   redis: {
-    host: process.env.Redis_HOST,
-    port: process.env.Redis_PORT ? Number.parseInt(process.env.Redis_PORT) : 6379,
-    password: process.env.Redis_PASS,
+    url: process.env.REDIS_URL,
   },
   app: {
     homepageUrl: process.env.APP_HOMEPAGE_URL,

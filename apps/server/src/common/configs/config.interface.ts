@@ -34,9 +34,7 @@ export interface Config {
     pass: string;
   };
   redis: {
-    host: string;
-    port: number;
-    password: string;
+    url: string;
   };
   app: {
     homepageUrl: string;
