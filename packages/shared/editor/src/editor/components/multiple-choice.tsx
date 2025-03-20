@@ -244,19 +244,27 @@ ContentEditorMultipleChoice.displayName = 'ContentEditorMultipleChoice';
 
 export const ContentEditorMultipleChoiceSerialize = (props: {
   element: ContentEditorMultipleChoiceElement;
+  onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => void;
 }) => {
-  const { element } = props;
+  const { element, onClick } = props;
+  const [otherValue, setOtherValue] = useState<string>('');
+
+  // Add shuffling logic
+  const options = element.data.shuffleOptions
+    ? [...element.data.options].sort(() => Math.random() - 0.5)
+    : element.data.options;
 
   return (
     <div className="flex flex-col gap-2 w-full">
       <div className="space-y-2">
         {!element.data.allowMultiple ? (
           <RadioGroup defaultValue={element.data.options[0].value}>
-            {element.data.options.map((option, index) => (
+            {options.map((option, index) => (
               <div className="flex items-center space-x-2" key={index}>
                 <RadioGroupItem
                   value={option.value}
                   id={`r1${index}`}
+                  onClick={() => onClick?.(element, option.value)}
                   className="border-sdk-question text-sdk-foreground"
                 />
                 <Label htmlFor={`r1${index}`} className="cursor-pointer">
@@ -264,18 +272,53 @@ export const ContentEditorMultipleChoiceSerialize = (props: {
                 </Label>
               </div>
             ))}
+            {element.data.enableOther && (
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem
+                  value="other"
+                  id="other-radio"
+                  onClick={() => onClick?.(element, otherValue)}
+                  className="border-sdk-question text-sdk-foreground"
+                />
+                <Input
+                  placeholder="Other..."
+                  value={otherValue}
+                  onChange={(e) => {
+                    setOtherValue(e.target.value);
+                  }}
+                  className="w-48"
+                />
+              </div>
+            )}
           </RadioGroup>
         ) : (
           <div className="flex flex-col gap-2">
-            {element.data.options.map((option, index) => (
+            {options.map((option, index) => (
               <div key={index} className="flex items-center gap-2">
                 <Checkbox
                   checked={option.checked}
                   className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-foreground"
+                  onClick={() => onClick?.(element, option.value)}
                 />
                 <span>{option.label || option.value || `Option ${index + 1}`}</span>
               </div>
             ))}
+            {element.data.enableOther && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-foreground"
+                  onClick={() => onClick?.(element, otherValue)}
+                />
+                <Input
+                  placeholder="Other..."
+                  value={otherValue}
+                  onChange={(e) => {
+                    setOtherValue(e.target.value);
+                  }}
+                  className="w-48"
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -27,7 +27,7 @@ import {
   useContentEditorContext,
 } from '../contexts/content-editor-context';
 import {
-  ContentEditorButtonElement,
+  ContentEditorClickableElement,
   ContentEditorElementType,
   ContentEditorProps,
   ContentEditorRoot,
@@ -197,10 +197,22 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
   });
 };
 
+const isClickableElement = (element: ContentEditorClickableElement) => {
+  return (
+    element.type === ContentEditorElementType.BUTTON ||
+    element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
+    element.type === ContentEditorElementType.MULTI_LINE_TEXT ||
+    element.type === ContentEditorElementType.NPS ||
+    element.type === ContentEditorElementType.STAR_RATING ||
+    element.type === ContentEditorElementType.SCALE ||
+    element.type === ContentEditorElementType.MULTIPLE_CHOICE
+  );
+};
+
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];
   userInfo?: BizUserInfo;
-  onClick?: (element: ContentEditorButtonElement) => void;
+  onClick?: (element: ContentEditorClickableElement, value?: any) => void;
 }) => {
   const { contents, onClick, userInfo } = props;
   const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;
@@ -216,16 +228,17 @@ export const ContentEditorSerialize = (props: {
                 if (!mapping) {
                   return <></>;
                 }
-                if (mapping.type === ContentEditorElementType.BUTTON) {
+
+                const Comp = mapping.serialize as any;
+                if (isClickableElement(element.element as ContentEditorClickableElement)) {
                   return (
-                    <ContentEditorButtonSerialize
-                      element={element.element as ContentEditorButtonElement}
+                    <Comp
+                      element={element.element as ContentEditorClickableElement}
                       onClick={onClick}
                       key={iii}
                     />
                   );
                 }
-                const Comp = mapping.serialize as any;
                 return <Comp element={element.element} key={iii} />;
               })}
             </ContentEditorColumnSerialize>

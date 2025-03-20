@@ -134,8 +134,8 @@ export type ContentEditorStarRatingElement = {
   data: {
     name: string;
     rating?: number;
-    lowRange?: number;
-    highRange?: number;
+    lowRange: number;
+    highRange: number;
     lowLabel?: string;
     highLabel?: string;
     actions?: RulesCondition[];
@@ -214,6 +214,10 @@ export type ContentEditorQuestionElement =
   | ContentEditorSingleLineTextElement
   | ContentEditorMultiLineTextElement
   | ContentEditorMultipleChoiceElement;
+
+export type ContentEditorClickableElement =
+  | ContentEditorButtonElement
+  | ContentEditorQuestionElement;
 
 export type ContentEditorRootElement = {
   id?: string;

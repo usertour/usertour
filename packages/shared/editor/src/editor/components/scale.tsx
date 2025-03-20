@@ -80,7 +80,7 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
               >
                 {Array.from({ length: scaleLength }, (_, i) => (
                   <Button key={i} className={buttonBaseClass} forSdk>
-                    {element.data.lowRange + i}
+                    {Number.parseInt(element.data.lowRange.toString()) + i}
                   </Button>
                 ))}
               </div>
@@ -174,11 +174,11 @@ export type ContentEditorScaleSerializeType = {
   className?: string;
   children?: React.ReactNode;
   element: ContentEditorScaleElement;
-  onClick?: (element: ContentEditorScaleElement) => void;
+  onClick?: (element: ContentEditorScaleElement, value: number) => void;
 };
 
 export const ContentEditorScaleSerialize = (props: ContentEditorScaleSerializeType) => {
-  const { element } = props;
+  const { element, onClick } = props;
 
   const scaleLength = element.data.highRange - element.data.lowRange + 1;
 
@@ -192,7 +192,12 @@ export const ContentEditorScaleSerialize = (props: ContentEditorScaleSerializeTy
           }}
         >
           {Array.from({ length: scaleLength }, (_, i) => (
-            <Button key={i} className={buttonBaseClass} forSdk>
+            <Button
+              key={i}
+              className={buttonBaseClass}
+              forSdk
+              onClick={() => onClick?.(element, element.data.lowRange + i)}
+            >
               {element.data.lowRange + i}
             </Button>
           ))}

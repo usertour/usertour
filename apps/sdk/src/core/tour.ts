@@ -1,5 +1,5 @@
 import { smoothScroll } from '@usertour-ui/dom';
-import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ContentActionsItemType,
@@ -185,10 +185,11 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  async handleOnClick({ type, data }: ContentEditorButtonElement) {
-    if (type === 'button' && data.actions) {
-      await this.handleActions(data.actions);
+  async handleOnClick(element: ContentEditorClickableElement, value?: any) {
+    if (element.data.actions) {
+      await this.handleActions(element.data.actions);
     }
+    console.log('value', value);
   }
 
   async checkStepVisible() {

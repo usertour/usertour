@@ -145,18 +145,27 @@ ContentEditorMultiLineText.displayName = 'ContentEditorMultiLineText';
 
 export const ContentEditorMultiLineTextSerialize = (props: {
   element: ContentEditorMultiLineTextElement;
-  onClick?: (element: ContentEditorMultiLineTextElement) => void;
+  onClick?: (element: ContentEditorMultiLineTextElement, value: string) => void;
 }) => {
   const { element, onClick } = props;
+  const [value, setValue] = useState<string>('');
 
   return (
     <div className="flex flex-col gap-2 items-center w-full">
       <Textarea
         placeholder={element.data.placeholder || 'Enter text...'}
         className="border-sdk-question"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
       />
       <div className="flex justify-end w-full">
-        <Button forSdk={true} size="sm" className="flex-none" onClick={() => onClick?.(element)}>
+        <Button
+          forSdk={true}
+          size="sm"
+          className="flex-none"
+          onClick={() => onClick?.(element, value)}
+          disabled={element.data.required && isEmptyString(value)}
+        >
           {element.data.buttonText || 'Submit'}
         </Button>
       </div>
