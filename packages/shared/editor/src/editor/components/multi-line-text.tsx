@@ -154,14 +154,13 @@ export const ContentEditorMultiLineTextSerialize = (props: {
     <div className="flex flex-col gap-2 items-center w-full">
       <Textarea
         placeholder={element.data.placeholder || 'Enter text...'}
-        className="border-sdk-question"
+        className="border-sdk-question bg-sdk-background"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
       <div className="flex justify-end w-full">
         <Button
           forSdk={true}
-          size="sm"
           className="flex-none"
           onClick={() => onClick?.(element, value)}
           disabled={element.data.required && isEmptyString(value)}

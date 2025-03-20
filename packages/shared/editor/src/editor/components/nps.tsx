@@ -164,12 +164,7 @@ export const ContentEditorNPSSerialize = (props: ContentEditorNPSSerializeType) 
           style={{ gridTemplateColumns: 'repeat(11, minmax(0px, 1fr))' }}
         >
           {Array.from({ length: 11 }, (_, i) => (
-            <Button
-              key={i}
-              className={`${buttonBaseClass}`}
-              forSdk
-              onClick={() => onClick?.(element, i)}
-            >
+            <Button key={i} className={`${buttonBaseClass}`} onClick={() => onClick?.(element, i)}>
               {i}
             </Button>
           ))}

@@ -153,14 +153,13 @@ export const ContentEditorSingleLineTextSerialize = (props: {
     <div className="flex flex-col gap-2 items-center w-full">
       <Input
         placeholder={element.data.placeholder || 'Enter text...'}
-        className="grow h-auto"
+        className="grow h-auto border-sdk-question bg-sdk-background"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
       <div className="flex justify-end w-full">
         <Button
           forSdk={true}
-          size="sm"
           className="flex-none"
           onClick={() => onClick?.(element, value)}
           disabled={element.data.required && isEmptyString(value)}

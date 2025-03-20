@@ -286,7 +286,7 @@ export const ContentEditorMultipleChoiceSerialize = (props: {
                   onChange={(e) => {
                     setOtherValue(e.target.value);
                   }}
-                  className="w-48"
+                  className="w-48 border-sdk-question bg-sdk-background"
                 />
               </div>
             )}
@@ -315,7 +315,7 @@ export const ContentEditorMultipleChoiceSerialize = (props: {
                   onChange={(e) => {
                     setOtherValue(e.target.value);
                   }}
-                  className="w-48"
+                  className="w-48 border-sdk-question bg-sdk-background"
                 />
               </div>
             )}
