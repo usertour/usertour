@@ -161,21 +161,21 @@ const FlowBuilderDetailBody = () => {
               onChange={handleContentTypeChange}
             />
             {currentStep.type !== 'hidden' && (
-              <ContentTheme
-                themeList={themeList}
-                onEdited={handleEditTheme}
-                zIndex={zIndex}
-                themeId={currentStep.themeId}
-                onChange={handleThemeChange}
-              />
-            )}
-            <Separator />
-            {currentStep.type !== 'hidden' && (
-              <ContentWidth
-                type={currentStep.type as 'tooltip' | 'modal'}
-                width={currentStep.setting.width}
-                onChange={handleWidthChange}
-              />
+              <>
+                <ContentTheme
+                  themeList={themeList}
+                  onEdited={handleEditTheme}
+                  zIndex={zIndex}
+                  themeId={currentStep.themeId}
+                  onChange={handleThemeChange}
+                />
+                <Separator />
+                <ContentWidth
+                  type={currentStep.type as 'tooltip' | 'modal'}
+                  width={currentStep.setting.width}
+                  onChange={handleWidthChange}
+                />
+              </>
             )}
             {currentStep.type === 'tooltip' && <FlowPlacement />}
             {currentStep.type === 'tooltip' && (

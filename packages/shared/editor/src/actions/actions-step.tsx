@@ -93,7 +93,11 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
               </ContentActionsConditionIcon>
               <span className="pr-1">Go to Step</span>{' '}
               {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              {!isLoading && <SelectValue placeholder={''} />}
+              {!isLoading && (
+                <div className=" max-w-[120px]	truncate ...">
+                  <SelectValue placeholder={''} />
+                </div>
+              )}
             </SelectTriggerNoIcon>
             <SelectPortal>
               <SelectContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}>

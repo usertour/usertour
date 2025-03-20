@@ -1,4 +1,6 @@
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { Alert, AlertDescription, AlertTitle } from '@usertour-ui/alert';
 import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-ui/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 
@@ -67,6 +69,24 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
             </div>
           </SelectItem>
         </SelectContent>
+
+        {type === 'hidden' && (
+          <Alert variant="warning">
+            <ExclamationTriangleIcon className="h-4 w-4" />
+            <AlertTitle>Take caution with hidden steps</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2">
+              <span>
+                Hidden steps MUST include a trigger that eventually matches and either directs the
+                user to a non-hidden step, initiates another flow, or dismisses the current flow.
+              </span>
+              <span>
+                Without such a trigger, the user could be stuck on a hidden step indefinitely,
+                potentially blocking other content from being displayed.
+              </span>
+              <span>Whenever possible, avoid using hidden steps altogether.</span>
+            </AlertDescription>
+          </Alert>
+        )}
       </Select>
     </div>
   );
