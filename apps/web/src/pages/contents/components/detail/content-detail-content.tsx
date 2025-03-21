@@ -139,7 +139,7 @@ const ContentDetailContentStep = ({
             </TooltipProvider>
           </div>
           <div className="font-bold flex flex-row space-x-1 items-center	">
-            {index + 1}、{currentStep.name}
+            {index + 1}. {currentStep.name}
           </div>
           <div className="text-sm space-x-1">
             <ContentBadge>{currentStep.type}</ContentBadge>

@@ -13,7 +13,7 @@ import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
 
 const buttonBaseClass =
-  'flex items-center overflow-hidden group font-semibold relative border bg-sdk-question/20 text-sdk-question border-sdk-question hover:text-sdk-question hover:bg-sdk-question/40  rounded-md main-transition p-2 py-2 text-base justify-center w-auto min-w-0	';
+  'flex items-center overflow-hidden group relative border bg-sdk-question/20 text-sdk-question border-sdk-question hover:text-sdk-question hover:bg-sdk-question/40  rounded-md main-transition p-2 justify-center w-auto min-w-0	';
 
 interface ContentEditorNPSProps {
   element: ContentEditorNPSElement;

@@ -191,7 +191,10 @@ export interface ContentEditorMultipleChoiceElement {
     shuffleOptions: boolean;
     enableOther: boolean;
     allowMultiple: boolean;
+    buttonText?: string;
     actions?: RulesCondition[];
+    lowRange?: number;
+    highRange?: number;
   };
 }
 
