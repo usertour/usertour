@@ -100,8 +100,10 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       return resp;
     };
 
+    const totalSteps = currentVersion?.steps?.length ?? 0;
+
     const progress = Math.min(
-      currentVersion?.steps?.length ? (currentIndex + 1 / currentVersion?.steps?.length) * 100 : 0,
+      totalSteps > 0 ? Math.round(((currentIndex + 1) / totalSteps) * 100) : 0,
       100,
     );
 
