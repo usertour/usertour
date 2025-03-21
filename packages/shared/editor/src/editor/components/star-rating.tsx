@@ -104,7 +104,7 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                 {Array.from({ length: scaleLength }, (_, i) => (
                   <StarButton
                     key={i}
-                    className={cn({
+                    className={cn('text-sdk-question/30', {
                       'text-sdk-question': hoveredIndex !== null && i <= hoveredIndex,
                     })}
                     onMouseEnter={() => handleStarHover(i)}
@@ -221,7 +221,7 @@ export const ContentEditorStarRatingSerialize = (props: {
         {Array.from({ length: scaleLength }, (_, i) => (
           <StarButton
             key={i}
-            className={cn({
+            className={cn('text-sdk-question/30', {
               'text-sdk-question': hoveredIndex !== null && i <= hoveredIndex,
             })}
             onMouseEnter={() => handleStarHover(i)}
