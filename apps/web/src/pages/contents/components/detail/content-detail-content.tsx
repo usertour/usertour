@@ -102,7 +102,7 @@ const ContentDetailContentStep = ({
       <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8" key={index}>
         {!isHidddenStep && (
           <div
-            className="w-40 h-32 flex  flex-none items-center"
+            className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
             style={{
               height: height ? `${height}px` : undefined,
             }}
@@ -280,7 +280,7 @@ const ChecklistContentPreview = ({
       <GoogleFontCss settings={currentTheme.settings} />
       <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
         <div
-          className="w-40 h-32 flex  flex-none items-center"
+          className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
           style={{
             height: height ? `${height}px` : undefined,
           }}
