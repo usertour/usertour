@@ -848,7 +848,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]
+  projects: [UserOnProject!]!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

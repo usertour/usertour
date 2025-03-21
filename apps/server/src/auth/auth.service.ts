@@ -59,13 +59,13 @@ export class AuthService {
 
   cookieOptions(key: string): CookieOptions {
     const baseOptions: CookieOptions = {
-      secure: true,
+      secure: this.configService.get('auth.cookie.secure'),
       sameSite: 'strict',
       path: '/',
     };
 
-    if (this.configService.get('auth.cookieDomain')) {
-      baseOptions.domain = this.configService.get('auth.cookieDomain');
+    if (this.configService.get('auth.cookie.domain')) {
+      baseOptions.domain = this.configService.get('auth.cookie.domain');
     }
 
     switch (key) {
