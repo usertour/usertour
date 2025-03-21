@@ -9,7 +9,7 @@ import {
   ChecklistPopperUseIframe,
 } from '@usertour-ui/sdk/src/checklist';
 import { ChecklistRoot } from '@usertour-ui/sdk/src/checklist';
-import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   BizUserInfo,
   ChecklistData,
@@ -30,7 +30,7 @@ interface ChecklistWidgetCoreProps {
   userInfo: BizUserInfo;
   assets: AssetAttributes[] | undefined;
   handleItemClick: (item: ChecklistItemType, index: number) => void;
-  handleOnClick: ({ type, data }: ContentEditorButtonElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   handleDismiss: () => Promise<void>;
   handleOpenChange: (open: boolean) => void;
 }

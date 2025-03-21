@@ -60,7 +60,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
             <div className="flex flex-col gap-2 items-center w-full">
               <Input
                 placeholder={element.data.placeholder || 'Enter text...'}
-                className="grow h-auto"
+                className="grow h-auto border-sdk-question bg-sdk-background"
               />
               <div className="flex justify-end w-full">
                 <Button forSdk={true} size="sm" className="flex-none">

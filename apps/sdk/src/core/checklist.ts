@@ -1,5 +1,5 @@
 import { canCompleteChecklistItem } from '@usertour-ui/sdk';
-import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ChecklistData,
@@ -108,7 +108,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     );
   }
 
-  handleOnClick = async ({ type, data }: ContentEditorButtonElement) => {
+  handleOnClick = async ({ type, data }: ContentEditorClickableElement) => {
     if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }

@@ -13,7 +13,7 @@ import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
 
 const buttonBaseClass =
-  'flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30  rounded-md main-transition p-2 py-2 text-base justify-center';
+  'flex items-center overflow-hidden group font-semibold relative border border-sdk-question hover:bg-sdk-question/30  rounded-md main-transition p-2 py-2 text-base justify-center w-auto min-w-0	';
 
 interface ContentEditorNPSProps {
   element: ContentEditorNPSElement;
@@ -63,16 +63,16 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
 
   return (
     <EditorError open={isShowError}>
-      <EditorErrorAnchor>
+      <EditorErrorAnchor className="w-full">
         <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
           <Popover.Trigger asChild>
-            <div className="cursor-pointer">
+            <div className="w-full">
               <div
                 className="grid gap-1.5 !gap-1"
                 style={{ gridTemplateColumns: 'repeat(11, minmax(0px, 1fr))' }}
               >
                 {Array.from({ length: 11 }, (_, i) => (
-                  <Button key={i} className={`${buttonBaseClass}`}>
+                  <Button key={i} className={`${buttonBaseClass}`} forSdk>
                     {i}
                   </Button>
                 ))}
@@ -158,13 +158,18 @@ export const ContentEditorNPSSerialize = (props: ContentEditorNPSSerializeType) 
 
   return (
     <>
-      <div className="cursor-pointer">
+      <div className="w-full">
         <div
           className="grid gap-1.5 !gap-1"
           style={{ gridTemplateColumns: 'repeat(11, minmax(0px, 1fr))' }}
         >
           {Array.from({ length: 11 }, (_, i) => (
-            <Button key={i} className={`${buttonBaseClass}`} onClick={() => onClick?.(element, i)}>
+            <Button
+              key={i}
+              className={`${buttonBaseClass}`}
+              onClick={() => onClick?.(element, i)}
+              forSdk
+            >
               {i}
             </Button>
           ))}

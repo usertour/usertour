@@ -61,13 +61,11 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
             <div className="flex flex-col gap-2 items-center w-full">
               <Textarea
                 placeholder={element.data.placeholder || 'Enter text...'}
-                className="border-sdk-question"
+                className="border-sdk-question bg-sdk-background"
                 disabled
               />
               <div className="flex justify-end w-full">
-                <Button forSdk={true} size="sm" className="flex-none">
-                  {element.data.buttonText || 'Submit'}
-                </Button>
+                <Button forSdk={true}>{element.data.buttonText || 'Submit'}</Button>
               </div>
             </div>
           </Popover.Trigger>
@@ -161,7 +159,6 @@ export const ContentEditorMultiLineTextSerialize = (props: {
       <div className="flex justify-end w-full">
         <Button
           forSdk={true}
-          className="flex-none"
           onClick={() => onClick?.(element, value)}
           disabled={element.data.required && isEmptyString(value)}
         >

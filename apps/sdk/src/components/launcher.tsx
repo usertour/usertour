@@ -3,7 +3,7 @@ import { LauncherContentWrapper, LauncherPopperContent } from '@usertour-ui/sdk/
 import { LauncherPopperContentPotal } from '@usertour-ui/sdk/src/launcher';
 import { LauncherPopper } from '@usertour-ui/sdk/src/launcher';
 import { LauncherRoot } from '@usertour-ui/sdk/src/launcher';
-import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   BizUserInfo,
@@ -26,7 +26,7 @@ interface LauncherWidgetCoreProps {
   el: HTMLElement;
   theme: Theme;
   zIndex: number;
-  handleOnClick: ({ type, data }: ContentEditorButtonElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   userInfo: BizUserInfo;
   handleActive: () => void;
 }

@@ -71,7 +71,7 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
       <EditorErrorAnchor className="w-full">
         <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
           <Popover.Trigger asChild>
-            <div>
+            <div className="w-full">
               <div
                 className="grid gap-1.5 !gap-1"
                 style={{
@@ -184,7 +184,7 @@ export const ContentEditorScaleSerialize = (props: ContentEditorScaleSerializeTy
 
   return (
     <>
-      <div>
+      <div className="w-full">
         <div
           className="grid gap-1.5 !gap-1"
           style={{
@@ -198,7 +198,7 @@ export const ContentEditorScaleSerialize = (props: ContentEditorScaleSerializeTy
               forSdk
               onClick={() => onClick?.(element, element.data.lowRange + i)}
             >
-              {element.data.lowRange + i}
+              {Number.parseInt(element.data.lowRange.toString()) + i}
             </Button>
           ))}
         </div>
