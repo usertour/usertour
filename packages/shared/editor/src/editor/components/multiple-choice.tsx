@@ -112,6 +112,18 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                         </Label>
                       </div>
                     ))}
+                    {element.data.enableOther && (
+                      <div className={cn(itemBaseClass)}>
+                        <RadioGroupItem
+                          value="other"
+                          id="other-radio"
+                          className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
+                        />
+                        <div className="flex items-center grow gap-2 relative">
+                          <span className="grow cursor-pointer leading-none">Other...</span>
+                        </div>
+                      </div>
+                    )}
                   </RadioGroup>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -130,6 +142,14 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                         </Label>
                       </div>
                     ))}
+                    {element.data.enableOther && (
+                      <div className={cn(itemBaseClass)}>
+                        <Checkbox className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background" />
+                        <div className="flex items-center grow gap-2 relative">
+                          <span className="grow cursor-pointer leading-none">Other...</span>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex justify-center w-full">
                       <Button forSdk={true}>{element.data.buttonText || 'Submit'}</Button>
                     </div>
