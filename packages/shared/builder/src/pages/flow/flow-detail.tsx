@@ -243,7 +243,7 @@ const FlowBuilderDetailFooter = () => {
     if (!currentStep || !backupStepData) {
       return;
     }
-    if (hasMissingRequiredData(currentStep.data)) {
+    if (currentStep.type !== 'hidden' && hasMissingRequiredData(currentStep.data)) {
       return;
     }
     if (
