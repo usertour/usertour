@@ -50,7 +50,11 @@ export class ContentsResolver {
   @Mutation(() => Content)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
-    return await this.contentsService.duplicateContent(data.contentId, data.name);
+    return await this.contentsService.duplicateContent(
+      data.contentId,
+      data.name,
+      data.targetEnvironmentId,
+    );
   }
 
   @Query(() => Content)

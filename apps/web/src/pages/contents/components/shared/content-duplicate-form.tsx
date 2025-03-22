@@ -1,6 +1,8 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
@@ -13,6 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@usertour-ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour-ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 import { duplicateContent } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
@@ -39,6 +47,7 @@ const formSchema = z.object({
     })
     .max(30)
     .min(1),
+  targetEnvironmentId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,6 +55,9 @@ type FormValues = z.infer<typeof formSchema>;
 export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   const { onSuccess, content, open, onOpenChange, name } = props;
   const [mutation] = useMutation(duplicateContent);
+  const { environmentList } = useEnvironmentListContext();
+  const { environment } = useAppContext();
+
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const showError = (title: string) => {
@@ -57,7 +69,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: content.name },
+    defaultValues: { name: content.name, targetEnvironmentId: environment?.id },
     mode: 'onChange',
   });
 
@@ -71,6 +83,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
       const variables = {
         contentId: content.id,
         name: formValues.name,
+        targetEnvironmentId: formValues.targetEnvironmentId,
       };
       const ret = await mutation({ variables });
       if (ret.data.duplicateContent.id) {
@@ -111,6 +124,39 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                           <Input placeholder={`Enter ${name} name`} {...field} />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="targetEnvironmentId"
+                    render={({ field }) => (
+                      <FormItem className="space-x-2">
+                        <FormLabel>Target Environment</FormLabel>
+                        <FormControl>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline">
+                                {field.value
+                                  ? environmentList?.find((env) => env.id === field.value)?.name ||
+                                    'Select Environment'
+                                  : 'Select Environment'}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {environmentList?.map((env) => (
+                                <DropdownMenuItem
+                                  key={env.id}
+                                  onSelect={() => field.onChange(env.id)}
+                                >
+                                  {env.name}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </FormControl>
                       </FormItem>
                     )}
                   />

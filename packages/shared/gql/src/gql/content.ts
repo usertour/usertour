@@ -174,8 +174,18 @@ export const updateContent = gql`
 `;
 
 export const duplicateContent = gql`
-  mutation duplicateContent($contentId: String!, $name: String!) {
-    duplicateContent(data: { contentId: $contentId, name: $name }) {
+  mutation duplicateContent(
+    $contentId: String!
+    $name: String!
+    $targetEnvironmentId: String
+  ) {
+    duplicateContent(
+      data: {
+        contentId: $contentId
+        name: $name
+        targetEnvironmentId: $targetEnvironmentId
+      }
+    ) {
       id
       name
     }
