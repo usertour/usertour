@@ -81,6 +81,14 @@ export class ContentsGuard implements CanActivate {
     if (!environment) {
       throw new NoPermissionError();
     }
+
+    // Check if the target environment is in the same project
+    if (args.data?.targetEnvironmentId) {
+      const targetEnvironment = await this.environmentsService.get(args.data.targetEnvironmentId);
+      if (!targetEnvironment || environment.projectId !== targetEnvironment.projectId) {
+        throw new NoPermissionError();
+      }
+    }
     const projectId = environment.projectId;
 
     if (localizationId) {
