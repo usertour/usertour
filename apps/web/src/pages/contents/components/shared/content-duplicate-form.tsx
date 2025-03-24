@@ -15,15 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@usertour-ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 import { duplicateContent } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
+import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Content } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
@@ -111,56 +106,44 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                 's steps.
               </DialogDescription>
             </DialogHeader>
-            <div>
-              <div className="space-y-4 py-2 pb-4 pt-4">
-                <div className="space-y-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
+            <div className="space-y-4 py-2 pb-4 pt-4">
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder={`Enter ${name} name`} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetEnvironmentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target Environment</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input placeholder={`Enter ${name} name`} {...field} />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a data type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="targetEnvironmentId"
-                    render={({ field }) => (
-                      <FormItem className="space-x-2">
-                        <FormLabel>Target Environment</FormLabel>
-                        <FormControl>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline">
-                                {field.value
-                                  ? environmentList?.find((env) => env.id === field.value)?.name ||
-                                    'Select Environment'
-                                  : 'Select Environment'}
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {environmentList?.map((env) => (
-                                <DropdownMenuItem
-                                  key={env.id}
-                                  onSelect={() => field.onChange(env.id)}
-                                >
-                                  {env.name}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          {environmentList?.map((env) => (
+                            <SelectItem value={env.id} key={env.id}>
+                              {env.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
             <DialogFooter>
