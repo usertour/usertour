@@ -313,7 +313,7 @@ export class ContentsService {
     });
   }
 
-  async duplicateContent(contentId: string, name: string) {
+  async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {
     const duplicateContent = await this.prisma.content.findUnique({
       where: { id: contentId },
     });
@@ -335,7 +335,7 @@ export class ContentsService {
           data: {
             name: name || duplicateContent.name,
             buildUrl: duplicateContent.buildUrl,
-            environmentId: duplicateContent.environmentId,
+            environmentId: targetEnvironmentId || duplicateContent.environmentId,
           },
         });
 
