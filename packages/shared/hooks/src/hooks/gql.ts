@@ -3,6 +3,8 @@ import {
   activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
+  deleteSession,
+  endSession,
   getAuthConfig,
   getInvite,
   getInvites,
@@ -11,10 +13,18 @@ import {
   listSegment,
   login,
   queryContents,
+  querySessionDetail,
   removeTeamMember,
   signUp,
 } from '@usertour-ui/gql';
-import type { Content, ContentDataType, Pagination, Segment, TeamMember } from '@usertour-ui/types';
+import type {
+  Content,
+  ContentDataType,
+  Pagination,
+  Segment,
+  TeamMember,
+  BizSession,
+} from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
   query: {
@@ -200,4 +210,31 @@ export const useActiveUserProjectMutation = () => {
     return !!response.data?.activeUserProject;
   };
   return { invoke, loading, error };
+};
+
+export const useDeleteSessionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteSession);
+  const invoke = async (sessionId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { sessionId } });
+    return !!response.data?.deleteSession;
+  };
+  return { invoke, loading, error };
+};
+
+export const useEndSessionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(endSession);
+  const invoke = async (sessionId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { sessionId } });
+    return !!response.data?.endSession;
+  };
+  return { invoke, loading, error };
+};
+
+export const useQuerySessionDetailQuery = (sessionId: string) => {
+  const { data, loading, error } = useQuery(querySessionDetail, {
+    variables: { sessionId },
+  });
+
+  const session = data?.querySessionDetail as BizSession;
+  return { session, loading, error };
 };

@@ -167,3 +167,51 @@ export const deleteBizCompanyOnSegment = gql`
     }
   }
 `;
+
+export const deleteSession = gql`
+  mutation deleteSession($sessionId: String!) {
+    deleteSession(sessionId: $sessionId)
+  }
+`;
+
+export const endSession = gql`
+  mutation endSession($sessionId: String!) {
+    endSession(sessionId: $sessionId)
+  }
+`;
+
+export const querySessionDetail = gql`
+  query querySessionDetail($sessionId: String!) {
+    querySessionDetail(sessionId: $sessionId) {
+      id
+      state
+      createdAt
+      contentId
+      data
+      content {
+        id
+        name
+      }
+      version {
+        id
+        sequence
+      }
+      bizUser {
+        id
+        externalId
+        environmentId
+      }
+      bizEvent {
+        id
+        eventId
+        createdAt
+        data
+        event {
+          id
+          codeName
+          displayName
+        }
+      }
+    }
+  }
+`;

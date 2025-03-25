@@ -99,6 +99,7 @@ type BizEvent {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
+  event: Events
   eventId: String!
   id: ID!
 
@@ -149,6 +150,7 @@ type BizSession {
   bizEvent: [BizEvent!]
   bizUser: BizModel!
   bizUserId: String!
+  content: Content
   contentId: String!
 
   """Identifies the date and time when the object was created."""
@@ -160,30 +162,13 @@ type BizSession {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  version: Version
 }
 
 type BizSessionConnection {
   edges: [BizSessionEdge!]
   pageInfo: PageInfo!
   totalCount: Int!
-}
-
-type BizSessionDetail {
-  bizEvent: [BizEvent!]
-  bizEvents: [BizEvent!]!
-  bizUser: BizModel!
-  bizUserId: String!
-  contentId: String!
-
-  """Identifies the date and time when the object was created."""
-  createdAt: DateTime!
-  data: JSON
-  id: ID!
-  progress: Int!
-  state: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: DateTime!
 }
 
 type BizSessionEdge {
@@ -664,7 +649,7 @@ type Query {
   queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
   queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryOembedInfo(url: String!): OEmbed!
-  querySessionDetail(sessionId: String!): BizSessionDetail!
+  querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!
 }
 

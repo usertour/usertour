@@ -33,8 +33,8 @@ export type CustomEvent = {
 
 export type BizEvent = {
   id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   event: CustomEvent;
   data: any | null;
   bizUserId: string;

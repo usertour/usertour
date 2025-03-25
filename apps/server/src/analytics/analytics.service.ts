@@ -567,7 +567,12 @@ export class AnalyticsService {
   async querySessionDetail(sessionId: string) {
     return await this.prisma.bizSession.findUnique({
       where: { id: sessionId, deleted: false },
-      include: { bizUser: true, bizEvent: true },
+      include: {
+        bizUser: true,
+        bizEvent: { include: { event: true } },
+        content: true,
+        version: true,
+      },
     });
   }
 

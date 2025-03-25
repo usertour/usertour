@@ -9,9 +9,10 @@ import { AnalyticsIdArgs } from './args/analytics-query.args';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { Analytics } from './models/analytics';
-import { BizSessionConnection, BizSessionDetail } from './models/analytics-connection.model';
+import { BizSessionConnection } from './models/analytics-connection.model';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { BizSession } from './models/biz-session';
 
 @Resolver()
 @UseGuards(AnalyticsGuard)
@@ -51,7 +52,7 @@ export class AnalyticsResolver {
     return !!(await this.service.endSession(sessionId));
   }
 
-  @Query(() => BizSessionDetail)
+  @Query(() => BizSession)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async querySessionDetail(@Args('sessionId') sessionId: string) {
     return await this.service.querySessionDetail(sessionId);

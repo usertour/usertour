@@ -1,3 +1,6 @@
+import { BizEvent, BizUser } from './biz';
+import { Content, ContentVersion } from './contents';
+
 export type ContentAnalytics = {
   id: string;
   externalId: string;
@@ -12,6 +15,10 @@ export type BizSession = {
   environmentId: string;
   data: JSON;
   createdAt: string;
+  bizUser?: BizUser;
+  bizEvent?: BizEvent[];
+  content?: Content;
+  version?: ContentVersion;
 };
 
 export type AnalyticsQuery = {
