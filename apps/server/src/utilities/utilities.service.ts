@@ -16,12 +16,11 @@ export class UtilitiesService {
   ) {}
 
   async createPresignedUrl(_: string, data: createPresignedUrlInput) {
-    const { fileName } = data;
+    const { fileName, contentType } = data;
     const uuid = v4();
     const key = `${uuid}/${fileName}`;
-
     const region = this.configService.get('AWS_S3_REGION');
-    const endpoint = this.configService.get('AWS_S3_ENDPOINT');
+    // const endpoint = this.configService.get("AWS_S3_ENDPOINT");
     const accessKeyId = this.configService.get('AWS_S3_ACCESS_KEY_ID');
     const secretAccessKey = this.configService.get('AWS_S3_SECRET_ACCESS_KEY');
     const domain = this.configService.get('AWS_S3_DOMAIN');
@@ -35,15 +34,20 @@ export class UtilitiesService {
       },
     };
 
-    if (endpoint) {
-      s3Config.endpoint = endpoint;
-    }
+    // if (endpoint) {
+    //   s3Config.endpoint = endpoint;
+    // }
 
     const s3 = new S3Client(s3Config);
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: contentType,
+      ACL: 'public-read',
+    });
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
 
-    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-    const signedUrl = getSignedUrl(s3, command, { expiresIn: 3600 });
-    return { signedUrl, cdnUrl: `${domain}/${key}` };
+    return { signedUrl, cdnUrl: `https://${domain}/${bucket}/${key}` };
   }
 
   async queryOembedInfo(url: string) {

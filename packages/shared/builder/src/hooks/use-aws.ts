@@ -4,12 +4,13 @@ import axios from 'axios';
 
 export const useAws = () => {
   const client = useApolloClient();
-  const getPresignedUrl = async (fileName: string, storageType = 'S3') => {
+  const getPresignedUrl = async (fileName: string, contentType: string, storageType = 'S3') => {
     const { data } = await client.mutate({
       mutation: createPresignedUrl,
       variables: {
         fileName,
         storageType,
+        contentType,
       },
     });
     return data?.createPresignedUrl;
@@ -19,7 +20,7 @@ export const useAws = () => {
     try {
       const fileName = file.name;
       const contentType = file.type;
-      const { signedUrl, cdnUrl } = await getPresignedUrl(fileName);
+      const { signedUrl, cdnUrl } = await getPresignedUrl(fileName, contentType, 'S3');
 
       if (!signedUrl || !cdnUrl) {
         throw new Error('Failed to get presigned URL');
