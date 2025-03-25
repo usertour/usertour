@@ -168,6 +168,24 @@ type BizSessionConnection {
   totalCount: Int!
 }
 
+type BizSessionDetail {
+  bizEvent: [BizEvent!]
+  bizEvents: [BizEvent!]!
+  bizUser: BizModel!
+  bizUserId: String!
+  contentId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  id: ID!
+  progress: Int!
+  state: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
 type BizSessionEdge {
   cursor: String!
   node: BizSession!
@@ -558,8 +576,10 @@ type Mutation {
   deleteEvent(data: DeleteEventInput!): Events!
   deleteLocalization(data: DeleteLocalizationInput!): Localization!
   deleteSegment(data: DeleteSegment!): Common!
+  deleteSession(sessionId: String!): Boolean!
   deleteTheme(data: DeleteThemeInput!): Theme!
   duplicateContent(data: ContentDuplicateInput!): Content!
+  endSession(sessionId: String!): Boolean!
   inviteTeamMember(data: InviteTeamMemberInput!): Boolean!
   login(data: LoginInput!): Auth!
   logout: Boolean!
@@ -644,6 +664,7 @@ type Query {
   queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
   queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryOembedInfo(url: String!): OEmbed!
+  querySessionDetail(sessionId: String!): BizSessionDetail!
   userEnvironments(projectId: String!): [Environment!]!
 }
 

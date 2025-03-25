@@ -29,9 +29,6 @@ export class LocalizationsGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
     if (localizationId) {
       const data = await this.localizationService.get(localizationId);
       if (!data || (projectId && data && projectId !== data.projectId)) {

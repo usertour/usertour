@@ -42,6 +42,7 @@ export class BizResolver {
   }
 
   @Query(() => BizConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async queryBizUser(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizQuery,
@@ -51,6 +52,7 @@ export class BizResolver {
   }
 
   @Query(() => BizConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async queryBizCompany(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizQuery,
@@ -79,6 +81,7 @@ export class BizResolver {
   }
 
   @Query(() => [Segment])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async listSegment(@Args() { environmentId }: ListSegment) {
     return await this.service.listSegment(environmentId);
   }

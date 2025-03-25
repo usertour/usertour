@@ -2,14 +2,16 @@ import { UserEntity } from '@/common/decorators/user.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { User } from '@/users/models/user.model';
 import { UseGuards } from '@nestjs/common';
-import { Args, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AnalyticsGuard } from './analytics.guard';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsIdArgs } from './args/analytics-query.args';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { Analytics } from './models/analytics';
-import { BizSessionConnection } from './models/analytics-connection.model';
+import { BizSessionConnection, BizSessionDetail } from './models/analytics-connection.model';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 
 @Resolver()
 @UseGuards(AnalyticsGuard)
@@ -17,6 +19,7 @@ export class AnalyticsResolver {
   constructor(private service: AnalyticsService) {}
 
   @Query(() => Analytics)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async queryContentAnalytics(
     @UserEntity() user: User,
     @Args()
@@ -26,6 +29,7 @@ export class AnalyticsResolver {
   }
 
   @Query(() => BizSessionConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async queryBizSession(
     @UserEntity() user: User,
     @Args() pagination: PaginationArgs,
@@ -33,5 +37,23 @@ export class AnalyticsResolver {
     @Args('orderBy') orderBy: AnalyticsOrder,
   ) {
     return await this.service.queryRecentSessions(query, pagination, orderBy, user);
+  }
+
+  @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  async deleteSession(@Args('sessionId') sessionId: string) {
+    return !!(await this.service.deleteSession(sessionId));
+  }
+
+  @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  async endSession(@Args('sessionId') sessionId: string) {
+    return !!(await this.service.endSession(sessionId));
+  }
+
+  @Query(() => BizSessionDetail)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async querySessionDetail(@Args('sessionId') sessionId: string) {
+    return await this.service.querySessionDetail(sessionId);
   }
 }

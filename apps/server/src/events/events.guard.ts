@@ -29,9 +29,6 @@ export class EventsGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
     if (eventId) {
       const data = await this.eventsService.get(eventId);
       if (!data || (projectId && data && projectId !== data.projectId)) {

@@ -556,4 +556,43 @@ export class AnalyticsService {
     }
     return true;
   }
+
+  async getSession(sessionId: string) {
+    return await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { content: true },
+    });
+  }
+
+  async querySessionDetail(sessionId: string) {
+    return await this.prisma.bizSession.findUnique({
+      where: { id: sessionId, deleted: false },
+      include: { bizUser: true, bizEvent: true },
+    });
+  }
+
+  async endSession(sessionId: string) {
+    return await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { state: 1 },
+    });
+  }
+
+  async deleteSession(sessionId: string) {
+    const session = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!session) {
+      return false;
+    }
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.bizEvent.deleteMany({
+        where: { bizSessionId: sessionId },
+      });
+      await tx.bizSession.delete({
+        where: { id: sessionId },
+      });
+      return true;
+    });
+  }
 }

@@ -41,6 +41,7 @@ export class LocalizationsResolver {
   }
 
   @Query(() => [Localization])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async listLocalizations(@Args() { projectId }: QueryLocalizationInput) {
     return await this.service.findMany(projectId);
   }

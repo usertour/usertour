@@ -17,6 +17,12 @@ export class TeamGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Check if endpoint is marked as public
+    const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler());
+    if (isPublic) {
+      return true;
+    }
+
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext();
     const args = ctx.getArgs();
@@ -25,9 +31,6 @@ export class TeamGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
 
     const userProject = await this.teamService.getUserOnProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {

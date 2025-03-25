@@ -38,11 +38,13 @@ export class EventsResolver {
   }
 
   @Query(() => [Events])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async listEvents(@UserEntity() @Args() { projectId }: QueryEventsInput) {
     return await this.service.list(projectId);
   }
 
   @Query(() => [AttributeOnEvent])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async listAttributeOnEvents(@Args() { eventId }: QueryAttributeOnEventsInput) {
     return await this.service.listAttributeOnEvents(eventId);
   }

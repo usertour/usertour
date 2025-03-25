@@ -17,6 +17,7 @@ import {
 } from '@/pages/layouts';
 import { AdminSettings, SettingsThemeDetail } from '@/pages/settings';
 import { UserDetail, UserList } from '@/pages/users';
+import { SessionDetail } from '@/pages/users/session-detail';
 
 export interface CustomRouteConfig {
   path: string;
@@ -185,6 +186,15 @@ const config: CustomRouteConfig[] = [
     loginRequired: true,
     redirectIfLogged: false,
     title: 'UserDetail',
+  },
+  /* SessionDetail */
+  {
+    path: '/env/:envId/session/:sessionId',
+    component: SessionDetail,
+    layout: AdminDetailLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'SessionDetail',
   },
   /* CompanyDetail */
   {
