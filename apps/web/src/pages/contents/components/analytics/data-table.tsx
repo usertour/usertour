@@ -20,6 +20,7 @@ import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useState } from 'react';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
+import { AnalyticsAction } from './analytics-action';
 
 export const BizSessionsDataTable = () => {
   const [rowSelection, setRowSelection] = useState({});
@@ -70,6 +71,7 @@ export const BizSessionsDataTable = () => {
                     </TableHead>
                   );
                 })}
+                <TableHead />
               </TableRow>
             ))}
           </TableHeader>
@@ -92,6 +94,9 @@ export const BizSessionsDataTable = () => {
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
+                  <TableCell>
+                    <AnalyticsAction session={row.original} />
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
