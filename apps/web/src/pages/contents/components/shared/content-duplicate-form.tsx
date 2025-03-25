@@ -1,6 +1,8 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
@@ -16,6 +18,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 import { duplicateContent } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
+import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Content } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
@@ -39,6 +42,7 @@ const formSchema = z.object({
     })
     .max(30)
     .min(1),
+  targetEnvironmentId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,6 +50,9 @@ type FormValues = z.infer<typeof formSchema>;
 export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   const { onSuccess, content, open, onOpenChange, name } = props;
   const [mutation] = useMutation(duplicateContent);
+  const { environmentList } = useEnvironmentListContext();
+  const { environment } = useAppContext();
+
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const showError = (title: string) => {
@@ -57,7 +64,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: content.name },
+    defaultValues: { name: content.name, targetEnvironmentId: environment?.id },
     mode: 'onChange',
   });
 
@@ -71,6 +78,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
       const variables = {
         contentId: content.id,
         name: formValues.name,
+        targetEnvironmentId: formValues.targetEnvironmentId,
       };
       const ret = await mutation({ variables });
       if (ret.data.duplicateContent.id) {
@@ -98,23 +106,44 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                 's steps.
               </DialogDescription>
             </DialogHeader>
-            <div>
-              <div className="space-y-4 py-2 pb-4 pt-4">
-                <div className="space-y-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
+            <div className="space-y-4 py-2 pb-4 pt-4">
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder={`Enter ${name} name`} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetEnvironmentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target Environment</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input placeholder={`Enter ${name} name`} {...field} />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a data type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          {environmentList?.map((env) => (
+                            <SelectItem value={env.id} key={env.id}>
+                              {env.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
             <DialogFooter>

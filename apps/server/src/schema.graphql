@@ -239,6 +239,7 @@ type ContentConnection {
 input ContentDuplicateInput {
   contentId: String!
   name: String
+  targetEnvironmentId: String
 }
 
 type ContentEdge {
@@ -848,7 +849,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]
+  projects: [UserOnProject!]!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

@@ -52,10 +52,13 @@ const config: Config = {
     },
   },
   auth: {
-    cookieDomain: process.env.USERTOUR_COOKIE_DOMAIN || 'localhost',
-    redirectUrl: process.env.LOGIN_REDIRECT_URL,
+    redirectUrl: process.env.LOGIN_REDIRECT_URL || '/env/1/flows',
+    cookie: {
+      secure: process.env.USERTOUR_COOKIE_SECURE === 'true',
+      domain: process.env.USERTOUR_COOKIE_DOMAIN,
+    },
     email: {
-      enabled: process.env.EMAIL_AUTH_ENABLED === 'true' || true,
+      enabled: process.env.EMAIL_AUTH_ENABLED === 'true',
       sender: process.env.EMAIL_SENDER || 'UserTour <support@usertour.io>',
       resendApiKey: process.env.RESEND_API_KEY,
     },
@@ -65,13 +68,13 @@ const config: Config = {
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME || '7d',
     },
     github: {
-      enabled: process.env.GITHUB_AUTH_ENABLED === 'true' || false,
+      enabled: process.env.GITHUB_AUTH_ENABLED === 'true',
       clientId: process.env.GITHUB_CLIENT_ID || 'test',
       clientSecret: process.env.GITHUB_CLIENT_SECRET || 'test',
       callbackUrl: process.env.GITHUB_CALLBACK_URL || 'test',
     },
     google: {
-      enabled: process.env.GOOGLE_AUTH_ENABLED === 'true' || false,
+      enabled: process.env.GOOGLE_AUTH_ENABLED === 'true',
       clientId: process.env.GOOGLE_CLIENT_ID || 'test',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'test',
       callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'test',

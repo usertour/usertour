@@ -50,8 +50,11 @@ export interface Config {
     };
   };
   auth: {
-    cookieDomain: string;
     redirectUrl: string;
+    cookie: {
+      secure: boolean;
+      domain: string;
+    };
     email: {
       enabled: boolean;
       sender: string;
