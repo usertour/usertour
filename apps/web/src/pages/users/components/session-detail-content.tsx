@@ -108,7 +108,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
             </Link>
           </div>
           <div className="border-b flex flex-col ">
-            <span className="text-sm text-foreground/60">Flow</span>
+            <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
               className=" text-primary"
               to={`/env/${environmentId}/flows/${session?.content?.id}`}
