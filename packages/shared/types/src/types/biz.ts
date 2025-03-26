@@ -2,7 +2,7 @@ export type BizUser = {
   id: string;
   externalId: string;
   environmentId: string;
-  data: JSON;
+  data: any;
   createdAt: string;
 };
 

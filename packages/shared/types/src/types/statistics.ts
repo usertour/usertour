@@ -13,7 +13,7 @@ export type BizSession = {
   id: string;
   externalId: string;
   environmentId: string;
-  data: JSON;
+  data: any;
   createdAt: string;
   bizUser?: BizUser;
   bizEvent?: BizEvent[];

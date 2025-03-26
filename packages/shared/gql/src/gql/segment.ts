@@ -200,6 +200,7 @@ export const querySessionDetail = gql`
         id
         externalId
         environmentId
+        data
       }
       bizEvent {
         id
