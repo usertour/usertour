@@ -9,18 +9,6 @@ export type ContentAnalytics = {
   createdAt: string;
 };
 
-export type BizSession = {
-  id: string;
-  externalId: string;
-  environmentId: string;
-  data: any;
-  createdAt: string;
-  bizUser?: BizUser;
-  bizEvent?: BizEvent[];
-  content?: Content;
-  version?: ContentVersion;
-};
-
 export type AnalyticsQuery = {
   contentId: string;
   startDate: string;
@@ -56,14 +44,18 @@ export type AnalyticsData = AnalyticsViews & {
   viewsByTask: AnalyticsViewsByTask[];
 };
 
-export type BizSessionObject = {
+export type BizSession = {
   id: string;
-  createdAt: string;
+  externalId: string;
   progress: number;
+  environmentId: string;
   data: any;
-  bizUserId: string;
   state: number;
-  contentId: string;
-  bizUser: { externalId: string };
-  bizEvent: { data: any; createdAt: string; eventId: string }[];
+  createdAt: string;
+  bizUserId?: string;
+  contentId?: string;
+  bizUser?: BizUser;
+  bizEvent?: BizEvent[];
+  content?: Content;
+  version?: ContentVersion;
 };

@@ -191,10 +191,21 @@ export const querySessionDetail = gql`
       content {
         id
         name
+        buildUrl
+        environmentId
+        editedVersionId
+        publishedVersionId
+        published
+        deleted
+        publishedAt
+        createdAt
+        updatedAt
+        type
       }
       version {
         id
         sequence
+        data
       }
       bizUser {
         id

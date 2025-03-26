@@ -7,13 +7,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
-import { BizSessionObject } from '@usertour-ui/types';
+import { BizSession } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
 import { useNavigate } from 'react-router-dom';
 import { ZoomIn } from 'lucide-react';
 import { Delete2Icon } from '@usertour-ui/icons';
 type AnalyticsActionProps = {
-  session: BizSessionObject;
+  session: BizSession;
 };
 export const AnalyticsAction = (props: AnalyticsActionProps) => {
   const { session } = props;

@@ -35,7 +35,8 @@ export type BizEvent = {
   id: string;
   createdAt: string;
   updatedAt: string;
-  event: CustomEvent;
+  eventId: string;
+  event?: CustomEvent;
   data: any | null;
   bizUserId: string;
   bizSessionId: string | null;
