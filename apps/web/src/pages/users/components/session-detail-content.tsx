@@ -111,7 +111,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
             <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
               className=" text-primary"
-              to={`/env/${environmentId}/flows/${session?.content?.id}`}
+              to={`/env/${environmentId}/${content.type}s/${session?.content?.id}/detail`}
             >
               {session?.content?.name}
             </Link>
