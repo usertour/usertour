@@ -1,4 +1,4 @@
-import { BizEvents } from '@/common/consts/attribute';
+import { BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/contents/models/content.model';
 import { User } from '@/users/models/user.model';
@@ -569,7 +569,7 @@ export class AnalyticsService {
       where: { id: sessionId, deleted: false },
       include: {
         bizUser: true,
-        bizEvent: { include: { event: true } },
+        bizEvent: { include: { event: true }, orderBy: { createdAt: 'desc' } },
         content: true,
         version: true,
       },
@@ -577,9 +577,54 @@ export class AnalyticsService {
   }
 
   async endSession(sessionId: string) {
-    return await this.prisma.bizSession.update({
-      where: { id: sessionId },
-      data: { state: 1 },
+    const endEvent = await this.prisma.event.findFirst({
+      where: { codeName: BizEvents.FLOW_ENDED },
+    });
+    const seenEvent = await this.prisma.event.findFirst({
+      where: { codeName: BizEvents.FLOW_STEP_SEEN },
+    });
+    const bizSession = await this.prisma.bizSession.findUnique({ where: { id: sessionId } });
+    const seenBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId, eventId: seenEvent.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!endEvent || !seenEvent || !bizSession) {
+      return false;
+    }
+
+    const seenData = seenBizEvent?.data as any;
+    const data: any = {
+      [EventAttributes.FLOW_END_REASON]: 'admin_ended',
+    };
+
+    if (seenData?.flow_step_number) {
+      data[EventAttributes.FLOW_STEP_NUMBER] = seenData.flow_step_number;
+    }
+    if (seenData?.flow_step_cvid) {
+      data[EventAttributes.FLOW_STEP_CVID] = seenData.flow_step_cvid;
+    }
+    if (seenData?.flow_step_name) {
+      data[EventAttributes.FLOW_STEP_NAME] = seenData.flow_step_name;
+    }
+    if (seenData?.flow_step_progress) {
+      data[EventAttributes.FLOW_STEP_PROGRESS] = seenData?.flow_step_progress;
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.bizEvent.create({
+        data: {
+          bizSessionId: sessionId,
+          eventId: endEvent.id,
+          bizUserId: bizSession.bizUserId,
+          data,
+        },
+      });
+      await tx.bizSession.update({
+        where: { id: sessionId },
+        data: { state: 1 },
+      });
+      return true;
     });
   }
 

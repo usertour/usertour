@@ -20,14 +20,16 @@ import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useState } from 'react';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
-import { AnalyticsAction } from './analytics-action';
+import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
+import { Button } from '@usertour-ui/button';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 
 export const BizSessionsDataTable = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, bizSessions } = useBizSessionContext();
+  const { setPagination, pagination, pageCount, bizSessions, refetch } = useBizSessionContext();
 
   const table = useReactTable({
     data: bizSessions,
@@ -95,7 +97,22 @@ export const BizSessionsDataTable = () => {
                     </TableCell>
                   ))}
                   <TableCell>
-                    <AnalyticsAction session={row.original} />
+                    <SessionActionDropdownMenu
+                      session={row.original}
+                      onDeleteSuccess={() => {
+                        refetch();
+                      }}
+                      onEndSuccess={() => {
+                        refetch();
+                      }}
+                    >
+                      <Button
+                        variant="ghost"
+                        className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+                      >
+                        <DotsHorizontalIcon className="h-4 w-4" />
+                      </Button>
+                    </SessionActionDropdownMenu>
                   </TableCell>
                 </TableRow>
               ))

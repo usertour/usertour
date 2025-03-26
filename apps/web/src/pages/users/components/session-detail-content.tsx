@@ -3,6 +3,7 @@ import {
   ArrowLeftIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  DotsHorizontalIcon,
   PieChartIcon,
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
@@ -17,6 +18,8 @@ import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-ui/button';
+import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 
 const SessionItemContainer = ({
   children,
@@ -39,7 +42,7 @@ interface SessionDetailContentProps {
 export function SessionDetailContent(props: SessionDetailContentProps) {
   const { environmentId, sessionId } = props;
   const navigator = useNavigate();
-  const { session } = useQuerySessionDetailQuery(sessionId);
+  const { session, refetch } = useQuerySessionDetailQuery(sessionId);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const { attributeList } = useAttributeListContext();
   const { eventList } = useEventListContext();
@@ -59,10 +62,14 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
     return <></>;
   }
 
+  const bizEvents = session?.bizEvent?.sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
   return (
     <>
-      <div className="border-b bg-white flex-col md:flex w-full fixed">
-        <div className="flex h-16 items-center px-4">
+      <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
+        <div className="flex h-16 items-center px-4 w-full">
           <ArrowLeftIcon
             className="ml-4 h-6 w-8 cursor-pointer"
             onClick={() => {
@@ -70,6 +77,23 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
             }}
           />
           <span>Session Detail</span>
+          <div className="ml-auto">
+            <SessionActionDropdownMenu
+              session={session}
+              showViewDetails={false}
+              onDeleteSuccess={() => {
+                navigator(`/env/${environmentId}/users`);
+              }}
+              onEndSuccess={() => {
+                refetch();
+              }}
+            >
+              <Button variant="secondary">
+                <span className="sr-only">Actions</span>
+                <DotsHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </SessionActionDropdownMenu>
+          </div>
         </div>
       </div>
       <div className="flex flex-col space-y-6 w-full max-w-screen-xl mx-auto p-14 mt-12  ">
@@ -137,8 +161,8 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
           <div className="flex flex-col items-center w-full h-full justify-center">
             <Table>
               <TableBody>
-                {session?.bizEvent ? (
-                  session?.bizEvent.map((bizEvent: BizEvent) => (
+                {bizEvents ? (
+                  bizEvents.map((bizEvent: BizEvent) => (
                     <Fragment key={bizEvent.id}>
                       <TableRow
                         className="cursor-pointer  h-10 group"

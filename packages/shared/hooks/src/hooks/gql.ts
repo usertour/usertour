@@ -231,10 +231,10 @@ export const useEndSessionMutation = () => {
 };
 
 export const useQuerySessionDetailQuery = (sessionId: string) => {
-  const { data, loading, error } = useQuery(querySessionDetail, {
+  const { data, loading, error, refetch } = useQuery(querySessionDetail, {
     variables: { sessionId },
   });
 
   const session = data?.querySessionDetail as BizSession;
-  return { session, loading, error };
+  return { session, loading, error, refetch };
 };
