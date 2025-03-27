@@ -851,6 +851,7 @@ export class WebSocketService {
           cvid: events[EventAttributes.QUESTION_CVID],
           versionId: currentVersion.id,
           bizUserId: user.id,
+          bizSessionId: bizSession.id,
         };
         if (events[EventAttributes.NUMBER_ANSWER]) {
           answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];

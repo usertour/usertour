@@ -440,6 +440,7 @@ model BizAnswer {
   createdAt    DateTime @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @db.Timestamptz(6)
   bizEventId   String
+  bizSessionId String
   contentId    String
   versionId    String
   bizUserId    String
@@ -448,6 +449,7 @@ model BizAnswer {
   textAnswer   String?
   listAnswer   String[]
 
+  @@unique([bizSessionId, cvid])
   @@index([contentId, cvid, bizUserId])
   @@index([versionId, cvid, bizUserId])
 }
