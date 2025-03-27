@@ -20,6 +20,7 @@ import {
   ContentEditorSideBarType,
 } from '../../types/editor';
 import { cuid } from '@usertour-ui/ui-utils';
+import { isQuestionElement } from '../../utils/helper';
 
 const selectStyle: CSSProperties = {
   boxSizing: 'border-box',
@@ -239,17 +240,6 @@ const sidebarButtons = [
     },
   },
 ] as SideBarButton[];
-
-const isQuestionElement = (element: ContentEditorElement) => {
-  return (
-    element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
-    element.type === ContentEditorElementType.MULTI_LINE_TEXT ||
-    element.type === ContentEditorElementType.NPS ||
-    element.type === ContentEditorElementType.STAR_RATING ||
-    element.type === ContentEditorElementType.SCALE ||
-    element.type === ContentEditorElementType.MULTIPLE_CHOICE
-  );
-};
 
 export const ContentEditorSideBarPopper = (
   props: Popover.PopoverProps & {

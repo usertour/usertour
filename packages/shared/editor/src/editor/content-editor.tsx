@@ -35,7 +35,7 @@ import {
   ContentEditorRootElement,
   ContentEditorSideBarType,
 } from '../types/editor';
-import { defaultInitialValue } from '../utils/helper';
+import { defaultInitialValue, isClickableElement } from '../utils/helper';
 import { ContentEditorButton, ContentEditorButtonSerialize } from './components/button';
 import {
   ContentEditorColumn,
@@ -195,18 +195,6 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
       }),
     };
   });
-};
-
-const isClickableElement = (element: ContentEditorClickableElement) => {
-  return (
-    element.type === ContentEditorElementType.BUTTON ||
-    element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
-    element.type === ContentEditorElementType.MULTI_LINE_TEXT ||
-    element.type === ContentEditorElementType.NPS ||
-    element.type === ContentEditorElementType.STAR_RATING ||
-    element.type === ContentEditorElementType.SCALE ||
-    element.type === ContentEditorElementType.MULTIPLE_CHOICE
-  );
 };
 
 export const ContentEditorSerialize = (props: {

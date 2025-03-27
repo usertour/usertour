@@ -225,7 +225,7 @@ export const ContentEditorStarRatingSerialize = (props: {
               'text-sdk-question': hoveredIndex !== null && i <= hoveredIndex,
             })}
             onMouseEnter={() => handleStarHover(i)}
-            onClick={() => onClick?.(element, i)}
+            onClick={() => onClick?.(element, element.data.lowRange + i)}
           />
         ))}
       </div>

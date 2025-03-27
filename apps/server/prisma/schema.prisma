@@ -425,7 +425,6 @@ model BizEvent {
   updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
   event        Event       @relation(fields: [eventId], references: [id])
   eventId      String
-  /// stores snapshot data related to event
   data         Json?       @db.JsonB
   bizUser      BizUser     @relation(fields: [bizUserId], references: [id])
   bizUserId    String
@@ -434,6 +433,23 @@ model BizEvent {
 
   @@index([bizUserId])
   @@index([bizSessionId])
+}
+
+model BizAnswer {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+  bizEventId   String
+  contentId    String
+  versionId    String
+  bizUserId    String
+  cvid         String
+  numberAnswer Int?
+  textAnswer   String?
+  listAnswer   String[]
+
+  @@index([contentId, cvid, bizUserId])
+  @@index([versionId, cvid, bizUserId])
 }
 
 model RefreshToken {

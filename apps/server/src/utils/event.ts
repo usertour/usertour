@@ -12,7 +12,7 @@ export const getEventProgress = (eventName: string, customProgress: number) => {
 };
 
 export const getEventState = (eventName: string) => {
-  if (eventName === BizEvents.FLOW_ENDED || eventName === BizEvents.FLOW_COMPLETED) {
+  if (eventName === BizEvents.FLOW_ENDED) {
     return 1;
   }
   if (eventName === BizEvents.CHECKLIST_DISMISSED) {

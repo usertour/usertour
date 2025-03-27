@@ -1,5 +1,6 @@
 import { uuidV4 } from '@usertour-ui/ui-utils';
 import {
+  ContentEditorClickableElement,
   ContentEditorElement,
   ContentEditorElementType,
   ContentEditorQuestionElement,
@@ -886,4 +887,19 @@ export const hasMissingRequiredData = (contents: ContentEditorRoot[]) => {
       column.children.some((item) => isMissingRequiredData(item.element)),
     ),
   );
+};
+
+export const isQuestionElement = (element: ContentEditorElement) => {
+  return (
+    element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
+    element.type === ContentEditorElementType.MULTI_LINE_TEXT ||
+    element.type === ContentEditorElementType.NPS ||
+    element.type === ContentEditorElementType.STAR_RATING ||
+    element.type === ContentEditorElementType.SCALE ||
+    element.type === ContentEditorElementType.MULTIPLE_CHOICE
+  );
+};
+
+export const isClickableElement = (element: ContentEditorClickableElement) => {
+  return element.type === ContentEditorElementType.BUTTON || isQuestionElement(element);
 };

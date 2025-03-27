@@ -7,7 +7,7 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import { BizAttributeTypes, BizEvents } from '@/common/consts/attribute';
+import { BizAttributeTypes, BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { ContentType } from '@/contents/models/content.model';
 import {
   ChecklistData,
@@ -844,6 +844,27 @@ export class WebSocketService {
           state,
         },
       });
+      if (eventName === BizEvents.QUESTION_ANSWERED) {
+        const answer: any = {
+          bizEventId: bizEvent.id,
+          contentId: currentVersion.contentId,
+          cvid: events[EventAttributes.QUESTION_CVID],
+          versionId: currentVersion.id,
+          bizUserId: user.id,
+        };
+        if (events[EventAttributes.NUMBER_ANSWER]) {
+          answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];
+        }
+        if (events[EventAttributes.TEXT_ANSWER]) {
+          answer.textAnswer = events[EventAttributes.TEXT_ANSWER];
+        }
+        if (events[EventAttributes.LIST_ANSWER]) {
+          answer.listAnswer = events[EventAttributes.LIST_ANSWER];
+        }
+        await tx.bizAnswer.create({
+          data: answer,
+        });
+      }
 
       return bizEvent;
     });

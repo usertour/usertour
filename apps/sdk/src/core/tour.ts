@@ -1,8 +1,14 @@
 import { smoothScroll } from '@usertour-ui/dom';
-import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
+import {
+  ContentEditorClickableElement,
+  ContentEditorElementType,
+  ContentEditorQuestionElement,
+  isQuestionElement,
+} from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ContentActionsItemType,
+  EventAttributes,
   RulesCondition,
   SDKContent,
   Step,
@@ -186,10 +192,44 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   async handleOnClick(element: ContentEditorClickableElement, value?: any) {
+    if (isQuestionElement(element)) {
+      await this.reportQuestionAnswer(element, value);
+    }
     if (element.data.actions) {
       await this.handleActions(element.data.actions);
     }
-    console.log('value', value);
+  }
+
+  async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
+    const { data } = element;
+    const { cvid } = data;
+    const eventData: any = {
+      [EventAttributes.QUESTION_CVID]: cvid,
+      [EventAttributes.QUESTION_NAME]: data.name,
+    };
+    console.log('value:', value);
+    if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
+      if (element.data.allowMultiple) {
+        eventData[EventAttributes.LIST_ANSWER] = value as string[];
+      } else {
+        eventData[EventAttributes.TEXT_ANSWER] = value;
+      }
+    } else if (
+      element.type === ContentEditorElementType.SCALE ||
+      element.type === ContentEditorElementType.NPS ||
+      element.type === ContentEditorElementType.STAR_RATING
+    ) {
+      eventData[EventAttributes.NUMBER_ANSWER] = value;
+    } else if (
+      element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
+      element.type === ContentEditorElementType.MULTI_LINE_TEXT
+    ) {
+      eventData[EventAttributes.TEXT_ANSWER] = value;
+    }
+    await this.reportEventWithSession({
+      eventName: BizEvents.QUESTION_ANSWERED,
+      eventData,
+    });
   }
 
   async checkStepVisible() {
