@@ -207,7 +207,6 @@ export class Tour extends BaseContent<TourStore> {
       [EventAttributes.QUESTION_CVID]: cvid,
       [EventAttributes.QUESTION_NAME]: data.name,
     };
-    console.log('value:', value);
     if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
       if (element.data.allowMultiple) {
         eventData[EventAttributes.LIST_ANSWER] = value as string[];
