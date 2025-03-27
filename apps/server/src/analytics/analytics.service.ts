@@ -636,6 +636,9 @@ export class AnalyticsService {
       return false;
     }
     return await this.prisma.$transaction(async (tx) => {
+      await tx.bizAnswer.deleteMany({
+        where: { bizSessionId: sessionId },
+      });
       await tx.bizEvent.deleteMany({
         where: { bizSessionId: sessionId },
       });
