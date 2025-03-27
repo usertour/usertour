@@ -16,8 +16,10 @@ import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElement,
   ContentEditorElementType,
+  ContentEditorQuestionElement,
   ContentEditorSideBarType,
 } from '../../types/editor';
+import { cuid } from '@usertour-ui/ui-utils';
 
 const selectStyle: CSSProperties = {
   boxSizing: 'border-box',
@@ -238,6 +240,17 @@ const sidebarButtons = [
   },
 ] as SideBarButton[];
 
+const isQuestionElement = (element: ContentEditorElement) => {
+  return (
+    element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
+    element.type === ContentEditorElementType.MULTI_LINE_TEXT ||
+    element.type === ContentEditorElementType.NPS ||
+    element.type === ContentEditorElementType.STAR_RATING ||
+    element.type === ContentEditorElementType.SCALE ||
+    element.type === ContentEditorElementType.MULTIPLE_CHOICE
+  );
+};
+
 export const ContentEditorSideBarPopper = (
   props: Popover.PopoverProps & {
     onClick: (element: ContentEditorElement) => void;
@@ -249,6 +262,18 @@ export const ContentEditorSideBarPopper = (
   const filteredButtons = enabledElementTypes
     ? sidebarButtons.filter((button) => enabledElementTypes.includes(button.element.type))
     : sidebarButtons;
+
+  const handleClick = (element: ContentEditorElement) => {
+    if (isQuestionElement(element)) {
+      const newElement = {
+        ...element,
+        data: { ...element.data, cvid: cuid() },
+      } as ContentEditorQuestionElement;
+      props.onClick(newElement);
+    } else {
+      props.onClick(element);
+    }
+  };
 
   return (
     <Popover.Root {...props}>
@@ -267,7 +292,7 @@ export const ContentEditorSideBarPopper = (
             {filteredButtons.map(({ name, icon: Icon, element }, index) => (
               <div
                 key={index}
-                onClick={() => props.onClick(element)}
+                onClick={() => handleClick(element)}
                 className="rounded-lg text-sm flex flex-col border hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer p-4 items-center justify-center pb-2"
               >
                 <Icon className="h-6 w-6 text-primary" />

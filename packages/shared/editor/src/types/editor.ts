@@ -121,6 +121,7 @@ export type ContentEditorEmebedElement = {
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
   data: {
+    cvid: string;
     name: string;
     lowLabel: string;
     highLabel: string;
@@ -132,6 +133,7 @@ export type ContentEditorNPSElement = {
 export type ContentEditorStarRatingElement = {
   type: ContentEditorElementType.STAR_RATING;
   data: {
+    cvid: string;
     name: string;
     rating?: number;
     lowRange: number;
@@ -145,6 +147,7 @@ export type ContentEditorStarRatingElement = {
 export type ContentEditorScaleElement = {
   type: ContentEditorElementType.SCALE;
   data: {
+    cvid: string;
     name: string;
     lowRange: number;
     highRange: number;
@@ -157,6 +160,7 @@ export type ContentEditorScaleElement = {
 export interface ContentEditorSingleLineTextElement {
   type: ContentEditorElementType.SINGLE_LINE_TEXT;
   data: {
+    cvid: string;
     name: string;
     placeholder: string;
     buttonText: string;
@@ -168,6 +172,7 @@ export interface ContentEditorSingleLineTextElement {
 export interface ContentEditorMultiLineTextElement {
   type: ContentEditorElementType.MULTI_LINE_TEXT;
   data: {
+    cvid: string;
     name: string;
     placeholder: string;
     buttonText: string;
@@ -186,6 +191,7 @@ export interface ContentEditorMultipleChoiceOption {
 export interface ContentEditorMultipleChoiceElement {
   type: ContentEditorElementType.MULTIPLE_CHOICE;
   data: {
+    cvid: string;
     name: string;
     options: ContentEditorMultipleChoiceOption[];
     shuffleOptions: boolean;

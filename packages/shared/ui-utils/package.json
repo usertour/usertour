@@ -12,6 +12,7 @@
     "build:fast": "tsup src"
   },
   "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2",
     "class-variance-authority": "^0.4.0",
     "clsx": "^1.2.1",
     "tailwind-merge": "^1.13.2",

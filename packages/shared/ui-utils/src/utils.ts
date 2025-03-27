@@ -1,10 +1,15 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { v4 } from 'uuid';
+import { createId } from '@paralleldrive/cuid2';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const cuid = () => {
+  return createId();
+};
 
 export function formatDate(input: string | number): string {
   const date = new Date(input);
