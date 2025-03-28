@@ -188,74 +188,195 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Query analytics data for questions in content
+   */
   async queryContentQuestionAnalytics(
     contentId: string,
     startDate: string,
     endDate: string,
     timezone: string,
   ) {
-    const content = await this.prisma.content.findUnique({
+    const content = await this.getContentWithVersion(contentId);
+    if (!content) {
+      return;
+    }
+
+    const version = content.publishedVersion || content.editedVersion;
+    const startDateStr = startDate;
+    const endDateStr = endDate;
+
+    const ret = [];
+    for (const step of version.steps) {
+      const questionData = this.extractQuestionForAnalytics(step);
+      if (!questionData) continue;
+
+      const response = await this.processQuestionAnalytics(
+        questionData,
+        contentId,
+        startDateStr,
+        endDateStr,
+        timezone,
+      );
+      ret.push(response);
+    }
+
+    return ret;
+  }
+
+  /**
+   * Get content with its version data
+   */
+  private async getContentWithVersion(contentId: string) {
+    return await this.prisma.content.findUnique({
       where: { id: contentId },
       include: {
         publishedVersion: { include: { steps: true } },
         editedVersion: { include: { steps: true } },
       },
     });
-    if (!content) {
-      return;
-    }
-    const version = content.publishedVersion || content.editedVersion;
+  }
 
-    const startDateStr = startDate;
-    const endDateStr = endDate;
+  /**
+   * Extract question data from step if it's a valid question for analytics
+   */
+  private extractQuestionForAnalytics(step: any) {
+    const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
+    if (questionData.length === 0) return null;
 
-    const ret = [];
-    for (const step of version.steps) {
-      const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
-      if (questionData.length === 0) {
-        continue;
-      }
-      const question = questionData[0];
-      if (!aggregationQuestionTypes.includes(question.type)) {
-        continue;
-      }
-      const questionCvid = question.data.cvid;
-      const field = getAggregationField(question);
-      const answer = await this.aggregationQuestionAnswer(
+    const question = questionData[0];
+    if (!aggregationQuestionTypes.includes(question.type)) return null;
+
+    return question;
+  }
+
+  /**
+   * Process analytics data for a single question
+   */
+  private async processQuestionAnalytics(
+    question: QuestionElement,
+    contentId: string,
+    startDateStr: string,
+    endDateStr: string,
+    timezone: string,
+  ) {
+    const questionCvid = question.data.cvid;
+    const field = getAggregationField(question);
+
+    // Get basic answer statistics
+    const answer = await this.aggregationQuestionAnswer(
+      contentId,
+      questionCvid,
+      startDateStr,
+      endDateStr,
+      field,
+    );
+    const totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
+
+    const response: any = {
+      totalResponse,
+      question,
+      answer,
+    };
+
+    // Process additional analytics based on question type
+    await this.processTypeSpecificAnalytics(
+      question,
+      contentId,
+      questionCvid,
+      startDateStr,
+      endDateStr,
+      timezone,
+      response,
+    );
+
+    return response;
+  }
+
+  /**
+   * Process type-specific analytics for different question types
+   */
+  private async processTypeSpecificAnalytics(
+    question: QuestionElement,
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+    timezone: string,
+    response: any,
+  ) {
+    if (!numberQuestionTypes.includes(question.type)) return;
+
+    const total = await this.aggregationQuestionAnswerTotal(
+      contentId,
+      questionCvid,
+      startDateStr,
+      endDateStr,
+    );
+    response.total = total;
+
+    if (question.type === ContentEditorElementType.NPS) {
+      // Get daily NPS analysis including promoters, passives, detractors and NPS score
+      // Also includes score distribution for each day
+      const npsAnalysisByDay = await this.aggregationNPSByDay(
         contentId,
         questionCvid,
         startDateStr,
         endDateStr,
-        field,
+        timezone,
       );
-      const totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
-      const response: any = {
-        totalResponse,
-        question,
-        answer,
-      };
-      if (numberQuestionTypes.includes(question.type)) {
-        const total = await this.aggregationQuestionAnswerTotal(
-          contentId,
-          questionCvid,
-          startDateStr,
-          endDateStr,
-        );
-        response.total = total;
-        const averageByDay = await this.aggregationQuestionAnswerByDay(
-          contentId,
-          questionCvid,
-          startDateStr,
-          endDateStr,
-          timezone,
-        );
-        response.averageByDay = averageByDay;
-      }
+      response.npsAnalysisByDay = npsAnalysisByDay;
 
-      ret.push(response);
+      // Calculate NPS metrics from answer data
+      this.calculateNPSMetrics(response);
+    } else {
+      const averageByDay = await this.aggregationQuestionAnswerByDay(
+        contentId,
+        questionCvid,
+        startDateStr,
+        endDateStr,
+        timezone,
+      );
+      response.averageByDay = averageByDay;
     }
+  }
 
-    return ret;
+  /**
+   * Calculate NPS metrics from answer data
+   */
+  private calculateNPSMetrics(response: any) {
+    const { answer, totalResponse } = response;
+
+    const promoters = answer
+      .filter((item) => Number(item.answer) >= 9)
+      .reduce((sum, item) => sum + item.count, 0);
+    const passives = answer
+      .filter((item) => Number(item.answer) >= 7 && Number(item.answer) <= 8)
+      .reduce((sum, item) => sum + item.count, 0);
+    const detractors = answer
+      .filter((item) => Number(item.answer) <= 6)
+      .reduce((sum, item) => sum + item.count, 0);
+
+    const promotersPercentage = Math.round((promoters / totalResponse) * 100);
+    const passivesPercentage = Math.round((passives / totalResponse) * 100);
+    const detractorsPercentage = Math.round((detractors / totalResponse) * 100);
+    const npsScore = promotersPercentage - detractorsPercentage;
+
+    response.npsAnalysis = {
+      promoters: {
+        count: promoters,
+        percentage: promotersPercentage,
+      },
+      passives: {
+        count: passives,
+        percentage: passivesPercentage,
+      },
+      detractors: {
+        count: detractors,
+        percentage: detractorsPercentage,
+      },
+      npsScore,
+    };
   }
 
   async aggregationViewsByDay(
@@ -543,7 +664,7 @@ export class AnalyticsService {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    const data = await this.prisma.$queryRaw<{ day: string; average: number; count: number }[]>`
+    const rawData = await this.prisma.$queryRaw<{ day: string; average: number; count: number }[]>`
       SELECT 
         DATE_TRUNC('DAY', "BizAnswer"."createdAt" AT TIME ZONE ${timezone}) AS day,
         AVG(CAST("numberAnswer" AS FLOAT)) as average,
@@ -559,11 +680,29 @@ export class AnalyticsService {
       ORDER BY day ASC
     `;
 
-    return data.map((d) => ({
-      day: d.day,
-      average: Number(d.average),
-      count: Number(d.count),
-    }));
+    // Fill in missing dates
+    const data = [];
+    if (isBefore(endDateStr, startDateStr)) {
+      return data;
+    }
+
+    let currentDate = new Date(startDateStr);
+    const finalEndDate = addDays(endDateStr, 1);
+
+    while (isBefore(currentDate, finalEndDate)) {
+      const dd = lightFormat(currentDate, 'yyyy-MM-dd');
+      const dayData = rawData.find((d) => lightFormat(new Date(d.day), 'yyyy-MM-dd') === dd);
+
+      data.push({
+        day: currentDate,
+        average: dayData ? Number(dayData.average) : 0,
+        count: dayData ? Number(dayData.count) : 0,
+      });
+
+      currentDate = addDays(currentDate, 1);
+    }
+
+    return data;
   }
 
   async aggregationQuestionAnswerTotal(
@@ -843,5 +982,116 @@ export class AnalyticsService {
       });
       return true;
     });
+  }
+
+  /**
+   * Calculate daily NPS metrics including promoters, passives, detractors counts and percentages
+   * Also includes score distribution for each day
+   * @returns Array of daily NPS analysis with npsScore, distribution and total responses
+   */
+  async aggregationNPSByDay(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+    timezone: string,
+  ) {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const rawData = await this.prisma.$queryRaw<
+      {
+        day: string;
+        answer: number;
+        count: number;
+      }[]
+    >`
+      SELECT 
+        DATE_TRUNC('DAY', "createdAt" AT TIME ZONE ${timezone}) AS day,
+        "numberAnswer" as answer,
+        COUNT(*) as count
+      FROM "BizAnswer"
+      WHERE
+        "contentId" = ${contentId}
+        AND "cvid" = ${questionCvid}
+        AND "createdAt" >= ${startDate}
+        AND "createdAt" <= ${endDate}
+        AND "numberAnswer" IS NOT NULL
+      GROUP BY day, "numberAnswer"
+      ORDER BY day ASC, "numberAnswer" ASC
+    `;
+
+    // Fill in missing dates
+    const data = [];
+    if (isBefore(endDateStr, startDateStr)) {
+      return data;
+    }
+
+    let currentDate = new Date(startDateStr);
+    const finalEndDate = addDays(endDateStr, 1);
+
+    while (isBefore(currentDate, finalEndDate)) {
+      const dd = lightFormat(currentDate, 'yyyy-MM-dd');
+      const dayScores = rawData.filter((d) => lightFormat(new Date(d.day), 'yyyy-MM-dd') === dd);
+
+      const dayStats = {
+        promoters: 0,
+        passives: 0,
+        detractors: 0,
+        total: 0,
+      };
+
+      const distribution = [];
+      for (const score of dayScores) {
+        const answer = Number(score.answer);
+        const count = Number(score.count);
+        distribution.push({ answer, count });
+
+        if (answer >= 9) {
+          dayStats.promoters += count;
+        } else if (answer >= 7) {
+          dayStats.passives += count;
+        } else {
+          dayStats.detractors += count;
+        }
+        dayStats.total += count;
+      }
+
+      const promotersPercentage = dayStats.total
+        ? Math.round((dayStats.promoters / dayStats.total) * 100)
+        : 0;
+      const passivesPercentage = dayStats.total
+        ? Math.round((dayStats.passives / dayStats.total) * 100)
+        : 0;
+      const detractorsPercentage = dayStats.total
+        ? Math.round((dayStats.detractors / dayStats.total) * 100)
+        : 0;
+      const npsScore = promotersPercentage - detractorsPercentage;
+
+      data.push({
+        day: currentDate,
+        npsAnalysis: {
+          promoters: {
+            count: dayStats.promoters,
+            percentage: promotersPercentage,
+          },
+          passives: {
+            count: dayStats.passives,
+            percentage: passivesPercentage,
+          },
+          detractors: {
+            count: dayStats.detractors,
+            percentage: detractorsPercentage,
+          },
+          npsScore,
+        },
+        distribution,
+        total: dayStats.total,
+      });
+
+      currentDate = addDays(currentDate, 1);
+    }
+
+    return data;
   }
 }
