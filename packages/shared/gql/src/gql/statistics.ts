@@ -71,3 +71,19 @@ export const queryBizSession = gql`
     }
   }
 `;
+
+export const queryContentQuestionAnalytics = gql`
+  query queryContentQuestionAnalytics(
+    $contentId: String!
+    $startDate: String!
+    $endDate: String!
+    $timezone: String!
+  ) {
+    queryContentQuestionAnalytics(
+      contentId: $contentId
+      startDate: $startDate
+      endDate: $endDate
+      timezone: $timezone
+    )
+  }
+`;

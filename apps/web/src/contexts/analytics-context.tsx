@@ -17,6 +17,7 @@ export interface AnalyticsContextValue {
   setQuery: React.Dispatch<React.SetStateAction<AnalyticsQuery>>;
   dateRange: DateRange | undefined;
   setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  timezone: string;
 }
 
 export const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(undefined);
@@ -26,10 +27,11 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
   const [query, setQuery] = useState<AnalyticsQuery>({ contentId, startDate: '', endDate: '' });
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | undefined>();
   const now = new Date();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const defaultDateRange = {
     from: subDays(now, 15),
     to: addDays(now, 1),
-  });
+  };
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -55,6 +57,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
     setQuery,
     dateRange,
     setDateRange,
+    timezone,
   };
 
   return <AnalyticsContext.Provider value={value}>{children}</AnalyticsContext.Provider>;

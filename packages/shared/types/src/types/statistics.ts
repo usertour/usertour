@@ -59,3 +59,78 @@ export type BizSession = {
   content?: Content;
   version?: ContentVersion;
 };
+
+export type QuestionData = {
+  cvid: string;
+  name: string;
+  actions: any;
+  // For multiple-choice questions
+  options?: Array<{
+    label: string;
+    value: string;
+    checked?: boolean;
+  }>;
+  // For star-rating and scale questions
+  lowLabel?: string;
+  lowRange?: number;
+  highLabel?: string;
+  highRange?: number;
+  // For multiple-choice questions
+  enableOther?: boolean;
+  allowMultiple?: boolean;
+  shuffleOptions?: boolean;
+};
+
+export type Question = {
+  data: QuestionData;
+  type: 'multiple-choice' | 'star-rating' | 'scale' | 'nps';
+};
+
+export type AnswerCount = {
+  answer: string | number;
+  count: number;
+};
+
+export type NPSAnalysis = {
+  promoters: {
+    count: number;
+    percentage: number;
+  };
+  passives: {
+    count: number;
+    percentage: number;
+  };
+  detractors: {
+    count: number;
+    percentage: number;
+  };
+  npsScore: number;
+};
+
+export type NPSByDay = {
+  day: string;
+  npsAnalysis: NPSAnalysis;
+  distribution: AnswerCount[];
+  total: number;
+};
+
+export type AverageByDay = {
+  day: string;
+  average: number;
+  count: number;
+};
+
+export type ContentQuestionAnalytics = {
+  totalResponse: number;
+  question: Question;
+  answer: AnswerCount[];
+  // For star-rating and scale questions
+  total?: {
+    average: number;
+    count: number;
+  };
+  averageByDay?: AverageByDay[];
+  // For NPS questions
+  npsAnalysis?: NPSAnalysis;
+  npsAnalysisByDay?: NPSByDay[];
+};

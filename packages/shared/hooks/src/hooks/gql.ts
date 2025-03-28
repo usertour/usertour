@@ -12,6 +12,7 @@ import {
   inviteTeamMember as inviteTeamMemberMutation,
   listSegment,
   login,
+  queryContentQuestionAnalytics,
   queryContents,
   querySessionDetail,
   removeTeamMember,
@@ -24,6 +25,7 @@ import type {
   Segment,
   TeamMember,
   BizSession,
+  ContentQuestionAnalytics,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -237,4 +239,17 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
 
   const session = data?.querySessionDetail as BizSession;
   return { session, loading, error, refetch };
+};
+
+export const useQueryContentQuestionAnalyticsQuery = (
+  contentId: string,
+  startDate: string,
+  endDate: string,
+  timezone: string,
+) => {
+  const { data, loading, error, refetch } = useQuery(queryContentQuestionAnalytics, {
+    variables: { contentId, startDate, endDate, timezone },
+  });
+  const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
+  return { questionAnalytics, loading, error, refetch };
 };
