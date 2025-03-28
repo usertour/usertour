@@ -1,14 +1,20 @@
 import { BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/contents/models/content.model';
-import { User } from '@/users/models/user.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
-import { Environment, Event } from '@prisma/client';
+import { Event } from '@prisma/client';
 import { addDays, isBefore, lightFormat } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
+import {
+  ContentEditorElementType,
+  extractQuestionData,
+  GroupItem,
+  QuestionElement,
+} from '@/utils/content';
+import { Prisma } from '@prisma/client';
 
 type AnalyticsConditions = {
   contentId: string;
@@ -22,6 +28,23 @@ type AnalyticsConditions = {
 type ItemAnalyticsConditions = AnalyticsConditions & {
   key: string;
   value: string;
+};
+
+const numberQuestionTypes = [
+  ContentEditorElementType.SCALE,
+  ContentEditorElementType.STAR_RATING,
+  ContentEditorElementType.NPS,
+];
+const aggregationQuestionTypes = [ContentEditorElementType.MULTIPLE_CHOICE, ...numberQuestionTypes];
+
+const getAggregationField = (question: QuestionElement) => {
+  if (numberQuestionTypes.includes(question.type)) {
+    return 'numberAnswer';
+  }
+  if (question.type === ContentEditorElementType.MULTIPLE_CHOICE) {
+    return question.data.allowMultiple ? 'listAnswer' : 'textAnswer';
+  }
+  return 'textAnswer';
 };
 
 const EVENT_TYPE_MAPPING = {
@@ -70,6 +93,11 @@ export interface ChecklistItemType {
   onlyShowTaskConditions: any;
 }
 
+type QuestionAnswerAnalytics = {
+  answer: string | number;
+  count: number;
+};
+
 @Injectable()
 export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
@@ -79,7 +107,6 @@ export class AnalyticsService {
     startDate: string,
     endDate: string,
     timezone: string,
-    user: User,
   ) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
@@ -87,7 +114,7 @@ export class AnalyticsService {
     const environment = await this.prisma.environment.findUnique({
       where: { id: content.environmentId },
     });
-    if (!content || !this.hasPermission(user, environment)) {
+    if (!content) {
       return;
     }
     const projectId = environment.projectId;
@@ -150,7 +177,7 @@ export class AnalyticsService {
       completeEvent,
     );
 
-    const data = {
+    return {
       uniqueViews,
       totalViews,
       uniqueCompletions,
@@ -159,10 +186,76 @@ export class AnalyticsService {
       viewsByStep,
       viewsByTask,
     };
+  }
 
-    console.log(data);
+  async queryContentQuestionAnalytics(
+    contentId: string,
+    startDate: string,
+    endDate: string,
+    timezone: string,
+  ) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      include: {
+        publishedVersion: { include: { steps: true } },
+        editedVersion: { include: { steps: true } },
+      },
+    });
+    if (!content) {
+      return;
+    }
+    const version = content.publishedVersion || content.editedVersion;
 
-    return data;
+    const startDateStr = startDate;
+    const endDateStr = endDate;
+
+    const ret = [];
+    for (const step of version.steps) {
+      const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
+      if (questionData.length === 0) {
+        continue;
+      }
+      const question = questionData[0];
+      if (!aggregationQuestionTypes.includes(question.type)) {
+        continue;
+      }
+      const questionCvid = question.data.cvid;
+      const field = getAggregationField(question);
+      const answer = await this.aggregationQuestionAnswer(
+        contentId,
+        questionCvid,
+        startDateStr,
+        endDateStr,
+        field,
+      );
+      const totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
+      const response: any = {
+        totalResponse,
+        question,
+        answer,
+      };
+      if (numberQuestionTypes.includes(question.type)) {
+        const total = await this.aggregationQuestionAnswerTotal(
+          contentId,
+          questionCvid,
+          startDateStr,
+          endDateStr,
+        );
+        response.total = total;
+        const averageByDay = await this.aggregationQuestionAnswerByDay(
+          contentId,
+          questionCvid,
+          startDateStr,
+          endDateStr,
+          timezone,
+        );
+        response.averageByDay = averageByDay;
+      }
+
+      ret.push(response);
+    }
+
+    return ret;
   }
 
   async aggregationViewsByDay(
@@ -374,6 +467,133 @@ export class AnalyticsService {
     return ret;
   }
 
+  async aggregationQuestionSession(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+  ) {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw`
+      SELECT Count(DISTINCT("BizAnswer"."bizSessionId")) from "BizAnswer"
+        WHERE
+        "BizAnswer"."contentId" = ${contentId} AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} AND "BizAnswer"."createdAt" <= ${endDate}
+        `;
+    return Number.parseInt(data[0].count.toString());
+  }
+
+  async aggregationQuestionAnswer(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+    field: 'numberAnswer' | 'textAnswer' | 'listAnswer',
+  ): Promise<QuestionAnswerAnalytics[]> {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    if (field === 'listAnswer') {
+      const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
+        SELECT unnest("listAnswer") as answer, count(*) as count 
+        FROM "BizAnswer"
+        WHERE
+          "BizAnswer"."contentId" = ${contentId} 
+          AND "BizAnswer"."cvid" = ${questionCvid}
+          AND "BizAnswer"."createdAt" >= ${startDate} 
+          AND "BizAnswer"."createdAt" <= ${endDate}
+          AND "BizAnswer"."listAnswer" IS NOT NULL
+          AND array_length("listAnswer", 1) > 0
+        GROUP BY unnest("listAnswer")
+        ORDER BY count DESC
+      `;
+      return data.map((item) => ({
+        ...item,
+        count: Number(item.count),
+      }));
+    }
+
+    const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
+      SELECT "BizAnswer".${Prisma.raw(`"${field}"`)} as answer, count(*) as count 
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer".${Prisma.raw(`"${field}"`)} IS NOT NULL
+      GROUP BY "BizAnswer".${Prisma.raw(`"${field}"`)}
+      ORDER BY count DESC
+    `;
+    return data.map((item) => ({
+      ...item,
+      count: Number(item.count),
+    }));
+  }
+
+  async aggregationQuestionAnswerByDay(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+    timezone: string,
+  ) {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw<{ day: string; average: number; count: number }[]>`
+      SELECT 
+        DATE_TRUNC('DAY', "BizAnswer"."createdAt" AT TIME ZONE ${timezone}) AS day,
+        AVG(CAST("numberAnswer" AS FLOAT)) as average,
+        COUNT("numberAnswer") as count
+      FROM "BizAnswer" 
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."numberAnswer" IS NOT NULL
+      GROUP BY day
+      ORDER BY day ASC
+    `;
+
+    return data.map((d) => ({
+      day: d.day,
+      average: Number(d.average),
+      count: Number(d.count),
+    }));
+  }
+
+  async aggregationQuestionAnswerTotal(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+  ) {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw<{ average: number; count: number }[]>`
+      SELECT 
+        AVG(CAST("numberAnswer" AS FLOAT)) as average,
+        COUNT("numberAnswer") as count
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."numberAnswer" IS NOT NULL
+    `;
+
+    return {
+      average: Number(data[0].average),
+      count: Number(data[0].count),
+    };
+  }
+
   async aggregationByEvent(condition: AnalyticsConditions) {
     const { contentId, eventId, startDateStr, endDateStr, isDistinct } = condition;
     const startDate = new Date(startDateStr);
@@ -483,7 +703,6 @@ export class AnalyticsService {
     query: AnalyticsQuery,
     pagination: PaginationArgs,
     orderBy: AnalyticsOrder,
-    user: User,
   ) {
     const { first, last, before, after } = pagination;
     const { contentId, startDate, endDate } = query;
@@ -495,12 +714,6 @@ export class AnalyticsService {
       });
       if (!content) {
         return false;
-      }
-      const environment = await this.prisma.environment.findUnique({
-        where: { id: content.environmentId },
-      });
-      if (!content || !this.hasPermission(user, environment)) {
-        return;
       }
       const resp = await findManyCursorConnection(
         (args) =>
@@ -538,23 +751,6 @@ export class AnalyticsService {
     } catch (_) {
       // console.log(error);
     }
-  }
-
-  async hasPermission(user: User, environment: Environment) {
-    if (!environment) {
-      return false;
-    }
-    const userOnProject = await this.prisma.userOnProject.findFirst({
-      where: {
-        userId: user.id,
-        projectId: environment.projectId,
-        role: { in: ['ADMIN', 'OWNER'] },
-      },
-    });
-    if (!userOnProject) {
-      return false;
-    }
-    return true;
   }
 
   async getSession(sessionId: string) {
