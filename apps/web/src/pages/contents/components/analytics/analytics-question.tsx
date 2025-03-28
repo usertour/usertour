@@ -26,7 +26,7 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-row items-center justify-center w-full py-4">
+          <div className="flex flex-row items-center justify-center w-full py-2">
             <div className="flex flex-row w-fit gap-16">
               <div>
                 {totalResponses} <span className="text-sm text-muted-foreground">responses</span>
