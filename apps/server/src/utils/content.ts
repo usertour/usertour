@@ -1,0 +1,146 @@
+export type ContentEditorNPSElement = {
+  type: ContentEditorElementType.NPS;
+  data: {
+    cvid: string;
+    name: string;
+    lowLabel: string;
+    highLabel: string;
+    actions?: any;
+    score?: number;
+  };
+};
+
+export type ContentEditorStarRatingElement = {
+  type: ContentEditorElementType.STAR_RATING;
+  data: {
+    cvid: string;
+    name: string;
+    rating?: number;
+    lowRange: number;
+    highRange: number;
+    lowLabel?: string;
+    highLabel?: string;
+    actions?: any;
+  };
+};
+
+export type ContentEditorScaleElement = {
+  type: ContentEditorElementType.SCALE;
+  data: {
+    cvid: string;
+    name: string;
+    lowRange: number;
+    highRange: number;
+    lowLabel?: string;
+    highLabel?: string;
+    actions?: any;
+  };
+};
+
+export interface ContentEditorSingleLineTextElement {
+  type: ContentEditorElementType.SINGLE_LINE_TEXT;
+  data: {
+    cvid: string;
+    name: string;
+    placeholder: string;
+    buttonText: string;
+    required: boolean;
+    actions?: any;
+  };
+}
+
+export interface ContentEditorMultiLineTextElement {
+  type: ContentEditorElementType.MULTI_LINE_TEXT;
+  data: {
+    cvid: string;
+    name: string;
+    placeholder: string;
+    buttonText: string;
+    actions?: any;
+    required: boolean;
+  };
+}
+// Define the option type
+export interface ContentEditorMultipleChoiceOption {
+  label: string;
+  value: string;
+  checked: boolean;
+}
+
+// Define the element type
+export interface ContentEditorMultipleChoiceElement {
+  type: ContentEditorElementType.MULTIPLE_CHOICE;
+  data: {
+    cvid: string;
+    name: string;
+    options: ContentEditorMultipleChoiceOption[];
+    shuffleOptions: boolean;
+    enableOther: boolean;
+    allowMultiple: boolean;
+    buttonText?: string;
+    actions?: any;
+    lowRange?: number;
+    highRange?: number;
+  };
+}
+export type QuestionElement =
+  | ContentEditorNPSElement
+  | ContentEditorStarRatingElement
+  | ContentEditorScaleElement
+  | ContentEditorSingleLineTextElement
+  | ContentEditorMultiLineTextElement
+  | ContentEditorMultipleChoiceElement;
+
+interface GroupElement {
+  type: string;
+  data?: any;
+  children?: any[];
+}
+
+export interface GroupItem {
+  element: GroupElement | QuestionElement;
+  children: GroupItem[] | null;
+}
+
+export enum ContentEditorElementType {
+  NPS = 'nps',
+  STAR_RATING = 'star-rating',
+  SCALE = 'scale',
+  SINGLE_LINE_TEXT = 'single-line-text',
+  MULTI_LINE_TEXT = 'multi-line-text',
+  MULTIPLE_CHOICE = 'multiple-choice',
+}
+
+const questionTypes = [
+  ContentEditorElementType.NPS,
+  ContentEditorElementType.STAR_RATING,
+  ContentEditorElementType.SCALE,
+  ContentEditorElementType.SINGLE_LINE_TEXT,
+  ContentEditorElementType.MULTI_LINE_TEXT,
+  ContentEditorElementType.MULTIPLE_CHOICE,
+];
+
+export function extractQuestionData(data: GroupItem[]): QuestionElement[] {
+  const result: QuestionElement[] = [];
+  // Helper function to recursively search through the data
+  function traverse(item: GroupItem) {
+    // Check if current element has type "multiple-choice"
+    if (questionTypes.includes(item.element.type as ContentEditorElementType)) {
+      result.push(item.element as QuestionElement);
+    }
+
+    // Recursively check children if they exist
+    if (item.children) {
+      for (const child of item.children) {
+        traverse(child);
+      }
+    }
+  }
+
+  // Process each item in the root array
+  for (const item of data) {
+    traverse(item);
+  }
+
+  return result;
+}
