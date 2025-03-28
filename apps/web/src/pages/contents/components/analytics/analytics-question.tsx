@@ -14,6 +14,9 @@ interface AnalyticsMultipleChoiceProps {
 export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => {
   const { questionAnalytics, totalViews } = props;
 
+  const totalResponses = questionAnalytics.totalResponse ?? 0;
+  const responseRate = totalViews > 0 ? Math.round((totalResponses / totalViews) * 100) : 0;
+
   return (
     <>
       <Card>
@@ -23,6 +26,16 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-row items-center justify-center w-full py-4">
+            <div className="flex flex-row w-fit gap-16">
+              <div>
+                {totalResponses} <span className="text-sm text-muted-foreground">responses</span>
+              </div>
+              <div>
+                {responseRate}% <span className="text-sm text-muted-foreground">response rate</span>
+              </div>
+            </div>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -36,7 +49,7 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
               {questionAnalytics.answer ? (
                 questionAnalytics.answer.map((answer: AnswerCount, index) => {
                   const percentage =
-                    totalViews > 0 ? Math.round((answer.count / totalViews) * 100) : 0;
+                    totalViews > 0 ? Math.round((answer.count / totalResponses) * 100) : 0;
                   return (
                     <TableRow key={index} onClick={() => {}}>
                       <TableCell className="py-[1px]">{answer.answer}</TableCell>
