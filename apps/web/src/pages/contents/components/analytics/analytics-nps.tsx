@@ -168,11 +168,7 @@ export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Detractors</div>
             <Badge variant="secondary">
-              {distribution
-                .slice(0, 7)
-                .reduce((sum, item) => sum + item.percentage, 0)
-                .toFixed(1)}
-              %
+              {distribution.slice(0, 7).reduce((sum, item) => sum + item.percentage, 0)}%
             </Badge>
           </div>
           <div className="flex items-end gap-2">
@@ -205,11 +201,7 @@ export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Passives</div>
             <Badge variant="secondary">
-              {distribution
-                .slice(7, 9)
-                .reduce((sum, item) => sum + item.percentage, 0)
-                .toFixed(1)}
-              %
+              {distribution.slice(7, 9).reduce((sum, item) => sum + item.percentage, 0)}%
             </Badge>
           </div>
           <div className="flex items-end gap-2">
@@ -242,11 +234,7 @@ export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Promoters</div>
             <Badge variant="secondary">
-              {distribution
-                .slice(9)
-                .reduce((sum, item) => sum + item.percentage, 0)
-                .toFixed(1)}
-              %
+              {distribution.slice(9).reduce((sum, item) => sum + item.percentage, 0)}%
             </Badge>
           </div>
           <div className="flex items-end gap-2">
@@ -325,7 +313,7 @@ const NPSGauge = ({ score }: NPSGaugeProps) => {
 
       {/* Score display */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-center">
-        <div className="text-2xl font-bold">{score.toFixed(1)}</div>
+        <div className="text-2xl font-bold">{score}</div>
         <div className="text-sm text-gray-500">NPS</div>
       </div>
 
