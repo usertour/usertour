@@ -5,6 +5,7 @@ import { useQueryContentQuestionAnalyticsQuery } from '@usertour-ui/shared-hooks
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
+import { AnalyticsNPS } from './analytics-nps';
 
 interface AnalyticsMultipleChoiceProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -93,15 +94,21 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
     timezone,
   );
 
-  return questionAnalytics?.map((analytics) =>
-    analytics.question.type === ContentEditorElementType.MULTIPLE_CHOICE ? (
-      <AnalyticsMultipleChoice
-        key={analytics.question.data.cvid}
-        questionAnalytics={analytics}
-        totalViews={analyticsData?.totalViews ?? 0}
-      />
-    ) : null,
-  );
+  return questionAnalytics?.map((analytics) => {
+    if (analytics.question.type === ContentEditorElementType.MULTIPLE_CHOICE) {
+      return (
+        <AnalyticsMultipleChoice
+          key={analytics.question.data.cvid}
+          questionAnalytics={analytics}
+          totalViews={analyticsData?.totalViews ?? 0}
+        />
+      );
+    }
+    if (analytics.question.type === ContentEditorElementType.NPS) {
+      return <AnalyticsNPS key={analytics.question.data.cvid} questionAnalytics={analytics} />;
+    }
+    return null;
+  });
 };
 
 AnalyticsQuestion.displayName = 'AnalyticsQuestion';
