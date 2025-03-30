@@ -7,8 +7,8 @@ import { Badge } from '@usertour-ui/badge';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
-import { ArrowRight } from 'lucide-react';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { ArrowRightIcon } from '@usertour-ui/icons';
 
 interface AnalyticsNPSProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -151,8 +151,9 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
             </ComposedChart>
           </ChartContainer>
           <div className="flex flex-row gap-8 items-center justify-center">
-            <div className="text-sm text-muted-foreground flex flex-row gap-2 items-center justify-center">
-              <span>{startDate}</span> - <ArrowRight className="w-4 h-4" />
+            <div className=" flex flex-row gap-2 items-center justify-center">
+              <span>{startDate}</span>
+              <ArrowRightIcon className="w-8 text-muted-foreground" />
               <span>{endDate}</span>
             </div>
             <div className="flex flex-row gap-2 items-center justify-center">
