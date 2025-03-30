@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { Badge } from '@usertour-ui/badge';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState } from 'react';
+import { cn } from '@usertour-ui/ui-utils';
 
 interface AnalyticsNPSProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -81,14 +82,14 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Current NPS Score */}
-        {/* <div className="flex justify-center items-center mb-8">
-          <div className="text-6xl font-bold text-primary">{npsAnalysis?.npsScore}</div>
-          <div className="text-sm text-muted-foreground ml-2">Current NPS</div>
-        </div> */}
+        <div className="flex flex-col gap-8 items-center justify-center">
+          {/* Current NPS Score */}
+          <div className="flex flex-col items-center justify-center ">
+            <div className="text-6xl font-bold text-primary">{npsAnalysis?.npsScore}</div>
+            <div className="text-sm text-muted-foreground ml-2">Current NPS</div>
+          </div>
 
-        {/* NPS Trend Chart */}
-        <div className="mb-8 mt-10">
+          {/* NPS Trend Chart */}
           <ChartContainer config={npsChartConfig} className="h-64 w-full">
             <ComposedChart
               data={dailyNPSData}
@@ -129,10 +130,11 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
               />
             </ComposedChart>
           </ChartContainer>
-        </div>
-        <div className="flex flex-row gap-4 items-center pt-10 px-20 space-x-20 ">
-          <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} />
-          <NPSDistribution distribution={selectedData?.distribution ?? totalDistribution} />
+          {/* <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} /> */}
+          <NPSDistribution
+            distribution={selectedData?.distribution ?? totalDistribution}
+            className="w-2/3"
+          />
         </div>
       </CardContent>
     </Card>
@@ -157,11 +159,12 @@ const getDarkBarColor = (score: number) => {
 
 interface NPSDistributionProps {
   distribution: DistributionItem[];
+  className?: string;
 }
 
-export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
+export const NPSDistribution = ({ distribution, className }: NPSDistributionProps) => {
   return (
-    <div className="w-full ">
+    <div className={cn('w-full', className)}>
       <div className="grid grid-cols-11 gap-2">
         {/* Detractors Section - 7 columns */}
         <div className="col-span-7 flex flex-col">
@@ -181,14 +184,12 @@ export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
                     className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(item.score)}`}
                   />
                   {/* Dark data bar with rounded corners */}
-                  {item.percentage > 0 && (
-                    <div
-                      className={`absolute bottom-0 w-full rounded-b-sm ${getDarkBarColor(item.score)}`}
-                      style={{
-                        height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                      }}
-                    />
-                  )}
+                  <div
+                    className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(item.score)}`}
+                    style={{
+                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                    }}
+                  />
                 </div>
                 <div className="text-sm text-gray-600 mt-1">{item.score}</div>
               </div>
@@ -214,14 +215,12 @@ export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
                     className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(item.score)}`}
                   />
                   {/* Dark data bar with rounded corners */}
-                  {item.percentage > 0 && (
-                    <div
-                      className={`absolute bottom-0 w-full rounded-b-sm ${getDarkBarColor(item.score)}`}
-                      style={{
-                        height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                      }}
-                    />
-                  )}
+                  <div
+                    className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(item.score)}`}
+                    style={{
+                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                    }}
+                  />
                 </div>
                 <div className="text-sm text-gray-600 mt-1">{item.score}</div>
               </div>
@@ -247,14 +246,12 @@ export const NPSDistribution = ({ distribution }: NPSDistributionProps) => {
                     className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(item.score)}`}
                   />
                   {/* Dark data bar with rounded corners */}
-                  {item.percentage > 0 && (
-                    <div
-                      className={`absolute bottom-0 w-full rounded-b-sm ${getDarkBarColor(item.score)}`}
-                      style={{
-                        height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                      }}
-                    />
-                  )}
+                  <div
+                    className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(item.score)}`}
+                    style={{
+                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                    }}
+                  />
                 </div>
                 <div className="text-sm text-gray-600 mt-1">{item.score}</div>
               </div>
@@ -276,7 +273,7 @@ interface NPSGaugeProps {
   score: number;
 }
 
-const NPSGauge = ({ score }: NPSGaugeProps) => {
+export const NPSGauge = ({ score }: NPSGaugeProps) => {
   // Fixed dimensions
   const CHART_WIDTH = 300;
   const CHART_HEIGHT = 150;
