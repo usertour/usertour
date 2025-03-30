@@ -94,18 +94,26 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
     timezone,
   );
 
+  const totalViews = analyticsData?.totalViews ?? 0;
+
   return questionAnalytics?.map((analytics) => {
     if (analytics.question.type === ContentEditorElementType.MULTIPLE_CHOICE) {
       return (
         <AnalyticsMultipleChoice
           key={analytics.question.data.cvid}
           questionAnalytics={analytics}
-          totalViews={analyticsData?.totalViews ?? 0}
+          totalViews={totalViews}
         />
       );
     }
     if (analytics.question.type === ContentEditorElementType.NPS) {
-      return <AnalyticsNPS key={analytics.question.data.cvid} questionAnalytics={analytics} />;
+      return (
+        <AnalyticsNPS
+          key={analytics.question.data.cvid}
+          questionAnalytics={analytics}
+          totalViews={totalViews}
+        />
+      );
     }
     return null;
   });

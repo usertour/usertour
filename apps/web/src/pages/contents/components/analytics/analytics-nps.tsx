@@ -7,9 +7,12 @@ import { Badge } from '@usertour-ui/badge';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
+import { ArrowRight } from 'lucide-react';
+import { useAnalyticsContext } from '@/contexts/analytics-context';
 
 interface AnalyticsNPSProps {
   questionAnalytics: ContentQuestionAnalytics;
+  totalViews: number;
 }
 
 type DistributionItem = { percentage: number; score: number; count: number };
@@ -17,11 +20,14 @@ type DistributionItem = { percentage: number; score: number; count: number };
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   // Add state for tracking selected data
   const [selectedData, setSelectedData] = useState<{
+    day: string;
     nps: number;
+    totalResponses: number;
     distribution: DistributionItem[];
   } | null>(null);
 
-  const { questionAnalytics } = props;
+  const { dateRange } = useAnalyticsContext();
+  const { questionAnalytics, totalViews } = props;
   const { npsAnalysis, npsAnalysisByDay, answer } = questionAnalytics;
 
   // NPS Score Chart Config
@@ -56,6 +62,8 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     npsAnalysisByDay?.map((item) => ({
       date: format(new Date(item.day), 'MMM dd, yyyy'),
       nps: Number(item.npsAnalysis.npsScore),
+      day: item.day,
+      totalResponses: item.total,
       distribution: completeDistribution(
         item.distribution.map((d) => ({
           score: Number(d.answer),
@@ -73,6 +81,16 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
       percentage: Math.round((item.count / total) * 100),
     })) || [],
   );
+
+  const totalResponses = selectedData?.totalResponses ?? total ?? 0;
+  const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
+
+  const startDate = selectedData?.day
+    ? format(new Date(selectedData.day), 'MMM dd, yyyy')
+    : format(new Date(dateRange?.from ?? ''), 'MMM dd, yyyy');
+  const endDate = selectedData?.day
+    ? format(new Date(selectedData.day), 'MMM dd, yyyy')
+    : format(new Date(dateRange?.to ?? ''), 'MMM dd, yyyy');
 
   return (
     <Card>
@@ -96,7 +114,9 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
               onMouseMove={(data) => {
                 if (data.activePayload) {
                   setSelectedData({
+                    day: data.activePayload[0].payload.day,
                     nps: data.activePayload[0].value,
+                    totalResponses: data.activePayload[0].payload.totalResponses,
                     distribution: data.activePayload[0].payload.distribution || [],
                   });
                 }
@@ -130,6 +150,18 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
               />
             </ComposedChart>
           </ChartContainer>
+          <div className="flex flex-row gap-8 items-center justify-center">
+            <div className="text-sm text-muted-foreground flex flex-row gap-2 items-center justify-center">
+              <span>{startDate}</span> - <ArrowRight className="w-4 h-4" />
+              <span>{endDate}</span>
+            </div>
+            <div className="flex flex-row gap-2 items-center justify-center">
+              <span>{totalResponses}</span> <span className="text-muted-foreground">responses</span>
+            </div>
+            <div className="flex flex-row gap-2 items-center justify-center">
+              <span>{rate}%</span> <span className="text-muted-foreground">response rate</span>
+            </div>
+          </div>
           {/* <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} /> */}
           <NPSDistribution
             distribution={selectedData?.distribution ?? totalDistribution}
