@@ -300,8 +300,12 @@ export class Tour extends BaseContent<TourStore> {
       }
     }
 
+    const newCurrentStep = this.getCurrentStep();
+    if (!newCurrentStep || currentStep.cvid !== newCurrentStep.cvid) {
+      return;
+    }
     this.setCurrentStep({
-      ...currentStep,
+      ...newCurrentStep,
       trigger: remainingTriggers,
     });
   }
