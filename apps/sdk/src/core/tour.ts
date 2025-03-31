@@ -7,7 +7,6 @@ import {
   SDKContent,
   Step,
   StepContentType,
-  StepTrigger,
   flowEndReason,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
@@ -238,17 +237,6 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  updateCurrentStepTriggers(triggers: StepTrigger[]) {
-    const currentStep = this.getCurrentStep();
-    if (!currentStep) {
-      return;
-    }
-    this.setCurrentStep({
-      ...currentStep,
-      trigger: triggers,
-    });
-  }
-
   async activeTriggerConditions() {
     const currentStep = this.getCurrentStep();
     if (!currentStep?.trigger?.length) {
@@ -272,7 +260,14 @@ export class Tour extends BaseContent<TourStore> {
       }
     }
 
-    this.updateCurrentStepTriggers(remainingTriggers);
+    const newCurrentStep = this.getCurrentStep();
+    if (!newCurrentStep || currentStep.cvid !== newCurrentStep.cvid) {
+      return;
+    }
+    this.setCurrentStep({
+      ...newCurrentStep,
+      trigger: remainingTriggers,
+    });
   }
 
   isActiveTour() {
