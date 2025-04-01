@@ -5,15 +5,12 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-ui/
 import { format } from 'date-fns';
 import { Badge } from '@usertour-ui/badge';
 import { PieChart, Pie, Cell } from 'recharts';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
-import { ArrowRightIcon, SettingsIcon } from '@usertour-ui/icons';
-import { Dialog, DialogContent, DialogTrigger, DialogFooter } from '@usertour-ui/dialog';
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { ArrowRightIcon } from '@usertour-ui/icons';
 import { useUpdateContentMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
+import { RollingWindowDialog } from './components/rolling-window-dialog';
 
 interface AnalyticsNPSProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -22,15 +19,24 @@ interface AnalyticsNPSProps {
   onRollingWindowChange: (success: boolean) => void;
 }
 
-const defaultRollingWindowConfig = { nps: 365, rate: 365, scale: 365 };
+const CONSTANTS = {
+  BAR_HEIGHT: 100,
+  DEFAULT_ROLLING_WINDOW: { nps: 365, rate: 365, scale: 365 },
+  CHART_DIMENSIONS: {
+    WIDTH: 300,
+    HEIGHT: 150,
+    OUTER_RADIUS: 140,
+    INNER_RADIUS: 110,
+  },
+} as const;
+
+const formatDate = (date: string) => format(new Date(date), 'MMM dd, yyyy');
 
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
-  const [selectedDay, setSelectedDay] = useState<NPSByDay | null>(null);
-  const [open, setOpen] = useState(false);
   const { questionAnalytics, totalViews, content, onRollingWindowChange } = props;
-  const { npsAnalysisByDay, answer } = questionAnalytics;
-  const rollingWindow = content.config?.rollWindowConfig ?? defaultRollingWindowConfig;
-  const [tempRollingWindow, setTempRollingWindow] = useState<number>(rollingWindow.nps);
+  const { npsAnalysisByDay, answer, question } = questionAnalytics;
+  const rollingWindow = content.config?.rollWindowConfig ?? CONSTANTS.DEFAULT_ROLLING_WINDOW;
+  const [selectedDay, setSelectedDay] = useState<NPSByDay | null>(null);
   const { invoke: updateContent } = useUpdateContentMutation();
   const { toast } = useToast();
   const npsChartConfig = {
@@ -40,12 +46,15 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     },
   };
 
-  const dailyNPSData =
-    npsAnalysisByDay?.map((item) => ({
-      ...item,
-      date: format(new Date(item.day), 'MMM dd, yyyy'),
-      nps: Number(item.metrics.npsScore),
-    })) || [];
+  const dailyNPSData = useMemo(
+    () =>
+      npsAnalysisByDay?.map((item) => ({
+        ...item,
+        date: formatDate(item.day),
+        nps: Number(item.metrics.npsScore),
+      })) || [],
+    [npsAnalysisByDay],
+  );
 
   const total = answer?.reduce((acc, item) => acc + item.count, 0) || 0;
   const lastDay = npsAnalysisByDay?.[npsAnalysisByDay.length - 1];
@@ -54,28 +63,27 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
 
   const startDate = selectedDay?.startDate
-    ? format(new Date(selectedDay.startDate), 'MMM dd, yyyy')
-    : format(new Date(lastDay?.startDate ?? ''), 'MMM dd, yyyy');
+    ? formatDate(selectedDay.startDate)
+    : formatDate(lastDay?.startDate ?? '');
   const endDate = selectedDay?.endDate
-    ? format(new Date(selectedDay.endDate), 'MMM dd, yyyy')
-    : format(new Date(lastDay?.endDate ?? ''), 'MMM dd, yyyy');
+    ? formatDate(selectedDay.endDate)
+    : formatDate(lastDay?.endDate ?? '');
 
-  // Handle confirmation
-  const handleConfirm = async () => {
+  // Handle rolling window update
+  const handleRollingWindowUpdate = async (newValue: number) => {
     try {
       const response = await updateContent(content.id, {
         config: {
           ...content.config,
           rollWindowConfig: {
             ...rollingWindow,
-            nps: Number(tempRollingWindow),
+            nps: newValue,
           },
         },
       });
+
       if (response) {
-        toast({
-          title: 'Rolling window updated',
-        });
+        toast({ title: 'Rolling window updated' });
         onRollingWindowChange(true);
       } else {
         toast({
@@ -91,65 +99,17 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
       });
       onRollingWindowChange(false);
     }
-    setOpen(false);
-  };
-
-  // Handle cancellation
-  const handleCancel = () => {
-    setTempRollingWindow(rollingWindow.nps);
-    setOpen(false);
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="space-between flex flex-row items-center">
-          <div className="grow">{questionAnalytics.question.data.name} - Net Promoter Score</div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <button type="button" className="flex flex-row items-center gap-1 cursor-pointer">
-                <span className="text-sm text-muted-foreground">
-                  {rollingWindow.nps}-day rolling window
-                </span>
-                <SettingsIcon className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <div className="py-4">
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex flex-row gap-2 items-center">
-                      <label className="text-sm font-medium" htmlFor="rolling-window">
-                        Rolling window size (days)
-                      </label>
-                      <QuestionTooltip>
-                        The NPS is computed using a rolling window approach, meaning the score for
-                        each day is derived from all responses collected within the preceding x
-                        days, where x is the number you specify here
-                      </QuestionTooltip>
-                    </div>
-                    <Input
-                      type="number"
-                      value={tempRollingWindow}
-                      id="rolling-window"
-                      onChange={(e) => setTempRollingWindow(Number(e.target.value))}
-                      min="1"
-                      max="365"
-                      placeholder="Enter days (1-365)"
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleConfirm}>Update</Button>
-                </div>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="grow">{question.data.name} - Net Promoter Score</div>
+          <RollingWindowDialog
+            currentValue={rollingWindow.nps}
+            onUpdate={handleRollingWindowUpdate}
+          />
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -165,8 +125,9 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
             <ComposedChart
               data={dailyNPSData}
               onMouseMove={(data) => {
-                if (data.activePayload) {
-                  setSelectedDay(data.activePayload[0].payload);
+                const payload = data.activePayload?.[0]?.payload;
+                if (payload) {
+                  setSelectedDay(payload);
                 }
               }}
               onMouseLeave={() => {

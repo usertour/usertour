@@ -272,7 +272,6 @@ export class AnalyticsService {
       } else if (questionData.type === ContentEditorElementType.SCALE) {
         rollingWindow = rollWindowConfig.scale;
       }
-      console.log('content type:', questionData.type, rollingWindow);
 
       const response = await this.processQuestionAnalytics(
         questionData,
