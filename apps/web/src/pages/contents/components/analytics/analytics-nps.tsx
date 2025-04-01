@@ -150,6 +150,9 @@ interface NPSDistributionProps {
 export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributionProps) => {
   if (!npsByDay) return null;
   const distribution = npsByDay.distribution;
+  const detractorsPercentage = npsByDay.metrics.detractors.percentage ?? 0;
+  const passivesPercentage = npsByDay.metrics.passives.percentage ?? 0;
+  const promotersPercentage = npsByDay.metrics.promoters.percentage ?? 0;
   return (
     <div className={cn('w-full', className)}>
       <div className="grid grid-cols-11 gap-2">
@@ -157,7 +160,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
         <div className="col-span-7 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Detractors</div>
-            <Badge variant="secondary">{npsByDay.metrics.detractors.percentage}%</Badge>
+            <Badge variant="secondary">{detractorsPercentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
             {distribution.slice(0, 7).map((item) => {
@@ -189,7 +192,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
         <div className="col-span-2 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Passives</div>
-            <Badge variant="secondary">{npsByDay.metrics.passives.percentage}%</Badge>
+            <Badge variant="secondary">{passivesPercentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
             {distribution.slice(7, 9).map((item) => {
@@ -221,7 +224,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
         <div className="col-span-2 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Promoters</div>
-            <Badge variant="secondary">{npsByDay.metrics.promoters.percentage}%</Badge>
+            <Badge variant="secondary">{promotersPercentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
             {distribution.slice(9).map((item) => {
