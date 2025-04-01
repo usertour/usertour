@@ -31,13 +31,13 @@ export class AnalyticsResolver {
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async queryContentQuestionAnalytics(
     @Args()
-    { contentId, startDate = '', endDate = '', rollingWindow = 365 }: AnalyticsIdArgs,
+    { contentId, startDate = '', endDate = '', timezone }: AnalyticsIdArgs,
   ) {
     return await this.service.queryContentQuestionAnalytics(
       contentId,
       startDate,
       endDate,
-      rollingWindow,
+      timezone,
     );
   }
 

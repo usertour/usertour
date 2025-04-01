@@ -78,14 +78,12 @@ export const queryContentQuestionAnalytics = gql`
     $startDate: String!
     $endDate: String!
     $timezone: String!
-    $rollingWindow: Int!
   ) {
     queryContentQuestionAnalytics(
       contentId: $contentId
       startDate: $startDate
       endDate: $endDate
       timezone: $timezone
-      rollingWindow: $rollingWindow
     )
   }
 `;

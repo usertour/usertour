@@ -6,6 +6,7 @@ import { useQueryContentQuestionAnalyticsQuery } from '@usertour-ui/shared-hooks
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
 import { AnalyticsNPS } from './analytics-nps';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
 
 interface AnalyticsMultipleChoiceProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -87,15 +88,26 @@ AnalyticsMultipleChoice.displayName = 'AnalyticsMultipleChoice';
 export const AnalyticsQuestion = (props: { contentId: string }) => {
   const { contentId } = props;
   const { dateRange, timezone, analyticsData } = useAnalyticsContext();
-  const { questionAnalytics } = useQueryContentQuestionAnalyticsQuery(
-    contentId,
-    dateRange?.from?.toISOString() ?? '',
-    dateRange?.to?.toISOString() ?? '',
-    timezone,
-    365,
-  );
+  const { content, refetch } = useContentDetailContext();
+  const { questionAnalytics, refetch: refetchQuestionAnalytics } =
+    useQueryContentQuestionAnalyticsQuery(
+      contentId,
+      dateRange?.from?.toISOString() ?? '',
+      dateRange?.to?.toISOString() ?? '',
+      timezone,
+    );
 
   const totalViews = analyticsData?.totalViews ?? 0;
+  const handleRollingWindowChange = async (success: boolean) => {
+    if (success) {
+      await refetch();
+      await refetchQuestionAnalytics();
+    }
+  };
+
+  if (!content) {
+    return null;
+  }
 
   return questionAnalytics?.map((analytics) => {
     if (analytics.question.type === ContentEditorElementType.MULTIPLE_CHOICE) {
@@ -113,6 +125,8 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
           key={analytics.question.data.cvid}
           questionAnalytics={analytics}
           totalViews={totalViews}
+          content={content}
+          onRollingWindowChange={handleRollingWindowChange}
         />
       );
     }

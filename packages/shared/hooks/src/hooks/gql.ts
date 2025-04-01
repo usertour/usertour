@@ -17,6 +17,7 @@ import {
   querySessionDetail,
   removeTeamMember,
   signUp,
+  updateContent,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -246,11 +247,22 @@ export const useQueryContentQuestionAnalyticsQuery = (
   startDate: string,
   endDate: string,
   timezone: string,
-  rollingWindow: number,
 ) => {
   const { data, loading, error, refetch } = useQuery(queryContentQuestionAnalytics, {
-    variables: { contentId, startDate, endDate, timezone, rollingWindow },
+    variables: { contentId, startDate, endDate, timezone },
   });
   const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
   return { questionAnalytics, loading, error, refetch };
+};
+
+export const useUpdateContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateContent);
+  const invoke = async (
+    contentId: string,
+    content: Pick<Content, 'name' | 'config' | 'buildUrl'>,
+  ) => {
+    const response = await mutation({ variables: { contentId, content } });
+    return response.data?.updateContent;
+  };
+  return { invoke, loading, error };
 };

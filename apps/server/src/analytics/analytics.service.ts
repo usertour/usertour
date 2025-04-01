@@ -25,6 +25,12 @@ type AnalyticsConditions = {
   stepIndex?: number;
 };
 
+type RollWindowConfig = {
+  nps: number;
+  rate: number;
+  scale: number;
+};
+
 type ItemAnalyticsConditions = AnalyticsConditions & {
   key: string;
   value: string;
@@ -36,6 +42,8 @@ const numberQuestionTypes = [
   ContentEditorElementType.NPS,
 ];
 const aggregationQuestionTypes = [ContentEditorElementType.MULTIPLE_CHOICE, ...numberQuestionTypes];
+
+const defaultRollWindowConfig = { nps: 365, rate: 365, scale: 365 };
 
 const completeDistribution = (distribution: QuestionAnswerAnalytics[]) => {
   const fullDistribution: QuestionAnswerAnalytics[] = [];
@@ -237,12 +245,16 @@ export class AnalyticsService {
     contentId: string,
     startDate: string,
     endDate: string,
-    rollingWindow: number,
+    timezone: string,
   ) {
+    console.log('timezone:', timezone);
     const content = await this.getContentWithVersion(contentId);
     if (!content) {
       return;
     }
+
+    const rollWindowConfig: RollWindowConfig =
+      (content.config as any)?.rollWindowConfig ?? defaultRollWindowConfig;
 
     const version = content.publishedVersion || content.editedVersion;
     const startDateStr = startDate;
@@ -252,6 +264,15 @@ export class AnalyticsService {
     for (const step of version.steps) {
       const questionData = this.extractQuestionForAnalytics(step);
       if (!questionData) continue;
+      let rollingWindow = 365;
+      if (questionData.type === ContentEditorElementType.NPS) {
+        rollingWindow = rollWindowConfig.nps;
+      } else if (questionData.type === ContentEditorElementType.STAR_RATING) {
+        rollingWindow = rollWindowConfig.rate;
+      } else if (questionData.type === ContentEditorElementType.SCALE) {
+        rollingWindow = rollWindowConfig.scale;
+      }
+      console.log('content type:', questionData.type, rollingWindow);
 
       const response = await this.processQuestionAnalytics(
         questionData,
@@ -877,51 +898,6 @@ export class AnalyticsService {
       count: Number(item.count),
       percentage: total > 0 ? Math.round((Number(item.count) / total) * 100) : 0,
     }));
-  }
-
-  async aggregationQuestionAnswerTotal(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-  ) {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    const data = await this.prisma.$queryRaw<{ average: number; count: number }[]>`
-      SELECT 
-        AVG(CAST("numberAnswer" AS FLOAT)) as average,
-        COUNT("numberAnswer") as count
-      FROM "BizAnswer"
-      WHERE
-        "BizAnswer"."contentId" = ${contentId} 
-        AND "BizAnswer"."cvid" = ${questionCvid}
-        AND "BizAnswer"."createdAt" >= ${startDate} 
-        AND "BizAnswer"."createdAt" <= ${endDate}
-        AND "BizAnswer"."numberAnswer" IS NOT NULL
-    `;
-
-    return {
-      average: Number(data[0].average),
-      count: Number(data[0].count),
-    };
-  }
-
-  async aggregationQuestionAnswerByDay(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-    rollingWindow: number,
-  ) {
-    return this.aggregationQuestionMetricsByDay(
-      contentId,
-      questionCvid,
-      startDateStr,
-      endDateStr,
-      rollingWindow,
-      'rating',
-    );
   }
 
   /**

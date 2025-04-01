@@ -215,6 +215,7 @@ type Common {
 
 type Content {
   buildUrl: String
+  config: JSON
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -646,8 +647,8 @@ type Query {
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
-  queryContentAnalytics(contentId: String!, endDate: String!, rollingWindow: Int, startDate: String!, timezone: String!): Analytics!
-  queryContentQuestionAnalytics(contentId: String!, endDate: String!, rollingWindow: Int, startDate: String!, timezone: String!): JSON!
+  queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
   queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
@@ -790,6 +791,7 @@ input UpdateAttributeInput {
 
 input UpdateContentInput {
   buildUrl: String
+  config: JSON
   name: String
 }
 

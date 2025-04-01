@@ -4,7 +4,7 @@ import { ContentInput } from './content.input';
 
 @InputType()
 export class UpdateContentInput extends PartialType(
-  PickType(ContentInput, ['name', 'buildUrl']),
+  PickType(ContentInput, ['name', 'buildUrl', 'config']),
   InputType,
 ) {}
 
