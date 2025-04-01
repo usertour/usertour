@@ -68,7 +68,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const endDate = selectedDay?.endDate
     ? formatDate(selectedDay.endDate)
     : formatDate(lastDay?.endDate ?? '');
-  const npsScore = selectedDay?.metrics.npsScore ?? lastDay?.metrics.npsScore ?? 0;
+  const npsScore = lastDay?.metrics.npsScore ?? 0;
 
   // Handle rolling window update
   const handleRollingWindowUpdate = async (newValue: number) => {
