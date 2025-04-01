@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import type { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
+import type { ContentQuestionAnalytics, NPSByDay } from '@usertour-ui/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-ui/chart';
 import { format } from 'date-fns';
@@ -15,20 +15,11 @@ interface AnalyticsNPSProps {
 }
 
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
-  // Add state for tracking selected data
-  const [selectedData, setSelectedData] = useState<{
-    day: string;
-    nps: number;
-    totalResponses: number;
-    startDate: string;
-    endDate: string;
-    distribution: AnswerCount[];
-  } | null>(null);
+  const [selectedDay, setSelectedDay] = useState<NPSByDay | null>(null);
 
   const { questionAnalytics, totalViews } = props;
   const { npsAnalysisByDay, answer } = questionAnalytics;
 
-  // NPS Score Chart Config
   const npsChartConfig = {
     nps: {
       label: 'NPS Score',
@@ -36,47 +27,24 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     },
   };
 
-  const completeDistribution = (distribution: AnswerCount[]) => {
-    const fullDistribution: AnswerCount[] = [];
-
-    for (let score = 0; score <= 10; score++) {
-      const existingItem = distribution.find((item) => Number(item.answer) === score);
-      fullDistribution.push(
-        existingItem || {
-          answer: score,
-          count: 0,
-          percentage: 0,
-        },
-      );
-    }
-
-    return fullDistribution;
-  };
-
-  // Format daily NPS data
   const dailyNPSData =
     npsAnalysisByDay?.map((item) => ({
+      ...item,
       date: format(new Date(item.day), 'MMM dd, yyyy'),
       nps: Number(item.metrics.npsScore),
-      day: item.day,
-      startDate: item.startDate,
-      endDate: item.endDate,
-      totalResponses: item.metrics.total,
-      distribution: completeDistribution(item.distribution),
     })) || [];
 
   const total = answer?.reduce((acc, item) => acc + item.count, 0) || 0;
   const lastDay = npsAnalysisByDay?.[npsAnalysisByDay.length - 1];
-  const totalDistribution = completeDistribution(lastDay?.distribution || []);
 
-  const totalResponses = selectedData?.totalResponses ?? total ?? 0;
+  const totalResponses = selectedDay?.metrics.total ?? total ?? 0;
   const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
 
-  const startDate = selectedData?.startDate
-    ? format(new Date(selectedData.startDate), 'MMM dd, yyyy')
+  const startDate = selectedDay?.startDate
+    ? format(new Date(selectedDay.startDate), 'MMM dd, yyyy')
     : format(new Date(lastDay?.startDate ?? ''), 'MMM dd, yyyy');
-  const endDate = selectedData?.endDate
-    ? format(new Date(selectedData.endDate), 'MMM dd, yyyy')
+  const endDate = selectedDay?.endDate
+    ? format(new Date(selectedDay.endDate), 'MMM dd, yyyy')
     : format(new Date(lastDay?.endDate ?? ''), 'MMM dd, yyyy');
 
   return (
@@ -100,18 +68,11 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
               data={dailyNPSData}
               onMouseMove={(data) => {
                 if (data.activePayload) {
-                  setSelectedData({
-                    day: data.activePayload[0].payload.day,
-                    nps: data.activePayload[0].value,
-                    startDate: data.activePayload[0].payload.startDate,
-                    endDate: data.activePayload[0].payload.endDate,
-                    totalResponses: data.activePayload[0].payload.totalResponses,
-                    distribution: data.activePayload[0].payload.distribution || [],
-                  });
+                  setSelectedDay(data.activePayload[0].payload);
                 }
               }}
               onMouseLeave={() => {
-                setSelectedData(null);
+                setSelectedDay(null);
               }}
             >
               <CartesianGrid vertical={false} />
@@ -153,10 +114,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
             </div>
           </div>
           {/* <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} /> */}
-          <NPSDistribution
-            distribution={selectedData?.distribution ?? totalDistribution}
-            className="w-2/3"
-          />
+          <NPSDistribution npsByDay={selectedDay ?? lastDay} className="w-2/3" />
         </div>
       </CardContent>
     </Card>
@@ -180,11 +138,13 @@ const getDarkBarColor = (score: number) => {
 };
 
 interface NPSDistributionProps {
-  distribution: AnswerCount[];
   className?: string;
+  npsByDay: NPSByDay | undefined;
 }
 
-export const NPSDistribution = ({ distribution, className }: NPSDistributionProps) => {
+export const NPSDistribution = ({ npsByDay, className }: NPSDistributionProps) => {
+  if (!npsByDay) return null;
+  const distribution = npsByDay.distribution;
   return (
     <div className={cn('w-full', className)}>
       <div className="grid grid-cols-11 gap-2">
@@ -192,9 +152,7 @@ export const NPSDistribution = ({ distribution, className }: NPSDistributionProp
         <div className="col-span-7 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Detractors</div>
-            <Badge variant="secondary">
-              {distribution.slice(0, 7).reduce((sum, item) => sum + item.percentage, 0)}%
-            </Badge>
+            <Badge variant="secondary">{npsByDay.metrics.detractors.percentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
             {distribution.slice(0, 7).map((item) => {
@@ -226,9 +184,7 @@ export const NPSDistribution = ({ distribution, className }: NPSDistributionProp
         <div className="col-span-2 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Passives</div>
-            <Badge variant="secondary">
-              {distribution.slice(7, 9).reduce((sum, item) => sum + item.percentage, 0)}%
-            </Badge>
+            <Badge variant="secondary">{npsByDay.metrics.passives.percentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
             {distribution.slice(7, 9).map((item) => {
@@ -260,9 +216,7 @@ export const NPSDistribution = ({ distribution, className }: NPSDistributionProp
         <div className="col-span-2 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
             <div className="text-sm font-medium">Promoters</div>
-            <Badge variant="secondary">
-              {distribution.slice(9).reduce((sum, item) => sum + item.percentage, 0)}%
-            </Badge>
+            <Badge variant="secondary">{npsByDay.metrics.promoters.percentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
             {distribution.slice(9).map((item) => {

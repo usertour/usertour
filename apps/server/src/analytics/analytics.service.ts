@@ -37,6 +37,23 @@ const numberQuestionTypes = [
 ];
 const aggregationQuestionTypes = [ContentEditorElementType.MULTIPLE_CHOICE, ...numberQuestionTypes];
 
+const completeDistribution = (distribution: QuestionAnswerAnalytics[]) => {
+  const fullDistribution: QuestionAnswerAnalytics[] = [];
+
+  for (let score = 0; score <= 10; score++) {
+    const existingItem = distribution.find((item) => Number(item.answer) === score);
+    fullDistribution.push(
+      existingItem || {
+        answer: score,
+        count: 0,
+        percentage: 0,
+      },
+    );
+  }
+
+  return fullDistribution;
+};
+
 const getAggregationField = (question: QuestionElement) => {
   if (numberQuestionTypes.includes(question.type)) {
     return 'numberAnswer';
@@ -923,6 +940,7 @@ export class AnalyticsService {
     const data: Array<NPSMetricsByDay | RatingMetricsByDay> = [];
     let currentDate = new Date(startDateStr);
     const finalEndDate = addDays(endDateStr, 1);
+    const isNps = type === 'nps';
 
     while (isBefore(currentDate, finalEndDate)) {
       // Calculate start date for rolling window
@@ -938,19 +956,18 @@ export class AnalyticsService {
       );
 
       // Calculate metrics based on type
-      const metrics =
-        type === 'nps'
-          ? this.calculateNPSMetrics(distribution)
-          : this.calculateRatingMetrics(distribution);
+      const metrics = isNps
+        ? this.calculateNPSMetrics(distribution)
+        : this.calculateRatingMetrics(distribution);
 
       const baseData: BaseMetricsByDay = {
         day: currentDate,
         startDate: windowStartDate,
         endDate: currentDate,
-        distribution,
+        distribution: isNps ? completeDistribution(distribution) : distribution,
       };
 
-      if (type === 'nps') {
+      if (isNps) {
         data.push({
           ...baseData,
           metrics,
