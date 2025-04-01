@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import type { ContentQuestionAnalytics, NPSByDay } from '@usertour-ui/types';
+import type { ContentQuestionAnalytics, NPSByDay, Question } from '@usertour-ui/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-ui/chart';
 import { format } from 'date-fns';
@@ -114,7 +114,11 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
             </div>
           </div>
           {/* <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} /> */}
-          <NPSDistribution npsByDay={selectedDay ?? lastDay} className="w-2/3" />
+          <NPSDistribution
+            npsByDay={selectedDay ?? lastDay}
+            question={questionAnalytics.question}
+            className="w-2/3"
+          />
         </div>
       </CardContent>
     </Card>
@@ -140,9 +144,10 @@ const getDarkBarColor = (score: number) => {
 interface NPSDistributionProps {
   className?: string;
   npsByDay: NPSByDay | undefined;
+  question: Question;
 }
 
-export const NPSDistribution = ({ npsByDay, className }: NPSDistributionProps) => {
+export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributionProps) => {
   if (!npsByDay) return null;
   const distribution = npsByDay.distribution;
   return (
@@ -247,8 +252,8 @@ export const NPSDistribution = ({ npsByDay, className }: NPSDistributionProps) =
 
       {/* Score labels */}
       <div className="flex justify-between mt-4">
-        <div className="text-sm text-gray-600">Not at all likely</div>
-        <div className="text-sm text-gray-600">Extremely likely</div>
+        <div className="text-sm text-gray-600">{question.data.lowLabel || 'Not at all likely'}</div>
+        <div className="text-sm text-gray-600">{question.data.highLabel || 'Extremely likely'}</div>
       </div>
     </div>
   );
