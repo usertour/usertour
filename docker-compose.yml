@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       platforms:
-        - linux/amd64
+        - linux/arm64
     ports:
       - "8011:80"
     env_file:
