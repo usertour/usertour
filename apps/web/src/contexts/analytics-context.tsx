@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { queryContentAnalytics } from '@usertour-ui/gql';
 import { AnalyticsData, AnalyticsQuery } from '@usertour-ui/types';
-import { addDays, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
@@ -29,7 +29,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
   const now = new Date();
   const defaultDateRange = {
     from: subDays(now, 15),
-    to: addDays(now, 1),
+    to: now,
   };
   const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);
 
