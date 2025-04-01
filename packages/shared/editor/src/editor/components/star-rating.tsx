@@ -13,7 +13,7 @@ import { EditorError } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
 
-const StarButton = ({
+export const StarButton = ({
   className,
   onMouseEnter,
   onMouseLeave,

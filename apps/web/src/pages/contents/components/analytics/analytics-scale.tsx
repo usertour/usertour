@@ -15,6 +15,7 @@ import { ArrowRightIcon } from '@usertour-ui/icons';
 import { useUpdateContentMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
+import { ContentEditorElementType, StarButton } from '@usertour-ui/shared-editor';
 
 interface AnalyticsScaleProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -63,6 +64,8 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
   const lowRange = question.data.lowRange ?? 0;
   const highRange = question.data.highRange ?? 10;
 
+  const isScale = question.type === ContentEditorElementType.SCALE;
+
   const averageChartConfig = {
     average: {
       label: 'Average',
@@ -97,13 +100,19 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
   // Handle rolling window update
   const handleRollingWindowUpdate = async (newValue: number) => {
     try {
+      const rollingWindowConfig = isScale
+        ? {
+            ...rollingWindow,
+            scale: newValue,
+          }
+        : {
+            ...rollingWindow,
+            rate: newValue,
+          };
       const response = await updateContent(content.id, {
         config: {
           ...content.config,
-          rollWindowConfig: {
-            ...rollingWindow,
-            scale: newValue,
-          },
+          rollWindowConfig: rollingWindowConfig,
         },
       });
 
@@ -133,7 +142,7 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
           <div className="grow">{question.data.name}</div>
           <RollingWindowDialog
             key={question.type}
-            currentValue={rollingWindow.scale}
+            currentValue={isScale ? rollingWindow.scale : rollingWindow.rate}
             onUpdate={handleRollingWindowUpdate}
           />
         </CardTitle>
@@ -229,11 +238,14 @@ export const ScaleDistribution = ({
 }: ScaleDistributionProps) => {
   if (!averageByDay) return null;
 
-  const distribution = completeDistribution(
-    question.data.lowRange ?? 0,
-    question.data.highRange ?? 10,
-    averageByDay.distribution,
-  ).sort((a, b) => Number(a.answer) - Number(b.answer));
+  const lowRange = question.data.lowRange ?? 0;
+  const highRange = question.data.highRange ?? 10;
+
+  const distribution = completeDistribution(lowRange, highRange, averageByDay.distribution).sort(
+    (a, b) => Number(a.answer) - Number(b.answer),
+  );
+
+  const scaleLength = highRange - lowRange + 1;
 
   return (
     <div className={cn('w-full', className)}>
@@ -257,7 +269,16 @@ export const ScaleDistribution = ({
                   }}
                 />
               </div>
-              <div className="text-sm text-gray-600 mt-1">{score}</div>
+              <div className="text-sm text-gray-600 mt-1 flex flex-row gap-1">
+                {Array.from({ length: scaleLength }, (_, i) => (
+                  <StarButton
+                    key={i}
+                    className={cn('text-blue-100 w-3 h-3', {
+                      'text-blue-700': score !== null && i <= score,
+                    })}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}

@@ -131,7 +131,10 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
         />
       );
     }
-    if (analytics.question.type === ContentEditorElementType.SCALE) {
+    if (
+      analytics.question.type === ContentEditorElementType.SCALE ||
+      analytics.question.type === ContentEditorElementType.STAR_RATING
+    ) {
       return (
         <AnalyticsScale
           key={analytics.question.data.cvid}
