@@ -4,7 +4,6 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   DotsHorizontalIcon,
-  PieChartIcon,
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-ui/shared-hooks';
@@ -152,10 +151,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
           </div>
         </SessionItemContainer>
         <SessionItemContainer>
-          <div className="mb-2 flex flex-row items-center font-bold	">
-            <PieChartIcon width={18} height={18} className="mr-2" />
-            Progress
-          </div>
+          <div className="mb-2 flex flex-row items-center font-bold	">Progress</div>
           {contentType === ContentDataType.CHECKLIST && (
             <ChecklistProgressColumn original={session} eventList={eventList} version={version} />
           )}
