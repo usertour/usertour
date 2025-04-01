@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import type { ContentQuestionAnalytics } from '@usertour-ui/types';
+import type { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-ui/chart';
 import { format } from 'date-fns';
@@ -7,7 +7,6 @@ import { Badge } from '@usertour-ui/badge';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
-import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { ArrowRightIcon } from '@usertour-ui/icons';
 
 interface AnalyticsNPSProps {
@@ -15,7 +14,7 @@ interface AnalyticsNPSProps {
   totalViews: number;
 }
 
-type DistributionItem = { percentage: number; score: number; count: number };
+// type DistributionItem = { percentage: number; score: number; count: number };
 
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   // Add state for tracking selected data
@@ -23,12 +22,13 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     day: string;
     nps: number;
     totalResponses: number;
-    distribution: DistributionItem[];
+    startDate: string;
+    endDate: string;
+    distribution: AnswerCount[];
   } | null>(null);
 
-  const { dateRange } = useAnalyticsContext();
   const { questionAnalytics, totalViews } = props;
-  const { npsAnalysis, npsAnalysisByDay, answer } = questionAnalytics;
+  const { npsAnalysisByDay, answer } = questionAnalytics;
 
   // NPS Score Chart Config
   const npsChartConfig = {
@@ -38,16 +38,14 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     },
   };
 
-  // 添加一个工具函数来补全分布数据
-  const completeDistribution = (distribution: DistributionItem[]) => {
-    const fullDistribution: DistributionItem[] = [];
+  const completeDistribution = (distribution: AnswerCount[]) => {
+    const fullDistribution: AnswerCount[] = [];
 
-    // 创建0-10的完整分布数组
     for (let score = 0; score <= 10; score++) {
-      const existingItem = distribution.find((item) => item.score === score);
+      const existingItem = distribution.find((item) => Number(item.answer) === score);
       fullDistribution.push(
         existingItem || {
-          score,
+          answer: score,
           count: 0,
           percentage: 0,
         },
@@ -61,36 +59,27 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const dailyNPSData =
     npsAnalysisByDay?.map((item) => ({
       date: format(new Date(item.day), 'MMM dd, yyyy'),
-      nps: Number(item.npsAnalysis.npsScore),
+      nps: Number(item.metrics.npsScore),
       day: item.day,
-      totalResponses: item.total,
-      distribution: completeDistribution(
-        item.distribution.map((d) => ({
-          score: Number(d.answer),
-          count: d.count,
-          percentage: Math.round((d.count / item.total) * 100),
-        })),
-      ),
+      startDate: item.startDate,
+      endDate: item.endDate,
+      totalResponses: item.metrics.total,
+      distribution: completeDistribution(item.distribution),
     })) || [];
 
   const total = answer?.reduce((acc, item) => acc + item.count, 0) || 0;
-  const totalDistribution = completeDistribution(
-    answer?.map((item) => ({
-      score: Number(item.answer),
-      count: item.count,
-      percentage: Math.round((item.count / total) * 100),
-    })) || [],
-  );
+  const lastDay = npsAnalysisByDay?.[npsAnalysisByDay.length - 1];
+  const totalDistribution = completeDistribution(lastDay?.distribution || []);
 
   const totalResponses = selectedData?.totalResponses ?? total ?? 0;
   const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
 
-  const startDate = selectedData?.day
-    ? format(new Date(selectedData.day), 'MMM dd, yyyy')
-    : format(new Date(dateRange?.from ?? ''), 'MMM dd, yyyy');
-  const endDate = selectedData?.day
-    ? format(new Date(selectedData.day), 'MMM dd, yyyy')
-    : format(new Date(dateRange?.to ?? ''), 'MMM dd, yyyy');
+  const startDate = selectedData?.startDate
+    ? format(new Date(selectedData.startDate), 'MMM dd, yyyy')
+    : format(new Date(lastDay?.startDate ?? ''), 'MMM dd, yyyy');
+  const endDate = selectedData?.endDate
+    ? format(new Date(selectedData.endDate), 'MMM dd, yyyy')
+    : format(new Date(lastDay?.endDate ?? ''), 'MMM dd, yyyy');
 
   return (
     <Card>
@@ -103,7 +92,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
         <div className="flex flex-col gap-8 items-center justify-center">
           {/* Current NPS Score */}
           <div className="flex flex-col items-center justify-center ">
-            <div className="text-6xl font-bold text-primary">{npsAnalysis?.npsScore}</div>
+            <div className="text-6xl font-bold text-primary">{lastDay?.metrics.npsScore}</div>
             <div className="text-sm text-muted-foreground ml-2">Current NPS</div>
           </div>
 
@@ -116,6 +105,8 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
                   setSelectedData({
                     day: data.activePayload[0].payload.day,
                     nps: data.activePayload[0].value,
+                    startDate: data.activePayload[0].payload.startDate,
+                    endDate: data.activePayload[0].payload.endDate,
                     totalResponses: data.activePayload[0].payload.totalResponses,
                     distribution: data.activePayload[0].payload.distribution || [],
                   });
@@ -191,7 +182,7 @@ const getDarkBarColor = (score: number) => {
 };
 
 interface NPSDistributionProps {
-  distribution: DistributionItem[];
+  distribution: AnswerCount[];
   className?: string;
 }
 
@@ -208,25 +199,28 @@ export const NPSDistribution = ({ distribution, className }: NPSDistributionProp
             </Badge>
           </div>
           <div className="flex items-end gap-2">
-            {distribution.slice(0, 7).map((item) => (
-              <div key={item.score} className="flex-1 flex flex-col items-center">
-                <div className="text-sm text-gray-600 mb-1">{item.count}</div>
-                <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
-                  {/* Light background bar with rounded corners */}
-                  <div
-                    className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(item.score)}`}
-                  />
-                  {/* Dark data bar with rounded corners */}
-                  <div
-                    className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(item.score)}`}
-                    style={{
-                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                    }}
-                  />
+            {distribution.slice(0, 7).map((item) => {
+              const score = Number(item.answer);
+              return (
+                <div key={item.answer} className="flex-1 flex flex-col items-center">
+                  <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                  <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
+                    {/* Light background bar with rounded corners */}
+                    <div
+                      className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(score)}`}
+                    />
+                    {/* Dark data bar with rounded corners */}
+                    <div
+                      className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(score)}`}
+                      style={{
+                        height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                      }}
+                    />
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">{score}</div>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">{item.score}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -239,25 +233,28 @@ export const NPSDistribution = ({ distribution, className }: NPSDistributionProp
             </Badge>
           </div>
           <div className="flex items-end gap-2">
-            {distribution.slice(7, 9).map((item) => (
-              <div key={item.score} className="flex-1 flex flex-col items-center">
-                <div className="text-sm text-gray-600 mb-1">{item.count}</div>
-                <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
-                  {/* Light background bar with rounded corners */}
-                  <div
-                    className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(item.score)}`}
-                  />
-                  {/* Dark data bar with rounded corners */}
-                  <div
-                    className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(item.score)}`}
-                    style={{
-                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                    }}
-                  />
+            {distribution.slice(7, 9).map((item) => {
+              const score = Number(item.answer);
+              return (
+                <div key={item.answer} className="flex-1 flex flex-col items-center">
+                  <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                  <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
+                    {/* Light background bar with rounded corners */}
+                    <div
+                      className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(score)}`}
+                    />
+                    {/* Dark data bar with rounded corners */}
+                    <div
+                      className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(score)}`}
+                      style={{
+                        height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                      }}
+                    />
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">{score}</div>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">{item.score}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -270,25 +267,28 @@ export const NPSDistribution = ({ distribution, className }: NPSDistributionProp
             </Badge>
           </div>
           <div className="flex items-end gap-2">
-            {distribution.slice(9).map((item) => (
-              <div key={item.score} className="flex-1 flex flex-col items-center">
-                <div className="text-sm text-gray-600 mb-1">{item.count}</div>
-                <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
-                  {/* Light background bar with rounded corners */}
-                  <div
-                    className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(item.score)}`}
-                  />
-                  {/* Dark data bar with rounded corners */}
-                  <div
-                    className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(item.score)}`}
-                    style={{
-                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                    }}
-                  />
+            {distribution.slice(9).map((item) => {
+              const score = Number(item.answer);
+              return (
+                <div key={item.answer} className="flex-1 flex flex-col items-center">
+                  <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                  <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
+                    {/* Light background bar with rounded corners */}
+                    <div
+                      className={`absolute bottom-0 w-full h-full rounded-sm ${getLightBarColor(score)}`}
+                    />
+                    {/* Dark data bar with rounded corners */}
+                    <div
+                      className={`absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out ${getDarkBarColor(score)}`}
+                      style={{
+                        height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                      }}
+                    />
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">{score}</div>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">{item.score}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

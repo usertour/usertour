@@ -89,6 +89,7 @@ export type Question = {
 export type AnswerCount = {
   answer: string | number;
   count: number;
+  percentage: number;
 };
 
 export type NPSAnalysis = {
@@ -105,32 +106,34 @@ export type NPSAnalysis = {
     percentage: number;
   };
   npsScore: number;
+  total: number;
+};
+
+export type RateAnalysis = {
+  total: number;
+  average: number;
 };
 
 export type NPSByDay = {
   day: string;
-  npsAnalysis: NPSAnalysis;
+  startDate: string;
+  endDate: string;
+  metrics: NPSAnalysis;
   distribution: AnswerCount[];
-  total: number;
 };
 
 export type AverageByDay = {
   day: string;
-  average: number;
-  count: number;
+  startDate: string;
+  endDate: string;
+  metrics: RateAnalysis;
+  distribution: AnswerCount[];
 };
 
 export type ContentQuestionAnalytics = {
   totalResponse: number;
   question: Question;
   answer: AnswerCount[];
-  // For star-rating and scale questions
-  total?: {
-    average: number;
-    count: number;
-  };
   averageByDay?: AverageByDay[];
-  // For NPS questions
-  npsAnalysis?: NPSAnalysis;
   npsAnalysisByDay?: NPSByDay[];
 };

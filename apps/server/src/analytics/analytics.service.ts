@@ -96,7 +96,32 @@ export interface ChecklistItemType {
 type QuestionAnswerAnalytics = {
   answer: string | number;
   count: number;
+  percentage: number;
 };
+
+interface BaseMetricsByDay {
+  day: Date;
+  startDate: Date;
+  endDate: Date;
+  distribution: QuestionAnswerAnalytics[];
+}
+
+interface NPSMetricsByDay extends BaseMetricsByDay {
+  metrics: {
+    promoters: { count: number; percentage: number };
+    passives: { count: number; percentage: number };
+    detractors: { count: number; percentage: number };
+    total: number;
+    npsScore: number;
+  };
+}
+
+interface RatingMetricsByDay extends BaseMetricsByDay {
+  metrics: {
+    average: number;
+    total: number;
+  };
+}
 
 @Injectable()
 export class AnalyticsService {
@@ -195,7 +220,7 @@ export class AnalyticsService {
     contentId: string,
     startDate: string,
     endDate: string,
-    timezone: string,
+    rollingWindow: number,
   ) {
     const content = await this.getContentWithVersion(contentId);
     if (!content) {
@@ -216,7 +241,7 @@ export class AnalyticsService {
         contentId,
         startDateStr,
         endDateStr,
-        timezone,
+        rollingWindow,
       );
       ret.push(response);
     }
@@ -258,7 +283,7 @@ export class AnalyticsService {
     contentId: string,
     startDateStr: string,
     endDateStr: string,
-    timezone: string,
+    rollingWindow: number,
   ) {
     const questionCvid = question.data.cvid;
     const field = getAggregationField(question);
@@ -279,104 +304,32 @@ export class AnalyticsService {
       answer,
     };
 
-    // Process additional analytics based on question type
-    await this.processTypeSpecificAnalytics(
-      question,
-      contentId,
-      questionCvid,
-      startDateStr,
-      endDateStr,
-      timezone,
-      response,
-    );
-
-    return response;
-  }
-
-  /**
-   * Process type-specific analytics for different question types
-   */
-  private async processTypeSpecificAnalytics(
-    question: QuestionElement,
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-    timezone: string,
-    response: any,
-  ) {
-    if (!numberQuestionTypes.includes(question.type)) return;
-
-    const total = await this.aggregationQuestionAnswerTotal(
-      contentId,
-      questionCvid,
-      startDateStr,
-      endDateStr,
-    );
-    response.total = total;
+    if (!numberQuestionTypes.includes(question.type)) return response;
 
     if (question.type === ContentEditorElementType.NPS) {
-      // Get daily NPS analysis including promoters, passives, detractors and NPS score
-      // Also includes score distribution for each day
-      const npsAnalysisByDay = await this.aggregationNPSByDay(
+      const npsAnalysisByDay = await this.aggregationQuestionMetricsByDay(
         contentId,
         questionCvid,
         startDateStr,
         endDateStr,
-        timezone,
+        rollingWindow,
+        'nps',
       );
-      response.npsAnalysisByDay = npsAnalysisByDay;
 
-      // Calculate NPS metrics from answer data
-      this.calculateNPSMetrics(response);
+      response.npsAnalysisByDay = npsAnalysisByDay;
     } else {
-      const averageByDay = await this.aggregationQuestionAnswerByDay(
+      const averageByDay = await this.aggregationQuestionMetricsByDay(
         contentId,
         questionCvid,
         startDateStr,
         endDateStr,
-        timezone,
+        rollingWindow,
+        'rating',
       );
       response.averageByDay = averageByDay;
     }
-  }
 
-  /**
-   * Calculate NPS metrics from answer data
-   */
-  private calculateNPSMetrics(response: any) {
-    const { answer, totalResponse } = response;
-
-    const promoters = answer
-      .filter((item) => Number(item.answer) >= 9)
-      .reduce((sum, item) => sum + item.count, 0);
-    const passives = answer
-      .filter((item) => Number(item.answer) >= 7 && Number(item.answer) <= 8)
-      .reduce((sum, item) => sum + item.count, 0);
-    const detractors = answer
-      .filter((item) => Number(item.answer) <= 6)
-      .reduce((sum, item) => sum + item.count, 0);
-
-    const promotersPercentage = Math.round((promoters / totalResponse) * 100);
-    const passivesPercentage = Math.round((passives / totalResponse) * 100);
-    const detractorsPercentage = Math.round((detractors / totalResponse) * 100);
-    const npsScore = promotersPercentage - detractorsPercentage;
-
-    response.npsAnalysis = {
-      promoters: {
-        count: promoters,
-        percentage: promotersPercentage,
-      },
-      passives: {
-        count: passives,
-        percentage: passivesPercentage,
-      },
-      detractors: {
-        count: detractors,
-        percentage: detractorsPercentage,
-      },
-      npsScore,
-    };
+    return response;
   }
 
   async aggregationViewsByDay(
@@ -604,133 +557,6 @@ export class AnalyticsService {
         AND "BizAnswer"."createdAt" >= ${startDate} AND "BizAnswer"."createdAt" <= ${endDate}
         `;
     return Number.parseInt(data[0].count.toString());
-  }
-
-  async aggregationQuestionAnswer(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-    field: 'numberAnswer' | 'textAnswer' | 'listAnswer',
-  ): Promise<QuestionAnswerAnalytics[]> {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    if (field === 'listAnswer') {
-      const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
-        SELECT unnest("listAnswer") as answer, count(*) as count 
-        FROM "BizAnswer"
-        WHERE
-          "BizAnswer"."contentId" = ${contentId} 
-          AND "BizAnswer"."cvid" = ${questionCvid}
-          AND "BizAnswer"."createdAt" >= ${startDate} 
-          AND "BizAnswer"."createdAt" <= ${endDate}
-          AND "BizAnswer"."listAnswer" IS NOT NULL
-          AND array_length("listAnswer", 1) > 0
-        GROUP BY unnest("listAnswer")
-        ORDER BY count DESC
-      `;
-      return data.map((item) => ({
-        ...item,
-        count: Number(item.count),
-      }));
-    }
-
-    const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
-      SELECT "BizAnswer".${Prisma.raw(`"${field}"`)} as answer, count(*) as count 
-      FROM "BizAnswer"
-      WHERE
-        "BizAnswer"."contentId" = ${contentId} 
-        AND "BizAnswer"."cvid" = ${questionCvid}
-        AND "BizAnswer"."createdAt" >= ${startDate} 
-        AND "BizAnswer"."createdAt" <= ${endDate}
-        AND "BizAnswer".${Prisma.raw(`"${field}"`)} IS NOT NULL
-      GROUP BY "BizAnswer".${Prisma.raw(`"${field}"`)}
-      ORDER BY count DESC
-    `;
-    return data.map((item) => ({
-      ...item,
-      count: Number(item.count),
-    }));
-  }
-
-  async aggregationQuestionAnswerByDay(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-    timezone: string,
-  ) {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    const rawData = await this.prisma.$queryRaw<{ day: string; average: number; count: number }[]>`
-      SELECT 
-        DATE_TRUNC('DAY', "BizAnswer"."createdAt" AT TIME ZONE ${timezone}) AS day,
-        AVG(CAST("numberAnswer" AS FLOAT)) as average,
-        COUNT("numberAnswer") as count
-      FROM "BizAnswer" 
-      WHERE
-        "BizAnswer"."contentId" = ${contentId} 
-        AND "BizAnswer"."cvid" = ${questionCvid}
-        AND "BizAnswer"."createdAt" >= ${startDate} 
-        AND "BizAnswer"."createdAt" <= ${endDate}
-        AND "BizAnswer"."numberAnswer" IS NOT NULL
-      GROUP BY day
-      ORDER BY day ASC
-    `;
-
-    // Fill in missing dates
-    const data = [];
-    if (isBefore(endDateStr, startDateStr)) {
-      return data;
-    }
-
-    let currentDate = new Date(startDateStr);
-    const finalEndDate = addDays(endDateStr, 1);
-
-    while (isBefore(currentDate, finalEndDate)) {
-      const dd = lightFormat(currentDate, 'yyyy-MM-dd');
-      const dayData = rawData.find((d) => lightFormat(new Date(d.day), 'yyyy-MM-dd') === dd);
-
-      data.push({
-        day: currentDate,
-        average: dayData ? Number(dayData.average) : 0,
-        count: dayData ? Number(dayData.count) : 0,
-      });
-
-      currentDate = addDays(currentDate, 1);
-    }
-
-    return data;
-  }
-
-  async aggregationQuestionAnswerTotal(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-  ) {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    const data = await this.prisma.$queryRaw<{ average: number; count: number }[]>`
-      SELECT 
-        AVG(CAST("numberAnswer" AS FLOAT)) as average,
-        COUNT("numberAnswer") as count
-      FROM "BizAnswer"
-      WHERE
-        "BizAnswer"."contentId" = ${contentId} 
-        AND "BizAnswer"."cvid" = ${questionCvid}
-        AND "BizAnswer"."createdAt" >= ${startDate} 
-        AND "BizAnswer"."createdAt" <= ${endDate}
-        AND "BizAnswer"."numberAnswer" IS NOT NULL
-    `;
-
-    return {
-      average: Number(data[0].average),
-      count: Number(data[0].count),
-    };
   }
 
   async aggregationByEvent(condition: AnalyticsConditions) {
@@ -984,114 +810,216 @@ export class AnalyticsService {
     });
   }
 
-  /**
-   * Calculate daily NPS metrics including promoters, passives, detractors counts and percentages
-   * Also includes score distribution for each day
-   * @returns Array of daily NPS analysis with npsScore, distribution and total responses
-   */
-  async aggregationNPSByDay(
+  async aggregationQuestionAnswer(
     contentId: string,
     questionCvid: string,
     startDateStr: string,
     endDateStr: string,
-    timezone: string,
+    field: 'numberAnswer' | 'textAnswer' | 'listAnswer',
+  ): Promise<QuestionAnswerAnalytics[]> {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    if (field === 'listAnswer') {
+      const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
+        SELECT unnest("listAnswer") as answer, count(*) as count 
+        FROM "BizAnswer"
+        WHERE
+          "BizAnswer"."contentId" = ${contentId} 
+          AND "BizAnswer"."cvid" = ${questionCvid}
+          AND "BizAnswer"."createdAt" >= ${startDate} 
+          AND "BizAnswer"."createdAt" <= ${endDate}
+          AND "BizAnswer"."listAnswer" IS NOT NULL
+          AND array_length("listAnswer", 1) > 0
+        GROUP BY unnest("listAnswer")
+        ORDER BY count DESC
+      `;
+      const total = data.reduce((sum, item) => sum + Number(item.count), 0);
+      return data.map((item) => ({
+        ...item,
+        count: Number(item.count),
+        percentage: total > 0 ? Math.round((Number(item.count) / total) * 100) : 0,
+      }));
+    }
+
+    const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
+      SELECT "BizAnswer".${Prisma.raw(`"${field}"`)} as answer, count(*) as count 
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer".${Prisma.raw(`"${field}"`)} IS NOT NULL
+      GROUP BY "BizAnswer".${Prisma.raw(`"${field}"`)}
+      ORDER BY count DESC
+    `;
+    const total = data.reduce((sum, item) => sum + Number(item.count), 0);
+    return data.map((item) => ({
+      ...item,
+      count: Number(item.count),
+      percentage: total > 0 ? Math.round((Number(item.count) / total) * 100) : 0,
+    }));
+  }
+
+  async aggregationQuestionAnswerTotal(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
   ) {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    const rawData = await this.prisma.$queryRaw<
-      {
-        day: string;
-        answer: number;
-        count: number;
-      }[]
-    >`
+    const data = await this.prisma.$queryRaw<{ average: number; count: number }[]>`
       SELECT 
-        DATE_TRUNC('DAY', "createdAt" AT TIME ZONE ${timezone}) AS day,
-        "numberAnswer" as answer,
-        COUNT(*) as count
+        AVG(CAST("numberAnswer" AS FLOAT)) as average,
+        COUNT("numberAnswer") as count
       FROM "BizAnswer"
       WHERE
-        "contentId" = ${contentId}
-        AND "cvid" = ${questionCvid}
-        AND "createdAt" >= ${startDate}
-        AND "createdAt" <= ${endDate}
-        AND "numberAnswer" IS NOT NULL
-      GROUP BY day, "numberAnswer"
-      ORDER BY day ASC, "numberAnswer" ASC
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."numberAnswer" IS NOT NULL
     `;
 
-    // Fill in missing dates
-    const data = [];
-    if (isBefore(endDateStr, startDateStr)) {
-      return data;
-    }
+    return {
+      average: Number(data[0].average),
+      count: Number(data[0].count),
+    };
+  }
 
+  async aggregationQuestionAnswerByDay(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+    rollingWindow: number,
+  ) {
+    return this.aggregationQuestionMetricsByDay(
+      contentId,
+      questionCvid,
+      startDateStr,
+      endDateStr,
+      rollingWindow,
+      'rating',
+    );
+  }
+
+  /**
+   * Calculate daily metrics for questions with rolling window
+   * @param type 'nps' | 'rating' - Type of question to calculate metrics for
+   * @returns Array of daily analysis with metrics and distribution
+   */
+  private async aggregationQuestionMetricsByDay(
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+    rollingWindow: number,
+    type: 'nps' | 'rating',
+  ): Promise<Array<NPSMetricsByDay | RatingMetricsByDay>> {
+    const data: Array<NPSMetricsByDay | RatingMetricsByDay> = [];
     let currentDate = new Date(startDateStr);
     const finalEndDate = addDays(endDateStr, 1);
 
     while (isBefore(currentDate, finalEndDate)) {
-      const dd = lightFormat(currentDate, 'yyyy-MM-dd');
-      const dayScores = rawData.filter((d) => lightFormat(new Date(d.day), 'yyyy-MM-dd') === dd);
+      // Calculate start date for rolling window
+      const windowStartDate = addDays(currentDate, -(rollingWindow - 1));
 
-      const dayStats = {
-        promoters: 0,
-        passives: 0,
-        detractors: 0,
-        total: 0,
+      // Get answers within the rolling window period
+      const distribution = await this.aggregationQuestionAnswer(
+        contentId,
+        questionCvid,
+        windowStartDate.toISOString(),
+        currentDate.toISOString(),
+        'numberAnswer',
+      );
+
+      // Calculate metrics based on type
+      const metrics =
+        type === 'nps'
+          ? this.calculateNPSMetrics(distribution)
+          : this.calculateRatingMetrics(distribution);
+
+      const baseData: BaseMetricsByDay = {
+        day: currentDate,
+        startDate: windowStartDate,
+        endDate: currentDate,
+        distribution,
       };
 
-      const distribution = [];
-      for (const score of dayScores) {
-        const answer = Number(score.answer);
-        const count = Number(score.count);
-        distribution.push({ answer, count });
-
-        if (answer >= 9) {
-          dayStats.promoters += count;
-        } else if (answer >= 7) {
-          dayStats.passives += count;
-        } else {
-          dayStats.detractors += count;
-        }
-        dayStats.total += count;
+      if (type === 'nps') {
+        data.push({
+          ...baseData,
+          metrics,
+        } as NPSMetricsByDay);
+      } else {
+        data.push({
+          ...baseData,
+          metrics,
+        } as RatingMetricsByDay);
       }
-
-      const promotersPercentage = dayStats.total
-        ? Math.round((dayStats.promoters / dayStats.total) * 100)
-        : 0;
-      const passivesPercentage = dayStats.total
-        ? Math.round((dayStats.passives / dayStats.total) * 100)
-        : 0;
-      const detractorsPercentage = dayStats.total
-        ? Math.round((dayStats.detractors / dayStats.total) * 100)
-        : 0;
-      const npsScore = promotersPercentage - detractorsPercentage;
-
-      data.push({
-        day: currentDate,
-        npsAnalysis: {
-          promoters: {
-            count: dayStats.promoters,
-            percentage: promotersPercentage,
-          },
-          passives: {
-            count: dayStats.passives,
-            percentage: passivesPercentage,
-          },
-          detractors: {
-            count: dayStats.detractors,
-            percentage: detractorsPercentage,
-          },
-          npsScore,
-        },
-        distribution,
-        total: dayStats.total,
-      });
 
       currentDate = addDays(currentDate, 1);
     }
 
     return data;
+  }
+
+  /**
+   * Calculate rating metrics from answer data
+   */
+  private calculateRatingMetrics(distribution: QuestionAnswerAnalytics[]) {
+    const total = distribution.reduce((sum, item) => sum + item.count, 0);
+    const weightedSum = distribution.reduce(
+      (sum, item) => sum + Number(item.answer) * item.count,
+      0,
+    );
+    const average = total > 0 ? Number((weightedSum / total).toFixed(2)) : 0;
+
+    return {
+      average,
+      total,
+    };
+  }
+
+  /**
+   * Calculate NPS metrics from answer data
+   */
+  private calculateNPSMetrics(answer: QuestionAnswerAnalytics[]) {
+    const promoters = answer
+      .filter((item) => Number(item.answer) >= 9)
+      .reduce((sum, item) => sum + item.count, 0);
+    const passives = answer
+      .filter((item) => Number(item.answer) >= 7 && Number(item.answer) <= 8)
+      .reduce((sum, item) => sum + item.count, 0);
+    const detractors = answer
+      .filter((item) => Number(item.answer) <= 6)
+      .reduce((sum, item) => sum + item.count, 0);
+
+    const total = promoters + passives + detractors;
+    const promotersPercentage = Math.round((promoters / total) * 100);
+    const passivesPercentage = Math.round((passives / total) * 100);
+    const detractorsPercentage = Math.round((detractors / total) * 100);
+    const npsScore = promotersPercentage - detractorsPercentage;
+
+    return {
+      promoters: {
+        count: promoters,
+        percentage: promotersPercentage,
+      },
+      passives: {
+        count: passives,
+        percentage: passivesPercentage,
+      },
+      detractors: {
+        count: detractors,
+        percentage: detractorsPercentage,
+      },
+      total,
+      npsScore,
+    };
   }
 }

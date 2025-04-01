@@ -246,9 +246,10 @@ export const useQueryContentQuestionAnalyticsQuery = (
   startDate: string,
   endDate: string,
   timezone: string,
+  rollingWindow: number,
 ) => {
   const { data, loading, error, refetch } = useQuery(queryContentQuestionAnalytics, {
-    variables: { contentId, startDate, endDate, timezone },
+    variables: { contentId, startDate, endDate, timezone, rollingWindow },
   });
   const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
   return { questionAnalytics, loading, error, refetch };

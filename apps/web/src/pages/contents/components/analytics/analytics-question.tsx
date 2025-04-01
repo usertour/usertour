@@ -92,6 +92,7 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
     dateRange?.from?.toISOString() ?? '',
     dateRange?.to?.toISOString() ?? '',
     timezone,
+    365,
   );
 
   const totalViews = analyticsData?.totalViews ?? 0;
