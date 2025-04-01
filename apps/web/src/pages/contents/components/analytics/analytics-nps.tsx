@@ -68,6 +68,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const endDate = selectedDay?.endDate
     ? formatDate(selectedDay.endDate)
     : formatDate(lastDay?.endDate ?? '');
+  const npsScore = selectedDay?.metrics.npsScore ?? lastDay?.metrics.npsScore ?? 0;
 
   // Handle rolling window update
   const handleRollingWindowUpdate = async (newValue: number) => {
@@ -107,6 +108,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
         <CardTitle className="space-between flex flex-row items-center">
           <div className="grow">{question.data.name} - Net Promoter Score</div>
           <RollingWindowDialog
+            key={question.type}
             currentValue={rollingWindow.nps}
             onUpdate={handleRollingWindowUpdate}
           />
@@ -116,7 +118,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
         <div className="flex flex-col gap-8 items-center justify-center">
           {/* Current NPS Score */}
           <div className="flex flex-col items-center justify-center ">
-            <div className="text-6xl font-bold text-primary">{lastDay?.metrics.npsScore}</div>
+            <div className="text-6xl font-bold text-primary">{npsScore}</div>
             <div className="text-sm text-muted-foreground ml-2">Current NPS</div>
           </div>
 

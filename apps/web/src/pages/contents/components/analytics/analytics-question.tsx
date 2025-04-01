@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
 import { AnalyticsNPS } from './analytics-nps';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { AnalyticsScale } from './analytics-scale';
 
 interface AnalyticsMultipleChoiceProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -122,6 +123,17 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
     if (analytics.question.type === ContentEditorElementType.NPS) {
       return (
         <AnalyticsNPS
+          key={analytics.question.data.cvid}
+          questionAnalytics={analytics}
+          totalViews={totalViews}
+          content={content}
+          onRollingWindowChange={handleRollingWindowChange}
+        />
+      );
+    }
+    if (analytics.question.type === ContentEditorElementType.SCALE) {
+      return (
+        <AnalyticsScale
           key={analytics.question.data.cvid}
           questionAnalytics={analytics}
           totalViews={totalViews}
