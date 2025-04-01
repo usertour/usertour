@@ -8,7 +8,7 @@ import {
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-ui/shared-hooks';
-import { Table, TableBody, TableCell, TableRow } from '@usertour-ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { BizEvent, BizEvents, ContentDataType } from '@usertour-ui/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
@@ -65,6 +65,21 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   const bizEvents = session?.bizEvent?.sort((a, b) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+
+  const answerEvents = session?.bizEvent?.filter(
+    (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
+  );
+
+  const getQuestionAnswer = (bizEvent: BizEvent) => {
+    const { list_answer, number_answer, text_answer } = bizEvent.data;
+    if (list_answer) {
+      return list_answer;
+    }
+    if (number_answer) {
+      return number_answer;
+    }
+    return text_answer;
+  };
 
   return (
     <>
@@ -152,6 +167,38 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
             <LauncherProgressColumn original={session} eventList={eventList} />
           )}
         </SessionItemContainer>
+
+        {answerEvents && answerEvents.length > 0 && (
+          <SessionItemContainer>
+            <div className="mb-2 flex flex-row items-center font-bold	">Response</div>
+            <div className="flex flex-col items-center w-full h-full justify-center">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-1/2">Question</TableHead>
+                    <TableHead className="w-1/2">Answer</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {answerEvents ? (
+                    answerEvents.map((answerEvent: BizEvent) => (
+                      <Fragment key={answerEvent.id}>
+                        <TableRow className=" h-10 group">
+                          <TableCell>{answerEvent.data.question_name}</TableCell>
+                          <TableCell>{getQuestionAnswer(answerEvent)}</TableCell>
+                        </TableRow>
+                      </Fragment>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell className="h-24 text-center">No results.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </SessionItemContainer>
+        )}
 
         <SessionItemContainer>
           <div className="mb-2 flex flex-row items-center font-bold	">
