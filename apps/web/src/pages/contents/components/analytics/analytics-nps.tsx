@@ -14,8 +14,6 @@ interface AnalyticsNPSProps {
   totalViews: number;
 }
 
-// type DistributionItem = { percentage: number; score: number; count: number };
-
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   // Add state for tracking selected data
   const [selectedData, setSelectedData] = useState<{
