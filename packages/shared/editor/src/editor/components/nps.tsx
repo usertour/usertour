@@ -2,7 +2,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { RulesCondition } from '@usertour-ui/types';
+import { AttributeBizTypes, BizAttributeTypes, RulesCondition } from '@usertour-ui/types';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -11,6 +11,8 @@ import { Button } from '@usertour-ui/button';
 import { EditorError, EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
+import { Switch } from '@usertour-ui/switch';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@usertour-ui/select';
 
 const buttonBaseClass =
   'flex items-center overflow-hidden group relative border bg-sdk-question/10 text-sdk-question border-sdk-question hover:text-sdk-question hover:border-sdk-question hover:bg-sdk-question/40  rounded-md main-transition p-2 justify-center w-auto min-w-0	';
@@ -132,12 +134,67 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
                     onChange={(e) => handleLabelChange(e.target.value, 'highLabel')}
                   />
                 </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-1">
+                      Bind to user attribute
+                      <QuestionTooltip>Store the NPS response in a user attribute</QuestionTooltip>
+                    </Label>
+                    <Switch
+                      className="data-[state=unchecked]:bg-muted"
+                      checked={element.data.bindToAttribute || false}
+                      onCheckedChange={(checked) => {
+                        updateElement(
+                          {
+                            ...element,
+                            data: { ...element.data, bindToAttribute: checked },
+                          },
+                          id,
+                        );
+                      }}
+                    />
+                  </div>
+
+                  {element.data.bindToAttribute && (
+                    <Select
+                      value={element.data.selectedAttribute}
+                      onValueChange={(value) => {
+                        updateElement(
+                          {
+                            ...element,
+                            data: { ...element.data, selectedAttribute: value },
+                          },
+                          id,
+                        );
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select user attribute" />
+                      </SelectTrigger>
+                      <SelectContent style={{ zIndex }}>
+                        {attributes
+                          ?.filter(
+                            (attr) =>
+                              attr.bizType === AttributeBizTypes.User &&
+                              !attr.predefined &&
+                              attr.dataType === BizAttributeTypes.Number,
+                          )
+                          .map((attr) => (
+                            <SelectItem key={attr.id} value={attr.id}>
+                              {attr.displayName}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
       </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex: zIndex }}>
+      <EditorErrorContent side="bottom" style={{ zIndex }}>
         Question name is required
       </EditorErrorContent>
     </EditorError>

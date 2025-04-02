@@ -133,6 +133,8 @@ export type ContentEditorNPSElement = {
     highLabel: string;
     actions?: RulesCondition[];
     score?: number;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
