@@ -277,6 +277,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
                 </SelectPortal>
               </Select>
             </div>
+            <Label htmlFor="button-text">Display height</Label>
             <div className="flex gap-x-2">
               <Input
                 type="height"
@@ -353,7 +354,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               </div>
             )}
 
-            <div className="flex">
+            <div className="flex items-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
