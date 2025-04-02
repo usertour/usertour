@@ -46,6 +46,7 @@
     "@aws-sdk/s3-request-presigner": "^3.441.0",
     "@aws-sdk/util-format-url": "^3.433.0",
     "@devoxa/prisma-relay-cursor-connection": "3.1.1",
+    "@nestjs/bullmq": "~10.2.3",
     "@nestjs/apollo": "12.1.0",
     "@nestjs/axios": "3.0.2",
     "@nestjs/common": "10.3.7",

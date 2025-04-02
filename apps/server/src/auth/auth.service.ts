@@ -30,6 +30,12 @@ import {
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import {
+  QUEUE_SEND_MAGIC_LINK_EMAIL,
+  QUEUE_SEND_RESET_PASSWORD_EMAIL,
+} from '@/common/consts/queen';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +47,8 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
     private readonly teamService: TeamService,
+    @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
+    @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
   ) {}
 
   getAuthConfig(): AuthConfigItem[] {
@@ -311,7 +319,7 @@ export class AuthService {
           email,
         },
       });
-      await this.sendMagicLinkEmail(result.code, email);
+      await this.addSendMagicLinkEmailJob(result.id);
       return result;
     } catch (_) {
       throw new UnknownError();
@@ -324,11 +332,39 @@ export class AuthService {
       throw new InvalidVerificationSession();
     }
     try {
-      await this.sendMagicLinkEmail(data.code, data.email);
+      await this.addSendMagicLinkEmailJob(data.id);
       return data;
     } catch (_) {
       throw new UnknownError();
     }
+  }
+
+  async sendResetPasswordEmailBySessionId(sessionId: string) {
+    const data = await this.prisma.code.findUnique({ where: { id: sessionId } });
+    if (!data) {
+      throw new InvalidVerificationSession();
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: data.userId } });
+    if (!user) {
+      throw new AccountNotFoundError();
+    }
+    await this.sendResetPasswordEmail(sessionId, user.email, user.name);
+  }
+
+  async addSendResetPasswordEmailJob(sessionId: string) {
+    await this.resetPasswordQueue.add('sendResetPasswordEmail', { sessionId });
+  }
+
+  async sendMagicLinkEmailBySessionId(sessionId: string) {
+    const data = await this.prisma.register.findUnique({ where: { id: sessionId } });
+    if (!data) {
+      throw new InvalidVerificationSession();
+    }
+    await this.sendMagicLinkEmail(data.code, data.email);
+  }
+
+  async addSendMagicLinkEmailJob(sessionId: string) {
+    await this.emailQueue.add('sendMagicLinkEmail', { sessionId });
   }
 
   async signup(payload: SignupInput): Promise<TokenData> {
@@ -440,7 +476,7 @@ export class AuthService {
           userId: user.id,
         },
       });
-      await this.sendResetPasswordEmail(result.id, email, user.name);
+      await this.addSendResetPasswordEmailJob(result.id);
       return { success: true };
     } catch (_) {
       throw new UnknownError();

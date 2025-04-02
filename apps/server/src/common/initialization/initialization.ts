@@ -463,6 +463,7 @@ const defaultEvents = [
       EventAttributes.NUMBER_ANSWER,
       EventAttributes.QUESTION_CVID,
       EventAttributes.QUESTION_NAME,
+      EventAttributes.QUESTION_TYPE,
       EventAttributes.TEXT_ANSWER,
       EventAttributes.LOCALE_CODE,
       EventAttributes.PAGE_URL,
@@ -930,25 +931,58 @@ const defaultAttributes: Partial<Attribute>[] = [
     dataType: AttributeDataType.String,
     description: 'The name of the question',
   },
+  {
+    codeName: EventAttributes.QUESTION_TYPE,
+    displayName: 'Question Type',
+    bizType: AttributeBizType.EVENT,
+    dataType: AttributeDataType.String,
+    description: 'The type of the question',
+  },
 ];
 
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
   const predefined = true;
-  return await tx.attribute.createMany({
-    data: defaultAttributes.map((attr) => ({ ...attr, projectId, predefined })),
+
+  // Get existing attributes
+  const existingAttributes = await tx.attribute.findMany({
+    where: { projectId, predefined: true },
+    select: { codeName: true },
   });
+  const existingCodeNames = new Set(existingAttributes.map((a) => a.codeName));
+
+  // Filter out existing attributes
+  const newAttributes = defaultAttributes.filter((attr) => !existingCodeNames.has(attr.codeName));
+
+  if (newAttributes.length > 0) {
+    return await tx.attribute.createMany({
+      data: newAttributes.map((attr) => ({ ...attr, projectId, predefined })),
+    });
+  }
 };
 
 const initializationEvents = async (tx: Prisma.TransactionClient, projectId: string) => {
   const predefined = true;
-  return await tx.event.createMany({
-    data: defaultEvents.map(({ displayName, codeName }) => ({
-      displayName,
-      codeName,
-      projectId,
-      predefined,
-    })),
+
+  // Get existing events
+  const existingEvents = await tx.event.findMany({
+    where: { projectId, predefined: true },
+    select: { codeName: true },
   });
+  const existingCodeNames = new Set(existingEvents.map((e) => e.codeName));
+
+  // Filter out existing events
+  const newEvents = defaultEvents.filter((event) => !existingCodeNames.has(event.codeName));
+
+  if (newEvents.length > 0) {
+    return await tx.event.createMany({
+      data: newEvents.map(({ displayName, codeName }) => ({
+        displayName,
+        codeName,
+        projectId,
+        predefined,
+      })),
+    });
+  }
 };
 
 const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, projectId: string) => {
@@ -957,21 +991,39 @@ const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, proj
   });
   const events = await tx.event.findMany({ where: { projectId } });
 
+  // Get existing relationships
+  const existingRelations = await tx.attributeOnEvent.findMany({
+    where: {
+      event: { projectId },
+      attribute: { projectId },
+    },
+    select: { attributeId: true, eventId: true },
+  });
+
+  // Create a Set of existing relations for easy lookup
+  const existingRelationSet = new Set(
+    existingRelations.map((rel) => `${rel.attributeId}-${rel.eventId}`),
+  );
+
   const inserts = [];
-  for (let z = 0; z < defaultEvents.length; z++) {
-    const defaultEvent = defaultEvents[z];
+  for (const defaultEvent of defaultEvents) {
     const event = events.find((e) => e.codeName === defaultEvent.codeName);
-    if (!event) {
-      continue;
-    }
-    for (let j = 0; j < attributes.length; j++) {
-      const attr = attributes[j];
+    if (!event) continue;
+
+    for (const attr of attributes) {
       if (defaultEvent.attributes.includes(attr.codeName as EventAttributes)) {
-        inserts.push({ attributeId: attr.id, eventId: event.id });
+        const relationKey = `${attr.id}-${event.id}`;
+        // Only add if relation doesn't exist
+        if (!existingRelationSet.has(relationKey)) {
+          inserts.push({ attributeId: attr.id, eventId: event.id });
+        }
       }
     }
   }
-  await tx.attributeOnEvent.createMany({ data: [...inserts] });
+
+  if (inserts.length > 0) {
+    await tx.attributeOnEvent.createMany({ data: inserts });
+  }
 };
 
 export const initialization = async (tx: Prisma.TransactionClient, projectId: string) => {

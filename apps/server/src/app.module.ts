@@ -18,12 +18,14 @@ import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { HttpModule } from '@nestjs/axios';
 import { Logger, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
 import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './localizations/localizations.module';
 import { TeamModule } from './team/team.module';
+import { BullModule } from '@nestjs/bullmq';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +45,17 @@ import { TeamModule } from './team/team.module';
           }),
         ],
       },
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get('redis.host'),
+          port: configService.get('redis.port'),
+          password: configService.get('redis.password') || undefined,
+        },
+      }),
+      inject: [ConfigService],
     }),
 
     GraphQLModule.forRootAsync<ApolloDriverConfig>({

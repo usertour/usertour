@@ -176,7 +176,7 @@ export class ContentsResolver {
       conditions.name = { contains: conditions.name };
     }
     try {
-      const a = await findManyCursorConnection(
+      return await findManyCursorConnection(
         (args) =>
           this.prisma.content.findMany({
             // include: { steps: { select: { id: true } } },
@@ -194,8 +194,6 @@ export class ContentsResolver {
           }),
         { first, last, before, after },
       );
-      console.log(a);
-      return a;
     } catch (error) {
       console.log(error);
     }

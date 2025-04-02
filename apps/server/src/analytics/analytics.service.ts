@@ -425,8 +425,6 @@ export class AnalyticsService {
       startDate = addDays(startDate, 1);
     }
 
-    console.log(data);
-
     return data;
   }
 

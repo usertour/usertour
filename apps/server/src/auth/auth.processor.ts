@@ -1,25 +1,45 @@
-import { WorkerHost } from '@nestjs/bullmq';
-
-import { AuthService } from '@/auth/auth.service';
-import { QUEUE_SEND_VERIFICATION_EMAIL } from '@/common/consts/queen';
-import { Processor } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { SendVerificationEmailJobData } from './dto/auth.dto';
+import { SendMagicLinkEmailJobData, SendResetPasswordEmailJobData } from './dto/auth.dto';
+import {
+  QUEUE_SEND_MAGIC_LINK_EMAIL,
+  QUEUE_SEND_RESET_PASSWORD_EMAIL,
+} from '@/common/consts/queen';
+import { AuthService } from './auth.service';
 
-@Processor(QUEUE_SEND_VERIFICATION_EMAIL)
-export class AuthProcessor extends WorkerHost {
-  private readonly logger = new Logger(AuthProcessor.name);
+@Processor(QUEUE_SEND_MAGIC_LINK_EMAIL)
+export class SendMagicLinkEmailProcessor extends WorkerHost {
+  private readonly logger = new Logger(SendMagicLinkEmailProcessor.name);
 
   constructor(private authService: AuthService) {
     super();
   }
 
-  async process(job: Job<SendVerificationEmailJobData>) {
+  async process(job: Job<SendMagicLinkEmailJobData>) {
     const { sessionId } = job.data;
     try {
-      this.logger.log(`Sending verification email for sessionId ${sessionId}`);
-      await this.authService.sendVerificationEmail(sessionId);
+      this.logger.log(`Sending magic link email for sessionId ${sessionId}`);
+      await this.authService.sendMagicLinkEmailBySessionId(sessionId);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+}
+
+@Processor(QUEUE_SEND_RESET_PASSWORD_EMAIL)
+export class SendResetPasswordEmailProcessor extends WorkerHost {
+  private readonly logger = new Logger(SendResetPasswordEmailProcessor.name);
+
+  constructor(private authService: AuthService) {
+    super();
+  }
+
+  async process(job: Job<SendResetPasswordEmailJobData>) {
+    const { sessionId } = job.data;
+    try {
+      this.logger.log(`Sending reset password email for sessionId ${sessionId}`);
+      await this.authService.sendResetPasswordEmailBySessionId(sessionId);
     } catch (error) {
       this.logger.error(error);
     }
