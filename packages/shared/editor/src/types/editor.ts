@@ -65,6 +65,11 @@ export type ContentEditorWidth = {
   value?: number;
 };
 
+export type ContentEditorHeight = {
+  type?: string;
+  value?: number;
+};
+
 export type ContentEditorMargin = {
   enabled: boolean;
   top?: number;
@@ -116,6 +121,7 @@ export type ContentEditorEmebedElement = {
   oembed?: ContentOmbedInfo;
   width?: ContentEditorWidth;
   margin?: ContentEditorMargin;
+  height?: ContentEditorHeight;
 };
 
 export type ContentEditorNPSElement = {
