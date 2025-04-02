@@ -20,3 +20,7 @@ export interface SendMagicLinkEmailJobData {
 export interface SendResetPasswordEmailJobData {
   sessionId: string;
 }
+
+export interface InitializeProjectJobData {
+  projectId: string;
+}

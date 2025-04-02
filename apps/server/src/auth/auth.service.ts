@@ -33,6 +33,7 @@ import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
+  QUEUE_INITIALIZE_PROJECT,
 } from '@/common/consts/queen';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -49,6 +50,7 @@ export class AuthService {
     private readonly teamService: TeamService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
+    @InjectQueue(QUEUE_INITIALIZE_PROJECT) private initializeProjectQueue: Queue,
   ) {}
 
   getAuthConfig(): AuthConfigItem[] {
@@ -365,6 +367,14 @@ export class AuthService {
 
   async addSendMagicLinkEmailJob(sessionId: string) {
     await this.emailQueue.add('sendMagicLinkEmail', { sessionId });
+  }
+
+  async initializeProject(projectId: string) {
+    await initialization(this.prisma, projectId);
+  }
+
+  async addInitializeProjectJob(projectId: string) {
+    await this.initializeProjectQueue.add('initializeProject', { projectId });
   }
 
   async signup(payload: SignupInput): Promise<TokenData> {

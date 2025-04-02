@@ -14,10 +14,15 @@ import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
 import { TeamModule } from '@/team/team.module';
 import { BullModule } from '@nestjs/bullmq';
 import {
+  QUEUE_INITIALIZE_PROJECT,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '@/common/consts/queen';
-import { SendMagicLinkEmailProcessor, SendResetPasswordEmailProcessor } from './auth.processor';
+import {
+  InitializeProjectProcessor,
+  SendMagicLinkEmailProcessor,
+  SendResetPasswordEmailProcessor,
+} from './auth.processor';
 
 @Module({
   imports: [
@@ -35,6 +40,7 @@ import { SendMagicLinkEmailProcessor, SendResetPasswordEmailProcessor } from './
     }),
     BullModule.registerQueue({ name: QUEUE_SEND_MAGIC_LINK_EMAIL }),
     BullModule.registerQueue({ name: QUEUE_SEND_RESET_PASSWORD_EMAIL }),
+    BullModule.registerQueue({ name: QUEUE_INITIALIZE_PROJECT }),
     TeamModule,
   ],
   providers: [
@@ -47,11 +53,13 @@ import { SendMagicLinkEmailProcessor, SendResetPasswordEmailProcessor } from './
     GoogleOauthStrategy,
     SendMagicLinkEmailProcessor,
     SendResetPasswordEmailProcessor,
+    InitializeProjectProcessor,
     {
       provide: APP_GUARD,
       useClass: GqlAuthGuard,
     },
   ],
   controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}
