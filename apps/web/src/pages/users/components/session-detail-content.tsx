@@ -19,6 +19,8 @@ import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { cn } from '@usertour-ui/ui-utils';
 import { Button } from '@usertour-ui/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
+import { ContentEditorElementType } from '@usertour-ui/shared-editor';
+import { QuestionStarRating } from '@/components/molecules/question';
 
 const SessionItemContainer = ({
   children,
@@ -37,6 +39,68 @@ interface SessionDetailContentProps {
   environmentId: string;
   sessionId: string;
 }
+
+// Add color utility functions from analytics-nps.tsx
+const getDarkBarColor = (score: number, type: 'NPS' | 'SCALE') => {
+  if (type === 'NPS') {
+    if (score <= 6) return 'bg-red-500';
+    if (score <= 8) return 'bg-yellow-500';
+    return 'bg-green-500';
+  }
+  return 'bg-blue-700';
+};
+
+const ScaleAnswer = ({ value, type }: { value: number; type: 'NPS' | 'SCALE' }) => (
+  <div className="flex items-center justify-start">
+    <div
+      className={cn(
+        'w-8 h-8 rounded-full flex items-center justify-center text-white',
+        getDarkBarColor(value, type),
+      )}
+    >
+      {value}
+    </div>
+  </div>
+);
+
+const MultipleChoiceAnswer = ({ answers }: { answers: string[] | string }) => {
+  const answerList = Array.isArray(answers) ? answers : [answers];
+  return (
+    <ul className="list-disc pl-4">
+      {answerList.map((answer: string, index: number) => (
+        <li key={index}>{answer}</li>
+      ))}
+    </ul>
+  );
+};
+
+const TextAnswer = ({ text }: { text: string }) => (
+  <div className="whitespace-pre-line">{text}</div>
+);
+
+const QuestionAnswer = ({ answerEvent }: { answerEvent: BizEvent }) => {
+  switch (answerEvent.data.question_type) {
+    case ContentEditorElementType.STAR_RATING:
+      return (
+        <div className="flex flex-row gap-0.5">
+          <QuestionStarRating
+            maxLength={answerEvent.data.number_answer}
+            score={answerEvent.data.number_answer}
+          />
+        </div>
+      );
+    case ContentEditorElementType.SCALE:
+      return <ScaleAnswer value={answerEvent.data.number_answer} type="SCALE" />;
+    case ContentEditorElementType.NPS:
+      return <ScaleAnswer value={answerEvent.data.number_answer} type="NPS" />;
+    case ContentEditorElementType.MULTIPLE_CHOICE:
+      return <MultipleChoiceAnswer answers={answerEvent.data.list_answer} />;
+    case ContentEditorElementType.MULTI_LINE_TEXT:
+      return <TextAnswer text={answerEvent.data.text_answer} />;
+    default:
+      return <TextAnswer text={answerEvent.data.text_answer} />;
+  }
+};
 
 export function SessionDetailContent(props: SessionDetailContentProps) {
   const { environmentId, sessionId } = props;
@@ -68,17 +132,6 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   const answerEvents = session?.bizEvent?.filter(
     (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
   );
-
-  const getQuestionAnswer = (bizEvent: BizEvent) => {
-    const { list_answer, number_answer, text_answer } = bizEvent.data;
-    if (list_answer) {
-      return list_answer;
-    }
-    if (number_answer) {
-      return number_answer;
-    }
-    return text_answer;
-  };
 
   return (
     <>
@@ -181,7 +234,9 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                       <Fragment key={answerEvent.id}>
                         <TableRow className=" h-10 group">
                           <TableCell>{answerEvent.data.question_name}</TableCell>
-                          <TableCell>{getQuestionAnswer(answerEvent)}</TableCell>
+                          <TableCell>
+                            <QuestionAnswer answerEvent={answerEvent} />
+                          </TableCell>
                         </TableRow>
                       </Fragment>
                     ))

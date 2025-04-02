@@ -201,11 +201,12 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
-    const { data } = element;
+    const { data, type } = element;
     const { cvid } = data;
     const eventData: any = {
       [EventAttributes.QUESTION_CVID]: cvid,
       [EventAttributes.QUESTION_NAME]: data.name,
+      [EventAttributes.QUESTION_TYPE]: type,
     };
     if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
       if (element.data.allowMultiple) {

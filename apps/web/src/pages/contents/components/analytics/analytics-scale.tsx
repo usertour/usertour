@@ -15,7 +15,8 @@ import { ArrowRightIcon } from '@usertour-ui/icons';
 import { useUpdateContentMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
-import { ContentEditorElementType, StarButton } from '@usertour-ui/shared-editor';
+import { ContentEditorElementType } from '@usertour-ui/shared-editor';
+import { QuestionStarRating } from '@/components/molecules/question';
 
 interface AnalyticsScaleProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -240,6 +241,7 @@ export const ScaleDistribution = ({
 
   const lowRange = question.data.lowRange ?? 0;
   const highRange = question.data.highRange ?? 10;
+  const isStarRating = question.type === ContentEditorElementType.STAR_RATING;
 
   const distribution = completeDistribution(lowRange, highRange, averageByDay.distribution).sort(
     (a, b) => Number(a.answer) - Number(b.answer),
@@ -270,14 +272,13 @@ export const ScaleDistribution = ({
                 />
               </div>
               <div className="text-sm text-gray-600 mt-1 flex flex-row gap-1">
-                {Array.from({ length: scaleLength }, (_, i) => (
-                  <StarButton
-                    key={i}
-                    className={cn('text-blue-100 w-3 h-3', {
-                      'text-blue-700': score !== null && i <= score,
-                    })}
-                  />
-                ))}
+                {isStarRating ? (
+                  <QuestionStarRating maxLength={scaleLength} score={score} />
+                ) : (
+                  <div className="flex flex-row gap-1">
+                    <span>{score}</span>
+                  </div>
+                )}
               </div>
             </div>
           );
