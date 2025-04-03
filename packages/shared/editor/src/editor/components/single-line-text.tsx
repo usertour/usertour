@@ -130,6 +130,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   zIndex={zIndex}
                   bindToAttribute={element.data.bindToAttribute || false}
                   projectId={projectId}
+                  selectedAttribute={element.data.selectedAttribute}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                   dataType={BizAttributeTypes.String}

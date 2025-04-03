@@ -180,6 +180,7 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                   zIndex={zIndex}
                   projectId={projectId}
                   bindToAttribute={element.data.bindToAttribute || false}
+                  selectedAttribute={element.data.selectedAttribute}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                 />
