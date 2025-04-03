@@ -60,6 +60,7 @@ export interface RulesUserAttributeData {
   attrId?: string;
   value?: string;
   value2?: string;
+  listValues?: string[];
 }
 export interface RulesUserAttributeProps {
   index: number;

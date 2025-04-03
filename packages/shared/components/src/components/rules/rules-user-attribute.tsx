@@ -303,52 +303,67 @@ const RulesUserAttributeInput = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(
     localData?.value && isDateTime ? new Date(localData?.value) : undefined,
   );
-  const [listValues, setListValues] = useState<string[]>([]);
+
+  // Internal state for list values management
+  const [listValues, setListValues] = useState<string[]>(['']);
   const [inputType, setInputType] = useState<string>('');
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
-  // Handle list values change and maintain focus
+  // Handle list value changes
   const handleListValueChange = (index: number, value: string) => {
     const newValues = [...listValues];
     newValues[index] = value;
 
-    // Ensure there's always an empty input at the end
-    if (value && index === listValues.length - 1) {
+    // Always ensure there's an empty input at the end
+    if (value && index === newValues.length - 1) {
       newValues.push('');
     }
 
     setListValues(newValues);
-    updateLocalData({ value: newValues.filter(Boolean).join(',') });
+
+    // Only update localData with non-empty values
+    const validValues = newValues.filter(Boolean);
+    if (validValues.length > 0) {
+      updateLocalData({ listValues: validValues });
+    } else {
+      updateLocalData({ listValues: [] });
+    }
   };
 
-  // Handle remove list value
+  // Handle removing a list value
   const handleRemoveListValue = (index: number) => {
     if (listValues.length === 1) {
       // If it's the last input, just clear it
       setListValues(['']);
-      updateLocalData({ value: '' });
+      updateLocalData({ listValues: [] });
     } else {
       const newValues = listValues.filter((_, i) => i !== index);
-      // Ensure there's always an empty input at the end
+      // Ensure there's an empty input at the end
       if (!newValues[newValues.length - 1]) {
         newValues.push('');
       }
       setListValues(newValues);
-      updateLocalData({ value: newValues.filter(Boolean).join(',') });
+
+      // Only update localData with non-empty values
+      const validValues = newValues.filter(Boolean);
+      if (validValues.length > 0) {
+        updateLocalData({ listValues: validValues });
+      } else {
+        updateLocalData({ listValues: [] });
+      }
     }
   };
 
   // Initialize list values from localData
   useEffect(() => {
     if (selectedPreset?.dataType === AttributeDataType.List) {
-      if (localData?.value) {
-        const values = localData.value.split(',').filter(Boolean);
-        setListValues([...values, '']); // Always add an empty input at the end
+      if (localData?.listValues) {
+        setListValues([...localData.listValues, '']);
       } else {
         setListValues(['']);
       }
     }
-  }, [selectedPreset?.dataType, localData?.value]);
+  }, [selectedPreset?.dataType, localData?.listValues]);
 
   useEffect(() => {
     if (selectedPreset?.dataType === AttributeDataType.Number) {
@@ -396,11 +411,11 @@ const RulesUserAttributeInput = () => {
               placeholder="Enter new value"
               className="pr-8"
             />
-            {/* Only show remove button when input has value or it's not the last empty input */}
+            {/* Show remove button when input has value or it's not the last empty input */}
             {(value || index !== listValues.length - 1) && (
               <Button
                 variant={'ghost'}
-                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0 w-8  "
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0 w-8"
                 onClick={() => handleRemoveListValue(index)}
               >
                 <CloseIcon className="w-4 h-4" />
@@ -522,16 +537,25 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   }, [activeConditionMapping, localData?.logic]);
 
   useEffect(() => {
-    if (
-      localData?.logic !== 'empty' &&
-      localData?.logic !== 'any' &&
-      selectedPreset?.dataType !== AttributeDataType.Boolean &&
-      localData?.value
-    ) {
-      setDisplayValue(localData?.value);
-    } else {
+    // Check if we should clear the display value
+    const shouldClearDisplay =
+      localData?.logic === 'empty' ||
+      localData?.logic === 'any' ||
+      selectedPreset?.dataType === AttributeDataType.Boolean;
+
+    if (shouldClearDisplay) {
       setDisplayValue('');
+      return;
     }
+
+    // Handle list values
+    if (localData?.listValues && selectedPreset?.dataType === AttributeDataType.List) {
+      setDisplayValue(localData.listValues.join(','));
+      return;
+    }
+
+    // Handle single value
+    setDisplayValue(localData?.value || '');
   }, [localData, selectedPreset]);
 
   const value = {
