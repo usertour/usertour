@@ -19,8 +19,9 @@ import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { cn } from '@usertour-ui/ui-utils';
 import { Button } from '@usertour-ui/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { ContentEditorElementType } from '@usertour-ui/shared-editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour-ui/shared-editor';
 import { QuestionStarRating } from '@/components/molecules/question';
+import { Badge } from '@usertour-ui/badge';
 
 const SessionItemContainer = ({
   children,
@@ -232,8 +233,20 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                   {answerEvents ? (
                     answerEvents.map((answerEvent: BizEvent) => (
                       <Fragment key={answerEvent.id}>
-                        <TableRow className=" h-10 group">
-                          <TableCell>{answerEvent.data.question_name}</TableCell>
+                        <TableRow className=" h-10 ">
+                          <TableCell>
+                            <div className="flex flex-row gap-2 items-center ">
+                              <span>{answerEvent.data.question_name}</span>
+                              <Badge variant="secondary">
+                                {
+                                  contentTypesConfig.find(
+                                    (config) =>
+                                      config.element.type === answerEvent.data.question_type,
+                                  )?.name
+                                }
+                              </Badge>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <QuestionAnswer answerEvent={answerEvent} />
                           </TableCell>
