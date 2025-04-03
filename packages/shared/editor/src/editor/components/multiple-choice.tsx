@@ -9,7 +9,6 @@ import { Switch } from '@usertour-ui/switch';
 import { TooltipContent } from '@usertour-ui/tooltip';
 import { Tooltip, TooltipTrigger } from '@usertour-ui/tooltip';
 import { TooltipProvider } from '@usertour-ui/tooltip';
-import { RulesCondition } from '@usertour-ui/types';
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { ContentActions } from '../../actions';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -22,6 +21,8 @@ import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
 import { cn } from '@usertour-ui/ui-utils';
+import { BindAttribute } from './bind-attribute';
+import { BizAttributeTypes } from '@usertour-ui/types';
 
 interface ContentEditorMultipleChoiceProps {
   element: ContentEditorMultipleChoiceElement;
@@ -66,25 +67,6 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
     const newOptions = [...element.data.options];
     newOptions[index] = { ...newOptions[index], [field]: value };
     handleDataChange({ options: newOptions });
-  };
-
-  const addOption = () => {
-    handleDataChange({
-      options: [...element.data.options, { label: '', value: '', checked: false }],
-    });
-  };
-
-  const removeOption = (index: number) => {
-    const newOptions = element.data.options.filter((_, i) => i !== index);
-    handleDataChange({ options: newOptions });
-  };
-
-  const handleActionChange = (actions: RulesCondition[]) => {
-    handleDataChange({ actions });
-  };
-
-  const handleLabelChange = (value: string, key: string) => {
-    handleDataChange({ [key]: value });
   };
 
   useEffect(() => {
@@ -181,7 +163,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   isShowLogic={false}
                   currentStep={currentStep}
                   currentVersion={currentVersion}
-                  onDataChange={handleActionChange}
+                  onDataChange={(actions) => handleDataChange({ actions })}
                   defaultConditions={element?.data?.actions || []}
                   attributes={attributes}
                   contents={contentList}
@@ -209,7 +191,11 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                               className="flex-none hover:bg-red-200"
                               variant="ghost"
                               size="sm"
-                              onClick={() => removeOption(index)}
+                              onClick={() =>
+                                handleDataChange({
+                                  options: element.data.options.filter((_, i) => i !== index),
+                                })
+                              }
                             >
                               <DeleteIcon className="fill-red-500" />
                             </Button>
@@ -221,7 +207,14 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   ))}
 
                   <Button
-                    onClick={addOption}
+                    onClick={() =>
+                      handleDataChange({
+                        options: [
+                          ...element.data.options,
+                          { label: '', value: '', checked: false },
+                        ],
+                      })
+                    }
                     size="sm"
                     variant={'link'}
                     className="hover:no-underline	"
@@ -238,14 +231,14 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                         type="number"
                         value={element.data.lowRange}
                         placeholder="Default"
-                        onChange={(e) => handleLabelChange(e.target.value, 'lowRange')}
+                        onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
                       />
                       <p>-</p>
                       <Input
                         type="number"
                         value={element.data.highRange}
                         placeholder="Default"
-                        onChange={(e) => handleLabelChange(e.target.value, 'highRange')}
+                        onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -290,6 +283,15 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                     />
                     <Label htmlFor="multiple">Allow multiple selection</Label>
                   </div>
+                  <BindAttribute
+                    zIndex={zIndex}
+                    bindToAttribute={element.data.bindToAttribute || false}
+                    selectedAttribute={element.data.selectedAttribute}
+                    onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+                    onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+                    attributes={attributes || []}
+                    dataType={BizAttributeTypes.String}
+                  />
                 </div>
               </div>
             </Popover.Content>

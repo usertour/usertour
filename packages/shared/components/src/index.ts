@@ -12,3 +12,4 @@ export { LocateSelect } from './components/common/locate-select';
 export type { LocateItem } from './components/common/locate-select';
 export { HelpTooltip } from './components/common/help-tooltip';
 export { defaultRulesItems } from './components/rules';
+export { AttributeCreateForm } from './components/form/attribute-create-form';

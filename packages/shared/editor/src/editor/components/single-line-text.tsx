@@ -3,13 +3,14 @@ import { Button } from '@usertour-ui/button';
 import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
-import { RulesCondition } from '@usertour-ui/types';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorSingleLineTextElement } from '../../types/editor';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
+import { BindAttribute } from './bind-attribute';
+import { BizAttributeTypes } from '@usertour-ui/types';
 
 interface ContentEditorSingleLineTextProps {
   element: ContentEditorSingleLineTextElement;
@@ -32,21 +33,17 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
   const [isShowError, setIsShowError] = useState<boolean>(false);
 
   const handleDataChange = useCallback(
-    (updates: Partial<typeof element.data>) => {
+    (data: Partial<ContentEditorSingleLineTextElement['data']>) => {
       updateElement(
         {
           ...element,
-          data: { ...element.data, ...updates },
+          data: { ...element.data, ...data },
         },
         id,
       );
     },
-    [element, id, updateElement],
+    [element.data, id, updateElement],
   );
-
-  const handleActionChange = (actions: RulesCondition[]) => {
-    handleDataChange({ actions });
-  };
 
   useEffect(() => {
     setIsShowError(isEmptyString(element.data.name));
@@ -92,7 +89,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   isShowLogic={false}
                   currentStep={currentStep}
                   currentVersion={currentVersion}
-                  onDataChange={handleActionChange}
+                  onDataChange={(actions) => handleDataChange({ actions })}
                   defaultConditions={element?.data?.actions || []}
                   attributes={attributes}
                   contents={contentList}
@@ -128,6 +125,14 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                     onCheckedChange={(checked) => handleDataChange({ required: checked })}
                   />
                 </div>
+                <BindAttribute
+                  zIndex={zIndex}
+                  bindToAttribute={element.data.bindToAttribute || false}
+                  attributes={attributes || []}
+                  onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+                  onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+                  dataType={BizAttributeTypes.String}
+                />
               </div>
             </Popover.Content>
           </Popover.Portal>

@@ -3,6 +3,7 @@ import {
   activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
+  createAttribute,
   deleteSession,
   endSession,
   getAuthConfig,
@@ -27,6 +28,8 @@ import type {
   TeamMember,
   BizSession,
   ContentQuestionAnalytics,
+  BizAttributeTypes,
+  AttributeBizTypes,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -263,6 +266,24 @@ export const useUpdateContentMutation = () => {
   ) => {
     const response = await mutation({ variables: { contentId, content } });
     return response.data?.updateContent;
+  };
+  return { invoke, loading, error };
+};
+
+export type CreateAttributeMutationVariables = {
+  projectId: string;
+  description: string;
+  dataType: BizAttributeTypes;
+  bizType: AttributeBizTypes;
+  displayName: string;
+  codeName: string;
+};
+
+export const useCreateAttributeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createAttribute);
+  const invoke = async (data: CreateAttributeMutationVariables) => {
+    const response = await mutation({ variables: { data } });
+    return response.data?.createAttribute;
   };
   return { invoke, loading, error };
 };

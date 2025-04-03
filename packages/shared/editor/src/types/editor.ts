@@ -149,6 +149,8 @@ export type ContentEditorStarRatingElement = {
     lowLabel?: string;
     highLabel?: string;
     actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
@@ -162,6 +164,8 @@ export type ContentEditorScaleElement = {
     lowLabel?: string;
     highLabel?: string;
     actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
@@ -174,6 +178,8 @@ export interface ContentEditorSingleLineTextElement {
     buttonText: string;
     required: boolean;
     actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 
@@ -186,6 +192,8 @@ export interface ContentEditorMultiLineTextElement {
     buttonText: string;
     actions?: RulesCondition[];
     required: boolean;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 // Define the option type
@@ -209,6 +217,8 @@ export interface ContentEditorMultipleChoiceElement {
     actions?: RulesCondition[];
     lowRange?: number;
     highRange?: number;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 

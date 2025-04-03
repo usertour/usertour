@@ -2,7 +2,6 @@ import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { RulesCondition } from '@usertour-ui/types';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -12,7 +11,7 @@ import { EditorError } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
-
+import { BindAttribute } from './bind-attribute';
 // Define Scale element type
 
 const buttonBaseClass =
@@ -38,27 +37,18 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
 
-  // Handle question text change
-  const handleNameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDataChange = useCallback(
+    (data: Partial<ContentEditorScaleElement['data']>) => {
       updateElement(
         {
           ...element,
-          data: { ...element.data, name: e.target.value },
+          data: { ...element.data, ...data },
         },
         id,
       );
     },
-    [element, id],
+    [element.data, id, updateElement],
   );
-
-  const handleActionChange = (actions: RulesCondition[]) => {
-    updateElement({ ...element, data: { ...element.data, actions } }, id);
-  };
-
-  const handleLabelChange = (value: string, key: string) => {
-    updateElement({ ...element, data: { ...element.data, [key]: value } }, id);
-  };
 
   const scaleLength = element.data.highRange - element.data.lowRange + 1;
 
@@ -103,7 +93,7 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                 <Input
                   id="scale-question"
                   value={element.data.name}
-                  onChange={handleNameChange}
+                  onChange={(e) => handleDataChange({ name: e.target.value })}
                   placeholder="Question name?"
                 />
                 <Label>When answer is submitted</Label>
@@ -113,7 +103,7 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                   isShowLogic={false}
                   currentStep={currentStep}
                   currentVersion={currentVersion}
-                  onDataChange={handleActionChange}
+                  onDataChange={(actions) => handleDataChange({ actions })}
                   defaultConditions={element?.data?.actions || []}
                   attributes={attributes}
                   contents={contentList}
@@ -125,14 +115,14 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                     type="number"
                     value={element.data.lowRange}
                     placeholder="Default"
-                    onChange={(e) => handleLabelChange(e.target.value, 'lowRange')}
+                    onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
                   />
                   <p>-</p>
                   <Input
                     type="number"
                     value={element.data.highRange}
                     placeholder="Default"
-                    onChange={(e) => handleLabelChange(e.target.value, 'highRange')}
+                    onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
                   />
                 </div>
                 <Label className="flex items-center gap-1">
@@ -147,15 +137,23 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                     type="text"
                     value={element.data.lowLabel}
                     placeholder="Default"
-                    onChange={(e) => handleLabelChange(e.target.value, 'lowLabel')}
+                    onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
                   />
                   <Input
                     type="text"
                     value={element.data.highLabel}
                     placeholder="Default"
-                    onChange={(e) => handleLabelChange(e.target.value, 'highLabel')}
+                    onChange={(e) => handleDataChange({ highLabel: e.target.value })}
                   />
                 </div>
+                <BindAttribute
+                  zIndex={zIndex}
+                  bindToAttribute={element.data.bindToAttribute || false}
+                  selectedAttribute={element.data.selectedAttribute}
+                  attributes={attributes || []}
+                  onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+                  onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+                />
               </div>
             </Popover.Content>
           </Popover.Portal>

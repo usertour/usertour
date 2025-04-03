@@ -4,7 +4,6 @@ import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
 import { Textarea } from '@usertour-ui/textarea';
-import { RulesCondition } from '@usertour-ui/types';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -13,6 +12,8 @@ import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
+import { BindAttribute } from './bind-attribute';
+import { BizAttributeTypes } from '@usertour-ui/types';
 interface ContentEditorMultiLineTextProps {
   element: ContentEditorMultiLineTextElement;
   id: string;
@@ -20,7 +21,7 @@ interface ContentEditorMultiLineTextProps {
 }
 
 export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProps) => {
-  const { element, id, path } = props;
+  const { element, id } = props;
   const {
     updateElement,
     zIndex,
@@ -42,12 +43,8 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
         id,
       );
     },
-    [element.data, path, updateElement],
+    [element.data, id, updateElement],
   );
-
-  const handleActionChange = (actions: RulesCondition[]) => {
-    handleDataChange({ actions });
-  };
 
   useEffect(() => {
     setIsShowError(isEmptyString(element.data.name));
@@ -92,7 +89,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   isShowLogic={false}
                   currentStep={currentStep}
                   currentVersion={currentVersion}
-                  onDataChange={handleActionChange}
+                  onDataChange={(actions) => handleDataChange({ actions })}
                   defaultConditions={element?.data?.actions || []}
                   attributes={attributes}
                   contents={contentList}
@@ -127,6 +124,15 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   />
                   <Label htmlFor="required">Required</Label>
                 </div>
+                <BindAttribute
+                  bindToAttribute={element.data.bindToAttribute || false}
+                  selectedAttribute={element.data.selectedAttribute}
+                  zIndex={zIndex}
+                  attributes={attributes || []}
+                  onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+                  onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+                  dataType={BizAttributeTypes.String}
+                />
               </div>
             </Popover.Content>
           </Popover.Portal>
