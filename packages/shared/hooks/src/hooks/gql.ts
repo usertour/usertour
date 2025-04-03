@@ -11,6 +11,7 @@ import {
   getInvites,
   getTeamMembers,
   inviteTeamMember as inviteTeamMemberMutation,
+  listAttributes,
   listSegment,
   login,
   queryContentQuestionAnalytics,
@@ -30,6 +31,7 @@ import type {
   ContentQuestionAnalytics,
   BizAttributeTypes,
   AttributeBizTypes,
+  Attribute,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -286,4 +288,12 @@ export const useCreateAttributeMutation = () => {
     return response.data?.createAttribute;
   };
   return { invoke, loading, error };
+};
+
+export const useListAttributesQuery = (projectId: string, bizType: AttributeBizTypes) => {
+  const { data, loading, error, refetch } = useQuery(listAttributes, {
+    variables: { projectId, bizType },
+  });
+  const attributes = data?.listAttributes as Attribute[];
+  return { attributes, loading, error, refetch };
 };

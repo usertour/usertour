@@ -264,6 +264,7 @@ export type ContentEditorRoot = {
 
 export interface ContentEditorProps {
   zIndex: number;
+  projectId: string;
   customUploadRequest?: (file: File) => Promise<string>;
   onValueChange?: (value: ContentEditorRoot[]) => void;
   getOembedInfo?: (url: string) => Promise<ContentOmbedInfo>;

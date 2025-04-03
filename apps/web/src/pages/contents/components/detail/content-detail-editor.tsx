@@ -1,3 +1,4 @@
+import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
@@ -18,6 +19,7 @@ export const ContentDetailEditor = () => {
   const { version } = useContentVersionContext();
   const { attributeList } = useAttributeListContext();
   const { contents } = useContentListContext();
+  const { project } = useAppContext();
   const defaultValue =
     version?.steps && version.steps?.length > 0
       ? (version.steps[0].data as ContentEditorRoot[])
@@ -60,9 +62,10 @@ export const ContentDetailEditor = () => {
               attributes={attributeList}
               initialValue={[]}
             /> */}
-            {version?.steps && (
+            {version?.steps && project?.id && (
               <ContentEditor
                 zIndex={10}
+                projectId={project?.id}
                 attributes={attributeList}
                 currentVersion={version}
                 contentList={contents}

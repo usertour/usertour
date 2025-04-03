@@ -3,26 +3,47 @@ import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@usertour-ui/select';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
+import { AttributeCreateForm } from '../../form/attribute-create-form';
+import { useState } from 'react';
+import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 
 interface BindAttributeProps {
   bindToAttribute: boolean;
   selectedAttribute?: string;
   zIndex: number;
-  attributes: any[]; // Replace 'any' with your actual attribute type
   onBindChange: (checked: boolean) => void;
   onAttributeChange: (value: string) => void;
   dataType?: BizAttributeTypes; // Optional parameter for different input types
+  projectId: string;
 }
 
 export const BindAttribute = ({
   bindToAttribute,
   selectedAttribute,
   zIndex,
-  attributes,
   onBindChange,
   onAttributeChange,
   dataType = BizAttributeTypes.Number, // Default to Number for NPS
+  projectId,
 }: BindAttributeProps) => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { attributes, refetch } = useListAttributesQuery(projectId, AttributeBizTypes.User);
+
+  // Handle after attribute creation
+  const handleAfterCreate = async (attributeId: string) => {
+    setShowCreateForm(false);
+    await refetch();
+    onAttributeChange(attributeId);
+  };
+
+  const handleAttributeChange = (value: string) => {
+    if (value === 'create-new') {
+      setShowCreateForm(true);
+    } else {
+      onAttributeChange(value);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
@@ -38,25 +59,41 @@ export const BindAttribute = ({
       </div>
 
       {bindToAttribute && (
-        <Select value={selectedAttribute} onValueChange={onAttributeChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select user attribute" />
-          </SelectTrigger>
-          <SelectContent style={{ zIndex }}>
-            {attributes
-              ?.filter(
-                (attr) =>
-                  attr.bizType === AttributeBizTypes.User &&
-                  !attr.predefined &&
-                  attr.dataType === dataType,
-              )
-              .map((attr) => (
-                <SelectItem key={attr.id} value={attr.id}>
-                  {attr.displayName}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <>
+          <Select value={selectedAttribute} onValueChange={handleAttributeChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select user attribute" />
+            </SelectTrigger>
+            <SelectContent style={{ zIndex }}>
+              {attributes
+                ?.filter(
+                  (attr) =>
+                    attr.bizType === AttributeBizTypes.User &&
+                    !attr.predefined &&
+                    attr.dataType === dataType,
+                )
+                .map((attr) => (
+                  <SelectItem key={attr.id} value={attr.id}>
+                    {attr.displayName}
+                  </SelectItem>
+                ))}
+              <SelectItem value="create-new">+ Create new attribute</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <AttributeCreateForm
+            onOpenChange={setShowCreateForm}
+            onSuccess={handleAfterCreate}
+            isOpen={showCreateForm}
+            projectId={projectId}
+            zIndex={zIndex + 1}
+            defaultValues={{
+              dataType: String(dataType),
+              bizType: String(AttributeBizTypes.User),
+            }}
+            disabledFields={['dataType', 'bizType']}
+          />
+        </>
       )}
     </div>
   );

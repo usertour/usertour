@@ -5,6 +5,7 @@ import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -37,8 +38,12 @@ import { z } from 'zod';
 
 interface CreateFormProps {
   isOpen: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   projectId: string;
+  defaultValues?: Partial<FormValues>;
+  disabledFields?: Array<'dataType' | 'bizType'>;
+  zIndex?: number;
+  onSuccess?: (attributeId: string) => void;
 }
 
 const formSchema = z.object({
@@ -72,13 +77,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const defaultValues: Partial<FormValues> = {
-  description: '',
-  bizType: String(AttributeBizTypes.User),
-  dataType: String(BizAttributeTypes.Number),
-};
-
-export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormProps) => {
+export const AttributeCreateForm = ({
+  onOpenChange,
+  isOpen,
+  projectId,
+  defaultValues: propDefaultValues,
+  disabledFields = [],
+  zIndex = 1000,
+  onSuccess,
+}: CreateFormProps) => {
   const { invoke } = useCreateAttributeMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -88,6 +95,15 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
       variant: 'destructive',
       title,
     });
+  };
+
+  const defaultValues: Partial<FormValues> = {
+    description: '',
+    bizType: String(AttributeBizTypes.User),
+    dataType: String(BizAttributeTypes.Number),
+    displayName: '',
+    codeName: '',
+    ...propDefaultValues,
   };
 
   const form = useForm<FormValues>({
@@ -109,11 +125,12 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
         dataType: Number.parseInt(formValues.dataType),
         projectId,
       } as CreateAttributeMutationVariables;
-      const isSuccess = await invoke(data);
-      if (!isSuccess) {
+      const result = await invoke(data);
+      if (!result?.id) {
         showError('Create Attribute failed.');
+      } else {
+        onSuccess?.(result.id);
       }
-      onClose();
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -121,8 +138,8 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl" style={{ zIndex: zIndex }}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
@@ -148,7 +165,11 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={disabledFields.includes('bizType')}
+                      >
                         <FormControl>
                           <SelectTrigger className="w-72">
                             <SelectValue placeholder="Select a object type" />
@@ -205,7 +226,11 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                           </Tooltip>
                         </TooltipProvider>
                       </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={disabledFields.includes('dataType')}
+                      >
                         <FormControl>
                           <SelectTrigger className="w-72">
                             <SelectValue placeholder="Select a data type" />
@@ -315,9 +340,9 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
-              </Button>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Create Attribute

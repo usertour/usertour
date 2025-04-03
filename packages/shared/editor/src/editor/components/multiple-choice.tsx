@@ -43,6 +43,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
     attributes,
     contentList,
     createStep,
+    projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
@@ -289,8 +290,8 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                     selectedAttribute={element.data.selectedAttribute}
                     onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                     onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-                    attributes={attributes || []}
                     dataType={BizAttributeTypes.String}
+                    projectId={projectId}
                   />
                 </div>
               </div>

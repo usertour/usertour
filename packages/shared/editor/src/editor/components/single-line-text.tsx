@@ -28,6 +28,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
     attributes,
     contentList,
     createStep,
+    projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
@@ -128,7 +129,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                 <BindAttribute
                   zIndex={zIndex}
                   bindToAttribute={element.data.bindToAttribute || false}
-                  attributes={attributes || []}
+                  projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                   dataType={BizAttributeTypes.String}

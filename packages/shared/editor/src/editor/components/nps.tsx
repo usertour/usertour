@@ -31,6 +31,7 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
     contentList,
     createStep,
     attributes,
+    projectId,
   } = useContentEditorContext();
   const [isShowError, setIsShowError] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>();
@@ -128,7 +129,7 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
                   bindToAttribute={element.data.bindToAttribute || false}
                   selectedAttribute={element.data.selectedAttribute}
                   zIndex={zIndex}
-                  attributes={attributes || []}
+                  projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                 />

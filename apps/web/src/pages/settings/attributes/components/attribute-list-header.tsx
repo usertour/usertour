@@ -12,10 +12,11 @@ export const AttributeListHeader = () => {
   const handleCreate = () => {
     setOpen(true);
   };
-  const handleOnClose = () => {
+  const handleSuccess = () => {
     setOpen(false);
     refetch();
   };
+
   return (
     <>
       <div className="relative ">
@@ -43,7 +44,12 @@ export const AttributeListHeader = () => {
         </div>
       </div>
       {project?.id && (
-        <AttributeCreateForm isOpen={open} onClose={handleOnClose} projectId={project?.id} />
+        <AttributeCreateForm
+          isOpen={open}
+          onOpenChange={setOpen}
+          onSuccess={handleSuccess}
+          projectId={project?.id}
+        />
       )}
     </>
   );

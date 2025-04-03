@@ -30,6 +30,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
     attributes,
     contentList,
     createStep,
+    projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
@@ -128,7 +129,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   bindToAttribute={element.data.bindToAttribute || false}
                   selectedAttribute={element.data.selectedAttribute}
                   zIndex={zIndex}
-                  attributes={attributes || []}
+                  projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                   dataType={BizAttributeTypes.String}

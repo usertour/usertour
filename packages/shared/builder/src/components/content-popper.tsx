@@ -42,6 +42,7 @@ export interface ContentPopperProps {
   currentIndex: number;
   currentContent: Content | undefined;
   createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  projectId: string;
 }
 
 export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
@@ -57,6 +58,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       triggerRef,
       currentIndex,
       createStep,
+      projectId,
     } = props;
     const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
@@ -156,6 +158,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                   onValueChange={handleEditorValueChange}
                   getOembedInfo={getOembedInfo}
                   createStep={createStep}
+                  projectId={projectId}
                 />
                 <PopperMadeWith />
                 <PopperProgress width={progress} />

@@ -328,6 +328,7 @@ const FlowBuilderDetailEmbed = () => {
     createStep,
     selectorOutput,
     currentContent,
+    projectId,
   } = useBuilderContext();
   const { themeList } = useThemeListContext();
   const { contents } = useContentListContext();
@@ -387,7 +388,7 @@ const FlowBuilderDetailEmbed = () => {
     }
   }, [selectorOutput]);
 
-  if (!currentStep || !theme) {
+  if (!currentStep || !theme || !projectId) {
     return <></>;
   }
 
@@ -412,6 +413,7 @@ const FlowBuilderDetailEmbed = () => {
             contents={contents}
             triggerRef={triggerRef}
             zIndex={zIndex}
+            projectId={projectId}
             currentStep={currentStep}
             currentVersion={currentVersion}
             onChange={handleContentChange}
@@ -429,6 +431,7 @@ const FlowBuilderDetailEmbed = () => {
           theme={theme}
           ref={contentRef as Ref<HTMLDivElement> | undefined}
           attributeList={attributeList}
+          projectId={projectId}
           contents={contents}
           zIndex={zIndex}
           currentIndex={currentIndex}

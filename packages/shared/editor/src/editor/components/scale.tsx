@@ -30,9 +30,10 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
     zIndex,
     currentStep,
     currentVersion,
-    attributes,
     contentList,
+    attributes,
     createStep,
+    projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
@@ -150,7 +151,7 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                   zIndex={zIndex}
                   bindToAttribute={element.data.bindToAttribute || false}
                   selectedAttribute={element.data.selectedAttribute}
-                  attributes={attributes || []}
+                  projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                 />

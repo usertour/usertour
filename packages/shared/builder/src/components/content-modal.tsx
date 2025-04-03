@@ -38,6 +38,7 @@ export interface ContentModalProps {
   contents: Content[];
   currentContent: Content | undefined;
   createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  projectId: string;
 }
 
 export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
@@ -52,6 +53,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       contents,
       currentIndex,
       createStep,
+      projectId,
     } = props;
     const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
@@ -118,6 +120,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   enabledElementTypes={enabledElementTypes}
                   customUploadRequest={handleCustomUploadRequest}
                   initialValue={data}
+                  projectId={projectId}
                   attributes={attributeList}
                   contentList={contents}
                   currentVersion={currentVersion}

@@ -51,9 +51,10 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
     zIndex,
     currentStep,
     currentVersion,
-    attributes,
     contentList,
     createStep,
+    attributes,
+    projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -177,8 +178,8 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                 </div>
                 <BindAttribute
                   zIndex={zIndex}
+                  projectId={projectId}
                   bindToAttribute={element.data.bindToAttribute || false}
-                  attributes={attributes || []}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                 />
