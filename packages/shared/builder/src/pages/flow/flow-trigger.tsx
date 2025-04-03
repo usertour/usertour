@@ -5,13 +5,19 @@ import { ChevronLeftIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour-ui/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour-ui/contexts';
+import { useContentListContext } from '@usertour-ui/contexts';
 import { updateContentStep } from '@usertour-ui/gql';
 import { SpinnerIcon } from '@usertour-ui/icons';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { createValue1 } from '@usertour-ui/shared-editor';
 import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour-ui/shared-utils';
-import { ContentVersion, RulesCondition, Step } from '@usertour-ui/types';
+import {
+  AttributeBizTypes,
+  Attribute,
+  ContentVersion,
+  RulesCondition,
+  Step,
+} from '@usertour-ui/types';
 import { cn, uuidV4 } from '@usertour-ui/ui-utils';
 import { useToast } from '@usertour-ui/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +26,7 @@ import { BuilderMode, useBuilderContext } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../sidebar/sidebar-mini';
+import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 
 const FlowBuilderTriggerHeader = () => {
   const { setCurrentMode, currentStep, currentContent, currentIndex } = useBuilderContext();
@@ -48,7 +55,7 @@ const FlowBuilderTriggerHeader = () => {
   );
 };
 
-const FlowBuilderTriggerBody = () => {
+const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => {
   const {
     zIndex,
     currentStep,
@@ -63,7 +70,6 @@ const FlowBuilderTriggerBody = () => {
   } = useBuilderContext();
 
   const { contents } = useContentListContext();
-  const { attributeList } = useAttributeListContext();
   const { showError, setShowError } = useTriggerContext();
   const { token } = useToken();
   const emptyTrigger = { conditions: [], actions: [] };
@@ -207,7 +213,7 @@ const FlowBuilderTriggerBody = () => {
             <ContentTrigger
               key={trigger.id ?? index}
               showError={showError}
-              attributeList={attributeList}
+              attributeList={attributes}
               contents={contents}
               onActionsChange={(actions) => {
                 handleOnActionsChange(actions, index);
@@ -245,24 +251,23 @@ const FlowBuilderTriggerBody = () => {
   );
 };
 
-const FlowBuilderTriggerFooter = () => {
+const FlowBuilderTriggerFooter = ({ attributes }: { attributes: Attribute[] }) => {
   const { setCurrentMode, currentStep, fetchContentAndVersion, currentVersion } =
     useBuilderContext();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updateContentStepMutation] = useMutation(updateContentStep);
   const { toast } = useToast();
-  const { attributeList } = useAttributeListContext();
   const { setShowError } = useTriggerContext();
 
   const handleSave = useCallback(async () => {
     setShowError(false);
-    if (!currentStep || !currentStep.trigger || !attributeList) {
+    if (!currentStep || !currentStep.trigger || !attributes) {
       return;
     }
     for (let index = 0; index < currentStep.trigger.length; index++) {
       const { actions, conditions } = currentStep.trigger[index];
-      if (hasError(conditions, attributeList) || hasActionError(actions)) {
+      if (hasError(conditions, attributes) || hasActionError(actions)) {
         return;
       }
       if (conditions.length === 0 || actions.length === 0) {
@@ -292,7 +297,7 @@ const FlowBuilderTriggerFooter = () => {
     }
     setIsLoading(false);
     setCurrentMode({ mode: BuilderMode.FLOW });
-  }, [currentStep, attributeList]);
+  }, [currentStep, attributes]);
 
   return (
     <CardFooter className="flex-none p-5">
@@ -306,7 +311,9 @@ const FlowBuilderTriggerFooter = () => {
 
 export const FlowBuilderTrigger = () => {
   const ref = useRef<HTMLDivElement>(null);
-  const { zIndex, position } = useBuilderContext();
+  const { zIndex, position, projectId } = useBuilderContext();
+
+  const { attributes } = useListAttributesQuery(projectId, AttributeBizTypes.Nil);
 
   return (
     <>
@@ -322,8 +329,8 @@ export const FlowBuilderTrigger = () => {
           <SidebarMini container={ref} containerWidth={374} />
           <Card className="h-full flex flex-col bg-background-800">
             <FlowBuilderTriggerHeader />
-            <FlowBuilderTriggerBody />
-            <FlowBuilderTriggerFooter />
+            <FlowBuilderTriggerBody attributes={attributes} />
+            <FlowBuilderTriggerFooter attributes={attributes} />
           </Card>
         </div>
       </TriggerProvider>
