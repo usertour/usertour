@@ -302,7 +302,13 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                                       ?.displayName || key}
                                   </span>
                                   <span className="grow">
-                                    {typeof value === 'string' ? value : JSON.stringify(value)}
+                                    {key === 'question_type'
+                                      ? contentTypesConfig.find(
+                                          (config) => config.element.type === value,
+                                        )?.name
+                                      : typeof value === 'string'
+                                        ? value
+                                        : JSON.stringify(value)}
                                   </span>
                                 </div>
                               ))}
