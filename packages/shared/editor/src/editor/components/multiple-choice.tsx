@@ -290,7 +290,9 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                     selectedAttribute={element.data.selectedAttribute}
                     onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                     onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-                    dataType={BizAttributeTypes.String}
+                    dataType={
+                      element.data.allowMultiple ? BizAttributeTypes.List : BizAttributeTypes.String
+                    }
                     projectId={projectId}
                   />
                 </div>

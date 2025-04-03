@@ -29,7 +29,7 @@ import {
 } from '@usertour-ui/shared-hooks';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
+import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -43,7 +43,7 @@ interface CreateFormProps {
   defaultValues?: Partial<FormValues>;
   disabledFields?: Array<'dataType' | 'bizType'>;
   zIndex?: number;
-  onSuccess?: (attributeId: string) => void;
+  onSuccess?: (attribute: Partial<Attribute>) => void;
 }
 
 const formSchema = z.object({
@@ -83,7 +83,7 @@ export const AttributeCreateForm = ({
   projectId,
   defaultValues: propDefaultValues,
   disabledFields = [],
-  zIndex = 1000,
+  zIndex,
   onSuccess,
 }: CreateFormProps) => {
   const { invoke } = useCreateAttributeMutation();
@@ -129,7 +129,7 @@ export const AttributeCreateForm = ({
       if (!result?.id) {
         showError('Create Attribute failed.');
       } else {
-        onSuccess?.(result.id);
+        onSuccess?.(result);
       }
     } catch (error) {
       showError(getErrorMessage(error));

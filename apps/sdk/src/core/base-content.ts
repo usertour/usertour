@@ -1,6 +1,13 @@
 import { convertSettings } from '@usertour-ui/shared-utils';
 import { convertToCssVars } from '@usertour-ui/shared-utils';
-import { EventAttributes, SDKContent, Step, Theme, flowEndReason } from '@usertour-ui/types';
+import {
+  EventAttributes,
+  SDKContent,
+  Step,
+  Theme,
+  UserTourTypes,
+  flowEndReason,
+} from '@usertour-ui/types';
 import { isEqual } from 'lodash';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
@@ -186,6 +193,10 @@ export abstract class BaseContent<T = any> extends Evented {
 
   getCurrentStep() {
     return this.currentStep;
+  }
+
+  async updateUser(attributes: UserTourTypes.Attributes) {
+    return await this.getInstance().updateUser(attributes);
   }
 
   async createSessionId() {

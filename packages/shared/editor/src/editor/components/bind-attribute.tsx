@@ -2,9 +2,9 @@ import { Switch } from '@usertour-ui/switch';
 import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@usertour-ui/select';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
+import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
 import { AttributeCreateForm } from '../../form/attribute-create-form';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 
 interface BindAttributeProps {
@@ -30,11 +30,16 @@ export const BindAttribute = ({
   const { attributes, refetch } = useListAttributesQuery(projectId, AttributeBizTypes.User);
 
   // Handle after attribute creation
-  const handleAfterCreate = async (attributeId: string) => {
-    setShowCreateForm(false);
-    await refetch();
-    onAttributeChange(attributeId);
-  };
+  const handleAfterCreate = useCallback(
+    async (attribute: Partial<Attribute>) => {
+      setShowCreateForm(false);
+      await refetch();
+      if (attribute.codeName) {
+        onAttributeChange(attribute.codeName);
+      }
+    },
+    [attributes, onAttributeChange, refetch],
+  );
 
   const handleAttributeChange = (value: string) => {
     if (value === 'create-new') {
@@ -73,7 +78,7 @@ export const BindAttribute = ({
                     attr.dataType === dataType,
                 )
                 .map((attr) => (
-                  <SelectItem key={attr.id} value={attr.id}>
+                  <SelectItem key={attr.id} value={attr.codeName}>
                     {attr.displayName}
                   </SelectItem>
                 ))}
