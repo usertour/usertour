@@ -258,7 +258,7 @@ export class WebSocketService {
     const companyAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY);
     switch (rules.type) {
       case 'user-attr': {
-        const filter = createFilterItem(rules, userAttrs);
+        const filter = createFilterItem(rules, userAttrs) || {};
         const segmentUser = await this.prisma.bizUser.findFirst({
           where: {
             environmentId: environment.id,
