@@ -2,7 +2,7 @@ import { TaskClickedIcon } from '@usertour-ui/icons';
 import { RulesLogic } from './rules-logic';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 
 export interface RulesTaskIsClickedProps {
   index: number;

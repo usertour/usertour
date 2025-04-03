@@ -1,5 +1,5 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { UserIcon } from '@usertour-ui/icons';
+import { CloseIcon, UserIcon } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
 // import * as Popover from "@radix-ui/react-popover";
 import * as Popover from '@usertour-ui/popover';
@@ -14,7 +14,6 @@ import {
 import { cn } from '@usertour-ui/ui-utils';
 import { format } from 'date-fns';
 import {
-  ChangeEvent,
   Dispatch,
   SetStateAction,
   createContext,
@@ -42,7 +41,7 @@ import {
   RulesUserAttributeData,
   RulesUserAttributeProps,
 } from '@usertour-ui/types';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
@@ -304,13 +303,52 @@ const RulesUserAttributeInput = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(
     localData?.value && isDateTime ? new Date(localData?.value) : undefined,
   );
-  const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    updateLocalData({ value: e.target.value });
-  };
-  const handleOnChange2 = (e: ChangeEvent<HTMLInputElement>) => {
-    updateLocalData({ value2: e.target.value });
-  };
+  const [listValues, setListValues] = useState<string[]>([]);
   const [inputType, setInputType] = useState<string>('');
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+
+  // Handle list values change and maintain focus
+  const handleListValueChange = (index: number, value: string) => {
+    const newValues = [...listValues];
+    newValues[index] = value;
+
+    // Ensure there's always an empty input at the end
+    if (value && index === listValues.length - 1) {
+      newValues.push('');
+    }
+
+    setListValues(newValues);
+    updateLocalData({ value: newValues.filter(Boolean).join(',') });
+  };
+
+  // Handle remove list value
+  const handleRemoveListValue = (index: number) => {
+    if (listValues.length === 1) {
+      // If it's the last input, just clear it
+      setListValues(['']);
+      updateLocalData({ value: '' });
+    } else {
+      const newValues = listValues.filter((_, i) => i !== index);
+      // Ensure there's always an empty input at the end
+      if (!newValues[newValues.length - 1]) {
+        newValues.push('');
+      }
+      setListValues(newValues);
+      updateLocalData({ value: newValues.filter(Boolean).join(',') });
+    }
+  };
+
+  // Initialize list values from localData
+  useEffect(() => {
+    if (selectedPreset?.dataType === AttributeDataType.List) {
+      if (localData?.value) {
+        const values = localData.value.split(',').filter(Boolean);
+        setListValues([...values, '']); // Always add an empty input at the end
+      } else {
+        setListValues(['']);
+      }
+    }
+  }, [selectedPreset?.dataType, localData?.value]);
 
   useEffect(() => {
     if (selectedPreset?.dataType === AttributeDataType.Number) {
@@ -340,6 +378,40 @@ const RulesUserAttributeInput = () => {
     );
   }
 
+  if (selectedPreset?.dataType === AttributeDataType.List) {
+    if (localData?.logic === 'empty' || localData?.logic === 'any') {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-col space-y-2">
+        {listValues.map((value, index) => (
+          <div key={index} className="relative">
+            <Input
+              value={value}
+              onChange={(e) => handleListValueChange(index, e.target.value)}
+              onFocus={() => setFocusedIndex(index)}
+              onBlur={() => setFocusedIndex(-1)}
+              autoFocus={index === focusedIndex}
+              placeholder="Enter new value"
+              className="pr-8"
+            />
+            {/* Only show remove button when input has value or it's not the last empty input */}
+            {(value || index !== listValues.length - 1) && (
+              <Button
+                variant={'ghost'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0 w-8  "
+                onClick={() => handleRemoveListValue(index)}
+              >
+                <CloseIcon className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-row space-x-4 items-center">
@@ -352,7 +424,9 @@ const RulesUserAttributeInput = () => {
             <Input
               type={inputType}
               value={localData?.value}
-              onChange={handleOnChange}
+              onChange={(e) => {
+                updateLocalData({ value: e.target.value });
+              }}
               placeholder={''}
             />
           )}
@@ -362,7 +436,9 @@ const RulesUserAttributeInput = () => {
             <Input
               type={inputType}
               value={localData?.value2}
-              onChange={handleOnChange2}
+              onChange={(e) => {
+                updateLocalData({ value2: e.target.value });
+              }}
               placeholder={''}
             />
           </>

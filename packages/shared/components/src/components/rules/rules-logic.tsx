@@ -1,7 +1,7 @@
 import { Button } from '@usertour-ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@usertour-ui/tabs';
 import { cn } from '@usertour-ui/ui-utils';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 
 type RulesLogicProps = {

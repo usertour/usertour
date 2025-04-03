@@ -26,7 +26,7 @@ import {
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { getContentError } from '@usertour-ui/shared-utils';
 import { ContentDataType } from '@usertour-ui/types';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';

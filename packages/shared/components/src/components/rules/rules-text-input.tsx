@@ -20,7 +20,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
