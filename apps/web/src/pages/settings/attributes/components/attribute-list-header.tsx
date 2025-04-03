@@ -3,7 +3,7 @@ import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
 import { useAppContext } from '@/contexts/app-context';
-import { AttributeCreateForm } from '@usertour-ui/shared-components';
+import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 
 export const AttributeListHeader = () => {
   const [open, setOpen] = useState(false);
