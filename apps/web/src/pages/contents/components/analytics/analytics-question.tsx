@@ -2,6 +2,7 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 import { ContentEditorElementType } from '@usertour-ui/shared-editor';
 import { useQueryContentQuestionAnalyticsQuery } from '@usertour-ui/shared-hooks';
+import { format } from 'date-fns';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
@@ -99,6 +100,21 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
     );
 
   const totalViews = analyticsData?.totalViews ?? 0;
+
+  // Helper function to format dates
+  const formatDate = (date: string) => format(new Date(date), 'PP');
+
+  // Process questionAnalytics data to format all dates
+  const formattedQuestionAnalytics = questionAnalytics?.map((analytics) => ({
+    ...analytics,
+    averageByDay: analytics.averageByDay?.map((day) => ({
+      ...day,
+      day: formatDate(day.day),
+      startDate: formatDate(day.startDate),
+      endDate: formatDate(day.endDate),
+    })),
+  }));
+
   const handleRollingWindowChange = async (success: boolean) => {
     if (success) {
       await refetch();
@@ -110,7 +126,8 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
     return null;
   }
 
-  return questionAnalytics?.map((analytics) => {
+  // Render analytics components with formatted data
+  return formattedQuestionAnalytics?.map((analytics) => {
     if (analytics.question.type === ContentEditorElementType.MULTIPLE_CHOICE) {
       return (
         <AnalyticsMultipleChoice

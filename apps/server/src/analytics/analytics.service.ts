@@ -4,7 +4,7 @@ import { ContentType } from '@/contents/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
-import { addDays, isBefore, lightFormat, format } from 'date-fns';
+import { addDays, isBefore, lightFormat, format, subDays, endOfDay, startOfDay } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
@@ -249,7 +249,6 @@ export class AnalyticsService {
     endDate: string,
     timezone: string,
   ) {
-    console.log('timezone:', timezone);
     const content = await this.getContentWithVersion(contentId);
     if (!content) {
       return;
@@ -281,6 +280,7 @@ export class AnalyticsService {
         startDateStr,
         endDateStr,
         rollingWindow,
+        timezone,
       );
       ret.push(response);
     }
@@ -323,6 +323,7 @@ export class AnalyticsService {
     startDateStr: string,
     endDateStr: string,
     rollingWindow: number,
+    timezone: string,
   ) {
     const questionCvid = question.data.cvid;
     const field = getAggregationField(question);
@@ -353,6 +354,7 @@ export class AnalyticsService {
         endDateStr,
         rollingWindow,
         'nps',
+        timezone,
       );
 
       response.npsAnalysisByDay = npsAnalysisByDay;
@@ -364,6 +366,7 @@ export class AnalyticsService {
         endDateStr,
         rollingWindow,
         'rating',
+        timezone,
       );
       response.averageByDay = averageByDay;
     }
@@ -918,22 +921,28 @@ export class AnalyticsService {
     endDateStr: string,
     rollingWindow: number,
     type: 'nps' | 'rating',
+    timezone: string,
   ): Promise<Array<NPSMetricsByDay | RatingMetricsByDay>> {
     const data: Array<NPSMetricsByDay | RatingMetricsByDay> = [];
-    let currentDate = new Date(startDateStr);
-    const finalEndDate = addDays(endDateStr, 1);
+    const startDate = startOfDay(toZonedTime(new Date(startDateStr), timezone));
+    const endDate = endOfDay(toZonedTime(new Date(endDateStr), timezone));
     const isNps = type === 'nps';
 
-    while (isBefore(currentDate, finalEndDate)) {
+    let currentDate = startDate;
+    while (isBefore(currentDate, endDate)) {
       // Calculate start date for rolling window
-      const windowStartDate = addDays(currentDate, -(rollingWindow - 1));
+
+      const windowStartDate = startOfDay(
+        toZonedTime(subDays(currentDate, rollingWindow - 1), timezone),
+      );
+      const windowEndDate = endOfDay(toZonedTime(currentDate, timezone));
 
       // Get answers within the rolling window period
       const distribution = await this.aggregationQuestionAnswer(
         contentId,
         questionCvid,
         windowStartDate.toISOString(),
-        currentDate.toISOString(),
+        windowEndDate.toISOString(),
         'numberAnswer',
       );
 
@@ -945,7 +954,7 @@ export class AnalyticsService {
       const baseData: BaseMetricsByDay = {
         day: currentDate,
         startDate: windowStartDate,
-        endDate: currentDate,
+        endDate: windowEndDate,
         distribution: isNps ? completeDistribution(distribution) : distribution,
       };
 

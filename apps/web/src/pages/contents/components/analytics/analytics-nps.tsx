@@ -34,7 +34,7 @@ const formatDate = (date: string) => format(new Date(date), 'MMM dd, yyyy');
 
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const { questionAnalytics, totalViews, content, onRollingWindowChange } = props;
-  const { npsAnalysisByDay, answer, question } = questionAnalytics;
+  const { npsAnalysisByDay, question } = questionAnalytics;
   const rollingWindow = content.config?.rollWindowConfig ?? CONSTANTS.DEFAULT_ROLLING_WINDOW;
   const [selectedDay, setSelectedDay] = useState<NPSByDay | null>(null);
   const { invoke: updateContent } = useUpdateContentMutation();
@@ -56,10 +56,9 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     [npsAnalysisByDay],
   );
 
-  const total = answer?.reduce((acc, item) => acc + item.count, 0) || 0;
   const lastDay = npsAnalysisByDay?.[npsAnalysisByDay.length - 1];
 
-  const totalResponses = selectedDay?.metrics.total ?? total ?? 0;
+  const totalResponses = selectedDay?.metrics.total ?? lastDay?.metrics.total ?? 0;
   const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
 
   const startDate = selectedDay?.startDate
