@@ -103,7 +103,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   itemIsCompleted(item: ChecklistItemType) {
     return !!this.getContent().events.find(
       (event) =>
-        event.event.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
+        event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
         event.data.checklist_task_id === item.id,
     );
   }

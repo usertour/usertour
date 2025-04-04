@@ -193,14 +193,15 @@ export class Tour extends BaseContent<TourStore> {
 
   async handleOnClick(element: ContentEditorClickableElement, value?: any) {
     if (isQuestionElement(element)) {
-      if (element.data.bindToAttribute && element.data.selectedAttribute) {
+      const el = element as ContentEditorQuestionElement;
+      if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
         await this.updateUser({
-          [element.data.selectedAttribute]: value,
+          [el.data.selectedAttribute]: value,
         });
       }
-      await this.reportQuestionAnswer(element, value);
+      await this.reportQuestionAnswer(el, value);
     }
-    if (element.data.actions) {
+    if (element?.data?.actions) {
       await this.handleActions(element.data.actions);
     }
   }

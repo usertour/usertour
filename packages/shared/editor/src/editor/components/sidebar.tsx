@@ -144,9 +144,10 @@ export const ContentEditorSideBarPopper = (
 
   const handleClick = (element: ContentEditorElement) => {
     if (isQuestionElement(element)) {
+      const el = element as ContentEditorQuestionElement;
       const newElement = {
         ...element,
-        data: { ...element.data, cvid: cuid() },
+        data: { ...el.data, cvid: cuid() },
       } as ContentEditorQuestionElement;
       props.onClick(newElement);
     } else {

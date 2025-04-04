@@ -4,10 +4,12 @@ import { ContentType } from '@/contents/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
-import { addDays, isBefore, lightFormat } from 'date-fns';
+import { addDays, isBefore, lightFormat, format } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
+import { toZonedTime } from 'date-fns-tz';
+
 import {
   ContentEditorElementType,
   extractQuestionData,
@@ -376,6 +378,17 @@ export class AnalyticsService {
     completeEvent: Event,
   ) {
     const { startDateStr, endDateStr } = condition;
+
+    // Convert string dates to Date objects with timezone consideration
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Validate date range
+    if (isBefore(endDate, startDate)) {
+      return false;
+    }
+
+    // Get aggregated statistics
     const uniqueViewsByDay = await this.aggregationByDay(
       { ...condition, eventId: startEvent.id },
       timezone,
@@ -392,37 +405,33 @@ export class AnalyticsService {
       { ...condition, eventId: completeEvent.id, isDistinct: false },
       timezone,
     );
+
     const data = [];
+    let currentDate = startDate;
+    const finalEndDate = endDate;
 
-    if (isBefore(endDateStr, startDateStr)) {
-      return false;
-    }
+    // Iterate through each day in the date range
+    while (isBefore(currentDate, finalEndDate)) {
+      // Format date considering timezone
+      const dd = format(toZonedTime(currentDate, timezone), 'yyyy-MM-dd');
 
-    let startDate = new Date(startDateStr);
-    const endDate = addDays(endDateStr, 1);
-
-    while (isBefore(startDate, endDate)) {
-      const dd = lightFormat(startDate, 'yyyy-MM-dd');
-      const uniqueView = uniqueViewsByDay.find(
-        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
-      );
-      const totalView = totalViewsByDay.find(
-        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
-      );
-      const uniqueCompletion = uniqueCompletionByDay.find(
-        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
-      );
-      const totalCompletion = totalCompletionByDay.find(
-        (views) => lightFormat(views.day, 'yyyy-MM-dd') === dd,
-      );
+      // Build daily statistics object with default value 0 for missing data
       data.push({
-        date: startDate,
-        uniqueViews: uniqueView ? uniqueView.count : 0,
-        totalViews: totalView ? totalView.count : 0,
-        uniqueCompletions: uniqueCompletion ? uniqueCompletion.count : 0,
-        totalCompletions: totalCompletion ? totalCompletion.count : 0,
+        date: currentDate,
+        uniqueViews:
+          uniqueViewsByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)?.count || 0,
+        totalViews:
+          totalViewsByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)?.count || 0,
+        uniqueCompletions:
+          uniqueCompletionByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)
+            ?.count || 0,
+        totalCompletions:
+          totalCompletionByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)
+            ?.count || 0,
       });
-      startDate = addDays(startDate, 1);
+
+      // Move to next day
+      currentDate = addDays(currentDate, 1);
     }
 
     return data;
