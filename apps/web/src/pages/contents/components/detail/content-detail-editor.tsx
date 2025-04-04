@@ -36,7 +36,7 @@ export const ContentDetailEditor = () => {
       male: true,
       sdsdd: 13,
       registerAt: '2024-03-29T16:05:45.000Z',
-      userNamedddd: 'liuzhaodong-test',
+      userNamedddd: 'test-user',
     },
   };
 
