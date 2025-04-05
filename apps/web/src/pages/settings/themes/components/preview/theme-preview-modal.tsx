@@ -1,8 +1,9 @@
 import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import * as SharedPopper from '@usertour-ui/sdk';
-import { ContentEditorSerialize, createValue6 } from '@usertour-ui/shared-editor';
+import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 
-export const ThemePreviewModal = () => {
+export const ThemePreviewModal = (props: { contents: ContentEditorRoot[] }) => {
+  const { contents } = props;
   const { settings, customStyle } = useThemeDetailContext();
 
   return (
@@ -15,7 +16,7 @@ export const ThemePreviewModal = () => {
         >
           <SharedPopper.PopperContent>
             <SharedPopper.PopperClose />
-            <ContentEditorSerialize contents={createValue6 as any} />
+            <ContentEditorSerialize contents={contents} />
             <SharedPopper.PopperMadeWith />
             <SharedPopper.PopperProgress width={60} />
           </SharedPopper.PopperContent>

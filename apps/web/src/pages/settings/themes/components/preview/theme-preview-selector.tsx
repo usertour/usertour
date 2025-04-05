@@ -52,6 +52,11 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     name: 'Checklist Launcher',
     type: 'checklist-launcher',
   },
+  {
+    id: '7',
+    name: 'NPS question',
+    type: 'nps',
+  },
 ];
 
 export function ThemePreviewSelector() {

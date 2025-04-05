@@ -852,6 +852,101 @@ export const createValue6 = [
   },
 ];
 
+export const surveysValue = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: {
+            type: 'fill',
+          },
+          justifyContent: 'justify-start',
+        },
+        children: [
+          {
+            element: {
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: '',
+                    },
+                  ],
+                },
+                {
+                  type: 'h1',
+                  align: 'center',
+                  children: [
+                    {
+                      bold: true,
+                      text: 'How easy-to-use is our product?',
+                    },
+                  ],
+                },
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: '',
+                    },
+                  ],
+                },
+              ],
+              type: 'text',
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: {
+            type: 'fill',
+          },
+          justifyContent: 'justify-center',
+        },
+        children: [
+          {
+            element: {
+              data: {
+                cvid: 'oatboqldqf7qcxtl1kdrvsvk',
+                name: 'sss',
+                actions: [
+                  {
+                    data: {},
+                    type: 'flow-dismis',
+                    operators: 'and',
+                  },
+                ],
+                lowLabel: '',
+                highLabel: '',
+                bindToAttribute: true,
+                selectedAttribute: 'nn5',
+              },
+              type: 'nps',
+            },
+            children: null,
+          },
+        ],
+      },
+    ],
+  },
+];
+
 // Helper function to check if type is restricted
 export const isRestrictedType = (type: ContentEditorElementType): boolean => {
   const restrictedTypes = [
