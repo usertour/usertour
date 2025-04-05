@@ -1,3 +1,5 @@
+import { createId } from '@paralleldrive/cuid2';
+
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
   data: {
@@ -111,7 +113,7 @@ export enum ContentEditorElementType {
   MULTIPLE_CHOICE = 'multiple-choice',
 }
 
-const questionTypes = [
+export const questionTypes = [
   ContentEditorElementType.NPS,
   ContentEditorElementType.STAR_RATING,
   ContentEditorElementType.SCALE,
@@ -143,4 +145,32 @@ export function extractQuestionData(data: GroupItem[]): QuestionElement[] {
   }
 
   return result;
+}
+
+// Process step data recursively
+export function processStepData(data: any): any {
+  if (!data) return data;
+
+  if (Array.isArray(data)) {
+    return data.map((item) => processStepData(item));
+  }
+
+  if (typeof data === 'object') {
+    const newData = { ...data };
+    if (
+      newData.element &&
+      questionTypes.includes(newData.element.type) &&
+      newData.element.data?.cvid
+    ) {
+      newData.element.data.cvid = createId();
+    }
+
+    // Process children recursively
+    if (newData.children) {
+      newData.children = processStepData(newData.children);
+    }
+    return newData;
+  }
+
+  return data;
 }

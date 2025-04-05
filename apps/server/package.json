@@ -60,6 +60,7 @@
     "@nestjs/platform-ws": "10.3.7",
     "@nestjs/swagger": "7.3.1",
     "@nestjs/websockets": "10.3.7",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@prisma/client": "5.12.1",
     "@smithy/hash-node": "^2.0.12",
     "@smithy/protocol-http": "^3.0.8",
