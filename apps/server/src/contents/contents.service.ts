@@ -336,6 +336,7 @@ export class ContentsService {
             name: name || duplicateContent.name,
             buildUrl: duplicateContent.buildUrl,
             environmentId: targetEnvironmentId || duplicateContent.environmentId,
+            type: duplicateContent.type,
           },
         });
 
