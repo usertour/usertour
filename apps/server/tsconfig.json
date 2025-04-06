@@ -13,6 +13,7 @@
     "incremental": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "watch": true,
     "paths": {
       "@/*": ["./src/*"]
     }
