@@ -11,7 +11,7 @@ export const QuestionStarRating = ({ maxLength, score }: QuestionStarRatingProps
     <StarButton
       key={i}
       className={cn('text-blue-100 w-3 h-3', {
-        'text-blue-700': score !== null && i <= score,
+        'text-blue-700': score !== null && i <= score - 1,
       })}
     />
   ));

@@ -18,7 +18,7 @@ import {
   RulesCondition,
   Step,
 } from '@usertour-ui/types';
-import { cn, uuidV4 } from '@usertour-ui/ui-utils';
+import { cn, cuid } from '@usertour-ui/ui-utils';
 import { useToast } from '@usertour-ui/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
@@ -65,8 +65,6 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
     currentContent,
     createStep,
     setCurrentMode,
-    currentMode,
-    selectorOutput,
   } = useBuilderContext();
 
   const { contents } = useContentListContext();
@@ -95,7 +93,7 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
       if (step.trigger?.[index]) {
         step.trigger[index].actions = [...actions];
       } else {
-        step.trigger = [{ actions, conditions: [] }];
+        step.trigger = [{ actions, conditions: [], id: cuid() }];
       }
       return step;
     });
@@ -107,7 +105,7 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
       if (step.trigger?.[index]) {
         step.trigger[index].conditions = [...conditions];
       } else {
-        step.trigger = [{ conditions, actions: [] }];
+        step.trigger = [{ conditions, actions: [], id: cuid() }];
       }
       return step;
     });
@@ -116,9 +114,9 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
   const handleOnClick = () => {
     updateCurrentStep((step) => {
       if (!step.trigger) {
-        return { ...step, trigger: [emptyTrigger] };
+        return { ...step, trigger: [{ ...emptyTrigger, id: cuid() }] };
       }
-      return { ...step, trigger: [...step.trigger, emptyTrigger] };
+      return { ...step, trigger: [...step.trigger, { ...emptyTrigger, id: cuid() }] };
     });
   };
 
@@ -147,62 +145,62 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
     });
   };
 
-  useEffect(() => {
-    if (currentMode?.mode === BuilderMode.FLOW_STEP_TRIGGER && selectorOutput && !isWebBuilder) {
-      const { triggerConditionData } = currentMode;
-      if (!triggerConditionData) {
-        return;
-      }
+  // useEffect(() => {
+  //   if (currentMode?.mode === BuilderMode.FLOW_STEP_TRIGGER && selectorOutput && !isWebBuilder) {
+  //     const { triggerConditionData } = currentMode;
+  //     if (!triggerConditionData) {
+  //       return;
+  //     }
 
-      const elementData = {
-        precision: 'loose',
-        sequence: '1st',
-        type: 'auto',
-        isDynamicContent: false,
-        selectors: selectorOutput.target.selectors,
-        content: selectorOutput.target.content,
-        screenshot: selectorOutput.screenshot.mini,
-        selectorsList: selectorOutput.target.selectorsList,
-      };
+  //     const elementData = {
+  //       precision: 'loose',
+  //       sequence: '1st',
+  //       type: 'auto',
+  //       isDynamicContent: false,
+  //       selectors: selectorOutput.target.selectors,
+  //       content: selectorOutput.target.content,
+  //       screenshot: selectorOutput.screenshot.mini,
+  //       selectorsList: selectorOutput.target.selectorsList,
+  //     };
 
-      updateCurrentStep((step) => {
-        if (step.trigger) {
-          const trigger = [...step.trigger];
-          const { index, conditionIndex, type } = triggerConditionData;
-          if (!trigger[index]) {
-            return step;
-          }
-          let conditions = [...trigger[index].conditions];
-          const operators = conditions.length > 0 ? conditions[0].operators : 'or';
+  //     updateCurrentStep((step) => {
+  //       if (step.trigger) {
+  //         const trigger = [...step.trigger];
+  //         const { index, conditionIndex, type } = triggerConditionData;
+  //         if (!trigger[index]) {
+  //           return step;
+  //         }
+  //         let conditions = [...trigger[index].conditions];
+  //         const operators = conditions.length > 0 ? conditions[0].operators : 'or';
 
-          if (conditionIndex >= conditions.length) {
-            conditions.push({
-              type,
-              operators,
-              data: {
-                logic: 'present',
-                elementData,
-              },
-            });
-          } else {
-            conditions = trigger[index].conditions.map((condition, i) => {
-              if (i === conditionIndex) {
-                return {
-                  ...condition,
-                  data: { ...condition.data, elementData },
-                };
-              }
-              return condition;
-            });
-          }
-          trigger[index].id = uuidV4();
-          trigger[index].conditions = [...conditions];
-          return { ...step, trigger };
-        }
-        return step;
-      });
-    }
-  }, [currentMode, selectorOutput, isWebBuilder]);
+  //         if (conditionIndex >= conditions.length) {
+  //           conditions.push({
+  //             type,
+  //             operators,
+  //             data: {
+  //               logic: 'present',
+  //               elementData,
+  //             },
+  //           });
+  //         } else {
+  //           conditions = trigger[index].conditions.map((condition, i) => {
+  //             if (i === conditionIndex) {
+  //               return {
+  //                 ...condition,
+  //                 data: { ...condition.data, elementData },
+  //               };
+  //             }
+  //             return condition;
+  //           });
+  //         }
+  //         trigger[index].id = uuidV4();
+  //         trigger[index].conditions = [...conditions];
+  //         return { ...step, trigger };
+  //       }
+  //       return step;
+  //     });
+  //   }
+  // }, [currentMode, selectorOutput, isWebBuilder]);
 
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
@@ -277,9 +275,7 @@ const FlowBuilderTriggerFooter = ({ attributes }: { attributes: Attribute[] }) =
     }
     setIsLoading(true);
     try {
-      const trigger = currentStep.trigger
-        ? currentStep.trigger.map(({ id, ...updates }) => updates)
-        : [];
+      const trigger = currentStep?.trigger || [];
       const ret = await updateContentStepMutation({
         variables: {
           stepId: currentStep.id,

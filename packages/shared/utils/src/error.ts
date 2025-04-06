@@ -33,7 +33,11 @@ export const getUserAttrError = (
     ret.showError = true;
     ret.errorInfo = 'Please enter a value';
   } else if (item?.dataType !== AttributeDataType.Boolean) {
-    if (data.logic !== 'any' && data.logic !== 'empty' && (!data.value || data.value === '')) {
+    if (
+      data.logic !== 'any' &&
+      data.logic !== 'empty' &&
+      (!data.listValues || data.listValues.length === 0)
+    ) {
       ret.showError = true;
       ret.errorInfo = 'Please enter a value';
     }

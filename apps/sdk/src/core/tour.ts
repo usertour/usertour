@@ -67,7 +67,10 @@ export class Tour extends BaseContent<TourStore> {
     }
     const { trigger, ...rest } = newStep;
 
-    const step = { ...rest, trigger: currentStep.trigger };
+    const step = {
+      ...rest,
+      trigger: trigger?.filter((t) => currentStep.trigger?.find((tt) => tt.id === t.id)),
+    };
 
     this.setCurrentStep(step);
 
