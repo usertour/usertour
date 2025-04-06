@@ -740,7 +740,7 @@ export class AnalyticsService {
                 some: {},
               },
             },
-            include: { bizUser: true, bizEvent: true },
+            include: { bizUser: true, bizEvent: { include: { event: true } } },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),

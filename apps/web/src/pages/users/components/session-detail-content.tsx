@@ -86,6 +86,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
             <SessionActionDropdownMenu
               session={session}
               showViewDetails={false}
+              showViewResponse={false}
               onDeleteSuccess={() => {
                 navigator(`/env/${environmentId}/users`);
               }}

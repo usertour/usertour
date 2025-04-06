@@ -59,6 +59,10 @@ export const queryBizSession = gql`
             data
             createdAt
             eventId
+            event {
+              id
+              codeName
+            }
           }
         }
       }
