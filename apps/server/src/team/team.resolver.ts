@@ -79,6 +79,7 @@ export class TeamResolver {
   }
 
   @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER, RolesScopeEnum.ADMIN, RolesScopeEnum.VIEWER])
   async activeUserProject(@Args('data') data: ActiveUserProjectInput) {
     await this.teamService.activeUserProject(data.userId, data.projectId);
     return true;

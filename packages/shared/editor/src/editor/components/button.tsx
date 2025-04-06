@@ -109,12 +109,9 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   };
 
   useEffect(() => {
-    if (isOpen === false && (!element?.data?.actions || element?.data?.actions.length === 0)) {
-      setIsShowError(true);
-    } else {
-      setIsShowError(false);
-    }
-  }, [isOpen, element?.data?.actions]);
+    const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
+    setIsShowError(isEmptyActions);
+  }, [element?.data?.actions]);
 
   return (
     <EditorError open={isShowError}>
@@ -232,7 +229,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                   contents={contentList}
                   createStep={createStep}
                 />
-                <div className="flex">
+                <div className="flex items-center">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

@@ -24,7 +24,7 @@ export const ChecklistEmbed = () => {
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
   const { themeList } = useThemeListContext();
-  const { currentVersion } = useBuilderContext();
+  const { currentVersion, projectId } = useBuilderContext();
 
   useEffect(() => {
     if (!themeList) {
@@ -82,6 +82,7 @@ export const ChecklistEmbed = () => {
                   customUploadRequest={handleCustomUploadRequest}
                   initialValue={localData.content}
                   onValueChange={handleContentChange}
+                  projectId={projectId}
                 />
                 <ChecklistProgress />
                 <ChecklistItems />

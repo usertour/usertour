@@ -13,20 +13,7 @@ import {
   ContentEditorRootColumn,
   ContentEditorRootElement,
 } from '../types/editor';
-import { createNewColumn, createNewGroup } from '../utils/helper';
-
-// Helper function to check if type is restricted
-const isRestrictedType = (type: ContentEditorElementType): boolean => {
-  const restrictedTypes = [
-    ContentEditorElementType.NPS,
-    ContentEditorElementType.STAR_RATING,
-    ContentEditorElementType.SCALE,
-    ContentEditorElementType.SINGLE_LINE_TEXT,
-    ContentEditorElementType.MULTI_LINE_TEXT,
-    ContentEditorElementType.MULTIPLE_CHOICE,
-  ];
-  return restrictedTypes.includes(type);
-};
+import { createNewColumn, createNewGroup, isRestrictedType } from '../utils/helper';
 
 const ContentEditorContext = createContext<ContentEditorContextProps | undefined>(undefined);
 

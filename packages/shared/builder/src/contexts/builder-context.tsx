@@ -24,8 +24,6 @@ export enum BuilderMode {
   LAUNCHER = 'launcher',
   CHECKLIST = 'checklist',
   BANNER = 'banner',
-  NPS = 'nps',
-  SURVEY = 'survey',
   LAUNCHER_TARGET = 'launcher-target',
   LAUNCHER_TOOLTIP = 'launcher-tooltip',
   CHECKLIST_ITEM = 'checklist-item',

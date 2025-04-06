@@ -2,20 +2,21 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
-import { AttributeCreateForm } from './attribute-create-form';
 import { useAppContext } from '@/contexts/app-context';
+import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 
 export const AttributeListHeader = () => {
   const [open, setOpen] = useState(false);
   const { refetch } = useAttributeListContext();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, project } = useAppContext();
   const handleCreate = () => {
     setOpen(true);
   };
-  const handleOnClose = () => {
+  const handleSuccess = () => {
     setOpen(false);
     refetch();
   };
+
   return (
     <>
       <div className="relative ">
@@ -42,7 +43,14 @@ export const AttributeListHeader = () => {
           </div>
         </div>
       </div>
-      <AttributeCreateForm isOpen={open} onClose={handleOnClose} />
+      {project?.id && (
+        <AttributeCreateForm
+          isOpen={open}
+          onOpenChange={setOpen}
+          onSuccess={handleSuccess}
+          projectId={project?.id}
+        />
+      )}
     </>
   );
 };

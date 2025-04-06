@@ -53,6 +53,13 @@ export type Content = {
   id: string;
   name?: string;
   type: ContentDataType;
+  config?: {
+    rollWindowConfig?: {
+      nps: number;
+      rate: number;
+      scale: number;
+    };
+  };
   buildUrl?: string;
   published?: boolean;
   createdAt?: string;

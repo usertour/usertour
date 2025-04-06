@@ -4,7 +4,7 @@ import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
 import { Dispatch, SetStateAction, createContext, useContext, useEffect, useState } from 'react';
 import { getElementError } from '@usertour-ui/shared-utils';
 import { ElementSelectorPropsData } from '@usertour-ui/types';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

@@ -20,7 +20,6 @@ import {
   Align,
   Attribute,
   Content,
-  ContentDataType,
   ContentOmbedInfo,
   ContentVersion,
   Side,
@@ -43,6 +42,7 @@ export interface ContentPopperProps {
   currentIndex: number;
   currentContent: Content | undefined;
   createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  projectId: string;
 }
 
 export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
@@ -58,13 +58,12 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       triggerRef,
       currentIndex,
       createStep,
-      currentContent,
+      projectId,
     } = props;
     const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const contentType = currentContent?.type as ContentDataType;
 
     const { upload } = useAws();
 
@@ -103,15 +102,14 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       return resp;
     };
 
+    const totalSteps = currentVersion?.steps?.length ?? 0;
+
     const progress = Math.min(
-      currentVersion?.steps?.length ? (currentIndex + 1 / currentVersion?.steps?.length) * 100 : 0,
+      totalSteps > 0 ? Math.round(((currentIndex + 1) / totalSteps) * 100) : 0,
       100,
     );
 
-    const enabledElementTypes =
-      contentType === ContentDataType.SURVEY || contentType === ContentDataType.NPS
-        ? Object.values(ContentEditorElementType)
-        : undefined;
+    const enabledElementTypes = Object.values(ContentEditorElementType);
 
     if (!triggerRef?.current) {
       return <></>;
@@ -160,6 +158,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                   onValueChange={handleEditorValueChange}
                   getOembedInfo={getOembedInfo}
                   createStep={createStep}
+                  projectId={projectId}
                 />
                 <PopperMadeWith />
                 <PopperProgress width={progress} />

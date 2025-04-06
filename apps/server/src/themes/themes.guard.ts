@@ -28,9 +28,7 @@ export class ThemesGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
+
     if (themeId) {
       const theme = await this.themeService.getTheme(themeId);
       if (!theme || (projectId && theme && projectId !== theme.projectId)) {

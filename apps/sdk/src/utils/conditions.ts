@@ -341,7 +341,7 @@ const getLatestEvent = (contentId: string, contents: SDKContent[], eventCodeName
       continue;
     }
     if (content.events && content.events.length > 0) {
-      bizEvents.push(...content.events.filter((e) => e.event.codeName === eventCodeName));
+      bizEvents.push(...content.events.filter((e) => e?.event?.codeName === eventCodeName));
     }
   }
   return findLatestEvent(bizEvents);
@@ -406,7 +406,7 @@ const isGreaterThenDuration = (
 };
 
 export const checklistIsDimissed = (content: SDKContent) => {
-  return content.events.find((event) => event.event.codeName === BizEvents.CHECKLIST_DISMISSED);
+  return content.events.find((event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
 };
 
 export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
@@ -426,7 +426,7 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const completeEventName = completeEventMapping[content.type as keyof typeof completeEventMapping];
   const lastEventName = showEventMapping[content.type as keyof typeof showEventMapping];
   const { frequency, startIfNotComplete } = content.config.autoStartRulesSetting;
-  const isComplete = content.events.find((e) => e.event.codeName === completeEventName);
+  const isComplete = content.events.find((e) => e?.event?.codeName === completeEventName);
   if (startIfNotComplete && isComplete) {
     return false;
   }
@@ -449,8 +449,8 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const showEventName = showEventMapping[content.type as keyof typeof showEventMapping];
   const showEvents = content.events.filter(
     (e) =>
-      e.event.codeName === showEventName &&
-      (content.type === ContentDataType.FLOW ? e.data.flow_step_number === 0 : true),
+      e?.event?.codeName === showEventName &&
+      (content.type === ContentDataType.FLOW ? e?.data?.flow_step_number === 0 : true),
   );
   if (!showEvents || showEvents.length === 0 || !frequency) {
     return true;

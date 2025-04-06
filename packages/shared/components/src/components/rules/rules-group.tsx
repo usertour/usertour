@@ -20,7 +20,7 @@ import {
 import { RulesCondition } from '@usertour-ui/types';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
 import { RulesCurrentTime } from './rules-current-time';

@@ -31,6 +31,7 @@ export function ContentListSidebar() {
           {contentType === 'flows' && 'Flows'}
           {contentType === 'launchers' && 'Launchers'}
           {contentType === 'checklists' && 'Checklists'}
+          {contentType === 'nps' && 'NPS'}
         </h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>

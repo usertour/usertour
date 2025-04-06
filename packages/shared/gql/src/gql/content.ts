@@ -6,6 +6,7 @@ export const getContent = gql`
       id
       name
       buildUrl
+      config
       environmentId
       editedVersionId
       publishedVersionId
@@ -169,6 +170,7 @@ export const updateContent = gql`
       name
       buildUrl
       environmentId
+      config
     }
   }
 `;

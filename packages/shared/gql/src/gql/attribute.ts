@@ -4,6 +4,7 @@ export const createAttribute = gql`
   mutation createAttribute($data: CreateAttributeInput!) {
     createAttribute(data: $data) {
       id
+      codeName
     }
   }
 `;

@@ -32,7 +32,7 @@ import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { getSegmentError } from '@usertour-ui/shared-utils';
 import { Segment } from '@usertour-ui/types';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';

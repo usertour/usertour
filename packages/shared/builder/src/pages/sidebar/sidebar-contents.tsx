@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from '@usertour-ui/alert-dialog';
 import { Button } from '@usertour-ui/button';
-import { Delete2Icon, EventIcon2 } from '@usertour-ui/icons';
+import { Delete2Icon, EventIcon2, EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { Step } from '@usertour-ui/types';
 import { forwardRef, useCallback, useState } from 'react';
@@ -63,9 +63,12 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
       >
         <div className="flex items-center justify-between ">
           <div className="grow inline-flex items-center text-sm ">
-            <DragHandleDots2Icon {...listeners} />{' '}
+            <DragHandleDots2Icon {...listeners} />
+            {step.type === 'tooltip' && <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5" />}
+            {step.type === 'modal' && <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5" />}
+            {step.type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mx-0.5" />}
             <span className="w-36 truncate ...">
-              {index + 1}、{step.name}
+              {index + 1}. {step.name}
             </span>
           </div>
           <div className="flex-none">

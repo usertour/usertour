@@ -2,7 +2,7 @@ export type BizUser = {
   id: string;
   externalId: string;
   environmentId: string;
-  data: JSON;
+  data: any;
   createdAt: string;
 };
 
@@ -33,9 +33,10 @@ export type CustomEvent = {
 
 export type BizEvent = {
   id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  event: CustomEvent;
+  createdAt: string;
+  updatedAt: string;
+  eventId: string;
+  event?: CustomEvent;
   data: any | null;
   bizUserId: string;
   bizSessionId: string | null;

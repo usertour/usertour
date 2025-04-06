@@ -7,6 +7,7 @@ import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { ParamsError, UnknownError } from '@/common/errors';
+import { processStepData } from '@/utils/content';
 
 @Injectable()
 export class ContentsService {
@@ -326,11 +327,20 @@ export class ContentsService {
           where: { id: duplicateContent.editedVersionId },
           include: { steps: true },
         });
+        // const steps = editedVersion.steps.map(
+        //   ({ id, createdAt, updatedAt, versionId, cvid, ...step }) => {
+        //     return step;
+        //   },
+        // );
         const steps = editedVersion.steps.map(
           ({ id, createdAt, updatedAt, versionId, cvid, ...step }) => {
-            return step;
+            return {
+              ...step,
+              data: processStepData(step.data),
+            };
           },
         );
+
         const content = await tx.content.create({
           data: {
             name: name || duplicateContent.name,

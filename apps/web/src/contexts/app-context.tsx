@@ -43,6 +43,7 @@ export const AppProvider = (props: AppProviderProps) => {
 
     // Reset user info if no uid or error occurs
     if (!uid || error || !data?.me) {
+      console.log('reset user info');
       setUserInfo(null);
       return;
     }

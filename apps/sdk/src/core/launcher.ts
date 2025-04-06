@@ -1,4 +1,4 @@
-import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import { BizEvents, EventAttributes, LauncherData, SDKContent } from '@usertour-ui/types';
 import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
@@ -84,7 +84,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     this.watcher.findElement();
   }
 
-  async handleOnClick({ type, data }: ContentEditorButtonElement) {
+  async handleOnClick({ type, data }: ContentEditorClickableElement) {
     if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }

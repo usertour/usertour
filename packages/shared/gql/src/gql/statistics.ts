@@ -59,6 +59,10 @@ export const queryBizSession = gql`
             data
             createdAt
             eventId
+            event {
+              id
+              codeName
+            }
           }
         }
       }
@@ -69,5 +73,21 @@ export const queryBizSession = gql`
         hasPreviousPage
       }
     }
+  }
+`;
+
+export const queryContentQuestionAnalytics = gql`
+  query queryContentQuestionAnalytics(
+    $contentId: String!
+    $startDate: String!
+    $endDate: String!
+    $timezone: String!
+  ) {
+    queryContentQuestionAnalytics(
+      contentId: $contentId
+      startDate: $startDate
+      endDate: $endDate
+      timezone: $timezone
+    )
   }
 `;

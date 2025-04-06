@@ -44,6 +44,7 @@ export enum EventAttributes {
   NUMBER_ANSWER = 'number_answer',
   QUESTION_CVID = 'question_cvid',
   QUESTION_NAME = 'question_name',
+  QUESTION_TYPE = 'question_type',
   TEXT_ANSWER = 'text_answer',
 }
 

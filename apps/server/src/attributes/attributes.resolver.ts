@@ -35,6 +35,7 @@ export class AttributesResolver {
   }
 
   @Query(() => [Attribute])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async listAttributes(@Args() { projectId, bizType }: QueryAttributeInput) {
     return await this.service.list(projectId, bizType);
   }

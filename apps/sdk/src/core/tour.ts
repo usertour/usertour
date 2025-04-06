@@ -1,8 +1,14 @@
 import { smoothScroll } from '@usertour-ui/dom';
-import { ContentEditorButtonElement } from '@usertour-ui/shared-editor';
+import {
+  ContentEditorClickableElement,
+  ContentEditorElementType,
+  ContentEditorQuestionElement,
+  isQuestionElement,
+} from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ContentActionsItemType,
+  EventAttributes,
   RulesCondition,
   SDKContent,
   Step,
@@ -61,7 +67,10 @@ export class Tour extends BaseContent<TourStore> {
     }
     const { trigger, ...rest } = newStep;
 
-    const step = { ...rest, trigger: currentStep.trigger };
+    const step = {
+      ...rest,
+      trigger: trigger?.filter((t) => currentStep.trigger?.find((tt) => tt.id === t.id)),
+    };
 
     this.setCurrentStep(step);
 
@@ -185,10 +194,51 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  async handleOnClick({ type, data }: ContentEditorButtonElement) {
-    if (type === 'button' && data.actions) {
-      await this.handleActions(data.actions);
+  async handleOnClick(element: ContentEditorClickableElement, value?: any) {
+    if (isQuestionElement(element)) {
+      const el = element as ContentEditorQuestionElement;
+      if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
+        await this.updateUser({
+          [el.data.selectedAttribute]: value,
+        });
+      }
+      await this.reportQuestionAnswer(el, value);
     }
+    if (element?.data?.actions) {
+      await this.handleActions(element.data.actions);
+    }
+  }
+
+  async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
+    const { data, type } = element;
+    const { cvid } = data;
+    const eventData: any = {
+      [EventAttributes.QUESTION_CVID]: cvid,
+      [EventAttributes.QUESTION_NAME]: data.name,
+      [EventAttributes.QUESTION_TYPE]: type,
+    };
+    if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
+      if (element.data.allowMultiple) {
+        eventData[EventAttributes.LIST_ANSWER] = value as string[];
+      } else {
+        eventData[EventAttributes.TEXT_ANSWER] = value;
+      }
+    } else if (
+      element.type === ContentEditorElementType.SCALE ||
+      element.type === ContentEditorElementType.NPS ||
+      element.type === ContentEditorElementType.STAR_RATING
+    ) {
+      eventData[EventAttributes.NUMBER_ANSWER] = value;
+    } else if (
+      element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
+      element.type === ContentEditorElementType.MULTI_LINE_TEXT
+    ) {
+      eventData[EventAttributes.TEXT_ANSWER] = value;
+    }
+    await this.reportEventWithSession({
+      eventName: BizEvents.QUESTION_ANSWERED,
+      eventData,
+    });
   }
 
   async checkStepVisible() {

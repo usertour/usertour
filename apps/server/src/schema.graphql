@@ -99,6 +99,7 @@ type BizEvent {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
+  event: Events
   eventId: String!
   id: ID!
 
@@ -149,6 +150,7 @@ type BizSession {
   bizEvent: [BizEvent!]
   bizUser: BizModel!
   bizUserId: String!
+  content: Content
   contentId: String!
 
   """Identifies the date and time when the object was created."""
@@ -160,6 +162,7 @@ type BizSession {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  version: Version
 }
 
 type BizSessionConnection {
@@ -212,6 +215,7 @@ type Common {
 
 type Content {
   buildUrl: String
+  config: JSON
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -558,8 +562,10 @@ type Mutation {
   deleteEvent(data: DeleteEventInput!): Events!
   deleteLocalization(data: DeleteLocalizationInput!): Localization!
   deleteSegment(data: DeleteSegment!): Common!
+  deleteSession(sessionId: String!): Boolean!
   deleteTheme(data: DeleteThemeInput!): Theme!
   duplicateContent(data: ContentDuplicateInput!): Content!
+  endSession(sessionId: String!): Boolean!
   inviteTeamMember(data: InviteTeamMemberInput!): Boolean!
   login(data: LoginInput!): Auth!
   logout: Boolean!
@@ -642,8 +648,10 @@ type Query {
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
   queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryOembedInfo(url: String!): OEmbed!
+  querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -783,6 +791,7 @@ input UpdateAttributeInput {
 
 input UpdateContentInput {
   buildUrl: String
+  config: JSON
   name: String
 }
 

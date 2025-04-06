@@ -33,6 +33,7 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .env.production
+.cursor-settings.json
 
 # turbo
 .turbo

@@ -27,7 +27,7 @@ import {
   useContentEditorContext,
 } from '../contexts/content-editor-context';
 import {
-  ContentEditorButtonElement,
+  ContentEditorClickableElement,
   ContentEditorElementType,
   ContentEditorProps,
   ContentEditorRoot,
@@ -35,7 +35,7 @@ import {
   ContentEditorRootElement,
   ContentEditorSideBarType,
 } from '../types/editor';
-import { defaultInitialValue } from '../utils/helper';
+import { defaultInitialValue, isClickableElement } from '../utils/helper';
 import { ContentEditorButton, ContentEditorButtonSerialize } from './components/button';
 import {
   ContentEditorColumn,
@@ -200,7 +200,7 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];
   userInfo?: BizUserInfo;
-  onClick?: (element: ContentEditorButtonElement) => void;
+  onClick?: (element: ContentEditorClickableElement, value?: any) => void;
 }) => {
   const { contents, onClick, userInfo } = props;
   const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;
@@ -216,16 +216,17 @@ export const ContentEditorSerialize = (props: {
                 if (!mapping) {
                   return <></>;
                 }
-                if (mapping.type === ContentEditorElementType.BUTTON) {
+
+                const Comp = mapping.serialize as any;
+                if (isClickableElement(element.element as ContentEditorClickableElement)) {
                   return (
-                    <ContentEditorButtonSerialize
-                      element={element.element as ContentEditorButtonElement}
+                    <Comp
+                      element={element.element as ContentEditorClickableElement}
                       onClick={onClick}
                       key={iii}
                     />
                   );
                 }
-                const Comp = mapping.serialize as any;
                 return <Comp element={element.element} key={iii} />;
               })}
             </ContentEditorColumnSerialize>
