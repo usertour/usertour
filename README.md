@@ -80,7 +80,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 🚨 **Identify problem areas**: Pinpoint steps causing user confusion or drop-offs and address the issues seamlessly.
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/8e10a03e-9d81-4158-bbff-9817769246c8" width="100%" />
+  <video src="https://github.com/user-attachments/assets/98a88a60-495c-4090-a7e3-4dde7f64714c" width="100%" />
 </p>
 
 ## How to Use?
