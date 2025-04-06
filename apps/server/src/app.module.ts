@@ -52,6 +52,7 @@ import { BullModule } from '@nestjs/bullmq';
         connection: {
           host: configService.get('redis.host'),
           port: configService.get('redis.port'),
+          family: 0,
           password: configService.get('redis.password') || undefined,
         },
       }),
