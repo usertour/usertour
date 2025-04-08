@@ -40,6 +40,7 @@ interface Plan {
   buttonText: string;
   buttonLink?: string;
   buttonClassName?: string;
+  showSpacing: boolean;
 }
 
 // Define comparison section type
@@ -65,6 +66,7 @@ const plans: Plan[] = [
     isCurrentPlan: true,
     buttonText: 'Get started',
     buttonClassName: secondaryButtonClassName,
+    showSpacing: false,
     features: [
       { icon: User2Icon, text: '3000 Monthly Active Users' },
       { icon: FlowIcon, text: 'Unlimited flows' },
@@ -83,6 +85,7 @@ const plans: Plan[] = [
     buttonText: 'Upgrade',
     isCurrentPlan: false,
     buttonClassName: primaryButtonClassName,
+    showSpacing: true,
     features: [
       { icon: CheckIcon, text: 'Everything in Hobby, plus' },
       { icon: User2Icon, text: '5000 Monthly Active Users' },
@@ -100,6 +103,7 @@ const plans: Plan[] = [
     description: 'For growing startups who need all major features.',
     buttonText: 'Upgrade',
     buttonClassName: primaryButtonClassName,
+    showSpacing: true,
     features: [
       { icon: CheckIcon, text: 'Everything in Pro, plus' },
       { icon: User2Icon, text: '10000 Monthly Active Users' },
@@ -118,6 +122,7 @@ const plans: Plan[] = [
     buttonText: 'Contact us',
     buttonLink: 'mailto:support@usertour.io',
     buttonClassName: secondaryButtonClassName,
+    showSpacing: true,
     features: [
       { icon: CheckIcon, text: 'Everything in Growth, plus' },
       { icon: CustomHomepageIcon, text: 'Security questionnaire' },
@@ -167,7 +172,7 @@ const PlanCard = ({ plan }: { plan: Plan }) => {
         </div>
       </div>
       <div className="grid auto-rows-fr gap-2">
-        <div className="h-5 hidden lg:block" />
+        <div className={cn('h-5 ', plan.showSpacing ? 'hidden lg:block' : 'hidden')} />
       </div>
       {plan.buttonLink ? (
         <a target="_self" className="flex" href={plan.buttonLink}>
