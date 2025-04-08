@@ -6,6 +6,7 @@ import { SettingsThemeList } from '@/pages/settings/themes';
 import { useParams } from 'react-router-dom';
 import { SettingsLocalizationList } from './localizations';
 import { SettingsMemberList } from './members';
+import { SettingsBilling } from './billing';
 
 export const AdminSettings = () => {
   const { settingType } = useParams();
@@ -27,6 +28,9 @@ export const AdminSettings = () => {
   }
   if (settingType === 'team') {
     return <SettingsMemberList />;
+  }
+  if (settingType === 'billing') {
+    return <SettingsBilling />;
   }
   return <SettingsAccountDetail />;
 };
