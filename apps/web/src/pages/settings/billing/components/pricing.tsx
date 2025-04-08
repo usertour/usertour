@@ -41,6 +41,7 @@ interface Plan {
   buttonLink?: string;
   buttonClassName?: string;
   showSpacing: boolean;
+  buttonVariant?: 'default' | 'secondary';
 }
 
 // Define comparison section type
@@ -53,8 +54,8 @@ interface ComparisonSection {
   }[];
 }
 
-const primaryButtonClassName =
-  'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
+// const primaryButtonClassName =
+//   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
 const secondaryButtonClassName =
   'border border-zinc-950/10 bg-white text-zinc-950/70 hover:bg-zinc-950/5 dark:border-white/10 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/5';
 
@@ -65,6 +66,7 @@ const plans: Plan[] = [
     description: 'Ideal for indie hackers and small teams to get started with Usertour.',
     isCurrentPlan: true,
     buttonText: 'Get started',
+    buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     features: [
@@ -84,7 +86,8 @@ const plans: Plan[] = [
     description: 'For small teams and startups who need extra features.',
     buttonText: 'Upgrade',
     isCurrentPlan: false,
-    buttonClassName: primaryButtonClassName,
+    buttonVariant: 'default',
+    buttonClassName: '',
     showSpacing: true,
     features: [
       { icon: CheckIcon, text: 'Everything in Hobby, plus' },
@@ -102,7 +105,8 @@ const plans: Plan[] = [
     price: '$360',
     description: 'For growing startups who need all major features.',
     buttonText: 'Upgrade',
-    buttonClassName: primaryButtonClassName,
+    buttonVariant: 'default',
+    buttonClassName: '',
     showSpacing: true,
     features: [
       { icon: CheckIcon, text: 'Everything in Pro, plus' },
@@ -121,6 +125,7 @@ const plans: Plan[] = [
     description: 'Custom built packages based on your needs',
     buttonText: 'Contact us',
     buttonLink: 'mailto:support@usertour.io',
+    buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: true,
     features: [
@@ -182,6 +187,7 @@ const PlanCard = ({ plan }: { plan: Plan }) => {
         </a>
       ) : (
         <Button
+          variant={plan.buttonVariant}
           className={cn(
             'inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] px-2.5 text-sm',
             plan.buttonClassName,
