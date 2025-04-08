@@ -25,6 +25,7 @@ import { Button } from '@usertour-ui/button';
 import { Mails, NewspaperIcon, User2Icon, ZapIcon, PanelTopIcon } from 'lucide-react';
 import { Switch } from '@usertour-ui/switch';
 import { Fragment } from 'react';
+import { cn } from '@usertour-ui/ui-utils';
 
 // Define plan type
 interface Plan {
@@ -38,6 +39,7 @@ interface Plan {
   }[];
   buttonText: string;
   buttonLink?: string;
+  buttonClassName?: string;
 }
 
 // Define comparison section type
@@ -50,6 +52,11 @@ interface ComparisonSection {
   }[];
 }
 
+const primaryButtonClassName =
+  'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
+const secondaryButtonClassName =
+  'border border-zinc-950/10 bg-white text-zinc-950/70 hover:bg-zinc-950/5 dark:border-white/10 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/5';
+
 const plans: Plan[] = [
   {
     name: 'Hobby',
@@ -57,6 +64,7 @@ const plans: Plan[] = [
     description: 'Ideal for indie hackers and small teams to get started with Usertour.',
     isCurrentPlan: true,
     buttonText: 'Get started',
+    buttonClassName: secondaryButtonClassName,
     features: [
       { icon: User2Icon, text: '3000 Monthly Active Users' },
       { icon: FlowIcon, text: 'Unlimited flows' },
@@ -74,6 +82,7 @@ const plans: Plan[] = [
     description: 'For small teams and startups who need extra features.',
     buttonText: 'Upgrade',
     isCurrentPlan: false,
+    buttonClassName: primaryButtonClassName,
     features: [
       { icon: CheckIcon, text: 'Everything in Hobby, plus' },
       { icon: User2Icon, text: '5000 Monthly Active Users' },
@@ -90,6 +99,7 @@ const plans: Plan[] = [
     price: '$360',
     description: 'For growing startups who need all major features.',
     buttonText: 'Upgrade',
+    buttonClassName: primaryButtonClassName,
     features: [
       { icon: CheckIcon, text: 'Everything in Pro, plus' },
       { icon: User2Icon, text: '10000 Monthly Active Users' },
@@ -107,6 +117,7 @@ const plans: Plan[] = [
     description: 'Custom built packages based on your needs',
     buttonText: 'Contact us',
     buttonLink: 'mailto:support@usertour.io',
+    buttonClassName: secondaryButtonClassName,
     features: [
       { icon: CheckIcon, text: 'Everything in Growth, plus' },
       { icon: CustomHomepageIcon, text: 'Security questionnaire' },
@@ -126,10 +137,8 @@ const PlanCard = ({ plan }: { plan: Plan }) => {
     <section
       className={`relative flex h-fit flex-col gap-5 rounded-2xl ${
         plan.isCurrentPlan
-          ? 'border border-zinc-950/5 dark:border-white/10'
-          : plan.name === 'Pro'
-            ? 'bg-zinc-950/5 dark:bg-white/10'
-            : 'border border-zinc-950/5 dark:border-white/10'
+          ? 'bg-zinc-950/5 dark:bg-white/10'
+          : 'border border-zinc-950/5 dark:border-white/10'
       } p-5`}
     >
       {plan.isCurrentPlan && (
@@ -168,11 +177,10 @@ const PlanCard = ({ plan }: { plan: Plan }) => {
         </a>
       ) : (
         <Button
-          className={`inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] ${
-            plan.name === 'Pro'
-              ? 'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90'
-              : 'border border-zinc-950/10 bg-white text-zinc-950/70 hover:bg-zinc-950/5 dark:border-white/10 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/5'
-          } px-2.5 text-sm`}
+          className={cn(
+            'inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] px-2.5 text-sm',
+            plan.buttonClassName,
+          )}
         >
           {plan.buttonText}
         </Button>
