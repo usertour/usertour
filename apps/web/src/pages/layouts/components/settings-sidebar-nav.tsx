@@ -62,16 +62,16 @@ const sidebarNavItems = [
     icon: <TeamIcon className={iconClassName} />,
   },
   {
-    title: 'Account',
-    href: '/settings/account',
-    role: allRoles,
-    icon: <AccountIcon className={iconClassName} />,
-  },
-  {
     title: 'Billing',
     href: '/settings/billing',
     role: ownerRoles,
     icon: <BankCardIcon className={iconClassName} />,
+  },
+  {
+    title: 'Account',
+    href: '/settings/account',
+    role: allRoles,
+    icon: <AccountIcon className={iconClassName} />,
   },
 ];
 
