@@ -1,28 +1,32 @@
 import {
-  UsersIcon,
-  AnalyticsIcon,
-  AIAssistantIcon,
-  SubpathIcon,
-  FeedbackIcon,
-  CustomizationIcon,
-  PasswordIcon,
-  GrammarIcon,
-  BrandingIcon,
-  MultiProductIcon,
-  CustomHomepageIcon,
-  SSOIcon,
-  UptimeIcon,
-  SupportIcon,
-  SecurityIcon,
-  APIIcon,
-  FeaturesIcon,
-  PublishingIcon,
-  Security2Icon,
-  CheckIcon,
-} from '@usertour-ui/icons';
+  Users,
+  BarChart2,
+  Bot,
+  GitFork,
+  MessageSquare,
+  Paintbrush,
+  KeyRound,
+  Languages,
+  Palette,
+  Layers,
+  Home,
+  Key,
+  Activity,
+  Headphones,
+  Shield,
+  Webhook,
+  Package,
+  Send,
+  Lock,
+  Check,
+  Mails,
+  Newspaper,
+  User2,
+  Zap,
+  PanelTop,
+} from 'lucide-react';
 import { FlowIcon, ChecklistIcon, LauncherIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
-import { Mails, NewspaperIcon, User2Icon, ZapIcon, PanelTopIcon } from 'lucide-react';
 import { Switch } from '@usertour-ui/switch';
 import { Fragment } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
@@ -70,14 +74,14 @@ const plans: Plan[] = [
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     features: [
-      { icon: User2Icon, text: '3000 Monthly Active Users' },
+      { icon: User2, text: '3000 Monthly Active Users' },
       { icon: FlowIcon, text: 'Unlimited flows' },
       { icon: ChecklistIcon, text: '2 checklists' },
       { icon: LauncherIcon, text: '20 launchers' },
-      { icon: AnalyticsIcon, text: 'Analytics' },
-      { icon: AIAssistantIcon, text: 'Custom theming' },
-      { icon: SubpathIcon, text: 'Version history' },
-      { icon: FeedbackIcon, text: 'Community support' },
+      { icon: BarChart2, text: 'Analytics' },
+      { icon: Bot, text: 'Custom theming' },
+      { icon: GitFork, text: 'Version history' },
+      { icon: MessageSquare, text: 'Community support' },
     ],
   },
   {
@@ -90,13 +94,13 @@ const plans: Plan[] = [
     buttonClassName: '',
     showSpacing: true,
     features: [
-      { icon: CheckIcon, text: 'Everything in Hobby, plus' },
-      { icon: User2Icon, text: '5000 Monthly Active Users' },
+      { icon: Check, text: 'Everything in Hobby, plus' },
+      { icon: User2, text: '5000 Monthly Active Users' },
       { icon: ChecklistIcon, text: 'Unlimited checklists' },
       { icon: LauncherIcon, text: 'Unlimited launchers' },
-      { icon: PanelTopIcon, text: 'Unlimited banners' },
-      { icon: BrandingIcon, text: 'Remove Usertour branding' },
-      { icon: UsersIcon, text: 'Unlimited team members' },
+      { icon: PanelTop, text: 'Unlimited banners' },
+      { icon: Palette, text: 'Remove Usertour branding' },
+      { icon: Users, text: 'Unlimited team members' },
       { icon: Mails, text: 'Email support' },
     ],
   },
@@ -109,14 +113,14 @@ const plans: Plan[] = [
     buttonClassName: '',
     showSpacing: true,
     features: [
-      { icon: CheckIcon, text: 'Everything in Pro, plus' },
-      { icon: User2Icon, text: '10000 Monthly Active Users' },
-      { icon: NewspaperIcon, text: 'Unlimited surveys/NPS' },
-      { icon: ZapIcon, text: 'No-code Event Tracking' },
-      { icon: PasswordIcon, text: 'Password protection' },
-      { icon: GrammarIcon, text: 'Localization' },
-      { icon: MultiProductIcon, text: 'Advanced integrations' },
-      { icon: SupportIcon, text: 'Priority support' },
+      { icon: Check, text: 'Everything in Pro, plus' },
+      { icon: User2, text: '10000 Monthly Active Users' },
+      { icon: Newspaper, text: 'Unlimited surveys/NPS' },
+      { icon: Zap, text: 'No-code Event Tracking' },
+      { icon: KeyRound, text: 'Password protection' },
+      { icon: Languages, text: 'Localization' },
+      { icon: Layers, text: 'Advanced integrations' },
+      { icon: Headphones, text: 'Priority support' },
     ],
   },
   {
@@ -129,14 +133,14 @@ const plans: Plan[] = [
     buttonClassName: secondaryButtonClassName,
     showSpacing: true,
     features: [
-      { icon: CheckIcon, text: 'Everything in Growth, plus' },
-      { icon: CustomHomepageIcon, text: 'Security questionnaire' },
-      { icon: SSOIcon, text: 'Single sign-on (SSO)' },
-      { icon: UptimeIcon, text: '99.9% uptime SLA' },
-      { icon: SecurityIcon, text: 'Security review' },
-      { icon: APIIcon, text: 'Custom integrations' },
-      { icon: CustomizationIcon, text: 'Custom contracts' },
-      { icon: SupportIcon, text: 'Concierge support' },
+      { icon: Check, text: 'Everything in Growth, plus' },
+      { icon: Home, text: 'Security questionnaire' },
+      { icon: Key, text: 'Single sign-on (SSO)' },
+      { icon: Activity, text: '99.9% uptime SLA' },
+      { icon: Shield, text: 'Security review' },
+      { icon: Webhook, text: 'Custom integrations' },
+      { icon: Paintbrush, text: 'Custom contracts' },
+      { icon: Headphones, text: 'Concierge support' },
     ],
   },
 ];
@@ -213,7 +217,7 @@ const ComparisonTable = () => {
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
-      icon: CustomizationIcon,
+      icon: Paintbrush,
       title: 'Usage',
       features: [
         {
@@ -231,7 +235,7 @@ const ComparisonTable = () => {
       ],
     },
     {
-      icon: FeaturesIcon,
+      icon: Package,
       title: 'Content',
       features: [
         {
@@ -269,7 +273,7 @@ const ComparisonTable = () => {
       ],
     },
     {
-      icon: PublishingIcon,
+      icon: Send,
       title: 'Features',
       features: [
         {
@@ -303,7 +307,7 @@ const ComparisonTable = () => {
       ],
     },
     {
-      icon: Security2Icon,
+      icon: Lock,
       title: 'Support & service',
       features: [
         {
@@ -357,7 +361,7 @@ const ComparisonTable = () => {
                   {typeof value === 'boolean' ? (
                     value ? (
                       <div className="pt-1">
-                        <CheckIcon className="size-4" />
+                        <Check className="size-4" />
                       </div>
                     ) : null
                   ) : (
