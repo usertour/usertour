@@ -23,11 +23,19 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
 
     return user;
   }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+
+    const req = context.switchToHttp().getRequest();
+    // Check if this is a Stripe webhook request by checking the path or headers
+    if (req.path === '/stripe/webhook' && req.headers['stripe-signature']) {
+      return true;
+    }
+
     if (isPublic) {
       return true;
     }

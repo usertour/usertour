@@ -44,19 +44,23 @@ model Account {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
-  email         String?         @unique
-  emailVerified DateTime?       @db.Timestamptz()
-  password      String?
-  avatarUrl     String?
-  name          String?
-  projects      UserOnProject[]
-  codes         Code[]
-  accounts      Account[]
-  refreshTokens RefreshToken[]
-  invites       Invite[]
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
+  email          String?         @unique
+  emailVerified  DateTime?       @db.Timestamptz()
+  password       String?
+  avatarUrl      String?
+  name           String?
+  /// Stripe customer ID
+  customerId     String?
+  /// Stripe subscription ID
+  subscriptionId String?
+  projects       UserOnProject[]
+  codes          Code[]
+  accounts       Account[]
+  refreshTokens  RefreshToken[]
+  invites        Invite[]
 }
 
 model Register {
@@ -475,4 +479,82 @@ model RefreshToken {
   updatedAt   DateTime @updatedAt @db.Timestamptz()
 
   @@index([userId])
+}
+
+/// Subscription plan
+model SubscriptionPlan {
+  /// Primary key
+  id                String   @id @default(cuid())
+  /// Subscription plan type
+  planType          String
+  /// Billing interval (monthly, yearly, etc.)
+  interval          String
+  /// Lookup key
+  lookupKey         String
+  /// Monthly active user count quota
+  mauQuota          Int      @default(3000)
+  /// Session count quota
+  sessionCountQuota Int      @default(5000)
+  /// Create timestamp
+  createdAt         DateTime @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt         DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@unique([planType, interval])
+}
+
+/// Subscription
+model Subscription {
+  /// Primary key
+  id             String    @id @default(cuid())
+  /// Stripe subscription ID
+  subscriptionId String    @unique
+  /// Stripe price lookup key
+  lookupKey      String
+  /// Plan type (free, pro, max, etc.)
+  planType       String
+  /// Billing interval (monthly, yearly, etc.)
+  interval       String
+  /// User ID
+  userId         String
+  /// Stripe subscription status
+  status         String
+  /// Whether this is a trial subscription
+  isTrial        Boolean   @default(false)
+  /// Override plan quota (JSON string)
+  overridePlan   Json?     @db.JsonB
+  /// Cancel timestamp
+  cancelAt       DateTime? @db.Timestamptz()
+  /// Create timestamp
+  createdAt      DateTime  @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([userId])
+  @@index([status, cancelAt])
+}
+
+model CheckoutSession {
+  /// Primary key
+  id             String   @id @default(cuid())
+  /// Stripe checkout session ID
+  sessionId      String
+  /// User ID
+  userId         String
+  /// Price lookup key
+  lookupKey      String
+  /// Payment status
+  paymentStatus  String?
+  /// Stripe subscription ID
+  subscriptionId String?
+  /// Stripe invoice ID
+  invoiceId      String?
+  /// Stripe customer ID
+  customerId     String?
+  /// Create timestamp
+  createdAt      DateTime @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([sessionId])
 }

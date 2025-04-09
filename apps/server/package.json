@@ -46,6 +46,7 @@
     "@aws-sdk/s3-request-presigner": "^3.441.0",
     "@aws-sdk/util-format-url": "^3.433.0",
     "@devoxa/prisma-relay-cursor-connection": "3.1.1",
+    "@golevelup/nestjs-stripe": "~0.8.2",
     "@nestjs/apollo": "12.1.0",
     "@nestjs/axios": "3.0.2",
     "@nestjs/bullmq": "~10.2.3",
@@ -97,6 +98,7 @@
     "rimraf": "5.0.1",
     "rxjs": "7.8.1",
     "socket.io": "^4.7.2",
+    "stripe": "^18.0.0",
     "uuid": "^9.0.1",
     "ws": "8.13.0"
   },

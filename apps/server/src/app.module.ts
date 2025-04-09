@@ -25,6 +25,8 @@ import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './localizations/localizations.module';
 import { TeamModule } from './team/team.module';
 import { BullModule } from '@nestjs/bullmq';
+import { StripeModule } from '@golevelup/nestjs-stripe';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -58,7 +60,20 @@ import { BullModule } from '@nestjs/bullmq';
       }),
       inject: [ConfigService],
     }),
-
+    (StripeModule as any).forRootAsync(StripeModule, {
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        apiKey: configService.get('stripe.apiKey'),
+        webhookConfig: {
+          stripeSecrets: {
+            account: configService.get('stripe.webhookSecret.account'),
+            accountTest: configService.get('stripe.webhookSecret.accountTest'),
+          },
+          requestBodyProperty: 'rawBody',
+        },
+      }),
+      inject: [ConfigService],
+    }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       useClass: GqlConfigService,
@@ -78,6 +93,7 @@ import { BullModule } from '@nestjs/bullmq';
     AnalyticsModule,
     LocalizationsModule,
     TeamModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, PrismaService],

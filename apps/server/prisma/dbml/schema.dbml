@@ -30,6 +30,8 @@ Table User {
   password String
   avatarUrl String
   name String
+  customerId String [note: 'Stripe customer ID']
+  subscriptionId String [note: 'Stripe subscription ID']
   projects UserOnProject [not null]
   codes Code [not null]
   accounts Account [not null]
@@ -448,6 +450,53 @@ Table RefreshToken {
   expiresAt DateTime [not null, note: 'Expiration timestamp']
   createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
   updatedAt DateTime [not null, note: 'Update timestamp']
+}
+
+Table SubscriptionPlan {
+  id String [pk, note: 'Primary key']
+  planType String [not null, note: 'Subscription plan type']
+  interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
+  lookupKey String [not null, note: 'Lookup key']
+  mauQuota Int [not null, default: 3000, note: 'Monthly active user count quota']
+  sessionCountQuota Int [not null, default: 5000, note: 'Session count quota']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+
+  indexes {
+    (planType, interval) [unique]
+  }
+
+  Note: 'Subscription plan'
+}
+
+Table Subscription {
+  id String [pk, note: 'Primary key']
+  subscriptionId String [unique, not null, note: 'Stripe subscription ID']
+  lookupKey String [not null, note: 'Stripe price lookup key']
+  planType String [not null, note: 'Plan type (free, pro, max, etc.)']
+  interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
+  userId String [not null, note: 'User ID']
+  status String [not null, note: 'Stripe subscription status']
+  isTrial Boolean [not null, default: false, note: 'Whether this is a trial subscription']
+  overridePlan Json [note: 'Override plan quota (JSON string)']
+  cancelAt DateTime [note: 'Cancel timestamp']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+
+  Note: 'Subscription'
+}
+
+Table CheckoutSession {
+  id String [pk, note: 'Primary key']
+  sessionId String [not null, note: 'Stripe checkout session ID']
+  userId String [not null, note: 'User ID']
+  lookupKey String [not null, note: 'Price lookup key']
+  paymentStatus String [note: 'Payment status']
+  subscriptionId String [note: 'Stripe subscription ID']
+  invoiceId String [note: 'Stripe invoice ID']
+  customerId String [note: 'Stripe customer ID']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
 }
 
 Enum Role {
