@@ -23,7 +23,7 @@ export class SubscriptionService implements OnModuleInit {
 
   constructor(
     protected readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    private readonly configService: ConfigService,
     @InjectStripeClient() private readonly stripeClient: Stripe,
     @InjectQueue(QUEUE_CHECK_CANCELED_SUBSCRIPTIONS)
     private readonly checkCanceledSubscriptionsQueue: Queue,
@@ -123,32 +123,31 @@ export class SubscriptionService implements OnModuleInit {
     const session = await this.stripeClient.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: price.id, quantity: 1 }],
-      success_url: this.config.get('stripe.sessionSuccessUrl'),
-      cancel_url: this.config.get('stripe.sessionCancelUrl'),
+      success_url: this.configService.get('stripe.sessionSuccessUrl'),
+      cancel_url: this.configService.get('stripe.sessionCancelUrl'),
       client_reference_id: id,
       customer: customerId || undefined,
       customer_email: !customerId ? userPo?.email : undefined,
       allow_promotion_codes: true,
     });
 
-    await this.prisma.$transaction([
-      this.prisma.checkoutSession.create({
+    await this.prisma.$transaction(async (prisma) => {
+      await prisma.checkoutSession.create({
         data: {
           userId: id,
           sessionId: session.id,
           lookupKey,
         },
-      }),
+      });
+
       // Only update if customer ID changed
-      ...(!userPo?.customerId || userPo.customerId !== session.customer
-        ? [
-            this.prisma.user.update({
-              where: { id },
-              data: { customerId: session.customer as string },
-            }),
-          ]
-        : []),
-    ]);
+      if (!userPo?.customerId || userPo.customerId !== session.customer) {
+        await prisma.user.update({
+          where: { id },
+          data: { customerId: session.customer as string },
+        });
+      }
+    });
 
     return session;
   }
@@ -191,7 +190,7 @@ export class SubscriptionService implements OnModuleInit {
 
     const session = await this.stripeClient.billingPortal.sessions.create({
       customer: customerId,
-      return_url: this.config.get('stripe.portalReturnUrl'),
+      return_url: this.configService.get('stripe.portalReturnUrl'),
     });
     return session;
   }

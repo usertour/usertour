@@ -1,5 +1,4 @@
 import {
-  Users,
   BarChart2,
   Bot,
   GitFork,
@@ -23,7 +22,8 @@ import {
   Newspaper,
   User2,
   Zap,
-  PanelTop,
+  Users2,
+  Calendar,
 } from 'lucide-react';
 import { FlowIcon, ChecklistIcon, LauncherIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
@@ -72,12 +72,12 @@ const plans: Plan[] = [
     buttonText: 'Get started',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
-    showSpacing: false,
+    showSpacing: true,
     features: [
       { icon: User2, text: '3000 Monthly Active Users' },
       { icon: FlowIcon, text: 'Unlimited flows' },
-      { icon: ChecklistIcon, text: '2 checklists' },
-      { icon: LauncherIcon, text: '20 launchers' },
+      { icon: ChecklistIcon, text: 'Unlimited checklists' },
+      { icon: LauncherIcon, text: 'Unlimited launchers' },
       { icon: BarChart2, text: 'Analytics' },
       { icon: Bot, text: 'Custom theming' },
       { icon: GitFork, text: 'Version history' },
@@ -96,11 +96,11 @@ const plans: Plan[] = [
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
       { icon: User2, text: '5000 Monthly Active Users' },
-      { icon: ChecklistIcon, text: 'Unlimited checklists' },
-      { icon: LauncherIcon, text: 'Unlimited launchers' },
-      { icon: PanelTop, text: 'Unlimited banners' },
+      { icon: Newspaper, text: 'Unlimited surveys/NPS' },
+      { icon: Zap, text: 'Unlimited Event Tracking' },
+      { icon: Users2, text: '3 team members' },
+      { icon: Calendar, text: '3 years data retention' },
       { icon: Palette, text: 'Remove Usertour branding' },
-      { icon: Users, text: 'Unlimited team members' },
       { icon: Mails, text: 'Email support' },
     ],
   },
@@ -115,10 +115,10 @@ const plans: Plan[] = [
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
       { icon: User2, text: '10000 Monthly Active Users' },
-      { icon: Newspaper, text: 'Unlimited surveys/NPS' },
-      { icon: Zap, text: 'No-code Event Tracking' },
-      { icon: KeyRound, text: 'Password protection' },
       { icon: Languages, text: 'Localization' },
+      { icon: KeyRound, text: 'Password protection' },
+      { icon: Users2, text: 'Unlimited team members' },
+      { icon: Calendar, text: '5 years data retention' },
       { icon: Layers, text: 'Advanced integrations' },
       { icon: Headphones, text: 'Priority support' },
     ],
@@ -229,6 +229,14 @@ const ComparisonTable = () => {
           values: ['3000', '5000', '10000', 'Custom'],
         },
         {
+          name: 'Sessions (Monthly)',
+          values: ['5000', 'Unlimited', 'Unlimited', 'Unlimited'],
+        },
+        {
+          name: 'Data Retention',
+          values: ['1 Year', '3 Years', '5 Years', 'Custom'],
+        },
+        {
           name: 'Usage limits can be upgraded',
           values: [true, true, true, true],
         },
@@ -244,27 +252,23 @@ const ComparisonTable = () => {
         },
         {
           name: 'Checklists',
-          values: ['2', 'Unlimited', 'Unlimited', 'Unlimited'],
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Launchers',
-          values: ['20', 'Unlimited', 'Unlimited', 'Unlimited'],
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
+        },
+        {
+          name: 'Survey/NPS',
+          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Banners',
-          values: ['', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Survey/NPS (coming soon)',
-          values: ['', 'Unlimited', 'Unlimited', 'Unlimited'],
+          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Event Trackers(coming soon)',
-          values: ['', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Flow/checklist views',
-          values: [true, true, true, true],
+          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'No Usertour-branding',
@@ -380,7 +384,7 @@ const ComparisonTable = () => {
 const Pricing = () => {
   return (
     <>
-      <div className="mx-auto max-w-6xl pb-10">
+      <div className="mx-auto pb-10">
         <div className="flex flex-col divide-zinc-950/5 dark:divide-white/5">
           <div>
             <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">

@@ -32,7 +32,7 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
 
     const req = context.switchToHttp().getRequest();
     // Check if this is a Stripe webhook request by checking the path or headers
-    if (req.path === '/stripe/webhook' && req.headers['stripe-signature']) {
+    if (req && req.path === '/stripe/webhook' && req.headers['stripe-signature']) {
       return true;
     }
 

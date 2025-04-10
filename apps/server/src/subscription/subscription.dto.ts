@@ -96,23 +96,15 @@ export type SubscriptionPlan = {
   /**
    * Subscription plan type
    */
-  planType?: string;
+  planType: string;
   /**
-   * Token quota per month (T1)
+   * Session count quota
    */
-  t1TokenQuota?: number;
+  sessionCountQuota: number;
   /**
-   * Token quota per month (T2)
+   * MAU quota
    */
-  t2TokenQuota?: number;
-  /**
-   * Object storage quota (in bytes)
-   */
-  objectStorageQuota?: string;
-  /**
-   * Vector storage quota (in bytes)
-   */
-  vectorStorageQuota?: string;
+  mauQuota: number;
 };
 
 export type GetSubscriptionPlansResponse = {
