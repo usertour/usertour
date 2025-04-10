@@ -5,6 +5,7 @@ import { CheckCanceledSubscriptionsProcessor } from './subscription.processor';
 import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
 import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionController } from './subscription.controller';
+import { SubscriptionResolver } from './subscription.resolver';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { SubscriptionController } from './subscription.controller';
     }),
     (StripeModule as any).externallyConfigured(StripeModule, 0),
   ],
-  providers: [SubscriptionService, CheckCanceledSubscriptionsProcessor],
+  providers: [SubscriptionService, CheckCanceledSubscriptionsProcessor, SubscriptionResolver],
   controllers: [SubscriptionController],
   exports: [SubscriptionService],
 })

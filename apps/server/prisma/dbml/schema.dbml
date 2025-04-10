@@ -453,7 +453,7 @@ Table RefreshToken {
 }
 
 Table SubscriptionPlan {
-  id BigInt [pk, increment, note: 'Primary key']
+  id String [pk, note: 'Primary key']
   planType String [not null, note: 'Subscription plan type']
   interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
   lookupKey String [not null, note: 'Lookup key']

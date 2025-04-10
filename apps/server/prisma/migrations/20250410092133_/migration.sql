@@ -4,7 +4,7 @@ ADD COLUMN     "subscriptionId" TEXT;
 
 -- CreateTable
 CREATE TABLE "SubscriptionPlan" (
-    "id" BIGSERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "planType" TEXT NOT NULL,
     "interval" TEXT NOT NULL,
     "lookupKey" TEXT NOT NULL,

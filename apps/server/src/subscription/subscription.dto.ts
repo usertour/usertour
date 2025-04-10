@@ -1,3 +1,7 @@
+import { PickType } from '@nestjs/graphql';
+import { InputType } from '@nestjs/graphql';
+import { SubscriptionPlanModel } from './subscription.model';
+
 /**
  * Payment recurring interval
  */
@@ -57,16 +61,12 @@ export interface CreateSubscriptionParam {
   interval?: SubscriptionInterval;
 }
 
-export type CreateCheckoutSessionRequest = {
-  /**
-   * Subscription plan type
-   */
-  planType: SubscriptionPlanType;
-  /**
-   * Subscription billing interval
-   */
-  interval?: SubscriptionInterval;
-};
+@InputType()
+export class CreateCheckoutSessionRequest extends PickType(
+  SubscriptionPlanModel,
+  ['planType', 'interval'],
+  InputType,
+) {}
 
 export type CreateCheckoutSessionResponse = {
   /**

@@ -484,7 +484,7 @@ model RefreshToken {
 /// Subscription plan
 model SubscriptionPlan {
   /// Primary key
-  id                BigInt   @id @default(autoincrement())
+  id                String   @id @default(cuid())
   /// Subscription plan type
   planType          String
   /// Billing interval (monthly, yearly, etc.)

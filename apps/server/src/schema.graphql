@@ -356,6 +356,11 @@ input CreateBizUserOnSegment {
   userOnSegment: [BizUserOnSegmentInput!]!
 }
 
+input CreateCheckoutSessionRequest {
+  interval: String!
+  planType: String!
+}
+
 input CreateEnvironmentInput {
   name: String!
   projectId: String!
@@ -543,12 +548,14 @@ type Mutation {
   createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
   createBizUser(data: CreateBizInput!): Common!
   createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
+  createCheckoutSession(data: CreateCheckoutSessionRequest!): String!
   createContent(data: ContentInput!): Content!
   createContentVersion(data: ContentVersionInput!): Version!
   createEnvironments(data: CreateEnvironmentInput!): Environment!
   createEvent(data: CreateEventInput!): Events!
   createLocalization(data: CreateLocalizationInput!): Localization!
   createMagicLink(data: MagicLinkInput!): Register!
+  createPortalSession: String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
@@ -632,6 +639,7 @@ type Query {
   getContentVersion(versionId: String!): Version!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getSubscriptionPlans: [SubscriptionPlanModel!]!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
   hello(name: String!): String!
@@ -764,6 +772,20 @@ input StepInput {
 type Storage {
   cdnUrl: String!
   signedUrl: String!
+}
+
+type SubscriptionPlanModel {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  interval: String!
+  lookupKey: String!
+  mauQuota: Int!
+  planType: String!
+  sessionCountQuota: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 type Theme {
