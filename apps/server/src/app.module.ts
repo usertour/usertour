@@ -27,6 +27,8 @@ import { TeamModule } from './team/team.module';
 import { BullModule } from '@nestjs/bullmq';
 import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { LoggerModule } from 'nestjs-pino';
+import api from '@opentelemetry/api';
 
 @Module({
   imports: [
@@ -46,6 +48,21 @@ import { SubscriptionModule } from './subscription/subscription.module';
             logLevel: 'log',
           }),
         ],
+      },
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        redact: {
+          paths: ['pid', 'hostname', 'req.headers'],
+          remove: true,
+        },
+        autoLogging: false,
+        genReqId: () => api.trace.getSpan(api.context.active())?.spanContext()?.traceId,
+        customSuccessObject: (req) => ({
+          env: process.env.NODE_ENV,
+          uid: (req as any).user?.id || 'anonymous',
+        }),
+        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
       },
     }),
     BullModule.forRootAsync({

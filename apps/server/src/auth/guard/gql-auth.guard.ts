@@ -10,6 +10,7 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
   constructor(private reflector: Reflector) {
     super();
   }
+
   getRequest(context: ExecutionContext) {
     const ctx = GqlExecutionContext.create(context);
     return ctx.getContext().req;
@@ -30,9 +31,10 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
       context.getClass(),
     ]);
 
-    const req = context.switchToHttp().getRequest();
+    const contextType = context.getType<'http' | 'stripe_webhook' | 'graphql'>();
+
     // Check if this is a Stripe webhook request by checking the path or headers
-    if (req && req.path === '/stripe/webhook' && req.headers['stripe-signature']) {
+    if (contextType !== 'graphql') {
       return true;
     }
 

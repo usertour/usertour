@@ -4,6 +4,8 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
+import { Logger } from 'nestjs-pino';
+
 // import { AllExceptionsFilter } from './common/filter';
 import cookieParser from 'cookie-parser';
 
@@ -12,7 +14,11 @@ async function bootstrap() {
     rawBody: true,
     bufferLogs: false,
   });
+
   app.enableShutdownHooks();
+
+  // Use pino logger
+  app.useLogger(app.get(Logger));
 
   // Catch all exceptions
   // app.useGlobalFilters(new AllExceptionsFilter());
