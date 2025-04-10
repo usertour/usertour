@@ -15,6 +15,7 @@ import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
 import { ParamsError } from '@/common/errors';
 import { User } from '@/users/models/user.model';
+import { SubscriptionPlanModel } from './subscription.model';
 
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
@@ -415,7 +416,7 @@ export class SubscriptionService implements OnModuleInit {
     await this.cancelSubscription(sub);
   }
 
-  async getSubscriptionPlans() {
+  async getSubscriptionPlans(): Promise<SubscriptionPlanModel[]> {
     return this.prisma.subscriptionPlan.findMany();
   }
 }
