@@ -4,7 +4,6 @@ import {
   GitFork,
   MessageSquare,
   Paintbrush,
-  KeyRound,
   Languages,
   Palette,
   Layers,
@@ -20,10 +19,10 @@ import {
   Check,
   Mails,
   Newspaper,
-  User2,
   Zap,
   Users2,
   Calendar,
+  BarChart4,
 } from 'lucide-react';
 import { FlowIcon, ChecklistIcon, LauncherIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
@@ -74,7 +73,7 @@ const plans: Plan[] = [
     buttonClassName: secondaryButtonClassName,
     showSpacing: true,
     features: [
-      { icon: User2, text: '3000 Monthly Active Users' },
+      { icon: BarChart4, text: '5k sessions/month' },
       { icon: FlowIcon, text: 'Unlimited flows' },
       { icon: ChecklistIcon, text: 'Unlimited checklists' },
       { icon: LauncherIcon, text: 'Unlimited launchers' },
@@ -86,7 +85,7 @@ const plans: Plan[] = [
   },
   {
     name: 'Pro',
-    price: '$120',
+    price: '$150',
     description: 'For small teams and startups who need extra features.',
     buttonText: 'Upgrade',
     isCurrentPlan: false,
@@ -95,9 +94,9 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: User2, text: '5000 Monthly Active Users' },
-      { icon: Newspaper, text: 'Unlimited surveys/NPS' },
-      { icon: Zap, text: 'Unlimited Event Tracking' },
+      { icon: BarChart4, text: '50k sessions/month' },
+      { icon: Newspaper, text: '2 surveys/NPS questions' },
+      { icon: Zap, text: '2 No-code Event Tracking' },
       { icon: Users2, text: '3 team members' },
       { icon: Calendar, text: '3 years data retention' },
       { icon: Palette, text: 'Remove Usertour branding' },
@@ -106,7 +105,7 @@ const plans: Plan[] = [
   },
   {
     name: 'Growth',
-    price: '$360',
+    price: '$550',
     description: 'For growing startups who need all major features.',
     buttonText: 'Upgrade',
     buttonVariant: 'default',
@@ -114,11 +113,11 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
-      { icon: User2, text: '10000 Monthly Active Users' },
-      { icon: Languages, text: 'Localization' },
-      { icon: KeyRound, text: 'Password protection' },
+      { icon: BarChart4, text: '150k sessions/month' },
+      { icon: Newspaper, text: 'Unlimited surveys/NPS questions' },
+      { icon: Zap, text: 'Unlimited No-code Event Tracking' },
       { icon: Users2, text: 'Unlimited team members' },
-      { icon: Calendar, text: '5 years data retention' },
+      { icon: Languages, text: 'Localization' },
       { icon: Layers, text: 'Advanced integrations' },
       { icon: Headphones, text: 'Priority support' },
     ],
@@ -149,7 +148,7 @@ const plans: Plan[] = [
 const PlanCard = ({ plan }: { plan: Plan }) => {
   return (
     <section
-      className={`relative flex h-fit flex-col gap-5 rounded-2xl ${
+      className={`relative flex h-fit flex-col gap-5 rounded-2xl h-full ${
         plan.isCurrentPlan
           ? 'bg-zinc-950/5 dark:bg-white/10'
           : 'border border-zinc-950/5 dark:border-white/10'
@@ -222,15 +221,15 @@ const ComparisonTable = () => {
       features: [
         {
           name: 'Price (monthly billing)',
-          values: ['$0/month', '$120/month', '$360/month', 'Chat with us'],
+          values: ['$0/month', '$150/month', '$550/month', 'Chat with us'],
         },
         {
-          name: 'MAUs (Monthly Active Users)',
-          values: ['3000', '5000', '10000', 'Custom'],
+          name: 'End users',
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Sessions (Monthly)',
-          values: ['5000', 'Unlimited', 'Unlimited', 'Unlimited'],
+          values: ['5000', '50000', '150000', 'Custom'],
         },
         {
           name: 'Data Retention',
@@ -259,16 +258,16 @@ const ComparisonTable = () => {
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Survey/NPS',
-          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
+          name: 'Banners',
+          values: ['1', '2', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Banners',
-          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
+          name: 'Survey/NPS',
+          values: ['1', '2', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Event Trackers(coming soon)',
-          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
+          values: ['1', '2', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'No Usertour-branding',
@@ -306,6 +305,10 @@ const ComparisonTable = () => {
         },
         {
           name: 'Localization',
+          values: [false, false, true, true],
+        },
+        {
+          name: 'Advanced integrations',
           values: [false, false, true, true],
         },
       ],
