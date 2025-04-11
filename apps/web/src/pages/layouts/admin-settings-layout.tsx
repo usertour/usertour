@@ -16,7 +16,9 @@ export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
         <AdminMainNewNav />
         <AdminLayoutNewContent className={settingType === 'account' ? 'bg-slate-50' : ''}>
           <SettingsSidebarNav />
-          <ScrollArea className="h-full w-full ">{children}</ScrollArea>
+          <ScrollArea className="h-full w-full ">
+            <div className="mx-auto max-w-6xl">{children}</div>
+          </ScrollArea>
         </AdminLayoutNewContent>
       </AdminNewLayout>
     </>
