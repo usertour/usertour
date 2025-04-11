@@ -216,7 +216,7 @@ const PlanCard = ({ plan, isYearly }: { plan: Plan; isYearly: boolean }) => {
 };
 
 // Comparison Table Component
-const ComparisonTable = () => {
+const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
@@ -225,7 +225,12 @@ const ComparisonTable = () => {
       features: [
         {
           name: 'Price (monthly billing)',
-          values: ['$0/month', '$150/month', '$550/month', 'Chat with us'],
+          values: [
+            isYearly ? '$0/month' : '$0/month',
+            isYearly ? '$120/month' : '$150/month',
+            isYearly ? '$440/month' : '$550/month',
+            'Chat with us',
+          ],
         },
         {
           name: 'End users',
@@ -428,7 +433,7 @@ const Pricing = () => {
                   <PlanCard key={plan.name} plan={plan} isYearly={isYearly} />
                 ))}
               </div>
-              <ComparisonTable />
+              <ComparisonTable isYearly={isYearly} />
             </div>
           </div>
         </div>
