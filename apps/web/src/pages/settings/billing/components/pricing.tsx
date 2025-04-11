@@ -73,7 +73,7 @@ const plans: Plan[] = [
     buttonText: 'Get started',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
-    showSpacing: true,
+    showSpacing: false,
     features: [
       { icon: BarChart4, text: '5k sessions/month' },
       { icon: FlowIcon, text: 'Unlimited flows' },
