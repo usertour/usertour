@@ -1,9 +1,9 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { SubscriptionService } from './subscription.service';
-import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
 import { CreateCheckoutSessionRequest } from './subscription.dto';
 import { SubscriptionPlanModel } from './subscription.model';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { User } from '@/users/models/user.model';
 
 @Resolver()
 export class SubscriptionResolver {
@@ -12,15 +12,23 @@ export class SubscriptionResolver {
   @Mutation(() => String)
   async createCheckoutSession(
     @UserEntity() user: User,
-    @Args('data') param: CreateCheckoutSessionRequest,
+    @Args('data') { projectId, planType, interval }: CreateCheckoutSessionRequest,
   ): Promise<string> {
-    const session = await this.subscriptionService.createCheckoutSession(user, param);
+    const session = await this.subscriptionService.createCheckoutSession(
+      user.id,
+      projectId,
+      planType,
+      interval,
+    );
     return session.url;
   }
 
   @Mutation(() => String)
-  async createPortalSession(@UserEntity() user: User): Promise<string> {
-    const session = await this.subscriptionService.createPortalSession(user);
+  async createPortalSession(
+    @UserEntity() user: User,
+    @Args('projectId') projectId: string,
+  ): Promise<string> {
+    const session = await this.subscriptionService.createPortalSession(user.id, projectId);
     return session.url;
   }
 

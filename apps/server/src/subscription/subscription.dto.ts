@@ -1,6 +1,4 @@
-import { PickType } from '@nestjs/graphql';
-import { InputType } from '@nestjs/graphql';
-import { SubscriptionPlanModel } from './subscription.model';
+import { InputType, Field } from '@nestjs/graphql';
 
 /**
  * Payment recurring interval
@@ -10,7 +8,7 @@ export type SubscriptionInterval = 'monthly' | 'yearly';
 /**
  * Subscription plan type
  */
-export type SubscriptionPlanType = 'free' | 'plus' | 'pro' | 'max' | 'ultra';
+export type SubscriptionPlanType = 'hobby' | 'pro' | 'growth' | 'enterprise';
 
 /**
  * Subscription status
@@ -62,54 +60,13 @@ export interface CreateSubscriptionParam {
 }
 
 @InputType()
-export class CreateCheckoutSessionRequest extends PickType(
-  SubscriptionPlanModel,
-  ['planType', 'interval'],
-  InputType,
-) {}
+export class CreateCheckoutSessionRequest {
+  @Field(() => String)
+  planType: SubscriptionPlanType;
 
-export type CreateCheckoutSessionResponse = {
-  /**
-   * Checkout session
-   */
-  data?: {
-    /**
-     * Checkout session URL
-     */
-    url?: string;
-  };
-};
+  @Field(() => String)
+  interval: SubscriptionInterval;
 
-export type CreatePortalSessionResponse = {
-  /**
-   * Portal session
-   */
-  data?: {
-    /**
-     * Portal session URL
-     */
-    url?: string;
-  };
-};
-
-export type SubscriptionPlan = {
-  /**
-   * Subscription plan type
-   */
-  planType: string;
-  /**
-   * Session count quota
-   */
-  sessionCountQuota: number;
-  /**
-   * MAU quota
-   */
-  mauQuota: number;
-};
-
-export type GetSubscriptionPlansResponse = {
-  /**
-   * Subscription plans
-   */
-  data?: Array<SubscriptionPlan>;
-};
+  @Field(() => String)
+  projectId: string;
+}

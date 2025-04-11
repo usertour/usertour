@@ -44,23 +44,19 @@ model Account {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
-  email          String?         @unique
-  emailVerified  DateTime?       @db.Timestamptz()
-  password       String?
-  avatarUrl      String?
-  name           String?
-  /// Stripe customer ID
-  customerId     String?
-  /// Stripe subscription ID
-  subscriptionId String?
-  projects       UserOnProject[]
-  codes          Code[]
-  accounts       Account[]
-  refreshTokens  RefreshToken[]
-  invites        Invite[]
+  id            String          @id @default(cuid())
+  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
+  email         String?         @unique
+  emailVerified DateTime?       @db.Timestamptz()
+  password      String?
+  avatarUrl     String?
+  name          String?
+  projects      UserOnProject[]
+  codes         Code[]
+  accounts      Account[]
+  refreshTokens RefreshToken[]
+  invites       Invite[]
 }
 
 model Register {
@@ -98,18 +94,22 @@ model Code {
 }
 
 model Project {
-  id            String          @id @default(cuid())
-  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
-  name          String
-  logoUrl       String?
-  users         UserOnProject[]
-  environments  Environment[]
-  themes        Theme[]
-  attributes    Attribute[]
-  events        Event[]
-  localizations Localization[]
-  invites       Invite[]
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
+  name           String
+  logoUrl        String?
+  /// Stripe customer ID
+  customerId     String?
+  /// Stripe subscription ID
+  subscriptionId String?
+  users          UserOnProject[]
+  environments   Environment[]
+  themes         Theme[]
+  attributes     Attribute[]
+  events         Event[]
+  localizations  Localization[]
+  invites        Invite[]
 }
 
 model UserOnProject {
@@ -515,8 +515,8 @@ model Subscription {
   planType       String
   /// Billing interval (monthly, yearly, etc.)
   interval       String
-  /// User ID
-  userId         String
+  /// Project ID
+  projectId      String
   /// Stripe subscription status
   status         String
   /// Whether this is a trial subscription
@@ -530,7 +530,7 @@ model Subscription {
   /// Update timestamp
   updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamptz()
 
-  @@index([userId])
+  @@index([projectId])
   @@index([status, cancelAt])
 }
 
@@ -539,8 +539,8 @@ model CheckoutSession {
   id             String   @id @default(cuid())
   /// Stripe checkout session ID
   sessionId      String
-  /// User ID
-  userId         String
+  /// Project ID
+  projectId      String
   /// Price lookup key
   lookupKey      String
   /// Payment status

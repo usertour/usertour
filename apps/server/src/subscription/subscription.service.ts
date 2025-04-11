@@ -3,18 +3,13 @@ import Stripe from 'stripe';
 import { InjectStripeClient, StripeWebhookHandler } from '@golevelup/nestjs-stripe';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import {
-  CreateCheckoutSessionRequest,
-  SubscriptionInterval,
-  SubscriptionPlanType,
-} from './subscription.dto';
+import { SubscriptionInterval, SubscriptionPlanType } from './subscription.dto';
 import { CreateSubscriptionParam } from '@/subscription/subscription.dto';
 import { Subscription, Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
 import { ParamsError } from '@/common/errors';
-import { User } from '@/users/models/user.model';
 import { SubscriptionPlanModel } from './subscription.model';
 
 @Injectable()
@@ -77,10 +72,23 @@ export class SubscriptionService implements OnModuleInit {
     this.logger.log('Canceled subscriptions check job scheduled');
   }
 
-  async createCheckoutSession(user: User, param: CreateCheckoutSessionRequest) {
-    const { id } = user;
-    const { planType, interval } = param;
-    const userPo = await this.prisma.user.findUnique({ where: { id } });
+  async createCheckoutSession(
+    userId: string,
+    projectId: string,
+    planType: SubscriptionPlanType,
+    interval: SubscriptionInterval,
+  ) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) {
+      throw new ParamsError(`No project found for id: ${projectId}`);
+    }
+    const owner = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!owner) {
+      throw new ParamsError(`No owner found for project: ${projectId}`);
+    }
 
     const plan = await this.prisma.subscriptionPlan.findFirst({
       where: { planType, interval },
@@ -99,12 +107,12 @@ export class SubscriptionService implements OnModuleInit {
     }
 
     // Try to find or create customer
-    let customerId = userPo?.customerId;
+    let customerId = project.customerId;
 
-    if (!customerId && userPo?.email) {
+    if (!customerId && owner?.email) {
       // Search for existing customers with this email
       const existingCustomers = await this.stripeClient.customers.list({
-        email: userPo.email,
+        email: owner.email,
         limit: 1,
       });
 
@@ -112,9 +120,9 @@ export class SubscriptionService implements OnModuleInit {
         // Use existing customer if found
         customerId = existingCustomers.data[0].id;
 
-        // Update user with the found customerId
-        await this.prisma.user.update({
-          where: { id },
+        // Update project with the found customerId
+        await this.prisma.project.update({
+          where: { id: projectId },
           data: { customerId },
         });
       }
@@ -126,25 +134,25 @@ export class SubscriptionService implements OnModuleInit {
       line_items: [{ price: price.id, quantity: 1 }],
       success_url: this.configService.get('stripe.sessionSuccessUrl'),
       cancel_url: this.configService.get('stripe.sessionCancelUrl'),
-      client_reference_id: id,
+      client_reference_id: projectId,
       customer: customerId || undefined,
-      customer_email: !customerId ? userPo?.email : undefined,
+      customer_email: !customerId ? owner?.email : undefined,
       allow_promotion_codes: true,
     });
 
     await this.prisma.$transaction(async (prisma) => {
       await prisma.checkoutSession.create({
         data: {
-          userId: id,
+          projectId,
           sessionId: session.id,
           lookupKey,
         },
       });
 
       // Only update if customer ID changed
-      if (!userPo?.customerId || userPo.customerId !== session.customer) {
-        await prisma.user.update({
-          where: { id },
+      if (!project.customerId || project.customerId !== session.customer) {
+        await prisma.project.update({
+          where: { id: projectId },
           data: { customerId: session.customer as string },
         });
       }
@@ -153,25 +161,28 @@ export class SubscriptionService implements OnModuleInit {
     return session;
   }
 
-  async createPortalSession(user: User) {
-    const userPo = await this.prisma.user.findUnique({
-      select: { customerId: true, email: true },
-      where: { id: user?.id },
+  async createPortalSession(userId: string, projectId: string) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) {
+      throw new ParamsError(`No project found for id: ${projectId}`);
+    }
+    const owner = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
-    if (!userPo) {
-      throw new ParamsError(`No user found for uid ${user?.id}`);
+    if (!owner) {
+      throw new ParamsError(`No owner found for project: ${projectId}`);
     }
 
-    let customerId = userPo?.customerId;
+    let customerId = project.customerId;
     if (!customerId) {
       // Check if email exists before searching
-      if (!userPo?.email) {
-        throw new ParamsError(`User ${user?.id} has no email address`);
+      if (!owner?.email) {
+        throw new ParamsError(`User ${owner?.id} has no email address`);
       }
 
       // Search for existing customers with this email
       const existingCustomers = await this.stripeClient.customers.list({
-        email: userPo.email,
+        email: owner.email,
         limit: 1,
       });
 
@@ -179,13 +190,13 @@ export class SubscriptionService implements OnModuleInit {
         // Use existing customer if found
         customerId = existingCustomers.data[0]?.id;
 
-        // Update user with the found customerId
-        await this.prisma.user.update({
-          where: { id: user?.id },
+        // Update project with the found customerId
+        await this.prisma.project.update({
+          where: { id: projectId },
           data: { customerId },
         });
       } else {
-        throw new ParamsError(`No customer found for user ${user?.id}`);
+        throw new ParamsError(`No customer found for user ${owner?.id}`);
       }
     }
 
@@ -202,8 +213,8 @@ export class SubscriptionService implements OnModuleInit {
     });
   }
 
-  async createSubscription(userId: string, param: CreateSubscriptionParam) {
-    this.logger.log(`Creating subscription for user ${userId}: ${JSON.stringify(param)}`);
+  async createSubscription(projectId: string, param: CreateSubscriptionParam) {
+    this.logger.log(`Creating subscription for project ${projectId}: ${JSON.stringify(param)}`);
 
     return this.prisma.$transaction(async (prisma) => {
       const existingSub = await prisma.subscription.findUnique({
@@ -221,14 +232,14 @@ export class SubscriptionService implements OnModuleInit {
           lookupKey: param.lookupKey,
           planType: param.planType,
           interval: param.interval,
-          userId,
+          projectId,
           status: param.status,
         },
       });
 
-      // Update user's subscriptionId
-      await prisma.user.update({
-        where: { id: userId },
+      // Update project's subscriptionId
+      await prisma.project.update({
+        where: { id: projectId },
         data: { subscriptionId: param.subscriptionId, customerId: param.customerId },
       });
 
@@ -244,21 +255,21 @@ export class SubscriptionService implements OnModuleInit {
         data: { status: 'canceled' },
       });
 
-      const user = await prisma.user.findUnique({ where: { id: sub.userId } });
-      if (!user) {
-        this.logger.error(`No user found for uid ${sub.userId}`);
+      const project = await prisma.project.findUnique({ where: { id: sub.projectId } });
+      if (!project) {
+        this.logger.error(`No project found for uid ${sub.projectId}`);
         return;
       }
 
-      // Proceed only if the user's current subscription matches the one to be canceled
-      if (user.subscriptionId !== sub.subscriptionId) {
-        this.logger.warn(`Subscription ${sub.subscriptionId} not valid for user ${user.id}`);
+      // Proceed only if the project's current subscription matches the one to be canceled
+      if (project.subscriptionId !== sub.subscriptionId) {
+        this.logger.warn(`Subscription ${sub.subscriptionId} not valid for project ${project.id}`);
         return;
       }
 
-      // Remove user's subscriptionId
-      await prisma.user.update({
-        where: { id: sub.userId },
+      // Remove project's subscriptionId
+      await prisma.project.update({
+        where: { id: project.id },
         data: { subscriptionId: null },
       });
     });
@@ -291,7 +302,7 @@ export class SubscriptionService implements OnModuleInit {
       return;
     }
 
-    const userId = session.client_reference_id;
+    const projectId = session.client_reference_id;
     const customerId = session.customer as string;
     const subscriptionId = session.subscription as string;
 
@@ -305,8 +316,8 @@ export class SubscriptionService implements OnModuleInit {
       return;
     }
 
-    if (checkoutSession.userId !== userId) {
-      this.logger.error(`Checkout session ${session.id} does not match user ${userId}`);
+    if (checkoutSession.projectId !== projectId) {
+      this.logger.error(`Checkout session ${session.id} does not match project ${projectId}`);
       return;
     }
 
@@ -319,15 +330,15 @@ export class SubscriptionService implements OnModuleInit {
     });
 
     // Check if customerId is already associated with this user
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
       select: { customerId: true },
     });
 
     // Update user's customerId if it's missing or different
-    if (!user?.customerId || user.customerId !== customerId) {
-      await this.prisma.user.update({
-        where: { id: userId },
+    if (!project?.customerId || project.customerId !== customerId) {
+      await this.prisma.project.update({
+        where: { id: projectId },
         data: { customerId },
       });
     }
@@ -338,7 +349,7 @@ export class SubscriptionService implements OnModuleInit {
 
     const { planType, interval } = plan;
 
-    await this.createSubscription(userId, {
+    await this.createSubscription(projectId, {
       planType: planType as SubscriptionPlanType,
       interval: interval as SubscriptionInterval,
       lookupKey: checkoutSession.lookupKey,
@@ -347,7 +358,9 @@ export class SubscriptionService implements OnModuleInit {
       customerId,
     });
 
-    this.logger.log(`Successfully processed checkout session ${session.id} for user ${userId}`);
+    this.logger.log(
+      `Successfully processed checkout session ${session.id} for project ${projectId}`,
+    );
   }
 
   @StripeWebhookHandler('customer.subscription.created')

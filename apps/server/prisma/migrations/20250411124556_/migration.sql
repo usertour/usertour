@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE "User" ADD COLUMN     "customerId" TEXT,
+ALTER TABLE "Project" ADD COLUMN     "customerId" TEXT,
 ADD COLUMN     "subscriptionId" TEXT;
 
 -- CreateTable
@@ -23,7 +23,7 @@ CREATE TABLE "Subscription" (
     "lookupKey" TEXT NOT NULL,
     "planType" TEXT NOT NULL,
     "interval" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
     "status" TEXT NOT NULL,
     "isTrial" BOOLEAN NOT NULL DEFAULT false,
     "overridePlan" JSONB,
@@ -38,7 +38,7 @@ CREATE TABLE "Subscription" (
 CREATE TABLE "CheckoutSession" (
     "id" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
     "lookupKey" TEXT NOT NULL,
     "paymentStatus" TEXT,
     "subscriptionId" TEXT,
@@ -57,7 +57,7 @@ CREATE UNIQUE INDEX "SubscriptionPlan_planType_interval_key" ON "SubscriptionPla
 CREATE UNIQUE INDEX "Subscription_subscriptionId_key" ON "Subscription"("subscriptionId");
 
 -- CreateIndex
-CREATE INDEX "Subscription_userId_idx" ON "Subscription"("userId");
+CREATE INDEX "Subscription_projectId_idx" ON "Subscription"("projectId");
 
 -- CreateIndex
 CREATE INDEX "Subscription_status_cancelAt_idx" ON "Subscription"("status", "cancelAt");

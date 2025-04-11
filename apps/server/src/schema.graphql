@@ -359,6 +359,7 @@ input CreateBizUserOnSegment {
 input CreateCheckoutSessionRequest {
   interval: String!
   planType: String!
+  projectId: String!
 }
 
 input CreateEnvironmentInput {
@@ -555,7 +556,7 @@ type Mutation {
   createEvent(data: CreateEventInput!): Events!
   createLocalization(data: CreateLocalizationInput!): Localization!
   createMagicLink(data: MagicLinkInput!): Register!
-  createPortalSession: String!
+  createPortalSession(projectId: String!): String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!

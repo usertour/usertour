@@ -30,8 +30,6 @@ Table User {
   password String
   avatarUrl String
   name String
-  customerId String [note: 'Stripe customer ID']
-  subscriptionId String [note: 'Stripe subscription ID']
   projects UserOnProject [not null]
   codes Code [not null]
   accounts Account [not null]
@@ -79,6 +77,8 @@ Table Project {
   updatedAt DateTime [not null]
   name String [not null]
   logoUrl String
+  customerId String [note: 'Stripe customer ID']
+  subscriptionId String [note: 'Stripe subscription ID']
   users UserOnProject [not null]
   environments Environment [not null]
   themes Theme [not null]
@@ -475,7 +475,7 @@ Table Subscription {
   lookupKey String [not null, note: 'Stripe price lookup key']
   planType String [not null, note: 'Plan type (free, pro, max, etc.)']
   interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
-  userId String [not null, note: 'User ID']
+  projectId String [not null, note: 'Project ID']
   status String [not null, note: 'Stripe subscription status']
   isTrial Boolean [not null, default: false, note: 'Whether this is a trial subscription']
   overridePlan Json [note: 'Override plan quota (JSON string)']
@@ -489,7 +489,7 @@ Table Subscription {
 Table CheckoutSession {
   id String [pk, note: 'Primary key']
   sessionId String [not null, note: 'Stripe checkout session ID']
-  userId String [not null, note: 'User ID']
+  projectId String [not null, note: 'Project ID']
   lookupKey String [not null, note: 'Price lookup key']
   paymentStatus String [note: 'Payment status']
   subscriptionId String [note: 'Stripe subscription ID']
