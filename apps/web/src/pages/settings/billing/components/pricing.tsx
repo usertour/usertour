@@ -23,11 +23,12 @@ import {
   Users2,
   Calendar,
   BarChart4,
+  AlertCircle,
 } from 'lucide-react';
 import { FlowIcon, ChecklistIcon, LauncherIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
 import { Switch } from '@usertour-ui/switch';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
 
 // Define plan type
@@ -36,6 +37,7 @@ interface Plan {
   price: string;
   description: string;
   isCurrentPlan?: boolean;
+  yearlyPrice: string;
   features: {
     icon: React.ElementType;
     text: string;
@@ -66,8 +68,8 @@ const plans: Plan[] = [
   {
     name: 'Hobby',
     price: '$0',
+    yearlyPrice: '$0',
     description: 'Ideal for indie hackers and small teams to get started with Usertour.',
-    isCurrentPlan: true,
     buttonText: 'Get started',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
@@ -86,17 +88,17 @@ const plans: Plan[] = [
   {
     name: 'Pro',
     price: '$150',
+    yearlyPrice: '$120',
     description: 'For small teams and startups who need extra features.',
     buttonText: 'Upgrade',
-    isCurrentPlan: false,
     buttonVariant: 'default',
     buttonClassName: '',
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
       { icon: BarChart4, text: '50k sessions/month' },
-      { icon: Newspaper, text: '2 surveys/NPS questions' },
-      { icon: Zap, text: '2 No-code Event Tracking' },
+      { icon: Newspaper, text: 'Unlimited surveys/NPS' },
+      { icon: Zap, text: 'Unlimited Event Tracking' },
       { icon: Users2, text: '3 team members' },
       { icon: Calendar, text: '3 years data retention' },
       { icon: Palette, text: 'Remove Usertour branding' },
@@ -106,6 +108,7 @@ const plans: Plan[] = [
   {
     name: 'Growth',
     price: '$550',
+    yearlyPrice: '$440',
     description: 'For growing startups who need all major features.',
     buttonText: 'Upgrade',
     buttonVariant: 'default',
@@ -114,10 +117,10 @@ const plans: Plan[] = [
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
       { icon: BarChart4, text: '150k sessions/month' },
-      { icon: Newspaper, text: 'Unlimited surveys/NPS questions' },
-      { icon: Zap, text: 'Unlimited No-code Event Tracking' },
-      { icon: Users2, text: 'Unlimited team members' },
+      { icon: AlertCircle, text: 'Alerting' },
       { icon: Languages, text: 'Localization' },
+      { icon: Users2, text: 'Unlimited team members' },
+      { icon: Calendar, text: '7 years data retention' },
       { icon: Layers, text: 'Advanced integrations' },
       { icon: Headphones, text: 'Priority support' },
     ],
@@ -125,6 +128,7 @@ const plans: Plan[] = [
   {
     name: 'Enterprise',
     price: 'Custom Pricing',
+    yearlyPrice: 'Custom Pricing',
     description: 'Custom built packages based on your needs',
     buttonText: 'Contact us',
     buttonLink: 'mailto:support@usertour.io',
@@ -145,7 +149,7 @@ const plans: Plan[] = [
 ];
 
 // Plan Card Component
-const PlanCard = ({ plan }: { plan: Plan }) => {
+const PlanCard = ({ plan, isYearly }: { plan: Plan; isYearly: boolean }) => {
   return (
     <section
       className={`relative flex h-fit flex-col gap-5 rounded-2xl h-full ${
@@ -166,7 +170,7 @@ const PlanCard = ({ plan }: { plan: Plan }) => {
           </h3>
           <p className="mt-1.5">
             <span className="align-baseline text-2xl font-semibold text-zinc-950 dark:text-white">
-              {plan.price}
+              {isYearly ? plan.yearlyPrice : plan.price}
             </span>
             {plan.price !== 'Custom Pricing' && (
               <span className="align-baseline text-sm text-zinc-950/50 dark:text-white/50">
@@ -200,8 +204,8 @@ const PlanCard = ({ plan }: { plan: Plan }) => {
         </Button>
       )}
       <div className="grid auto-rows-fr gap-3.5 text-sm text-zinc-600 dark:text-zinc-400">
-        {plan.features.map((feature, index) => (
-          <div key={index} className="flex items-center gap-2">
+        {plan.features.map((feature) => (
+          <div key={feature.text} className="flex items-center gap-2">
             <feature.icon className="size-4" />
             <span className="line-clamp-1">{feature.text}</span>
           </div>
@@ -233,7 +237,7 @@ const ComparisonTable = () => {
         },
         {
           name: 'Data Retention',
-          values: ['1 Year', '3 Years', '5 Years', 'Custom'],
+          values: ['1 Year', '3 Years', '7 Years', 'Custom'],
         },
         {
           name: 'Usage limits can be upgraded',
@@ -259,15 +263,15 @@ const ComparisonTable = () => {
         },
         {
           name: 'Banners',
-          values: ['1', '2', 'Unlimited', 'Unlimited'],
+          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Survey/NPS',
-          values: ['1', '2', 'Unlimited', 'Unlimited'],
+          name: 'Surveys/NPS',
+          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Event Trackers(coming soon)',
-          values: ['1', '2', 'Unlimited', 'Unlimited'],
+          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'No Usertour-branding',
@@ -360,9 +364,9 @@ const ComparisonTable = () => {
               <p className="border-b border-zinc-950/5 pb-3 text-zinc-950/70 dark:border-white/10 dark:text-white/50">
                 {feature.name}
               </p>
-              {feature.values.map((value, index) => (
+              {feature.values.map((value) => (
                 <div
-                  key={index}
+                  key={feature.name}
                   className="mx-4 border-b border-zinc-950/5 pb-3 text-zinc-950/70 dark:border-white/10 dark:text-white/70"
                 >
                   {typeof value === 'boolean' ? (
@@ -385,6 +389,8 @@ const ComparisonTable = () => {
 };
 
 const Pricing = () => {
+  const [isYearly, setIsYearly] = useState(false);
+
   return (
     <>
       <div className="mx-auto pb-10">
@@ -406,7 +412,11 @@ const Pricing = () => {
                       Save with yearly billing
                     </div>
                     <div>
-                      <Switch className="data-[state=unchecked]:bg-input" />
+                      <Switch
+                        checked={isYearly}
+                        onCheckedChange={setIsYearly}
+                        className="data-[state=unchecked]:bg-input"
+                      />
                     </div>
                   </div>
                 </div>
@@ -414,8 +424,8 @@ const Pricing = () => {
             </div>
             <div className="flex flex-col gap-12">
               <div className="grid grid-cols-1 gap-3 lg:max-w-none lg:grid-cols-4">
-                {plans.map((plan, index) => (
-                  <PlanCard key={index} plan={plan} />
+                {plans.map((plan) => (
+                  <PlanCard key={plan.name} plan={plan} isYearly={isYearly} />
                 ))}
               </div>
               <ComparisonTable />
