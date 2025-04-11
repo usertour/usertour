@@ -624,10 +624,12 @@ type PageInfo {
 type Project {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
+  customerId: String
   environments: [Environment!]
   id: String!
   logoUrl: String
   name: String!
+  subscriptionId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -640,6 +642,7 @@ type Query {
   getContentVersion(versionId: String!): Version!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
   getSubscriptionPlans: [SubscriptionPlanModel!]!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
@@ -773,6 +776,25 @@ input StepInput {
 type Storage {
   cdnUrl: String!
   signedUrl: String!
+}
+
+type SubscriptionModel {
+  cancelAt: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  interval: String!
+  isTrial: Boolean!
+  lookupKey: String!
+  overridePlan: JSON
+  planType: String!
+  projectId: String!
+  status: String!
+  subscriptionId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 type SubscriptionPlanModel {

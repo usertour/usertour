@@ -12,4 +12,6 @@ export type Project = {
   name?: string;
   logoUrl?: string;
   environments?: Environment[];
+  customerId?: string;
+  subscriptionId?: string;
 };

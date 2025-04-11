@@ -1,7 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { SubscriptionService } from './subscription.service';
 import { CreateCheckoutSessionRequest } from './subscription.dto';
-import { SubscriptionPlanModel } from './subscription.model';
+import { SubscriptionModel, SubscriptionPlanModel } from './subscription.model';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
 
@@ -35,5 +35,12 @@ export class SubscriptionResolver {
   @Query(() => [SubscriptionPlanModel])
   async getSubscriptionPlans(): Promise<SubscriptionPlanModel[]> {
     return this.subscriptionService.getSubscriptionPlans();
+  }
+
+  @Query(() => SubscriptionModel)
+  async getSubscriptionByProjectId(
+    @Args('projectId') projectId: string,
+  ): Promise<SubscriptionModel> {
+    return this.subscriptionService.getSubscriptionByProjectId(projectId);
   }
 }

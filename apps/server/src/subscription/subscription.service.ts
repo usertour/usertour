@@ -432,4 +432,22 @@ export class SubscriptionService implements OnModuleInit {
   async getSubscriptionPlans(): Promise<SubscriptionPlanModel[]> {
     return this.prisma.subscriptionPlan.findMany();
   }
+
+  async getSubscriptionByProjectId(projectId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { subscriptionId: true },
+    });
+    if (!project || !project.subscriptionId) {
+      throw new ParamsError(`No subscription found for project ${projectId}`);
+    }
+
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { subscriptionId: project.subscriptionId },
+    });
+    if (!subscription) {
+      throw new ParamsError(`No subscription found for project ${projectId}`);
+    }
+    return subscription;
+  }
 }

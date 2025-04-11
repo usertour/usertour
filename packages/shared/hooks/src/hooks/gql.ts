@@ -20,6 +20,10 @@ import {
   removeTeamMember,
   signUp,
   updateContent,
+  createCheckoutSession,
+  createPortalSession,
+  getSubscriptionPlans,
+  getSubscriptionByProjectId,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -32,6 +36,7 @@ import type {
   BizAttributeTypes,
   AttributeBizTypes,
   Attribute,
+  Subscription,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -296,4 +301,40 @@ export const useListAttributesQuery = (projectId: string, bizType: AttributeBizT
   });
   const attributes = data?.listAttributes as Attribute[];
   return { attributes, loading, error, refetch };
+};
+
+export const useCreateCheckoutSessionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createCheckoutSession);
+  const invoke = async (data: {
+    projectId: string;
+    planType: string;
+    interval: string;
+  }): Promise<string> => {
+    const response = await mutation({ variables: { data } });
+    return response.data?.createCheckoutSession;
+  };
+  return { invoke, loading, error };
+};
+
+export const useCreatePortalSessionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createPortalSession);
+  const invoke = async (projectId: string): Promise<string> => {
+    const response = await mutation({ variables: { projectId } });
+    return response.data?.createPortalSession;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetSubscriptionPlansQuery = () => {
+  const { data, loading, error, refetch } = useQuery(getSubscriptionPlans);
+  const plans = data?.getSubscriptionPlans ?? [];
+  return { plans, loading, error, refetch };
+};
+
+export const useGetSubscriptionByProjectIdQuery = (projectId: string) => {
+  const { data, loading, error, refetch } = useQuery(getSubscriptionByProjectId, {
+    variables: { projectId },
+  });
+  const subscription = data?.getSubscriptionByProjectId as Subscription | null;
+  return { subscription, loading, error, refetch };
 };

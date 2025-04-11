@@ -30,6 +30,8 @@ import { Button } from '@usertour-ui/button';
 import { Switch } from '@usertour-ui/switch';
 import { Fragment, useState } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
+import { useCreateCheckoutSessionMutation } from '@usertour-ui/shared-hooks';
+import { useAppContext } from '@/contexts/app-context';
 
 // Define plan type
 interface Plan {
@@ -150,6 +152,32 @@ const plans: Plan[] = [
 
 // Plan Card Component
 const PlanCard = ({ plan, isYearly }: { plan: Plan; isYearly: boolean }) => {
+  const { invoke: createCheckout, loading: checkoutLoading } = useCreateCheckoutSessionMutation();
+  const { project } = useAppContext();
+
+  const handleUpgrade = async () => {
+    if (plan.buttonLink) {
+      window.location.href = plan.buttonLink;
+      return;
+    }
+    if (!project?.id) {
+      console.error('Project ID is not available');
+      return;
+    }
+
+    try {
+      const url = await createCheckout({
+        projectId: project?.id,
+        planType: plan.name.toLowerCase(),
+        interval: isYearly ? 'yearly' : 'monthly',
+      });
+      window.location.href = url;
+    } catch (error) {
+      console.error('Failed to create checkout session:', error);
+      // TODO: Add error notification
+    }
+  };
+
   return (
     <section
       className={`relative flex h-fit flex-col gap-5 rounded-2xl h-full ${
@@ -199,8 +227,10 @@ const PlanCard = ({ plan, isYearly }: { plan: Plan; isYearly: boolean }) => {
             'inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] px-2.5 text-sm',
             plan.buttonClassName,
           )}
+          onClick={handleUpgrade}
+          disabled={checkoutLoading}
         >
-          {plan.buttonText}
+          {checkoutLoading ? 'Loading...' : plan.buttonText}
         </Button>
       )}
       <div className="grid auto-rows-fr gap-3.5 text-sm text-zinc-600 dark:text-zinc-400">
