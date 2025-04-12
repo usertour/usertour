@@ -28,7 +28,7 @@ import {
 import { FlowIcon, ChecklistIcon, LauncherIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
 import { Switch } from '@usertour-ui/switch';
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   useCreateCheckoutSessionMutation,
@@ -476,6 +476,13 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { subscription } = useGetSubscriptionByProjectIdQuery(projectId);
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
+
+  // Update isYearly when subscription data is loaded
+  useEffect(() => {
+    if (subscription?.interval) {
+      setIsYearly(subscription.interval === 'yearly');
+    }
+  }, [subscription?.interval]);
 
   const handleManageSubscription = async () => {
     try {
