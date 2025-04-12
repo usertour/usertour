@@ -33,6 +33,7 @@ import { cn } from '@usertour-ui/ui-utils';
 import {
   useCreateCheckoutSessionMutation,
   useGetSubscriptionByProjectIdQuery,
+  useCreatePortalSessionMutation,
 } from '@usertour-ui/shared-hooks';
 
 // Define plan type
@@ -164,10 +165,29 @@ interface PlanCardProps {
 const PlanCard = (props: PlanCardProps) => {
   const { plan, isYearly, projectId, currentPlanType } = props;
   const { invoke: createCheckout, loading: checkoutLoading } = useCreateCheckoutSessionMutation();
+  const { invoke: createPortalSession } = useCreatePortalSessionMutation();
 
   const isCurrentPlan = currentPlanType?.toLowerCase() === plan.name.toLowerCase();
 
-  const handleUpgrade = async () => {
+  // Add logic to determine if this plan is higher or lower than current plan
+  const getPlanLevel = (planName: string) => {
+    const planLevels = ['hobby', 'pro', 'growth', 'enterprise'];
+    return planLevels.indexOf(planName.toLowerCase());
+  };
+
+  const currentPlanLevel = currentPlanType ? getPlanLevel(currentPlanType) : -1;
+  const thisPlanLevel = getPlanLevel(plan.name);
+  const isHigherPlan = thisPlanLevel > currentPlanLevel;
+  const isLowerPlan = thisPlanLevel < currentPlanLevel;
+
+  const getButtonText = () => {
+    if (isCurrentPlan) return 'Current Plan';
+    if (isHigherPlan) return 'Upgrade';
+    if (isLowerPlan) return 'Downgrade';
+    return plan.buttonText;
+  };
+
+  const handleButtonClick = async () => {
     if (plan.buttonLink) {
       window.location.href = plan.buttonLink;
       return;
@@ -177,6 +197,19 @@ const PlanCard = (props: PlanCardProps) => {
       return;
     }
 
+    // If current plan is not hobby, redirect to portal
+    if (currentPlanType && currentPlanType.toLowerCase() !== 'hobby') {
+      try {
+        const url = await createPortalSession(projectId);
+        window.location.href = url;
+      } catch (error) {
+        console.error('Failed to create portal session:', error);
+        // TODO: Add error notification
+      }
+      return;
+    }
+
+    // For hobby plan, create checkout session
     try {
       const url = await createCheckout({
         projectId,
@@ -228,7 +261,10 @@ const PlanCard = (props: PlanCardProps) => {
       </div>
       {plan.buttonLink ? (
         <a target="_self" className="flex" href={plan.buttonLink}>
-          <Button className="inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] border border-zinc-950/10 bg-white px-2.5 text-sm text-zinc-950/70 ring-zinc-950/10 ring-offset-transparent hover:bg-zinc-950/5 focus:bg-white focus:ring disabled:pointer-events-none dark:border-white/10 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white/90">
+          <Button
+            disabled={isCurrentPlan}
+            className="inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] border border-zinc-950/10 bg-white px-2.5 text-sm text-zinc-950/70 ring-zinc-950/10 ring-offset-transparent hover:bg-zinc-950/5 focus:bg-white focus:ring disabled:pointer-events-none dark:border-white/10 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white/90"
+          >
             {plan.buttonText}
           </Button>
         </a>
@@ -239,10 +275,10 @@ const PlanCard = (props: PlanCardProps) => {
             'inline-flex h-10 w-full min-w-[40px] select-none items-center justify-center gap-0.5 rounded-[10px] px-2.5 text-sm',
             plan.buttonClassName,
           )}
-          onClick={handleUpgrade}
-          disabled={checkoutLoading}
+          onClick={handleButtonClick}
+          disabled={checkoutLoading || isCurrentPlan}
         >
-          {checkoutLoading ? 'Loading...' : plan.buttonText}
+          {checkoutLoading ? 'Loading...' : getButtonText()}
         </Button>
       )}
       <div className="grid auto-rows-fr gap-3.5 text-sm text-zinc-600 dark:text-zinc-400">
@@ -438,6 +474,29 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
 const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
   const { subscription } = useGetSubscriptionByProjectIdQuery(projectId);
+  const { invoke: createPortalSession } = useCreatePortalSessionMutation();
+  const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
+
+  const handleManageSubscription = async () => {
+    try {
+      // If current plan is hobby or no plan, create checkout session for upgrade
+      if (!subscription?.planType || subscription?.planType === 'hobby') {
+        const url = await createCheckout({
+          projectId,
+          planType: 'pro', // Default upgrade to Pro plan
+          interval: isYearly ? 'yearly' : 'monthly',
+        });
+        window.location.href = url;
+      } else {
+        // For other plans, create portal session for management
+        const url = await createPortalSession(projectId);
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      // TODO: Add error notification
+    }
+  };
 
   return (
     <>
@@ -459,12 +518,19 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                   <div className="flex max-xl:mb-1 items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
                     <span>Current plan: </span>
                     <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
-                      {subscription?.planType || 'Hobby'}
+                      {subscription?.planType || 'hobby'}
                     </span>
                     <div className="max-xl:hidden" />
                   </div>
-                  <Button className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950">
-                    <div className="px-1">Upgrade</div>
+                  <Button
+                    className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950"
+                    onClick={handleManageSubscription}
+                  >
+                    <div className="px-1">
+                      {!subscription?.planType || subscription?.planType === 'hobby'
+                        ? 'Upgrade'
+                        : 'Manage'}
+                    </div>
                     <div className="w-4 h-4">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -478,6 +544,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                         strokeLinejoin="round"
                         className="lucide lucide-arrow-up-right"
                       >
+                        <title>Upgrade</title>
                         <path d="M7 7h10v10" />
                         <path d="M7 17 17 7" />
                       </svg>
@@ -520,7 +587,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     plan={plan}
                     isYearly={isYearly}
                     projectId={projectId}
-                    currentPlanType={subscription?.planType}
+                    currentPlanType={subscription?.planType ?? 'hobby'}
                   />
                 ))}
               </div>
