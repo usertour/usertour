@@ -11,6 +11,7 @@ import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
 import { ParamsError } from '@/common/errors';
 import { SubscriptionPlanModel } from './subscription.model';
+import { parseSubscriptionPlan } from '@/utils/subscription';
 
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
@@ -295,7 +296,9 @@ export class SubscriptionService implements OnModuleInit {
   @StripeWebhookHandler('checkout.session.completed')
   async handleCheckoutSessionCompleted(event: Stripe.Event) {
     const session = event.data.object as Stripe.Checkout.Session;
-    this.logger.log(`Checkout session completed: ${JSON.stringify(session)}`);
+    this.logger.log(
+      `Checkout session completed: ${JSON.stringify(session)}, data: ${JSON.stringify(event)}`,
+    );
 
     if (session.payment_status !== 'paid') {
       this.logger.warn(`Checkout session ${session.id} not paid`);
@@ -366,13 +369,20 @@ export class SubscriptionService implements OnModuleInit {
   @StripeWebhookHandler('customer.subscription.created')
   async handleSubscriptionCreated(event: Stripe.Event) {
     const subscription = event.data.object as Stripe.Subscription;
-    this.logger.log(`New subscription created: ${subscription.id}`);
+    this.logger.log(
+      `New subscription created: ${subscription.id}, data: ${JSON.stringify(subscription)}`,
+    );
   }
 
   @StripeWebhookHandler('customer.subscription.updated')
   async handleSubscriptionUpdated(event: Stripe.Event) {
     const subscription = event.data.object as Stripe.Subscription;
-    this.logger.log(`Subscription updated: ${subscription.id}`);
+    this.logger.log(
+      `Subscription updated: ${subscription.id}, data: ${JSON.stringify(subscription)}`,
+    );
+    const lookupKey = subscription.items.data[0].price.lookup_key;
+
+    this.logger.log(`Lookup key: ${lookupKey}`);
 
     const sub = await this.prisma.subscription.findUnique({
       where: { subscriptionId: subscription.id },
@@ -383,6 +393,12 @@ export class SubscriptionService implements OnModuleInit {
     }
 
     const updates: Prisma.SubscriptionUpdateInput = {};
+
+    const planInfo = parseSubscriptionPlan(lookupKey);
+    if (planInfo) {
+      updates.planType = planInfo.planType;
+      updates.interval = planInfo.interval;
+    }
 
     // Track status changes
     if (subscription.status !== sub.status) {
@@ -411,7 +427,9 @@ export class SubscriptionService implements OnModuleInit {
   @StripeWebhookHandler('customer.subscription.deleted')
   async handleSubscriptionDeleted(event: Stripe.Event) {
     const subscription = event.data.object as Stripe.Subscription;
-    this.logger.log(`Subscription deleted: ${subscription.id}`);
+    this.logger.log(
+      `Subscription deleted: ${subscription.id}, data: ${JSON.stringify(subscription)}`,
+    );
 
     const sub = await this.prisma.subscription.findUnique({
       where: { subscriptionId: subscription.id },

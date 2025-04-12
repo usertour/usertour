@@ -527,6 +527,12 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                       {subscription?.planType || 'hobby'}
                     </span>
+                    {subscription?.cancelAt && (
+                      <span className="text-red-500">
+                        Expires on{' '}
+                        {new Date(Number.parseInt(subscription.cancelAt)).toLocaleDateString()}
+                      </span>
+                    )}
                     <div className="max-xl:hidden" />
                   </div>
                   <Button
@@ -534,9 +540,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     onClick={handleManageSubscription}
                   >
                     <div className="px-1">
-                      {!subscription?.planType || subscription?.planType === 'hobby'
-                        ? 'Upgrade'
-                        : 'Manage'}
+                      {subscription?.cancelAt
+                        ? 'Reactivate'
+                        : !subscription?.planType || subscription?.planType === 'hobby'
+                          ? 'Upgrade'
+                          : 'Manage'}
                     </div>
                     <div className="w-4 h-4">
                       <svg
