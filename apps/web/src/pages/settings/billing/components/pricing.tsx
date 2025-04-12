@@ -540,11 +540,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     onClick={handleManageSubscription}
                   >
                     <div className="px-1">
-                      {subscription?.cancelAt
-                        ? 'Reactivate'
+                      {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
+                        ? 'Renew Subscription'
                         : !subscription?.planType || subscription?.planType === 'hobby'
                           ? 'Upgrade'
-                          : 'Manage'}
+                          : 'Manage Subscription'}
                     </div>
                     <div className="w-4 h-4">
                       <svg
