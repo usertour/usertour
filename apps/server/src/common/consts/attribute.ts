@@ -95,3 +95,8 @@ export enum BizAttributeTypes {
   RandomAB = 6,
   RandomNumber = 7,
 }
+
+export enum Integrations {
+  GOOGLE_ANALYTICS = 'ga',
+  AMPLITUDE = 'amplitude',
+}
