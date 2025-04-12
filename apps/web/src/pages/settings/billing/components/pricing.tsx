@@ -30,8 +30,10 @@ import { Button } from '@usertour-ui/button';
 import { Switch } from '@usertour-ui/switch';
 import { Fragment, useState } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
-import { useCreateCheckoutSessionMutation } from '@usertour-ui/shared-hooks';
-import { useAppContext } from '@/contexts/app-context';
+import {
+  useCreateCheckoutSessionMutation,
+  useGetSubscriptionByProjectIdQuery,
+} from '@usertour-ui/shared-hooks';
 
 // Define plan type
 interface Plan {
@@ -76,6 +78,7 @@ const plans: Plan[] = [
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
+    isCurrentPlan: true,
     features: [
       { icon: BarChart4, text: '5k sessions/month' },
       { icon: FlowIcon, text: 'Unlimited flows' },
@@ -150,24 +153,33 @@ const plans: Plan[] = [
   },
 ];
 
+interface PlanCardProps {
+  plan: Plan;
+  isYearly: boolean;
+  projectId: string;
+  currentPlanType?: string;
+}
+
 // Plan Card Component
-const PlanCard = ({ plan, isYearly }: { plan: Plan; isYearly: boolean }) => {
+const PlanCard = (props: PlanCardProps) => {
+  const { plan, isYearly, projectId, currentPlanType } = props;
   const { invoke: createCheckout, loading: checkoutLoading } = useCreateCheckoutSessionMutation();
-  const { project } = useAppContext();
+
+  const isCurrentPlan = currentPlanType?.toLowerCase() === plan.name.toLowerCase();
 
   const handleUpgrade = async () => {
     if (plan.buttonLink) {
       window.location.href = plan.buttonLink;
       return;
     }
-    if (!project?.id) {
+    if (!projectId) {
       console.error('Project ID is not available');
       return;
     }
 
     try {
       const url = await createCheckout({
-        projectId: project?.id,
+        projectId,
         planType: plan.name.toLowerCase(),
         interval: isYearly ? 'yearly' : 'monthly',
       });
@@ -181,12 +193,12 @@ const PlanCard = ({ plan, isYearly }: { plan: Plan; isYearly: boolean }) => {
   return (
     <section
       className={`relative flex h-fit flex-col gap-5 rounded-2xl h-full ${
-        plan.isCurrentPlan
+        isCurrentPlan
           ? 'bg-zinc-950/5 dark:bg-white/10'
           : 'border border-zinc-950/5 dark:border-white/10'
       } p-5`}
     >
-      {plan.isCurrentPlan && (
+      {isCurrentPlan && (
         <div className="absolute right-4 top-4 h-[21px] rounded-md bg-green-600 px-1.5 text-xs font-semibold text-white dark:bg-green-500">
           <p className="translate-y-[3px] uppercase">Current Plan</p>
         </div>
@@ -399,9 +411,9 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
               <p className="border-b border-zinc-950/5 pb-3 text-zinc-950/70 dark:border-white/10 dark:text-white/50">
                 {feature.name}
               </p>
-              {feature.values.map((value) => (
+              {feature.values.map((value, index) => (
                 <div
-                  key={feature.name}
+                  key={`${feature.name}-${index}`}
                   className="mx-4 border-b border-zinc-950/5 pb-3 text-zinc-950/70 dark:border-white/10 dark:text-white/70"
                 >
                   {typeof value === 'boolean' ? (
@@ -423,14 +435,57 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
   );
 };
 
-const Pricing = () => {
+const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
+  const { subscription } = useGetSubscriptionByProjectIdQuery(projectId);
 
   return (
     <>
       <div className="mx-auto pb-10">
         <div className="flex flex-col divide-zinc-950/5 dark:divide-white/5">
           <div>
+            <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
+              <div className="col-span-3 flex flex-col gap-1">
+                <div className="flex flex-wrap gap-2">
+                  <h1 className="text-zinc-950/90 dark:text-white/90">Billing plan</h1>
+                </div>
+                <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
+                  View and manage your billing plan
+                </h2>
+              </div>
+              <div className="col-span-5">
+                <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center p-4 pt-1 xl:p-4 rounded-xl xl:justify-between bg-zinc-950/5 dark:bg-white/5">
+                  <div className="xl:hidden" />
+                  <div className="flex max-xl:mb-1 items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
+                    <span>Current plan: </span>
+                    <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
+                      {subscription?.planType || 'Hobby'}
+                    </span>
+                    <div className="max-xl:hidden" />
+                  </div>
+                  <Button className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950">
+                    <div className="px-1">Upgrade</div>
+                    <div className="w-4 h-4">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-arrow-up-right"
+                      >
+                        <path d="M7 7h10v10" />
+                        <path d="M7 17 17 7" />
+                      </svg>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            </div>
             <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
               <div className="col-span-3 flex flex-col gap-1">
                 <div className="flex flex-wrap gap-2">
@@ -460,7 +515,13 @@ const Pricing = () => {
             <div className="flex flex-col gap-12">
               <div className="grid grid-cols-1 gap-3 lg:max-w-none lg:grid-cols-4">
                 {plans.map((plan) => (
-                  <PlanCard key={plan.name} plan={plan} isYearly={isYearly} />
+                  <PlanCard
+                    key={plan.name}
+                    plan={plan}
+                    isYearly={isYearly}
+                    projectId={projectId}
+                    currentPlanType={subscription?.planType}
+                  />
                 ))}
               </div>
               <ComparisonTable isYearly={isYearly} />

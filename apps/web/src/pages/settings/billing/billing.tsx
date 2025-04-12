@@ -14,7 +14,7 @@ export const SettingsBilling = () => {
     <SettingsContent>
       <SettingsBillingHeader />
       <Separator />
-      <Pricing />
+      <Pricing projectId={project.id} />
     </SettingsContent>
   );
 };

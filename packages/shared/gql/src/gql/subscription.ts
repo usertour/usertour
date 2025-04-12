@@ -28,6 +28,18 @@ export const getSubscriptionPlans = gql`
 
 export const getSubscriptionByProjectId = gql`
   query getSubscriptionByProjectId($projectId: String!) {
-    getSubscriptionByProjectId(projectId: $projectId)
+    getSubscriptionByProjectId(projectId: $projectId) {
+      projectId
+      subscriptionId
+      lookupKey
+      planType
+      interval
+      status
+      isTrial
+      cancelAt
+      overridePlan
+      createdAt
+      updatedAt
+    }
   }
 `;
