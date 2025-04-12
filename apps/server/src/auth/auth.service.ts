@@ -407,10 +407,10 @@ export class AuthService {
       this.logger.log(`User ${user.id} created`);
       return this.login(user.id);
     } catch (e) {
+      this.logger.error('Failed to signup user', e);
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
       }
-      this.logger.error('Failed to signup user', e);
       throw new UnknownError();
     }
   }

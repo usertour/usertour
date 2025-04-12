@@ -951,6 +951,10 @@ const defaultIntegrations = [
     displayName: 'Google Analytics',
     codeName: Integrations.GOOGLE_ANALYTICS,
   },
+  {
+    displayName: 'Amplitude',
+    codeName: Integrations.AMPLITUDE,
+  },
 ];
 
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
@@ -1039,7 +1043,7 @@ const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, proj
   }
 };
 
-const initializationOnIntegrations = async (tx: Prisma.TransactionClient, projectId: string) => {
+const initializationIntegrations = async (tx: Prisma.TransactionClient, projectId: string) => {
   // Get existing integrations
   const existingIntegrations = await tx.integration.findMany({
     where: { projectId },
@@ -1067,5 +1071,5 @@ export const initialization = async (tx: Prisma.TransactionClient, projectId: st
   await initializationAttributes(tx, projectId);
   await initializationEvents(tx, projectId);
   await initializationAttributeOnEvent(tx, projectId);
-  await initializationOnIntegrations(tx, projectId);
+  await initializationIntegrations(tx, projectId);
 };
