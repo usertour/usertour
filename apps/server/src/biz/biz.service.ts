@@ -498,4 +498,45 @@ export class BizService {
       console.log(error);
     }
   }
+
+  async upsertBizIntegration(data: {
+    integrationId: string;
+    enabled: boolean;
+  }): Promise<boolean> {
+    const { integrationId, enabled } = data;
+
+    try {
+      const existingIntegration = await this.prisma.bizIntegration.findFirst({
+        where: { integrationId },
+      });
+
+      if (existingIntegration) {
+        await this.prisma.bizIntegration.update({
+          where: { id: existingIntegration.id },
+          data: {
+            enabled,
+          },
+        });
+      } else {
+        await this.prisma.bizIntegration.create({
+          data: {
+            integrationId,
+            enabled,
+          },
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in upsertBizIntegration:', error);
+      return false;
+    }
+  }
+
+  async listAllIntegrations(projectId: string) {
+    return await this.prisma.integration.findMany({
+      where: { projectId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
 }

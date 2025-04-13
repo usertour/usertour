@@ -21,6 +21,8 @@ import {
 } from './dto/segment.input';
 import { BizConnection } from './models/biz-connection.model';
 import { Segment } from './models/segment.model';
+import { Integration } from './models/integration.model';
+import { UpsertBizIntegrationInput } from './dto/integration.input';
 
 @Resolver()
 @UseGuards(BizGuard)
@@ -126,5 +128,18 @@ export class BizResolver {
   async deleteBizCompanyOnSegment(@Args('data') data: DeleteBizCompanyOnSegment) {
     const ret = await this.service.deleteBizCompanyOnSegment(data);
     return { success: ret.count > 0, count: ret.count };
+  }
+
+  @Mutation(() => Common)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  async upsertBizIntegration(@Args('data') data: UpsertBizIntegrationInput) {
+    const success = await this.service.upsertBizIntegration(data);
+    return { success };
+  }
+
+  @Query(() => [Integration])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async listIntegrations(@Args('projectId') projectId: string) {
+    return await this.service.listAllIntegrations(projectId);
   }
 }

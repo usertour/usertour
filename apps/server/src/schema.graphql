@@ -468,6 +468,17 @@ type Events {
   updatedAt: DateTime!
 }
 
+type Integration {
+  codeName: String!
+  configSchema: String
+  createdAt: DateTime!
+  description: String
+  displayName: String!
+  id: ID!
+  projectId: String!
+  updatedAt: DateTime!
+}
+
 type Invite {
   code: String!
 
@@ -590,6 +601,7 @@ type Mutation {
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
+  upsertBizIntegration(data: UpsertBizIntegrationInput!): Common!
 }
 
 type OEmbed {
@@ -640,6 +652,7 @@ type Query {
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
   listContentVersions(contentId: String!): [Version!]!
   listEvents(projectId: String!): [Events!]!
+  listIntegrations(projectId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
   listSegment(environmentId: String!): [Segment!]!
   listThemes(projectId: String!): [Theme!]!
@@ -848,6 +861,11 @@ input UpdateThemeInput {
 input UpdateUserInput {
   avatarUrl: String
   name: String!
+}
+
+input UpsertBizIntegrationInput {
+  enabled: Boolean!
+  integrationId: String!
 }
 
 type User {
