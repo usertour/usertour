@@ -570,8 +570,8 @@ const Pricing = ({ projectId }: { projectId: string }) => {
           </div>
           <div className="col-span-5">
             <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center p-4 pt-1 xl:p-4 rounded-xl xl:justify-between bg-zinc-950/5 dark:bg-white/5">
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col">
+              <div className="flex items-center gap-2 grow">
+                <div className="flex flex-col w-full">
                   <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
                     <span>Current plan: </span>
                     <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
@@ -585,12 +585,12 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     )}
                   </div>
                   <div className="flex flex-col gap-1 text-xs mt-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4 w-full">
                       <Progress
                         value={((currentUsage / totalLimit) * 100) as number}
-                        className="h-1 w-48"
+                        className="h-1 grow max-w-60"
                       />
-                      <span className="text-zinc-950/60 dark:text-white/50">
+                      <span className="text-zinc-950/60 dark:text-white/50 flex-none">
                         {currentUsage} / {totalLimit}
                       </span>
                     </div>
@@ -607,7 +607,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 </div>
               </div>
               <Button
-                className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950"
+                className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
                 onClick={handleManageSubscription}
               >
                 <div className="px-1">
