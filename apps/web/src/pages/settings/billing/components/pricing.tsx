@@ -373,6 +373,16 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
       ],
     },
     {
+      icon: Users2,
+      title: 'Team',
+      features: [
+        {
+          name: 'Team members',
+          values: ['1', '3', 'Unlimited', 'Unlimited'],
+        },
+      ],
+    },
+    {
       icon: Send,
       title: 'Features',
       features: [
