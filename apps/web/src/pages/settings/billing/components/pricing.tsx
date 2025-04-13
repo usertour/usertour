@@ -60,8 +60,13 @@ interface ComparisonSection {
   title: string;
   features: {
     name: string;
-    values: (string | boolean)[];
+    values: (string | boolean | { count: string; price: string | null })[];
   }[];
+}
+
+interface SessionValue {
+  count: string;
+  price: string | null;
 }
 
 // const primaryButtonClassName =
@@ -81,7 +86,7 @@ const plans: Plan[] = [
     showSpacing: false,
     isCurrentPlan: true,
     features: [
-      { icon: BarChart4, text: '5k sessions/month' },
+      { icon: BarChart4, text: '2k sessions/month' },
       { icon: FlowIcon, text: 'Unlimited flows' },
       { icon: ChecklistIcon, text: 'Unlimited checklists' },
       { icon: LauncherIcon, text: 'Unlimited launchers' },
@@ -102,7 +107,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: '50k sessions/month' },
+      { icon: BarChart4, text: '20k sessions/month' },
       { icon: Newspaper, text: 'Unlimited surveys/NPS' },
       { icon: Zap, text: 'Unlimited Event Tracking' },
       { icon: Users2, text: '3 team members' },
@@ -122,7 +127,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
-      { icon: BarChart4, text: '150k sessions/month' },
+      { icon: BarChart4, text: '20k sessions/month' },
       { icon: AlertCircle, text: 'Alerting' },
       { icon: Languages, text: 'Localization' },
       { icon: Users2, text: 'Unlimited team members' },
@@ -316,7 +321,12 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
         },
         {
           name: 'Sessions (Monthly)',
-          values: ['5000', '50000', '150000', 'Custom'],
+          values: [
+            { count: '2000', price: null },
+            { count: '20000', price: '+ $0.01 per additional session' },
+            { count: '20000', price: '+ $0.01 per additional session' },
+            { count: 'Custom', price: null },
+          ],
         },
         {
           name: 'Data Retention',
@@ -459,7 +469,20 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
                       </div>
                     ) : null
                   ) : (
-                    <p className="text-zinc-950/60 dark:text-white/60">{value}</p>
+                    <div className="flex flex-col">
+                      <p className="text-zinc-950/60 dark:text-white/60">
+                        {typeof value === 'object' && 'count' in value
+                          ? (value as SessionValue).count
+                          : (value as string)}
+                      </p>
+                      {typeof value === 'object' &&
+                        'price' in value &&
+                        (value as SessionValue).price && (
+                          <p className="text-xs text-zinc-950/40 dark:text-white/40 mt-1">
+                            {(value as SessionValue).price}
+                          </p>
+                        )}
+                    </div>
                   )}
                 </div>
               ))}
