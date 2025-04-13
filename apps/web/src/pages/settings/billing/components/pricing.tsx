@@ -37,7 +37,7 @@ import {
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
 import { Subscription } from '@usertour-ui/types';
-
+import { Progress } from '@usertour-ui/progress';
 // Define plan type
 interface Plan {
   name: string;
@@ -546,7 +546,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     }
   };
 
-  const currentUsage = 0;
+  const currentUsage = 1000;
   const totalLimit =
     subscription?.planType === 'hobby'
       ? HobbySessionLimit
@@ -577,17 +577,30 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     </span>
                     {subscription?.cancelAt && (
                       <span className="text-red-500">
-                        , which will expire on{' '}
+                        Expires on{' '}
                         {new Date(Number.parseInt(subscription.cancelAt)).toLocaleDateString()}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-xs mt-2 text-zinc-950/60 dark:text-white/50">
-                    <span>You've used </span>
-                    <span className="text-zinc-950/60 dark:text-white/50">
-                      {currentUsage} out of {totalLimit}
-                    </span>
-                    <span> sessions this month</span>
+                  <div className="flex flex-col gap-1 text-xs mt-2">
+                    <div className="flex items-center gap-2">
+                      <Progress
+                        value={((currentUsage / totalLimit) * 100) as number}
+                        className="h-1 w-48"
+                      />
+                      <span className="text-zinc-950/60 dark:text-white/50">
+                        {currentUsage} / {totalLimit}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
+                      <span>Monthly sessions</span>
+                      <span>•</span>
+                      <span>{Math.round((currentUsage / totalLimit) * 100)}% used</span>
+                      <span>•</span>
+                      <span>
+                        {currentUsage < totalLimit * 0.8 ? 'Efficient usage' : 'Consider upgrading'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
