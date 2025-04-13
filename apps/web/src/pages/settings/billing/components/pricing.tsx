@@ -35,6 +35,8 @@ import {
   useGetSubscriptionByProjectIdQuery,
   useCreatePortalSessionMutation,
 } from '@usertour-ui/shared-hooks';
+import { Separator } from '@usertour-ui/separator';
+import { Subscription } from '@usertour-ui/types';
 
 // Define plan type
 interface Plan {
@@ -69,6 +71,10 @@ interface SessionValue {
   price: string | null;
 }
 
+const HobbySessionLimit = 2000;
+const ProSessionLimit = 20000;
+const GrowthSessionLimit = 20000;
+
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
 const secondaryButtonClassName =
@@ -86,7 +92,7 @@ const plans: Plan[] = [
     showSpacing: false,
     isCurrentPlan: true,
     features: [
-      { icon: BarChart4, text: '2000 sessions/month' },
+      { icon: BarChart4, text: `${HobbySessionLimit} sessions/month` },
       { icon: FlowIcon, text: 'Unlimited flows' },
       { icon: ChecklistIcon, text: 'Unlimited checklists' },
       { icon: LauncherIcon, text: 'Unlimited launchers' },
@@ -107,7 +113,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: '20000 sessions/month' },
+      { icon: BarChart4, text: `${ProSessionLimit} sessions/month` },
       { icon: Newspaper, text: 'Unlimited surveys/NPS' },
       { icon: Zap, text: 'Unlimited Event Tracking' },
       { icon: Users2, text: '3 team members' },
@@ -127,7 +133,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
-      { icon: BarChart4, text: '20000 sessions/month' },
+      { icon: BarChart4, text: `${GrowthSessionLimit} sessions/month` },
       { icon: AlertCircle, text: 'Alerting' },
       { icon: Languages, text: 'Localization' },
       { icon: Users2, text: 'Unlimited team members' },
@@ -322,9 +328,9 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
         {
           name: 'Sessions (Monthly)',
           values: [
-            { count: '2000', price: null },
-            { count: '20000', price: '+ $0.01 per additional session' },
-            { count: '20000', price: '+ $0.01 per additional session' },
+            { count: `${HobbySessionLimit}`, price: null },
+            { count: `${ProSessionLimit}`, price: '+ $0.01 per additional session' },
+            { count: `${GrowthSessionLimit}`, price: '+ $0.01 per additional session' },
             { count: 'Custom', price: null },
           ],
         },
@@ -506,7 +512,9 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
 
 const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
-  const { subscription } = useGetSubscriptionByProjectIdQuery(projectId);
+  const { subscription } = useGetSubscriptionByProjectIdQuery(projectId) as {
+    subscription: Subscription | null;
+  };
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
 
@@ -538,110 +546,124 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     }
   };
 
+  const currentUsage = 0;
+  const totalLimit =
+    subscription?.planType === 'hobby'
+      ? HobbySessionLimit
+      : subscription?.planType === 'pro'
+        ? ProSessionLimit
+        : GrowthSessionLimit;
+
   return (
     <>
-      <div className="mx-auto pb-10">
-        <div className="flex flex-col divide-zinc-950/5 dark:divide-white/5">
-          <div>
-            <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
-              <div className="col-span-3 flex flex-col gap-1">
-                <div className="flex flex-wrap gap-2">
-                  <h1 className="text-zinc-950/90 dark:text-white/90">Billing plan</h1>
-                </div>
-                <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
-                  View and manage your billing plan
-                </h2>
-              </div>
-              <div className="col-span-5">
-                <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center p-4 pt-1 xl:p-4 rounded-xl xl:justify-between bg-zinc-950/5 dark:bg-white/5">
-                  <div className="xl:hidden" />
-                  <div className="flex max-xl:mb-1 items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
+      <div className="flex flex-col divide-zinc-950/5 dark:divide-white/5">
+        <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
+          <div className="col-span-3 flex flex-col gap-1">
+            <div className="flex flex-wrap gap-2">
+              <h1 className="text-zinc-950/90 dark:text-white/90">Billing plan</h1>
+            </div>
+            <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
+              View and manage your billing plan
+            </h2>
+          </div>
+          <div className="col-span-5">
+            <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center p-4 pt-1 xl:p-4 rounded-xl xl:justify-between bg-zinc-950/5 dark:bg-white/5">
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
                     <span>Current plan: </span>
                     <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                       {subscription?.planType || 'hobby'}
                     </span>
                     {subscription?.cancelAt && (
                       <span className="text-red-500">
-                        Expires on{' '}
+                        , which will expire on{' '}
                         {new Date(Number.parseInt(subscription.cancelAt)).toLocaleDateString()}
                       </span>
                     )}
-                    <div className="max-xl:hidden" />
                   </div>
-                  <Button
-                    className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950"
-                    onClick={handleManageSubscription}
+                  <div className="flex items-center gap-1 text-xs mt-2 text-zinc-950/60 dark:text-white/50">
+                    <span>You've used </span>
+                    <span className="text-zinc-950/60 dark:text-white/50">
+                      {currentUsage} out of {totalLimit}
+                    </span>
+                    <span> sessions this month</span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950"
+                onClick={handleManageSubscription}
+              >
+                <div className="px-1">
+                  {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
+                    ? 'Renew Subscription'
+                    : !subscription?.planType || subscription?.planType === 'hobby'
+                      ? 'Upgrade'
+                      : 'Manage Subscription'}
+                </div>
+                <div className="w-4 h-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-arrow-up-right"
                   >
-                    <div className="px-1">
-                      {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
-                        ? 'Renew Subscription'
-                        : !subscription?.planType || subscription?.planType === 'hobby'
-                          ? 'Upgrade'
-                          : 'Manage Subscription'}
-                    </div>
-                    <div className="w-4 h-4">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="lucide lucide-arrow-up-right"
-                      >
-                        <title>Upgrade</title>
-                        <path d="M7 7h10v10" />
-                        <path d="M7 17 17 7" />
-                      </svg>
-                    </div>
-                  </Button>
+                    <title>Upgrade</title>
+                    <path d="M7 7h10v10" />
+                    <path d="M7 17 17 7" />
+                  </svg>
                 </div>
-              </div>
-            </div>
-            <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
-              <div className="col-span-3 flex flex-col gap-1">
-                <div className="flex flex-wrap gap-2">
-                  <h1 className="text-zinc-950/90 dark:text-white/90">Plans</h1>
-                </div>
-                <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
-                  You can upgrade or change your plan here
-                </h2>
-              </div>
-              <div className="col-span-5">
-                <div className="flex justify-end items-center h-full">
-                  <div className="flex gap-x-2.5">
-                    <div className="text-xs items-center text-zinc-950/60 dark:text-white/50">
-                      Save with yearly billing
-                    </div>
-                    <div>
-                      <Switch
-                        checked={isYearly}
-                        onCheckedChange={setIsYearly}
-                        className="data-[state=unchecked]:bg-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-12">
-              <div className="grid grid-cols-1 gap-3 lg:max-w-none lg:grid-cols-4">
-                {plans.map((plan) => (
-                  <PlanCard
-                    key={plan.name}
-                    plan={plan}
-                    isYearly={isYearly}
-                    projectId={projectId}
-                    currentPlanType={subscription?.planType ?? 'hobby'}
-                  />
-                ))}
-              </div>
-              <ComparisonTable isYearly={isYearly} />
+              </Button>
             </div>
           </div>
+        </div>
+        <Separator />
+        <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
+          <div className="col-span-3 flex flex-col gap-1">
+            <div className="flex flex-wrap gap-2">
+              <h1 className="text-zinc-950/90 dark:text-white/90">Plans</h1>
+            </div>
+            <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
+              You can upgrade or change your plan here
+            </h2>
+          </div>
+          <div className="col-span-5">
+            <div className="flex justify-end items-center h-full">
+              <div className="flex gap-x-2.5">
+                <div className="text-xs items-center text-zinc-950/60 dark:text-white/50">
+                  Save with yearly billing
+                </div>
+                <div>
+                  <Switch
+                    checked={isYearly}
+                    onCheckedChange={setIsYearly}
+                    className="data-[state=unchecked]:bg-input"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-12">
+          <div className="grid grid-cols-1 gap-3 lg:max-w-none lg:grid-cols-4">
+            {plans.map((plan) => (
+              <PlanCard
+                key={plan.name}
+                plan={plan}
+                isYearly={isYearly}
+                projectId={projectId}
+                currentPlanType={subscription?.planType ?? 'hobby'}
+              />
+            ))}
+          </div>
+          <ComparisonTable isYearly={isYearly} />
         </div>
       </div>
     </>

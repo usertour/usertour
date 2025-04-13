@@ -611,6 +611,9 @@ importers:
       '@usertour-ui/popover':
         specifier: workspace:^
         version: link:../../packages/components/popover
+      '@usertour-ui/progress':
+        specifier: workspace:^
+        version: link:../../packages/components/progress
       '@usertour-ui/radio-group':
         specifier: workspace:^
         version: link:../../packages/components/radio-group
