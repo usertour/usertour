@@ -399,6 +399,7 @@ Table BizSession {
   state Int [not null, default: 0]
   data Json
   progress Int [not null, default: 0]
+  projectId String [not null, default: '']
   bizUser BizUser [not null]
   bizUserId String [not null]
   content Content [not null]

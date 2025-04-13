@@ -644,6 +644,7 @@ type Query {
   getInvites(projectId: String!): [Invite!]!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
   getSubscriptionPlans: [SubscriptionPlanModel!]!
+  getSubscriptionUsage(projectId: String!): Int!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
   hello(name: String!): String!

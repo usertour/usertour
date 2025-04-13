@@ -12,6 +12,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { ParamsError } from '@/common/errors';
 import { SubscriptionPlanModel } from './subscription.model';
 import { parseSubscriptionPlan } from '@/utils/subscription';
+import { startOfMonth, endOfMonth } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
@@ -467,5 +469,22 @@ export class SubscriptionService implements OnModuleInit {
       throw new ParamsError(`No subscription found for project ${projectId}`);
     }
     return subscription;
+  }
+
+  async getSubscriptionUsage(projectId: string) {
+    const now = new Date();
+    const utcNow = toZonedTime(now, 'UTC');
+    const firstDayOfMonth = startOfMonth(utcNow);
+    const lastDayOfMonth = endOfMonth(utcNow);
+
+    return this.prisma.bizSession.count({
+      where: {
+        projectId,
+        createdAt: {
+          gte: firstDayOfMonth,
+          lte: lastDayOfMonth,
+        },
+      },
+    });
   }
 }

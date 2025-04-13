@@ -43,4 +43,9 @@ export class SubscriptionResolver {
   ): Promise<SubscriptionModel> {
     return this.subscriptionService.getSubscriptionByProjectId(projectId);
   }
+
+  @Query(() => Number)
+  async getSubscriptionUsage(@Args('projectId') projectId: string): Promise<number> {
+    return this.subscriptionService.getSubscriptionUsage(projectId);
+  }
 }

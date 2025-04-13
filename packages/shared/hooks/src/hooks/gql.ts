@@ -24,6 +24,7 @@ import {
   createPortalSession,
   getSubscriptionPlans,
   getSubscriptionByProjectId,
+  getSubscriptionUsage,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -337,4 +338,12 @@ export const useGetSubscriptionByProjectIdQuery = (projectId: string) => {
   });
   const subscription = data?.getSubscriptionByProjectId as Subscription | null;
   return { subscription, loading, error, refetch };
+};
+
+export const useGetSubscriptionUsageQuery = (projectId: string) => {
+  const { data, loading, error, refetch } = useQuery(getSubscriptionUsage, {
+    variables: { projectId },
+  });
+  const usage = data?.getSubscriptionUsage;
+  return { usage, loading, error, refetch };
 };

@@ -43,3 +43,9 @@ export const getSubscriptionByProjectId = gql`
     }
   }
 `;
+
+export const getSubscriptionUsage = gql`
+  query getSubscriptionUsage($projectId: String!) {
+    getSubscriptionUsage(projectId: $projectId)
+  }
+`;

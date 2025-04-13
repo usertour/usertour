@@ -411,6 +411,7 @@ model BizSession {
   state     Int        @default(0)
   data      Json?      @db.JsonB
   progress  Int        @default(0)
+  projectId String     @default("")
   bizUser   BizUser    @relation(fields: [bizUserId], references: [id])
   bizUserId String
   content   Content    @relation(fields: [contentId], references: [id])

@@ -34,6 +34,7 @@ import {
   useCreateCheckoutSessionMutation,
   useGetSubscriptionByProjectIdQuery,
   useCreatePortalSessionMutation,
+  useGetSubscriptionUsageQuery,
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
 import { Subscription } from '@usertour-ui/types';
@@ -517,6 +518,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   };
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
+  const { usage } = useGetSubscriptionUsageQuery(projectId);
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -546,7 +548,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     }
   };
 
-  const currentUsage = 1000;
+  const currentUsage = usage ?? 0;
   const totalLimit =
     subscription?.planType === 'hobby'
       ? HobbySessionLimit
