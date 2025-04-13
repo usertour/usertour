@@ -86,7 +86,7 @@ const plans: Plan[] = [
     showSpacing: false,
     isCurrentPlan: true,
     features: [
-      { icon: BarChart4, text: '2k sessions/month' },
+      { icon: BarChart4, text: '2000 sessions/month' },
       { icon: FlowIcon, text: 'Unlimited flows' },
       { icon: ChecklistIcon, text: 'Unlimited checklists' },
       { icon: LauncherIcon, text: 'Unlimited launchers' },
@@ -107,7 +107,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: '20k sessions/month' },
+      { icon: BarChart4, text: '20000 sessions/month' },
       { icon: Newspaper, text: 'Unlimited surveys/NPS' },
       { icon: Zap, text: 'Unlimited Event Tracking' },
       { icon: Users2, text: '3 team members' },
@@ -127,7 +127,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
-      { icon: BarChart4, text: '20k sessions/month' },
+      { icon: BarChart4, text: '20000 sessions/month' },
       { icon: AlertCircle, text: 'Alerting' },
       { icon: Languages, text: 'Localization' },
       { icon: Users2, text: 'Unlimited team members' },
