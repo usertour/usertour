@@ -48,6 +48,11 @@ export class WebSocketGateway {
     return await this.service.trackEvent(body);
   }
 
+  @SubscribeMessage('list-enabled-integrations')
+  async listEnabledIntegrations(@MessageBody() body: any): Promise<any> {
+    return await this.service.listEnabledIntegrations(body);
+  }
+
   // @SubscribeMessage("list-attributes")
   // async listAttributes(@MessageBody() body: any): Promise<any> {
   //   return await this.service.listAttributes(body);
