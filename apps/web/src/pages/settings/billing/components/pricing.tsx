@@ -37,7 +37,7 @@ import {
   useGetSubscriptionUsageQuery,
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
-import { Subscription } from '@usertour-ui/types';
+import type { Subscription } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
 // Define plan type
 interface Plan {
@@ -72,7 +72,7 @@ interface SessionValue {
   price: string | null;
 }
 
-const HobbySessionLimit = 5000;
+const HobbySessionLimit = 10000;
 
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
