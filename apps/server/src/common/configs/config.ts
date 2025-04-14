@@ -93,6 +93,13 @@ const config: Config = {
       callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'test',
     },
   },
+  content: {
+    limit: {
+      survey: process.env.SURVEY_CONTENT_LIMIT
+        ? Number.parseInt(process.env.SURVEY_CONTENT_LIMIT)
+        : -1,
+    },
+  },
 };
 
 export default (): Config => config;

@@ -123,7 +123,7 @@ export class NoPermissionError extends BaseError {
 export class ContentNotPublishedError extends BaseError {
   code = 'E0014';
   messageDict = {
-    en: 'You have reached your Survey questions limit of 1. Please upgrade your Usertour account under Settings → Billing.',
+    en: 'You have reached your Survey questions limit. Please upgrade your Usertour account under Settings → Billing.',
     'zh-CN': '您已经达到了 Survey 问题的限制，请在设置 → 账单中升级您的 Usertour 账户。',
   };
 }

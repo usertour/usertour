@@ -90,4 +90,9 @@ export interface Config {
     sessionCancelUrl: string;
     portalReturnUrl: string;
   };
+  content: {
+    limit: {
+      survey: number;
+    };
+  };
 }

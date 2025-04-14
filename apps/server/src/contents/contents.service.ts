@@ -10,10 +10,14 @@ import { ContentNotPublishedError, ParamsError, UnknownError } from '@/common/er
 import { extractQuestionData, GroupItem, processStepData } from '@/utils/content';
 import { ContentType } from './models/content.model';
 import { Version } from './models/version.model';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ContentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {}
 
   async createContent(input: ContentInput) {
     const { steps = [], name, buildUrl, environmentId, config, data, themeId, type } = input;
@@ -315,8 +319,9 @@ export class ContentsService {
     if (!content) {
       throw new ParamsError();
     }
+    const surveyLimit = this.configService.get('content.limit.survey');
 
-    if (content.type !== ContentType.FLOW) {
+    if (content.type !== ContentType.FLOW || surveyLimit === -1) {
       return true;
     }
 
@@ -351,7 +356,7 @@ export class ContentsService {
         hasQuestions(content.publishedVersion as unknown as Version),
     );
 
-    if (questionContents.length > 1) {
+    if (questionContents.length > surveyLimit) {
       return false;
     }
 
