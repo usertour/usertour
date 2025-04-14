@@ -519,6 +519,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { usage } = useGetSubscriptionUsageQuery(projectId);
   const currentUsage = usage ?? 0;
   const totalLimit = HobbySessionLimit;
+  const planType = subscription?.planType ?? 'hobby';
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -547,8 +548,6 @@ const Pricing = ({ projectId }: { projectId: string }) => {
       // TODO: Add error notification
     }
   };
-
-  const planType = subscription?.planType ?? 'hobby';
 
   return (
     <>

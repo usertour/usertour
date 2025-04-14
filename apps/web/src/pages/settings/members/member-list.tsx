@@ -14,7 +14,7 @@ export const SettingsMemberList = () => {
   return (
     <MemberProvider projectId={project.id}>
       <SettingsContent>
-        <MemberListHeader />
+        <MemberListHeader projectId={project.id} />
         <Separator />
         <MemberListContent />
       </SettingsContent>
