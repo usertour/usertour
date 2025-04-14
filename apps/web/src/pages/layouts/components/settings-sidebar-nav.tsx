@@ -18,6 +18,7 @@ import {
   FlashlightIcon,
   BankCardIcon,
 } from '@usertour-ui/icons';
+import { useGlobalConfigQuery } from '@usertour-ui/shared-hooks';
 import { TeamMemberRole } from '@usertour-ui/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -79,6 +80,8 @@ export const SettingsSidebarNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { project } = useAppContext();
+  const { data: globalConfig } = useGlobalConfigQuery();
+  const enabledBilling = globalConfig?.enabledBilling;
   const items = sidebarNavItems
     .map((it) => {
       const href = `/project/${project?.id}${it.href}`;
@@ -86,6 +89,9 @@ export const SettingsSidebarNav = () => {
     })
     .filter((it) => {
       const projectRole = project?.role;
+      if ((it.title === 'Billing' || it.title === 'Team') && !enabledBilling) {
+        return false;
+      }
       if (projectRole && it.role.includes(projectRole as TeamMemberRole)) {
         return true;
       }

@@ -7,6 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 } from 'uuid';
 import { createPresignedUrlInput } from './dto/createPresignedUrl.input';
+import { User } from '@/users/models/user.model';
 
 @Injectable()
 export class UtilitiesService {
@@ -76,5 +77,13 @@ export class UtilitiesService {
       }
     }
     return { html: '', width: '', height: '' };
+  }
+
+  async globalConfig(user: User) {
+    const enabledBillingUsers = this.configService.get('globalConfig.enabledBillingUsers');
+    console.log('enabledBillingUsers:', enabledBillingUsers);
+    return {
+      enabledBilling: enabledBillingUsers.includes(user.id),
+    };
   }
 }

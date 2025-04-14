@@ -25,6 +25,7 @@ import {
   getSubscriptionPlans,
   getSubscriptionByProjectId,
   getSubscriptionUsage,
+  globalConfig,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -346,4 +347,9 @@ export const useGetSubscriptionUsageQuery = (projectId: string) => {
   });
   const usage = data?.getSubscriptionUsage;
   return { usage, loading, error, refetch };
+};
+
+export const useGlobalConfigQuery = () => {
+  const { data, loading, error } = useQuery(globalConfig);
+  return { data: data?.globalConfig, loading, error };
 };

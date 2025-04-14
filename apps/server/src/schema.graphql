@@ -474,6 +474,10 @@ type Events {
   updatedAt: DateTime!
 }
 
+type GlobalConfig {
+  enabledBilling: Boolean!
+}
+
 type Invite {
   code: String!
 
@@ -647,6 +651,7 @@ type Query {
   getSubscriptionUsage(projectId: String!): Int!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
+  globalConfig: GlobalConfig!
   hello(name: String!): String!
   helloWorld: String!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!

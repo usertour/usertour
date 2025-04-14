@@ -95,4 +95,7 @@ export interface Config {
       survey: number;
     };
   };
+  globalConfig: {
+    enabledBillingUsers: string[];
+  };
 }

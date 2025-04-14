@@ -100,6 +100,9 @@ const config: Config = {
         : -1,
     },
   },
+  globalConfig: {
+    enabledBillingUsers: process.env.ENABLED_BILLING_USERS?.split(','),
+  },
 };
 
 export default (): Config => config;
