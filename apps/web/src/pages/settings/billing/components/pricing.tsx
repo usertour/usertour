@@ -72,9 +72,7 @@ interface SessionValue {
   price: string | null;
 }
 
-const HobbySessionLimit = 2000;
-const ProSessionLimit = 20000;
-const GrowthSessionLimit = 20000;
+const HobbySessionLimit = 5000;
 
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
@@ -114,7 +112,7 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: `${ProSessionLimit} sessions/month` },
+      { icon: BarChart4, text: 'Unlimited sessions' },
       { icon: Newspaper, text: 'Unlimited surveys/NPS' },
       { icon: Zap, text: 'Unlimited Event Tracking' },
       { icon: Users2, text: '3 team members' },
@@ -134,9 +132,9 @@ const plans: Plan[] = [
     showSpacing: true,
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
-      { icon: BarChart4, text: `${GrowthSessionLimit} sessions/month` },
       { icon: AlertCircle, text: 'Alerting' },
       { icon: Languages, text: 'Localization' },
+      { icon: Lock, text: 'Password-protection' },
       { icon: Users2, text: 'Unlimited team members' },
       { icon: Calendar, text: '7 years data retention' },
       { icon: Layers, text: 'Advanced integrations' },
@@ -330,9 +328,9 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
           name: 'Sessions (Monthly)',
           values: [
             { count: `${HobbySessionLimit}`, price: null },
-            { count: `${ProSessionLimit}`, price: '+ $0.01 per additional session' },
-            { count: `${GrowthSessionLimit}`, price: '+ $0.01 per additional session' },
-            { count: 'Custom', price: null },
+            { count: 'Unlimited', price: null },
+            { count: 'Unlimited', price: null },
+            { count: 'Unlimited', price: null },
           ],
         },
         {
@@ -519,6 +517,8 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
   const { usage } = useGetSubscriptionUsageQuery(projectId);
+  const currentUsage = usage ?? 0;
+  const totalLimit = HobbySessionLimit;
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -548,13 +548,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     }
   };
 
-  const currentUsage = usage ?? 0;
-  const totalLimit =
-    subscription?.planType === 'hobby'
-      ? HobbySessionLimit
-      : subscription?.planType === 'pro'
-        ? ProSessionLimit
-        : GrowthSessionLimit;
+  const planType = subscription?.planType ?? 'hobby';
 
   return (
     <>
@@ -575,7 +569,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                   <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
                     <span>Current plan: </span>
                     <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
-                      {subscription?.planType || 'hobby'}
+                      {planType}
                     </span>
                     {subscription?.cancelAt && (
                       <span className="text-red-500">
@@ -584,26 +578,30 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1 text-xs mt-2">
-                    <div className="flex items-center gap-4 w-full">
-                      <Progress
-                        value={((currentUsage / totalLimit) * 100) as number}
-                        className="h-1 grow max-w-60"
-                      />
-                      <span className="text-zinc-950/60 dark:text-white/50 flex-none">
-                        {currentUsage} / {totalLimit}
-                      </span>
+                  {planType === 'hobby' && (
+                    <div className="flex flex-col gap-1 text-xs mt-2">
+                      <div className="flex items-center gap-4 w-full">
+                        <Progress
+                          value={((currentUsage / totalLimit) * 100) as number}
+                          className="h-1 grow max-w-60"
+                        />
+                        <span className="text-zinc-950/60 dark:text-white/50 flex-none">
+                          {currentUsage} / {totalLimit}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
+                        <span>Monthly sessions</span>
+                        <span>•</span>
+                        <span>{Math.round((currentUsage / totalLimit) * 100)}% used</span>
+                        <span>•</span>
+                        <span>
+                          {currentUsage < totalLimit * 0.8
+                            ? 'Efficient usage'
+                            : 'Consider upgrading'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
-                      <span>Monthly sessions</span>
-                      <span>•</span>
-                      <span>{Math.round((currentUsage / totalLimit) * 100)}% used</span>
-                      <span>•</span>
-                      <span>
-                        {currentUsage < totalLimit * 0.8 ? 'Efficient usage' : 'Consider upgrading'}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
               <Button
