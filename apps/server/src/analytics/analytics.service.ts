@@ -11,9 +11,11 @@ import { AnalyticsQuery } from './dto/analytics-query.input';
 import { toZonedTime } from 'date-fns-tz';
 
 import {
+  aggregationQuestionTypes,
   ContentEditorElementType,
   extractQuestionData,
   GroupItem,
+  numberQuestionTypes,
   QuestionElement,
 } from '@/utils/content';
 import { Prisma } from '@prisma/client';
@@ -37,13 +39,6 @@ type ItemAnalyticsConditions = AnalyticsConditions & {
   key: string;
   value: string;
 };
-
-const numberQuestionTypes = [
-  ContentEditorElementType.SCALE,
-  ContentEditorElementType.STAR_RATING,
-  ContentEditorElementType.NPS,
-];
-const aggregationQuestionTypes = [ContentEditorElementType.MULTIPLE_CHOICE, ...numberQuestionTypes];
 
 const defaultRollWindowConfig = { nps: 365, rate: 365, scale: 365 };
 

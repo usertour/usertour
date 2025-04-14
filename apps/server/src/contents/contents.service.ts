@@ -6,8 +6,10 @@ import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
-import { ParamsError, UnknownError } from '@/common/errors';
-import { processStepData } from '@/utils/content';
+import { ContentNotPublishedError, ParamsError, UnknownError } from '@/common/errors';
+import { extractQuestionData, GroupItem, processStepData } from '@/utils/content';
+import { ContentType } from './models/content.model';
+import { Version } from './models/version.model';
 
 @Injectable()
 export class ContentsService {
@@ -284,6 +286,9 @@ export class ContentsService {
 
   async publishedContentVersion(versionId: string) {
     const version = await this.getContentVersionById(versionId);
+    if (!(await this.canPublishContent(version.contentId))) {
+      throw new ContentNotPublishedError();
+    }
 
     return await this.prisma.content.update({
       where: { id: version.contentId },
@@ -293,6 +298,64 @@ export class ContentsService {
         publishedAt: new Date(),
       },
     });
+  }
+
+  async canPublishContent(contentId: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      include: {
+        environment: {
+          include: {
+            project: true,
+          },
+        },
+      },
+    });
+
+    if (!content) {
+      throw new ParamsError();
+    }
+
+    if (content.type !== ContentType.FLOW) {
+      return true;
+    }
+
+    if (content.environment.project.subscriptionId) {
+      return true;
+    }
+
+    // Get all contents in the same environment
+    const contents = await this.prisma.content.findMany({
+      where: {
+        environmentId: content.environmentId,
+        type: ContentType.FLOW,
+      },
+      include: {
+        editedVersion: { include: { steps: true } },
+        publishedVersion: { include: { steps: true } },
+      },
+    });
+
+    // Check if a version contains questions
+    const hasQuestions = (version: Version) => {
+      if (!version?.steps) return false;
+      return version.steps.some((step) => {
+        const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
+        return questionData.length > 0;
+      });
+    };
+
+    const questionContents = contents.filter(
+      (content) =>
+        hasQuestions(content.editedVersion as unknown as Version) ||
+        hasQuestions(content.publishedVersion as unknown as Version),
+    );
+
+    if (questionContents.length > 1) {
+      return false;
+    }
+
+    return true;
   }
 
   async unpublishedContentVersion(contentId: string) {
