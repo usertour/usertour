@@ -360,7 +360,7 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Banners',
+          name: 'Banners(coming soon)',
           values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
