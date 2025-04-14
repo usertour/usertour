@@ -70,7 +70,11 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
       <div className="flex items-center justify-between">
         <h3 className="text-2xl font-semibold tracking-tight">Team</h3>
         <Button onClick={canInviteMembers ? handleCreate : handleUpgrade} className="flex-none">
-          {canInviteMembers ? 'Invite team member' : 'Upgrade to Pro'}
+          {canInviteMembers
+            ? 'Invite team member'
+            : planType === PlanType.HOBBY
+              ? 'Upgrade to Pro'
+              : 'Upgrade to Growth'}
         </Button>
       </div>
       <MemberInviteDialog isOpen={isDialogOpen} onClose={handleOnClose} />
