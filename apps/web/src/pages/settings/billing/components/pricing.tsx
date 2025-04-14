@@ -37,7 +37,7 @@ import {
   useGetSubscriptionUsageQuery,
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
-import type { Subscription } from '@usertour-ui/types';
+import { PlanType, type Subscription } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
 // Define plan type
 interface Plan {
@@ -519,7 +519,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { usage } = useGetSubscriptionUsageQuery(projectId);
   const currentUsage = usage ?? 0;
   const totalLimit = HobbySessionLimit;
-  const planType = subscription?.planType ?? 'hobby';
+  const planType = subscription?.planType ?? PlanType.HOBBY;
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -531,10 +531,10 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const handleManageSubscription = async () => {
     try {
       // If current plan is hobby or no plan, create checkout session for upgrade
-      if (!subscription?.planType || subscription?.planType === 'hobby') {
+      if (!subscription?.planType || subscription?.planType === PlanType.HOBBY) {
         const url = await createCheckout({
           projectId,
-          planType: 'pro', // Default upgrade to Pro plan
+          planType: PlanType.PRO,
           interval: isYearly ? 'yearly' : 'monthly',
         });
         window.location.href = url;
@@ -577,7 +577,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                       </span>
                     )}
                   </div>
-                  {planType === 'hobby' && (
+                  {planType === PlanType.HOBBY && (
                     <div className="flex flex-col gap-1 text-xs mt-2">
                       <div className="flex items-center gap-4 w-full">
                         <Progress
@@ -610,7 +610,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 <div className="px-1">
                   {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
                     ? 'Renew Subscription'
-                    : !subscription?.planType || subscription?.planType === 'hobby'
+                    : !subscription?.planType || subscription?.planType === PlanType.HOBBY
                       ? 'Upgrade'
                       : 'Manage Subscription'}
                 </div>
@@ -671,7 +671,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 plan={plan}
                 isYearly={isYearly}
                 projectId={projectId}
-                currentPlanType={subscription?.planType ?? 'hobby'}
+                currentPlanType={subscription?.planType ?? PlanType.HOBBY}
               />
             ))}
           </div>

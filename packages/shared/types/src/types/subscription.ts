@@ -3,10 +3,16 @@ export type Subscription = {
   projectId: string;
   subscriptionId: string;
   lookupKey: string;
-  planType: string;
+  planType: PlanType;
   interval: string;
   status: string;
   isTrial: boolean;
   cancelAt: string | null;
   overridePlan?: any;
 };
+
+export enum PlanType {
+  HOBBY = 'hobby',
+  PRO = 'pro',
+  GROWTH = 'growth',
+}
