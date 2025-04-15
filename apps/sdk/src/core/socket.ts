@@ -35,6 +35,7 @@ export class Socket extends Evented {
         withCredentials: false,
         timeout: 5000,
         reconnection: true,
+        transports: ['websocket'],
         ...options.socketConfig,
       },
     };
