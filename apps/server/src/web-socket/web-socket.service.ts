@@ -755,6 +755,7 @@ export class WebSocketService {
       data: {
         state: 0,
         progress: 0,
+        projectId: environment.projectId,
         bizUserId: bizUser.id,
         contentId: content.id,
         versionId: content.publishedVersionId,

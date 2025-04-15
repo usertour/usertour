@@ -23,6 +23,7 @@ import {
   SendMagicLinkEmailProcessor,
   SendResetPasswordEmailProcessor,
 } from './auth.processor';
+import { StripeModule } from '@golevelup/nestjs-stripe';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import {
     BullModule.registerQueue({ name: QUEUE_SEND_RESET_PASSWORD_EMAIL }),
     BullModule.registerQueue({ name: QUEUE_INITIALIZE_PROJECT }),
     TeamModule,
+    (StripeModule as any).externallyConfigured(StripeModule, 0),
   ],
   providers: [
     AuthService,

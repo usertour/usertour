@@ -74,6 +74,7 @@
     "@usertour-ui/types": "workspace:^",
     "@usertour-ui/ui-utils": "workspace:^",
     "@usertour-ui/use-toast": "workspace:^",
+    "@usertour-ui/progress": "workspace:^",
     "apollo3-cache-persist": "^0.14.1",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",

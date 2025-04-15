@@ -5,6 +5,7 @@ import { createPresignedUrlInput } from './dto/createPresignedUrl.input';
 import { OEmbed } from './models/oembed.model';
 import { Storage } from './models/storage.model';
 import { UtilitiesService } from './utilities.service';
+import { GlobalConfig } from './models/global.model';
 
 @Resolver()
 export class UtilitiesResolver {
@@ -18,5 +19,10 @@ export class UtilitiesResolver {
   @Query(() => OEmbed)
   async queryOembedInfo(@UserEntity() _: User, @Args('url') url: string) {
     return this.utilitiesService.queryOembedInfo(url);
+  }
+
+  @Query(() => GlobalConfig)
+  async globalConfig(@UserEntity() user: User) {
+    return this.utilitiesService.globalConfig(user);
   }
 }

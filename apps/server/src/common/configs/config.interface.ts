@@ -80,4 +80,22 @@ export interface Config {
       callbackUrl: string;
     };
   };
+  stripe: {
+    apiKey: string;
+    webhookSecret: {
+      account: string;
+      accountTest: string;
+    };
+    sessionSuccessUrl: string;
+    sessionCancelUrl: string;
+    portalReturnUrl: string;
+  };
+  content: {
+    limit: {
+      survey: number;
+    };
+  };
+  globalConfig: {
+    enabledBillingUsers: string[];
+  };
 }

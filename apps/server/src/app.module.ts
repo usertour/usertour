@@ -25,6 +25,10 @@ import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './localizations/localizations.module';
 import { TeamModule } from './team/team.module';
 import { BullModule } from '@nestjs/bullmq';
+import { StripeModule } from '@golevelup/nestjs-stripe';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { LoggerModule } from 'nestjs-pino';
+import api from '@opentelemetry/api';
 
 @Module({
   imports: [
@@ -46,6 +50,21 @@ import { BullModule } from '@nestjs/bullmq';
         ],
       },
     }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        redact: {
+          paths: ['pid', 'hostname', 'req.headers'],
+          remove: true,
+        },
+        autoLogging: false,
+        genReqId: () => api.trace.getSpan(api.context.active())?.spanContext()?.traceId,
+        customSuccessObject: (req) => ({
+          env: process.env.NODE_ENV,
+          uid: (req as any).user?.id || 'anonymous',
+        }),
+        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+      },
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -58,7 +77,20 @@ import { BullModule } from '@nestjs/bullmq';
       }),
       inject: [ConfigService],
     }),
-
+    (StripeModule as any).forRootAsync(StripeModule, {
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        apiKey: configService.get('stripe.apiKey'),
+        webhookConfig: {
+          stripeSecrets: {
+            account: configService.get('stripe.webhookSecret.account'),
+            accountTest: configService.get('stripe.webhookSecret.accountTest'),
+          },
+          requestBodyProperty: 'rawBody',
+        },
+      }),
+      inject: [ConfigService],
+    }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       useClass: GqlConfigService,
@@ -78,6 +110,7 @@ import { BullModule } from '@nestjs/bullmq';
     AnalyticsModule,
     LocalizationsModule,
     TeamModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, PrismaService],
