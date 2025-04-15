@@ -355,6 +355,9 @@ importers:
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       mjml:
         specifier: ^4.14.1
         version: 4.15.3(encoding@0.1.13)
