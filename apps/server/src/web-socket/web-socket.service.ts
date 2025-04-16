@@ -33,6 +33,35 @@ const EVENT_CODE_MAP = {
 export class WebSocketService {
   constructor(private prisma: PrismaService) {}
 
+  async getConfig(body: any): Promise<any> {
+    const { token } = body;
+    const environment = await this.prisma.environment.findFirst({
+      where: { token },
+    });
+    const config = {
+      removeBranding: false,
+      planType: 'hobby',
+    };
+    if (!environment) {
+      return config;
+    }
+    const projectId = environment.projectId;
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    if (!project || !project.subscriptionId) {
+      return config;
+    }
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { subscriptionId: project.subscriptionId },
+    });
+    if (subscription) {
+      config.planType = subscription.planType;
+      config.removeBranding = subscription.planType !== 'hobby';
+    }
+    return config;
+  }
+
   async listContents(body: any): Promise<any> {
     const { token, versionId, userId: bizUserId, companyId } = body;
     const environment = await this.prisma.environment.findFirst({

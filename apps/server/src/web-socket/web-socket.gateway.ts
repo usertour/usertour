@@ -13,6 +13,11 @@ export class WebSocketGateway {
   @WebSocketServer()
   server: Server;
 
+  @SubscribeMessage('get-config')
+  async getConfig(@MessageBody() body: any): Promise<any> {
+    return await this.service.getConfig(body);
+  }
+
   @SubscribeMessage('list-contents')
   async listContents(@MessageBody() body: any): Promise<any> {
     return await this.service.listContents(body);

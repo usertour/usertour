@@ -55,6 +55,7 @@ interface Plan {
   buttonClassName?: string;
   showSpacing: boolean;
   buttonVariant?: 'default' | 'secondary';
+  disabled: boolean;
 }
 
 // Define comparison section type
@@ -90,6 +91,7 @@ const plans: Plan[] = [
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     isCurrentPlan: true,
+    disabled: false,
     features: [
       { icon: BarChart4, text: `${HobbySessionLimit} sessions/month` },
       { icon: FlowIcon, text: 'Unlimited flows' },
@@ -110,6 +112,7 @@ const plans: Plan[] = [
     buttonVariant: 'default',
     buttonClassName: '',
     showSpacing: true,
+    disabled: false,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
       { icon: BarChart4, text: 'Unlimited sessions' },
@@ -128,8 +131,9 @@ const plans: Plan[] = [
     description: 'For growing startups who need all major features.',
     buttonText: 'Upgrade',
     buttonVariant: 'default',
-    buttonClassName: '',
+    buttonClassName: secondaryButtonClassName,
     showSpacing: true,
+    disabled: true,
     features: [
       { icon: Check, text: 'Everything in Pro, plus' },
       { icon: AlertCircle, text: 'Alerting' },
@@ -151,6 +155,7 @@ const plans: Plan[] = [
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: true,
+    disabled: false,
     features: [
       { icon: Check, text: 'Everything in Growth, plus' },
       { icon: Home, text: 'Security questionnaire' },
@@ -286,9 +291,9 @@ const PlanCard = (props: PlanCardProps) => {
             plan.buttonClassName,
           )}
           onClick={handleButtonClick}
-          disabled={checkoutLoading || isCurrentPlan}
+          disabled={checkoutLoading || isCurrentPlan || plan.disabled}
         >
-          {checkoutLoading ? 'Loading...' : getButtonText()}
+          {checkoutLoading ? 'Loading...' : plan.disabled ? 'Coming Soon' : getButtonText()}
         </Button>
       )}
       <div className="grid auto-rows-fr gap-3.5 text-sm text-zinc-600 dark:text-zinc-400">

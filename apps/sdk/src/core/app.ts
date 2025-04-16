@@ -5,6 +5,8 @@ import {
   BizCompany,
   BizUserInfo,
   ContentDataType,
+  PlanType,
+  SDKConfig,
   SDKContent,
   SDKSettingsMode,
   Theme,
@@ -49,6 +51,10 @@ export class App extends Evented {
     environmentId: '',
     token: '',
     mode: SDKSettingsMode.NORMAL,
+  };
+  sdkConfig: SDKConfig = {
+    planType: PlanType.HOBBY,
+    removeBranding: false,
   };
   tours: Tour[] = [];
   launchers: Launcher[] = [];
@@ -370,6 +376,7 @@ export class App extends Evented {
       return;
     }
     await this.reset();
+    await this.initSdkConfig();
     await this.initThemeData();
     await this.initContentData();
     this.initContents();
@@ -377,6 +384,10 @@ export class App extends Evented {
     await this.startContents();
     await this.startActivityMonitor();
     this.startContentPolling();
+  }
+
+  getSdkConfig() {
+    return this.sdkConfig;
   }
 
   async refresh() {
@@ -633,6 +644,14 @@ export class App extends Evented {
     if (this.activeTour) {
       this.activeTour.destroy();
       this.activeTour = undefined;
+    }
+  }
+
+  async initSdkConfig() {
+    const sdkConfig = await this.socket.getConfig(this.startOptions.token);
+    if (sdkConfig) {
+      this.sdkConfig = sdkConfig;
+      console.log('sdkConfig', this.sdkConfig);
     }
   }
 

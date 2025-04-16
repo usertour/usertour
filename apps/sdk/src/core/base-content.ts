@@ -272,10 +272,15 @@ export abstract class BaseContent<T = any> extends Evented {
     return await this.getConfig().activeConditions();
   }
 
+  getSdkConfig() {
+    return this.getInstance().getSdkConfig();
+  }
+
   getStoreBaseInfo() {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
+    const sdkConfig = this.getSdkConfig();
     if (!themes || themes.length === 0) {
       return {};
     }
@@ -290,6 +295,7 @@ export abstract class BaseContent<T = any> extends Evented {
       return {};
     }
     return {
+      sdkConfig,
       assets: getAssets(theme),
       globalStyle: convertToCssVars(convertSettings(theme.settings)),
       theme,
