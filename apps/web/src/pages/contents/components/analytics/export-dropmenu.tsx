@@ -9,13 +9,18 @@ import { ReactNode, useState } from 'react';
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
-import { listSessionsDetail } from '@usertour-ui/gql';
+import { getContentVersion, listSessionsDetail } from '@usertour-ui/gql';
 import type { BizSession, BizEvent } from '@usertour-ui/types';
 import { BizEvents } from '@usertour-ui/types';
+import {
+  ContentEditorElementType,
+  extractQuestionData,
+  contentTypesConfig,
+} from '@usertour-ui/shared-editor';
 import { useToast } from '@usertour-ui/use-toast';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
-
+import { useContentDetailContext } from '@/contexts/content-detail-context';
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
   if (!date) return '';
@@ -81,28 +86,21 @@ const getState = (session: BizSession, eventList: any[] | undefined) => {
   return 'In Progress';
 };
 
-const getStepData = (events: BizEvent[]) => {
-  const stepData = {
-    nps: '',
-    feedback: '',
-    done: false,
-  };
-
-  for (const event of events) {
-    switch (event.event?.codeName) {
-      case 'nps':
-        stepData.nps = event.data?.score || '';
-        break;
-      case 'feedback':
-        stepData.feedback = event.data?.text || '';
-        break;
-      case 'done':
-        stepData.done = true;
-        break;
-    }
+const getQuestionAnswer = (answerEvent: BizEvent) => {
+  switch (answerEvent.data.question_type) {
+    case ContentEditorElementType.STAR_RATING:
+    case ContentEditorElementType.SCALE:
+    case ContentEditorElementType.NPS:
+      return answerEvent.data.number_answer;
+    case ContentEditorElementType.MULTIPLE_CHOICE:
+      return Array.isArray(answerEvent.data.list_answer)
+        ? answerEvent.data.list_answer.join('; ')
+        : answerEvent.data.list_answer;
+    case ContentEditorElementType.MULTI_LINE_TEXT:
+      return answerEvent.data.text_answer;
+    default:
+      return answerEvent.data.text_answer;
   }
-
-  return stepData;
 };
 
 type ExportDropdownMenuProps = {
@@ -116,6 +114,11 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const { eventList } = useEventListContext();
+  const { content } = useContentDetailContext();
+  const { data } = useQuery(getContentVersion, {
+    variables: { versionId: content?.publishedVersionId || content?.editedVersionId },
+  });
+  const version = data?.getContentVersion;
 
   const query = {
     contentId,
@@ -173,8 +176,27 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         }
       }
 
+      // Get all unique question names from version steps
+      const questionHeaders = new Map<string, string>(); // cvid -> name
+      if (version?.steps) {
+        for (const step of version.steps) {
+          const questions = extractQuestionData(step.data);
+          for (const question of questions) {
+            if (question.data?.name && question.data?.cvid) {
+              const questionType =
+                contentTypesConfig.find((config) => config.element.type === question.type)?.name ||
+                question.type;
+              questionHeaders.set(
+                question.data.cvid,
+                `Question (${questionType}): ${question.data.name}`,
+              );
+            }
+          }
+        }
+      }
+
       // Convert to CSV format
-      const headers = [
+      const baseHeaders = [
         'User: ID',
         'User: Name',
         'User: Email',
@@ -188,14 +210,20 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         'State',
         'Start reason',
         'End reason',
-        'Step 1: NPS',
-        'Step 2: Feedback',
-        'Step 3: Done',
       ];
 
+      const headers = [...baseHeaders, ...Array.from(questionHeaders.values())];
+
       const rows = allSessions.map((session) => {
-        const stepData = getStepData(session.bizEvent || []);
-        return [
+        // Create a map of question answers for this session
+        const questionAnswers = new Map<string, string>(); // cvid -> answer
+        for (const event of session.bizEvent || []) {
+          if (event.data?.question_cvid) {
+            questionAnswers.set(event.data.question_cvid, getQuestionAnswer(event));
+          }
+        }
+
+        const baseRow = [
           session.bizUser?.externalId || '',
           session.bizUser?.data?.name || '',
           session.bizUser?.data?.email || '',
@@ -209,10 +237,14 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           getState(session, eventList),
           session.data?.startReason || 'Matched auto-start condition',
           session.data?.endReason || 'Ended through action',
-          stepData.nps,
-          stepData.feedback,
-          stepData.done ? 'Yes' : 'No',
         ];
+
+        // Add question answers in the same order as headers
+        const questionAnswersRow = Array.from(questionHeaders.keys()).map(
+          (cvid) => questionAnswers.get(cvid) || '',
+        );
+
+        return [...baseRow, ...questionAnswersRow];
       });
 
       const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
