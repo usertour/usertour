@@ -334,18 +334,12 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
         // Get company info
         const companies = session.bizUser?.bizUsersOnCompany || [];
-        const companyValues = Array(maxCompanies * 2).fill(''); // Always generate the correct number of empty values
+        const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
+          const company = companies[i];
+          return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
+        }).flat();
 
-        // If there are companies, fill in the values
-        if (companies.length > 0) {
-          companies.forEach((company, i) => {
-            if (i < maxCompanies) {
-              companyValues[i * 2] = company?.bizCompany?.externalId || '';
-              companyValues[i * 2 + 1] = company?.bizCompany?.data?.name || '';
-            }
-          });
-        }
-
+        // Get common info
         const commonInfo = [
           `v${session.version?.sequence}`,
           formatDate(session.createdAt),
