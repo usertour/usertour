@@ -115,6 +115,20 @@ const getQuestionAnswer = (answerEvent: BizEvent) => {
   }
 };
 
+const getFlowReasons = (events: BizEvent[]) => {
+  const startEvent = events.find((event) => event.event?.codeName === BizEvents.FLOW_STARTED);
+  const endEvent = events.find((event) => event.event?.codeName === BizEvents.FLOW_ENDED);
+
+  return {
+    startReason:
+      flowReasonTitleMap[
+        startEvent?.data?.[EventAttributes.FLOW_START_REASON] as flowStartReason
+      ] || '',
+    endReason:
+      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as flowEndReason] || '',
+  };
+};
+
 type ExportDropdownMenuProps = {
   children: ReactNode;
 };
@@ -230,9 +244,21 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
             .map((attr) => `User: ${attr.displayName}`) || []
         : [];
 
+      // Find max number of companies across all sessions
+      const maxCompanies = Math.max(
+        ...allSessions.map((session) => session.bizUser?.bizUsersOnCompany?.length || 0),
+      );
+
+      // Generate company headers based on max companies
+      const companyHeaders =
+        maxCompanies <= 1
+          ? ['Company: ID', 'Company: Name']
+          : Array.from({ length: maxCompanies }, (_, i) => [
+              `Company(${i + 1}): ID`,
+              `Company(${i + 1}): Name`,
+            ]).flat();
+
       const otherHeaders = [
-        'Company: ID',
-        'Company: Name',
         'Version',
         'Started at (UTC)',
         'Last activity at (UTC)',
@@ -246,25 +272,24 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       const headers = [
         ...baseHeaders,
         ...userAttributeHeaders,
+        ...companyHeaders,
         ...otherHeaders,
         ...Array.from(questionHeaders.values()),
         ...Array.from(stepHeaders.values()),
       ];
 
       const rows = allSessions.map((session) => {
+        const events = session.bizEvent || [];
+
         // Create a map of question answers for this session
         const questionAnswers = new Map<string, string>(); // cvid -> answer
         const stepViews = new Map<string, number>(); // step number -> view count
 
-        // Get start and end reasons from events
-        const startEvent = (session.bizEvent || []).find(
-          (event) => event.event?.codeName === BizEvents.FLOW_STARTED,
-        );
-        const endEvent = (session.bizEvent || []).find(
-          (event) => event.event?.codeName === BizEvents.FLOW_ENDED,
-        );
+        // Get flow reasons
+        const { startReason, endReason } = getFlowReasons(events);
 
-        for (const event of session.bizEvent || []) {
+        // Process events
+        for (const event of events) {
           // Handle question answers
           if (event.data?.[EventAttributes.QUESTION_CVID]) {
             questionAnswers.set(
@@ -276,7 +301,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
         // Count step views
         for (const stepNumber of stepHeaders.keys()) {
-          const viewCount = (session.bizEvent || []).filter(
+          const viewCount = events.filter(
             (event) =>
               event.event?.codeName === BizEvents.FLOW_STEP_SEEN &&
               event.data?.[EventAttributes.FLOW_STEP_NUMBER] === Number.parseInt(stepNumber),
@@ -284,6 +309,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           stepViews.set(stepNumber, viewCount);
         }
 
+        // Get user base info
         const baseRow = [
           session.bizUser?.externalId || '',
           session.bizUser?.data?.name || '',
@@ -305,20 +331,23 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
               }) || []
           : [];
 
-        const otherRow = [
-          session.bizUser?.bizUsersOnCompany?.[0]?.bizCompany?.externalId || '',
-          session.bizUser?.bizUsersOnCompany?.[0]?.bizCompany?.data?.name || '',
+        // Get company info
+        const companies = session.bizUser?.bizUsersOnCompany || [];
+        const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
+          const company = companies[i];
+          return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
+        }).flat();
+
+        // Get common info
+        const commonInfo = [
           `v${session.version?.sequence}`,
           formatDate(session.createdAt),
           formatDate(getLastActivityAt(session)),
           formatDate(getCompletedAt(session, eventList)),
           `${session.progress}%`,
           getState(session, eventList),
-          flowReasonTitleMap[
-            startEvent?.data?.[EventAttributes.FLOW_START_REASON] as flowStartReason
-          ] || '',
-          flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as flowEndReason] ||
-            '',
+          startReason,
+          endReason,
         ];
 
         // Add question answers in the same order as headers
@@ -334,7 +363,8 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         return [
           ...baseRow,
           ...userAttributeValues,
-          ...otherRow,
+          ...companyValues,
+          ...commonInfo,
           ...questionAnswersRow,
           ...stepViewsRow,
         ];
