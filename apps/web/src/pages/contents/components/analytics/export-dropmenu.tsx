@@ -10,8 +10,8 @@ import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
 import { getContentVersion, listSessionsDetail } from '@usertour-ui/gql';
-import type { BizSession, BizEvent } from '@usertour-ui/types';
-import { BizEvents } from '@usertour-ui/types';
+import type { BizSession, BizEvent, ContentVersion } from '@usertour-ui/types';
+import { BizEvents, EventAttributes } from '@usertour-ui/types';
 import {
   ContentEditorElementType,
   extractQuestionData,
@@ -97,9 +97,9 @@ const getQuestionAnswer = (answerEvent: BizEvent) => {
         ? answerEvent.data.list_answer.join('; ')
         : answerEvent.data.list_answer;
     case ContentEditorElementType.MULTI_LINE_TEXT:
-      return answerEvent.data.text_answer;
+      return (answerEvent.data.text_answer || '').replace(/\n/g, ' ');
     default:
-      return answerEvent.data.text_answer;
+      return (answerEvent.data.text_answer || '').replace(/\n/g, ' ');
   }
 };
 
@@ -118,7 +118,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { data } = useQuery(getContentVersion, {
     variables: { versionId: content?.publishedVersionId || content?.editedVersionId },
   });
-  const version = data?.getContentVersion;
+  const version = data?.getContentVersion as ContentVersion;
 
   const query = {
     contentId,
@@ -178,8 +178,10 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
       // Get all unique question names from version steps
       const questionHeaders = new Map<string, string>(); // cvid -> name
+      const stepHeaders = new Map<string, string>(); // step number -> name
       if (version?.steps) {
         for (const step of version.steps) {
+          // Collect questions
           const questions = extractQuestionData(step.data);
           for (const question of questions) {
             if (question.data?.name && question.data?.cvid) {
@@ -191,6 +193,11 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
                 `Question (${questionType}): ${question.data.name}`,
               );
             }
+          }
+
+          // Collect steps
+          if (step.name) {
+            stepHeaders.set(step.sequence.toString(), `Step ${step.sequence + 1}. ${step.name}`);
           }
         }
       }
@@ -212,15 +219,35 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         'End reason',
       ];
 
-      const headers = [...baseHeaders, ...Array.from(questionHeaders.values())];
+      const headers = [
+        ...baseHeaders,
+        ...Array.from(questionHeaders.values()),
+        ...Array.from(stepHeaders.values()),
+      ];
 
       const rows = allSessions.map((session) => {
         // Create a map of question answers for this session
         const questionAnswers = new Map<string, string>(); // cvid -> answer
+        const stepViews = new Map<string, number>(); // step number -> view count
+
         for (const event of session.bizEvent || []) {
-          if (event.data?.question_cvid) {
-            questionAnswers.set(event.data.question_cvid, getQuestionAnswer(event));
+          // Handle question answers
+          if (event.data?.[EventAttributes.QUESTION_CVID]) {
+            questionAnswers.set(
+              event.data[EventAttributes.QUESTION_CVID],
+              getQuestionAnswer(event),
+            );
           }
+        }
+
+        // Count step views
+        for (const stepNumber of stepHeaders.keys()) {
+          const viewCount = (session.bizEvent || []).filter(
+            (event) =>
+              event.event?.codeName === BizEvents.FLOW_STEP_SEEN &&
+              event.data?.[EventAttributes.FLOW_STEP_NUMBER] === Number.parseInt(stepNumber),
+          ).length;
+          stepViews.set(stepNumber, viewCount);
         }
 
         const baseRow = [
@@ -235,8 +262,8 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           formatDate(getCompletedAt(session, eventList)),
           `${session.progress}%`,
           getState(session, eventList),
-          session.data?.startReason || 'Matched auto-start condition',
-          session.data?.endReason || 'Ended through action',
+          session.data?.[EventAttributes.FLOW_START_REASON] || 'Matched auto-start condition',
+          session.data?.[EventAttributes.FLOW_END_REASON] || 'Ended through action',
         ];
 
         // Add question answers in the same order as headers
@@ -244,7 +271,12 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           (cvid) => questionAnswers.get(cvid) || '',
         );
 
-        return [...baseRow, ...questionAnswersRow];
+        // Add step view counts in the same order as headers
+        const stepViewsRow = Array.from(stepHeaders.keys()).map(
+          (stepNumber) => stepViews.get(stepNumber) || 0,
+        );
+
+        return [...baseRow, ...questionAnswersRow, ...stepViewsRow];
       });
 
       const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
