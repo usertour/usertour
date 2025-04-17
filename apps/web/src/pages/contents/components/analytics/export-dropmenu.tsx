@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
-import { DownloadIcon } from 'lucide-react';
+import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
@@ -292,8 +292,16 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           onClick={handleExportCSV}
           disabled={isExporting}
         >
-          <DownloadIcon className="mr-1 w-4 h-4" />
-          {isExporting ? 'Exporting...' : 'Export to CSV'}
+          <User className="mr-1 w-4 h-4" />
+          {isExporting ? 'Exporting...' : 'Standard user attributes '}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className={`cursor-pointer ${isExporting ? 'opacity-50' : ''}`}
+          onClick={handleExportCSV}
+          disabled={isExporting}
+        >
+          <UserCog className="mr-1 w-4 h-4" />
+          {isExporting ? 'Exporting...' : 'All user attributes '}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
