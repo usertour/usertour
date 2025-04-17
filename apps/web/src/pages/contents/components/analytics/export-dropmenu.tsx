@@ -11,7 +11,7 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
 import { getContentVersion, listSessionsDetail } from '@usertour-ui/gql';
 import type { BizSession, BizEvent, ContentVersion } from '@usertour-ui/types';
-import { BizEvents, EventAttributes } from '@usertour-ui/types';
+import { AttributeBizTypes, BizEvents, EventAttributes } from '@usertour-ui/types';
 import {
   ContentEditorElementType,
   extractQuestionData,
@@ -21,6 +21,7 @@ import { useToast } from '@usertour-ui/use-toast';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
   if (!date) return '';
@@ -115,6 +116,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { toast } = useToast();
   const { eventList } = useEventListContext();
   const { content } = useContentDetailContext();
+  const { attributeList } = useAttributeListContext();
   const { data } = useQuery(getContentVersion, {
     variables: { versionId: content?.publishedVersionId || content?.editedVersionId },
   });
@@ -136,7 +138,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
     skip: true,
   });
 
-  const handleExportCSV = async () => {
+  const handleExportCSV = async (includeAllAttributes = false) => {
     if (isExporting) {
       return;
     }
@@ -203,10 +205,21 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       }
 
       // Convert to CSV format
-      const baseHeaders = [
-        'User: ID',
-        'User: Name',
-        'User: Email',
+      const baseHeaders = ['User: ID', 'User: Name', 'User: Email'];
+
+      // Add user attributes if includeAllAttributes is true
+      const userAttributeHeaders = includeAllAttributes
+        ? attributeList
+            ?.filter(
+              (attr) =>
+                attr.bizType === AttributeBizTypes.User &&
+                attr.codeName !== 'name' &&
+                attr.codeName !== 'email',
+            ) // User attributes excluding name and email
+            .map((attr) => `User: ${attr.displayName}`) || []
+        : [];
+
+      const otherHeaders = [
         'Company: ID',
         'Company: Name',
         'Version',
@@ -221,6 +234,8 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
       const headers = [
         ...baseHeaders,
+        ...userAttributeHeaders,
+        ...otherHeaders,
         ...Array.from(questionHeaders.values()),
         ...Array.from(stepHeaders.values()),
       ];
@@ -254,6 +269,24 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           session.bizUser?.externalId || '',
           session.bizUser?.data?.name || '',
           session.bizUser?.data?.email || '',
+        ];
+
+        // Add user attributes if includeAllAttributes is true
+        const userAttributeValues = includeAllAttributes
+          ? attributeList
+              ?.filter(
+                (attr) =>
+                  attr.bizType === AttributeBizTypes.User &&
+                  attr.codeName !== 'name' &&
+                  attr.codeName !== 'email',
+              ) // User attributes excluding name and email
+              .map((attr) => {
+                const value = session.bizUser?.data?.[attr.codeName];
+                return typeof value === 'string' ? value : JSON.stringify(value || '');
+              }) || []
+          : [];
+
+        const otherRow = [
           session.bizUser?.bizUsersOnCompany?.[0]?.bizCompany?.externalId || '',
           session.bizUser?.bizUsersOnCompany?.[0]?.bizCompany?.data?.name || '',
           `v${session.version?.sequence}`,
@@ -276,7 +309,13 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           (stepNumber) => stepViews.get(stepNumber) || 0,
         );
 
-        return [...baseRow, ...questionAnswersRow, ...stepViewsRow];
+        return [
+          ...baseRow,
+          ...userAttributeValues,
+          ...otherRow,
+          ...questionAnswersRow,
+          ...stepViewsRow,
+        ];
       });
 
       const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
@@ -321,19 +360,19 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       <DropdownMenuContent align="end" className="z-[101]">
         <DropdownMenuItem
           className={`cursor-pointer ${isExporting ? 'opacity-50' : ''}`}
-          onClick={handleExportCSV}
+          onClick={() => handleExportCSV(false)}
           disabled={isExporting}
         >
           <User className="mr-1 w-4 h-4" />
-          {isExporting ? 'Exporting...' : 'Standard user attributes '}
+          {isExporting ? 'Exporting...' : 'Standard user attributes'}
         </DropdownMenuItem>
         <DropdownMenuItem
           className={`cursor-pointer ${isExporting ? 'opacity-50' : ''}`}
-          onClick={handleExportCSV}
+          onClick={() => handleExportCSV(true)}
           disabled={isExporting}
         >
           <UserCog className="mr-1 w-4 h-4" />
-          {isExporting ? 'Exporting...' : 'All user attributes '}
+          {isExporting ? 'Exporting...' : 'All user attributes'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
