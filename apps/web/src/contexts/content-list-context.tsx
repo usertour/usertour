@@ -99,6 +99,7 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
       query: { environmentId, type: getQueryType(contentType), ...query },
       orderBy: { field: 'createdAt', direction: 'desc' },
     },
+    skip: !environmentId,
   });
 
   const contentList = data?.queryContents;

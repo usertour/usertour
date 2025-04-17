@@ -998,3 +998,29 @@ export const isQuestionElement = (element: ContentEditorElement) => {
 export const isClickableElement = (element: ContentEditorClickableElement) => {
   return element.type === ContentEditorElementType.BUTTON || isQuestionElement(element);
 };
+
+export const extractQuestionData = (data: ContentEditorRoot[]): ContentEditorQuestionElement[] => {
+  const result: ContentEditorQuestionElement[] = [];
+
+  function isQuestionRootElement(item: any): item is { element: ContentEditorQuestionElement } {
+    return 'element' in item && isQuestionElement(item.element);
+  }
+
+  function traverse(item: ContentEditorRoot | ContentEditorRootColumn | ContentEditorRootElement) {
+    if (isQuestionRootElement(item)) {
+      result.push(item.element);
+    }
+
+    if ('children' in item && item.children) {
+      for (const child of item.children) {
+        traverse(child);
+      }
+    }
+  }
+
+  for (const item of data) {
+    traverse(item);
+  }
+
+  return result;
+};

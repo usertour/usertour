@@ -14,6 +14,7 @@ import {
   Step,
   StepContentType,
   flowEndReason,
+  flowStartReason,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
 import { TourStore } from '../types/store';
@@ -175,7 +176,7 @@ export class Tour extends BaseContent<TourStore> {
 
   async handleClose(reason?: flowEndReason) {
     await this.closeActiveTour(reason);
-    await this.startTour(undefined, 'start_condition');
+    await this.startTour(undefined, flowStartReason.START_CONDITION);
   }
 
   async handleActions(actions: RulesCondition[]) {
@@ -281,7 +282,7 @@ export class Tour extends BaseContent<TourStore> {
 
     if (isTimeout) {
       await this.closeActiveTour();
-      await this.startTour(undefined, 'start_condition');
+      await this.startTour(undefined, flowStartReason.START_CONDITION);
     } else {
       this.hide();
     }

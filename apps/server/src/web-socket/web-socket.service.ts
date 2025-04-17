@@ -675,7 +675,7 @@ export class WebSocketService {
   }
 
   async upsertBizCompanies(data: any): Promise<any> {
-    const { companyId, userId, attributes, token } = data;
+    const { companyId, userId, attributes, token, membership } = data;
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -697,6 +697,9 @@ export class WebSocketService {
       companyId,
       attributes,
     );
+    if (membership) {
+      await this.upsertBizMembership(projectId, company.id, user.id, membership);
+    }
 
     return company;
   }

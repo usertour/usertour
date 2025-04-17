@@ -17,3 +17,24 @@ export class BizModel extends BaseModel {
   @Field(() => GraphQLJSON)
   membership?: JsonObject;
 }
+
+@ObjectType()
+export class BizUserOnCompanyModel extends BaseModel {
+  @Field(() => String)
+  bizCompanyId: string;
+
+  @Field(() => BizModel, { nullable: true })
+  bizCompany?: BizModel;
+
+  @Field(() => String)
+  bizUserId: string;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  data?: JsonObject;
+}
+
+@ObjectType()
+export class BizUser extends BizModel {
+  @Field(() => [BizUserOnCompanyModel], { nullable: true })
+  bizUsersOnCompany?: BizUserOnCompanyModel[];
+}

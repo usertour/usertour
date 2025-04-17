@@ -7,6 +7,7 @@ import {
   Theme,
   UserTourTypes,
   flowEndReason,
+  flowStartReason,
 } from '@usertour-ui/types';
 import { isEqual } from 'lodash';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
@@ -259,7 +260,7 @@ export abstract class BaseContent<T = any> extends Evented {
 
   async startNewTour(contentId: string) {
     await this.cancelActiveTour();
-    await this.startTour(contentId, 'action');
+    await this.startTour(contentId, flowStartReason.ACTION);
   }
 
   handleNavigate(data: any) {
