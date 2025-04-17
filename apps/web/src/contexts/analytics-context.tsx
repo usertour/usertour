@@ -18,6 +18,7 @@ export interface AnalyticsContextValue {
   dateRange: DateRange | undefined;
   setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
   timezone: string;
+  contentId: string;
 }
 
 export const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(undefined);
@@ -58,6 +59,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
     dateRange,
     setDateRange,
     timezone,
+    contentId,
   };
 
   return <AnalyticsContext.Provider value={value}>{children}</AnalyticsContext.Provider>;

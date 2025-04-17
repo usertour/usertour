@@ -4,13 +4,22 @@ export type BizUser = {
   environmentId: string;
   data: any;
   createdAt: string;
+  bizUsersOnCompany?: BizUserOnCompany[];
+};
+
+export type BizUserOnCompany = {
+  id: string;
+  bizCompanyId: string;
+  bizCompany: BizCompany;
+  bizUserId: string;
+  data: any;
 };
 
 export type BizCompany = {
   id: string;
   externalId: string;
   environmentId: string;
-  data: JSON;
+  data: any;
   createdAt: string;
 };
 
