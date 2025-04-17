@@ -87,7 +87,7 @@ const SessionResponse = ({ answerEvents }: SessionResponseProps) => {
         <TableBody>
           {answerEvents ? (
             answerEvents.map((answerEvent: BizEvent) => (
-              <Fragment key={answerEvent.id}>
+              <Fragment key={answerEvent.eventId}>
                 <TableRow className="h-10">
                   <TableCell>
                     <div className="flex flex-row gap-2 items-center">
