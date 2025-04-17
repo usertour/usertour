@@ -14,6 +14,7 @@ import type { BizSession, BizEvent } from '@usertour-ui/types';
 import { BizEvents } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import { useEventListContext } from '@/contexts/event-list-context';
+import { format } from 'date-fns';
 
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
@@ -21,7 +22,7 @@ const formatDate = (date: string | null | undefined) => {
   try {
     const parsedDate = new Date(date);
     if (Number.isNaN(parsedDate.getTime())) return '';
-    return parsedDate.toISOString().replace('T', ' ').replace('.000Z', '');
+    return format(parsedDate, 'yyyy-MM-dd HH:mm:ss');
   } catch (error) {
     console.error('Error formatting date:', error);
     return '';
