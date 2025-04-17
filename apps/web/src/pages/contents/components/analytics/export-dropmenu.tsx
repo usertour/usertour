@@ -10,8 +10,19 @@ import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
 import { getContentVersion, listSessionsDetail } from '@usertour-ui/gql';
-import type { BizSession, BizEvent, ContentVersion } from '@usertour-ui/types';
-import { AttributeBizTypes, BizEvents, EventAttributes } from '@usertour-ui/types';
+import type {
+  BizSession,
+  BizEvent,
+  ContentVersion,
+  flowStartReason,
+  flowEndReason,
+} from '@usertour-ui/types';
+import {
+  AttributeBizTypes,
+  BizEvents,
+  EventAttributes,
+  flowReasonTitleMap,
+} from '@usertour-ui/types';
 import {
   ContentEditorElementType,
   extractQuestionData,
@@ -245,6 +256,14 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         const questionAnswers = new Map<string, string>(); // cvid -> answer
         const stepViews = new Map<string, number>(); // step number -> view count
 
+        // Get start and end reasons from events
+        const startEvent = (session.bizEvent || []).find(
+          (event) => event.event?.codeName === BizEvents.FLOW_STARTED,
+        );
+        const endEvent = (session.bizEvent || []).find(
+          (event) => event.event?.codeName === BizEvents.FLOW_ENDED,
+        );
+
         for (const event of session.bizEvent || []) {
           // Handle question answers
           if (event.data?.[EventAttributes.QUESTION_CVID]) {
@@ -295,8 +314,11 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           formatDate(getCompletedAt(session, eventList)),
           `${session.progress}%`,
           getState(session, eventList),
-          session.data?.[EventAttributes.FLOW_START_REASON] || 'Matched auto-start condition',
-          session.data?.[EventAttributes.FLOW_END_REASON] || 'Ended through action',
+          flowReasonTitleMap[
+            startEvent?.data?.[EventAttributes.FLOW_START_REASON] as flowStartReason
+          ] || '',
+          flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as flowEndReason] ||
+            '',
         ];
 
         // Add question answers in the same order as headers

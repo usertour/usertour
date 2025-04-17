@@ -11,6 +11,7 @@ import {
   SDKSettingsMode,
   Theme,
   flowEndReason,
+  flowStartReason,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
@@ -767,7 +768,7 @@ export class App extends Evented {
    * Starts all content items (tours, launchers, checklists)
    */
   async startContents() {
-    await this.startTour(undefined, 'start_condition');
+    await this.startTour(undefined, flowStartReason.START_CONDITION);
     await this.startLauncher();
     await this.startChecklist();
   }
