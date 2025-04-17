@@ -247,6 +247,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       // Find max number of companies across all sessions
       const maxCompanies = Math.max(
         ...allSessions.map((session) => session.bizUser?.bizUsersOnCompany?.length || 0),
+        1, // Ensure at least 1 company column is generated
       );
 
       // Generate company headers based on max companies
@@ -333,12 +334,18 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
         // Get company info
         const companies = session.bizUser?.bizUsersOnCompany || [];
-        const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
-          const company = companies[i];
-          return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
-        }).flat();
+        const companyValues = Array(maxCompanies * 2).fill(''); // Always generate the correct number of empty values
 
-        // Get common info
+        // If there are companies, fill in the values
+        if (companies.length > 0) {
+          companies.forEach((company, i) => {
+            if (i < maxCompanies) {
+              companyValues[i * 2] = company?.bizCompany?.externalId || '';
+              companyValues[i * 2 + 1] = company?.bizCompany?.data?.name || '';
+            }
+          });
+        }
+
         const commonInfo = [
           `v${session.version?.sequence}`,
           formatDate(session.createdAt),
