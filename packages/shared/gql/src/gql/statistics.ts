@@ -120,6 +120,9 @@ export const listSessionsDetail = gql`
           bizUserId
           state
           contentId
+          version {
+            sequence
+          }
           bizUser {
             externalId
             data

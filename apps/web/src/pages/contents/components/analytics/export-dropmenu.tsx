@@ -11,7 +11,98 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
 import { listSessionsDetail } from '@usertour-ui/gql';
 import type { BizSession, BizEvent } from '@usertour-ui/types';
+import { BizEvents } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
+import { useEventListContext } from '@/contexts/event-list-context';
+
+// Utility functions
+const formatDate = (date: string | null | undefined) => {
+  if (!date) return '';
+  try {
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return '';
+    return parsedDate.toISOString().replace('T', ' ').replace('.000Z', '');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};
+
+const getLastActivityAt = (session: BizSession) => {
+  if (!session.bizEvent || session.bizEvent.length === 0) {
+    return session.createdAt;
+  }
+  return session.bizEvent.reduce((latest, event) => {
+    return new Date(event.createdAt) > new Date(latest) ? event.createdAt : latest;
+  }, session.createdAt);
+};
+
+const getCompletedAt = (session: BizSession, eventList: any[] | undefined) => {
+  const { bizEvent } = session;
+  if (!bizEvent || bizEvent.length === 0 || !eventList) {
+    return '';
+  }
+
+  const completeEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_COMPLETED);
+  const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent?.id);
+
+  if (!completeBizEvent) {
+    return '';
+  }
+
+  return completeBizEvent.createdAt;
+};
+
+const getState = (session: BizSession, eventList: any[] | undefined) => {
+  const { bizEvent } = session;
+  if (!bizEvent || bizEvent.length === 0 || !eventList || eventList.length === 0) {
+    return 'In Progress';
+  }
+
+  const completeEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_COMPLETED);
+  const endedEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_ENDED);
+
+  if (!completeEvent || !endedEvent) {
+    return 'In Progress';
+  }
+  const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent.id);
+  const endedBizEvent = bizEvent.find((e) => e.eventId === endedEvent.id);
+
+  const isComplete = !!completeBizEvent;
+  const isDismissed = !!endedBizEvent;
+
+  if (isComplete) {
+    return 'Completed';
+  }
+  if (isDismissed) {
+    return 'Dismissed';
+  }
+  return 'In Progress';
+};
+
+const getStepData = (events: BizEvent[]) => {
+  const stepData = {
+    nps: '',
+    feedback: '',
+    done: false,
+  };
+
+  for (const event of events) {
+    switch (event.event?.codeName) {
+      case 'nps':
+        stepData.nps = event.data?.score || '';
+        break;
+      case 'feedback':
+        stepData.feedback = event.data?.text || '';
+        break;
+      case 'done':
+        stepData.done = true;
+        break;
+    }
+  }
+
+  return stepData;
+};
 
 type ExportDropdownMenuProps = {
   children: ReactNode;
@@ -23,6 +114,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { totalCount } = useBizSessionContext();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const { eventList } = useEventListContext();
 
   const query = {
     contentId,
@@ -39,71 +131,6 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
     },
     skip: true,
   });
-
-  const formatDate = (date: string | null | undefined) => {
-    if (!date) return '';
-    try {
-      const parsedDate = new Date(date);
-      if (Number.isNaN(parsedDate.getTime())) return '';
-      return parsedDate.toISOString().replace('T', ' ').replace('.000Z', '');
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '';
-    }
-  };
-
-  const getLastActivityAt = (session: BizSession) => {
-    if (!session.bizEvent || session.bizEvent.length === 0) {
-      return session.createdAt;
-    }
-    return session.bizEvent.reduce((latest, event) => {
-      return new Date(event.createdAt) > new Date(latest) ? event.createdAt : latest;
-    }, session.createdAt);
-  };
-
-  const getCompletedAt = (session: BizSession) => {
-    if (session.state === 2) {
-      return getLastActivityAt(session);
-    }
-    return '';
-  };
-
-  const getState = (state: number) => {
-    switch (state) {
-      case 0:
-        return 'In Progress';
-      case 1:
-        return 'Dismissed';
-      case 2:
-        return 'Completed';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  const getStepData = (events: BizEvent[]) => {
-    const stepData = {
-      nps: '',
-      feedback: '',
-      done: false,
-    };
-
-    for (const event of events) {
-      switch (event.event?.codeName) {
-        case 'nps':
-          stepData.nps = event.data?.score || '';
-          break;
-        case 'feedback':
-          stepData.feedback = event.data?.text || '';
-          break;
-        case 'done':
-          stepData.done = true;
-          break;
-      }
-    }
-
-    return stepData;
-  };
 
   const handleExportCSV = async () => {
     if (isExporting) {
@@ -134,7 +161,6 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
         const sessions = result.data?.listSessionsDetail?.edges?.map((e: any) => e.node) || [];
         allSessions = [...allSessions, ...sessions];
-        console.log('allSessions:', allSessions);
 
         // Get the cursor for the next page
         const lastEdge = result.data?.listSessionsDetail?.edges?.slice(-1)[0];
@@ -174,12 +200,12 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           session.bizUser?.data?.email || '',
           session.bizUser?.bizUsersOnCompany?.[0]?.bizCompany?.externalId || '',
           session.bizUser?.bizUsersOnCompany?.[0]?.bizCompany?.data?.name || '',
-          session.version?.sequence || '',
+          `v${session.version?.sequence}`,
           formatDate(session.createdAt),
           formatDate(getLastActivityAt(session)),
-          formatDate(getCompletedAt(session)),
+          formatDate(getCompletedAt(session, eventList)),
           `${session.progress}%`,
-          getState(session.state),
+          getState(session, eventList),
           session.data?.startReason || 'Matched auto-start condition',
           session.data?.endReason || 'Ended through action',
           stepData.nps,
