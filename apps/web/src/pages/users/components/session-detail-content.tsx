@@ -64,7 +64,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   }
 
   const bizEvents = session?.bizEvent?.sort((a, b) => {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   const answerEvents = session?.bizEvent?.filter(
