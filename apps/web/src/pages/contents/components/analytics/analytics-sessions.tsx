@@ -15,7 +15,7 @@ export const AnalyticsSessions = () => {
             <ExportDropdownMenu>
               <Button variant="ghost" className="h-8 text-primary hover:text-primary">
                 <DownloadIcon className="mr-1 w-4 h-4" />
-                Export
+                Export to CSV
               </Button>
             </ExportDropdownMenu>
           </CardTitle>
