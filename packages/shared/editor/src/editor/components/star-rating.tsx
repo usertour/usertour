@@ -59,28 +59,39 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
   const [isOpen, setIsOpen] = useState<boolean>();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [localData, setLocalData] = useState(element.data);
+  const [shouldUpdate, setShouldUpdate] = useState(false);
+
+  const handleDataChange = useCallback((data: Partial<ContentEditorStarRatingElement['data']>) => {
+    setLocalData((prevData) => {
+      const newData = { ...prevData, ...data };
+      setShouldUpdate(true);
+      return newData;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (shouldUpdate) {
+      updateElement(
+        {
+          ...element,
+          data: localData,
+        },
+        id,
+      );
+      setShouldUpdate(false);
+    }
+  }, [shouldUpdate, localData, updateElement, element, id]);
+
+  useEffect(() => {
+    setIsShowError(isEmptyString(localData.name));
+  }, [localData.name]);
+
   const handleStarHover = useCallback((index: number) => {
     setHoveredIndex(index);
   }, []);
 
-  const handleDataChange = useCallback(
-    (data: Partial<ContentEditorStarRatingElement['data']>) => {
-      updateElement(
-        {
-          ...element,
-          data: { ...element.data, ...data },
-        },
-        id,
-      );
-    },
-    [element.data, id, updateElement],
-  );
-
-  const scaleLength = element.data.highRange - element.data.lowRange + 1;
-
-  useEffect(() => {
-    setIsShowError(isEmptyString(element.data.name));
-  }, [element?.data?.name]);
+  const scaleLength = localData.highRange - localData.lowRange + 1;
 
   return (
     <EditorError open={isShowError}>
@@ -104,10 +115,10 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                   />
                 ))}
               </div>
-              {(element.data.lowLabel || element.data.highLabel) && (
+              {(localData.lowLabel || localData.highLabel) && (
                 <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-                  <p>{element.data.lowLabel}</p>
-                  <p>{element.data.highLabel}</p>
+                  <p>{localData.lowLabel}</p>
+                  <p>{localData.highLabel}</p>
                 </div>
               )}
             </div>
@@ -122,7 +133,7 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                 <Label htmlFor="star-rating-question">Question name</Label>
                 <Input
                   id="star-rating-question"
-                  value={element.data.name}
+                  value={localData.name}
                   onChange={(e) => handleDataChange({ name: e.target.value })}
                   placeholder="Question name?"
                 />
@@ -134,7 +145,7 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                   currentStep={currentStep}
                   currentVersion={currentVersion}
                   onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={element?.data?.actions || []}
+                  defaultConditions={localData.actions || []}
                   attributes={attributes}
                   contents={contentList}
                   createStep={createStep}
@@ -143,14 +154,14 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                 <div className="flex flex-row gap-2 items-center">
                   <Input
                     type="number"
-                    value={element.data.lowRange}
+                    value={localData.lowRange}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
                   />
                   <p>-</p>
                   <Input
                     type="number"
-                    value={element.data.highRange}
+                    value={localData.highRange}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
                   />
@@ -165,13 +176,13 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                 <div className="flex flex-row gap-2">
                   <Input
                     type="text"
-                    value={element.data.lowLabel}
+                    value={localData.lowLabel}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
                   />
                   <Input
                     type="text"
-                    value={element.data.highLabel}
+                    value={localData.highLabel}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ highLabel: e.target.value })}
                   />
@@ -179,8 +190,8 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
                 <BindAttribute
                   zIndex={zIndex}
                   projectId={projectId}
-                  bindToAttribute={element.data.bindToAttribute || false}
-                  selectedAttribute={element.data.selectedAttribute}
+                  bindToAttribute={localData.bindToAttribute || false}
+                  selectedAttribute={localData.selectedAttribute}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                 />

@@ -40,39 +40,55 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
     zIndex,
     currentStep,
     currentVersion,
-    attributes,
     contentList,
     createStep,
+    attributes,
     projectId,
   } = useContentEditorContext();
-  const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>();
+  const [localData, setLocalData] = useState(element.data);
+  const [shouldUpdate, setShouldUpdate] = useState(false);
+
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorMultipleChoiceElement['data']>) => {
+      setLocalData((prevData) => {
+        const newData = { ...prevData, ...data };
+        setShouldUpdate(true);
+        return newData;
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (shouldUpdate) {
       updateElement(
         {
           ...element,
-          data: { ...element.data, ...data },
+          data: localData,
         },
         id,
       );
-    },
-    [element, id, updateElement],
-  );
-
-  const handleOptionChange = (
-    index: number,
-    field: keyof ContentEditorMultipleChoiceOption,
-    value: string | boolean,
-  ) => {
-    const newOptions = [...element.data.options];
-    newOptions[index] = { ...newOptions[index], [field]: value };
-    handleDataChange({ options: newOptions });
-  };
+      setShouldUpdate(false);
+    }
+  }, [shouldUpdate, localData, updateElement, id]);
 
   useEffect(() => {
-    setIsShowError(isEmptyString(element.data.name));
-  }, [element?.data?.name]);
+    setIsShowError(isEmptyString(localData.name));
+  }, [localData.name]);
+
+  const handleOptionChange = useCallback(
+    (index: number, field: keyof ContentEditorMultipleChoiceOption, value: string | boolean) => {
+      setLocalData((prevData) => {
+        const newOptions = [...prevData.options];
+        newOptions[index] = { ...newOptions[index], [field]: value };
+        setShouldUpdate(true);
+        return { ...prevData, options: newOptions };
+      });
+    },
+    [],
+  );
 
   return (
     <EditorError open={isShowError}>
@@ -81,9 +97,9 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 w-full">
               <div className="space-y-2">
-                {!element.data.allowMultiple ? (
-                  <RadioGroup defaultValue={element.data.options[0].value}>
-                    {element.data.options.map((option, index) => (
+                {!localData.allowMultiple ? (
+                  <RadioGroup defaultValue={localData.options[0].value}>
+                    {localData.options.map((option, index) => (
                       <div className={itemBaseClass} key={index}>
                         <RadioGroupItem
                           value={option.value}
@@ -95,7 +111,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                         </Label>
                       </div>
                     ))}
-                    {element.data.enableOther && (
+                    {localData.enableOther && (
                       <div className={cn(itemBaseClass)}>
                         <RadioGroupItem
                           value="other"
@@ -110,7 +126,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   </RadioGroup>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {element.data.options.map((option, index) => (
+                    {localData.options.map((option, index) => (
                       <div className={itemBaseClass} key={index}>
                         <Checkbox
                           checked={option.checked}
@@ -125,7 +141,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                         </Label>
                       </div>
                     ))}
-                    {element.data.enableOther && (
+                    {localData.enableOther && (
                       <div className={cn(itemBaseClass)}>
                         <Checkbox className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background" />
                         <div className="flex items-center grow gap-2 relative">
@@ -134,7 +150,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                       </div>
                     )}
                     <div className="flex justify-center w-full">
-                      <Button forSdk={true}>{element.data.buttonText || 'Submit'}</Button>
+                      <Button forSdk={true}>{localData.buttonText || 'Submit'}</Button>
                     </div>
                   </div>
                 )}
@@ -152,7 +168,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   <Label htmlFor="question-name">Question name</Label>
                   <Input
                     id="question-name"
-                    value={element.data.name}
+                    value={localData.name}
                     onChange={(e) => handleDataChange({ name: e.target.value })}
                     placeholder="Enter question name"
                   />
@@ -165,7 +181,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   currentStep={currentStep}
                   currentVersion={currentVersion}
                   onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={element?.data?.actions || []}
+                  defaultConditions={localData.actions || []}
                   attributes={attributes}
                   contents={contentList}
                   createStep={createStep}
@@ -173,7 +189,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
 
                 <div className="space-y-2">
                   <Label>Options</Label>
-                  {element.data.options.map((option, index) => (
+                  {localData.options.map((option, index) => (
                     <div key={index} className="flex gap-2">
                       <Input
                         value={option.value}
@@ -194,7 +210,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                               size="sm"
                               onClick={() =>
                                 handleDataChange({
-                                  options: element.data.options.filter((_, i) => i !== index),
+                                  options: localData.options.filter((_, i) => i !== index),
                                 })
                               }
                             >
@@ -210,10 +226,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   <Button
                     onClick={() =>
                       handleDataChange({
-                        options: [
-                          ...element.data.options,
-                          { label: '', value: '', checked: false },
-                        ],
+                        options: [...localData.options, { label: '', value: '', checked: false }],
                       })
                     }
                     size="sm"
@@ -224,20 +237,20 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                     Add answer option
                   </Button>
                 </div>
-                {element.data.allowMultiple && (
+                {localData.allowMultiple && (
                   <>
                     <Label className="flex items-center gap-1">Number of options required</Label>
                     <div className="flex flex-row gap-2 items-center">
                       <Input
                         type="number"
-                        value={element.data.lowRange}
+                        value={localData.lowRange}
                         placeholder="Default"
                         onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
                       />
                       <p>-</p>
                       <Input
                         type="number"
-                        value={element.data.highRange}
+                        value={localData.highRange}
                         placeholder="Default"
                         onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
                       />
@@ -246,7 +259,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                       <Label htmlFor="button-text">Submit button text</Label>
                       <Input
                         id="button-text"
-                        value={element.data.buttonText}
+                        value={localData.buttonText}
                         onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                         placeholder="Enter button text"
                       />
@@ -258,7 +271,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="shuffle"
-                      checked={element.data.shuffleOptions}
+                      checked={localData.shuffleOptions}
                       className="data-[state=unchecked]:bg-muted"
                       onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
                     />
@@ -268,7 +281,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="other"
-                      checked={element.data.enableOther}
+                      checked={localData.enableOther}
                       className="data-[state=unchecked]:bg-muted"
                       onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
                     />
@@ -278,7 +291,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="multiple"
-                      checked={element.data.allowMultiple}
+                      checked={localData.allowMultiple}
                       className="data-[state=unchecked]:bg-muted"
                       onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
                     />
@@ -286,12 +299,12 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   </div>
                   <BindAttribute
                     zIndex={zIndex}
-                    bindToAttribute={element.data.bindToAttribute || false}
-                    selectedAttribute={element.data.selectedAttribute}
+                    bindToAttribute={localData.bindToAttribute || false}
+                    selectedAttribute={localData.selectedAttribute}
                     onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                     onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                     dataType={
-                      element.data.allowMultiple ? BizAttributeTypes.List : BizAttributeTypes.String
+                      localData.allowMultiple ? BizAttributeTypes.List : BizAttributeTypes.String
                     }
                     projectId={projectId}
                   />

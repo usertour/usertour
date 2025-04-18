@@ -32,23 +32,36 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [localData, setLocalData] = useState(element.data);
+  const [shouldUpdate, setShouldUpdate] = useState(false);
 
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorSingleLineTextElement['data']>) => {
-      updateElement(
-        {
-          ...element,
-          data: { ...element.data, ...data },
-        },
-        id,
-      );
+      setLocalData((prevData) => {
+        const newData = { ...prevData, ...data };
+        setShouldUpdate(true);
+        return newData;
+      });
     },
-    [element.data, id, updateElement],
+    [],
   );
 
   useEffect(() => {
-    setIsShowError(isEmptyString(element.data.name));
-  }, [element?.data?.name]);
+    if (shouldUpdate) {
+      updateElement(
+        {
+          ...element,
+          data: localData,
+        },
+        id,
+      );
+      setShouldUpdate(false);
+    }
+  }, [shouldUpdate, localData, updateElement, element, id]);
+
+  useEffect(() => {
+    setIsShowError(isEmptyString(localData.name));
+  }, [localData.name]);
 
   return (
     <EditorError open={isShowError}>
@@ -57,12 +70,12 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
               <Input
-                placeholder={element.data.placeholder || 'Enter text...'}
+                placeholder={localData.placeholder || 'Enter text...'}
                 className="grow h-auto border-sdk-question bg-sdk-background"
               />
               <div className="flex justify-end w-full">
                 <Button forSdk={true} size="sm" className="flex-none">
-                  {element.data.buttonText || 'Submit'}
+                  {localData.buttonText || 'Submit'}
                 </Button>
               </div>
             </div>
@@ -78,7 +91,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   <Label htmlFor="question-name">Question name</Label>
                   <Input
                     id="question-name"
-                    value={element.data.name}
+                    value={localData.name}
                     onChange={(e) => handleDataChange({ name: e.target.value })}
                     placeholder="Enter question name"
                   />
@@ -91,7 +104,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   currentStep={currentStep}
                   currentVersion={currentVersion}
                   onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={element?.data?.actions || []}
+                  defaultConditions={localData.actions || []}
                   attributes={attributes}
                   contents={contentList}
                   createStep={createStep}
@@ -101,7 +114,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   <Label htmlFor="placeholder">Placeholder text</Label>
                   <Input
                     id="placeholder"
-                    value={element.data.placeholder}
+                    value={localData.placeholder}
                     onChange={(e) => handleDataChange({ placeholder: e.target.value })}
                     placeholder="Enter placeholder text"
                   />
@@ -111,7 +124,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   <Label htmlFor="button-text">Submit button text</Label>
                   <Input
                     id="button-text"
-                    value={element.data.buttonText}
+                    value={localData.buttonText}
                     onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                     placeholder="Enter button text"
                   />
@@ -122,15 +135,15 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                   <Switch
                     id="required"
                     className="data-[state=unchecked]:bg-muted"
-                    checked={element.data.required}
+                    checked={localData.required}
                     onCheckedChange={(checked) => handleDataChange({ required: checked })}
                   />
                 </div>
                 <BindAttribute
                   zIndex={zIndex}
-                  bindToAttribute={element.data.bindToAttribute || false}
+                  bindToAttribute={localData.bindToAttribute || false}
                   projectId={projectId}
-                  selectedAttribute={element.data.selectedAttribute}
+                  selectedAttribute={localData.selectedAttribute}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
                   dataType={BizAttributeTypes.String}
