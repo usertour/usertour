@@ -37,6 +37,7 @@ import { ScrollArea } from '@usertour-ui/scroll-area';
 import { getUserAttrError } from '@usertour-ui/shared-utils';
 import {
   Attribute,
+  AttributeBizTypes,
   AttributeDataType,
   RulesUserAttributeData,
   RulesUserAttributeProps,
@@ -169,7 +170,6 @@ const RulesUserAttributeName = () => {
   const [open, setOpen] = useState(false);
   const { selectedPreset, setSelectedPreset, updateLocalData } = useRulesUserAttributeContext();
   const { attributes } = useRulesContext();
-  const { type } = useRulesUserAttributeContext();
   const handleOnSelected = (item: Attribute) => {
     setSelectedPreset(item);
     updateLocalData({ attrId: item.id });
@@ -205,57 +205,77 @@ const RulesUserAttributeName = () => {
             <CommandInput placeholder="Search attribute..." />
             <CommandEmpty>No items found.</CommandEmpty>
             <ScrollArea className="h-72">
-              {type === 'user-attr' && (
-                <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-                  {attributes
-                    ?.filter((attr) => attr.bizType === 1)
-                    .map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        className="cursor-pointer"
-                        value={item.id}
-                        onSelect={() => {
-                          handleOnSelected(item);
-                        }}
-                      >
-                        {item.displayName || item.codeName}
-                        <CheckIcon
-                          className={cn(
-                            'ml-auto h-4 w-4',
-                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              )}
-              {type === 'company-attr' && (
-                <CommandGroup
-                  heading="Company attribute"
-                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
-                >
-                  {attributes
-                    ?.filter((attr) => attr.bizType === 2)
-                    .map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        className="cursor-pointer text-sm"
-                        value={item.id}
-                        onSelect={() => {
-                          handleOnSelected(item);
-                        }}
-                      >
-                        {item.displayName || item.codeName}
-                        <CheckIcon
-                          className={cn(
-                            'ml-auto h-4 w-4',
-                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              )}
+              <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                {attributes
+                  ?.filter((attr) => attr.bizType === AttributeBizTypes.User)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.displayName || item.codeName}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+
+              <CommandGroup heading="Company attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                {attributes
+                  ?.filter((attr) => attr.bizType === AttributeBizTypes.Company)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer text-sm"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.displayName || item.codeName}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+
+              <CommandGroup
+                heading="Membership attribute"
+                style={{ zIndex: EXTENSION_CONTENT_RULES }}
+              >
+                {attributes
+                  ?.filter((attr) => attr.bizType === AttributeBizTypes.Membership)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer text-sm"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.displayName || item.codeName}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
             </ScrollArea>
           </Command>
         </Popover.PopoverContent>
@@ -403,7 +423,7 @@ const RulesUserAttributeInput = () => {
         {listValues.map((value, index) => (
           <div key={index} className="relative">
             <Input
-              value={value}
+              value={value || ''}
               onChange={(e) => handleListValueChange(index, e.target.value)}
               onFocus={() => setFocusedIndex(index)}
               onBlur={() => setFocusedIndex(-1)}
@@ -438,7 +458,7 @@ const RulesUserAttributeInput = () => {
           localData?.logic !== 'after' && (
             <Input
               type={inputType}
-              value={localData?.value}
+              value={localData?.value || ''}
               onChange={(e) => {
                 updateLocalData({ value: e.target.value });
               }}
@@ -450,7 +470,7 @@ const RulesUserAttributeInput = () => {
             <span>and</span>
             <Input
               type={inputType}
-              value={localData?.value2}
+              value={localData?.value2 || ''}
               onChange={(e) => {
                 updateLocalData({ value2: e.target.value });
               }}
@@ -593,8 +613,11 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                   <div className=" flex flex-col space-y-2">
                     <div className=" flex flex-col space-y-1">
                       <div>
-                        {type === 'user-attr' && 'User attribute'}
-                        {type === 'company-attr' && 'Company attribute'}
+                        {selectedPreset?.bizType === AttributeBizTypes.User && 'User attribute'}
+                        {selectedPreset?.bizType === AttributeBizTypes.Company &&
+                          'Company attribute'}
+                        {selectedPreset?.bizType === AttributeBizTypes.Membership &&
+                          'Membership attribute'}
                       </div>
                       <RulesUserAttributeName />
                       <RulesUserAttributeCondition />
