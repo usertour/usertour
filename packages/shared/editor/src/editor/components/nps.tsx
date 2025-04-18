@@ -35,23 +35,33 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
   } = useContentEditorContext();
   const [isShowError, setIsShowError] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>();
+  const [localData, setLocalData] = useState(element.data);
+  const [shouldUpdate, setShouldUpdate] = useState(false);
 
-  const handleDataChange = useCallback(
-    (data: Partial<ContentEditorNPSElement['data']>) => {
+  const handleDataChange = useCallback((data: Partial<ContentEditorNPSElement['data']>) => {
+    setLocalData((prevData) => {
+      const newData = { ...prevData, ...data };
+      setShouldUpdate(true);
+      return newData;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (shouldUpdate) {
       updateElement(
         {
           ...element,
-          data: { ...element.data, ...data },
+          data: localData,
         },
         id,
       );
-    },
-    [element.data, id, updateElement],
-  );
+      setShouldUpdate(false);
+    }
+  }, [shouldUpdate, localData, updateElement, element, id]);
 
   useEffect(() => {
-    setIsShowError(isEmptyString(element.data.name));
-  }, [element?.data?.name]);
+    setIsShowError(isEmptyString(localData.name));
+  }, [localData.name]);
 
   return (
     <EditorError open={isShowError}>
@@ -64,14 +74,14 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
                 style={{ gridTemplateColumns: 'repeat(11, minmax(0px, 1fr))' }}
               >
                 {Array.from({ length: 11 }, (_, i) => (
-                  <Button key={i} className={`${buttonBaseClass}`} forSdk>
+                  <Button key={`nps-button-${i}`} className={`${buttonBaseClass}`} forSdk>
                     {i}
                   </Button>
                 ))}
               </div>
               <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-                <p>{element.data.lowLabel || 'Not at all likely'}</p>
-                <p>{element.data.highLabel || 'Extremely likely'}</p>
+                <p>{localData.lowLabel || 'Not at all likely'}</p>
+                <p>{localData.highLabel || 'Extremely likely'}</p>
               </div>
             </div>
           </Popover.Trigger>
@@ -85,7 +95,7 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
                 <Label htmlFor="nps-question">Question name</Label>
                 <Input
                   id="nps-question"
-                  value={element.data.name}
+                  value={localData.name}
                   onChange={(e) => handleDataChange({ name: e.target.value })}
                   placeholder="Question name?"
                 />
@@ -97,9 +107,8 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
                   currentStep={currentStep}
                   currentVersion={currentVersion}
                   onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={element?.data?.actions || []}
+                  defaultConditions={localData.actions || []}
                   attributes={attributes}
-                  // segments={segmentList || []}
                   contents={contentList}
                   createStep={createStep}
                 />
@@ -113,21 +122,21 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
                 <div className="flex flex-row gap-2">
                   <Input
                     type="text"
-                    value={element.data.lowLabel}
+                    value={localData.lowLabel}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
                   />
                   <Input
                     type="text"
-                    value={element.data.highLabel}
+                    value={localData.highLabel}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ highLabel: e.target.value })}
                   />
                 </div>
 
                 <BindAttribute
-                  bindToAttribute={element.data.bindToAttribute || false}
-                  selectedAttribute={element.data.selectedAttribute}
+                  bindToAttribute={localData.bindToAttribute || false}
+                  selectedAttribute={localData.selectedAttribute}
                   zIndex={zIndex}
                   projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
@@ -166,7 +175,7 @@ export const ContentEditorNPSSerialize = (props: ContentEditorNPSSerializeType) 
         >
           {Array.from({ length: 11 }, (_, i) => (
             <Button
-              key={i}
+              key={`nps-button-${i}`}
               className={`${buttonBaseClass}`}
               onClick={() => onClick?.(element, i)}
               forSdk
