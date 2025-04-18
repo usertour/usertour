@@ -227,10 +227,10 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
       <Popover.Portal>
         <Popover.Content
           className="z-50 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-          side="bottom"
+          side="right"
           align="start"
           style={{ zIndex: zIndex }}
-          sideOffset={5}
+          sideOffset={10}
         >
           <div className="flex flex-col gap-2.5">
             <Label htmlFor="button-text">Embed URL</Label>

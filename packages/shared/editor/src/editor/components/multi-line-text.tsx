@@ -86,6 +86,8 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
             <Popover.Content
               className="z-50 w-72 rounded-md border bg-background p-4"
               style={{ zIndex }}
+              sideOffset={10}
+              side="right"
             >
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">

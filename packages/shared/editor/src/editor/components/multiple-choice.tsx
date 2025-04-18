@@ -162,6 +162,8 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
             <Popover.Content
               className="z-50 w-96 rounded-md border bg-background p-4"
               style={{ zIndex }}
+              sideOffset={10}
+              side="right"
             >
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">

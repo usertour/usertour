@@ -131,10 +131,9 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
           <Popover.Portal>
             <Popover.Content
               className="z-50 w-72 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-              side="bottom"
-              align="start"
+              side="right"
               style={{ zIndex: zIndex }}
-              sideOffset={5}
+              sideOffset={10}
               alignOffset={-2}
             >
               <div className="flex flex-col gap-2.5">
