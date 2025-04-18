@@ -403,7 +403,7 @@ const RulesUserAttributeInput = () => {
         {listValues.map((value, index) => (
           <div key={index} className="relative">
             <Input
-              value={value}
+              value={value || ''}
               onChange={(e) => handleListValueChange(index, e.target.value)}
               onFocus={() => setFocusedIndex(index)}
               onBlur={() => setFocusedIndex(-1)}
@@ -438,7 +438,7 @@ const RulesUserAttributeInput = () => {
           localData?.logic !== 'after' && (
             <Input
               type={inputType}
-              value={localData?.value}
+              value={localData?.value || ''}
               onChange={(e) => {
                 updateLocalData({ value: e.target.value });
               }}
@@ -450,7 +450,7 @@ const RulesUserAttributeInput = () => {
             <span>and</span>
             <Input
               type={inputType}
-              value={localData?.value2}
+              value={localData?.value2 || ''}
               onChange={(e) => {
                 updateLocalData({ value2: e.target.value });
               }}
