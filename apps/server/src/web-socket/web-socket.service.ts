@@ -102,7 +102,9 @@ export class WebSocketService {
     const attributes = await this.prisma.attribute.findMany({
       where: {
         projectId: environment.projectId,
-        bizType: { in: [AttributeBizType.USER, AttributeBizType.COMPANY] },
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
       },
     });
     for (let index = 0; index < contents.length; index++) {
@@ -287,15 +289,13 @@ export class WebSocketService {
     const companyAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY);
     switch (rules.type) {
       case 'user-attr': {
-        const filter = createFilterItem(rules, userAttrs) || {};
-        const segmentUser = await this.prisma.bizUser.findFirst({
-          where: {
-            environmentId: environment.id,
-            externalId: String(bizUser.externalId),
-            ...filter,
-          },
-        });
-        return !!segmentUser;
+        return await this.activedUserAttributeRulesCondition(
+          rules,
+          environment,
+          attributes,
+          bizUser,
+          companyId,
+        );
       }
       case 'segment': {
         const { segmentId } = rules.data;
@@ -330,6 +330,60 @@ export class WebSocketService {
       default: {
         return false;
       }
+    }
+  }
+
+  async activedUserAttributeRulesCondition(
+    rules: RulesCondition,
+    environment: Environment,
+    attributes: Attribute[],
+    bizUser: BizUser,
+    companyId?: string,
+  ): Promise<boolean> {
+    const attr = attributes.find((attr) => attr.id === rules.data.attrId);
+    if (!attr) {
+      return false;
+    }
+
+    const filter = createFilterItem(rules, attributes) || {};
+    const environmentId = environment.id;
+
+    switch (attr.bizType) {
+      case AttributeBizType.USER: {
+        const segmentUser = await this.prisma.bizUser.findFirst({
+          where: {
+            environmentId,
+            externalId: String(bizUser.externalId),
+            ...filter,
+          },
+        });
+        return !!segmentUser;
+      }
+
+      case AttributeBizType.COMPANY:
+      case AttributeBizType.MEMBERSHIP: {
+        if (!companyId) return false;
+
+        const bizCompany = await this.prisma.bizCompany.findFirst({
+          where: {
+            externalId: String(companyId),
+            environmentId,
+          },
+        });
+        if (!bizCompany) return false;
+
+        const segmentUser = await this.prisma.bizUserOnCompany.findFirst({
+          where: {
+            bizUserId: bizUser.id,
+            bizCompanyId: bizCompany.id,
+            ...(attr.bizType === AttributeBizType.COMPANY ? { bizCompany: filter } : filter),
+          },
+        });
+        return !!segmentUser;
+      }
+
+      default:
+        return false;
     }
   }
 
