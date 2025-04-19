@@ -8,6 +8,8 @@ export class AmplitudeAdapter extends BaseAnalyticsAdapter {
         ...event.eventData,
       });
       console.log('Event sent to Amplitude:', event.eventName);
+    } else {
+      console.warn('Amplitude is not initialized.');
     }
   }
 }

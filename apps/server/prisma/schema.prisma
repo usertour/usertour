@@ -483,9 +483,9 @@ model Integration {
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
   // Name of the integration (e.g., "Google Analytics")
-  displayName        String   @unique 
+  displayName        String
    // code of integration (e.g., "ga", "mixpanel", "posthog")
-  codeName        String   @unique
+  codeName        String
   // Description of the integration
   description String?
   // JSON schema for configuration (optional)
@@ -494,6 +494,9 @@ model Integration {
   projectId      String
 
   bizIntegrations BizIntegration[]
+
+  @@unique([projectId, displayName])
+  @@unique([projectId, codeName])
 }
 
 model BizIntegration {

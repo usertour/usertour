@@ -99,4 +99,11 @@ export enum BizAttributeTypes {
 export enum Integrations {
   GOOGLE_ANALYTICS = 'ga',
   AMPLITUDE = 'amplitude',
+  HUBSPOT = 'hubspot',
+  INTERCOM = 'intercom',
+  KLAVIYO = 'klaviyo',
+  LOGROCKET = 'logrocket',
+  MIXPANEL = 'mixpanel',
+  POSTHOG = 'posthog',
+  SEGMENT = 'segment',
 }

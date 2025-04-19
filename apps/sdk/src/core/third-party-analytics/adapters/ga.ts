@@ -10,6 +10,8 @@ export class GoogleAnalyticsAdapter extends BaseAnalyticsAdapter {
         ...event.eventData,
       });
       console.log('Event sent to GA');
+    } else {
+      console.warn('Google Analytics is not initialized.');
     }
   }
 }

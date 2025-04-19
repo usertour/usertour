@@ -9,6 +9,7 @@ import {
   SDKSettingsMode,
   Theme,
   flowEndReason,
+  Integrations,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
@@ -33,6 +34,16 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
+import { tpa } from './third-party-analytics/third-party-analytics';
+import { GoogleAnalyticsAdapter } from './third-party-analytics/adapters/ga';
+import { AmplitudeAdapter } from './third-party-analytics/adapters/amplitude';
+import { HubSpotAdapter } from './third-party-analytics/adapters/hubspot';
+import { IntercomAdapter } from './third-party-analytics/adapters/intercom';
+import { KlaviyoAdapter } from './third-party-analytics/adapters/klaviyo';
+import { LogRocketAdapter } from './third-party-analytics/adapters/logrocket';
+import { MixpanelAdapter } from './third-party-analytics/adapters/mixpanel';
+import { PostHogAdapter } from './third-party-analytics/adapters/posthog';
+import { SegmentAdapter } from './third-party-analytics/adapters/segment';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -152,6 +163,7 @@ export class App extends Evented {
     if (!this.isPreview()) {
       this.startOptions = Object.assign({}, startOptions);
     }
+    this.registerIntegrations();
   }
 
   /**
@@ -404,14 +416,22 @@ export class App extends Evented {
       if (!sessionId) {
         return;
       }
-
-      await this.socket.trackEvent({
+      console.log('starting to track event');
+      const response = await this.socket.trackEvent({
         userId: event.userId,
         token,
         sessionId,
         eventData: event.eventData,
         eventName: event.eventName,
       });
+
+      tpa.sendEvent({
+        eventName: event.eventName,
+        userId: event.userId,
+        eventData: event.eventData,
+      });
+
+      console.log('received response for tracking event', response, event);
       this.trigger(AppEvents.EVENT_REPORTED);
     } catch (error) {
       logger.error('Failed to report event:', error);
@@ -859,6 +879,49 @@ export class App extends Evented {
     if (this.contentPollingInterval) {
       clearInterval(this.contentPollingInterval);
       this.contentPollingInterval = undefined;
+    }
+  }
+
+  /**
+   * Registers enabled integrations for the project
+   */
+  private async registerIntegrations() {
+    const { token } = this.startOptions;
+    const enabledIntegrations = await this.socket.listEnabledIntegrations(token);
+    for (const bizIntegration of enabledIntegrations) {
+      const integration = bizIntegration.integration;
+      console.log('registering adapter for', integration.codeName);
+      switch (integration.codeName) {
+        case Integrations.GOOGLE_ANALYTICS:
+          tpa.registerAdapter(new GoogleAnalyticsAdapter());
+          break;
+        case Integrations.AMPLITUDE:
+          tpa.registerAdapter(new AmplitudeAdapter());
+          break;
+        case Integrations.HUBSPOT:
+          tpa.registerAdapter(new HubSpotAdapter());
+          break;
+        case Integrations.INTERCOM:
+          tpa.registerAdapter(new IntercomAdapter());
+          break;
+        case Integrations.KLAVIYO:
+          tpa.registerAdapter(new KlaviyoAdapter());
+          break;
+        case Integrations.LOGROCKET:
+          tpa.registerAdapter(new LogRocketAdapter());
+          break;
+        case Integrations.MIXPANEL:
+          tpa.registerAdapter(new MixpanelAdapter());
+          break;
+        case Integrations.POSTHOG:
+          tpa.registerAdapter(new PostHogAdapter());
+          break;
+        case Integrations.SEGMENT:
+          tpa.registerAdapter(new SegmentAdapter());
+          break;
+        default:
+          console.warn(`No adapter found for integration: ${integration.codeName}`);
+      }
     }
   }
 }

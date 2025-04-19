@@ -955,6 +955,34 @@ const defaultIntegrations = [
     displayName: 'Amplitude',
     codeName: Integrations.AMPLITUDE,
   },
+  {
+    displayName: 'HubSpot',
+    codeName: Integrations.HUBSPOT,
+  },
+  {
+    displayName: 'Intercom',
+    codeName: Integrations.INTERCOM,
+  },
+  {
+    displayName: 'Klaviyo',
+    codeName: Integrations.KLAVIYO,
+  },
+  {
+    displayName: 'LogRocket',
+    codeName: Integrations.LOGROCKET,
+  },
+  {
+    displayName: 'Mixpanel',
+    codeName: Integrations.MIXPANEL,
+  },
+  {
+    displayName: 'PostHog',
+    codeName: Integrations.POSTHOG,
+  },
+  {
+    displayName: 'Segment',
+    codeName: Integrations.SEGMENT,
+  },
 ];
 
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
