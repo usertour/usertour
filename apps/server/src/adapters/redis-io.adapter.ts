@@ -26,6 +26,7 @@ export class RedisIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): any {
     const serverOptions = {
       ...options,
+      // transports: ['websocket'],
       cors: {
         origin: true,
         allowedHeaders: true,

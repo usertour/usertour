@@ -7,6 +7,7 @@ import {
   Theme,
   UserTourTypes,
   flowEndReason,
+  flowStartReason,
 } from '@usertour-ui/types';
 import { isEqual } from 'lodash';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
@@ -259,7 +260,7 @@ export abstract class BaseContent<T = any> extends Evented {
 
   async startNewTour(contentId: string) {
     await this.cancelActiveTour();
-    await this.startTour(contentId, 'action');
+    await this.startTour(contentId, flowStartReason.ACTION);
   }
 
   handleNavigate(data: any) {
@@ -272,10 +273,15 @@ export abstract class BaseContent<T = any> extends Evented {
     return await this.getConfig().activeConditions();
   }
 
+  getSdkConfig() {
+    return this.getInstance().getSdkConfig();
+  }
+
   getStoreBaseInfo() {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
+    const sdkConfig = this.getSdkConfig();
     if (!themes || themes.length === 0) {
       return {};
     }
@@ -290,6 +296,7 @@ export abstract class BaseContent<T = any> extends Evented {
       return {};
     }
     return {
+      sdkConfig,
       assets: getAssets(theme),
       globalStyle: convertToCssVars(convertSettings(theme.settings)),
       theme,

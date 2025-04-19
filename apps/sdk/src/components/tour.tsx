@@ -33,7 +33,7 @@ const PopperContent = ({
         onClick={handleOnClick}
         userInfo={userInfo}
       />
-      <SharedPopper.PopperMadeWith />
+      {!store.sdkConfig.removeBranding && <SharedPopper.PopperMadeWith />}
       <SharedPopper.PopperProgress width={progress} />
     </SharedPopper.PopperContentFrame>
   );

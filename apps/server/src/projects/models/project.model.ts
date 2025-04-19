@@ -11,8 +11,14 @@ export class Project extends BaseModel {
   name: string;
 
   @Field(() => String, { nullable: true })
-  logoUrl?: string | null;
+  logoUrl?: string;
 
   @Field(() => [Environment], { nullable: true })
-  environments?: [Environment] | null;
+  environments?: [Environment];
+
+  @Field(() => String, { nullable: true })
+  customerId?: string;
+
+  @Field(() => String, { nullable: true })
+  subscriptionId?: string;
 }

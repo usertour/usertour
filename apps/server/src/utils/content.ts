@@ -122,6 +122,30 @@ export const questionTypes = [
   ContentEditorElementType.MULTIPLE_CHOICE,
 ];
 
+export const numberQuestionTypes = [
+  ContentEditorElementType.SCALE,
+  ContentEditorElementType.STAR_RATING,
+  ContentEditorElementType.NPS,
+];
+
+export const aggregationQuestionTypes = [
+  ContentEditorElementType.MULTIPLE_CHOICE,
+  ...numberQuestionTypes,
+];
+
+/**
+ * Extract question data from step if it's a valid question for analytics
+ */
+export function extractQuestionForAnalytics(step: any) {
+  const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
+  if (questionData.length === 0) return null;
+
+  const question = questionData[0];
+  if (!aggregationQuestionTypes.includes(question.type)) return null;
+
+  return question;
+}
+
 export function extractQuestionData(data: GroupItem[]): QuestionElement[] {
   const result: QuestionElement[] = [];
   // Helper function to recursively search through the data

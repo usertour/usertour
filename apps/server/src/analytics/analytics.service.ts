@@ -11,12 +11,15 @@ import { AnalyticsQuery } from './dto/analytics-query.input';
 import { toZonedTime } from 'date-fns-tz';
 
 import {
+  aggregationQuestionTypes,
   ContentEditorElementType,
   extractQuestionData,
   GroupItem,
+  numberQuestionTypes,
   QuestionElement,
 } from '@/utils/content';
 import { Prisma } from '@prisma/client';
+import { UnknownError } from '@/common/errors/errors';
 
 type AnalyticsConditions = {
   contentId: string;
@@ -37,13 +40,6 @@ type ItemAnalyticsConditions = AnalyticsConditions & {
   key: string;
   value: string;
 };
-
-const numberQuestionTypes = [
-  ContentEditorElementType.SCALE,
-  ContentEditorElementType.STAR_RATING,
-  ContentEditorElementType.NPS,
-];
-const aggregationQuestionTypes = [ContentEditorElementType.MULTIPLE_CHOICE, ...numberQuestionTypes];
 
 const defaultRollWindowConfig = { nps: 365, rate: 365, scale: 365 };
 
@@ -765,6 +761,41 @@ export class AnalyticsService {
     }
   }
 
+  async listSessionsDetail(
+    query: AnalyticsQuery,
+    pagination: PaginationArgs,
+    orderBy: AnalyticsOrder,
+  ) {
+    try {
+      const sessions = await this.queryRecentSessions(query, pagination, orderBy);
+      if (!sessions) {
+        throw new UnknownError('Failed to fetch sessions');
+      }
+
+      // Fetch all session details in a single query
+      const sessionIds = sessions.edges.map((edge) => edge.node.id);
+      const sessionDetails = await this.querySessionsDetail(sessionIds);
+
+      // Create a map of session ID to session details for efficient lookup
+      const sessionDetailMap = new Map(sessionDetails.map((detail) => [detail.id, detail]));
+
+      // Build the response with enhanced session details
+      return {
+        edges: sessions.edges.map((edge) => ({
+          node: sessionDetailMap.get(edge.node.id) || edge.node,
+          cursor: edge.cursor,
+        })),
+        pageInfo: sessions.pageInfo,
+        totalCount: sessions.totalCount,
+      };
+    } catch (error) {
+      if (error instanceof UnknownError) {
+        throw error;
+      }
+      throw new UnknownError('Failed to fetch session details');
+    }
+  }
+
   async getSession(sessionId: string) {
     return await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
@@ -776,7 +807,22 @@ export class AnalyticsService {
     return await this.prisma.bizSession.findUnique({
       where: { id: sessionId, deleted: false },
       include: {
-        bizUser: true,
+        bizUser: { include: { bizCompany: true } },
+        bizEvent: { include: { event: true }, orderBy: { createdAt: 'desc' } },
+        content: true,
+        version: true,
+      },
+    });
+  }
+
+  async querySessionsDetail(sessionIds: string[]) {
+    return await this.prisma.bizSession.findMany({
+      where: {
+        id: { in: sessionIds },
+        deleted: false,
+      },
+      include: {
+        bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
         bizEvent: { include: { event: true }, orderBy: { createdAt: 'desc' } },
         content: true,
         version: true,

@@ -60,7 +60,11 @@ const QuestionAnswer = ({ answerEvent }: { answerEvent: BizEvent }) => {
     case ContentEditorElementType.NPS:
       return <ScaleAnswer value={answerEvent.data.number_answer} type="NPS" />;
     case ContentEditorElementType.MULTIPLE_CHOICE:
-      return <MultipleChoiceAnswer answers={answerEvent.data.list_answer} />;
+      return (
+        <MultipleChoiceAnswer
+          answers={answerEvent.data.text_answer || answerEvent.data.list_answer}
+        />
+      );
     case ContentEditorElementType.MULTI_LINE_TEXT:
       return <TextAnswer text={answerEvent.data.text_answer} />;
     default:
@@ -87,7 +91,7 @@ const SessionResponse = ({ answerEvents }: SessionResponseProps) => {
         <TableBody>
           {answerEvents ? (
             answerEvents.map((answerEvent: BizEvent) => (
-              <Fragment key={answerEvent.id}>
+              <Fragment key={`${answerEvent.id}`}>
                 <TableRow className="h-10">
                   <TableCell>
                     <div className="flex flex-row gap-2 items-center">

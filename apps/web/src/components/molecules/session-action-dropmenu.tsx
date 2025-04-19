@@ -97,7 +97,7 @@ type SessionActionDropdownMenuProps = {
 // Returns filtered and sorted answer events from session bizEvents
 const useSessionEvents = (session?: BizSession) => {
   const bizEvents = session?.bizEvent?.sort((a, b) => {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   const answerEvents = bizEvents?.filter(

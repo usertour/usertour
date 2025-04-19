@@ -1,5 +1,5 @@
 import { AssetAttributes } from '@usertour-ui/frame';
-import { BizUserInfo, SDKContent, Step, Theme } from '@usertour-ui/types';
+import { BizUserInfo, SDKConfig, SDKContent, Step, Theme } from '@usertour-ui/types';
 
 // Base store interface
 export interface BaseStore {
@@ -9,6 +9,7 @@ export interface BaseStore {
   assets: AssetAttributes[] | undefined;
   userInfo: BizUserInfo | undefined;
   theme?: Theme;
+  sdkConfig: SDKConfig;
 }
 
 // Tour store type

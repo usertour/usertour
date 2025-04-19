@@ -68,4 +68,14 @@ export class AnalyticsResolver {
   async querySessionDetail(@Args('sessionId') sessionId: string) {
     return await this.service.querySessionDetail(sessionId);
   }
+
+  @Query(() => BizSessionConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async listSessionsDetail(
+    @Args() pagination: PaginationArgs,
+    @Args('query') query: AnalyticsQuery,
+    @Args('orderBy') orderBy: AnalyticsOrder,
+  ) {
+    return await this.service.listSessionsDetail(query, pagination, orderBy);
+  }
 }

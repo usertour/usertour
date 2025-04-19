@@ -27,4 +27,13 @@ export class AppController {
       'https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDesOaG7vNtVH8Wun4VB7KoxF2k4XxD_5I',
     );
   }
+
+  @Get('api/health')
+  @Public()
+  healthCheck() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+  }
 }

@@ -1,5 +1,5 @@
 import { AssetAttributes } from '@usertour-ui/frame';
-import { BizUserInfo, Theme } from '@usertour-ui/types';
+import { BizUserInfo, PlanType, Theme } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
 import { ChecklistStore, LauncherStore, TourStore } from '../types/store';
 import { getUserTourCss } from '../utils/env';
@@ -10,6 +10,10 @@ const DEFAULT_STORE_VALUES = {
   globalStyle: '',
   assets: [],
   userInfo: undefined,
+  sdkConfig: {
+    removeBranding: false,
+    planType: PlanType.HOBBY,
+  },
 };
 
 // Update default stores

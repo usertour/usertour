@@ -17,6 +17,8 @@ export const getUserInfo = gql`
           id
           name
           logoUrl
+          subscriptionId
+          customerId
         }
       }
     }

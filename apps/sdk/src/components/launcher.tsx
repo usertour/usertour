@@ -29,10 +29,21 @@ interface LauncherWidgetCoreProps {
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   userInfo: BizUserInfo;
   handleActive: () => void;
+  removeBranding: boolean;
 }
 
 const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
-  const { data, handleActions, el, theme, zIndex, handleOnClick, userInfo, handleActive } = props;
+  const {
+    data,
+    handleActions,
+    el,
+    theme,
+    zIndex,
+    handleOnClick,
+    userInfo,
+    handleActive,
+    removeBranding,
+  } = props;
   const actionType = data?.behavior?.actionType;
   const [open, setOpen] = useState(false);
   const popperRef = useRef<HTMLDivElement>(null);
@@ -119,7 +130,7 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
               onClick={handleOnClick}
               userInfo={userInfo}
             />
-            <PopperMadeWith />
+            {!removeBranding && <PopperMadeWith />}
           </LauncherPopperContent>
         </LauncherPopperContentPotal>
       </LauncherPopper>
@@ -131,11 +142,8 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
 export const LauncherWidget = (props: { launcher: Launcher }) => {
   const { launcher } = props;
   const store = launcher.getStore();
-  const { userInfo, content, zIndex, theme, triggerRef, openState } = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot,
-  );
+  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } =
+    useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
   const data = content?.data as LauncherData | undefined;
 
@@ -155,6 +163,7 @@ export const LauncherWidget = (props: { launcher: Launcher }) => {
       handleOnClick={launcher.handleOnClick}
       userInfo={userInfo as BizUserInfo}
       el={triggerRef}
+      removeBranding={sdkConfig.removeBranding}
     />
   );
 };

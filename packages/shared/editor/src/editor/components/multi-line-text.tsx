@@ -34,22 +34,36 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [localData, setLocalData] = useState(element.data);
+  const [shouldUpdate, setShouldUpdate] = useState(false);
+
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorMultiLineTextElement['data']>) => {
-      updateElement(
-        {
-          ...element,
-          data: { ...element.data, ...data },
-        },
-        id,
-      );
+      setLocalData((prevData) => {
+        const newData = { ...prevData, ...data };
+        setShouldUpdate(true);
+        return newData;
+      });
     },
-    [element.data, id, updateElement],
+    [],
   );
 
   useEffect(() => {
-    setIsShowError(isEmptyString(element.data.name));
-  }, [element?.data?.name]);
+    if (shouldUpdate) {
+      updateElement(
+        {
+          ...element,
+          data: localData,
+        },
+        id,
+      );
+      setShouldUpdate(false);
+    }
+  }, [shouldUpdate, localData, updateElement, element, id]);
+
+  useEffect(() => {
+    setIsShowError(isEmptyString(localData.name));
+  }, [localData.name]);
 
   return (
     <EditorError open={isShowError}>
@@ -58,12 +72,12 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
               <Textarea
-                placeholder={element.data.placeholder || 'Enter text...'}
+                placeholder={localData.placeholder || 'Enter text...'}
                 className="border-sdk-question bg-sdk-background"
                 disabled
               />
               <div className="flex justify-end w-full">
-                <Button forSdk={true}>{element.data.buttonText || 'Submit'}</Button>
+                <Button forSdk={true}>{localData.buttonText || 'Submit'}</Button>
               </div>
             </div>
           </Popover.Trigger>
@@ -72,13 +86,15 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
             <Popover.Content
               className="z-50 w-72 rounded-md border bg-background p-4"
               style={{ zIndex }}
+              sideOffset={10}
+              side="right"
             >
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="question-name">Question name</Label>
                   <Input
                     id="question-name"
-                    value={element.data.name}
+                    value={localData.name}
                     onChange={(e) => handleDataChange({ name: e.target.value })}
                     placeholder="Enter question name"
                   />
@@ -91,7 +107,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   currentStep={currentStep}
                   currentVersion={currentVersion}
                   onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={element?.data?.actions || []}
+                  defaultConditions={localData.actions || []}
                   attributes={attributes}
                   contents={contentList}
                   createStep={createStep}
@@ -101,7 +117,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   <Label htmlFor="placeholder">Placeholder</Label>
                   <Input
                     id="placeholder"
-                    value={element.data.placeholder}
+                    value={localData.placeholder}
                     onChange={(e) => handleDataChange({ placeholder: e.target.value })}
                     placeholder="Enter placeholder text"
                   />
@@ -111,7 +127,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   <Label htmlFor="button-text">Button text</Label>
                   <Input
                     id="button-text"
-                    value={element.data.buttonText}
+                    value={localData.buttonText}
                     onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                     placeholder="Enter button text"
                   />
@@ -120,14 +136,14 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="required"
-                    checked={element.data.required}
+                    checked={localData.required}
                     onCheckedChange={(checked) => handleDataChange({ required: checked })}
                   />
                   <Label htmlFor="required">Required</Label>
                 </div>
                 <BindAttribute
-                  bindToAttribute={element.data.bindToAttribute || false}
-                  selectedAttribute={element.data.selectedAttribute}
+                  bindToAttribute={localData.bindToAttribute || false}
+                  selectedAttribute={localData.selectedAttribute}
                   zIndex={zIndex}
                   projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}

@@ -11,3 +11,4 @@ export * from './gql/statistics';
 export * from './gql/utilities';
 export * from './gql/localizations';
 export * from './gql/team';
+export * from './gql/subscription';

@@ -91,3 +91,68 @@ export const queryContentQuestionAnalytics = gql`
     )
   }
 `;
+
+export const listSessionsDetail = gql`
+  query listSessionsDetail(
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+    $query: AnalyticsQuery!
+    $orderBy: AnalyticsOrder!
+  ) {
+    listSessionsDetail(
+      first: $first
+      last: $last
+      after: $after
+      before: $before
+      query: $query
+      orderBy: $orderBy
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          createdAt
+          progress
+          data
+          bizUserId
+          state
+          contentId
+          version {
+            sequence
+          }
+          bizUser {
+            externalId
+            data
+            bizUsersOnCompany {
+              id
+              data
+              bizCompany {
+                id
+                externalId
+                data
+              }
+            }
+          }
+          bizEvent {
+            data
+            createdAt
+            eventId
+            event {
+              id
+              codeName
+            }
+          }
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;

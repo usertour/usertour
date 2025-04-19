@@ -16,6 +16,7 @@ import {
   TeamIcon,
   AccountIcon,
   FlashlightIcon,
+  BankCardIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -59,6 +60,12 @@ const sidebarNavItems = [
     href: '/settings/team',
     role: ownerRoles,
     icon: <TeamIcon className={iconClassName} />,
+  },
+  {
+    title: 'Billing',
+    href: '/settings/billing',
+    role: ownerRoles,
+    icon: <BankCardIcon className={iconClassName} />,
   },
   {
     title: 'Account',

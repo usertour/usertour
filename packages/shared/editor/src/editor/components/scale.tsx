@@ -5,7 +5,7 @@ import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
-import { ContentEditorScaleElement } from '../../types/editor';
+import type { ContentEditorScaleElement } from '../../types/editor';
 import { Button } from '@usertour-ui/button';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
@@ -31,31 +31,41 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
     currentStep,
     currentVersion,
     contentList,
-    attributes,
     createStep,
+    attributes,
     projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [localData, setLocalData] = useState(element.data);
+  const [shouldUpdate, setShouldUpdate] = useState(false);
 
-  const handleDataChange = useCallback(
-    (data: Partial<ContentEditorScaleElement['data']>) => {
+  const handleDataChange = useCallback((data: Partial<ContentEditorScaleElement['data']>) => {
+    setLocalData((prevData) => {
+      const newData = { ...prevData, ...data };
+      setShouldUpdate(true);
+      return newData;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (shouldUpdate) {
       updateElement(
         {
           ...element,
-          data: { ...element.data, ...data },
+          data: localData,
         },
         id,
       );
-    },
-    [element.data, id, updateElement],
-  );
-
-  const scaleLength = element.data.highRange - element.data.lowRange + 1;
+      setShouldUpdate(false);
+    }
+  }, [shouldUpdate, localData, updateElement, id]);
 
   useEffect(() => {
-    setIsShowError(isEmptyString(element.data.name));
-  }, [element?.data?.name]);
+    setIsShowError(isEmptyString(localData.name));
+  }, [localData.name]);
+
+  const scaleLength = localData.highRange - localData.lowRange + 1;
 
   return (
     <EditorError open={isShowError}>
@@ -71,14 +81,14 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
               >
                 {Array.from({ length: scaleLength }, (_, i) => (
                   <Button key={i} className={buttonBaseClass} forSdk>
-                    {Number.parseInt(element.data.lowRange.toString()) + i}
+                    {Number.parseInt(localData.lowRange.toString()) + i}
                   </Button>
                 ))}
               </div>
-              {(element.data.lowLabel || element.data.highLabel) && (
+              {(localData.lowLabel || localData.highLabel) && (
                 <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-                  <p>{element.data.lowLabel}</p>
-                  <p>{element.data.highLabel}</p>
+                  <p>{localData.lowLabel}</p>
+                  <p>{localData.highLabel}</p>
                 </div>
               )}
             </div>
@@ -88,12 +98,14 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
             <Popover.Content
               className="z-50 w-72 rounded-md border bg-background p-4"
               style={{ zIndex }}
+              sideOffset={10}
+              side="right"
             >
               <div className="flex flex-col gap-2.5">
                 <Label htmlFor="scale-question">Question name</Label>
                 <Input
                   id="scale-question"
-                  value={element.data.name}
+                  value={localData.name}
                   onChange={(e) => handleDataChange({ name: e.target.value })}
                   placeholder="Question name?"
                 />
@@ -105,7 +117,7 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                   currentStep={currentStep}
                   currentVersion={currentVersion}
                   onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={element?.data?.actions || []}
+                  defaultConditions={localData.actions || []}
                   attributes={attributes}
                   contents={contentList}
                   createStep={createStep}
@@ -114,14 +126,14 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                 <div className="flex flex-row gap-2 items-center">
                   <Input
                     type="number"
-                    value={element.data.lowRange}
+                    value={localData.lowRange}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
                   />
                   <p>-</p>
                   <Input
                     type="number"
-                    value={element.data.highRange}
+                    value={localData.highRange}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
                   />
@@ -136,21 +148,21 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                 <div className="flex flex-row gap-2">
                   <Input
                     type="text"
-                    value={element.data.lowLabel}
+                    value={localData.lowLabel}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
                   />
                   <Input
                     type="text"
-                    value={element.data.highLabel}
+                    value={localData.highLabel}
                     placeholder="Default"
                     onChange={(e) => handleDataChange({ highLabel: e.target.value })}
                   />
                 </div>
                 <BindAttribute
                   zIndex={zIndex}
-                  bindToAttribute={element.data.bindToAttribute || false}
-                  selectedAttribute={element.data.selectedAttribute}
+                  bindToAttribute={localData.bindToAttribute || false}
+                  selectedAttribute={localData.selectedAttribute}
                   projectId={projectId}
                   onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
                   onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}

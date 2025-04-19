@@ -13,7 +13,7 @@ export const ContentList = () => {
   const { contentType } = useParams();
   const { environment, project } = useAppContext();
 
-  if (!contentType) {
+  if (!contentType || !environment || !project) {
     return <></>;
   }
 
