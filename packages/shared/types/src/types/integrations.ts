@@ -19,6 +19,7 @@ export type Integration = {
   description?: string; // Optional description of the integration
   configSchema?: Record<string, any>; // JSON schema for configuration (optional)
   projectId: string; // Associated project ID
+  enabled: boolean;
 };
 
 export type BizIntegration = {

@@ -25,4 +25,7 @@ export class Integration {
 
   @Field(() => Date)
   updatedAt: Date;
+
+  @Field()
+  enabled: boolean;
 }

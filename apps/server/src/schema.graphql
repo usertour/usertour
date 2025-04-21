@@ -148,7 +148,7 @@ input BizQuery {
 
 type BizSession {
   bizEvent: [BizEvent!]
-  bizUser: BizModel!
+  bizUser: BizUser!
   bizUserId: String!
   content: Content
   contentId: String!
@@ -174,6 +174,35 @@ type BizSessionConnection {
 type BizSessionEdge {
   cursor: String!
   node: BizSession!
+}
+
+type BizUser {
+  bizUsersOnCompany: [BizUserOnCompanyModel!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  environmentId: String!
+  externalId: String!
+  id: ID!
+  membership: JSON!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type BizUserOnCompanyModel {
+  bizCompany: BizModel
+  bizCompanyId: String!
+  bizUserId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  id: ID!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 input BizUserOnSegmentInput {
@@ -356,6 +385,12 @@ input CreateBizUserOnSegment {
   userOnSegment: [BizUserOnSegmentInput!]!
 }
 
+input CreateCheckoutSessionRequest {
+  interval: String!
+  planType: String!
+  projectId: String!
+}
+
 input CreateEnvironmentInput {
   name: String!
   projectId: String!
@@ -468,12 +503,17 @@ type Events {
   updatedAt: DateTime!
 }
 
+type GlobalConfig {
+  enabledBilling: Boolean!
+}
+
 type Integration {
   codeName: String!
   configSchema: String
   createdAt: DateTime!
   description: String
   displayName: String!
+  enabled: Boolean!
   id: ID!
   projectId: String!
   updatedAt: DateTime!
@@ -554,12 +594,14 @@ type Mutation {
   createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
   createBizUser(data: CreateBizInput!): Common!
   createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
+  createCheckoutSession(data: CreateCheckoutSessionRequest!): String!
   createContent(data: ContentInput!): Content!
   createContentVersion(data: ContentVersionInput!): Version!
   createEnvironments(data: CreateEnvironmentInput!): Environment!
   createEvent(data: CreateEventInput!): Events!
   createLocalization(data: CreateLocalizationInput!): Localization!
   createMagicLink(data: MagicLinkInput!): Register!
+  createPortalSession(projectId: String!): String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
@@ -628,10 +670,12 @@ type PageInfo {
 type Project {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
+  customerId: String
   environments: [Environment!]
   id: String!
   logoUrl: String
   name: String!
+  subscriptionId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -644,8 +688,12 @@ type Query {
   getContentVersion(versionId: String!): Version!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
+  getSubscriptionPlans: [SubscriptionPlanModel!]!
+  getSubscriptionUsage(projectId: String!): Int!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
+  globalConfig: GlobalConfig!
   hello(name: String!): String!
   helloWorld: String!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
@@ -655,6 +703,7 @@ type Query {
   listIntegrations(projectId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
   listSegment(environmentId: String!): [Segment!]!
+  listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
@@ -777,6 +826,39 @@ input StepInput {
 type Storage {
   cdnUrl: String!
   signedUrl: String!
+}
+
+type SubscriptionModel {
+  cancelAt: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  interval: String!
+  isTrial: Boolean!
+  lookupKey: String!
+  overridePlan: JSON
+  planType: String!
+  projectId: String!
+  status: String!
+  subscriptionId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type SubscriptionPlanModel {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  interval: String!
+  lookupKey: String!
+  mauQuota: Int!
+  planType: String!
+  sessionCountQuota: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 type Theme {

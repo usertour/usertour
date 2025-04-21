@@ -534,9 +534,28 @@ export class BizService {
   }
 
   async listAllIntegrations(projectId: string) {
-    return await this.prisma.integration.findMany({
+    const integrations = await this.prisma.integration.findMany({
       where: { projectId },
       orderBy: { createdAt: 'asc' },
     });
+    const bizIntegrations = await this.prisma.bizIntegration.findMany({
+      where: {
+        integrationId: {
+          in: integrations.map((integration) => integration.id),
+        },
+      },
+    });
+    const bizIntegrationMap = bizIntegrations.reduce(
+      (map, bizIntegration) => {
+        map[bizIntegration.integrationId] = bizIntegration.enabled;
+        return map;
+      },
+      {} as Record<string, boolean>,
+    );
+
+    return integrations.map((integration) => ({
+      ...integration,
+      enabled: bizIntegrationMap[integration.id] ?? false,
+    }));
   }
 }
