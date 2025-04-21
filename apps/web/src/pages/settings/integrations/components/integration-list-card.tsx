@@ -9,7 +9,7 @@ export const IntegrationListCard = ({ integration }: { integration: Integration 
   return (
     <Card
       key={integration.id}
-      className="h-52 min-w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
+      className="h-52 min-w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900"
     >
       <div className="flex flex-col h-full">
         {/* Header Section */}
