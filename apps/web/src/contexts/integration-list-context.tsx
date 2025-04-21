@@ -29,7 +29,11 @@ const UPSERT_BIZ_INTEGRATION = gql`
 type IntegrationListContextType = {
   integrations: Integration[];
   loading: boolean;
-  toggleIntegration: (integrationId: string, enabled: boolean) => Promise<void>;
+  toggleIntegration: (
+    integrationId: string,
+    enabled: boolean,
+    displayName: string,
+  ) => Promise<void>;
 };
 
 const IntegrationListContext = createContext<IntegrationListContextType | undefined>(undefined);
@@ -47,13 +51,20 @@ export const IntegrationListProvider = ({
 
   const [upsertBizIntegration] = useMutation(UPSERT_BIZ_INTEGRATION);
 
-  const toggleIntegration = async (integrationId: string, enabled: boolean) => {
+  const toggleIntegration = async (
+    integrationId: string,
+    enabled: boolean,
+    displayName: string,
+  ) => {
     try {
       const response = await upsertBizIntegration({
         variables: { data: { integrationId, enabled } },
       });
       if (response.data.upsertBizIntegration.success) {
-        toast({ variant: 'success', title: 'Integration updated' });
+        toast({
+          variant: 'success',
+          title: `${enabled ? 'Connected' : 'Disconnected'} ${displayName} integration`,
+        });
         refetch();
       } else {
         toast({

@@ -31,3 +31,15 @@ export type BizIntegration = {
   config?: Record<string, any>;
   enabled: boolean;
 };
+
+export const integrationImages: Record<string, string> = {
+  ga: '/images/integrations/ga.png', // Google Analytics
+  amplitude: '/images/integrations/amplitude.png', // Amplitude
+  hubspot: '/images/integrations/hubspot.png', // HubSpot
+  intercom: '/images/integrations/intercom.png', // Intercom
+  klaviyo: '/images/integrations/klaviyo.png', // Klaviyo
+  logrocket: '/images/integrations/logrocket.png', // LogRocket
+  mixpanel: '/images/integrations/mixpanel.png', // Mixpanel
+  posthog: '/images/integrations/posthog.png', // PostHog
+  segment: '/images/integrations/segment.png', // Segment
+};
