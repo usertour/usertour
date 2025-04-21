@@ -30,7 +30,7 @@ import { RulesUserFills } from './rules-user-fills';
 const RULES_ITEMS = [
   {
     type: 'user-attr',
-    text: 'User attribute',
+    text: 'Attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
