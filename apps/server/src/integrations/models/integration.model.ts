@@ -1,10 +1,8 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { BaseModel } from '@/common/models/base.model';
+import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
-export class Integration {
-  @Field(() => ID)
-  id: string;
-
+export class Integration extends BaseModel {
   @Field()
   displayName: string;
 
@@ -19,12 +17,6 @@ export class Integration {
 
   @Field()
   projectId: string;
-
-  @Field(() => Date)
-  createdAt: Date;
-
-  @Field(() => Date)
-  updatedAt: Date;
 
   @Field()
   enabled: boolean;

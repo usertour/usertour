@@ -29,6 +29,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 import api from '@opentelemetry/api';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -111,6 +112,7 @@ import api from '@opentelemetry/api';
     LocalizationsModule,
     TeamModule,
     SubscriptionModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, PrismaService],

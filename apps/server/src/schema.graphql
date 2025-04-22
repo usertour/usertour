@@ -510,12 +510,16 @@ type GlobalConfig {
 type Integration {
   codeName: String!
   configSchema: String
+
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   description: String
   displayName: String!
   enabled: Boolean!
   id: ID!
   projectId: String!
+
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -946,7 +950,7 @@ input UpdateUserInput {
 }
 
 input UpsertBizIntegrationInput {
-  enabled: Boolean!
+  enabled: Boolean
   integrationId: String!
 }
 
