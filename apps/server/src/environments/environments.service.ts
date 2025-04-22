@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
 import { ParamsError } from '@/common/errors';
+import { CreateAccessTokenInput } from './dto/access-token.dto';
 
 @Injectable()
 export class EnvironmentsService {
@@ -62,6 +63,51 @@ export class EnvironmentsService {
     return await this.prisma.environment.findMany({
       where: { projectId, deleted: false },
       orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  // AccessToken related methods
+  async createAccessToken(environmentId: string, input: CreateAccessTokenInput) {
+    return this.prisma.accessToken.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        environmentId,
+        isActive: true,
+      },
+    });
+  }
+
+  async findAllAccessTokens(projectId: string) {
+    return this.prisma.accessToken.findMany({
+      where: {
+        environment: {
+          projectId,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async findOneAccessToken(id: string) {
+    const accessToken = await this.prisma.accessToken.findUnique({
+      where: { id },
+    });
+
+    if (!accessToken) {
+      throw new ParamsError('Access token not found');
+    }
+
+    return accessToken;
+  }
+
+  async removeAccessToken(id: string) {
+    await this.findOneAccessToken(id);
+
+    return this.prisma.accessToken.delete({
+      where: { id },
     });
   }
 }

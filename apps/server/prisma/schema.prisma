@@ -127,18 +127,37 @@ model UserOnProject {
 }
 
 model Environment {
-  id           String       @id @default(cuid())
-  createdAt    DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime     @updatedAt @db.Timestamptz(6)
+  id           String        @id @default(cuid())
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
   name         String?
-  token        String       @default(cuid())
-  deleted      Boolean      @default(false)
-  project      Project      @relation(fields: [projectId], references: [id])
+  token        String        @default(cuid())
+  deleted      Boolean       @default(false)
+  project      Project       @relation(fields: [projectId], references: [id])
   projectId    String
   contents     Content[]
   bizUsers     BizUser[]
   bizCompanies BizCompany[]
   segments     Segment[]
+  accessTokens AccessToken[]
+}
+
+model AccessToken {
+  id            String      @id @default(cuid())
+  prefix        String      @default("ak_")
+  accessToken   String      @unique @default(cuid())
+  name          String
+  environment   Environment @relation(fields: [environmentId], references: [id])
+  environmentId String
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime    @updatedAt @db.Timestamptz(6)
+  expiresAt     DateTime?   @db.Timestamptz(6)
+  lastUsedAt    DateTime?   @db.Timestamptz(6)
+  description   String?
+
+  @@index([environmentId])
+  @@index([accessToken])
 }
 
 model Theme {

@@ -10,6 +10,8 @@ import {
 import { EnvironmentsGuard } from './environments.guard';
 import { EnvironmentsService } from './environments.service';
 import { Environment } from './models/environment.model';
+import { AccessToken } from './dto/access-token.dto';
+import { CreateAccessTokenInput } from './dto/access-token.dto';
 
 @Resolver(() => Environment)
 @UseGuards(EnvironmentsGuard)
@@ -38,5 +40,34 @@ export class EnvironmentsResolver {
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   userEnvironments(@Args() { projectId }: ProjectIdArgs) {
     return this.environmentsService.listEnvsByProjectId(projectId);
+  }
+
+  @Query(() => [AccessToken])
+  @Roles([RolesScopeEnum.OWNER])
+  async listAccessTokens(@Args('projectId') projectId: string) {
+    return this.environmentsService.findAllAccessTokens(projectId);
+  }
+
+  @Query(() => String)
+  @Roles([RolesScopeEnum.OWNER])
+  async getAccessToken(@Args('id') id: string) {
+    const accessToken = await this.environmentsService.findOneAccessToken(id);
+    return `ak_${accessToken.accessToken}`;
+  }
+
+  @Mutation(() => AccessToken)
+  @Roles([RolesScopeEnum.OWNER])
+  async createAccessToken(
+    @Args('environmentId') environmentId: string,
+    @Args('input') input: CreateAccessTokenInput,
+  ) {
+    return this.environmentsService.createAccessToken(environmentId, input);
+  }
+
+  @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER])
+  async deleteAccessToken(@Args('id') id: string) {
+    await this.environmentsService.removeAccessToken(id);
+    return true;
   }
 }

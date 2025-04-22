@@ -19,6 +19,7 @@ import {
   BankCardIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
+import { Key } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const allRoles = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER, TeamMemberRole.VIEWER];
@@ -38,6 +39,12 @@ const sidebarNavItems = [
     href: '/settings/environments',
     role: allRoles,
     icon: <BoxIcon className={iconClassName} />,
+  },
+  {
+    title: 'API',
+    href: '/settings/api',
+    role: allRoles,
+    icon: <Key className={iconClassName} />,
   },
   // {
   //   title: "Localization",
