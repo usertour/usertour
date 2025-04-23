@@ -14,7 +14,7 @@ import { useToast } from '@usertour-ui/use-toast';
 import { CreateAccessToken } from '@usertour-ui/gql';
 import { useAppContext } from '@/contexts/app-context';
 import { useApiContext } from '@/contexts/api-context';
-import { ApiListAction } from './api-list-action';
+import { ApiCopyButton } from './api-copy-button';
 
 interface ApiCreateFormProps {
   visible: boolean;
@@ -134,7 +134,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
             <span>API key</span>
             <div className="flex items-center gap-1">
               <span className="text-sm text-gray-600">{newToken}</span>
-              <ApiListAction token={newToken} />
+              <ApiCopyButton token={newToken} />
             </div>
           </div>
           <DialogFooter>

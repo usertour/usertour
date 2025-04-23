@@ -3,11 +3,11 @@ import { CopyIcon } from '@radix-ui/react-icons';
 import { useToast } from '@usertour-ui/use-toast';
 import { useCopyToClipboard } from 'react-use';
 
-interface ApiListActionProps {
+interface ApiCopyButtonProps {
   token: string;
 }
 
-export const ApiListAction = ({ token }: ApiListActionProps) => {
+export const ApiCopyButton = ({ token }: ApiCopyButtonProps) => {
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
 
