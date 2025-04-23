@@ -1,5 +1,6 @@
 import {
   BizCompany,
+  BizIntegration,
   BizSession,
   BizUserInfo,
   SDKConfig,
@@ -128,7 +129,13 @@ export class Socket extends Evented {
     eventName: string;
     sessionId: string;
     eventData: any;
-  }): Promise<void> {
-    await this.emitWithTimeout('track-event', params);
+  }): Promise<any> {
+    const response = await this.emitWithTimeout('track-event', params);
+    return response as any;
+  }
+
+  async listEnabledIntegrations(token: string): Promise<BizIntegration[]> {
+    const response = await this.emitWithTimeout('list-enabled-integrations', token);
+    return response as BizIntegration[];
   }
 }

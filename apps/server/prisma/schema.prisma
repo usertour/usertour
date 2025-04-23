@@ -110,6 +110,7 @@ model Project {
   events         Event[]
   localizations  Localization[]
   invites        Invite[]
+  integrations Integration[]
 }
 
 model UserOnProject {
@@ -558,4 +559,37 @@ model CheckoutSession {
   updatedAt      DateTime @default(now()) @updatedAt @db.Timestamptz()
 
   @@index([sessionId])
+}
+
+model Integration {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  // Name of the integration (e.g., "Google Analytics")
+  displayName        String
+   // code of integration (e.g., "ga", "mixpanel", "posthog")
+  codeName        String
+  // Description of the integration
+  description String?
+  // JSON schema for configuration (optional)
+  configSchema Json?   @db.JsonB 
+  project        Project     @relation(fields: [projectId], references: [id])
+  projectId      String
+
+  bizIntegrations BizIntegration[]
+
+  @@unique([projectId, displayName])
+  @@unique([projectId, codeName])
+}
+
+model BizIntegration {
+  id             String      @id @default(cuid())
+  createdAt      DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @db.Timestamptz(6)
+  integration    Integration @relation(fields: [integrationId], references: [id])
+  integrationId  String
+  // Project-specific configuration (e.g., API keys)
+  config         Json?       @db.JsonB 
+  // Whether the integration is enabled
+  enabled        Boolean     @default(true)
 }

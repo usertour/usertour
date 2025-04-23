@@ -16,6 +16,7 @@ import usertour from 'usertour.js';
 import { AdminEnvSwitcher } from './admin-env-switcher';
 import { AdminMainNav } from './admin-main-nav';
 import { AdminUserNav } from './admin-user-nav';
+import { IntegrationListProvider } from '@/contexts/integration-list-context';
 
 export const AdminLayoutHeader = () => {
   return (
@@ -192,17 +193,19 @@ export const AdminNewLayout = (props: AdminLayoutProps) => {
     <>
       <EnvironmentListProvider projectId={project?.id}>
         <AttributeListProvider projectId={project?.id}>
-          <Helmet>
-            <title>Usertour App</title>
-            <body
-              className={
-                type === 'builder'
-                  ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                  : 'bg-slate-100'
-              }
-            />
-          </Helmet>
-          <div className="flex h-[100dvh] w-full">{children}</div>
+          <IntegrationListProvider projectId={project?.id}>
+            <Helmet>
+              <title>Usertour App</title>
+              <body
+                className={
+                  type === 'builder'
+                    ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
+                    : 'bg-slate-100'
+                }
+              />
+            </Helmet>
+            <div className="flex h-[100dvh] w-full">{children}</div>
+          </IntegrationListProvider>
         </AttributeListProvider>
       </EnvironmentListProvider>
     </>

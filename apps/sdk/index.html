@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TEM22ZWZ47"></script>
+<script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script><script src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz"></script><script>window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));window.amplitude.init('ddec49afe0bef1c0c8f307d91000d10c', {"autocapture":{"elementInteractions":true}});</script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-TEM22ZWZ47');
+</script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -152,8 +162,8 @@
     <script>
       window.onload = async function () {
         if (window.usertour) {
-          usertour.init("cm9e922o50004mjao21fb64ap");
-          await usertour.identify(new Date().getTime().toString(), {
+          usertour.init("cm9e3nqmq007pnqtpwauqf7zr");
+          await usertour.identify('dev_' + new Date().getTime().toString(), {
             name: "Iric L",
             email: "iric@usertour.com",
             male: true,
@@ -166,7 +176,7 @@
             like: ["123", "456"],
           });
           await usertour.group(
-            "group-999999",
+            "group-12345678",
             {
               name: "Iric L",
             },

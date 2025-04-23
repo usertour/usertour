@@ -43,7 +43,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -114,7 +114,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON
+  membership: JSON!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -185,7 +185,7 @@ type BizUser {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON
+  membership: JSON!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -238,7 +238,7 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int
+  count: Int!
   success: Boolean!
 }
 
@@ -341,7 +341,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String
+  name: String!
 }
 
 input CreatSegment {
@@ -357,7 +357,7 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   projectId: String!
 }
@@ -366,7 +366,7 @@ input CreateBizCompanyInput {
   data: JSON
   environmentId: String!
   externalId: String!
-  membership: JSON
+  membership: JSON!
   userId: String!
 }
 
@@ -378,7 +378,7 @@ input CreateBizInput {
   data: JSON
   environmentId: String!
   externalId: String!
-  membership: JSON
+  membership: JSON!
 }
 
 input CreateBizUserOnSegment {
@@ -507,6 +507,22 @@ type GlobalConfig {
   enabledBilling: Boolean!
 }
 
+type Integration {
+  codeName: String!
+  configSchema: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  description: String
+  displayName: String!
+  enabled: Boolean!
+  id: ID!
+  projectId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
 type Invite {
   code: String!
 
@@ -631,6 +647,7 @@ type Mutation {
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
+  upsertBizIntegration(data: UpsertBizIntegrationInput!): Common!
 }
 
 type OEmbed {
@@ -687,6 +704,7 @@ type Query {
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
   listContentVersions(contentId: String!): [Version!]!
   listEvents(projectId: String!): [Events!]!
+  listIntegrations(projectId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
   listSegment(environmentId: String!): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
@@ -931,6 +949,11 @@ input UpdateUserInput {
   name: String!
 }
 
+input UpsertBizIntegrationInput {
+  enabled: Boolean
+  integrationId: String!
+}
+
 type User {
   avatarUrl: String
 
@@ -939,7 +962,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]
+  projects: [UserOnProject!]!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

@@ -17,6 +17,7 @@ import {
   AccountIcon,
   FlashlightIcon,
   BankCardIcon,
+  IntegrationPlugIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -54,6 +55,12 @@ const sidebarNavItems = [
     href: '/settings/events',
     role: allRoles,
     icon: <FlashlightIcon className={iconClassName} />,
+  },
+  {
+    title: 'Integrations',
+    href: '/settings/integrations',
+    role: allRoles,
+    icon: <IntegrationPlugIcon className={iconClassName} />,
   },
   {
     title: 'Team',

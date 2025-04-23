@@ -953,8 +953,38 @@ export class WebSocketService {
           data: answer,
         });
       }
-
-      return bizEvent;
+      /* resolve for: 
+      - content
+      - version
+      - user data attributes?
+      */
+      return {
+        eventDetails: bizEvent,
+        sessionUpdated: true,
+        // You can add other useful information as needed
+      };
     });
+  }
+
+  async listEnabledIntegrations(token: string) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { token },
+    });
+    if (!environment) {
+      return;
+    }
+    const projectId = environment.projectId;
+    const enabledIntegrations = await this.prisma.bizIntegration.findMany({
+      where: {
+        enabled: true,
+        integration: {
+          projectId,
+        },
+      },
+      include: {
+        integration: true,
+      },
+    });
+    return enabledIntegrations;
   }
 }

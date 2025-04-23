@@ -1,7 +1,13 @@
 import { AttributeBizType, AttributeDataType } from '@/attributes/models/attribute.model';
 import { InitThemeInput } from '@/themes/dto/theme.input';
 import { Attribute, Prisma } from '@prisma/client';
-import { BizEvents, CompanyAttributes, EventAttributes, UserAttributes } from '../consts/attribute';
+import {
+  BizEvents,
+  CompanyAttributes,
+  EventAttributes,
+  Integrations,
+  UserAttributes,
+} from '../consts/attribute';
 
 export const initializationThemes: InitThemeInput[] = [
   {
@@ -940,6 +946,45 @@ const defaultAttributes: Partial<Attribute>[] = [
   },
 ];
 
+const defaultIntegrations = [
+  {
+    displayName: 'Google Analytics',
+    codeName: Integrations.GOOGLE_ANALYTICS,
+  },
+  {
+    displayName: 'Amplitude',
+    codeName: Integrations.AMPLITUDE,
+  },
+  {
+    displayName: 'HubSpot',
+    codeName: Integrations.HUBSPOT,
+  },
+  {
+    displayName: 'Intercom',
+    codeName: Integrations.INTERCOM,
+  },
+  {
+    displayName: 'Klaviyo',
+    codeName: Integrations.KLAVIYO,
+  },
+  {
+    displayName: 'LogRocket',
+    codeName: Integrations.LOGROCKET,
+  },
+  {
+    displayName: 'Mixpanel',
+    codeName: Integrations.MIXPANEL,
+  },
+  {
+    displayName: 'PostHog',
+    codeName: Integrations.POSTHOG,
+  },
+  {
+    displayName: 'Segment',
+    codeName: Integrations.SEGMENT,
+  },
+];
+
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
   const predefined = true;
 
@@ -1026,8 +1071,33 @@ const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, proj
   }
 };
 
+const initializationIntegrations = async (tx: Prisma.TransactionClient, projectId: string) => {
+  // Get existing integrations
+  const existingIntegrations = await tx.integration.findMany({
+    where: { projectId },
+    select: { codeName: true },
+  });
+  const existingCodeNames = new Set(existingIntegrations.map((e) => e.codeName));
+
+  // Filter out existing integrations
+  const newIntegrations = defaultIntegrations.filter(
+    (integration) => !existingCodeNames.has(integration.codeName),
+  );
+
+  if (newIntegrations.length > 0) {
+    return await tx.integration.createMany({
+      data: newIntegrations.map(({ displayName, codeName }) => ({
+        displayName,
+        codeName,
+        projectId,
+      })),
+    });
+  }
+};
+
 export const initialization = async (tx: Prisma.TransactionClient, projectId: string) => {
   await initializationAttributes(tx, projectId);
   await initializationEvents(tx, projectId);
   await initializationAttributeOnEvent(tx, projectId);
+  await initializationIntegrations(tx, projectId);
 };

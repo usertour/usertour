@@ -86,6 +86,7 @@ Table Project {
   events Event [not null]
   localizations Localization [not null]
   invites Invite [not null]
+  integrations Integration [not null]
 }
 
 Table UserOnProject {
@@ -500,6 +501,34 @@ Table CheckoutSession {
   updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
 }
 
+Table Integration {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  displayName String [not null]
+  codeName String [not null]
+  description String
+  configSchema Json
+  project Project [not null]
+  projectId String [not null]
+  bizIntegrations BizIntegration [not null]
+
+  indexes {
+    (projectId, displayName) [unique]
+    (projectId, codeName) [unique]
+  }
+}
+
+Table BizIntegration {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  integration Integration [not null]
+  integrationId String [not null]
+  config Json
+  enabled Boolean [not null, default: true]
+}
+
 Enum Role {
   ADMIN
   VIEWER
@@ -584,3 +613,7 @@ Ref: BizEvent.bizUserId > BizUser.id
 Ref: BizEvent.bizSessionId > BizSession.id
 
 Ref: RefreshToken.userId > User.id
+
+Ref: Integration.projectId > Project.id
+
+Ref: BizIntegration.integrationId > Integration.id
