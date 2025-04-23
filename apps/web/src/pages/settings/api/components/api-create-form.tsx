@@ -3,6 +3,7 @@ import { Button } from '@usertour-ui/button';
 import { Input } from '@usertour-ui/input';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -10,10 +11,10 @@ import {
 } from '@usertour-ui/dialog';
 import { useState } from 'react';
 import { useToast } from '@usertour-ui/use-toast';
-import { useCopyToClipboard } from 'react-use';
 import { CreateAccessToken } from '@usertour-ui/gql';
 import { useAppContext } from '@/contexts/app-context';
 import { useApiContext } from '@/contexts/api-context';
+import { ApiListAction } from './api-list-action';
 
 interface ApiCreateFormProps {
   visible: boolean;
@@ -29,7 +30,6 @@ interface CreateTokenResponse {
 export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
   const [tokenName, setTokenName] = useState('');
   const [newToken, setNewToken] = useState('');
-  const [_, copyToClipboard] = useCopyToClipboard();
   const { environment } = useAppContext();
   const { refetch } = useApiContext();
   const { toast } = useToast();
@@ -98,14 +98,6 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
     });
   };
 
-  const handleCopyToken = () => {
-    copyToClipboard(newToken);
-    toast({
-      title: 'Success',
-      description: 'API key copied to clipboard',
-    });
-  };
-
   return (
     <>
       <Dialog open={visible} onOpenChange={onClose}>
@@ -137,12 +129,18 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
           <DialogHeader>
             <DialogTitle>New API key Created</DialogTitle>
           </DialogHeader>
-          <p className="mb-4 text-sm text-gray-600">
-            Please copy your API key now. You won't be able to see it again!
-          </p>
-          <Input value={newToken} readOnly className="mb-4" />
+          <div>Please copy your API key now.</div>
+          <div className="flex flex-col ">
+            <span>API key</span>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-gray-600">{newToken}</span>
+              <ApiListAction token={newToken} />
+            </div>
+          </div>
           <DialogFooter>
-            <Button onClick={handleCopyToken}>Copy API key</Button>
+            <DialogClose asChild>
+              <Button>Close</Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
