@@ -39,6 +39,8 @@ import {
 import { Separator } from '@usertour-ui/separator';
 import { PlanType, type Subscription } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
+import { Skeleton } from '@usertour-ui/skeleton';
+
 // Define plan type
 interface Plan {
   name: string;
@@ -516,8 +518,11 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
 
 const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
-  const { subscription } = useGetSubscriptionByProjectIdQuery(projectId) as {
+  const { subscription, loading: subscriptionLoading } = useGetSubscriptionByProjectIdQuery(
+    projectId,
+  ) as {
     subscription: Subscription | null;
+    loading: boolean;
   };
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
@@ -571,18 +576,41 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               <div className="flex items-center gap-2 grow">
                 <div className="flex flex-col w-full">
                   <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
-                    <span>Current plan: </span>
-                    <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
-                      {planType}
-                    </span>
-                    {subscription?.cancelAt && (
-                      <span className="text-red-500">
-                        Expires on{' '}
-                        {new Date(Number.parseInt(subscription.cancelAt)).toLocaleDateString()}
-                      </span>
+                    {subscriptionLoading ? (
+                      <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-4 w-20 bg-background" />
+                        <Skeleton className="h-4 w-16 bg-background" />
+                      </div>
+                    ) : (
+                      <>
+                        <span>Current plan: </span>
+                        <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
+                          {planType}
+                        </span>
+                        {subscription?.cancelAt && (
+                          <span className="text-red-500">
+                            Expires on{' '}
+                            {new Date(Number.parseInt(subscription.cancelAt)).toLocaleDateString()}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
-                  {planType === PlanType.HOBBY && (
+                  {subscriptionLoading ? (
+                    <div className="flex flex-col gap-1 text-xs mt-2">
+                      <div className="flex items-center gap-4 w-full">
+                        <Skeleton className="h-1 grow max-w-60 bg-background" />
+                        <Skeleton className="h-4 w-16 bg-background" />
+                      </div>
+                      <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
+                        <Skeleton className="h-3 w-20 bg-background" />
+                        <Skeleton className="h-3 w-4 bg-background" />
+                        <Skeleton className="h-3 w-16 bg-background" />
+                        <Skeleton className="h-3 w-4 bg-background" />
+                        <Skeleton className="h-3 w-24 bg-background" />
+                      </div>
+                    </div>
+                  ) : planType === PlanType.HOBBY ? (
                     <div className="flex flex-col gap-1 text-xs mt-2">
                       <div className="flex items-center gap-4 w-full">
                         <Progress
@@ -605,12 +633,13 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                         </span>
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
               <Button
                 className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
                 onClick={handleManageSubscription}
+                disabled={subscriptionLoading}
               >
                 <div className="px-1">
                   {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
