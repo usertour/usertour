@@ -3,6 +3,7 @@ import { OpenInNewWindowIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import { ApiCreateForm } from './api-create-form';
 import { useAppContext } from '@/contexts/app-context';
+
 export const ApiListHeader = () => {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const { environment } = useAppContext();
@@ -16,7 +17,7 @@ export const ApiListHeader = () => {
           </h3>
           <Button variant="default" onClick={() => setIsCreateModalVisible(true)}>
             <PlusIcon className="mr-2 h-4 w-4" />
-            Create Token
+            New API key
           </Button>
         </div>
         <div className="text-sm text-muted-foreground">

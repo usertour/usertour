@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const ListAccessTokens = gql`
-  query ListAccessTokens($projectId: String!) {
-    listAccessTokens(projectId: $projectId) {
+  query ListAccessTokens($environmentId: String!) {
+    listAccessTokens(environmentId: $environmentId) {
       id
       name
       accessToken

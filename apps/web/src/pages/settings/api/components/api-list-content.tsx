@@ -1,22 +1,10 @@
-import { useQuery } from '@apollo/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { ListAccessTokens } from '@usertour-ui/gql';
 import { format } from 'date-fns';
 import { ApiListAction } from './api-list-action';
-import { useAppContext } from '@/contexts/app-context';
-interface AccessToken {
-  id: string;
-  name: string;
-  accessToken: string;
-  createdAt: string;
-}
+import { useApiContext } from '@/contexts/api-context';
 
 export const ApiListContent = () => {
-  const { project } = useAppContext();
-  const { data, loading } = useQuery(ListAccessTokens, {
-    variables: { projectId: project?.id },
-    skip: !project?.id,
-  });
+  const { accessTokens, loading } = useApiContext();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -32,7 +20,7 @@ export const ApiListContent = () => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data?.listAccessTokens.map((token: AccessToken) => (
+        {accessTokens?.map((token) => (
           <TableRow key={token.id}>
             <TableCell>{token.name}</TableCell>
             <TableCell>

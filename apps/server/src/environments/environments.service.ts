@@ -78,12 +78,10 @@ export class EnvironmentsService {
     });
   }
 
-  async findAllAccessTokens(projectId: string) {
+  async findAllAccessTokens(environmentId: string) {
     return this.prisma.accessToken.findMany({
       where: {
-        environment: {
-          projectId,
-        },
+        environmentId,
       },
       orderBy: {
         createdAt: 'desc',

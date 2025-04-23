@@ -704,7 +704,7 @@ type Query {
   globalConfig: GlobalConfig!
   hello(name: String!): String!
   helloWorld: String!
-  listAccessTokens(projectId: String!): [AccessToken!]!
+  listAccessTokens(environmentId: String!): [AccessToken!]!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
   listContentVersions(contentId: String!): [Version!]!

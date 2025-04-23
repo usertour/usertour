@@ -44,8 +44,8 @@ export class EnvironmentsResolver {
 
   @Query(() => [AccessToken])
   @Roles([RolesScopeEnum.OWNER])
-  async listAccessTokens(@Args('projectId') projectId: string) {
-    return this.environmentsService.findAllAccessTokens(projectId);
+  async listAccessTokens(@Args('environmentId') environmentId: string) {
+    return this.environmentsService.findAllAccessTokens(environmentId);
   }
 
   @Query(() => String)

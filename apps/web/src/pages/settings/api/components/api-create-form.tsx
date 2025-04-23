@@ -13,6 +13,7 @@ import { useToast } from '@usertour-ui/use-toast';
 import { useCopyToClipboard } from 'react-use';
 import { CreateAccessToken } from '@usertour-ui/gql';
 import { useAppContext } from '@/contexts/app-context';
+import { useApiContext } from '@/contexts/api-context';
 
 interface ApiCreateFormProps {
   visible: boolean;
@@ -30,18 +31,24 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
   const [newToken, setNewToken] = useState('');
   const [_, copyToClipboard] = useCopyToClipboard();
   const { environment } = useAppContext();
+  const { refetch } = useApiContext();
   const { toast } = useToast();
 
   const [createToken, { loading: creating }] = useMutation<CreateTokenResponse>(CreateAccessToken, {
-    onCompleted: (data) => {
+    onCompleted: async (data) => {
       setNewToken(data.createAccessToken.accessToken);
       setTokenName('');
       onClose();
+      await refetch();
+      toast({
+        title: 'Success',
+        description: 'API key created successfully',
+      });
     },
     onError: (error) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create token',
+        description: error.message || 'Failed to create API key',
         variant: 'destructive',
       });
     },
@@ -95,7 +102,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
     copyToClipboard(newToken);
     toast({
       title: 'Success',
-      description: 'Token copied to clipboard',
+      description: 'API key copied to clipboard',
     });
   };
 
@@ -104,7 +111,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
       <Dialog open={visible} onOpenChange={onClose}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Token</DialogTitle>
+            <DialogTitle>New API key</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -128,14 +135,14 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
       <Dialog open={!!newToken} onOpenChange={() => setNewToken('')}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New Token Created</DialogTitle>
+            <DialogTitle>New API key Created</DialogTitle>
           </DialogHeader>
           <p className="mb-4 text-sm text-gray-600">
-            Please copy your token now. You won't be able to see it again!
+            Please copy your API key now. You won't be able to see it again!
           </p>
           <Input value={newToken} readOnly className="mb-4" />
           <DialogFooter>
-            <Button onClick={handleCopyToken}>Copy Token</Button>
+            <Button onClick={handleCopyToken}>Copy API key</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
