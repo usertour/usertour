@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@apollo/client';
+import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
@@ -28,6 +28,7 @@ import {
   globalConfig,
   ListAccessTokens,
   DeleteAccessToken,
+  GetAccessToken,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -380,4 +381,12 @@ export const useDeleteAccessTokenMutation = () => {
     return !!response.data?.deleteAccessToken;
   };
   return { invoke, loading, error };
+};
+
+export const useGetAccessTokenQuery = (id: string, options?: QueryHookOptions) => {
+  const { data, loading, error } = useQuery(GetAccessToken, {
+    variables: { id },
+    ...options,
+  });
+  return { data: data?.getAccessToken, loading, error };
 };

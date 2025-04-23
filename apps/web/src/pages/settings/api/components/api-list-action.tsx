@@ -1,6 +1,10 @@
 import { useApiContext } from '@/contexts/api-context';
-import { AccessToken, useDeleteAccessTokenMutation } from '@usertour-ui/shared-hooks';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import {
+  AccessToken,
+  useDeleteAccessTokenMutation,
+  useGetAccessTokenQuery,
+} from '@usertour-ui/shared-hooks';
+import { DotsHorizontalIcon, EyeOpenIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import {
   DropdownMenu,
@@ -22,10 +26,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
 import { useToast } from '@usertour-ui/use-toast';
-
-// Constants for better maintainability
-const DROPDOWN_WIDTH = 200;
-const ICON_SIZE = 16;
+import { ApiKeyDialog } from './api-key-dialog';
 
 // Type definitions
 type ApiListActionProps = {
@@ -74,10 +75,20 @@ const DeleteDialog = ({ token, isOpen, onOpenChange, onDelete, isLoading }: Dele
  */
 export const ApiListAction = ({ token }: ApiListActionProps) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRevealDialogOpen, setIsRevealDialogOpen] = useState(false);
+  const [shouldFetchToken, setShouldFetchToken] = useState(false);
   const { refetch } = useApiContext();
   const { isViewOnly } = useAppContext();
   const { invoke: deleteAccessToken, loading: isDeleting } = useDeleteAccessTokenMutation();
+  const { data: fullToken, loading: isTokenLoading } = useGetAccessTokenQuery(token.id, {
+    skip: !shouldFetchToken,
+  });
   const { toast } = useToast();
+
+  const handleReveal = () => {
+    setIsRevealDialogOpen(true);
+    setShouldFetchToken(true);
+  };
 
   const handleDelete = async () => {
     try {
@@ -107,23 +118,23 @@ export const ApiListAction = ({ token }: ApiListActionProps) => {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger disabled={isViewOnly} asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-            aria-label="Open token actions menu"
-          >
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className={`w-[${DROPDOWN_WIDTH}px]`}>
+        <DropdownMenuContent align="end" className="w-[200px]">
+          <DropdownMenuItem onClick={handleReveal}>
+            <EyeOpenIcon className="w-4 h-4 mr-2" />
+            Reveal API key
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-            disabled={isDeleting}
+            disabled={isViewOnly}
+            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
           >
-            <Delete2Icon className="w-6" width={ICON_SIZE} height={ICON_SIZE} />
-            Delete key
+            <Delete2Icon className="w-4 h-4 mr-2" />
+            Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -133,6 +144,17 @@ export const ApiListAction = ({ token }: ApiListActionProps) => {
         onOpenChange={setIsDeleteDialogOpen}
         onDelete={handleDelete}
         isLoading={isDeleting}
+      />
+      <ApiKeyDialog
+        token={fullToken || ''}
+        open={isRevealDialogOpen}
+        onOpenChange={(open) => {
+          setIsRevealDialogOpen(open);
+          if (!open) {
+            setShouldFetchToken(false);
+          }
+        }}
+        description={isTokenLoading ? 'Loading...' : undefined}
       />
     </>
   );

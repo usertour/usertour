@@ -3,7 +3,6 @@ import { Button } from '@usertour-ui/button';
 import { Input } from '@usertour-ui/input';
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -14,7 +13,7 @@ import { useToast } from '@usertour-ui/use-toast';
 import { CreateAccessToken } from '@usertour-ui/gql';
 import { useAppContext } from '@/contexts/app-context';
 import { useApiContext } from '@/contexts/api-context';
-import { ApiCopyButton } from './api-copy-button';
+import { ApiKeyDialog } from './api-key-dialog';
 
 interface ApiCreateFormProps {
   visible: boolean;
@@ -124,26 +123,12 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!newToken} onOpenChange={() => setNewToken('')}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New API key Created</DialogTitle>
-          </DialogHeader>
-          <div>Please copy your API key now.</div>
-          <div className="flex flex-col ">
-            <span>API key</span>
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-gray-600">{newToken}</span>
-              <ApiCopyButton token={newToken} />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button>Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ApiKeyDialog
+        token={newToken}
+        title="New API key Created"
+        open={!!newToken}
+        onOpenChange={() => setNewToken('')}
+      />
     </>
   );
 };

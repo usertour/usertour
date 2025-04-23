@@ -1,5 +1,4 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { format } from 'date-fns';
 import { useApiContext } from '@/contexts/api-context';
 import { Skeleton } from '@usertour-ui/skeleton';
 import { AlertCircle } from 'lucide-react';
@@ -39,20 +38,16 @@ export const ApiListContent = () => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Token</TableHead>
-          <TableHead>Created At</TableHead>
-          <TableHead className="w-[50px]" />
+          <TableHead className="w-1/2">Name</TableHead>
+          <TableHead className="w-1/2">Token</TableHead>
+          <TableHead className="w-[80px]" />
         </TableRow>
       </TableHeader>
       <TableBody>
         {accessTokens.map((token: AccessToken) => (
           <TableRow key={token.id}>
             <TableCell>{token.name}</TableCell>
-            <TableCell>
-              <div className="flex items-center h-8">{token.accessToken}</div>
-            </TableCell>
-            <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
+            <TableCell>{token.accessToken}</TableCell>
             <TableCell>
               <ApiListAction token={token} />
             </TableCell>
@@ -60,7 +55,7 @@ export const ApiListContent = () => {
         ))}
         {accessTokens.length === 0 && (
           <TableRow>
-            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
               No API keys found.
             </TableCell>
           </TableRow>

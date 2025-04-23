@@ -45,7 +45,11 @@ export class EnvironmentsResolver {
   @Query(() => [AccessToken])
   @Roles([RolesScopeEnum.OWNER])
   async listAccessTokens(@Args('environmentId') environmentId: string) {
-    return this.environmentsService.findAllAccessTokens(environmentId);
+    const accessTokens = await this.environmentsService.findAllAccessTokens(environmentId);
+    return accessTokens.map((accessToken) => ({
+      ...accessToken,
+      accessToken: `ak_${accessToken.accessToken.slice(0, 4)}...${accessToken.accessToken.slice(-4)}`,
+    }));
   }
 
   @Query(() => String)

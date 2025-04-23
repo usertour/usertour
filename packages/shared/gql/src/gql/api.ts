@@ -34,3 +34,9 @@ export const DeleteAccessToken = gql`
     deleteAccessToken(id: $id)
   }
 `;
+
+export const GetAccessToken = gql`
+  query GetAccessToken($id: String!) {
+    getAccessToken(id: $id)
+  }
+`;
