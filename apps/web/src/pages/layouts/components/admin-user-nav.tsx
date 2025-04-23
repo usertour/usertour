@@ -100,7 +100,7 @@ export const AdminUserNav = () => {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/account`)}>
-            Acount
+            Account
             <DropdownMenuShortcut>⌘U</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/themes`)}>
