@@ -27,6 +27,7 @@ import {
   getSubscriptionUsage,
   globalConfig,
   ListAccessTokens,
+  DeleteAccessToken,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -370,4 +371,13 @@ export const useListAccessTokensQuery = (environmentId: string | undefined) => {
 
   const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
   return { accessTokens, loading, error, refetch };
+};
+
+export const useDeleteAccessTokenMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteAccessToken);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteAccessToken;
+  };
+  return { invoke, loading, error };
 };
