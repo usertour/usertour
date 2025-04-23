@@ -39,7 +39,7 @@ export const ApiListContent = () => {
       <TableHeader>
         <TableRow>
           <TableHead className="w-1/2">Name</TableHead>
-          <TableHead className="w-1/2">Token</TableHead>
+          <TableHead className="w-1/2">Key</TableHead>
           <TableHead className="w-[80px]" />
         </TableRow>
       </TableHeader>

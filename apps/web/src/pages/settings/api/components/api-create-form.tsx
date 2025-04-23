@@ -121,9 +121,9 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Token Name</FormLabel>
+                      <FormLabel>Key Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter token name" {...field} />
+                        <Input placeholder="Enter key name" {...field} />
                       </FormControl>
                       <FormDescription>Can be changed later</FormDescription>
                       <FormMessage />
