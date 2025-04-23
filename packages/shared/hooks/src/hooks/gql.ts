@@ -26,6 +26,7 @@ import {
   getSubscriptionByProjectId,
   getSubscriptionUsage,
   globalConfig,
+  ListAccessTokens,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -352,4 +353,21 @@ export const useGetSubscriptionUsageQuery = (projectId: string) => {
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useQuery(globalConfig);
   return { data: data?.globalConfig, loading, error };
+};
+
+export interface AccessToken {
+  id: string;
+  name: string;
+  accessToken: string;
+  createdAt: string;
+}
+
+export const useListAccessTokensQuery = (environmentId: string | undefined) => {
+  const { data, loading, error, refetch } = useQuery(ListAccessTokens, {
+    variables: { environmentId },
+    skip: !environmentId,
+  });
+
+  const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
+  return { accessTokens, loading, error, refetch };
 };

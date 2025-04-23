@@ -1,14 +1,6 @@
-import { useQuery } from '@apollo/client';
-import { ListAccessTokens } from '@usertour-ui/gql';
 import { ReactNode, createContext, useContext } from 'react';
 import { useAppContext } from './app-context';
-
-export interface AccessToken {
-  id: string;
-  name: string;
-  accessToken: string;
-  createdAt: string;
-}
+import { useListAccessTokensQuery, AccessToken } from '@usertour-ui/shared-hooks';
 
 export interface ApiProviderProps {
   children?: ReactNode;
@@ -25,13 +17,7 @@ export const ApiContext = createContext<ApiContextValue | undefined>(undefined);
 export function ApiProvider(props: ApiProviderProps): JSX.Element {
   const { children } = props;
   const { environment } = useAppContext();
-
-  const { data, refetch, loading } = useQuery(ListAccessTokens, {
-    variables: { environmentId: environment?.id },
-    skip: !environment?.id,
-  });
-
-  const accessTokens = data?.listAccessTokens;
+  const { accessTokens, refetch, loading } = useListAccessTokensQuery(environment?.id);
 
   const value: ApiContextValue = {
     accessTokens,
