@@ -12,42 +12,70 @@ import { useState } from 'react';
 import { useToast } from '@usertour-ui/use-toast';
 import { useCopyToClipboard } from 'react-use';
 import { CreateAccessToken } from '@usertour-ui/gql';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import { useAppContext } from '@/contexts/app-context';
 
 interface ApiCreateFormProps {
   visible: boolean;
   onClose: () => void;
 }
 
+interface CreateTokenResponse {
+  createAccessToken: {
+    accessToken: string;
+  };
+}
+
 export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
   const [tokenName, setTokenName] = useState('');
-  const [selectedEnvironmentId, setSelectedEnvironmentId] = useState('');
   const [newToken, setNewToken] = useState('');
   const [_, copyToClipboard] = useCopyToClipboard();
+  const { environment } = useAppContext();
   const { toast } = useToast();
-  const { environmentList, loading } = useEnvironmentListContext();
 
-  const [createToken, { loading: creating }] = useMutation(CreateAccessToken, {
+  const [createToken, { loading: creating }] = useMutation<CreateTokenResponse>(CreateAccessToken, {
     onCompleted: (data) => {
       setNewToken(data.createAccessToken.accessToken);
+      setTokenName('');
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create token',
+        variant: 'destructive',
+      });
     },
   });
 
-  const handleCreate = () => {
-    if (!tokenName) {
+  const validateForm = (): boolean => {
+    if (!tokenName.trim()) {
       toast({
         title: 'Error',
         description: 'Please enter a token name',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
-    if (!selectedEnvironmentId) {
+    if (!environment) {
       toast({
         title: 'Error',
         description: 'Please select an environment',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleCreate = () => {
+    if (!validateForm()) return;
+
+    if (!environment) {
+      toast({
+        title: 'Error',
+        description: 'Environment not found',
         variant: 'destructive',
       });
       return;
@@ -55,16 +83,20 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
 
     createToken({
       variables: {
-        environmentId: selectedEnvironmentId,
+        environmentId: environment.id,
         input: {
-          name: tokenName,
+          name: tokenName.trim(),
         },
       },
     });
+  };
 
-    setTokenName('');
-    setSelectedEnvironmentId('');
-    onClose();
+  const handleCopyToken = () => {
+    copyToClipboard(newToken);
+    toast({
+      title: 'Success',
+      description: 'Token copied to clipboard',
+    });
   };
 
   return (
@@ -79,60 +111,34 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
               placeholder="Token Name"
               value={tokenName}
               onChange={(e) => setTokenName(e.target.value)}
+              disabled={creating}
             />
-            <Select
-              value={selectedEnvironmentId}
-              onValueChange={setSelectedEnvironmentId}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={loading ? 'Loading environments...' : 'Select Environment'}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {environmentList?.map((env) => (
-                  <SelectItem key={env.id} value={env.id}>
-                    {env.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={creating}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={loading || creating}>
+            <Button onClick={handleCreate} disabled={creating}>
               {creating ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {newToken && (
-        <Dialog open={!!newToken} onOpenChange={() => setNewToken('')}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>New Token Created</DialogTitle>
-            </DialogHeader>
-            <p>Please copy your token now. You won't be able to see it again!</p>
-            <Input value={newToken} readOnly />
-            <DialogFooter>
-              <Button
-                onClick={() => {
-                  copyToClipboard(newToken);
-                  toast({
-                    title: 'Token copied to clipboard',
-                  });
-                }}
-              >
-                Copy Token
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={!!newToken} onOpenChange={() => setNewToken('')}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Token Created</DialogTitle>
+          </DialogHeader>
+          <p className="mb-4 text-sm text-gray-600">
+            Please copy your token now. You won't be able to see it again!
+          </p>
+          <Input value={newToken} readOnly className="mb-4" />
+          <DialogFooter>
+            <Button onClick={handleCopyToken}>Copy Token</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
