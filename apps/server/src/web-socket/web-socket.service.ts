@@ -565,7 +565,7 @@ export class WebSocketService {
     if (!environmenet) {
       return;
     }
-    return await this.bizService.upsertBizUsers(userId, attributes, environmenet.id);
+    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environmenet.id);
   }
 
   async upsertBizCompanies(data: any): Promise<any> {
@@ -577,6 +577,7 @@ export class WebSocketService {
       return;
     }
     return await this.bizService.upsertBizCompanies(
+      this.prisma,
       companyId,
       userId,
       attributes,

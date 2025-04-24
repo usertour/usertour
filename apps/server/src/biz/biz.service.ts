@@ -4,6 +4,7 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
 import { CreateBizInput } from './dto/biz.input';
@@ -352,8 +353,13 @@ export class BizService {
     }
   }
 
-  async upsertBizUsers(userId: string, attributes: any, environmentId: string): Promise<any> {
-    const environmenet = await this.prisma.environment.findFirst({
+  async upsertBizUsers(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    attributes: any,
+    environmentId: string,
+  ): Promise<any> {
+    const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
     });
     if (!environmenet) {
@@ -361,16 +367,17 @@ export class BizService {
     }
     const projectId = environmenet.projectId;
     const insertAttribute = await this.insertBizAttributes(
+      tx,
       projectId,
       AttributeBizType.USER,
       attributes,
     );
 
-    const user = await this.prisma.bizUser.findFirst({
+    const user = await tx.bizUser.findFirst({
       where: { externalId: String(userId), environmentId },
     });
     if (!user) {
-      return await this.prisma.bizUser.create({
+      return await tx.bizUser.create({
         data: {
           externalId: String(userId),
           environmentId,
@@ -384,7 +391,7 @@ export class BizService {
       ...insertAttribute,
     });
 
-    return await this.prisma.bizUser.update({
+    return await tx.bizUser.update({
       where: {
         id: user.id,
       },
@@ -395,19 +402,20 @@ export class BizService {
   }
 
   async upsertBizCompanies(
+    tx: Prisma.TransactionClient,
     companyId: string,
     userId: string,
     attributes: any,
     environmentId: string,
     membership: any,
   ): Promise<any> {
-    const environmenet = await this.prisma.environment.findFirst({
+    const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
     });
     if (!environmenet) {
       return;
     }
-    const user = await this.prisma.bizUser.findFirst({
+    const user = await tx.bizUser.findFirst({
       where: { externalId: String(userId), environmentId },
     });
     if (!user) {
@@ -416,19 +424,103 @@ export class BizService {
 
     const projectId = environmenet.projectId;
     const company = await this.upsertBizCompanyAttributes(
+      tx,
       projectId,
       environmentId,
       companyId,
       attributes,
     );
     if (membership) {
-      await this.upsertBizMembership(projectId, company.id, user.id, membership);
+      await this.upsertBizMembership(tx, projectId, company.id, user.id, membership);
     }
 
     return company;
   }
 
+  async upsertBizCompanyAttributes(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    environmentId: string,
+    companyId: string,
+    attributes: any,
+  ): Promise<any> {
+    const company = await tx.bizCompany.findFirst({
+      where: { externalId: String(companyId), environmentId },
+    });
+    const insertAttribute = await this.insertBizAttributes(
+      tx,
+      projectId,
+      AttributeBizType.COMPANY,
+      attributes,
+    );
+    if (company) {
+      const userData = JSON.parse(JSON.stringify(company.data));
+      const insertData = filterNullAttributes({
+        ...userData,
+        ...insertAttribute,
+      });
+      return await tx.bizCompany.update({
+        where: {
+          id: company.id,
+        },
+        data: {
+          data: insertData,
+        },
+      });
+    }
+    return await tx.bizCompany.create({
+      data: {
+        externalId: String(companyId),
+        environmentId,
+        data: insertAttribute,
+      },
+    });
+  }
+
+  async upsertBizMembership(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    bizCompanyId: string,
+    bizUserId: string,
+    membership: any,
+  ): Promise<any> {
+    const insertAttribute = await this.insertBizAttributes(
+      tx,
+      projectId,
+      AttributeBizType.MEMBERSHIP,
+      membership,
+    );
+
+    const relation = await tx.bizUserOnCompany.findFirst({
+      where: { bizCompanyId, bizUserId },
+    });
+
+    if (relation) {
+      const userData = JSON.parse(JSON.stringify(relation.data));
+      const insertData = filterNullAttributes({
+        ...userData,
+        ...insertAttribute,
+      });
+      return await tx.bizUserOnCompany.update({
+        where: {
+          id: relation.id,
+        },
+        data: {
+          data: insertData,
+        },
+      });
+    }
+    return await tx.bizUserOnCompany.create({
+      data: {
+        bizUserId,
+        bizCompanyId,
+        data: insertAttribute,
+      },
+    });
+  }
+
   async insertBizAttributes(
+    tx: Prisma.TransactionClient,
     projectId: string,
     bizType: AttributeBizType,
     attributes: any,
@@ -442,7 +534,7 @@ export class BizService {
         continue;
       }
       const dataType = getAttributeType(attrValue);
-      const attribute = await this.prisma.attribute.findFirst({
+      const attribute = await tx.attribute.findFirst({
         where: {
           projectId,
           codeName: attrName,
@@ -450,7 +542,7 @@ export class BizService {
         },
       });
       if (!attribute) {
-        const newAttr = await this.prisma.attribute.create({
+        const newAttr = await tx.attribute.create({
           data: {
             codeName: attrName,
             dataType: dataType,
@@ -473,83 +565,5 @@ export class BizService {
       }
     }
     return insertAttribute;
-  }
-
-  async upsertBizCompanyAttributes(
-    projectId: string,
-    environmentId: string,
-    companyId: string,
-    attributes: any,
-  ): Promise<any> {
-    const company = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(companyId), environmentId },
-    });
-    const insertAttribute = await this.insertBizAttributes(
-      projectId,
-      AttributeBizType.COMPANY,
-      attributes,
-    );
-    if (company) {
-      const userData = JSON.parse(JSON.stringify(company.data));
-      const insertData = filterNullAttributes({
-        ...userData,
-        ...insertAttribute,
-      });
-      return await this.prisma.bizCompany.update({
-        where: {
-          id: company.id,
-        },
-        data: {
-          data: insertData,
-        },
-      });
-    }
-    return await this.prisma.bizCompany.create({
-      data: {
-        externalId: String(companyId),
-        environmentId,
-        data: insertAttribute,
-      },
-    });
-  }
-
-  async upsertBizMembership(
-    projectId: string,
-    bizCompanyId: string,
-    bizUserId: string,
-    membership: any,
-  ): Promise<any> {
-    const insertAttribute = await this.insertBizAttributes(
-      projectId,
-      AttributeBizType.MEMBERSHIP,
-      membership,
-    );
-
-    const relation = await this.prisma.bizUserOnCompany.findFirst({
-      where: { bizCompanyId, bizUserId },
-    });
-
-    if (relation) {
-      const userData = JSON.parse(JSON.stringify(relation.data));
-      const insertData = filterNullAttributes({
-        ...userData,
-        ...insertAttribute,
-      });
-      return await this.prisma.bizUserOnCompany.update({
-        where: {
-          id: relation.id,
-        },
-        data: {
-          data: insertData,
-        },
-      });
-    }
-    return await this.prisma.bizUserOnCompany.create({
-      data: {
-        bizUserId,
-        bizCompanyId,
-        data: insertAttribute,
-      },
-    });
   }
 }

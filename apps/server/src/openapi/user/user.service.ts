@@ -154,43 +154,52 @@ export class UserService {
   }
 
   async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string): Promise<User> {
-    // First upsert the user with attributes
-    const user = await this.bizService.upsertBizUsers(id, data.attributes || {}, environmentId);
-
-    if (!user) {
-      throw new OpenAPIException(
-        OpenAPIErrors.USER.NOT_FOUND.message,
-        HttpStatus.NOT_FOUND,
-        OpenAPIErrors.USER.NOT_FOUND.code,
+    return await this.prisma.$transaction(async (tx) => {
+      // First upsert the user with attributes
+      const user = await this.bizService.upsertBizUsers(
+        tx,
+        id,
+        data.attributes || {},
+        environmentId,
       );
-    }
 
-    // Handle groups/companies and memberships
-    if (data.companies) {
-      for (const company of data.companies) {
-        await this.bizService.upsertBizCompanies(
-          company.id,
-          id,
-          company.attributes || {},
-          environmentId,
-          null,
+      if (!user) {
+        throw new OpenAPIException(
+          OpenAPIErrors.USER.NOT_FOUND.message,
+          HttpStatus.NOT_FOUND,
+          OpenAPIErrors.USER.NOT_FOUND.code,
         );
       }
-    }
 
-    if (data.memberships) {
-      for (const membership of data.memberships) {
-        await this.bizService.upsertBizCompanies(
-          membership.id,
-          id,
-          {},
-          environmentId,
-          membership.attributes || {},
-        );
+      // Handle groups/companies and memberships
+      if (data.companies) {
+        for (const company of data.companies) {
+          await this.bizService.upsertBizCompanies(
+            tx,
+            company.id,
+            id,
+            company.attributes || {},
+            environmentId,
+            null,
+          );
+        }
       }
-    }
 
-    // Get the updated user data
-    return await this.getUser(user.id, environmentId);
+      if (data.memberships) {
+        for (const membership of data.memberships) {
+          await this.bizService.upsertBizCompanies(
+            tx,
+            membership.company.id,
+            id,
+            membership.company.attributes || {},
+            environmentId,
+            membership.attributes || {},
+          );
+        }
+      }
+
+      // Get the updated user data
+      return await this.getUser(user.id, environmentId);
+    });
   }
 }
