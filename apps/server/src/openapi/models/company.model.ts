@@ -4,7 +4,7 @@ export class Company {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
   id: string;
 
-  @ApiProperty({ example: 'group' })
+  @ApiProperty({ example: 'company' })
   object: string;
 
   @ApiProperty({ type: 'object', additionalProperties: true })

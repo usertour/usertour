@@ -6,6 +6,7 @@ import { OpenapiGuard } from './openapi.guard';
 import { APP_FILTER } from '@nestjs/core';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
+import { BizService } from '@/biz/biz.service';
 
 @Module({
   imports: [ConfigModule],
@@ -14,6 +15,7 @@ import { ConfigModule } from '@nestjs/config';
     UserService,
     PrismaService,
     OpenapiGuard,
+    BizService,
     {
       provide: APP_FILTER,
       useClass: OpenAPIExceptionFilter,

@@ -6,6 +6,8 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
+import { UpsertUserRequestDto } from './user.dto';
+import { BizService } from '@/biz/biz.service';
 
 @Injectable()
 export class UserService {
@@ -14,12 +16,13 @@ export class UserService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private bizService: BizService,
   ) {}
 
   async getUser(id: string, environmentId: string): Promise<User> {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: {
-        id,
+        externalId: id,
         environmentId,
       },
       include: {
@@ -129,12 +132,12 @@ export class UserService {
 
   private mapBizUserToUser(bizUser: any): User {
     return {
-      id: bizUser.id,
+      id: bizUser.externalId,
       object: 'user',
       attributes: bizUser.data || {},
       createdAt: bizUser.createdAt.toISOString(),
       companies: bizUser.bizUsersOnCompany?.map((membership) => ({
-        id: membership.bizCompany.id,
+        id: membership.bizCompany.externalId,
         object: 'company',
         attributes: membership.bizCompany.data || {},
         createdAt: membership.bizCompany.createdAt.toISOString(),
@@ -148,5 +151,46 @@ export class UserService {
         userId: membership.bizUserId,
       })),
     };
+  }
+
+  async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string): Promise<User> {
+    // First upsert the user with attributes
+    const user = await this.bizService.upsertBizUsers(id, data.attributes || {}, environmentId);
+
+    if (!user) {
+      throw new OpenAPIException(
+        OpenAPIErrors.USER.NOT_FOUND.message,
+        HttpStatus.NOT_FOUND,
+        OpenAPIErrors.USER.NOT_FOUND.code,
+      );
+    }
+
+    // Handle groups/companies and memberships
+    if (data.companies) {
+      for (const company of data.companies) {
+        await this.bizService.upsertBizCompanies(
+          company.id,
+          id,
+          company.attributes || {},
+          environmentId,
+          null,
+        );
+      }
+    }
+
+    if (data.memberships) {
+      for (const membership of data.memberships) {
+        await this.bizService.upsertBizCompanies(
+          membership.id,
+          id,
+          {},
+          environmentId,
+          membership.attributes || {},
+        );
+      }
+    }
+
+    // Get the updated user data
+    return await this.getUser(user.id, environmentId);
   }
 }

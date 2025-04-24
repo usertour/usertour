@@ -380,23 +380,8 @@ input CreateAttributeInput {
   projectId: String!
 }
 
-input CreateBizCompanyInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON
-  userId: String!
-}
-
 input CreateBizCompanyOnSegment {
   companyOnSegment: [BizCompanyOnSegmentInput!]!
-}
-
-input CreateBizInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON
 }
 
 input CreateBizUserOnSegment {
@@ -597,9 +582,7 @@ type Mutation {
   copyTheme(data: CopyThemeInput!): Theme!
   createAccessToken(environmentId: String!, input: CreateAccessTokenInput!): AccessToken!
   createAttribute(data: CreateAttributeInput!): Attribute!
-  createBizCompany(data: CreateBizCompanyInput!): Common!
   createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
-  createBizUser(data: CreateBizInput!): Common!
   createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
   createCheckoutSession(data: CreateCheckoutSessionRequest!): String!
   createContent(data: ContentInput!): Content!
