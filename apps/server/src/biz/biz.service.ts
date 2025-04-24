@@ -430,9 +430,7 @@ export class BizService {
       companyId,
       attributes,
     );
-    if (membership) {
-      await this.upsertBizMembership(tx, projectId, company.id, user.id, membership);
-    }
+    await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {});
 
     return company;
   }

@@ -154,6 +154,15 @@ export class UserService {
   }
 
   async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string): Promise<User> {
+    // Validate that only one of companies or memberships is set
+    if (data.companies && data.memberships) {
+      throw new OpenAPIException(
+        OpenAPIErrors.USER.INVALID_REQUEST.message,
+        HttpStatus.BAD_REQUEST,
+        OpenAPIErrors.USER.INVALID_REQUEST.code,
+      );
+    }
+
     return await this.prisma.$transaction(async (tx) => {
       // First upsert the user with attributes
       const user = await this.bizService.upsertBizUsers(
@@ -165,9 +174,9 @@ export class UserService {
 
       if (!user) {
         throw new OpenAPIException(
-          OpenAPIErrors.USER.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.USER.NOT_FOUND.code,
+          OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.code,
         );
       }
 
@@ -180,7 +189,7 @@ export class UserService {
             id,
             company.attributes || {},
             environmentId,
-            null,
+            {},
           );
         }
       }
