@@ -2,7 +2,7 @@ import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
@@ -29,6 +29,8 @@ import { BizAttributeTypes } from '@/common/consts/attribute';
 
 @Injectable()
 export class BizService {
+  private readonly logger = new Logger(BizService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async createBizUser(data: CreateBizInput) {
@@ -157,37 +159,58 @@ export class BizService {
     });
   }
 
+  private async executeDeleteUserTransaction(tx: Prisma.TransactionClient, deleteIds: string[]) {
+    // Delete user-company relationships
+    await tx.bizUserOnCompany.deleteMany({
+      where: { bizUserId: { in: deleteIds } },
+    });
+
+    // Delete user-segment relationships
+    await tx.bizUserOnSegment.deleteMany({
+      where: { bizUserId: { in: deleteIds } },
+    });
+
+    // Delete user events
+    await tx.bizEvent.deleteMany({
+      where: { bizUserId: { in: deleteIds } },
+    });
+
+    // Delete user sessions
+    await tx.bizSession.deleteMany({
+      where: { bizUserId: { in: deleteIds } },
+    });
+
+    // Delete users
+    return await tx.bizUser.deleteMany({
+      where: { id: { in: deleteIds } },
+    });
+  }
+
   async deleteBizUser(ids: string[], environmentId: string) {
-    try {
-      const bizUsers = await this.prisma.bizUser.findMany({
-        where: {
-          id: { in: ids },
-          environmentId,
-        },
-      });
-      const deleteIds = bizUsers.map((bizUser) => bizUser.id);
-      if (deleteIds.length === 0) {
-        throw new ParamsError();
-      }
-      const deleteUsersOnCompany = this.prisma.bizUserOnCompany.deleteMany({
-        where: { bizUserId: { in: deleteIds } },
-      });
-      const deleteUsersOnSegment = this.prisma.bizUserOnSegment.deleteMany({
-        where: { bizUserId: { in: deleteIds } },
-      });
-      const deleteUsers = this.prisma.bizUser.deleteMany({
-        where: {
-          id: { in: deleteIds },
-        },
-      });
-      return await this.prisma.$transaction([
-        deleteUsersOnCompany,
-        deleteUsersOnSegment,
-        deleteUsers,
-      ]);
-    } catch (_) {
-      throw new UnknownError();
+    // 1. Validate input
+    if (!ids?.length) {
+      throw new ParamsError('User IDs are required');
     }
+
+    // 2. Find users to delete
+    const bizUsers = await this.prisma.bizUser.findMany({
+      where: {
+        id: { in: ids },
+        environmentId,
+      },
+      select: { id: true }, // Only select needed fields
+    });
+
+    if (!bizUsers.length) {
+      throw new ParamsError('No users found to delete');
+    }
+
+    const deleteIds = bizUsers.map((bizUser) => bizUser.id);
+
+    // 3. Execute all operations in a transaction
+    return await this.prisma.$transaction(async (tx) => {
+      return await this.executeDeleteUserTransaction(tx, deleteIds);
+    });
   }
 
   async deleteBizCompany(ids: string[], environmentId: string) {

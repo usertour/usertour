@@ -153,7 +153,8 @@ export class UserService {
     };
   }
 
-  async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string): Promise<User> {
+  async upsertUser(data: UpsertUserRequestDto, environmentId: string): Promise<User> {
+    const id = data.id;
     // Validate that only one of companies or memberships is set
     if (data.companies && data.memberships) {
       throw new OpenAPIException(
@@ -210,5 +211,24 @@ export class UserService {
       // Get the updated user data
       return await this.getUser(user.id, environmentId);
     });
+  }
+
+  async deleteUser(id: string, environmentId: string): Promise<void> {
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: {
+        externalId: id,
+        environmentId,
+      },
+    });
+
+    if (!bizUser) {
+      throw new OpenAPIException(
+        OpenAPIErrors.USER.NOT_FOUND.message,
+        HttpStatus.NOT_FOUND,
+        OpenAPIErrors.USER.NOT_FOUND.code,
+      );
+    }
+
+    await this.bizService.deleteBizUser([bizUser.id], environmentId);
   }
 }

@@ -70,7 +70,7 @@ describe('OpenAPI:UserService', () => {
         OpenAPIErrors.USER.INVALID_REQUEST.code,
       );
 
-      await expect(service.upsertUser('user1', data, 'env1')).rejects.toThrow(error);
+      await expect(service.upsertUser(data, 'env1')).rejects.toThrow(error);
     });
 
     it('should create user with companies', async () => {
@@ -98,7 +98,7 @@ describe('OpenAPI:UserService', () => {
       mockBizService.upsertBizUsers.mockResolvedValue(mockUser);
       mockBizService.upsertBizCompanies.mockResolvedValue({});
 
-      await service.upsertUser('user1', data, 'env1');
+      await service.upsertUser(data, 'env1');
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockBizService.upsertBizUsers).toHaveBeenCalledWith(
@@ -148,7 +148,7 @@ describe('OpenAPI:UserService', () => {
       mockBizService.upsertBizUsers.mockResolvedValue(mockUser);
       mockBizService.upsertBizCompanies.mockResolvedValue({});
 
-      await service.upsertUser('user1', data, 'env1');
+      await service.upsertUser(data, 'env1');
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockBizService.upsertBizUsers).toHaveBeenCalledWith(
@@ -187,7 +187,7 @@ describe('OpenAPI:UserService', () => {
 
       mockBizService.upsertBizUsers.mockRejectedValue(error);
 
-      await expect(service.upsertUser('user1', data, 'env1')).rejects.toThrow(error);
+      await expect(service.upsertUser(data, 'env1')).rejects.toThrow(error);
     });
   });
 });

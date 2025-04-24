@@ -88,8 +88,11 @@ export class BizResolver {
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async deleteBizUser(@Args('data') data: BizUserOrCompanyIdsInput) {
-    const [, , r3] = await this.service.deleteBizUser(data.ids, data.environmentId);
-    return { success: r3.count > 0, count: r3.count };
+    const result = await this.service.deleteBizUser(data.ids, data.environmentId);
+    return {
+      success: result?.count > 0,
+      count: result?.count || 0,
+    };
   }
 
   @Mutation(() => Common)
