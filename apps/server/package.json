@@ -25,10 +25,10 @@
     "prisma:studio": "npx prisma studio",
     "prisma:generate": "npx prisma generate",
     "prisma:generate:watch": "npx prisma generate --watch",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test": "jest --config jest.config.ts",
+    "test:watch": "jest --config jest.config.ts --watch",
+    "test:cov": "jest --config jest.config.ts --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config jest.config.ts --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "start:db": "npm run migrate:up && npm run prisma:generate && npm run seed",
     "seed": "prisma db seed",
@@ -85,6 +85,7 @@
     "graphql-subscriptions": "2.0.0",
     "graphql-type-json": "^0.3.2",
     "handlebars": "^4.7.8",
+    "lodash": "^4.17.21",
     "mjml": "^4.14.1",
     "ms": "^2.1.3",
     "nestjs-pino": "^4.4.0",
@@ -102,10 +103,10 @@
     "socket.io": "^4.7.2",
     "stripe": "^18.0.0",
     "uuid": "^9.0.1",
-    "ws": "8.13.0",
-    "lodash": "^4.17.21"
+    "ws": "8.13.0"
   },
   "devDependencies": {
+    "@jest/types": "^29.6.3",
     "@nestjs/cli": "10.3.2",
     "@nestjs/schematics": "10.1.1",
     "@nestjs/testing": "10.3.7",
@@ -134,20 +135,6 @@
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.1.2",
     "typescript": "4.9.5"
-  },
-  "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
-    "rootDir": ".",
-    "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/src/$1"
-    },
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": ["**/*.(t|j)s"],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
