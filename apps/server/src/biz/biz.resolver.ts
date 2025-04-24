@@ -7,7 +7,6 @@ import { BizGuard } from './biz.guard';
 import { BizService } from './biz.service';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
-import { CreateBizCompanyInput, CreateBizInput } from './dto/biz.input';
 import {
   BizUserOrCompanyIdsInput,
   CreatSegment,
@@ -26,20 +25,6 @@ import { Segment } from './models/segment.model';
 @UseGuards(BizGuard)
 export class BizResolver {
   constructor(private service: BizService) {}
-
-  @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
-  async createBizUser(@Args('data') data: CreateBizInput) {
-    const ret = await this.service.upsertBizUsers(data);
-    return { success: ret };
-  }
-
-  @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
-  async createBizCompany(@Args('data') data: CreateBizCompanyInput) {
-    const ret = await this.service.upsertBizCompany(data);
-    return { success: ret };
-  }
 
   @Query(() => BizConnection)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])

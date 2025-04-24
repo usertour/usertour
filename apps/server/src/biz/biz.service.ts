@@ -1,14 +1,12 @@
 import { AttributeBizType } from '@/attributes/models/attribute.model';
-import { getAttributeType } from '@/common/attribute/attribute';
 import { createConditionsFilter } from '@/common/attribute/filter';
-import { BizAttributeTypes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
-import { CreateBizCompanyInput, CreateBizInput } from './dto/biz.input';
+import { CreateBizInput } from './dto/biz.input';
 import {
   BizCompanyOnSegmentInput,
   BizUserOnSegmentInput,
@@ -35,158 +33,6 @@ export class BizService {
     return await this.prisma.bizCompany.create({
       data,
     });
-  }
-
-  async upsertBizUsers(data: CreateBizInput): Promise<boolean> {
-    const { externalId: userId, data: attributes, environmentId } = data;
-    const environmenet = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
-    });
-    if (!environmenet) {
-      return false;
-    }
-    const projectId = environmenet.projectId;
-    const insertAttribute = await this.insertAttributes(projectId, attributes, 1);
-    const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: userId, environmentId },
-    });
-    if (!user) {
-      const ret = await this.prisma.bizUser.create({
-        data: {
-          externalId: userId,
-          environmentId,
-          data: insertAttribute,
-        },
-      });
-      return Boolean(ret);
-    }
-
-    const userData = JSON.parse(JSON.stringify(user.data));
-    const insertData = { ...userData, ...insertAttribute };
-
-    const ret = await this.prisma.bizUser.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        data: insertData,
-      },
-    });
-    return Boolean(ret);
-  }
-
-  async upsertBizCompany(data: CreateBizCompanyInput): Promise<boolean> {
-    const { externalId, data: attributes, environmentId, membership, userId } = data;
-    const environmenet = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
-    });
-    const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: userId, environmentId },
-    });
-    if (!environmenet || !user) {
-      return false;
-    }
-    const projectId = environmenet.projectId;
-    const insertAttribute = await this.insertAttributes(projectId, attributes, 2);
-    let bizCompanyId: string;
-    const company = await this.prisma.bizCompany.findFirst({
-      where: { externalId, environmentId },
-    });
-    if (!company) {
-      const ret = await this.prisma.bizCompany.create({
-        data: {
-          externalId,
-          environmentId,
-          data: insertAttribute,
-        },
-      });
-      if (ret) {
-        bizCompanyId = ret.id;
-      }
-    } else {
-      const userData = JSON.parse(JSON.stringify(company.data));
-      const ret = await this.prisma.bizCompany.update({
-        where: {
-          id: company.id,
-        },
-        data: {
-          data: { ...userData, ...insertAttribute },
-        },
-      });
-      if (ret) {
-        bizCompanyId = ret.id;
-      }
-    }
-    if (bizCompanyId) {
-      await this.prisma.bizUser.update({
-        where: { id: user.id },
-        data: { bizCompanyId },
-      });
-    }
-    if (membership) {
-      const insertAttribute = await this.insertAttributes(projectId, membership, 3);
-      const m1 = await this.prisma.bizUserOnCompany.findFirst({
-        where: {
-          bizCompanyId: bizCompanyId,
-          bizUserId: user.id,
-        },
-      });
-      if (!m1) {
-        await this.prisma.bizUserOnCompany.create({
-          data: {
-            bizCompanyId: bizCompanyId,
-            bizUserId: user.id,
-            data: insertAttribute,
-          },
-        });
-      } else {
-        await this.prisma.bizUserOnCompany.update({
-          where: { id: m1.id },
-          data: {
-            data: insertAttribute,
-          },
-        });
-      }
-    }
-    return true;
-  }
-
-  async insertAttributes(projectId, attributes: any, bizType: number) {
-    const insertAttribute = {};
-    for (const codeName in attributes) {
-      const attrValue = attributes[codeName];
-      const attrName = codeName;
-      const dataType = getAttributeType(attrValue);
-      const attribute = await this.prisma.attribute.findFirst({
-        where: {
-          projectId,
-          bizType: bizType,
-          codeName: attrName,
-        },
-      });
-      if (!attribute) {
-        const newAttr = await this.prisma.attribute.create({
-          data: {
-            codeName: attrName,
-            dataType: dataType,
-            displayName: attrName,
-            bizType: bizType,
-            projectId,
-          },
-        });
-        if (newAttr) {
-          insertAttribute[attrName] = attrValue;
-          continue;
-        }
-      }
-      if (attribute && attribute.dataType === dataType) {
-        insertAttribute[attrName] = attrValue;
-      }
-      if (dataType === BizAttributeTypes.DateTime) {
-        insertAttribute[attrName] = new Date(attrValue).toISOString();
-      }
-    }
-    return insertAttribute;
   }
 
   async creatSegment(data: CreatSegment) {
