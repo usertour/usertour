@@ -1,11 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../models/user.model';
 
-export class GetUserResponseDto {
-  @ApiProperty()
-  data: User;
-}
-
 export class ListUsersResponseDto {
   @ApiProperty({ type: [User] })
   results: User[];
