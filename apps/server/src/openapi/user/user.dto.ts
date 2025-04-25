@@ -6,6 +6,7 @@ import { IsEnum, IsOptional } from 'class-validator';
 export enum ExpandType {
   GROUPS = 'groups',
   MEMBERSHIPS = 'memberships',
+  MEMBERSHIPS_GROUP = 'memberships.group',
 }
 
 export type ExpandTypes = ExpandType[];

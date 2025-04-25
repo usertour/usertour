@@ -31,8 +31,12 @@ export class UserService {
           expand?.length > 0
             ? {
                 include: {
-                  bizCompany: expand.includes(ExpandType.GROUPS),
-                  bizUser: expand.includes(ExpandType.MEMBERSHIPS),
+                  bizCompany:
+                    expand.includes(ExpandType.GROUPS) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
+                  bizUser:
+                    expand.includes(ExpandType.MEMBERSHIPS) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
                 },
               }
             : false,
@@ -78,8 +82,12 @@ export class UserService {
           expand?.length > 0
             ? {
                 include: {
-                  bizCompany: expand.includes(ExpandType.GROUPS),
-                  bizUser: expand.includes(ExpandType.MEMBERSHIPS),
+                  bizCompany:
+                    expand.includes(ExpandType.GROUPS) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
+                  bizUser:
+                    expand.includes(ExpandType.MEMBERSHIPS) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
                 },
               }
             : false,
@@ -143,6 +151,26 @@ export class UserService {
   }
 
   private mapBizUserToUser(bizUser: any, expand?: ExpandTypes): User {
+    const memberships =
+      expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_GROUP)
+        ? bizUser.bizUsersOnCompany?.map((membership) => ({
+            id: membership.id,
+            object: 'membership',
+            attributes: membership.data || {},
+            created_at: membership.createdAt.toISOString(),
+            groupId: membership.bizCompanyId,
+            userId: membership.bizUserId,
+            group: expand?.includes(ExpandType.MEMBERSHIPS_GROUP)
+              ? {
+                  id: membership.bizCompany.externalId,
+                  object: 'company',
+                  attributes: membership.bizCompany.data || {},
+                  createdAt: membership.bizCompany.createdAt.toISOString(),
+                }
+              : undefined,
+          }))
+        : null;
+
     return {
       id: bizUser.externalId,
       object: 'user',
@@ -156,16 +184,7 @@ export class UserService {
             createdAt: membership.bizCompany.createdAt.toISOString(),
           }))
         : null,
-      memberships: expand?.includes(ExpandType.MEMBERSHIPS)
-        ? bizUser.bizUsersOnCompany?.map((membership) => ({
-            id: membership.id,
-            object: 'membership',
-            attributes: membership.data || {},
-            created_at: membership.createdAt.toISOString(),
-            groupId: membership.bizCompanyId,
-            userId: membership.bizUserId,
-          }))
-        : null,
+      memberships,
     };
   }
 

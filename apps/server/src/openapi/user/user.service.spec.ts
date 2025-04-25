@@ -5,7 +5,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
-import { UpsertUserRequestDto } from './user.dto';
+import { UpsertUserRequestDto, ExpandType } from './user.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 
 describe('OpenAPI:UserService', () => {
@@ -15,16 +15,19 @@ describe('OpenAPI:UserService', () => {
     $transaction: jest.fn(),
     bizUser: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
     },
   };
 
   const mockBizService = {
     upsertBizUsers: jest.fn(),
     upsertBizCompanies: jest.fn(),
+    deleteBizUser: jest.fn(),
   };
 
   const mockConfigService = {
-    get: jest.fn(),
+    get: jest.fn().mockReturnValue('http://localhost:3000'),
   };
 
   beforeEach(async () => {
@@ -188,6 +191,251 @@ describe('OpenAPI:UserService', () => {
       mockBizService.upsertBizUsers.mockRejectedValue(error);
 
       await expect(service.upsertUser(data, 'env1')).rejects.toThrow(error);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should return user with no expand', async () => {
+      const mockUser = {
+        externalId: 'test-id',
+        data: { name: 'Test User' },
+        createdAt: new Date(),
+        bizUsersOnCompany: [],
+      };
+
+      mockPrismaService.bizUser.findFirst.mockResolvedValue(mockUser);
+
+      const result = await service.getUser('test-id', 'env-id');
+
+      expect(result).toEqual({
+        id: 'test-id',
+        object: 'user',
+        attributes: { name: 'Test User' },
+        createdAt: mockUser.createdAt.toISOString(),
+        companies: null,
+        memberships: null,
+      });
+    });
+
+    it('should return user with groups expand', async () => {
+      const mockUser = {
+        externalId: 'test-id',
+        data: { name: 'Test User' },
+        createdAt: new Date(),
+        bizUsersOnCompany: [
+          {
+            bizCompany: {
+              externalId: 'group-1',
+              data: { name: 'Group 1' },
+              createdAt: new Date(),
+            },
+          },
+        ],
+      };
+
+      mockPrismaService.bizUser.findFirst.mockResolvedValue(mockUser);
+
+      const result = await service.getUser('test-id', 'env-id', [ExpandType.GROUPS]);
+
+      expect(result).toEqual({
+        id: 'test-id',
+        object: 'user',
+        attributes: { name: 'Test User' },
+        createdAt: mockUser.createdAt.toISOString(),
+        companies: [
+          {
+            id: 'group-1',
+            object: 'company',
+            attributes: { name: 'Group 1' },
+            createdAt: mockUser.bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
+          },
+        ],
+        memberships: null,
+      });
+    });
+
+    it('should return user with memberships expand', async () => {
+      const mockUser = {
+        externalId: 'test-id',
+        data: { name: 'Test User' },
+        createdAt: new Date(),
+        bizUsersOnCompany: [
+          {
+            id: 'membership-1',
+            data: { role: 'admin' },
+            createdAt: new Date(),
+            bizCompanyId: 'group-1',
+            bizUserId: 'user-1',
+          },
+        ],
+      };
+
+      mockPrismaService.bizUser.findFirst.mockResolvedValue(mockUser);
+
+      const result = await service.getUser('test-id', 'env-id', [ExpandType.MEMBERSHIPS]);
+
+      expect(result).toEqual({
+        id: 'test-id',
+        object: 'user',
+        attributes: { name: 'Test User' },
+        createdAt: mockUser.createdAt.toISOString(),
+        companies: null,
+        memberships: [
+          {
+            id: 'membership-1',
+            object: 'membership',
+            attributes: { role: 'admin' },
+            created_at: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
+            groupId: 'group-1',
+            userId: 'user-1',
+          },
+        ],
+      });
+    });
+
+    it('should return user with memberships.group expand', async () => {
+      const mockUser = {
+        externalId: 'test-id',
+        data: { name: 'Test User' },
+        createdAt: new Date(),
+        bizUsersOnCompany: [
+          {
+            id: 'membership-1',
+            data: { role: 'admin' },
+            createdAt: new Date(),
+            bizCompanyId: 'group-1',
+            bizUserId: 'user-1',
+            bizCompany: {
+              externalId: 'group-1',
+              data: { name: 'Group 1' },
+              createdAt: new Date(),
+            },
+          },
+        ],
+      };
+
+      mockPrismaService.bizUser.findFirst.mockResolvedValue(mockUser);
+
+      const result = await service.getUser('test-id', 'env-id', [ExpandType.MEMBERSHIPS_GROUP]);
+
+      expect(result).toEqual({
+        id: 'test-id',
+        object: 'user',
+        attributes: { name: 'Test User' },
+        createdAt: mockUser.createdAt.toISOString(),
+        companies: null,
+        memberships: [
+          {
+            id: 'membership-1',
+            object: 'membership',
+            attributes: { role: 'admin' },
+            created_at: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
+            groupId: 'group-1',
+            userId: 'user-1',
+            group: {
+              id: 'group-1',
+              object: 'company',
+              attributes: { name: 'Group 1' },
+              createdAt: mockUser.bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
+            },
+          },
+        ],
+      });
+    });
+
+    it('should throw not found error when user does not exist', async () => {
+      mockPrismaService.bizUser.findFirst.mockResolvedValue(null);
+
+      await expect(service.getUser('non-existent', 'env-id')).rejects.toThrow(
+        new OpenAPIException(
+          OpenAPIErrors.USER.NOT_FOUND.message,
+          HttpStatus.NOT_FOUND,
+          OpenAPIErrors.USER.NOT_FOUND.code,
+        ),
+      );
+    });
+  });
+
+  describe('listUsers', () => {
+    it('should return paginated users with no expand', async () => {
+      const mockUsers = [
+        {
+          externalId: 'test-id-1',
+          data: { name: 'User 1' },
+          createdAt: new Date(),
+          bizUsersOnCompany: [],
+        },
+        {
+          externalId: 'test-id-2',
+          data: { name: 'User 2' },
+          createdAt: new Date(),
+          bizUsersOnCompany: [],
+        },
+      ];
+
+      mockPrismaService.bizUser.findMany.mockResolvedValue(mockUsers);
+      mockPrismaService.bizUser.count.mockResolvedValue(2);
+
+      const result = await service.listUsers('env-id', undefined, 2);
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0]).toEqual({
+        id: 'test-id-1',
+        object: 'user',
+        attributes: { name: 'User 1' },
+        createdAt: mockUsers[0].createdAt.toISOString(),
+        companies: null,
+        memberships: null,
+      });
+    });
+
+    it('should return paginated users with memberships.group expand', async () => {
+      const mockUsers = [
+        {
+          externalId: 'test-id-1',
+          data: { name: 'User 1' },
+          createdAt: new Date(),
+          bizUsersOnCompany: [
+            {
+              id: 'membership-1',
+              data: { role: 'admin' },
+              createdAt: new Date(),
+              bizCompanyId: 'group-1',
+              bizUserId: 'user-1',
+              bizCompany: {
+                externalId: 'group-1',
+                data: { name: 'Group 1' },
+                createdAt: new Date(),
+              },
+            },
+          ],
+        },
+      ];
+
+      mockPrismaService.bizUser.findMany.mockResolvedValue(mockUsers);
+      mockPrismaService.bizUser.count.mockResolvedValue(1);
+
+      const result = await service.listUsers('env-id', undefined, 1, [
+        ExpandType.MEMBERSHIPS_GROUP,
+      ]);
+
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].memberships).toEqual([
+        {
+          id: 'membership-1',
+          object: 'membership',
+          attributes: { role: 'admin' },
+          created_at: mockUsers[0].bizUsersOnCompany[0].createdAt.toISOString(),
+          groupId: 'group-1',
+          userId: 'user-1',
+          group: {
+            id: 'group-1',
+            object: 'company',
+            attributes: { name: 'Group 1' },
+            createdAt: mockUsers[0].bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
+          },
+        },
+      ]);
     });
   });
 });
