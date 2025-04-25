@@ -179,35 +179,26 @@ export class CompanyService {
 
   async upsertCompany(data: UpsertCompanyRequestDto, environmentId: string): Promise<Company> {
     const id = data.id;
-    // Validate that only one of users or memberships is set
-    if (data.users && data.memberships) {
-      throw new OpenAPIException(
-        OpenAPIErrors.COMPANY.INVALID_REQUEST.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.COMPANY.INVALID_REQUEST.code,
-      );
-    }
-    const environment = await this.prisma.environment.findFirst({
-      where: {
-        id: environmentId,
-      },
-    });
-
-    if (!environment) {
-      throw new OpenAPIException(
-        OpenAPIErrors.COMPANY.INVALID_REQUEST.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.COMPANY.INVALID_REQUEST.code,
-      );
-    }
-
-    const projectId = environment.projectId;
 
     return await this.prisma.$transaction(async (tx) => {
-      // First upsert the company with attributes
+      // Get environment and projectId in the same transaction
+      const environment = await tx.environment.findFirst({
+        where: { id: environmentId },
+        select: { projectId: true },
+      });
+
+      if (!environment) {
+        throw new OpenAPIException(
+          OpenAPIErrors.COMPANY.INVALID_REQUEST.message,
+          HttpStatus.BAD_REQUEST,
+          OpenAPIErrors.COMPANY.INVALID_REQUEST.code,
+        );
+      }
+
+      // Upsert the company with attributes
       const company = await this.bizService.upsertBizCompanyAttributes(
         tx,
-        projectId,
+        environment.projectId,
         environmentId,
         id,
         data.attributes || {},
@@ -221,26 +212,8 @@ export class CompanyService {
         );
       }
 
-      // Handle users and memberships
-      if (data.users) {
-        for (const user of data.users) {
-          await this.bizService.upsertBizUsers(tx, user.id, user.attributes || {}, environmentId);
-        }
-      }
-
-      if (data.memberships) {
-        for (const membership of data.memberships) {
-          await this.bizService.upsertBizUsers(
-            tx,
-            membership.user.id,
-            membership.user.attributes || {},
-            environmentId,
-          );
-        }
-      }
-
       // Get the updated company data
-      return await this.getCompany(company.id, environmentId);
+      return await this.getCompany(company.externalId, environmentId);
     });
   }
 

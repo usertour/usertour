@@ -214,14 +214,27 @@ export class BizService {
   }
 
   async deleteBizCompany(ids: string[], environmentId: string) {
-    return await this.prisma.bizCompany.updateMany({
-      where: {
-        id: { in: ids },
-        environmentId,
-      },
-      data: {
-        deleted: true,
-      },
+    return await this.prisma.$transaction(async (tx) => {
+      // First delete related records
+      await tx.bizUserOnCompany.deleteMany({
+        where: {
+          bizCompanyId: { in: ids },
+        },
+      });
+
+      await tx.bizCompanyOnSegment.deleteMany({
+        where: {
+          bizCompanyId: { in: ids },
+        },
+      });
+
+      // Then delete the companies
+      return await tx.bizCompany.deleteMany({
+        where: {
+          id: { in: ids },
+          environmentId,
+        },
+      });
     });
   }
 

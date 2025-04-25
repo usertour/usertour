@@ -26,6 +26,9 @@ export class UpsertMembershipDto {
   @Type(() => UpsertUserDto)
   @ApiProperty()
   user: UpsertUserDto;
+
+  @ApiProperty({ required: false })
+  attributes?: Record<string, any>;
 }
 
 export class UpsertCompanyRequestDto {
@@ -36,20 +39,6 @@ export class UpsertCompanyRequestDto {
   @IsOptional()
   @ApiProperty({ example: { name: 'Acme Inc.' } })
   attributes?: Record<string, any>;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpsertUserDto)
-  @ApiProperty({ type: [UpsertUserDto], required: false })
-  users?: UpsertUserDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpsertMembershipDto)
-  @ApiProperty({ type: [UpsertMembershipDto], required: false })
-  memberships?: UpsertMembershipDto[];
 }
 
 export class ListCompaniesQueryDto {
