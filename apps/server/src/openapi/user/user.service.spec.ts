@@ -217,7 +217,7 @@ describe('OpenAPI:UserService', () => {
       });
     });
 
-    it('should return user with groups expand', async () => {
+    it('should return user with companies expand', async () => {
       const mockUser = {
         externalId: 'test-id',
         data: { name: 'Test User' },
@@ -225,8 +225,8 @@ describe('OpenAPI:UserService', () => {
         bizUsersOnCompany: [
           {
             bizCompany: {
-              externalId: 'group-1',
-              data: { name: 'Group 1' },
+              externalId: 'company-1',
+              data: { name: 'company 1' },
               createdAt: new Date(),
             },
           },
@@ -235,7 +235,7 @@ describe('OpenAPI:UserService', () => {
 
       mockPrismaService.bizUser.findFirst.mockResolvedValue(mockUser);
 
-      const result = await service.getUser('test-id', 'env-id', [ExpandType.GROUPS]);
+      const result = await service.getUser('test-id', 'env-id', [ExpandType.COMPANIES]);
 
       expect(result).toEqual({
         id: 'test-id',
@@ -244,9 +244,9 @@ describe('OpenAPI:UserService', () => {
         createdAt: mockUser.createdAt.toISOString(),
         companies: [
           {
-            id: 'group-1',
+            id: 'company-1',
             object: 'company',
-            attributes: { name: 'Group 1' },
+            attributes: { name: 'company 1' },
             createdAt: mockUser.bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
           },
         ],
@@ -264,7 +264,7 @@ describe('OpenAPI:UserService', () => {
             id: 'membership-1',
             data: { role: 'admin' },
             createdAt: new Date(),
-            bizCompanyId: 'group-1',
+            bizCompanyId: 'company-1',
             bizUserId: 'user-1',
           },
         ],
@@ -285,15 +285,15 @@ describe('OpenAPI:UserService', () => {
             id: 'membership-1',
             object: 'company_membership',
             attributes: { role: 'admin' },
-            created_at: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
-            groupId: 'group-1',
+            createdAt: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
+            companyId: 'company-1',
             userId: 'user-1',
           },
         ],
       });
     });
 
-    it('should return user with memberships.group expand', async () => {
+    it('should return user with memberships.company expand', async () => {
       const mockUser = {
         externalId: 'test-id',
         data: { name: 'Test User' },
@@ -303,11 +303,11 @@ describe('OpenAPI:UserService', () => {
             id: 'membership-1',
             data: { role: 'admin' },
             createdAt: new Date(),
-            bizCompanyId: 'group-1',
+            bizCompanyId: 'company-1',
             bizUserId: 'user-1',
             bizCompany: {
-              externalId: 'group-1',
-              data: { name: 'Group 1' },
+              externalId: 'company-1',
+              data: { name: 'company 1' },
               createdAt: new Date(),
             },
           },
@@ -316,7 +316,7 @@ describe('OpenAPI:UserService', () => {
 
       mockPrismaService.bizUser.findFirst.mockResolvedValue(mockUser);
 
-      const result = await service.getUser('test-id', 'env-id', [ExpandType.MEMBERSHIPS_GROUP]);
+      const result = await service.getUser('test-id', 'env-id', [ExpandType.MEMBERSHIPS_COMPANY]);
 
       expect(result).toEqual({
         id: 'test-id',
@@ -329,13 +329,13 @@ describe('OpenAPI:UserService', () => {
             id: 'membership-1',
             object: 'company_membership',
             attributes: { role: 'admin' },
-            created_at: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
-            groupId: 'group-1',
+            createdAt: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
+            companyId: 'company-1',
             userId: 'user-1',
-            group: {
-              id: 'group-1',
+            company: {
+              id: 'company-1',
               object: 'company',
-              attributes: { name: 'Group 1' },
+              attributes: { name: 'company 1' },
               createdAt: mockUser.bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
             },
           },
@@ -389,7 +389,7 @@ describe('OpenAPI:UserService', () => {
       });
     });
 
-    it('should return paginated users with memberships.group expand', async () => {
+    it('should return paginated users with memberships.company expand', async () => {
       const mockUsers = [
         {
           externalId: 'test-id-1',
@@ -400,11 +400,11 @@ describe('OpenAPI:UserService', () => {
               id: 'membership-1',
               data: { role: 'admin' },
               createdAt: new Date(),
-              bizCompanyId: 'group-1',
+              bizCompanyId: 'company-1',
               bizUserId: 'user-1',
               bizCompany: {
-                externalId: 'group-1',
-                data: { name: 'Group 1' },
+                externalId: 'company-1',
+                data: { name: 'company 1' },
                 createdAt: new Date(),
               },
             },
@@ -416,7 +416,7 @@ describe('OpenAPI:UserService', () => {
       mockPrismaService.bizUser.count.mockResolvedValue(1);
 
       const result = await service.listUsers('env-id', undefined, 1, [
-        ExpandType.MEMBERSHIPS_GROUP,
+        ExpandType.MEMBERSHIPS_COMPANY,
       ]);
 
       expect(result.results).toHaveLength(1);
@@ -425,13 +425,13 @@ describe('OpenAPI:UserService', () => {
           id: 'membership-1',
           object: 'company_membership',
           attributes: { role: 'admin' },
-          created_at: mockUsers[0].bizUsersOnCompany[0].createdAt.toISOString(),
-          groupId: 'group-1',
+          createdAt: mockUsers[0].bizUsersOnCompany[0].createdAt.toISOString(),
+          companyId: 'company-1',
           userId: 'user-1',
-          group: {
-            id: 'group-1',
+          company: {
+            id: 'company-1',
             object: 'company',
-            attributes: { name: 'Group 1' },
+            attributes: { name: 'company 1' },
             createdAt: mockUsers[0].bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
           },
         },

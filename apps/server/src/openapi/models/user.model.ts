@@ -1,20 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Company } from './company.model';
-
-export interface Membership {
-  id: string;
-  object: 'company_membership';
-  attributes: Record<string, any>;
-  created_at: string;
-  groupId: string;
-  userId: string;
-  group?: {
-    id: string;
-    object: 'company';
-    attributes: Record<string, any>;
-    createdAt: string;
-  };
-}
+import { Membership } from './membership.model';
 
 export class User {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })

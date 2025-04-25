@@ -4,9 +4,9 @@ import { Company } from '../models/company.model';
 import { IsEnum, IsOptional } from 'class-validator';
 
 export enum ExpandType {
-  GROUPS = 'groups',
+  COMPANIES = 'companies',
   MEMBERSHIPS = 'memberships',
-  MEMBERSHIPS_GROUP = 'memberships.group',
+  MEMBERSHIPS_COMPANY = 'memberships.company',
 }
 
 export type ExpandTypes = ExpandType[];
@@ -40,7 +40,7 @@ export class UpsertUserRequestDto {
   @ApiProperty({ description: 'Additional attributes for the user', type: 'object' })
   attributes?: Record<string, any>;
 
-  @ApiProperty({ description: 'List of groups/companies', type: [Company], required: false })
+  @ApiProperty({ description: 'List of companies/companies', type: [Company], required: false })
   companies?: Pick<Company, 'id' | 'attributes'>[];
 
   @ApiProperty({ description: 'List of memberships', type: [UpsertMembershipDto], required: false })

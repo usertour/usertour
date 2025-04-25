@@ -145,8 +145,8 @@ export class CompanyService {
             id: membership.id,
             object: 'company_membership',
             attributes: membership.data || {},
-            created_at: membership.createdAt.toISOString(),
-            groupId: membership.bizCompanyId,
+            createdAt: membership.createdAt.toISOString(),
+            companyId: membership.bizCompanyId,
             userId: membership.bizUserId,
             user: expand?.includes(ExpandType.MEMBERSHIPS_USER)
               ? {

@@ -84,13 +84,19 @@ describe('UserController', () => {
             id: 'membership-1',
             object: 'company_membership',
             attributes: { role: 'admin' },
-            created_at: new Date().toISOString(),
-            groupId: 'group-1',
+            createdAt: new Date().toISOString(),
+            companyId: 'company-1',
             userId: 'user-1',
-            group: {
-              id: 'group-1',
+            company: {
+              id: 'company-1',
               object: 'company',
-              attributes: { name: 'Group 1' },
+              attributes: { name: 'company 1' },
+              createdAt: new Date().toISOString(),
+            },
+            user: {
+              id: 'user-1',
+              object: 'user',
+              attributes: { name: 'Test User' },
               createdAt: new Date().toISOString(),
             },
           },
@@ -99,11 +105,11 @@ describe('UserController', () => {
 
       mockUserService.getUser.mockResolvedValue(mockUser);
 
-      const result = await controller.getUser('test-id', 'env-id', 'memberships.group');
+      const result = await controller.getUser('test-id', 'env-id', 'memberships.company');
 
       expect(result).toEqual(mockUser);
       expect(userService.getUser).toHaveBeenCalledWith('test-id', 'env-id', [
-        ExpandType.MEMBERSHIPS_GROUP,
+        ExpandType.MEMBERSHIPS_COMPANY,
       ]);
     });
   });
@@ -147,13 +153,13 @@ describe('UserController', () => {
                 id: 'membership-1',
                 object: 'company_membership',
                 attributes: { role: 'admin' },
-                created_at: new Date().toISOString(),
-                groupId: 'group-1',
+                createdAt: new Date().toISOString(),
+                companyId: 'company-1',
                 userId: 'user-1',
-                group: {
-                  id: 'group-1',
+                company: {
+                  id: 'company-1',
                   object: 'company',
-                  attributes: { name: 'Group 1' },
+                  attributes: { name: 'company 1' },
                   createdAt: new Date().toISOString(),
                 },
               },
@@ -166,11 +172,11 @@ describe('UserController', () => {
 
       mockUserService.listUsers.mockResolvedValue(mockUsers);
 
-      const result = await controller.listUsers('env-id', undefined, 10, 'memberships.group');
+      const result = await controller.listUsers('env-id', undefined, 10, 'memberships.company');
 
       expect(result).toEqual(mockUsers);
       expect(userService.listUsers).toHaveBeenCalledWith('env-id', undefined, 10, [
-        ExpandType.MEMBERSHIPS_GROUP,
+        ExpandType.MEMBERSHIPS_COMPANY,
       ]);
     });
   });
@@ -234,9 +240,21 @@ describe('UserController', () => {
             id: 'membership-1',
             object: 'company_membership',
             attributes: { role: 'admin' },
-            created_at: new Date().toISOString(),
-            groupId: 'group-1',
+            createdAt: new Date().toISOString(),
+            companyId: 'company-1',
             userId: 'user-1',
+            company: {
+              id: 'company-1',
+              object: 'company',
+              attributes: { name: 'company 1' },
+              createdAt: new Date().toISOString(),
+            },
+            user: {
+              id: 'user-1',
+              object: 'user',
+              attributes: { name: 'Test User' },
+              createdAt: new Date().toISOString(),
+            },
           },
         ],
       };
@@ -249,8 +267,8 @@ describe('UserController', () => {
             id: 'membership-1',
             attributes: { role: 'admin' },
             company: {
-              id: 'group-1',
-              attributes: { name: 'Group 1' },
+              id: 'company-1',
+              attributes: { name: 'company 1' },
             },
           },
         ],

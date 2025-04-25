@@ -32,11 +32,11 @@ export class UserService {
             ? {
                 include: {
                   bizCompany:
-                    expand.includes(ExpandType.GROUPS) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
+                    expand.includes(ExpandType.COMPANIES) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
                   bizUser:
                     expand.includes(ExpandType.MEMBERSHIPS) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
                 },
               }
             : false,
@@ -83,11 +83,11 @@ export class UserService {
             ? {
                 include: {
                   bizCompany:
-                    expand.includes(ExpandType.GROUPS) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
+                    expand.includes(ExpandType.COMPANIES) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
                   bizUser:
                     expand.includes(ExpandType.MEMBERSHIPS) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_GROUP),
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
                 },
               }
             : false,
@@ -152,15 +152,15 @@ export class UserService {
 
   private mapBizUserToUser(bizUser: any, expand?: ExpandTypes): User {
     const memberships =
-      expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_GROUP)
+      expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_COMPANY)
         ? bizUser.bizUsersOnCompany?.map((membership) => ({
             id: membership.id,
             object: 'company_membership',
             attributes: membership.data || {},
-            created_at: membership.createdAt.toISOString(),
-            groupId: membership.bizCompanyId,
+            createdAt: membership.createdAt.toISOString(),
+            companyId: membership.bizCompanyId,
             userId: membership.bizUserId,
-            group: expand?.includes(ExpandType.MEMBERSHIPS_GROUP)
+            company: expand?.includes(ExpandType.MEMBERSHIPS_COMPANY)
               ? {
                   id: membership.bizCompany.externalId,
                   object: 'company',
@@ -176,7 +176,7 @@ export class UserService {
       object: 'user',
       attributes: bizUser.data || {},
       createdAt: bizUser.createdAt.toISOString(),
-      companies: expand?.includes(ExpandType.GROUPS)
+      companies: expand?.includes(ExpandType.COMPANIES)
         ? bizUser.bizUsersOnCompany?.map((membership) => ({
             id: membership.bizCompany.externalId,
             object: 'company',
@@ -216,7 +216,7 @@ export class UserService {
         );
       }
 
-      // Handle groups/companies and memberships
+      // Handle companies/companies and memberships
       if (data.companies) {
         for (const company of data.companies) {
           await this.bizService.upsertBizCompanies(
