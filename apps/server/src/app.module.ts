@@ -63,7 +63,13 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
           env: process.env.NODE_ENV,
           uid: (req as any).user?.id || 'anonymous',
         }),
-        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+        transport: {
+          target: process.env.NODE_ENV !== 'production' ? 'pino-pretty' : 'pino/file',
+          options: {
+            destination: 1, // stdout
+            sync: false,
+          },
+        },
       },
     }),
     BullModule.forRootAsync({
