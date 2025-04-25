@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CompanyService } from './company.service';
-import { ListCompaniesResponseDto, UpsertCompanyRequestDto } from './company.dto';
+import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from './company.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
@@ -27,23 +27,32 @@ export class CompanyController {
   @Get(':id')
   @ApiOperation({ summary: 'Get company by ID' })
   @ApiParam({ name: 'id', description: 'Company ID' })
+  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'Company found', type: Company })
   @ApiResponse({ status: 404, description: 'Company not found' })
-  async getCompany(@Param('id') id: string, @Request() req): Promise<Company> {
-    return await this.companyService.getCompany(id, req.environment.id);
+  async getCompany(
+    @Param('id') id: string,
+    @Request() req,
+    @Query('expand') expand?: string,
+  ): Promise<Company> {
+    const expandTypes = expand ? (expand.split(',') as ExpandType[]) : undefined;
+    return await this.companyService.getCompany(id, req.environment.id, expandTypes);
   }
 
   @Get()
   @ApiOperation({ summary: 'List companies' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
   @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
+  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
   async listCompanies(
     @Request() req,
     @Query('cursor') cursor?: string,
     @Query('limit') limit = 20,
+    @Query('expand') expand?: string,
   ): Promise<ListCompaniesResponseDto> {
-    return await this.companyService.listCompanies(req.environment.id, cursor, limit);
+    const expandTypes = expand ? (expand.split(',') as ExpandType[]) : undefined;
+    return await this.companyService.listCompanies(req.environment.id, cursor, limit, expandTypes);
   }
 
   @Post()
