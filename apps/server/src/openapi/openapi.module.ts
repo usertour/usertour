@@ -8,8 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
 import { CompanyController } from './company/company.controller';
 import { CompanyService } from './company/company.service';
-import { CompanyMembershipController } from './company/company_membership.controller';
-import { CompanyMembershipService } from './company/company_membership.service';
+import { CompanyMembershipController } from './company_membership/company_membership.controller';
+import { CompanyMembershipService } from './company_membership/company_membership.service';
 
 @Module({
   imports: [ConfigModule],
