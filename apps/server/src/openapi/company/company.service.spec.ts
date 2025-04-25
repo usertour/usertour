@@ -212,7 +212,7 @@ describe('OpenAPI:CompanyService', () => {
         memberships: [
           {
             id: 'membership-1',
-            object: 'membership',
+            object: 'company_membership',
             attributes: { role: 'admin' },
             created_at: mockCompany.bizUsersOnCompany[0].createdAt.toISOString(),
             groupId: 'company-1',
@@ -302,7 +302,7 @@ describe('OpenAPI:CompanyService', () => {
       expect(result.results[0].memberships).toEqual([
         {
           id: 'membership-1',
-          object: 'membership',
+          object: 'company_membership',
           attributes: { role: 'admin' },
           created_at: mockCompanies[0].bizUsersOnCompany[0].createdAt.toISOString(),
           groupId: 'company-1',

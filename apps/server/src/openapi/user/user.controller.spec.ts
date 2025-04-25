@@ -82,7 +82,7 @@ describe('UserController', () => {
         memberships: [
           {
             id: 'membership-1',
-            object: 'membership',
+            object: 'company_membership',
             attributes: { role: 'admin' },
             created_at: new Date().toISOString(),
             groupId: 'group-1',
@@ -145,7 +145,7 @@ describe('UserController', () => {
             memberships: [
               {
                 id: 'membership-1',
-                object: 'membership',
+                object: 'company_membership',
                 attributes: { role: 'admin' },
                 created_at: new Date().toISOString(),
                 groupId: 'group-1',
@@ -232,7 +232,7 @@ describe('UserController', () => {
         memberships: [
           {
             id: 'membership-1',
-            object: 'membership',
+            object: 'company_membership',
             attributes: { role: 'admin' },
             created_at: new Date().toISOString(),
             groupId: 'group-1',

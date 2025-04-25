@@ -3,7 +3,7 @@ import { Company } from './company.model';
 
 export interface Membership {
   id: string;
-  object: 'membership';
+  object: 'company_membership';
   attributes: Record<string, any>;
   created_at: string;
   groupId: string;

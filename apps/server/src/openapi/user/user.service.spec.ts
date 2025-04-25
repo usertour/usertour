@@ -283,7 +283,7 @@ describe('OpenAPI:UserService', () => {
         memberships: [
           {
             id: 'membership-1',
-            object: 'membership',
+            object: 'company_membership',
             attributes: { role: 'admin' },
             created_at: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
             groupId: 'group-1',
@@ -327,7 +327,7 @@ describe('OpenAPI:UserService', () => {
         memberships: [
           {
             id: 'membership-1',
-            object: 'membership',
+            object: 'company_membership',
             attributes: { role: 'admin' },
             created_at: mockUser.bizUsersOnCompany[0].createdAt.toISOString(),
             groupId: 'group-1',
@@ -423,7 +423,7 @@ describe('OpenAPI:UserService', () => {
       expect(result.results[0].memberships).toEqual([
         {
           id: 'membership-1',
-          object: 'membership',
+          object: 'company_membership',
           attributes: { role: 'admin' },
           created_at: mockUsers[0].bizUsersOnCompany[0].createdAt.toISOString(),
           groupId: 'group-1',

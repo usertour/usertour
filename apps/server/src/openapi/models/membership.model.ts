@@ -6,7 +6,7 @@ export class Membership {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
   id: string;
 
-  @ApiProperty({ example: 'group_membership' })
+  @ApiProperty({ example: 'company_membership' })
   object: string;
 
   @ApiProperty({ type: 'object', additionalProperties: true })

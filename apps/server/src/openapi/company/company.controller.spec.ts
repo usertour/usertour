@@ -224,7 +224,7 @@ describe('OpenAPI:CompanyController', () => {
           memberships: [
             {
               id: 'membership-1',
-              object: 'membership',
+              object: 'company_membership',
               attributes: { role: 'admin' },
               created_at: createdAt.toISOString(),
               groupId: 'company-1',

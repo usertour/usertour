@@ -155,7 +155,7 @@ export class UserService {
       expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_GROUP)
         ? bizUser.bizUsersOnCompany?.map((membership) => ({
             id: membership.id,
-            object: 'membership',
+            object: 'company_membership',
             attributes: membership.data || {},
             created_at: membership.createdAt.toISOString(),
             groupId: membership.bizCompanyId,
