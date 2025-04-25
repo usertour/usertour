@@ -60,7 +60,6 @@ describe('OpenAPI:UserService', () => {
         companies: [{ id: 'company1', attributes: { name: 'Test Company' } }],
         memberships: [
           {
-            id: 'membership1',
             attributes: { role: 'admin' },
             company: { id: 'company1', attributes: { name: 'Test Company' } },
           },
@@ -126,7 +125,6 @@ describe('OpenAPI:UserService', () => {
         attributes: { name: 'Test User' },
         memberships: [
           {
-            id: 'membership1',
             attributes: { role: 'admin' },
             company: { id: 'company1', attributes: { name: 'Test Company' } },
           },

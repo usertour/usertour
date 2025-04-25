@@ -244,7 +244,7 @@ export class UserService {
       }
 
       // Get the updated user data
-      return await this.getUser(user.id, environmentId);
+      return await this.getUser(user.externalId, environmentId);
     });
   }
 

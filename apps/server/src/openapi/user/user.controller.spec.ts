@@ -264,7 +264,6 @@ describe('UserController', () => {
         attributes: { name: 'Test User' },
         memberships: [
           {
-            id: 'membership-1',
             attributes: { role: 'admin' },
             company: {
               id: 'company-1',

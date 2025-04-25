@@ -23,9 +23,6 @@ export class UserExpandQueryDto {
 }
 
 export class UpsertMembershipDto {
-  @ApiProperty({ description: 'Unique identifier for the membership' })
-  id: string;
-
   @ApiProperty({ description: 'Additional attributes for the membership', type: 'object' })
   attributes?: Record<string, any>;
 

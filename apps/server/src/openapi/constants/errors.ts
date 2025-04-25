@@ -11,6 +11,7 @@ type ErrorCode =
   | 'invalid_api_key'
   | 'user_not_found'
   | 'company_not_found'
+  | 'company_membership_not_found'
   | 'invalid_limit'
   | 'invalid_cursor'
   | 'invalid_cursor_previous';
@@ -58,6 +59,12 @@ export const OpenAPIErrors = {
     INVALID_REQUEST: {
       code: 'invalid_request' as ErrorCode,
       message: 'Only one of members or memberships can be set',
+    },
+  },
+  COMPANY_MEMBERSHIP: {
+    NOT_FOUND: {
+      code: 'company_membership_not_found' as ErrorCode,
+      message: 'Company membership not found',
     },
   },
   AUTH: {
