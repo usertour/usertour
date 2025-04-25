@@ -16,8 +16,8 @@ export class User {
   createdAt: string;
 
   @ApiProperty({ nullable: true })
-  companies: Company[];
+  companies?: Company[];
 
   @ApiProperty({ nullable: true })
-  memberships: Membership[];
+  memberships?: Membership[];
 }

@@ -8,6 +8,7 @@ import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { UpsertUserRequestDto } from './user.dto';
 import { BizService } from '../../biz/biz.service';
+import { ExpandType, ExpandTypes } from './user.dto';
 
 @Injectable()
 export class UserService {
@@ -19,18 +20,22 @@ export class UserService {
     private bizService: BizService,
   ) {}
 
-  async getUser(id: string, environmentId: string): Promise<User> {
+  async getUser(id: string, environmentId: string, expand?: ExpandTypes): Promise<User> {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: {
         externalId: id,
         environmentId,
       },
       include: {
-        bizUsersOnCompany: {
-          include: {
-            bizCompany: true,
-          },
-        },
+        bizUsersOnCompany:
+          expand?.length > 0
+            ? {
+                include: {
+                  bizCompany: expand.includes(ExpandType.GROUPS),
+                  bizUser: expand.includes(ExpandType.MEMBERSHIPS),
+                },
+              }
+            : false,
       },
     });
 
@@ -42,13 +47,14 @@ export class UserService {
       );
     }
 
-    return this.mapBizUserToUser(bizUser);
+    return this.mapBizUserToUser(bizUser, expand);
   }
 
   async listUsers(
     environmentId: string,
     cursor?: string,
     limit = 20,
+    expand?: ExpandTypes,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
     // Validate limit
     const pageSize = Number(limit) || 20;
@@ -68,9 +74,15 @@ export class UserService {
     const baseQuery = {
       where: { environmentId },
       include: {
-        bizUsersOnCompany: {
-          include: { bizCompany: true },
-        },
+        bizUsersOnCompany:
+          expand?.length > 0
+            ? {
+                include: {
+                  bizCompany: expand.includes(ExpandType.GROUPS),
+                  bizUser: expand.includes(ExpandType.MEMBERSHIPS),
+                },
+              }
+            : false,
       },
     };
 
@@ -119,7 +131,7 @@ export class UserService {
     }
 
     return {
-      results: connection.edges.map((edge) => this.mapBizUserToUser(edge.node)),
+      results: connection.edges.map((edge) => this.mapBizUserToUser(edge.node, expand)),
       next: connection.pageInfo.hasNextPage
         ? `${apiUrl}/v1/users?cursor=${connection.pageInfo.endCursor}`
         : null,
@@ -130,26 +142,30 @@ export class UserService {
     };
   }
 
-  private mapBizUserToUser(bizUser: any): User {
+  private mapBizUserToUser(bizUser: any, expand?: ExpandTypes): User {
     return {
       id: bizUser.externalId,
       object: 'user',
       attributes: bizUser.data || {},
       createdAt: bizUser.createdAt.toISOString(),
-      companies: bizUser.bizUsersOnCompany?.map((membership) => ({
-        id: membership.bizCompany.externalId,
-        object: 'company',
-        attributes: membership.bizCompany.data || {},
-        createdAt: membership.bizCompany.createdAt.toISOString(),
-      })),
-      memberships: bizUser.bizUsersOnCompany?.map((membership) => ({
-        id: membership.id,
-        object: 'membership',
-        attributes: membership.data || {},
-        created_at: membership.createdAt.toISOString(),
-        groupId: membership.bizCompanyId,
-        userId: membership.bizUserId,
-      })),
+      companies: expand?.includes(ExpandType.GROUPS)
+        ? bizUser.bizUsersOnCompany?.map((membership) => ({
+            id: membership.bizCompany.externalId,
+            object: 'company',
+            attributes: membership.bizCompany.data || {},
+            createdAt: membership.bizCompany.createdAt.toISOString(),
+          }))
+        : null,
+      memberships: expand?.includes(ExpandType.MEMBERSHIPS)
+        ? bizUser.bizUsersOnCompany?.map((membership) => ({
+            id: membership.id,
+            object: 'membership',
+            attributes: membership.data || {},
+            created_at: membership.createdAt.toISOString(),
+            groupId: membership.bizCompanyId,
+            userId: membership.bizUserId,
+          }))
+        : null,
     };
   }
 

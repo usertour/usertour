@@ -6,10 +6,19 @@ import { OpenapiGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
+import { CompanyController } from './company/company.controller';
+import { CompanyService } from './company/company.service';
 
 @Module({
   imports: [ConfigModule],
-  controllers: [UserController],
-  providers: [UserService, PrismaService, OpenapiGuard, BizService, OpenAPIExceptionFilter],
+  controllers: [UserController, CompanyController],
+  providers: [
+    UserService,
+    CompanyService,
+    PrismaService,
+    OpenapiGuard,
+    BizService,
+    OpenAPIExceptionFilter,
+  ],
 })
 export class OpenapiModule {}

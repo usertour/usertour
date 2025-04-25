@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Membership } from './membership.model';
+import { User } from './user.model';
 
 export class Company {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
@@ -9,6 +11,12 @@ export class Company {
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   attributes: Record<string, any>;
+
+  @ApiProperty({ nullable: true })
+  memberships?: Membership[];
+
+  @ApiProperty({ nullable: true })
+  users?: User[];
 
   @ApiProperty({ example: '2022-10-17T12:34:56.000+00:00' })
   createdAt: string;

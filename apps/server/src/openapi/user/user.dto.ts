@@ -1,6 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../models/user.model';
 import { Company } from '../models/company.model';
+import { IsEnum, IsOptional } from 'class-validator';
+
+export enum ExpandType {
+  GROUPS = 'groups',
+  MEMBERSHIPS = 'memberships',
+}
+
+export type ExpandTypes = ExpandType[];
+
+export class UserExpandQueryDto {
+  @ApiProperty({
+    description: 'Expand related resources',
+    enum: ExpandType,
+    required: false,
+  })
+  @IsEnum(ExpandType)
+  @IsOptional()
+  expand?: ExpandType;
+}
 
 export class UpsertMembershipDto {
   @ApiProperty({ description: 'Unique identifier for the membership' })

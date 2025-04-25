@@ -10,6 +10,7 @@ type ErrorCode =
   | 'service_unavailable'
   | 'invalid_api_key'
   | 'user_not_found'
+  | 'company_not_found'
   | 'invalid_limit'
   | 'invalid_cursor'
   | 'invalid_cursor_previous';
@@ -35,6 +36,28 @@ export const OpenAPIErrors = {
     INVALID_REQUEST: {
       code: 'invalid_request' as ErrorCode,
       message: 'Only one of companies or memberships can be set',
+    },
+  },
+  COMPANY: {
+    NOT_FOUND: {
+      code: 'company_not_found' as ErrorCode,
+      message: 'Company not found',
+    },
+    INVALID_LIMIT: {
+      code: 'invalid_limit' as ErrorCode,
+      message: 'Invalid limit parameter',
+    },
+    INVALID_CURSOR: {
+      code: 'invalid_cursor' as ErrorCode,
+      message: 'Invalid cursor parameter',
+    },
+    INVALID_CURSOR_PREVIOUS: {
+      code: 'invalid_cursor_previous' as ErrorCode,
+      message: 'Invalid previous cursor parameter',
+    },
+    INVALID_REQUEST: {
+      code: 'invalid_request' as ErrorCode,
+      message: 'Only one of members or memberships can be set',
     },
   },
   AUTH: {
