@@ -35,7 +35,6 @@ export class CompanyService {
             : false,
       },
     });
-    console.log(bizCompany);
 
     if (!bizCompany) {
       throw new OpenAPIException(
@@ -212,8 +211,8 @@ export class CompanyService {
         );
       }
 
-      // Get the updated company data
-      return await this.getCompany(company.externalId, environmentId);
+      // Map the company to the response format
+      return this.mapBizCompanyToCompany(company);
     });
   }
 

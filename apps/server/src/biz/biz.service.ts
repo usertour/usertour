@@ -268,7 +268,6 @@ export class BizService {
         },
       });
       const filter = createConditionsFilter(conditions, attributes);
-      console.log(JSON.stringify(filter));
       // const conditions = { ...c };
       const where: Record<string, any> = filter ? filter : {};
       if (segment && segment.dataType === SegmentDataType.MANUAL) {
@@ -286,7 +285,6 @@ export class BizService {
       if (search) {
         where.externalId = { contains: search };
       }
-      console.log('where:', JSON.stringify(where));
       const resp = await findManyCursorConnection(
         (args) =>
           this.prisma.bizUser.findMany({
@@ -306,10 +304,9 @@ export class BizService {
           }),
         { first, last, before, after },
       );
-      console.log(resp);
       return resp;
     } catch (error) {
-      console.log(error);
+      throw new UnknownError(error);
     }
   }
 
@@ -360,7 +357,6 @@ export class BizService {
       if (search) {
         where.externalId = { contains: search };
       }
-      console.log('where:', JSON.stringify(where));
       const resp = await findManyCursorConnection(
         (args) =>
           this.prisma.bizCompany.findMany({
@@ -382,10 +378,9 @@ export class BizService {
           }),
         { first, last, before, after },
       );
-      console.log(resp);
       return resp;
     } catch (error) {
-      console.log(error);
+      throw new UnknownError(error);
     }
   }
 
@@ -481,12 +476,14 @@ export class BizService {
     const company = await tx.bizCompany.findFirst({
       where: { externalId: String(companyId), environmentId },
     });
+
     const insertAttribute = await this.insertBizAttributes(
       tx,
       projectId,
       AttributeBizType.COMPANY,
       attributes,
     );
+
     if (company) {
       const userData = JSON.parse(JSON.stringify(company.data));
       const insertData = filterNullAttributes({
@@ -502,6 +499,7 @@ export class BizService {
         },
       });
     }
+
     return await tx.bizCompany.create({
       data: {
         externalId: String(companyId),
