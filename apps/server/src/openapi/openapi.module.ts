@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
-import { PrismaService } from '@/prisma.service';
+import { PrismaService } from 'nestjs-prisma';
 import { OpenapiGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';

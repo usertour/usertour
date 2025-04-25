@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma.service';
+import { PrismaService } from 'nestjs-prisma';
 import { Company } from '../models/company.model';
 import { UpsertCompanyRequestDto } from './company.dto';
 import { ListCompaniesResponseDto } from './company.dto';

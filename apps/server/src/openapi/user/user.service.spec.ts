@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { BizService } from '../../biz/biz.service';
-import { PrismaService } from '../../prisma.service';
+import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';

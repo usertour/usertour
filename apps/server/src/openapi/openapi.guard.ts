@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '@/prisma.service';
+import { PrismaService } from 'nestjs-prisma';
 
 @Injectable()
 export class OpenapiGuard implements CanActivate {

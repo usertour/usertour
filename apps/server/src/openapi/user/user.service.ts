@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma.service';
 import { User } from '../models/user.model';
 import { ConfigService } from '@nestjs/config';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -9,6 +8,7 @@ import { OpenAPIErrors } from '../constants/errors';
 import { UpsertUserRequestDto } from './user.dto';
 import { BizService } from '../../biz/biz.service';
 import { ExpandType, ExpandTypes } from './user.dto';
+import { PrismaService } from 'nestjs-prisma';
 
 @Injectable()
 export class UserService {
