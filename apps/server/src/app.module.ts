@@ -9,7 +9,6 @@ import { ContentsModule } from '@/contents/contents.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
-import { PrismaService } from '@/prisma.service';
 import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 import { UsersModule } from '@/users/users.module';
@@ -121,6 +120,6 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
     DbMonitorModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppResolver, PrismaService],
+  providers: [AppService, AppResolver],
 })
 export class AppModule {}
