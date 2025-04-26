@@ -12,6 +12,7 @@ type ErrorCode =
   | 'user_not_found'
   | 'company_not_found'
   | 'company_membership_not_found'
+  | 'content_not_found'
   | 'invalid_limit'
   | 'invalid_cursor'
   | 'invalid_cursor_previous';
@@ -65,6 +66,24 @@ export const OpenAPIErrors = {
     NOT_FOUND: {
       code: 'company_membership_not_found' as ErrorCode,
       message: 'Company membership not found',
+    },
+  },
+  CONTENT: {
+    NOT_FOUND: {
+      code: 'content_not_found' as ErrorCode,
+      message: 'Content not found',
+    },
+    INVALID_LIMIT: {
+      code: 'invalid_limit' as ErrorCode,
+      message: 'Invalid limit parameter',
+    },
+    INVALID_CURSOR: {
+      code: 'invalid_cursor' as ErrorCode,
+      message: 'Invalid cursor parameter',
+    },
+    INVALID_CURSOR_PREVIOUS: {
+      code: 'invalid_cursor_previous' as ErrorCode,
+      message: 'Invalid previous cursor parameter',
     },
   },
   AUTH: {

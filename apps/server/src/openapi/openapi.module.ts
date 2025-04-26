@@ -10,14 +10,17 @@ import { CompanyController } from './company/company.controller';
 import { CompanyService } from './company/company.service';
 import { CompanyMembershipController } from './company_membership/company_membership.controller';
 import { CompanyMembershipService } from './company_membership/company_membership.service';
+import { ContentController } from './content/content.controller';
+import { ContentService } from './content/content.service';
 
 @Module({
   imports: [ConfigModule],
-  controllers: [UserController, CompanyController, CompanyMembershipController],
+  controllers: [UserController, CompanyController, CompanyMembershipController, ContentController],
   providers: [
     UserService,
     CompanyService,
     CompanyMembershipService,
+    ContentService,
     PrismaService,
     OpenapiGuard,
     BizService,
