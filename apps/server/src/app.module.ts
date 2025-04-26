@@ -29,6 +29,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 import api from '@opentelemetry/api';
 import { OpenapiModule } from './openapi/openapi.module';
+import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { OpenapiModule } from './openapi/openapi.module';
     TeamModule,
     SubscriptionModule,
     OpenapiModule,
+    DbMonitorModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],
