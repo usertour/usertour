@@ -10,17 +10,27 @@ import {
   Delete,
   Post,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CompanyService } from './company.service';
 import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from './company.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { EnvironmentDecorator } from '../decorators/environment.decorator';
+import { Environment } from '@/environments/models/environment.model';
 
 @ApiTags('Companies')
 @Controller('v1/companies')
 @UseGuards(OpenapiGuard)
 @UseFilters(OpenAPIExceptionFilter)
+@ApiBearerAuth()
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
@@ -58,8 +68,11 @@ export class CompanyController {
   @Post()
   @ApiOperation({ summary: 'Create or update a company' })
   @ApiResponse({ status: 200, description: 'Company created/updated successfully', type: Company })
-  async upsertCompany(@Body() data: UpsertCompanyRequestDto, @Request() req): Promise<Company> {
-    return await this.companyService.upsertCompany(data, req.environment.id);
+  async upsertCompany(
+    @Body() data: UpsertCompanyRequestDto,
+    @EnvironmentDecorator() environment: Environment,
+  ): Promise<Company> {
+    return await this.companyService.upsertCompany(data, environment.id, environment.projectId);
   }
 
   @Delete(':id')

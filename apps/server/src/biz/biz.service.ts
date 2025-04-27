@@ -26,8 +26,8 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
-import { UpsertUserRequestDto, ExpandType } from '../openapi/users/users.dto';
-import { ExpandTypes } from '../openapi/users/users.dto';
+import { UpsertUserRequestDto } from '../openapi/users/users.dto';
+import { ExpandType } from '../openapi/company/company.dto';
 
 @Injectable()
 export class BizService {
@@ -468,6 +468,21 @@ export class BizService {
     return company;
   }
 
+  async upsertBizCompany(
+    projectId: string,
+    environmentId: string,
+    companyId: string,
+    attributes: any,
+  ): Promise<any> {
+    return await this.upsertBizCompanyAttributes(
+      this.prisma,
+      projectId,
+      environmentId,
+      companyId,
+      attributes,
+    );
+  }
+
   async upsertBizCompanyAttributes(
     tx: Prisma.TransactionClient,
     projectId: string,
@@ -601,8 +616,12 @@ export class BizService {
     return insertAttribute;
   }
 
-  async getBizUser(id: string, environmentId: string, expand?: ExpandTypes) {
-    return await this.prisma.bizUser.findFirst({
+  async getBizUser(
+    id: string,
+    environmentId: string,
+    expand?: import('../openapi/users/users.dto').ExpandTypes,
+  ) {
+    const bizUser = await this.prisma.bizUser.findFirst({
       where: {
         externalId: id,
         environmentId,
@@ -612,20 +631,35 @@ export class BizService {
           expand?.length > 0
             ? {
                 include: {
-                  bizCompany:
-                    expand.includes(ExpandType.COMPANIES) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
-                  bizUser:
-                    expand.includes(ExpandType.MEMBERSHIPS) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
+                  bizCompany: true,
                 },
               }
             : false,
       },
     });
+
+    if (!bizUser) {
+      throw new ParamsError('User not found');
+    }
+
+    return bizUser;
   }
 
-  async listBizUsers(environmentId: string, cursor?: string, limit = 20, expand?: ExpandTypes) {
+  async listBizUsers(
+    environmentId: string,
+    cursor?: string,
+    limit = 20,
+    expand?: import('../openapi/users/users.dto').ExpandTypes,
+  ) {
+    const pageSize = Number(limit) || 20;
+    if (Number.isNaN(pageSize) || pageSize < 1) {
+      throw new ParamsError('Invalid limit');
+    }
+
+    this.logger.debug(
+      `Listing users with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${pageSize}`,
+    );
+
     const baseQuery = {
       where: { environmentId },
       include: {
@@ -633,12 +667,7 @@ export class BizService {
           expand?.length > 0
             ? {
                 include: {
-                  bizCompany:
-                    expand.includes(ExpandType.COMPANIES) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
-                  bizUser:
-                    expand.includes(ExpandType.MEMBERSHIPS) ||
-                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
+                  bizCompany: true,
                 },
               }
             : false,
@@ -652,7 +681,7 @@ export class BizService {
         previousPage = await findManyCursorConnection(
           (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
           () => this.prisma.bizUser.count({ where: { environmentId } }),
-          { last: limit, before: cursor },
+          { last: pageSize, before: cursor },
         );
       } catch (error) {
         this.logger.warn(`Failed to get previous page: ${error.message}`);
@@ -665,7 +694,7 @@ export class BizService {
       connection = await findManyCursorConnection(
         (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
         () => this.prisma.bizUser.count({ where: { environmentId } }),
-        { first: limit, after: cursor },
+        { first: pageSize, after: cursor },
       );
     } catch (error) {
       this.logger.error(`Failed to get current page: ${error.message}`);
@@ -679,8 +708,8 @@ export class BizService {
 
     return {
       results: connection.edges.map((edge) => edge.node),
-      nextCursor: connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null,
-      previousCursor:
+      next: connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null,
+      previous:
         previousPage?.edges.length > 0
           ? previousPage.edges[previousPage.edges.length - 1].cursor
           : null,
@@ -725,5 +754,105 @@ export class BizService {
 
       return user;
     });
+  }
+
+  async getBizCompany(
+    id: string,
+    environmentId: string,
+    expand?: (ExpandType | import('../openapi/users/users.dto').ExpandType)[],
+  ) {
+    const bizCompany = await this.prisma.bizCompany.findFirst({
+      where: {
+        externalId: id,
+        environmentId,
+      },
+      include: {
+        bizUsersOnCompany:
+          expand?.length > 0
+            ? {
+                include: {
+                  bizUser: true,
+                },
+              }
+            : false,
+      },
+    });
+
+    if (!bizCompany) {
+      throw new ParamsError('Company not found');
+    }
+
+    return bizCompany;
+  }
+
+  async listBizCompanies(
+    environmentId: string,
+    cursor?: string,
+    limit = 20,
+    expand?: (ExpandType | import('../openapi/users/users.dto').ExpandType)[],
+  ) {
+    const pageSize = Number(limit) || 20;
+    if (Number.isNaN(pageSize) || pageSize < 1) {
+      throw new ParamsError('Invalid limit');
+    }
+
+    this.logger.debug(
+      `Listing companies with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${pageSize}`,
+    );
+
+    const baseQuery = {
+      where: { environmentId },
+      include: {
+        bizUsersOnCompany:
+          expand?.length > 0
+            ? {
+                include: {
+                  bizUser: true,
+                },
+              }
+            : false,
+      },
+    };
+
+    // Get the previous page's last cursor if we're not on the first page
+    let previousPage = null;
+    if (cursor) {
+      try {
+        previousPage = await findManyCursorConnection(
+          (args) => this.prisma.bizCompany.findMany({ ...baseQuery, ...args }),
+          () => this.prisma.bizCompany.count({ where: { environmentId } }),
+          { last: pageSize, before: cursor },
+        );
+      } catch (error) {
+        this.logger.warn(`Failed to get previous page: ${error.message}`);
+        throw new ParamsError('Invalid cursor for previous page');
+      }
+    }
+
+    let connection: any;
+    try {
+      connection = await findManyCursorConnection(
+        (args) => this.prisma.bizCompany.findMany({ ...baseQuery, ...args }),
+        () => this.prisma.bizCompany.count({ where: { environmentId } }),
+        { first: pageSize, after: cursor },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to get current page: ${error.message}`);
+      throw new ParamsError('Invalid cursor');
+    }
+
+    // If we got no results and there was a cursor, it means the cursor was invalid
+    if (!connection.edges.length && cursor) {
+      throw new ParamsError('Invalid cursor');
+    }
+
+    return {
+      results: connection.edges.map((edge) => edge.node),
+      next: connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null,
+      previous:
+        previousPage?.edges.length > 0
+          ? previousPage.edges[previousPage.edges.length - 1].cursor
+          : null,
+    };
   }
 }
