@@ -26,6 +26,8 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
+import { UpsertUserRequestDto, ExpandType } from '../openapi/users/users.dto';
+import { ExpandTypes } from '../openapi/users/users.dto';
 
 @Injectable()
 export class BizService {
@@ -597,5 +599,131 @@ export class BizService {
       }
     }
     return insertAttribute;
+  }
+
+  async getBizUser(id: string, environmentId: string, expand?: ExpandTypes) {
+    return await this.prisma.bizUser.findFirst({
+      where: {
+        externalId: id,
+        environmentId,
+      },
+      include: {
+        bizUsersOnCompany:
+          expand?.length > 0
+            ? {
+                include: {
+                  bizCompany:
+                    expand.includes(ExpandType.COMPANIES) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
+                  bizUser:
+                    expand.includes(ExpandType.MEMBERSHIPS) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
+                },
+              }
+            : false,
+      },
+    });
+  }
+
+  async listBizUsers(environmentId: string, cursor?: string, limit = 20, expand?: ExpandTypes) {
+    const baseQuery = {
+      where: { environmentId },
+      include: {
+        bizUsersOnCompany:
+          expand?.length > 0
+            ? {
+                include: {
+                  bizCompany:
+                    expand.includes(ExpandType.COMPANIES) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
+                  bizUser:
+                    expand.includes(ExpandType.MEMBERSHIPS) ||
+                    expand.includes(ExpandType.MEMBERSHIPS_COMPANY),
+                },
+              }
+            : false,
+      },
+    };
+
+    // Get the previous page's last cursor if we're not on the first page
+    let previousPage = null;
+    if (cursor) {
+      try {
+        previousPage = await findManyCursorConnection(
+          (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
+          () => this.prisma.bizUser.count({ where: { environmentId } }),
+          { last: limit, before: cursor },
+        );
+      } catch (error) {
+        this.logger.warn(`Failed to get previous page: ${error.message}`);
+        throw new ParamsError('Invalid cursor for previous page');
+      }
+    }
+
+    let connection: any;
+    try {
+      connection = await findManyCursorConnection(
+        (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
+        () => this.prisma.bizUser.count({ where: { environmentId } }),
+        { first: limit, after: cursor },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to get current page: ${error.message}`);
+      throw new ParamsError('Invalid cursor');
+    }
+
+    // If we got no results and there was a cursor, it means the cursor was invalid
+    if (!connection.edges.length && cursor) {
+      throw new ParamsError('Invalid cursor');
+    }
+
+    return {
+      results: connection.edges.map((edge) => edge.node),
+      nextCursor: connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null,
+      previousCursor:
+        previousPage?.edges.length > 0
+          ? previousPage.edges[previousPage.edges.length - 1].cursor
+          : null,
+    };
+  }
+
+  async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      // First upsert the user with attributes
+      const user = await this.upsertBizUsers(tx, id, data.attributes || {}, environmentId);
+
+      if (!user) {
+        throw new UnknownError('Failed to upsert user');
+      }
+
+      // Handle companies/companies and memberships
+      if (data.companies) {
+        for (const company of data.companies) {
+          await this.upsertBizCompanies(
+            tx,
+            company.id,
+            id,
+            company.attributes || {},
+            environmentId,
+            {},
+          );
+        }
+      }
+
+      if (data.memberships) {
+        for (const membership of data.memberships) {
+          await this.upsertBizCompanies(
+            tx,
+            membership.company.id,
+            id,
+            membership.company.attributes || {},
+            environmentId,
+            membership.attributes || {},
+          );
+        }
+      }
+
+      return user;
+    });
   }
 }

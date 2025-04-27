@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { UserController } from './user/user.controller';
-import { UserService } from './user/user.service';
 import { PrismaService } from 'nestjs-prisma';
 import { OpenapiGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
@@ -19,22 +17,24 @@ import { OpenAPIAttributesController } from './attributes/attributes.controller'
 import { OpenAPIAttributesService } from './attributes/attributes.service';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { OpenAPIEventsController } from './events/events.controller';
-import { OpenAPIEventsService } from './events/events.service';
 import { EventsModule } from '@/events/events.module';
+import { OpenAPIUsersController } from './users/users.controller';
+import { OpenAPIUsersService } from './users/users.service';
+import { BizModule } from '@/biz/biz.module';
+import { OpenAPIEventsService } from './events/events.service';
 
 @Module({
-  imports: [ConfigModule, AnalyticsModule, AttributesModule, EventsModule],
+  imports: [ConfigModule, AnalyticsModule, AttributesModule, EventsModule, BizModule],
   controllers: [
-    UserController,
     CompanyController,
     CompanyMembershipController,
     ContentController,
     ContentSessionController,
     OpenAPIAttributesController,
     OpenAPIEventsController,
+    OpenAPIUsersController,
   ],
   providers: [
-    UserService,
     CompanyService,
     CompanyMembershipService,
     ContentService,
@@ -45,6 +45,7 @@ import { EventsModule } from '@/events/events.module';
     ContentSessionService,
     OpenAPIAttributesService,
     OpenAPIEventsService,
+    OpenAPIUsersService,
   ],
 })
 export class OpenapiModule {}
