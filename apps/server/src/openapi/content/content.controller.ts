@@ -9,20 +9,20 @@ import {
 } from '@nestjs/swagger';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 import { ContentService } from './content.service';
-import { Content } from '../models/content.model';
+import { Content, ContentVersion } from '../models/content.model';
 import { EnvironmentId } from '../decorators/environment-id.decorator';
 import { ExpandType } from './content.dto';
 import { OpenapiGuard } from '../openapi.guard';
 
 @ApiTags('Contents')
-@Controller('v1/contents')
+@Controller('v1')
 @UseGuards(OpenapiGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
-  @Get(':id')
+  @Get('contents/:id')
   @ApiOperation({ summary: 'Get a content by ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
@@ -37,7 +37,7 @@ export class ContentController {
     return this.contentService.getContent(id, environmentId, expandTypes);
   }
 
-  @Get()
+  @Get('contents')
   @ApiOperation({ summary: 'List all contents' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
   @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
@@ -51,5 +51,35 @@ export class ContentController {
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const expandTypes = expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined;
     return this.contentService.listContents(environmentId, cursor, limit, expandTypes);
+  }
+
+  @Get('content_versions/:id')
+  @ApiOperation({ summary: 'Get a content version by ID' })
+  @ApiParam({ name: 'id', description: 'Content version ID' })
+  @ApiResponse({ status: 200, description: 'Content version found', type: ContentVersion })
+  @ApiResponse({ status: 404, description: 'Content version not found' })
+  async getContentVersion(
+    @Param('id') id: string,
+    @EnvironmentId() environmentId: string,
+  ): Promise<ContentVersion> {
+    return this.contentService.getContentVersion(id, environmentId);
+  }
+
+  @Get('content_versions')
+  @ApiOperation({ summary: 'List all content versions' })
+  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    type: Number,
+  })
+  @ApiResponse({ status: 200, description: 'List of content versions' })
+  async listContentVersions(
+    @EnvironmentId() environmentId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+  ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
+    return this.contentService.listContentVersions(environmentId, cursor, limit);
   }
 }
