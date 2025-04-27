@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContentService } from './content.service';
+import { OpenAPIContentService } from './content.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
@@ -10,8 +10,8 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 
 jest.mock('@devoxa/prisma-relay-cursor-connection');
 
-describe('ContentService', () => {
-  let service: ContentService;
+describe('OpenAPIContentService', () => {
+  let service: OpenAPIContentService;
   let prismaService: PrismaService;
 
   const mockPrismaService = {
@@ -34,7 +34,7 @@ describe('ContentService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ContentService,
+        OpenAPIContentService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -46,7 +46,7 @@ describe('ContentService', () => {
       ],
     }).compile();
 
-    service = module.get<ContentService>(ContentService);
+    service = module.get<OpenAPIContentService>(OpenAPIContentService);
     prismaService = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });

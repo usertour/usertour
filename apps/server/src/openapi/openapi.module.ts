@@ -6,8 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
 import { OpenAPICompaniesController } from './companies/companies.controller';
 import { OpenAPICompaniesService } from './companies/companies.service';
-import { ContentController } from './content/content.controller';
-import { ContentService } from './content/content.service';
+import { OpenAPIContentController } from './content/content.controller';
+import { OpenAPIContentService } from './content/content.service';
 import { ContentSessionController } from './content-session/content-session.controller';
 import { ContentSessionService } from './content-session/content-session.service';
 import { AnalyticsModule } from '@/analytics/analytics.module';
@@ -31,7 +31,7 @@ import { OpenAPICompanyMembershipService } from './company_memberships/company_m
     OpenAPIEventsController,
     OpenAPIUsersController,
     OpenAPICompanyMembershipController,
-    ContentController,
+    OpenAPIContentController,
     ContentSessionController,
   ],
   providers: [
@@ -41,7 +41,7 @@ import { OpenAPICompanyMembershipService } from './company_memberships/company_m
     OpenAPIEventsService,
     OpenAPIUsersService,
     OpenAPICompanyMembershipService,
-    ContentService,
+    OpenAPIContentService,
     PrismaService,
     OpenapiGuard,
     BizService,

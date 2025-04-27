@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContentController } from './content.controller';
-import { ContentService } from './content.service';
+import { OpenAPIContentController } from './content.controller';
+import { OpenAPIContentService } from './content.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { ExpandType } from './content.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
@@ -10,9 +10,9 @@ import { OpenapiGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 
-describe('ContentController', () => {
-  let controller: ContentController;
-  let contentService: ContentService;
+describe('OpenAPIContentController', () => {
+  let controller: OpenAPIContentController;
+  let contentService: OpenAPIContentService;
 
   const mockContentService = {
     getContent: jest.fn(),
@@ -33,10 +33,10 @@ describe('ContentController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ContentController],
+      controllers: [OpenAPIContentController],
       providers: [
         {
-          provide: ContentService,
+          provide: OpenAPIContentService,
           useValue: mockContentService,
         },
         {
@@ -51,8 +51,8 @@ describe('ContentController', () => {
       ],
     }).compile();
 
-    controller = module.get<ContentController>(ContentController);
-    contentService = module.get<ContentService>(ContentService);
+    controller = module.get<OpenAPIContentController>(OpenAPIContentController);
+    contentService = module.get<OpenAPIContentService>(OpenAPIContentService);
   });
 
   describe('getContent', () => {

@@ -23,8 +23,8 @@ type VersionWithContent = Prisma.VersionGetPayload<{
 }>;
 
 @Injectable()
-export class ContentService {
-  private readonly logger = new Logger(ContentService.name);
+export class OpenAPIContentService {
+  private readonly logger = new Logger(OpenAPIContentService.name);
 
   constructor(
     private prisma: PrismaService,
