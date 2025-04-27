@@ -1,33 +1,25 @@
-import { Injectable, Logger, HttpStatus } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { BizService } from '@/biz/biz.service';
+import { DeleteCompanyMembershipResponseDto } from './company_membership.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
-import { DeleteCompanyMembershipResponseDto } from './company_membership.dto';
 
 @Injectable()
 export class CompanyMembershipService {
   private readonly logger = new Logger(CompanyMembershipService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly bizService: BizService) {}
 
   async deleteCompanyMembership(
     userId: string,
     companyId: string,
     environmentId: string,
   ): Promise<DeleteCompanyMembershipResponseDto> {
-    const membership = await this.prisma.bizUserOnCompany.findFirst({
-      where: {
-        bizUser: {
-          externalId: userId,
-          environmentId,
-        },
-        bizCompany: {
-          externalId: companyId,
-          environmentId,
-        },
-      },
-    });
-
+    const membership = await this.bizService.getBizCompanyMembership(
+      userId,
+      companyId,
+      environmentId,
+    );
     if (!membership) {
       throw new OpenAPIException(
         OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.message,
@@ -35,12 +27,7 @@ export class CompanyMembershipService {
         OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.code,
       );
     }
-
-    await this.prisma.bizUserOnCompany.delete({
-      where: {
-        id: membership.id,
-      },
-    });
+    await this.bizService.deleteBizCompanyMembership(membership.id);
 
     return {
       id: membership.id,

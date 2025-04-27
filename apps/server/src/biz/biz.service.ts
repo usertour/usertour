@@ -855,4 +855,29 @@ export class BizService {
           : null,
     };
   }
+
+  async getBizCompanyMembership(userId: string, companyId: string, environmentId: string) {
+    const membership = await this.prisma.bizUserOnCompany.findFirst({
+      where: {
+        bizUser: {
+          externalId: userId,
+          environmentId,
+        },
+        bizCompany: {
+          externalId: companyId,
+          environmentId,
+        },
+      },
+    });
+
+    return membership;
+  }
+
+  async deleteBizCompanyMembership(membershipId: string) {
+    return await this.prisma.bizUserOnCompany.delete({
+      where: {
+        id: membershipId,
+      },
+    });
+  }
 }

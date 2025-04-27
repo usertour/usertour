@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CompanyMembershipService } from './company_membership.service';
-import { PrismaService } from 'nestjs-prisma';
+import { BizService } from '@/biz/biz.service';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { OpenAPIException } from '../exceptions/openapi.exception';
@@ -8,11 +8,9 @@ import { OpenAPIException } from '../exceptions/openapi.exception';
 describe('OpenAPI:CompanyMembershipService', () => {
   let service: CompanyMembershipService;
 
-  const mockPrismaService = {
-    bizUserOnCompany: {
-      findFirst: jest.fn(),
-      delete: jest.fn(),
-    },
+  const mockBizService = {
+    getBizCompanyMembership: jest.fn(),
+    deleteBizCompanyMembership: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -20,8 +18,8 @@ describe('OpenAPI:CompanyMembershipService', () => {
       providers: [
         CompanyMembershipService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
+          provide: BizService,
+          useValue: mockBizService,
         },
       ],
     }).compile();
@@ -36,8 +34,8 @@ describe('OpenAPI:CompanyMembershipService', () => {
         id: 'membership-1',
       };
 
-      mockPrismaService.bizUserOnCompany.findFirst.mockResolvedValue(mockMembership);
-      mockPrismaService.bizUserOnCompany.delete.mockResolvedValue(mockMembership);
+      mockBizService.getBizCompanyMembership.mockResolvedValue(mockMembership);
+      mockBizService.deleteBizCompanyMembership.mockResolvedValue(mockMembership);
 
       const result = await service.deleteCompanyMembership('user-1', 'company-1', 'env-1');
 
@@ -47,28 +45,17 @@ describe('OpenAPI:CompanyMembershipService', () => {
         deleted: true,
       });
 
-      expect(mockPrismaService.bizUserOnCompany.findFirst).toHaveBeenCalledWith({
-        where: {
-          bizUser: {
-            externalId: 'user-1',
-            environmentId: 'env-1',
-          },
-          bizCompany: {
-            externalId: 'company-1',
-            environmentId: 'env-1',
-          },
-        },
-      });
+      expect(mockBizService.getBizCompanyMembership).toHaveBeenCalledWith(
+        'user-1',
+        'company-1',
+        'env-1',
+      );
 
-      expect(mockPrismaService.bizUserOnCompany.delete).toHaveBeenCalledWith({
-        where: {
-          id: 'membership-1',
-        },
-      });
+      expect(mockBizService.deleteBizCompanyMembership).toHaveBeenCalledWith('membership-1');
     });
 
     it('should throw not found error when membership does not exist', async () => {
-      mockPrismaService.bizUserOnCompany.findFirst.mockResolvedValue(null);
+      mockBizService.getBizCompanyMembership.mockResolvedValue(null);
 
       const error = new OpenAPIException(
         OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.message,
@@ -80,20 +67,13 @@ describe('OpenAPI:CompanyMembershipService', () => {
         error,
       );
 
-      expect(mockPrismaService.bizUserOnCompany.findFirst).toHaveBeenCalledWith({
-        where: {
-          bizUser: {
-            externalId: 'user-1',
-            environmentId: 'env-1',
-          },
-          bizCompany: {
-            externalId: 'company-1',
-            environmentId: 'env-1',
-          },
-        },
-      });
+      expect(mockBizService.getBizCompanyMembership).toHaveBeenCalledWith(
+        'user-1',
+        'company-1',
+        'env-1',
+      );
 
-      expect(mockPrismaService.bizUserOnCompany.delete).not.toHaveBeenCalled();
+      expect(mockBizService.deleteBizCompanyMembership).not.toHaveBeenCalled();
     });
   });
 });
