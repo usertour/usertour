@@ -322,6 +322,7 @@ Table BizCompany {
   bizUsersOnCompany BizUserOnCompany [not null]
   bizUsers BizUser [not null]
   bizCompaniesOnSegment BizCompanyOnSegment [not null]
+  BizSession BizSession [not null]
 
   indexes {
     (environmentId, externalId) [unique]
@@ -418,6 +419,8 @@ Table BizSession {
   projectId String [not null, default: '']
   bizUser BizUser [not null]
   bizUserId String [not null]
+  bizCompany BizCompany
+  bizCompanyId String
   content Content [not null]
   contentId String [not null]
   version Version [not null]
@@ -590,6 +593,8 @@ Ref: AttributeOnEvent.eventId > Event.id
 Ref: AttributeOnEvent.attributeId > Attribute.id
 
 Ref: BizSession.bizUserId > BizUser.id
+
+Ref: BizSession.bizCompanyId > BizCompany.id
 
 Ref: BizSession.contentId > Content.id
 

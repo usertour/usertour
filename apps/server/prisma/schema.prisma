@@ -344,6 +344,7 @@ model BizCompany {
   bizUsersOnCompany     BizUserOnCompany[]
   bizUsers              BizUser[]
   bizCompaniesOnSegment BizCompanyOnSegment[]
+  BizSession            BizSession[]
 
   @@unique([environmentId, externalId])
   @@index([externalId])
@@ -424,21 +425,23 @@ model AttributeOnEvent {
 }
 
 model BizSession {
-  id        String     @id @default(cuid())
-  createdAt DateTime   @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime   @updatedAt @db.Timestamptz(6)
-  deleted   Boolean    @default(false)
-  state     Int        @default(0)
-  data      Json?      @db.JsonB
-  progress  Int        @default(0)
-  projectId String     @default("")
-  bizUser   BizUser    @relation(fields: [bizUserId], references: [id])
-  bizUserId String
-  content   Content    @relation(fields: [contentId], references: [id])
-  contentId String
-  version   Version    @relation(fields: [versionId], references: [id])
-  versionId String
-  bizEvent  BizEvent[]
+  id           String      @id @default(cuid())
+  createdAt    DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
+  deleted      Boolean     @default(false)
+  state        Int         @default(0)
+  data         Json?       @db.JsonB
+  progress     Int         @default(0)
+  projectId    String      @default("")
+  bizUser      BizUser     @relation(fields: [bizUserId], references: [id])
+  bizUserId    String
+  bizCompany   BizCompany? @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId String?
+  content      Content     @relation(fields: [contentId], references: [id])
+  contentId    String
+  version      Version     @relation(fields: [versionId], references: [id])
+  versionId    String
+  bizEvent     BizEvent[]
 
   @@index([bizUserId])
   @@index([contentId])

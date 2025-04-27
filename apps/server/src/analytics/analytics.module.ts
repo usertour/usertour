@@ -8,5 +8,6 @@ import { AnalyticsService } from './analytics.service';
 @Module({
   imports: [ContentsModule, ProjectsModule, EnvironmentsModule],
   providers: [AnalyticsResolver, AnalyticsService],
+  exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

@@ -29,7 +29,6 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 import api from '@opentelemetry/api';
 import { OpenapiModule } from './openapi/openapi.module';
-import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
 
 @Module({
   imports: [
@@ -63,6 +62,7 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
           env: process.env.NODE_ENV,
           uid: (req as any).user?.id || 'anonymous',
         }),
+        level: 'debug',
         transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
       },
     }),
@@ -113,7 +113,6 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
     TeamModule,
     SubscriptionModule,
     OpenapiModule,
-    DbMonitorModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

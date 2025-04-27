@@ -1,4 +1,11 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIErrors } from '../constants/errors';
@@ -13,6 +20,7 @@ interface OpenAPIErrorResponse {
 
 @Catch()
 export class OpenAPIExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(OpenAPIExceptionFilter.name);
   private readonly docUrl: string;
 
   constructor(private configService: ConfigService) {
@@ -22,6 +30,7 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let errorCode = OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.code;
@@ -70,6 +79,25 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
           break;
       }
     }
+
+    // Log the error with request context
+    this.logger.error({
+      err: exception,
+      msg: 'OpenAPI error occurred',
+      context: this.constructor.name,
+      request: {
+        method: request.method,
+        url: request.url,
+        params: request.params,
+        query: request.query,
+        body: request.body,
+      },
+      response: {
+        status,
+        errorCode,
+        message,
+      },
+    });
 
     const errorResponse: OpenAPIErrorResponse = {
       error: {

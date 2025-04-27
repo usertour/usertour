@@ -13,6 +13,7 @@ type ErrorCode =
   | 'company_not_found'
   | 'company_membership_not_found'
   | 'content_not_found'
+  | 'content_session_not_found'
   | 'invalid_limit'
   | 'invalid_cursor'
   | 'invalid_cursor_previous';
@@ -84,6 +85,12 @@ export const OpenAPIErrors = {
     INVALID_CURSOR_PREVIOUS: {
       code: 'invalid_cursor_previous' as ErrorCode,
       message: 'Invalid previous cursor parameter',
+    },
+  },
+  CONTENT_SESSION: {
+    NOT_FOUND: {
+      code: 'content_session_not_found' as ErrorCode,
+      message: 'Content session not found',
     },
   },
   AUTH: {

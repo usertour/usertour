@@ -12,10 +12,19 @@ import { CompanyMembershipController } from './company_membership/company_member
 import { CompanyMembershipService } from './company_membership/company_membership.service';
 import { ContentController } from './content/content.controller';
 import { ContentService } from './content/content.service';
+import { ContentSessionController } from './content-session/content-session.controller';
+import { ContentSessionService } from './content-session/content-session.service';
+import { AnalyticsModule } from '@/analytics/analytics.module';
 
 @Module({
-  imports: [ConfigModule],
-  controllers: [UserController, CompanyController, CompanyMembershipController, ContentController],
+  imports: [ConfigModule, AnalyticsModule],
+  controllers: [
+    UserController,
+    CompanyController,
+    CompanyMembershipController,
+    ContentController,
+    ContentSessionController,
+  ],
   providers: [
     UserService,
     CompanyService,
@@ -25,6 +34,7 @@ import { ContentService } from './content/content.service';
     OpenapiGuard,
     BizService,
     OpenAPIExceptionFilter,
+    ContentSessionService,
   ],
 })
 export class OpenapiModule {}

@@ -1,13 +1,23 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
 @Injectable()
 export class OpenapiGuard implements CanActivate {
+  private readonly logger = new Logger(OpenapiGuard.name);
+
   constructor(private prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const apiKey = this.extractApiKeyFromHeader(request);
+
+    this.logger.log('Checking API key', { apiKey: apiKey ? 'present' : 'missing' });
 
     if (!apiKey) {
       throw new UnauthorizedException('API key is required');
@@ -19,6 +29,11 @@ export class OpenapiGuard implements CanActivate {
     const accessToken = await this.prisma.accessToken.findUnique({
       where: { accessToken: cleanApiKey },
       include: { environment: true },
+    });
+
+    this.logger.log('Access token check', {
+      found: !!accessToken,
+      isActive: accessToken?.isActive,
     });
 
     if (!accessToken) {
