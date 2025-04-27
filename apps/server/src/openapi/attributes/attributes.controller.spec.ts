@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AttributeController } from './attribute.controller';
-import { AttributeService } from './attribute.service';
+import { OpenAPIAttributesController } from './attributes.controller';
+import { OpenAPIAttributesService } from './attributes.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenapiGuard } from '../openapi.guard';
@@ -8,11 +8,11 @@ import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 import { AttributesService } from '@/attributes/attributes.service';
 import { Environment } from '@/environments/models/environment.model';
 
-describe('AttributeController', () => {
-  let controller: AttributeController;
-  let attributeService: AttributeService;
+describe('OpenAPIAttributesController', () => {
+  let controller: OpenAPIAttributesController;
+  let attributesService: OpenAPIAttributesService;
 
-  const mockAttributeService = {
+  const mockAttributesService = {
     listAttributes: jest.fn(),
   };
 
@@ -23,18 +23,18 @@ describe('AttributeController', () => {
     },
   };
 
-  const mockAttributesService = {
+  const mockBizAttributesService = {
     mapDataType: jest.fn(),
     mapBizType: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AttributeController],
+      controllers: [OpenAPIAttributesController],
       providers: [
         {
-          provide: AttributeService,
-          useValue: mockAttributeService,
+          provide: OpenAPIAttributesService,
+          useValue: mockAttributesService,
         },
         {
           provide: PrismaService,
@@ -57,15 +57,15 @@ describe('AttributeController', () => {
         },
         {
           provide: AttributesService,
-          useValue: mockAttributesService,
+          useValue: mockBizAttributesService,
         },
         OpenapiGuard,
         OpenAPIExceptionFilter,
       ],
     }).compile();
 
-    controller = module.get<AttributeController>(AttributeController);
-    attributeService = module.get<AttributeService>(AttributeService);
+    controller = module.get<OpenAPIAttributesController>(OpenAPIAttributesController);
+    attributesService = module.get<OpenAPIAttributesService>(OpenAPIAttributesService);
     jest.clearAllMocks();
   });
 
@@ -88,7 +88,7 @@ describe('AttributeController', () => {
         previous: null,
       };
 
-      mockAttributeService.listAttributes.mockResolvedValue(mockResponse);
+      mockAttributesService.listAttributes.mockResolvedValue(mockResponse);
 
       const environment = {
         id: 'env-1',
@@ -99,14 +99,16 @@ describe('AttributeController', () => {
         updatedAt: new Date(),
       } as Environment;
 
-      const result = await controller.listAttributes(environment);
+      const result = await controller.listAttributes(environment, {
+        cursor: undefined,
+        limit: undefined,
+      });
 
       expect(result).toEqual(mockResponse);
-      expect(attributeService.listAttributes).toHaveBeenCalledWith(
-        'project-1',
-        undefined,
-        undefined,
-      );
+      expect(attributesService.listAttributes).toHaveBeenCalledWith('project-1', {
+        cursor: undefined,
+        limit: undefined,
+      });
     });
 
     it('should handle pagination parameters', async () => {
@@ -127,7 +129,7 @@ describe('AttributeController', () => {
         previous: null,
       };
 
-      mockAttributeService.listAttributes.mockResolvedValue(mockResponse);
+      mockAttributesService.listAttributes.mockResolvedValue(mockResponse);
 
       const environment = {
         id: 'env-1',
@@ -141,10 +143,10 @@ describe('AttributeController', () => {
       const cursor = 'current_cursor';
       const limit = 10;
 
-      const result = await controller.listAttributes(environment, cursor, limit);
+      const result = await controller.listAttributes(environment, { cursor, limit });
 
       expect(result).toEqual(mockResponse);
-      expect(attributeService.listAttributes).toHaveBeenCalledWith('project-1', cursor, limit);
+      expect(attributesService.listAttributes).toHaveBeenCalledWith('project-1', { cursor, limit });
     });
   });
 });

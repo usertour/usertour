@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.input';
 import { AttributeBizTypeNames, AttributeDataTypeNames } from './models/attribute.model';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { Attribute } from '@/openapi/models/attribute.model';
 
 @Injectable()
 export class AttributesService {
@@ -46,6 +48,34 @@ export class AttributesService {
     });
   }
 
+  async listWithPagination(projectId: string, cursor?: string, limit = 20) {
+    const result = await findManyCursorConnection(
+      (args) =>
+        this.prisma.attribute.findMany({
+          ...args,
+          where: {
+            projectId,
+            deleted: false,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+      () =>
+        this.prisma.attribute.count({
+          where: {
+            projectId,
+            deleted: false,
+          },
+        }),
+      { first: limit, after: cursor },
+    );
+
+    return {
+      data: result.edges.map((edge) => this.mapToAttribute(edge.node)),
+      hasMore: result.pageInfo.hasNextPage,
+      nextCursor: result.pageInfo.hasNextPage ? result.pageInfo.endCursor : null,
+    };
+  }
+
   mapDataType(dataType: number): AttributeDataTypeNames {
     switch (dataType) {
       case 1:
@@ -80,5 +110,18 @@ export class AttributesService {
       default:
         return AttributeBizTypeNames.USER;
     }
+  }
+
+  private mapToAttribute(attribute: any): Attribute {
+    return {
+      id: attribute.id,
+      object: 'attribute',
+      createdAt: attribute.createdAt.toISOString(),
+      dataType: this.mapDataType(attribute.dataType),
+      description: attribute.description,
+      displayName: attribute.displayName,
+      name: attribute.codeName,
+      scope: this.mapBizType(attribute.bizType),
+    };
   }
 }

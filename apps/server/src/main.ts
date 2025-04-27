@@ -26,7 +26,12 @@ async function bootstrap() {
   // app.useGlobalFilters(new AllExceptionsFilter());
 
   // Validation
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
 
   // trust proxy
   app.set('trust proxy', true);

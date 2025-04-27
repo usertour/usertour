@@ -15,8 +15,8 @@ import { ContentService } from './content/content.service';
 import { ContentSessionController } from './content-session/content-session.controller';
 import { ContentSessionService } from './content-session/content-session.service';
 import { AnalyticsModule } from '@/analytics/analytics.module';
-import { AttributeController } from './attribute/attribute.controller';
-import { AttributeService } from './attribute/attribute.service';
+import { OpenAPIAttributesController } from './attributes/attributes.controller';
+import { OpenAPIAttributesService } from './attributes/attributes.service';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { OpenAPIEventsController } from './events/events.controller';
 import { OpenAPIEventsService } from './events/events.service';
@@ -30,7 +30,7 @@ import { EventsModule } from '@/events/events.module';
     CompanyMembershipController,
     ContentController,
     ContentSessionController,
-    AttributeController,
+    OpenAPIAttributesController,
     OpenAPIEventsController,
   ],
   providers: [
@@ -43,7 +43,7 @@ import { EventsModule } from '@/events/events.module';
     BizService,
     OpenAPIExceptionFilter,
     ContentSessionService,
-    AttributeService,
+    OpenAPIAttributesService,
     OpenAPIEventsService,
   ],
 })
