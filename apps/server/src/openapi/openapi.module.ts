@@ -6,8 +6,6 @@ import { ConfigModule } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
 import { OpenAPICompaniesController } from './companies/companies.controller';
 import { OpenAPICompaniesService } from './companies/companies.service';
-import { CompanyMembershipController } from './company_membership/company_membership.controller';
-import { CompanyMembershipService } from './company_membership/company_membership.service';
 import { ContentController } from './content/content.controller';
 import { ContentService } from './content/content.service';
 import { ContentSessionController } from './content-session/content-session.controller';
@@ -22,30 +20,32 @@ import { OpenAPIUsersController } from './users/users.controller';
 import { OpenAPIUsersService } from './users/users.service';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIEventsService } from './events/events.service';
+import { OpenAPICompanyMembershipController } from './company_memberships/company_memberships.controller';
+import { OpenAPICompanyMembershipService } from './company_memberships/company_memberships.service';
 
 @Module({
   imports: [ConfigModule, AnalyticsModule, AttributesModule, EventsModule, BizModule],
   controllers: [
     OpenAPICompaniesController,
-    CompanyMembershipController,
-    ContentController,
-    ContentSessionController,
     OpenAPIAttributesController,
     OpenAPIEventsController,
     OpenAPIUsersController,
+    OpenAPICompanyMembershipController,
+    ContentController,
+    ContentSessionController,
   ],
   providers: [
     OpenAPICompaniesService,
-    CompanyMembershipService,
+    OpenAPIExceptionFilter,
+    OpenAPIAttributesService,
+    OpenAPIEventsService,
+    OpenAPIUsersService,
+    OpenAPICompanyMembershipService,
     ContentService,
     PrismaService,
     OpenapiGuard,
     BizService,
-    OpenAPIExceptionFilter,
     ContentSessionService,
-    OpenAPIAttributesService,
-    OpenAPIEventsService,
-    OpenAPIUsersService,
   ],
 })
 export class OpenapiModule {}

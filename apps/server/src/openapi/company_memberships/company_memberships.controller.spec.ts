@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CompanyMembershipController } from './company_membership.controller';
-import { CompanyMembershipService } from './company_membership.service';
-import { DeleteCompanyMembershipResponseDto } from './company_membership.dto';
+import { OpenAPICompanyMembershipController } from './company_memberships.controller';
+import { OpenAPICompanyMembershipService } from './company_memberships.service';
+import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 
 describe('OpenAPI:CompanyMembershipController', () => {
-  let controller: CompanyMembershipController;
+  let controller: OpenAPICompanyMembershipController;
 
   const mockCompanyMembershipService = {
     deleteCompanyMembership: jest.fn(),
@@ -38,10 +38,10 @@ describe('OpenAPI:CompanyMembershipController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [CompanyMembershipController],
+      controllers: [OpenAPICompanyMembershipController],
       providers: [
         {
-          provide: CompanyMembershipService,
+          provide: OpenAPICompanyMembershipService,
           useValue: mockCompanyMembershipService,
         },
         {
@@ -57,7 +57,7 @@ describe('OpenAPI:CompanyMembershipController', () => {
       ],
     }).compile();
 
-    controller = module.get<CompanyMembershipController>(CompanyMembershipController);
+    controller = module.get<OpenAPICompanyMembershipController>(OpenAPICompanyMembershipController);
   });
 
   describe('deleteCompanyMembership', () => {
@@ -70,9 +70,7 @@ describe('OpenAPI:CompanyMembershipController', () => {
 
       mockCompanyMembershipService.deleteCompanyMembership.mockResolvedValue(mockResponse);
 
-      const result = await controller.deleteCompanyMembership('user-1', 'company-1', {
-        environment: { id: 'env-1' },
-      });
+      const result = await controller.deleteCompanyMembership('user-1', 'company-1', 'env-1');
 
       expect(result).toEqual(mockResponse);
       expect(mockCompanyMembershipService.deleteCompanyMembership).toHaveBeenCalledWith(

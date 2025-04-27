@@ -1,16 +1,17 @@
-import { Controller, Delete, Query, Request, UseFilters, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
-import { CompanyMembershipService } from './company_membership.service';
-import { DeleteCompanyMembershipResponseDto } from './company_membership.dto';
+import { OpenAPICompanyMembershipService } from './company_memberships.service';
+import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
+import { EnvironmentId } from '../decorators/environment-id.decorator';
 
 @ApiTags('Company Memberships')
 @Controller('v1/company_memberships')
 @UseGuards(OpenapiGuard)
 @UseFilters(OpenAPIExceptionFilter)
-export class CompanyMembershipController {
-  constructor(private readonly companyMembershipService: CompanyMembershipService) {}
+export class OpenAPICompanyMembershipController {
+  constructor(private readonly openAPICompanyMembershipService: OpenAPICompanyMembershipService) {}
 
   @Delete()
   @ApiOperation({ summary: 'Delete company membership' })
@@ -25,12 +26,12 @@ export class CompanyMembershipController {
   async deleteCompanyMembership(
     @Query('user_id') userId: string,
     @Query('company_id') companyId: string,
-    @Request() req,
+    @EnvironmentId() environmentId: string,
   ): Promise<DeleteCompanyMembershipResponseDto> {
-    return await this.companyMembershipService.deleteCompanyMembership(
+    return await this.openAPICompanyMembershipService.deleteCompanyMembership(
       userId,
       companyId,
-      req.environment.id,
+      environmentId,
     );
   }
 }

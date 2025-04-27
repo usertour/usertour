@@ -1,12 +1,12 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { BizService } from '@/biz/biz.service';
-import { DeleteCompanyMembershipResponseDto } from './company_membership.dto';
+import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 
 @Injectable()
-export class CompanyMembershipService {
-  private readonly logger = new Logger(CompanyMembershipService.name);
+export class OpenAPICompanyMembershipService {
+  private readonly logger = new Logger(OpenAPICompanyMembershipService.name);
 
   constructor(private readonly bizService: BizService) {}
 
