@@ -17,8 +17,6 @@ export class OpenapiGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const apiKey = this.extractApiKeyFromHeader(request);
 
-    this.logger.log('Checking API key', { apiKey: apiKey ? 'present' : 'missing' });
-
     if (!apiKey) {
       throw new UnauthorizedException('API key is required');
     }
@@ -29,11 +27,6 @@ export class OpenapiGuard implements CanActivate {
     const accessToken = await this.prisma.accessToken.findUnique({
       where: { accessToken: cleanApiKey },
       include: { environment: true },
-    });
-
-    this.logger.log('Access token check', {
-      found: !!accessToken,
-      isActive: accessToken?.isActive,
     });
 
     if (!accessToken) {

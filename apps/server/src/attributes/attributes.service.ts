@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.input';
+import { AttributeBizTypeNames, AttributeDataTypeNames } from './models/attribute.model';
 
 @Injectable()
 export class AttributesService {
@@ -43,5 +44,41 @@ export class AttributesService {
       where: { projectId, bizType },
       orderBy: { id: 'asc' },
     });
+  }
+
+  mapDataType(dataType: number): AttributeDataTypeNames {
+    switch (dataType) {
+      case 1:
+        return AttributeDataTypeNames.Number;
+      case 2:
+        return AttributeDataTypeNames.String;
+      case 3:
+        return AttributeDataTypeNames.Boolean;
+      case 4:
+        return AttributeDataTypeNames.List;
+      case 5:
+        return AttributeDataTypeNames.DateTime;
+      case 6:
+        return AttributeDataTypeNames.RandomAB;
+      case 7:
+        return AttributeDataTypeNames.RandomNumber;
+      default:
+        return AttributeDataTypeNames.String;
+    }
+  }
+
+  mapBizType(bizType: number): AttributeBizTypeNames {
+    switch (bizType) {
+      case 1:
+        return AttributeBizTypeNames.USER;
+      case 2:
+        return AttributeBizTypeNames.COMPANY;
+      case 3:
+        return AttributeBizTypeNames.MEMBERSHIP;
+      case 4:
+        return AttributeBizTypeNames.EVENT;
+      default:
+        return AttributeBizTypeNames.USER;
+    }
   }
 }

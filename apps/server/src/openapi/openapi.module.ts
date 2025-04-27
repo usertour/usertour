@@ -15,15 +15,19 @@ import { ContentService } from './content/content.service';
 import { ContentSessionController } from './content-session/content-session.controller';
 import { ContentSessionService } from './content-session/content-session.service';
 import { AnalyticsModule } from '@/analytics/analytics.module';
+import { AttributeController } from './attribute/attribute.controller';
+import { AttributeService } from './attribute/attribute.service';
+import { AttributesModule } from '@/attributes/attributes.module';
 
 @Module({
-  imports: [ConfigModule, AnalyticsModule],
+  imports: [ConfigModule, AnalyticsModule, AttributesModule],
   controllers: [
     UserController,
     CompanyController,
     CompanyMembershipController,
     ContentController,
     ContentSessionController,
+    AttributeController,
   ],
   providers: [
     UserService,
@@ -35,6 +39,7 @@ import { AnalyticsModule } from '@/analytics/analytics.module';
     BizService,
     OpenAPIExceptionFilter,
     ContentSessionService,
+    AttributeService,
   ],
 })
 export class OpenapiModule {}

@@ -8,6 +8,13 @@ export enum AttributeBizType {
   EVENT = 4,
 }
 
+export enum AttributeBizTypeNames {
+  USER = 'user',
+  COMPANY = 'company',
+  MEMBERSHIP = 'membership',
+  EVENT = 'event',
+}
+
 export enum AttributeDataType {
   Number = 1,
   String = 2,
@@ -16,6 +23,16 @@ export enum AttributeDataType {
   DateTime = 5,
   RandomAB = 6,
   RandomNumber = 7,
+}
+
+export enum AttributeDataTypeNames {
+  Number = 'number',
+  String = 'string',
+  Boolean = 'boolean',
+  List = 'list',
+  DateTime = 'datetime',
+  RandomAB = 'random_ab',
+  RandomNumber = 'random_number',
 }
 
 @ObjectType()
