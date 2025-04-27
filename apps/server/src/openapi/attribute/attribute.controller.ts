@@ -1,14 +1,17 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Query, UseFilters, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenapiGuard } from '../openapi.guard';
 import { AttributeService } from './attribute.service';
 import { ListAttributesResponseDto } from './attribute.dto';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '../decorators/environment.decorator';
+import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 
 @ApiTags('Attributes')
 @Controller('v1/attributes')
 @UseGuards(OpenapiGuard)
+@UseFilters(OpenAPIExceptionFilter)
+@ApiBearerAuth()
 export class AttributeController {
   constructor(private readonly attributeService: AttributeService) {}
 

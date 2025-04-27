@@ -18,6 +18,8 @@ import { AnalyticsModule } from '@/analytics/analytics.module';
 import { AttributeController } from './attribute/attribute.controller';
 import { AttributeService } from './attribute/attribute.service';
 import { AttributesModule } from '@/attributes/attributes.module';
+import { EventController } from './event/event.controller';
+import { EventService } from './event/event.service';
 
 @Module({
   imports: [ConfigModule, AnalyticsModule, AttributesModule],
@@ -28,6 +30,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
     ContentController,
     ContentSessionController,
     AttributeController,
+    EventController,
   ],
   providers: [
     UserService,
@@ -40,6 +43,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
     OpenAPIExceptionFilter,
     ContentSessionService,
     AttributeService,
+    EventService,
   ],
 })
 export class OpenapiModule {}
