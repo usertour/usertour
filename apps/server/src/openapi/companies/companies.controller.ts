@@ -18,8 +18,8 @@ import {
   ApiTags,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { CompanyService } from './company.service';
-import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from './company.dto';
+import { OpenAPICompaniesService } from './companies.service';
+import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from './companies.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
@@ -31,8 +31,8 @@ import { Environment } from '@/environments/models/environment.model';
 @UseGuards(OpenapiGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
-export class CompanyController {
-  constructor(private readonly companyService: CompanyService) {}
+export class OpenAPICompaniesController {
+  constructor(private readonly companyService: OpenAPICompaniesService) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get company by ID' })

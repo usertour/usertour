@@ -125,23 +125,29 @@ describe('OpenAPIUsersService', () => {
     });
 
     it('should handle pagination parameters', async () => {
-      const mockBizUsers = [
-        {
-          externalId: 'user1',
-          data: {},
-          createdAt: new Date(),
-          bizUsersOnCompany: [],
-        },
-      ];
+      const cursor = 'cursor1';
+      const limit = 10;
+
+      const mockBizUser = {
+        externalId: 'user1',
+        data: {},
+        createdAt: new Date('2025-04-27T10:56:52.198Z'),
+        bizUsersOnCompany: [
+          {
+            bizCompany: {
+              externalId: 'company1',
+              data: {},
+              createdAt: new Date('2025-04-27T10:56:52.198Z'),
+            },
+          },
+        ],
+      };
 
       mockBizService.listBizUsers.mockResolvedValue({
-        results: mockBizUsers,
-        nextCursor: 'next_cursor',
-        previousCursor: 'previous_cursor',
+        results: [mockBizUser],
+        next: 'next_cursor',
+        previous: 'previous_cursor',
       });
-
-      const cursor = 'current_cursor';
-      const limit = 10;
 
       const result = await service.listUsers('env1', cursor, limit, [ExpandType.COMPANIES]);
 
@@ -151,15 +157,23 @@ describe('OpenAPIUsersService', () => {
             id: 'user1',
             object: 'user',
             attributes: {},
-            createdAt: mockBizUsers[0].createdAt.toISOString(),
-            companies: [],
+            createdAt: '2025-04-27T10:56:52.198Z',
+            companies: [
+              {
+                id: 'company1',
+                object: 'company',
+                attributes: {},
+                createdAt: '2025-04-27T10:56:52.198Z',
+              },
+            ],
             memberships: null,
           },
         ],
         next: 'http://localhost:3000/v1/users?cursor=next_cursor',
         previous: 'http://localhost:3000/v1/users?cursor=previous_cursor',
       });
-      expect(bizService.listBizUsers).toHaveBeenCalledWith('env1', cursor, limit, [
+
+      expect(mockBizService.listBizUsers).toHaveBeenCalledWith('env1', cursor, limit, [
         ExpandType.COMPANIES,
       ]);
     });

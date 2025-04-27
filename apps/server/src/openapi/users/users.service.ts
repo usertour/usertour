@@ -52,7 +52,7 @@ export class OpenAPIUsersService {
     );
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
-    const { results, nextCursor, previousCursor } = await this.bizService.listBizUsers(
+    const { results, next, previous } = await this.bizService.listBizUsers(
       environmentId,
       cursor,
       pageSize,
@@ -61,8 +61,8 @@ export class OpenAPIUsersService {
 
     return {
       results: results.map((bizUser) => this.mapBizUserToUser(bizUser, expand)),
-      next: nextCursor ? `${apiUrl}/v1/users?cursor=${nextCursor}` : null,
-      previous: previousCursor ? `${apiUrl}/v1/users?cursor=${previousCursor}` : null,
+      next: next ? `${apiUrl}/v1/users?cursor=${next}` : null,
+      previous: previous ? `${apiUrl}/v1/users?cursor=${previous}` : null,
     };
   }
 

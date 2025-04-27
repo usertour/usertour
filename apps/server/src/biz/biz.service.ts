@@ -27,7 +27,7 @@ import {
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
 import { UpsertUserRequestDto } from '../openapi/users/users.dto';
-import { ExpandType } from '../openapi/company/company.dto';
+import { ExpandType } from '../openapi/companies/companies.dto';
 
 @Injectable()
 export class BizService {

@@ -1,15 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CompanyService } from './company.service';
+import { OpenAPICompaniesService } from './companies.service';
 import { BizService } from '../../biz/biz.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
-import { UpsertCompanyRequestDto, ExpandType } from './company.dto';
+import { UpsertCompanyRequestDto, ExpandType } from './companies.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
+import { ParamsError } from '@/common/errors';
 
-describe('OpenAPI:CompanyService', () => {
-  let service: CompanyService;
+describe('OpenAPICompaniesService', () => {
+  let service: OpenAPICompaniesService;
 
   const mockPrismaService = {
     $transaction: jest.fn(),
@@ -24,7 +25,9 @@ describe('OpenAPI:CompanyService', () => {
   };
 
   const mockBizService = {
-    upsertBizCompanyAttributes: jest.fn(),
+    getBizCompany: jest.fn(),
+    listBizCompanies: jest.fn(),
+    upsertBizCompany: jest.fn(),
     deleteBizCompany: jest.fn(),
   };
 
@@ -35,7 +38,7 @@ describe('OpenAPI:CompanyService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CompanyService,
+        OpenAPICompaniesService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -51,7 +54,8 @@ describe('OpenAPI:CompanyService', () => {
       ],
     }).compile();
 
-    service = module.get<CompanyService>(CompanyService);
+    service = module.get<OpenAPICompaniesService>(OpenAPICompaniesService);
+    jest.clearAllMocks();
   });
 
   describe('upsertCompany', () => {
@@ -76,13 +80,9 @@ describe('OpenAPI:CompanyService', () => {
       };
 
       mockPrismaService.environment.findFirst.mockResolvedValue(mockEnvironment);
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        return callback(mockPrismaService);
-      });
+      mockBizService.upsertBizCompany.mockResolvedValue(mockCompany);
 
-      mockBizService.upsertBizCompanyAttributes.mockResolvedValue(mockCompany);
-
-      const result = await service.upsertCompany(data, 'env1');
+      const result = await service.upsertCompany(data, 'env1', 'project1');
 
       expect(result).toEqual({
         id: 'company1',
@@ -93,8 +93,7 @@ describe('OpenAPI:CompanyService', () => {
         memberships: null,
       });
 
-      expect(mockBizService.upsertBizCompanyAttributes).toHaveBeenCalledWith(
-        mockPrismaService,
+      expect(mockBizService.upsertBizCompany).toHaveBeenCalledWith(
         'project1',
         'env1',
         'company1',
@@ -109,15 +108,13 @@ describe('OpenAPI:CompanyService', () => {
       };
 
       mockPrismaService.environment.findFirst.mockResolvedValue(null);
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        return callback(mockPrismaService);
-      });
+      mockBizService.upsertBizCompany.mockResolvedValue(null);
 
-      await expect(service.upsertCompany(data, 'env1')).rejects.toThrow(
+      await expect(service.upsertCompany(data, 'env1', 'project1')).rejects.toThrow(
         new OpenAPIException(
-          OpenAPIErrors.COMPANY.INVALID_REQUEST.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.COMPANY.INVALID_REQUEST.code,
+          OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.code,
         ),
       );
     });
@@ -132,7 +129,7 @@ describe('OpenAPI:CompanyService', () => {
         bizUsersOnCompany: [],
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockCompany);
 
       const result = await service.getCompany('test-id', 'env-id');
 
@@ -162,7 +159,7 @@ describe('OpenAPI:CompanyService', () => {
         ],
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockCompany);
 
       const result = await service.getCompany('test-id', 'env-id', [ExpandType.USERS]);
 
@@ -199,7 +196,7 @@ describe('OpenAPI:CompanyService', () => {
         ],
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockCompany);
 
       const result = await service.getCompany('test-id', 'env-id', [ExpandType.MEMBERSHIPS]);
 
@@ -223,7 +220,7 @@ describe('OpenAPI:CompanyService', () => {
     });
 
     it('should throw not found error when company does not exist', async () => {
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(null);
+      mockBizService.getBizCompany.mockRejectedValue(new ParamsError('Company not found'));
 
       await expect(service.getCompany('non-existent', 'env-id')).rejects.toThrow(
         new OpenAPIException(
@@ -252,8 +249,11 @@ describe('OpenAPI:CompanyService', () => {
         },
       ];
 
-      mockPrismaService.bizCompany.findMany.mockResolvedValue(mockCompanies);
-      mockPrismaService.bizCompany.count.mockResolvedValue(2);
+      mockBizService.listBizCompanies.mockResolvedValue({
+        results: mockCompanies,
+        next: 'next-cursor',
+        previous: 'prev-cursor',
+      });
 
       const result = await service.listCompanies('env-id', undefined, 2);
 
@@ -266,6 +266,8 @@ describe('OpenAPI:CompanyService', () => {
         users: null,
         memberships: null,
       });
+      expect(result.next).toBe('http://localhost:3000/v1/companies?cursor=next-cursor');
+      expect(result.previous).toBe('http://localhost:3000/v1/companies?cursor=prev-cursor');
     });
 
     it('should return paginated companies with memberships.user expand', async () => {
@@ -291,8 +293,11 @@ describe('OpenAPI:CompanyService', () => {
         },
       ];
 
-      mockPrismaService.bizCompany.findMany.mockResolvedValue(mockCompanies);
-      mockPrismaService.bizCompany.count.mockResolvedValue(1);
+      mockBizService.listBizCompanies.mockResolvedValue({
+        results: mockCompanies,
+        next: null,
+        previous: null,
+      });
 
       const result = await service.listCompanies('env-id', undefined, 1, [
         ExpandType.MEMBERSHIPS_USER,
@@ -326,7 +331,7 @@ describe('OpenAPI:CompanyService', () => {
         environmentId: 'env1',
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockCompany);
       mockBizService.deleteBizCompany.mockResolvedValue({});
 
       await service.deleteCompany('company1', 'env1');
@@ -335,7 +340,7 @@ describe('OpenAPI:CompanyService', () => {
     });
 
     it('should throw error when company not found', async () => {
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(null);
+      mockBizService.getBizCompany.mockRejectedValue(new ParamsError('Company not found'));
 
       await expect(service.deleteCompany('non-existent', 'env1')).rejects.toThrow(
         new OpenAPIException(

@@ -4,11 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { BizService } from '../../biz/biz.service';
-import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './company.dto';
+import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
 
 @Injectable()
-export class CompanyService {
-  private readonly logger = new Logger(CompanyService.name);
+export class OpenAPICompaniesService {
+  private readonly logger = new Logger(OpenAPICompaniesService.name);
 
   constructor(
     private configService: ConfigService,

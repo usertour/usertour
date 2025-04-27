@@ -1,15 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CompanyController } from './company.controller';
-import { CompanyService } from './company.service';
-import { UpsertCompanyRequestDto } from './company.dto';
+import { OpenAPICompaniesController } from './companies.controller';
+import { OpenAPICompaniesService } from './companies.service';
+import { UpsertCompanyRequestDto } from './companies.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 import { BizService } from '../../biz/biz.service';
+import { Environment } from '@/environments/models/environment.model';
 
-describe('OpenAPI:CompanyController', () => {
-  let controller: CompanyController;
+describe('OpenAPICompaniesController', () => {
+  let controller: OpenAPICompaniesController;
   const createdAt = new Date();
 
   const mockPrismaService = {
@@ -30,17 +31,26 @@ describe('OpenAPI:CompanyController', () => {
   };
 
   const mockBizService = {
-    upsertBizCompanies: jest.fn(),
-    upsertBizUsers: jest.fn(),
+    getBizCompany: jest.fn(),
+    listBizCompanies: jest.fn(),
+    upsertBizCompany: jest.fn(),
     deleteBizCompany: jest.fn(),
-    upsertBizCompanyAttributes: jest.fn(),
+  };
+
+  const mockEnvironment: Environment = {
+    id: 'env-1',
+    projectId: 'project-1',
+    name: 'Test Environment',
+    token: 'test-token',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [CompanyController],
+      controllers: [OpenAPICompaniesController],
       providers: [
-        CompanyService,
+        OpenAPICompaniesService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -69,7 +79,7 @@ describe('OpenAPI:CompanyController', () => {
       ],
     }).compile();
 
-    controller = module.get<CompanyController>(CompanyController);
+    controller = module.get<OpenAPICompaniesController>(OpenAPICompaniesController);
     jest.clearAllMocks();
   });
 
@@ -82,7 +92,7 @@ describe('OpenAPI:CompanyController', () => {
         bizUsersOnCompany: [],
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockBizCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockBizCompany);
 
       const result = await controller.getCompany('test-id', { environment: { id: 'env-1' } });
 
@@ -93,15 +103,6 @@ describe('OpenAPI:CompanyController', () => {
         createdAt: createdAt.toISOString(),
         users: null,
         memberships: null,
-      });
-      expect(mockPrismaService.bizCompany.findFirst).toHaveBeenCalledWith({
-        where: {
-          externalId: 'test-id',
-          environmentId: 'env-1',
-        },
-        include: {
-          bizUsersOnCompany: false,
-        },
       });
     });
 
@@ -121,7 +122,7 @@ describe('OpenAPI:CompanyController', () => {
         ],
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockBizCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockBizCompany);
 
       const result = await controller.getCompany(
         'test-id',
@@ -158,8 +159,11 @@ describe('OpenAPI:CompanyController', () => {
         },
       ];
 
-      mockPrismaService.bizCompany.findMany.mockResolvedValue(mockBizCompanies);
-      mockPrismaService.bizCompany.count.mockResolvedValue(1);
+      mockBizService.listBizCompanies.mockResolvedValue({
+        results: mockBizCompanies,
+        next: 'next-cursor',
+        previous: 'prev-cursor',
+      });
 
       const result = await controller.listCompanies(
         { environment: { id: 'env-1' } },
@@ -177,6 +181,8 @@ describe('OpenAPI:CompanyController', () => {
           memberships: null,
         },
       ]);
+      expect(result.next).toBe('http://localhost:3000/v1/companies?cursor=next-cursor');
+      expect(result.previous).toBe('http://localhost:3000/v1/companies?cursor=prev-cursor');
     });
 
     it('should return paginated companies with expand and cursor', async () => {
@@ -202,10 +208,11 @@ describe('OpenAPI:CompanyController', () => {
         },
       ];
 
-      mockPrismaService.bizCompany.findMany
-        .mockResolvedValueOnce([]) // Previous page
-        .mockResolvedValueOnce(mockBizCompanies); // Current page
-      mockPrismaService.bizCompany.count.mockResolvedValue(1);
+      mockBizService.listBizCompanies.mockResolvedValue({
+        results: mockBizCompanies,
+        next: null,
+        previous: null,
+      });
 
       const result = await controller.listCompanies(
         { environment: { id: 'env-1' } },
@@ -256,9 +263,9 @@ describe('OpenAPI:CompanyController', () => {
         bizUsersOnCompany: [],
       };
 
-      mockBizService.upsertBizCompanyAttributes.mockResolvedValue(mockBizCompany);
+      mockBizService.upsertBizCompany.mockResolvedValue(mockBizCompany);
 
-      const result = await controller.upsertCompany(mockRequest, { environment: { id: 'env-1' } });
+      const result = await controller.upsertCompany(mockRequest, mockEnvironment);
 
       expect(result).toEqual({
         id: 'company-1',
@@ -283,9 +290,9 @@ describe('OpenAPI:CompanyController', () => {
         bizUsersOnCompany: [],
       };
 
-      mockBizService.upsertBizCompanyAttributes.mockResolvedValue(mockBizCompany);
+      mockBizService.upsertBizCompany.mockResolvedValue(mockBizCompany);
 
-      const result = await controller.upsertCompany(mockRequest, { environment: { id: 'env-1' } });
+      const result = await controller.upsertCompany(mockRequest, mockEnvironment);
 
       expect(result).toEqual({
         id: 'company-1',
@@ -301,24 +308,20 @@ describe('OpenAPI:CompanyController', () => {
   describe('deleteCompany', () => {
     it('should delete a company', async () => {
       const mockBizCompany = {
+        id: 'biz1',
         externalId: 'company-1',
         data: { name: 'Company 1' },
         createdAt,
         bizUsersOnCompany: [],
       };
 
-      mockPrismaService.bizCompany.findFirst.mockResolvedValue(mockBizCompany);
+      mockBizService.getBizCompany.mockResolvedValue(mockBizCompany);
       mockBizService.deleteBizCompany.mockResolvedValue(undefined);
 
       await controller.deleteCompany('company-1', { environment: { id: 'env-1' } });
 
-      expect(mockPrismaService.bizCompany.findFirst).toHaveBeenCalledWith({
-        where: {
-          externalId: 'company-1',
-          environmentId: 'env-1',
-        },
-      });
-      expect(mockBizService.deleteBizCompany).toHaveBeenCalled();
+      expect(mockBizService.getBizCompany).toHaveBeenCalledWith('company-1', 'env-1');
+      expect(mockBizService.deleteBizCompany).toHaveBeenCalledWith(['biz1'], 'env-1');
     });
   });
 });

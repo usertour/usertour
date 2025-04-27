@@ -4,8 +4,8 @@ import { OpenapiGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
-import { CompanyController } from './company/company.controller';
-import { CompanyService } from './company/company.service';
+import { OpenAPICompaniesController } from './companies/companies.controller';
+import { OpenAPICompaniesService } from './companies/companies.service';
 import { CompanyMembershipController } from './company_membership/company_membership.controller';
 import { CompanyMembershipService } from './company_membership/company_membership.service';
 import { ContentController } from './content/content.controller';
@@ -26,7 +26,7 @@ import { OpenAPIEventsService } from './events/events.service';
 @Module({
   imports: [ConfigModule, AnalyticsModule, AttributesModule, EventsModule, BizModule],
   controllers: [
-    CompanyController,
+    OpenAPICompaniesController,
     CompanyMembershipController,
     ContentController,
     ContentSessionController,
@@ -35,7 +35,7 @@ import { OpenAPIEventsService } from './events/events.service';
     OpenAPIUsersController,
   ],
   providers: [
-    CompanyService,
+    OpenAPICompaniesService,
     CompanyMembershipService,
     ContentService,
     PrismaService,
