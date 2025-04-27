@@ -7,5 +7,6 @@ import { EventsService } from './events.service';
 @Module({
   imports: [ProjectsModule],
   providers: [EventsResolver, EventsService, EventsGuard],
+  exports: [EventsService],
 })
 export class EventsModule {}

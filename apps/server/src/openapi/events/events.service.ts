@@ -6,8 +6,8 @@ import { HttpStatus } from '@nestjs/common';
 import { EventsService as BusinessEventsService } from '../../events/events.service';
 
 @Injectable()
-export class EventsService {
-  private readonly logger = new Logger(EventsService.name);
+export class OpenAPIEventsService {
+  private readonly logger = new Logger(OpenAPIEventsService.name);
 
   constructor(private readonly businessEventsService: BusinessEventsService) {}
 

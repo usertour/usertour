@@ -1,23 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EventsService } from './events.service';
+import { OpenAPIEventsService } from './events.service';
 import { EventsService as BusinessEventsService } from '../../events/events.service';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
-import { HttpStatus } from '@nestjs/common';
-import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 
-describe('EventsService', () => {
-  let service: EventsService;
-  let mockBusinessEventsService: jest.Mocked<BusinessEventsService>;
+describe('OpenAPIEventsService', () => {
+  let service: OpenAPIEventsService;
+  let businessEventsService: BusinessEventsService;
+
+  const mockBusinessEventsService = {
+    listWithPagination: jest.fn(),
+  };
 
   beforeEach(async () => {
-    mockBusinessEventsService = {
-      listWithPagination: jest.fn(),
-    } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        EventsService,
+        OpenAPIEventsService,
         {
           provide: BusinessEventsService,
           useValue: mockBusinessEventsService,
@@ -25,156 +23,87 @@ describe('EventsService', () => {
       ],
     }).compile();
 
-    service = module.get<EventsService>(EventsService);
+    service = module.get<OpenAPIEventsService>(OpenAPIEventsService);
+    businessEventsService = module.get<BusinessEventsService>(BusinessEventsService);
+
+    // Clear all mocks before each test
+    jest.clearAllMocks();
   });
 
   describe('listEvents', () => {
-    it('should return events with pagination', async () => {
-      const projectId = 'test-project-id';
-      const mockEvents: Connection<any> = {
-        edges: [
-          {
-            node: {
-              id: 'event1',
-              createdAt: new Date(),
-              description: 'Test event',
-              displayName: 'Test Event',
-              codeName: 'test_event',
-              updatedAt: new Date(),
-              deleted: false,
-              predefined: false,
-              projectId: 'test-project-id',
-            },
-            cursor: 'cursor1',
-          },
-        ],
-        pageInfo: {
-          hasNextPage: true,
-          hasPreviousPage: false,
-          endCursor: 'next-cursor',
-          startCursor: 'prev-cursor',
-        },
-        nodes: [
-          {
-            id: 'event1',
-            createdAt: new Date(),
-            description: 'Test event',
+    const mockProjectId = 'project-123';
+    const mockCursor = 'test-cursor';
+    const mockLimit = 10;
+
+    const mockBusinessResponse = {
+      edges: [
+        {
+          node: {
+            id: 'event-123',
+            createdAt: new Date('2024-01-01T00:00:00.000Z'),
+            description: 'Test Event',
             displayName: 'Test Event',
             codeName: 'test_event',
-            updatedAt: new Date(),
-            deleted: false,
-            predefined: false,
-            projectId: 'test-project-id',
           },
-        ],
-        totalCount: 1,
-      };
+        },
+      ],
+      pageInfo: {
+        hasNextPage: true,
+        hasPreviousPage: false,
+        startCursor: null,
+        endCursor: 'next-cursor',
+      },
+    };
 
-      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockEvents);
+    const expectedResponse = {
+      results: [
+        {
+          id: 'event-123',
+          object: 'event_definition',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          description: 'Test Event',
+          displayName: 'Test Event',
+          name: 'test_event',
+        },
+      ],
+      next: 'next-cursor',
+      previous: null,
+    };
 
-      const result = await service.listEvents(projectId);
+    it('should successfully list events', async () => {
+      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
-      expect(result.results).toHaveLength(1);
-      expect(result.results[0].id).toBe('event1');
-      expect(result.results[0].object).toBe('event_definition');
-      expect(result.results[0].name).toBe('test_event');
-      expect(mockBusinessEventsService.listWithPagination).toHaveBeenCalledWith(
-        projectId,
+      const result = await service.listEvents(mockProjectId, mockCursor, mockLimit);
+
+      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
+        mockProjectId,
+        mockCursor,
+        mockLimit,
+      );
+      expect(result).toEqual(expectedResponse);
+    });
+
+    it('should use default limit if not provided', async () => {
+      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
+
+      const result = await service.listEvents(mockProjectId);
+
+      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
+        mockProjectId,
         undefined,
         20,
       );
+      expect(result).toEqual(expectedResponse);
     });
 
-    it('should throw OpenAPIException when limit is invalid', async () => {
-      const projectId = 'test-project-id';
-      const invalidLimit = -1;
-
-      await expect(service.listEvents(projectId, undefined, invalidLimit)).rejects.toThrow(
+    it('should throw error for invalid limit', async () => {
+      await expect(service.listEvents(mockProjectId, undefined, -1)).rejects.toThrow(
         new OpenAPIException(
           OpenAPIErrors.USER.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
+          400,
           OpenAPIErrors.USER.INVALID_LIMIT.code,
         ),
       );
-
-      expect(mockBusinessEventsService.listWithPagination).not.toHaveBeenCalled();
-    });
-
-    it('should handle cursor pagination', async () => {
-      const projectId = 'test-project-id';
-      const cursor = 'test-cursor';
-      const mockEvents: Connection<any> = {
-        edges: [
-          {
-            node: {
-              id: 'event1',
-              createdAt: new Date(),
-              description: 'Test event',
-              displayName: 'Test Event',
-              codeName: 'test_event',
-              updatedAt: new Date(),
-              deleted: false,
-              predefined: false,
-              projectId: 'test-project-id',
-            },
-            cursor: 'cursor1',
-          },
-        ],
-        pageInfo: {
-          hasNextPage: true,
-          hasPreviousPage: false,
-          endCursor: 'next-cursor',
-          startCursor: 'prev-cursor',
-        },
-        nodes: [
-          {
-            id: 'event1',
-            createdAt: new Date(),
-            description: 'Test event',
-            displayName: 'Test Event',
-            codeName: 'test_event',
-            updatedAt: new Date(),
-            deleted: false,
-            predefined: false,
-            projectId: 'test-project-id',
-          },
-        ],
-        totalCount: 1,
-      };
-
-      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockEvents);
-
-      const result = await service.listEvents(projectId, cursor);
-
-      expect(mockBusinessEventsService.listWithPagination).toHaveBeenCalledWith(
-        projectId,
-        cursor,
-        20,
-      );
-      expect(result.results).toHaveLength(1);
-    });
-
-    it('should handle empty results', async () => {
-      const projectId = 'test-project-id';
-      const mockEvents: Connection<any> = {
-        edges: [],
-        pageInfo: {
-          hasNextPage: false,
-          hasPreviousPage: false,
-          endCursor: null,
-          startCursor: null,
-        },
-        nodes: [],
-        totalCount: 0,
-      };
-
-      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockEvents);
-
-      const result = await service.listEvents(projectId);
-
-      expect(result.results).toHaveLength(0);
-      expect(result.next).toBeNull();
-      expect(result.previous).toBeNull();
     });
   });
 });
