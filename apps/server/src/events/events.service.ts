@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
 import { CreateEventInput, UpdateEventInput } from './dto/events.input';
 import { ParamsError, UnknownError } from '@/common/errors';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
 @Injectable()
 export class EventsService {
+  private readonly logger = new Logger(EventsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async create(data: CreateEventInput) {
@@ -111,5 +114,29 @@ export class EventsService {
       where: { eventId },
       orderBy: { createdAt: 'asc' },
     });
+  }
+
+  async listWithPagination(projectId: string, cursor?: string, limit = 20) {
+    this.logger.log(`Listing events with pagination for project ${projectId}`);
+
+    return findManyCursorConnection(
+      (args) =>
+        this.prisma.event.findMany({
+          ...args,
+          where: {
+            projectId,
+            deleted: false,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+      () =>
+        this.prisma.event.count({
+          where: {
+            projectId,
+            deleted: false,
+          },
+        }),
+      { first: limit, after: cursor },
+    );
   }
 }
