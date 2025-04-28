@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentController } from './content.controller';
-import { OpenAPIContentService } from './content.service';
+import { OpenAPIContentsController } from './contents.controller';
+import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
-import { ExpandType } from './content.dto';
+import { ExpandType } from './contents.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
@@ -10,9 +10,9 @@ import { OpenapiGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 
-describe('OpenAPIContentController', () => {
-  let controller: OpenAPIContentController;
-  let contentService: OpenAPIContentService;
+describe('OpenAPIContentsController', () => {
+  let controller: OpenAPIContentsController;
+  let contentService: OpenAPIContentsService;
 
   const mockContentService = {
     getContent: jest.fn(),
@@ -33,10 +33,10 @@ describe('OpenAPIContentController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OpenAPIContentController],
+      controllers: [OpenAPIContentsController],
       providers: [
         {
-          provide: OpenAPIContentService,
+          provide: OpenAPIContentsService,
           useValue: mockContentService,
         },
         {
@@ -51,8 +51,8 @@ describe('OpenAPIContentController', () => {
       ],
     }).compile();
 
-    controller = module.get<OpenAPIContentController>(OpenAPIContentController);
-    contentService = module.get<OpenAPIContentService>(OpenAPIContentService);
+    controller = module.get<OpenAPIContentsController>(OpenAPIContentsController);
+    contentService = module.get<OpenAPIContentsService>(OpenAPIContentsService);
   });
 
   describe('getContent', () => {

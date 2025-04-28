@@ -5,7 +5,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
-import { ExpandType } from './content.dto';
+import { ExpandType } from './contents.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
 
@@ -23,8 +23,8 @@ type VersionWithContent = Prisma.VersionGetPayload<{
 }>;
 
 @Injectable()
-export class OpenAPIContentService {
-  private readonly logger = new Logger(OpenAPIContentService.name);
+export class OpenAPIContentsService {
+  private readonly logger = new Logger(OpenAPIContentsService.name);
 
   constructor(
     private prisma: PrismaService,

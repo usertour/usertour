@@ -8,10 +8,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
-import { OpenAPIContentService } from './content.service';
+import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { EnvironmentId } from '../decorators/environment-id.decorator';
-import { ExpandType } from './content.dto';
+import { ExpandType } from './contents.dto';
 import { OpenapiGuard } from '../openapi.guard';
 
 @ApiTags('Contents')
@@ -19,8 +19,8 @@ import { OpenapiGuard } from '../openapi.guard';
 @UseGuards(OpenapiGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
-export class OpenAPIContentController {
-  constructor(private readonly openAPIContentService: OpenAPIContentService) {}
+export class OpenAPIContentsController {
+  constructor(private readonly openAPIContentsService: OpenAPIContentsService) {}
 
   @Get('contents/:id')
   @ApiOperation({ summary: 'Get a content by ID' })
@@ -34,7 +34,7 @@ export class OpenAPIContentController {
     @Query('expand') expand?: string,
   ): Promise<Content> {
     const expandTypes = expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined;
-    return this.openAPIContentService.getContent(id, environmentId, expandTypes);
+    return this.openAPIContentsService.getContent(id, environmentId, expandTypes);
   }
 
   @Get('contents')
@@ -50,7 +50,7 @@ export class OpenAPIContentController {
     @Query('expand') expand?: string,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const expandTypes = expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined;
-    return this.openAPIContentService.listContents(environmentId, cursor, limit, expandTypes);
+    return this.openAPIContentsService.listContents(environmentId, cursor, limit, expandTypes);
   }
 
   @Get('content_versions/:id')
@@ -62,7 +62,7 @@ export class OpenAPIContentController {
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
   ): Promise<ContentVersion> {
-    return this.openAPIContentService.getContentVersion(id, environmentId);
+    return this.openAPIContentsService.getContentVersion(id, environmentId);
   }
 
   @Get('content_versions')
@@ -80,6 +80,6 @@ export class OpenAPIContentController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: number,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentService.listContentVersions(environmentId, cursor, limit);
+    return this.openAPIContentsService.listContentVersions(environmentId, cursor, limit);
   }
 }
