@@ -3,7 +3,6 @@ import { PrismaService } from 'nestjs-prisma';
 import { OpenapiGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
-import { BizService } from '@/biz/biz.service';
 import { OpenAPICompaniesController } from './companies/companies.controller';
 import { OpenAPICompaniesService } from './companies/companies.service';
 import { OpenAPIContentController } from './content/content.controller';
@@ -44,7 +43,6 @@ import { OpenAPICompanyMembershipService } from './company_memberships/company_m
     OpenAPIContentService,
     PrismaService,
     OpenapiGuard,
-    BizService,
     ContentSessionService,
   ],
 })
