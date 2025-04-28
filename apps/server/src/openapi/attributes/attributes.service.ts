@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
-import { ListAttributesDto } from './dto/attributes.dto';
+import { ListAttributesDto } from './attributes.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { HttpStatus } from '@nestjs/common';

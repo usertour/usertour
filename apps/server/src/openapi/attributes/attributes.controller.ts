@@ -2,7 +2,7 @@ import { Controller, Get, Query, UseGuards, UseFilters } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Environment } from '@/environments/models/environment.model';
 import { OpenAPIAttributesService } from './attributes.service';
-import { ListAttributesDto } from './dto/attributes.dto';
+import { ListAttributesDto } from './attributes.dto';
 import { OpenapiGuard } from '@/openapi/openapi.guard';
 import { OpenAPIExceptionFilter } from '@/openapi/filters/openapi-exception.filter';
 import { EnvironmentDecorator } from '@/openapi/decorators/environment.decorator';
