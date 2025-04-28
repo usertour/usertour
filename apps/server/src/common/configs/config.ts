@@ -54,14 +54,14 @@ const config: Config = {
     },
   },
   stripe: {
-    apiKey: process.env.STRIPE_API_KEY,
+    apiKey: process.env.STRIPE_API_KEY || 'test',
     webhookSecret: {
       account: process.env.STRIPE_ACCOUNT_WEBHOOK_SECRET || 'test',
       accountTest: process.env.STRIPE_ACCOUNT_TEST_WEBHOOK_SECRET || 'test',
     },
-    sessionSuccessUrl: process.env.STRIPE_SESSION_SUCCESS_URL,
-    sessionCancelUrl: process.env.STRIPE_SESSION_CANCEL_URL,
-    portalReturnUrl: process.env.STRIPE_PORTAL_RETURN_URL,
+    sessionSuccessUrl: process.env.STRIPE_SESSION_SUCCESS_URL || '',
+    sessionCancelUrl: process.env.STRIPE_SESSION_CANCEL_URL || '',
+    portalReturnUrl: process.env.STRIPE_PORTAL_RETURN_URL || '',
   },
 
   auth: {
@@ -73,7 +73,7 @@ const config: Config = {
     email: {
       enabled: process.env.EMAIL_AUTH_ENABLED === 'true',
       sender: process.env.EMAIL_SENDER || 'UserTour <support@usertour.io>',
-      resendApiKey: process.env.RESEND_API_KEY,
+      resendApiKey: process.env.RESEND_API_KEY || 'test',
     },
     jwt: {
       secret: process.env.JWT_SECRET || 'test',
@@ -101,7 +101,7 @@ const config: Config = {
     },
   },
   globalConfig: {
-    enabledBillingUsers: process.env.ENABLED_BILLING_USERS?.split(','),
+    enabledBillingUsers: process.env.ENABLED_BILLING_USERS?.split(',') || [],
   },
 };
 
