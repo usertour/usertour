@@ -9,8 +9,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { OpenAPIContentSessionService } from './content-session.service';
-import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './content-session.dto';
+import { OpenAPIContentSessionService } from './sessions.service';
+import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './sessions.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 import { EnvironmentId } from '../decorators/environment-id.decorator';

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentSessionController } from './content-session.controller';
-import { OpenAPIContentSessionService } from './content-session.service';
+import { OpenAPIContentSessionController } from './sessions.controller';
+import { OpenAPIContentSessionService } from './sessions.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { AnalyticsService } from '@/analytics/analytics.service';

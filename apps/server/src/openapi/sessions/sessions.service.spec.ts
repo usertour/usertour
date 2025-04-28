@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentSessionService } from './content-session.service';
+import { OpenAPIContentSessionService } from './sessions.service';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { ExpandType } from './content-session.dto';
+import { ExpandType } from './sessions.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
-import { ExpandType, ExpandTypes } from './content-session.dto';
+import { ExpandType, ExpandTypes } from './sessions.dto';
 import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { OpenAPIException } from '../exceptions/openapi.exception';
