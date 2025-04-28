@@ -9,7 +9,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { ContentSessionService } from './content-session.service';
+import { OpenAPIContentSessionService } from './content-session.service';
 import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './content-session.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
@@ -20,10 +20,10 @@ import { EnvironmentId } from '../decorators/environment-id.decorator';
 @UseGuards(OpenapiGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
-export class ContentSessionController {
-  private readonly logger = new Logger(ContentSessionController.name);
+export class OpenAPIContentSessionController {
+  private readonly logger = new Logger(OpenAPIContentSessionController.name);
 
-  constructor(private readonly contentSessionService: ContentSessionService) {}
+  constructor(private readonly openAPIContentSessionService: OpenAPIContentSessionService) {}
 
   @Get()
   @ApiOperation({ summary: 'List content sessions' })
@@ -42,7 +42,7 @@ export class ContentSessionController {
       limit,
       expand,
     });
-    return this.contentSessionService.listContentSessions(
+    return this.openAPIContentSessionService.listContentSessions(
       environmentId,
       contentId,
       cursor,
@@ -60,7 +60,7 @@ export class ContentSessionController {
     @Query('expand') expand?: string,
   ) {
     return {
-      data: await this.contentSessionService.getContentSession(
+      data: await this.openAPIContentSessionService.getContentSession(
         id,
         environmentId,
         expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined,
@@ -72,6 +72,6 @@ export class ContentSessionController {
   @ApiOperation({ summary: 'Delete content session' })
   @ApiResponse({ status: 200 })
   async deleteContentSession(@Param('id') id: string, @EnvironmentId() environmentId: string) {
-    return this.contentSessionService.deleteContentSession(id, environmentId);
+    return this.openAPIContentSessionService.deleteContentSession(id, environmentId);
   }
 }

@@ -20,8 +20,8 @@ type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
 type BizSessionInclude = Prisma.BizSessionInclude;
 
 @Injectable()
-export class ContentSessionService {
-  private readonly logger = new Logger(ContentSessionService.name);
+export class OpenAPIContentSessionService {
+  private readonly logger = new Logger(OpenAPIContentSessionService.name);
 
   constructor(
     private readonly prisma: PrismaService,

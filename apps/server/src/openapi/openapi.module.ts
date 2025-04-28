@@ -6,8 +6,8 @@ import { OpenAPICompaniesController } from './companies/companies.controller';
 import { OpenAPICompaniesService } from './companies/companies.service';
 import { OpenAPIContentsController } from './contents/contents.controller';
 import { OpenAPIContentsService } from './contents/contents.service';
-import { ContentSessionController } from './content-session/content-session.controller';
-import { ContentSessionService } from './content-session/content-session.service';
+import { OpenAPIContentSessionController } from './content-session/content-session.controller';
+import { OpenAPIContentSessionService } from './content-session/content-session.service';
 import { AnalyticsModule } from '@/analytics/analytics.module';
 import { OpenAPIAttributesController } from './attributes/attributes.controller';
 import { OpenAPIAttributesService } from './attributes/attributes.service';
@@ -38,7 +38,7 @@ import { ContentsModule } from '@/contents/contents.module';
     OpenAPIUsersController,
     OpenAPICompanyMembershipController,
     OpenAPIContentsController,
-    ContentSessionController,
+    OpenAPIContentSessionController,
   ],
   providers: [
     OpenAPICompaniesService,
@@ -49,7 +49,7 @@ import { ContentsModule } from '@/contents/contents.module';
     OpenAPICompanyMembershipService,
     OpenAPIContentsService,
     OpenapiGuard,
-    ContentSessionService,
+    OpenAPIContentSessionService,
   ],
 })
 export class OpenapiModule {}

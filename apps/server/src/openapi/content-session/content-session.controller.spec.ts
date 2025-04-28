@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContentSessionController } from './content-session.controller';
-import { ContentSessionService } from './content-session.service';
+import { OpenAPIContentSessionController } from './content-session.controller';
+import { OpenAPIContentSessionService } from './content-session.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { AnalyticsService } from '@/analytics/analytics.service';
 
-describe('ContentSessionController', () => {
-  let controller: ContentSessionController;
-  let service: ContentSessionService;
+describe('OpenAPIContentSessionController', () => {
+  let controller: OpenAPIContentSessionController;
+  let service: OpenAPIContentSessionService;
 
   const mockAnalyticsService = {
     deleteSession: jest.fn(),
@@ -15,9 +15,9 @@ describe('ContentSessionController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ContentSessionController],
+      controllers: [OpenAPIContentSessionController],
       providers: [
-        ContentSessionService,
+        OpenAPIContentSessionService,
         PrismaService,
         ConfigService,
         {
@@ -27,8 +27,8 @@ describe('ContentSessionController', () => {
       ],
     }).compile();
 
-    controller = module.get<ContentSessionController>(ContentSessionController);
-    service = module.get<ContentSessionService>(ContentSessionService);
+    controller = module.get<OpenAPIContentSessionController>(OpenAPIContentSessionController);
+    service = module.get<OpenAPIContentSessionService>(OpenAPIContentSessionService);
   });
 
   it('should be defined', () => {

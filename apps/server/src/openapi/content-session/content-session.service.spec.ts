@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContentSessionService } from './content-session.service';
+import { OpenAPIContentSessionService } from './content-session.service';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { ExpandType } from './content-session.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 
-describe('ContentSessionService', () => {
-  let service: ContentSessionService;
+describe('OpenAPIContentSessionService', () => {
+  let service: OpenAPIContentSessionService;
 
   const mockPrismaService = {
     bizSession: {
@@ -24,7 +24,7 @@ describe('ContentSessionService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ContentSessionService,
+        OpenAPIContentSessionService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -36,7 +36,7 @@ describe('ContentSessionService', () => {
       ],
     }).compile();
 
-    service = module.get<ContentSessionService>(ContentSessionService);
+    service = module.get<OpenAPIContentSessionService>(OpenAPIContentSessionService);
   });
 
   afterEach(() => {
