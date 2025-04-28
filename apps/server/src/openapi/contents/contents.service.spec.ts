@@ -1,34 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIContentsService } from './contents.service';
-import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { ExpandType } from './contents.dto';
-import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
-
-jest.mock('@devoxa/prisma-relay-cursor-connection');
+import { ContentsService } from '@/contents/contents.service';
 
 describe('OpenAPIContentsService', () => {
   let service: OpenAPIContentsService;
-  let prismaService: PrismaService;
-
-  const mockPrismaService = {
-    content: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      count: jest.fn(),
-    },
-    version: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      count: jest.fn(),
-    },
-  };
 
   const mockConfigService = {
     get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
+
+  const mockContentsService = {
+    getContentWithRelations: jest.fn(),
+    listContentsWithRelations: jest.fn(),
+    getContentVersionWithRelations: jest.fn(),
+    listContentVersionsWithRelations: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -36,18 +26,17 @@ describe('OpenAPIContentsService', () => {
       providers: [
         OpenAPIContentsService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: ContentsService,
+          useValue: mockContentsService,
         },
       ],
     }).compile();
 
     service = module.get<OpenAPIContentsService>(OpenAPIContentsService);
-    prismaService = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 
@@ -62,7 +51,7 @@ describe('OpenAPIContentsService', () => {
         createdAt: new Date(),
       };
 
-      mockPrismaService.content.findFirst.mockResolvedValue(mockContent);
+      mockContentsService.getContentWithRelations.mockResolvedValue(mockContent);
 
       const result = await service.getContent('test-id', 'env-id');
 
@@ -72,16 +61,19 @@ describe('OpenAPIContentsService', () => {
         type: 'flow',
         editedVersionId: 'version-1',
         publishedVersionId: null,
+        editedVersion: undefined,
+        publishedVersion: undefined,
         updatedAt: mockContent.updatedAt.toISOString(),
         createdAt: mockContent.createdAt.toISOString(),
       });
-      expect(prismaService.content.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'test-id',
-          environmentId: 'env-id',
+      expect(mockContentsService.getContentWithRelations).toHaveBeenCalledWith(
+        'test-id',
+        'env-id',
+        {
+          editedVersion: false,
+          publishedVersion: false,
         },
-        include: {},
-      });
+      );
     });
 
     it('should return content with expand', async () => {
@@ -108,7 +100,7 @@ describe('OpenAPIContentsService', () => {
         createdAt: new Date(),
       };
 
-      mockPrismaService.content.findFirst.mockResolvedValue(mockContent);
+      mockContentsService.getContentWithRelations.mockResolvedValue(mockContent);
 
       const result = await service.getContent('test-id', 'env-id', [ExpandType.PUBLISHED_VERSION]);
 
@@ -118,6 +110,7 @@ describe('OpenAPIContentsService', () => {
         type: 'flow',
         editedVersionId: 'version-1',
         publishedVersionId: 'version-2',
+        editedVersion: undefined,
         publishedVersion: {
           id: 'version-2',
           object: 'content_version',
@@ -129,20 +122,18 @@ describe('OpenAPIContentsService', () => {
         updatedAt: mockContent.updatedAt.toISOString(),
         createdAt: mockContent.createdAt.toISOString(),
       });
-      expect(prismaService.content.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'test-id',
-          environmentId: 'env-id',
-        },
-        include: {
+      expect(mockContentsService.getContentWithRelations).toHaveBeenCalledWith(
+        'test-id',
+        'env-id',
+        {
           editedVersion: false,
           publishedVersion: true,
         },
-      });
+      );
     });
 
     it('should throw error when content not found', async () => {
-      mockPrismaService.content.findFirst.mockResolvedValue(null);
+      mockContentsService.getContentWithRelations.mockResolvedValue(null);
 
       await expect(service.getContent('non-existent', 'env-id')).rejects.toThrow(
         new OpenAPIException(
@@ -178,7 +169,7 @@ describe('OpenAPIContentsService', () => {
         },
       };
 
-      (findManyCursorConnection as jest.Mock).mockResolvedValue(mockConnection);
+      mockContentsService.listContentsWithRelations.mockResolvedValue(mockConnection);
 
       const result = await service.listContents('env-id', undefined, 10);
 
@@ -189,12 +180,22 @@ describe('OpenAPIContentsService', () => {
           type: 'flow',
           editedVersionId: 'version-1',
           publishedVersionId: null,
+          editedVersion: undefined,
+          publishedVersion: undefined,
           updatedAt: content.updatedAt.toISOString(),
           createdAt: content.createdAt.toISOString(),
         })),
         next: null,
         previous: null,
       });
+      expect(mockContentsService.listContentsWithRelations).toHaveBeenCalledWith(
+        'env-id',
+        { first: 10 },
+        {
+          editedVersion: false,
+          publishedVersion: false,
+        },
+      );
     });
 
     it('should throw error when invalid limit', async () => {
@@ -214,11 +215,12 @@ describe('OpenAPIContentsService', () => {
         id: 'version-1',
         sequence: 1,
         data: [],
+        content: {},
         updatedAt: new Date(),
         createdAt: new Date(),
       };
 
-      mockPrismaService.version.findFirst.mockResolvedValue(mockVersion);
+      mockContentsService.getContentVersionWithRelations.mockResolvedValue(mockVersion);
 
       const result = await service.getContentVersion('version-1', 'env-id');
 
@@ -230,21 +232,17 @@ describe('OpenAPIContentsService', () => {
         updatedAt: mockVersion.updatedAt.toISOString(),
         createdAt: mockVersion.createdAt.toISOString(),
       });
-      expect(prismaService.version.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'version-1',
-          content: {
-            environmentId: 'env-id',
-          },
-        },
-        include: {
+      expect(mockContentsService.getContentVersionWithRelations).toHaveBeenCalledWith(
+        'version-1',
+        'env-id',
+        {
           content: true,
         },
-      });
+      );
     });
 
     it('should throw error when version not found', async () => {
-      mockPrismaService.version.findFirst.mockResolvedValue(null);
+      mockContentsService.getContentVersionWithRelations.mockResolvedValue(null);
 
       await expect(service.getContentVersion('non-existent', 'env-id')).rejects.toThrow(
         new OpenAPIException(
@@ -263,6 +261,7 @@ describe('OpenAPIContentsService', () => {
           id: 'version-1',
           sequence: 1,
           data: [],
+          content: {},
           updatedAt: new Date(),
           createdAt: new Date(),
         },
@@ -279,7 +278,7 @@ describe('OpenAPIContentsService', () => {
         },
       };
 
-      (findManyCursorConnection as jest.Mock).mockResolvedValue(mockConnection);
+      mockContentsService.listContentVersionsWithRelations.mockResolvedValue(mockConnection);
 
       const result = await service.listContentVersions('env-id', undefined, 10);
 
@@ -292,9 +291,14 @@ describe('OpenAPIContentsService', () => {
           updatedAt: version.updatedAt.toISOString(),
           createdAt: version.createdAt.toISOString(),
         })),
-        next: 'http://localhost:3000/v1/content_versions?cursor=version-1',
+        next: 'http://localhost:3000/v1/content_versions?cursor=version-1&limit=10',
         previous: null,
       });
+      expect(mockContentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(
+        'env-id',
+        { first: 10 },
+        { content: true },
+      );
     });
 
     it('should throw error when invalid limit', async () => {

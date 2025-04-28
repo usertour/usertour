@@ -11,6 +11,7 @@ import { extractQuestionData, GroupItem, processStepData } from '@/utils/content
 import { ContentType } from './models/content.model';
 import { Version } from './models/version.model';
 import { ConfigService } from '@nestjs/config';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
 @Injectable()
 export class ContentsService {
@@ -570,5 +571,107 @@ export class ContentsService {
       where: { id: relation.id },
       data: { localized, backup, enabled },
     });
+  }
+
+  async getContentWithRelations(
+    id: string,
+    environmentId: string,
+    include?: {
+      editedVersion?: boolean;
+      publishedVersion?: boolean;
+    },
+  ) {
+    return await this.prisma.content.findFirst({
+      where: {
+        id,
+        environmentId,
+      },
+      include: {
+        editedVersion: include?.editedVersion ?? false,
+        publishedVersion: include?.publishedVersion ?? false,
+      },
+    });
+  }
+
+  async getContentVersionWithRelations(
+    versionId: string,
+    environmentId: string,
+    include?: {
+      content?: boolean;
+      steps?: boolean;
+    },
+  ) {
+    return await this.prisma.version.findFirst({
+      where: {
+        id: versionId,
+        content: {
+          environmentId,
+        },
+      },
+      include: {
+        content: include?.content,
+        steps: include?.steps ? { orderBy: { sequence: 'asc' } } : false,
+      },
+    });
+  }
+
+  async listContentVersionsWithRelations(
+    environmentId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+    include?: {
+      content?: boolean;
+      steps?: boolean;
+    },
+  ) {
+    const baseQuery = {
+      where: {
+        content: {
+          environmentId,
+        },
+      },
+      include: {
+        content: include?.content,
+        steps: include?.steps ? { orderBy: { sequence: 'asc' as const } } : false,
+      },
+    };
+
+    return await findManyCursorConnection(
+      (args) => this.prisma.version.findMany({ ...baseQuery, ...args }),
+      () => this.prisma.version.count({ where: baseQuery.where }),
+      paginationArgs,
+    );
+  }
+
+  async listContentsWithRelations(
+    environmentId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+    include?: {
+      editedVersion?: boolean;
+      publishedVersion?: boolean;
+    },
+  ) {
+    const baseQuery = {
+      where: { environmentId },
+      include: {
+        editedVersion: include?.editedVersion,
+        publishedVersion: include?.publishedVersion,
+      },
+    };
+
+    return await findManyCursorConnection(
+      (args) => this.prisma.content.findMany({ ...baseQuery, ...args }),
+      () => this.prisma.content.count({ where: { environmentId } }),
+      paginationArgs,
+    );
   }
 }

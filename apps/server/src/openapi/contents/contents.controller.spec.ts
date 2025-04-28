@@ -7,8 +7,9 @@ import { OpenAPIException } from '../exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { OpenapiGuard } from '../openapi.guard';
-import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
+import { ContentsService } from '@/contents/contents.service';
+import { PrismaService } from 'nestjs-prisma';
 
 describe('OpenAPIContentsController', () => {
   let controller: OpenAPIContentsController;
@@ -21,16 +22,6 @@ describe('OpenAPIContentsController', () => {
     listContentVersions: jest.fn(),
   };
 
-  const mockPrismaService = {
-    bizUser: {
-      findFirst: jest.fn(),
-    },
-  };
-
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue('http://localhost:3000'),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OpenAPIContentsController],
@@ -40,12 +31,25 @@ describe('OpenAPIContentsController', () => {
           useValue: mockContentService,
         },
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('http://localhost:3000'),
+          },
         },
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: ContentsService,
+          useValue: {
+            getContentWithRelations: jest.fn(),
+            listContentsWithRelations: jest.fn(),
+            getContentVersionWithRelations: jest.fn(),
+            listContentVersionsWithRelations: jest.fn(),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            // Add any required PrismaService methods here
+          },
         },
         OpenapiGuard,
       ],
@@ -151,7 +155,7 @@ describe('OpenAPIContentsController', () => {
 
       mockContentService.listContents.mockResolvedValue(mockContents);
 
-      const result = await controller.listContents('env-id', undefined, 10);
+      const result = await controller.listContents('env-id', 10, undefined);
 
       expect(result).toEqual(mockContents);
       expect(contentService.listContents).toHaveBeenCalledWith('env-id', undefined, 10, undefined);
@@ -192,7 +196,7 @@ describe('OpenAPIContentsController', () => {
 
       mockContentService.listContents.mockResolvedValue(mockContents);
 
-      const result = await controller.listContents('env-id', undefined, 10, 'published_version');
+      const result = await controller.listContents('env-id', 10, undefined, 'published_version');
 
       expect(result).toEqual(mockContents);
       expect(contentService.listContents).toHaveBeenCalledWith('env-id', undefined, 10, [
@@ -209,7 +213,7 @@ describe('OpenAPIContentsController', () => {
         ),
       );
 
-      await expect(controller.listContents('env-id', undefined, -1)).rejects.toThrow(
+      await expect(controller.listContents('env-id', -1, undefined)).rejects.toThrow(
         new OpenAPIException(
           OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
           HttpStatus.BAD_REQUEST,
@@ -270,13 +274,13 @@ describe('OpenAPIContentsController', () => {
             createdAt: new Date().toISOString(),
           },
         ],
-        next: 'http://localhost:3000/v1/content_versions?cursor=version-1',
+        next: null,
         previous: null,
       };
 
       mockContentService.listContentVersions.mockResolvedValue(mockVersions);
 
-      const result = await controller.listContentVersions('env-id', undefined, 10);
+      const result = await controller.listContentVersions('env-id', 10, undefined);
 
       expect(result).toEqual(mockVersions);
       expect(contentService.listContentVersions).toHaveBeenCalledWith('env-id', undefined, 10);
@@ -291,7 +295,7 @@ describe('OpenAPIContentsController', () => {
         ),
       );
 
-      await expect(controller.listContentVersions('env-id', undefined, -1)).rejects.toThrow(
+      await expect(controller.listContentVersions('env-id', -1, undefined)).rejects.toThrow(
         new OpenAPIException(
           OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
           HttpStatus.BAD_REQUEST,

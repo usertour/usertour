@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseFilters,
+  UseGuards,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -40,13 +48,17 @@ export class OpenAPIContentsController {
   @Get('contents')
   @ApiOperation({ summary: 'List all contents' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+  })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of contents', type: Content, isArray: true })
   async listContents(
     @EnvironmentId() environmentId: string,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
     @Query('expand') expand?: string,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const expandTypes = expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined;
@@ -77,8 +89,8 @@ export class OpenAPIContentsController {
   @ApiResponse({ status: 200, description: 'List of content versions' })
   async listContentVersions(
     @EnvironmentId() environmentId: string,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     return this.openAPIContentsService.listContentVersions(environmentId, cursor, limit);
   }

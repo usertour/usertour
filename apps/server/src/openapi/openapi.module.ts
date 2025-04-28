@@ -20,9 +20,17 @@ import { BizModule } from '@/biz/biz.module';
 import { OpenAPIEventsService } from './events/events.service';
 import { OpenAPICompanyMembershipController } from './company_memberships/company_memberships.controller';
 import { OpenAPICompanyMembershipService } from './company_memberships/company_memberships.service';
+import { ContentsModule } from '@/contents/contents.module';
 
 @Module({
-  imports: [ConfigModule, AnalyticsModule, AttributesModule, EventsModule, BizModule],
+  imports: [
+    ConfigModule,
+    AnalyticsModule,
+    AttributesModule,
+    EventsModule,
+    BizModule,
+    ContentsModule,
+  ],
   controllers: [
     OpenAPICompaniesController,
     OpenAPIAttributesController,

@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Content, ContentVersion } from '../models/content.model';
 import { ConfigService } from '@nestjs/config';
-import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { ExpandType } from './contents.dto';
-import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
+import { ContentsService } from '@/contents/contents.service';
 
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
@@ -27,20 +26,14 @@ export class OpenAPIContentsService {
   private readonly logger = new Logger(OpenAPIContentsService.name);
 
   constructor(
-    private prisma: PrismaService,
     private configService: ConfigService,
+    private contentsService: ContentsService,
   ) {}
 
   async getContent(id: string, environmentId: string, expand?: ExpandType[]): Promise<Content> {
-    const content = await this.prisma.content.findFirst({
-      where: {
-        id,
-        environmentId,
-      },
-      include: {
-        editedVersion: expand?.includes(ExpandType.EDITED_VERSION),
-        publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION),
-      },
+    const content = await this.contentsService.getContentWithRelations(id, environmentId, {
+      editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
+      publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
     });
 
     if (!content) {
@@ -61,8 +54,7 @@ export class OpenAPIContentsService {
     expand?: ExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     // Validate limit
-    const pageSize = Number(limit);
-    if (Number.isNaN(pageSize) || pageSize < 1) {
+    if (limit < 1) {
       throw new OpenAPIException(
         OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
         HttpStatus.BAD_REQUEST,
@@ -71,52 +63,20 @@ export class OpenAPIContentsService {
     }
 
     this.logger.debug(
-      `Listing contents with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${pageSize}`,
+      `Listing contents with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${limit}`,
     );
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
-    const baseQuery = {
-      where: { environmentId },
-      include: {
-        editedVersion: expand?.includes(ExpandType.EDITED_VERSION),
-        publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION),
+
+    // Get the current page
+    const connection = await this.contentsService.listContentsWithRelations(
+      environmentId,
+      { first: limit, after: cursor },
+      {
+        editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
+        publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
       },
-    };
-
-    // Get the previous page's last cursor if we're not on the first page
-    let previousPage = null;
-    if (cursor) {
-      try {
-        previousPage = await findManyCursorConnection(
-          (args) => this.prisma.content.findMany({ ...baseQuery, ...args }),
-          () => this.prisma.content.count({ where: { environmentId } }),
-          { last: pageSize, before: cursor },
-        );
-      } catch (error) {
-        this.logger.warn(`Failed to get previous page: ${error.message}`);
-        throw new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_CURSOR_PREVIOUS.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_CURSOR_PREVIOUS.code,
-        );
-      }
-    }
-
-    let connection: any;
-    try {
-      connection = await findManyCursorConnection(
-        (args) => this.prisma.content.findMany({ ...baseQuery, ...args }),
-        () => this.prisma.content.count({ where: { environmentId } }),
-        { first: pageSize, after: cursor },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to get current page: ${error.message}`);
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.code,
-      );
-    }
+    );
 
     // If we got no results and there was a cursor, it means the cursor was invalid
     if (!connection.edges.length && cursor) {
@@ -127,15 +87,43 @@ export class OpenAPIContentsService {
       );
     }
 
+    // Get the previous page's cursor if we're not on the first page
+    let previousUrl = null;
+    if (cursor) {
+      // We're on a page after the first page, need to query the previous page
+      const previousPage = await this.contentsService.listContentsWithRelations(
+        environmentId,
+        { last: limit, before: connection.edges[0].cursor },
+        {}, // No need to include relations when just getting the cursor
+      );
+      if (previousPage.edges.length > 0) {
+        // If previous page has less than limit records, it means it's the first page
+        if (previousPage.edges.length < limit) {
+          previousUrl = `${apiUrl}/v1/contents?limit=${limit}`;
+        } else {
+          // If previous page has exactly limit records, we need to check if it's the first page
+          const firstPage = await this.contentsService.listContentsWithRelations(
+            environmentId,
+            { first: limit },
+            {}, // No need to include relations when just getting the cursor
+          );
+          // If the first page's first cursor matches the previous page's first cursor,
+          // it means the previous page is the first page
+          if (firstPage.edges[0].cursor === previousPage.edges[0].cursor) {
+            previousUrl = `${apiUrl}/v1/contents?limit=${limit}`;
+          } else {
+            previousUrl = `${apiUrl}/v1/contents?cursor=${previousPage.edges[0].cursor}&limit=${limit}`;
+          }
+        }
+      }
+    }
+
     return {
       results: connection.edges.map((edge) => this.mapPrismaContentToApiContent(edge.node, expand)),
       next: connection.pageInfo.hasNextPage
-        ? `${apiUrl}/v1/contents?cursor=${connection.pageInfo.endCursor}`
+        ? `${apiUrl}/v1/contents?cursor=${connection.pageInfo.endCursor}&limit=${limit}`
         : null,
-      previous:
-        previousPage?.edges.length > 0
-          ? `${apiUrl}/v1/contents?cursor=${previousPage.edges[previousPage.edges.length - 1].cursor}`
-          : null,
+      previous: previousUrl,
     };
   }
 
@@ -177,16 +165,8 @@ export class OpenAPIContentsService {
   }
 
   async getContentVersion(id: string, environmentId: string): Promise<ContentVersion> {
-    const version = await this.prisma.version.findFirst({
-      where: {
-        id,
-        content: {
-          environmentId,
-        },
-      },
-      include: {
-        content: true,
-      },
+    const version = await this.contentsService.getContentVersionWithRelations(id, environmentId, {
+      content: true,
     });
 
     if (!version) {
@@ -206,8 +186,7 @@ export class OpenAPIContentsService {
     limit = 20,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     // Validate limit
-    const pageSize = Number(limit);
-    if (Number.isNaN(pageSize) || pageSize < 1) {
+    if (limit < 1) {
       throw new OpenAPIException(
         OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
         HttpStatus.BAD_REQUEST,
@@ -216,55 +195,17 @@ export class OpenAPIContentsService {
     }
 
     this.logger.debug(
-      `Listing content versions with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${pageSize}`,
+      `Listing content versions with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${limit}`,
     );
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
-    const baseQuery = {
-      where: {
-        content: {
-          environmentId,
-        },
-      },
-      include: {
-        content: true,
-      },
-    };
 
-    // Get the previous page's last cursor if we're not on the first page
-    let previousPage = null;
-    if (cursor) {
-      try {
-        previousPage = await findManyCursorConnection(
-          (args) => this.prisma.version.findMany({ ...baseQuery, ...args }),
-          () => this.prisma.version.count({ where: baseQuery.where }),
-          { last: pageSize, before: cursor },
-        );
-      } catch (error) {
-        this.logger.warn(`Failed to get previous page: ${error.message}`);
-        throw new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_CURSOR_PREVIOUS.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_CURSOR_PREVIOUS.code,
-        );
-      }
-    }
-
-    let connection: any;
-    try {
-      connection = await findManyCursorConnection(
-        (args) => this.prisma.version.findMany({ ...baseQuery, ...args }),
-        () => this.prisma.version.count({ where: baseQuery.where }),
-        { first: pageSize, after: cursor },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to get current page: ${error.message}`);
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.code,
-      );
-    }
+    // Get the current page
+    const connection = await this.contentsService.listContentVersionsWithRelations(
+      environmentId,
+      { first: limit, after: cursor },
+      { content: true },
+    );
 
     // If we got no results and there was a cursor, it means the cursor was invalid
     if (!connection.edges.length && cursor) {
@@ -275,15 +216,43 @@ export class OpenAPIContentsService {
       );
     }
 
+    // Get the previous page's cursor if we're not on the first page
+    let previousUrl = null;
+    if (cursor) {
+      // We're on a page after the first page, need to query the previous page
+      const previousPage = await this.contentsService.listContentVersionsWithRelations(
+        environmentId,
+        { last: limit, before: connection.edges[0].cursor },
+        {}, // No need to include relations when just getting the cursor
+      );
+      if (previousPage.edges.length > 0) {
+        // If previous page has less than limit records, it means it's the first page
+        if (previousPage.edges.length < limit) {
+          previousUrl = `${apiUrl}/v1/content_versions?limit=${limit}`;
+        } else {
+          // If previous page has exactly limit records, we need to check if it's the first page
+          const firstPage = await this.contentsService.listContentVersionsWithRelations(
+            environmentId,
+            { first: limit },
+            {}, // No need to include relations when just getting the cursor
+          );
+          // If the first page's first cursor matches the previous page's first cursor,
+          // it means the previous page is the first page
+          if (firstPage.edges[0].cursor === previousPage.edges[0].cursor) {
+            previousUrl = `${apiUrl}/v1/content_versions?limit=${limit}`;
+          } else {
+            previousUrl = `${apiUrl}/v1/content_versions?cursor=${previousPage.edges[0].cursor}&limit=${limit}`;
+          }
+        }
+      }
+    }
+
     return {
       results: connection.edges.map((edge) => this.mapPrismaVersionToApiVersion(edge.node)),
       next: connection.pageInfo.hasNextPage
-        ? `${apiUrl}/v1/content_versions?cursor=${connection.pageInfo.endCursor}`
+        ? `${apiUrl}/v1/content_versions?cursor=${connection.pageInfo.endCursor}&limit=${limit}`
         : null,
-      previous:
-        previousPage?.edges.length > 0
-          ? `${apiUrl}/v1/content_versions?cursor=${previousPage.edges[previousPage.edges.length - 1].cursor}`
-          : null,
+      previous: previousUrl,
     };
   }
 
