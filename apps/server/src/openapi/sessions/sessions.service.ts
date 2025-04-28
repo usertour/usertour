@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
-import { Prisma } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { ExpandType, ExpandTypes } from './sessions.dto';
 import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
+import { Prisma } from '@prisma/client';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {
@@ -13,25 +13,27 @@ type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
     bizCompany?: true;
     bizUser?: true;
     version?: true;
-    bizEvent?: true;
   };
 }>;
-
-type BizSessionInclude = Prisma.BizSessionInclude;
 
 @Injectable()
 export class OpenAPIContentSessionService {
   private readonly logger = new Logger(OpenAPIContentSessionService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly analyticsService: AnalyticsService,
+    private readonly configService: ConfigService,
   ) {}
 
   private getIncludeFromExpand(expand?: ExpandTypes) {
     if (!expand) return {};
 
-    const include: BizSessionInclude = {};
+    const include: {
+      content?: boolean;
+      bizCompany?: boolean;
+      bizUser?: boolean;
+      version?: boolean;
+    } = {};
 
     if (expand.includes(ExpandType.CONTENT)) {
       include.content = true;
@@ -54,10 +56,11 @@ export class OpenAPIContentSessionService {
     environmentId: string,
     expand?: ExpandTypes,
   ): Promise<ContentSession> {
-    const session = await this.prisma.bizSession.findUnique({
-      where: { id, content: { environmentId } },
-      include: this.getIncludeFromExpand(expand),
-    });
+    const session = await this.analyticsService.getContentSessionWithRelations(
+      id,
+      environmentId,
+      this.getIncludeFromExpand(expand),
+    );
 
     if (!session) {
       return null;
@@ -73,41 +76,28 @@ export class OpenAPIContentSessionService {
     limit = 10,
     expand?: ExpandTypes,
   ) {
-    const where: Prisma.BizSessionWhereInput = {
-      contentId,
-      content: {
+    const apiUrl = this.configService.get<string>('app.apiUrl');
+    const { results, hasNext, endCursor } =
+      await this.analyticsService.listContentSessionsWithRelations(
         environmentId,
-      },
-    };
-
-    this.logger.log('Before findMany');
-
-    const sessions = await this.prisma.bizSession.findMany({
-      where,
-      include: this.getIncludeFromExpand(expand),
-      take: Number(limit) + 1,
-      ...(cursor && { cursor: { id: cursor } }),
-      orderBy: { createdAt: 'desc' },
-    });
-
-    this.logger.log('After findMany');
-
-    const hasNext = sessions.length > limit;
-    const results = hasNext ? sessions.slice(0, -1) : sessions;
-
-    this.logger.log('Before return');
+        contentId,
+        cursor,
+        limit,
+        this.getIncludeFromExpand(expand),
+      );
 
     return {
       results: results.map(this.mapToContentSession),
-      next: hasNext ? results[results.length - 1].id : null,
+      next: hasNext ? `${apiUrl}/v1/content_sessions?cursor=${endCursor}&limit=${limit}` : null,
       previous: cursor || null,
     };
   }
 
   async deleteContentSession(id: string, environmentId: string) {
-    const session = await this.prisma.bizSession.findUnique({
-      where: { id, content: { environmentId } },
-    });
+    const session = await this.analyticsService.deleteContentSessionWithRelations(
+      id,
+      environmentId,
+    );
 
     if (!session) {
       throw new OpenAPIException(
@@ -116,8 +106,6 @@ export class OpenAPIContentSessionService {
         OpenAPIErrors.CONTENT_SESSION.NOT_FOUND.code,
       );
     }
-
-    await this.analyticsService.deleteSession(id);
 
     return {
       id,

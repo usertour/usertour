@@ -1076,4 +1076,81 @@ export class AnalyticsService {
       npsScore,
     };
   }
+
+  async getContentSessionWithRelations(
+    id: string,
+    environmentId: string,
+    include?: {
+      content?: boolean;
+      bizCompany?: boolean;
+      bizUser?: boolean;
+      version?: boolean;
+    },
+  ) {
+    return await this.prisma.bizSession.findUnique({
+      where: { id, content: { environmentId } },
+      include,
+    });
+  }
+
+  async listContentSessionsWithRelations(
+    environmentId: string,
+    contentId: string,
+    cursor?: string,
+    limit = 10,
+    include?: {
+      content?: boolean;
+      bizCompany?: boolean;
+      bizUser?: boolean;
+      version?: boolean;
+    },
+  ) {
+    const where: Prisma.BizSessionWhereInput = {
+      contentId,
+      content: {
+        environmentId,
+      },
+    };
+
+    const sessions = await this.prisma.bizSession.findMany({
+      where,
+      include,
+      take: Number(limit) + 1,
+      ...(cursor && { cursor: { id: cursor } }),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasNext = sessions.length > limit;
+    const results = hasNext ? sessions.slice(0, -1) : sessions;
+
+    return {
+      results,
+      hasNext,
+      endCursor: hasNext ? results[results.length - 1].id : null,
+    };
+  }
+
+  async deleteContentSessionWithRelations(id: string, environmentId: string) {
+    const session = await this.prisma.bizSession.findUnique({
+      where: { id, content: { environmentId } },
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bizAnswer.deleteMany({
+        where: { bizSessionId: id },
+      });
+      await tx.bizEvent.deleteMany({
+        where: { bizSessionId: id },
+      });
+      await tx.bizSession.delete({
+        where: { id },
+      });
+    });
+
+    return session;
+  }
 }

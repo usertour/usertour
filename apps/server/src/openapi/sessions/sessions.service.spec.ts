@@ -5,9 +5,23 @@ import { AnalyticsService } from '@/analytics/analytics.service';
 import { ExpandType } from './sessions.dto';
 import { OpenAPIException } from '../exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
+import { ConfigService } from '@nestjs/config';
 
 describe('OpenAPIContentSessionService', () => {
   let service: OpenAPIContentSessionService;
+
+  const mockSession = {
+    id: '1',
+    contentId: 'content1',
+    bizUserId: 'user1',
+    bizCompanyId: 'company1',
+    versionId: 'version1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    state: 0,
+    progress: 0,
+    data: {},
+  };
 
   const mockPrismaService = {
     bizSession: {
@@ -19,6 +33,13 @@ describe('OpenAPIContentSessionService', () => {
 
   const mockAnalyticsService = {
     deleteSession: jest.fn(),
+    getContentSessionWithRelations: jest.fn(),
+    listContentSessionsWithRelations: jest.fn(),
+    deleteContentSessionWithRelations: jest.fn(),
+  };
+
+  const mockConfigService = {
+    get: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -33,10 +54,16 @@ describe('OpenAPIContentSessionService', () => {
           provide: AnalyticsService,
           useValue: mockAnalyticsService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
     service = module.get<OpenAPIContentSessionService>(OpenAPIContentSessionService);
+    jest.clearAllMocks();
+    mockConfigService.get.mockReturnValue('http://localhost:3000');
   });
 
   afterEach(() => {
@@ -45,20 +72,7 @@ describe('OpenAPIContentSessionService', () => {
 
   describe('getContentSession', () => {
     it('should return a content session when found', async () => {
-      const mockSession = {
-        id: '1',
-        contentId: 'content1',
-        bizUserId: 'user1',
-        bizCompanyId: 'company1',
-        versionId: 'version1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        state: 0,
-        progress: 0,
-        data: {},
-      };
-
-      mockPrismaService.bizSession.findUnique.mockResolvedValue(mockSession);
+      mockAnalyticsService.getContentSessionWithRelations.mockResolvedValue(mockSession);
 
       const result = await service.getContentSession('1', 'env1', [
         ExpandType.CONTENT,
@@ -69,19 +83,20 @@ describe('OpenAPIContentSessionService', () => {
 
       expect(result).toBeDefined();
       expect(result.id).toBe('1');
-      expect(mockPrismaService.bizSession.findUnique).toHaveBeenCalledWith({
-        where: { id: '1', content: { environmentId: 'env1' } },
-        include: {
+      expect(mockAnalyticsService.getContentSessionWithRelations).toHaveBeenCalledWith(
+        '1',
+        'env1',
+        {
           content: true,
           bizUser: true,
           bizCompany: true,
           version: true,
         },
-      });
+      );
     });
 
     it('should return null when session not found', async () => {
-      mockPrismaService.bizSession.findUnique.mockResolvedValue(null);
+      mockAnalyticsService.getContentSessionWithRelations.mockResolvedValue(null);
 
       const result = await service.getContentSession('1', 'env1', []);
 
@@ -91,34 +106,11 @@ describe('OpenAPIContentSessionService', () => {
 
   describe('listContentSessions', () => {
     it('should return a list of content sessions', async () => {
-      const mockSessions = [
-        {
-          id: '1',
-          contentId: 'content1',
-          bizUserId: 'user1',
-          bizCompanyId: 'company1',
-          versionId: 'version1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          state: 0,
-          progress: 0,
-          data: {},
-        },
-        {
-          id: '2',
-          contentId: 'content1',
-          bizUserId: 'user2',
-          bizCompanyId: 'company1',
-          versionId: 'version1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          state: 0,
-          progress: 0,
-          data: {},
-        },
-      ];
-
-      mockPrismaService.bizSession.findMany.mockResolvedValue(mockSessions);
+      mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
+        results: [mockSession],
+        hasNext: false,
+        endCursor: null,
+      });
 
       const result = await service.listContentSessions('env1', 'content1', undefined, 10, [
         ExpandType.CONTENT,
@@ -128,37 +120,27 @@ describe('OpenAPIContentSessionService', () => {
       ]);
 
       expect(result).toBeDefined();
-      expect(result.results).toHaveLength(2);
-      expect(mockPrismaService.bizSession.findMany).toHaveBeenCalledWith({
-        where: { contentId: 'content1', content: { environmentId: 'env1' } },
-        take: 11,
-        orderBy: { createdAt: 'desc' },
-        include: {
+      expect(result.results).toHaveLength(1);
+      expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
+        'env1',
+        'content1',
+        undefined,
+        10,
+        {
           content: true,
           bizUser: true,
           bizCompany: true,
           version: true,
         },
-      });
+      );
     });
 
     it('should handle cursor pagination', async () => {
-      const mockSessions = [
-        {
-          id: '2',
-          contentId: 'content1',
-          bizUserId: 'user2',
-          bizCompanyId: 'company1',
-          versionId: 'version1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          state: 0,
-          progress: 0,
-          data: {},
-        },
-      ];
-
-      mockPrismaService.bizSession.findMany.mockResolvedValue(mockSessions);
+      mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
+        results: [mockSession],
+        hasNext: true,
+        endCursor: 'nextCursor',
+      });
 
       const result = await service.listContentSessions('env1', 'content1', 'cursor1', 10, [
         ExpandType.CONTENT,
@@ -169,48 +151,42 @@ describe('OpenAPIContentSessionService', () => {
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(mockPrismaService.bizSession.findMany).toHaveBeenCalledWith({
-        where: { contentId: 'content1', content: { environmentId: 'env1' } },
-        take: 11,
-        cursor: { id: 'cursor1' },
-        orderBy: { createdAt: 'desc' },
-        include: {
+      expect(result.next).toBe(
+        'http://localhost:3000/v1/content_sessions?cursor=nextCursor&limit=10',
+      );
+      expect(result.previous).toBe('cursor1');
+      expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
+        'env1',
+        'content1',
+        'cursor1',
+        10,
+        {
           content: true,
           bizUser: true,
           bizCompany: true,
           version: true,
         },
-      });
+      );
     });
   });
 
   describe('deleteContentSession', () => {
     it('should delete a content session', async () => {
-      const mockSession = {
-        id: '1',
-        contentId: 'content1',
-        bizUserId: 'user1',
-        bizCompanyId: 'company1',
-        versionId: 'version1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        state: 0,
-        progress: 0,
-        data: {},
-      };
-
-      mockPrismaService.bizSession.findUnique.mockResolvedValue(mockSession);
+      mockAnalyticsService.deleteContentSessionWithRelations.mockResolvedValue(mockSession);
 
       const result = await service.deleteContentSession('1', 'env1');
 
       expect(result).toBeDefined();
       expect(result.id).toBe('1');
       expect(result.deleted).toBe(true);
-      expect(mockAnalyticsService.deleteSession).toHaveBeenCalledWith('1');
+      expect(mockAnalyticsService.deleteContentSessionWithRelations).toHaveBeenCalledWith(
+        '1',
+        'env1',
+      );
     });
 
     it('should throw OpenAPIException when session not found', async () => {
-      mockPrismaService.bizSession.findUnique.mockResolvedValue(null);
+      mockAnalyticsService.deleteContentSessionWithRelations.mockResolvedValue(null);
 
       await expect(service.deleteContentSession('1', 'env1')).rejects.toThrow(
         new OpenAPIException(
