@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import { OpenapiGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from './filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
@@ -41,7 +40,6 @@ import { OpenAPICompanyMembershipService } from './company_memberships/company_m
     OpenAPIUsersService,
     OpenAPICompanyMembershipService,
     OpenAPIContentService,
-    PrismaService,
     OpenapiGuard,
     ContentSessionService,
   ],
