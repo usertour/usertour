@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIError } from '../errors/errors';
+import { OpenAPIError } from '@/common/errors/errors';
 
 @Catch()
 export class OpenAPIExceptionFilter implements ExceptionFilter {

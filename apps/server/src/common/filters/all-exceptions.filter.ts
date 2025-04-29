@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { Logger } from '../../utils';
+import { Logger } from '@/utils/logger';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {

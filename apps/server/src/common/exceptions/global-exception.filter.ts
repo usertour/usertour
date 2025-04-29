@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
-import { genBaseRespDataFromError } from './exception';
-import { OAuthError, UnknownError } from '../errors';
+import { genBaseRespDataFromError } from '@/common/exceptions/exception';
+import { OAuthError, UnknownError } from '@/common/errors/errors';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
