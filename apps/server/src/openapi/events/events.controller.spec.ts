@@ -80,19 +80,19 @@ describe('OpenAPIEventsController', () => {
 
       const result = await controller.listEvents(
         { id: 'env1', projectId: 'project1' } as any,
-        'cursor1',
         10,
+        'cursor1',
       );
 
       expect(result).toEqual(mockEvents);
-      expect(mockService.listEvents).toHaveBeenCalledWith('project1', 'cursor1', 10);
+      expect(mockService.listEvents).toHaveBeenCalledWith('project1', 10, 'cursor1');
     });
 
     it('should throw error when limit is invalid', async () => {
       mockService.listEvents.mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listEvents({ id: 'env1', projectId: 'project1' } as any, 'cursor1', -1),
+        controller.listEvents({ id: 'env1', projectId: 'project1' } as any, -1),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -100,7 +100,7 @@ describe('OpenAPIEventsController', () => {
       mockService.listEvents.mockRejectedValue(new InvalidCursorError());
 
       await expect(
-        controller.listEvents({ id: 'env1', projectId: 'project1' } as any, 'invalid-cursor', 10),
+        controller.listEvents({ id: 'env1', projectId: 'project1' } as any, 10, 'invalid-cursor'),
       ).rejects.toThrow(new InvalidCursorError());
     });
   });

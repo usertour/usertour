@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventsService } from './events.service';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { InvalidLimitError } from '@/common/errors/errors';
+import { ConfigService } from '@nestjs/config';
 
 describe('OpenAPIEventsService', () => {
   let service: OpenAPIEventsService;
@@ -11,6 +12,10 @@ describe('OpenAPIEventsService', () => {
     listWithPagination: jest.fn(),
   };
 
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -18,6 +23,10 @@ describe('OpenAPIEventsService', () => {
         {
           provide: BusinessEventsService,
           useValue: mockBusinessEventsService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -65,20 +74,34 @@ describe('OpenAPIEventsService', () => {
           name: 'test_event',
         },
       ],
-      next: 'next-cursor',
+      next: `http://localhost:3000/v1/events?cursor=next-cursor&limit=${mockLimit}`,
+      previous: `http://localhost:3000/v1/events?limit=${mockLimit}`,
+    };
+
+    const expectedDefaultResponse = {
+      results: [
+        {
+          id: 'event-123',
+          object: 'event_definition',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          description: 'Test Event',
+          displayName: 'Test Event',
+          name: 'test_event',
+        },
+      ],
+      next: 'http://localhost:3000/v1/events?cursor=next-cursor&limit=20',
       previous: null,
     };
 
     it('should successfully list events', async () => {
       mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
-      const result = await service.listEvents(mockProjectId, mockCursor, mockLimit);
+      const result = await service.listEvents(mockProjectId, mockLimit, mockCursor);
 
-      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
-        mockProjectId,
-        mockCursor,
-        mockLimit,
-      );
+      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(mockProjectId, {
+        first: mockLimit,
+        after: mockCursor,
+      });
       expect(result).toEqual(expectedResponse);
     });
 
@@ -87,18 +110,15 @@ describe('OpenAPIEventsService', () => {
 
       const result = await service.listEvents(mockProjectId);
 
-      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
-        mockProjectId,
-        undefined,
-        20,
-      );
-      expect(result).toEqual(expectedResponse);
+      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(mockProjectId, {
+        first: 20,
+        after: undefined,
+      });
+      expect(result).toEqual(expectedDefaultResponse);
     });
 
     it('should throw error for invalid limit', async () => {
-      await expect(service.listEvents(mockProjectId, undefined, -1)).rejects.toThrow(
-        new InvalidLimitError(),
-      );
+      await expect(service.listEvents(mockProjectId, -1)).rejects.toThrow(new InvalidLimitError());
     });
   });
 });

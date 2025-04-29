@@ -4,6 +4,8 @@ import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
 import { CreateEventInput, UpdateEventInput } from './dto/events.input';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { PaginationConnection } from '@/common/openapi/pagination';
+import { Event } from '@prisma/client';
 
 @Injectable()
 export class EventsService {
@@ -116,27 +118,30 @@ export class EventsService {
     });
   }
 
-  async listWithPagination(projectId: string, cursor?: string, limit = 20) {
-    this.logger.log(`Listing events with pagination for project ${projectId}`);
-
+  async listWithPagination(
+    projectId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+  ): Promise<PaginationConnection<Event>> {
+    const baseQuery = {
+      where: { projectId, deleted: false },
+    };
     return findManyCursorConnection(
       (args) =>
         this.prisma.event.findMany({
+          ...baseQuery,
           ...args,
-          where: {
-            projectId,
-            deleted: false,
-          },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { id: 'desc' },
         }),
       () =>
         this.prisma.event.count({
-          where: {
-            projectId,
-            deleted: false,
-          },
+          ...baseQuery,
         }),
-      { first: limit, after: cursor },
+      paginationArgs,
     );
   }
 }

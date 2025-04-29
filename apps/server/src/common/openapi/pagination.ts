@@ -18,7 +18,7 @@ export interface PaginationConnection<T> {
   edges: { node: T; cursor: string }[];
   pageInfo: {
     hasNextPage: boolean;
-    endCursor: string | null;
+    endCursor?: string | null;
     hasPreviousPage?: boolean;
     startCursor?: string | null;
   };
@@ -55,7 +55,9 @@ export async function paginate<T>(
   // Get the previous page's cursor if we're not on the first page
   let previousUrl = null;
   if (cursor) {
-    // We're on a page after the first page, need to query the previous page
+    // We're on a page after the first page
+    // If we're on the second page, the previous page is the first page
+    // If we're on a later page, we need to query the previous page
     const previousPage = await fetchData({ last: limit, before: connection.edges[0].cursor });
     if (previousPage.edges.length > 0) {
       // If previous page has less than limit records, it means it's the first page

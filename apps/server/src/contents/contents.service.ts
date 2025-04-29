@@ -670,7 +670,7 @@ export class ContentsService {
 
     return await findManyCursorConnection(
       (args) => this.prisma.content.findMany({ ...baseQuery, ...args }),
-      () => this.prisma.content.count({ where: { environmentId } }),
+      () => this.prisma.content.count({ where: { ...baseQuery.where } }),
       paginationArgs,
     );
   }

@@ -1,4 +1,12 @@
-import { Controller, Get, Query, Logger, UseGuards, UseFilters } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Logger,
+  UseGuards,
+  UseFilters,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIEventsService } from './events.service';
 import { Environment } from '@/environments/models/environment.model';
@@ -20,10 +28,10 @@ export class OpenAPIEventsController {
   @ApiOperation({ summary: 'List events' })
   async listEvents(
     @EnvironmentDecorator() environment: Environment,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
   ) {
     this.logger.log(`Listing events for environment ${environment.id}`);
-    return this.eventsService.listEvents(environment.projectId, cursor, limit);
+    return this.eventsService.listEvents(environment.projectId, limit, cursor);
   }
 }
