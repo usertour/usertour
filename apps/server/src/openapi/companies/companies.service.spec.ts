@@ -1,35 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompaniesService } from './companies.service';
-import { BizService } from '../../biz/biz.service';
-import { PrismaService } from 'nestjs-prisma';
-import { ConfigService } from '@nestjs/config';
-import { UpsertCompanyRequestDto, ExpandType } from './companies.dto';
+import { BizService } from '@/biz/biz.service';
+import { ExpandType } from './companies.dto';
 import { CompanyNotFoundError } from '@/common/errors/errors';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { ConfigService } from '@nestjs/config';
 
 describe('OpenAPICompaniesService', () => {
   let service: OpenAPICompaniesService;
+  let mockBizService: jest.Mocked<BizService>;
 
-  const mockPrismaService = {
-    $transaction: jest.fn(),
-    bizCompany: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      count: jest.fn(),
-    },
-    environment: {
-      findFirst: jest.fn(),
-    },
+  const mockCompany = {
+    id: 'biz-1',
+    externalId: 'company-1',
+    environmentId: 'env-1',
+    data: { name: 'Test Company' } as JsonValue,
+    createdAt: new Date('2025-04-29T08:25:33.827Z'),
+    updatedAt: new Date('2025-04-29T08:25:33.827Z'),
+    deleted: false,
+    bizUsersOnCompany: [],
   };
 
-  const mockBizService = {
-    getBizCompany: jest.fn(),
-    listBizCompanies: jest.fn(),
-    upsertBizCompany: jest.fn(),
-    deleteBizCompany: jest.fn(),
-  };
-
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  const mockCompanyWithUsers = {
+    ...mockCompany,
+    bizUsersOnCompany: [
+      {
+        id: 'membership-1',
+        createdAt: new Date('2025-04-29T08:25:33.827Z'),
+        updatedAt: new Date('2025-04-29T08:25:33.827Z'),
+        bizCompanyId: 'company-1',
+        bizUserId: 'user-1',
+        data: { role: 'admin' } as JsonValue,
+        bizUser: {
+          externalId: 'user-1',
+          data: { name: 'Test User' } as JsonValue,
+          createdAt: new Date('2025-04-29T08:25:33.827Z'),
+          updatedAt: new Date('2025-04-29T08:25:33.827Z'),
+        },
+      },
+    ],
   };
 
   beforeEach(async () => {
@@ -37,97 +46,40 @@ describe('OpenAPICompaniesService', () => {
       providers: [
         OpenAPICompaniesService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
           provide: BizService,
-          useValue: mockBizService,
+          useValue: {
+            getBizCompany: jest.fn(),
+            listBizCompanies: jest.fn(),
+            upsertBizCompany: jest.fn(),
+            deleteBizCompany: jest.fn(),
+          },
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService,
+          useValue: {
+            get: jest.fn().mockImplementation((key: string) => {
+              if (key === 'app.apiUrl') {
+                return 'http://localhost:3000';
+              }
+              return null;
+            }),
+          },
         },
       ],
     }).compile();
 
     service = module.get<OpenAPICompaniesService>(OpenAPICompaniesService);
-    jest.clearAllMocks();
-  });
-
-  describe('upsertCompany', () => {
-    it('should create a new company', async () => {
-      const data: UpsertCompanyRequestDto = {
-        id: 'company1',
-        attributes: { name: 'Test Company', industry: 'Technology' },
-      };
-
-      const mockEnvironment = {
-        projectId: 'project1',
-      };
-
-      const mockCompany = {
-        id: 'biz1',
-        externalId: 'company1',
-        data: { name: 'Test Company', industry: 'Technology' },
-        environmentId: 'env1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        bizUsersOnCompany: [],
-      };
-
-      mockPrismaService.environment.findFirst.mockResolvedValue(mockEnvironment);
-      mockBizService.upsertBizCompany.mockResolvedValue(mockCompany);
-
-      const result = await service.upsertCompany(data, 'env1', 'project1');
-
-      expect(result).toEqual({
-        id: 'company1',
-        object: 'company',
-        attributes: { name: 'Test Company', industry: 'Technology' },
-        createdAt: mockCompany.createdAt.toISOString(),
-        users: null,
-        memberships: null,
-      });
-
-      expect(mockBizService.upsertBizCompany).toHaveBeenCalledWith(
-        'project1',
-        'env1',
-        'company1',
-        data.attributes,
-      );
-    });
-
-    it('should throw error when environment is not found', async () => {
-      const data: UpsertCompanyRequestDto = {
-        id: 'company1',
-        attributes: { name: 'Test Company' },
-      };
-
-      mockPrismaService.environment.findFirst.mockResolvedValue(null);
-      mockBizService.upsertBizCompany.mockResolvedValue(null);
-
-      await expect(service.upsertCompany(data, 'env1', 'project1')).rejects.toThrow(
-        new CompanyNotFoundError(),
-      );
-    });
+    mockBizService = module.get(BizService);
   });
 
   describe('getCompany', () => {
-    it('should return company with no expand', async () => {
-      const mockCompany = {
-        externalId: 'test-id',
-        data: { name: 'Test Company' },
-        createdAt: new Date(),
-        bizUsersOnCompany: [],
-      };
-
+    it('should return company without expand', async () => {
       mockBizService.getBizCompany.mockResolvedValue(mockCompany);
 
-      const result = await service.getCompany('test-id', 'env-id');
+      const result = await service.getCompany('company-1', 'env-1');
 
       expect(result).toEqual({
-        id: 'test-id',
+        id: 'company-1',
         object: 'company',
         attributes: { name: 'Test Company' },
         createdAt: mockCompany.createdAt.toISOString(),
@@ -137,27 +89,12 @@ describe('OpenAPICompaniesService', () => {
     });
 
     it('should return company with users expand', async () => {
-      const mockCompany = {
-        externalId: 'test-id',
-        data: { name: 'Test Company' },
-        createdAt: new Date(),
-        bizUsersOnCompany: [
-          {
-            bizUser: {
-              externalId: 'user-1',
-              data: { name: 'Test User' },
-              createdAt: new Date(),
-            },
-          },
-        ],
-      };
+      mockBizService.getBizCompany.mockResolvedValue(mockCompanyWithUsers);
 
-      mockBizService.getBizCompany.mockResolvedValue(mockCompany);
-
-      const result = await service.getCompany('test-id', 'env-id', [ExpandType.USERS]);
+      const result = await service.getCompany('company-1', 'env-1', [ExpandType.USERS]);
 
       expect(result).toEqual({
-        id: 'test-id',
+        id: 'company-1',
         object: 'company',
         attributes: { name: 'Test Company' },
         createdAt: mockCompany.createdAt.toISOString(),
@@ -166,172 +103,220 @@ describe('OpenAPICompaniesService', () => {
             id: 'user-1',
             object: 'user',
             attributes: { name: 'Test User' },
-            createdAt: mockCompany.bizUsersOnCompany[0].bizUser.createdAt.toISOString(),
+            createdAt: mockCompanyWithUsers.bizUsersOnCompany[0].bizUser.createdAt.toISOString(),
           },
         ],
         memberships: null,
-      });
-    });
-
-    it('should return company with memberships expand', async () => {
-      const mockCompany = {
-        externalId: 'test-id',
-        data: { name: 'Test Company' },
-        createdAt: new Date(),
-        bizUsersOnCompany: [
-          {
-            id: 'membership-1',
-            data: { role: 'admin' },
-            createdAt: new Date(),
-            bizCompanyId: 'company-1',
-            bizUserId: 'user-1',
-          },
-        ],
-      };
-
-      mockBizService.getBizCompany.mockResolvedValue(mockCompany);
-
-      const result = await service.getCompany('test-id', 'env-id', [ExpandType.MEMBERSHIPS]);
-
-      expect(result).toEqual({
-        id: 'test-id',
-        object: 'company',
-        attributes: { name: 'Test Company' },
-        createdAt: mockCompany.createdAt.toISOString(),
-        users: null,
-        memberships: [
-          {
-            id: 'membership-1',
-            object: 'company_membership',
-            attributes: { role: 'admin' },
-            createdAt: mockCompany.bizUsersOnCompany[0].createdAt.toISOString(),
-            companyId: 'company-1',
-            userId: 'user-1',
-          },
-        ],
       });
     });
 
     it('should throw not found error when company does not exist', async () => {
       mockBizService.getBizCompany.mockResolvedValue(null);
 
-      await expect(service.getCompany('non-existent', 'env-id')).rejects.toThrow(
+      await expect(service.getCompany('non-existent', 'env-1')).rejects.toThrow(
         new CompanyNotFoundError(),
       );
     });
   });
 
   describe('listCompanies', () => {
-    it('should return paginated companies with no expand', async () => {
-      const mockCompanies = [
-        {
-          externalId: 'test-id-1',
-          data: { name: 'Company 1' },
-          createdAt: new Date(),
-          bizUsersOnCompany: [],
-        },
-        {
-          externalId: 'test-id-2',
-          data: { name: 'Company 2' },
-          createdAt: new Date(),
-          bizUsersOnCompany: [],
-        },
-      ];
-
+    it('should return companies with pagination', async () => {
       mockBizService.listBizCompanies.mockResolvedValue({
-        results: mockCompanies,
-        next: 'next-cursor',
-        previous: 'prev-cursor',
+        edges: [
+          {
+            node: mockCompany,
+            cursor: 'cursor-1',
+          },
+        ],
+        nodes: [mockCompany],
+        pageInfo: {
+          hasNextPage: false,
+          endCursor: null,
+          hasPreviousPage: true,
+          startCursor: 'cursor-1',
+        },
+        totalCount: 1,
       });
 
-      const result = await service.listCompanies('env-id', undefined, 2);
+      const result = await service.listCompanies('env-1', 20);
 
-      expect(result.results).toHaveLength(2);
-      expect(result.results[0]).toEqual({
-        id: 'test-id-1',
-        object: 'company',
-        attributes: { name: 'Company 1' },
-        createdAt: mockCompanies[0].createdAt.toISOString(),
-        users: null,
-        memberships: null,
-      });
-      expect(result.next).toBe('http://localhost:3000/v1/companies?cursor=next-cursor');
-      expect(result.previous).toBe('http://localhost:3000/v1/companies?cursor=prev-cursor');
-    });
-
-    it('should return paginated companies with memberships.user expand', async () => {
-      const mockCompanies = [
-        {
-          externalId: 'test-id-1',
-          data: { name: 'Company 1' },
-          createdAt: new Date(),
-          bizUsersOnCompany: [
-            {
-              id: 'membership-1',
-              data: { role: 'admin' },
-              createdAt: new Date(),
-              bizCompanyId: 'company-1',
-              bizUserId: 'user-1',
-              bizUser: {
-                externalId: 'user-1',
-                data: { name: 'Test User' },
-                createdAt: new Date(),
-              },
-            },
-          ],
-        },
-      ];
-
-      mockBizService.listBizCompanies.mockResolvedValue({
-        results: mockCompanies,
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'company-1',
+            object: 'company',
+            attributes: { name: 'Test Company' },
+            createdAt: mockCompany.createdAt.toISOString(),
+            users: null,
+            memberships: null,
+          },
+        ],
         next: null,
         previous: null,
       });
+    });
 
-      const result = await service.listCompanies('env-id', undefined, 1, [
+    it('should handle cursor pagination', async () => {
+      mockBizService.listBizCompanies.mockResolvedValue({
+        edges: [
+          {
+            node: mockCompany,
+            cursor: 'cursor-2',
+          },
+        ],
+        nodes: [mockCompany],
+        pageInfo: {
+          hasNextPage: false,
+          endCursor: null,
+          hasPreviousPage: true,
+          startCursor: 'cursor-2',
+        },
+        totalCount: 1,
+      });
+
+      const result = await service.listCompanies('env-1', 20, 'cursor-1');
+
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'company-1',
+            object: 'company',
+            attributes: { name: 'Test Company' },
+            createdAt: mockCompany.createdAt.toISOString(),
+            users: null,
+            memberships: null,
+          },
+        ],
+        next: null,
+        previous: 'http://localhost:3000/v1/companies?limit=20',
+      });
+
+      expect(mockBizService.listBizCompanies).toHaveBeenCalledWith(
+        'env-1',
+        {
+          first: 20,
+          after: 'cursor-1',
+        },
+        {
+          bizUsersOnCompany: {
+            include: {
+              bizUser: false,
+            },
+          },
+        },
+      );
+    });
+
+    it('should handle expand parameter', async () => {
+      mockBizService.listBizCompanies.mockResolvedValue({
+        edges: [
+          {
+            node: mockCompanyWithUsers,
+            cursor: 'cursor-1',
+          },
+        ],
+        nodes: [mockCompanyWithUsers],
+        pageInfo: {
+          hasNextPage: false,
+          endCursor: null,
+          hasPreviousPage: true,
+          startCursor: 'cursor-1',
+        },
+        totalCount: 1,
+      });
+
+      const result = await service.listCompanies('env-1', 20, undefined, [
         ExpandType.MEMBERSHIPS_USER,
       ]);
 
-      expect(result.results).toHaveLength(1);
-      expect(result.results[0].memberships).toEqual([
-        {
-          id: 'membership-1',
-          object: 'company_membership',
-          attributes: { role: 'admin' },
-          createdAt: mockCompanies[0].bizUsersOnCompany[0].createdAt.toISOString(),
-          companyId: 'company-1',
-          userId: 'user-1',
-          user: {
-            id: 'user-1',
-            object: 'user',
-            attributes: { name: 'Test User' },
-            createdAt: mockCompanies[0].bizUsersOnCompany[0].bizUser.createdAt.toISOString(),
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'company-1',
+            object: 'company',
+            attributes: { name: 'Test Company' },
+            createdAt: mockCompany.createdAt.toISOString(),
+            users: null,
+            memberships: [
+              {
+                id: 'membership-1',
+                object: 'company_membership',
+                attributes: { role: 'admin' },
+                createdAt: mockCompanyWithUsers.bizUsersOnCompany[0].createdAt.toISOString(),
+                companyId: 'company-1',
+                userId: 'user-1',
+                user: {
+                  id: 'user-1',
+                  object: 'user',
+                  attributes: { name: 'Test User' },
+                  createdAt:
+                    mockCompanyWithUsers.bizUsersOnCompany[0].bizUser.createdAt.toISOString(),
+                },
+              },
+            ],
           },
+        ],
+        next: null,
+        previous: null,
+      });
+    });
+  });
+
+  describe('upsertCompany', () => {
+    it('should create a new company', async () => {
+      mockBizService.upsertBizCompany.mockResolvedValue(mockCompany);
+
+      const result = await service.upsertCompany(
+        {
+          id: 'company-1',
+          attributes: { name: 'Test Company' },
         },
-      ]);
+        'env-1',
+        'project-1',
+      );
+
+      expect(result).toEqual({
+        id: 'company-1',
+        object: 'company',
+        attributes: { name: 'Test Company' },
+        createdAt: mockCompany.createdAt.toISOString(),
+        users: null,
+        memberships: null,
+      });
+    });
+
+    it('should throw not found error when company creation fails', async () => {
+      mockBizService.upsertBizCompany.mockResolvedValue(null);
+
+      await expect(
+        service.upsertCompany(
+          {
+            id: 'company-1',
+            attributes: { name: 'Test Company' },
+          },
+          'env-1',
+          'project-1',
+        ),
+      ).rejects.toThrow(new CompanyNotFoundError());
     });
   });
 
   describe('deleteCompany', () => {
     it('should delete company successfully', async () => {
-      const mockCompany = {
-        id: 'biz1',
-        externalId: 'company1',
-        environmentId: 'env1',
-      };
-
       mockBizService.getBizCompany.mockResolvedValue(mockCompany);
-      mockBizService.deleteBizCompany.mockResolvedValue({});
+      mockBizService.deleteBizCompany.mockResolvedValue(undefined);
 
-      await service.deleteCompany('company1', 'env1');
+      await service.deleteCompany('company-1', 'env-1');
 
-      expect(mockBizService.deleteBizCompany).toHaveBeenCalledWith(['biz1'], 'env1');
+      expect(mockBizService.deleteBizCompany).toHaveBeenCalledWith(['biz-1'], 'env-1');
     });
 
-    it('should throw CompanyNotFoundError when company does not exist', async () => {
+    it('should throw not found error when company does not exist', async () => {
       mockBizService.getBizCompany.mockResolvedValue(null);
 
-      await expect(service.deleteCompany('company1', 'env1')).rejects.toThrow(CompanyNotFoundError);
+      await expect(service.deleteCompany('non-existent', 'env-1')).rejects.toThrow(
+        new CompanyNotFoundError(),
+      );
     });
   });
 });

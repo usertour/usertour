@@ -9,6 +9,7 @@ import {
   UseGuards,
   Delete,
   Post,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -51,18 +52,22 @@ export class OpenAPICompaniesController {
 
   @Get()
   @ApiOperation({ summary: 'List companies' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+  })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
   async listCompanies(
     @Request() req,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit = 20,
     @Query('expand') expand?: string,
   ): Promise<ListCompaniesResponseDto> {
     const expandTypes = expand ? (expand.split(',') as ExpandType[]) : undefined;
-    return await this.companyService.listCompanies(req.environment.id, cursor, limit, expandTypes);
+    return await this.companyService.listCompanies(req.environment.id, limit, cursor, expandTypes);
   }
 
   @Post()

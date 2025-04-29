@@ -5,6 +5,7 @@ import { BizService } from '@/biz/biz.service';
 import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
 import { CompanyNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
+import { paginate, PaginationConnection } from '@/common/openapi/pagination';
 
 @Injectable()
 export class OpenAPICompaniesService {
@@ -25,24 +26,37 @@ export class OpenAPICompaniesService {
 
   async listCompanies(
     environmentId: string,
-    cursor?: string,
     limit = 20,
-    expand?: ExpandTypes,
+    cursor?: string,
+    expand?: ExpandType[],
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
-    const { results, next, previous } = await this.bizService.listBizCompanies(
+    const apiUrl = this.configService.get<string>('app.apiUrl');
+
+    return paginate(
+      apiUrl,
+      'companies',
       environmentId,
       cursor,
       limit,
-      expand,
+      async (params) => {
+        const result = await this.bizService.listBizCompanies(
+          environmentId,
+          {
+            first: params.first,
+            after: params.after,
+          },
+          {
+            bizUsersOnCompany: {
+              include: {
+                bizUser: expand?.includes(ExpandType.MEMBERSHIPS_USER) ?? false,
+              },
+            },
+          },
+        );
+        return result as unknown as PaginationConnection<(typeof result.nodes)[0]>;
+      },
+      (node) => this.mapBizCompanyToCompany(node, expand),
     );
-
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-
-    return {
-      results: results.map((bizCompany) => this.mapBizCompanyToCompany(bizCompany, expand)),
-      next: next ? `${apiUrl}/v1/companies?cursor=${next}` : null,
-      previous: previous ? `${apiUrl}/v1/companies?cursor=${previous}` : null,
-    };
   }
 
   private mapBizCompanyToCompany(bizCompany: any, expand?: ExpandTypes): Company {

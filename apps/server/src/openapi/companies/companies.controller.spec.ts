@@ -160,15 +160,22 @@ describe('OpenAPICompaniesController', () => {
       ];
 
       mockBizService.listBizCompanies.mockResolvedValue({
-        results: mockBizCompanies,
-        next: 'next-cursor',
-        previous: 'prev-cursor',
+        edges: mockBizCompanies.map((company) => ({
+          node: company,
+          cursor: 'cursor-1',
+        })),
+        pageInfo: {
+          hasNextPage: false,
+          endCursor: null,
+          hasPreviousPage: false,
+          startCursor: null,
+        },
       });
 
       const result = await controller.listCompanies(
         { environment: { id: 'env-1' } },
         undefined,
-        20,
+        '20',
       );
 
       expect(result.results).toEqual([
@@ -181,8 +188,8 @@ describe('OpenAPICompaniesController', () => {
           memberships: null,
         },
       ]);
-      expect(result.next).toBe('http://localhost:3000/v1/companies?cursor=next-cursor');
-      expect(result.previous).toBe('http://localhost:3000/v1/companies?cursor=prev-cursor');
+      expect(result.next).toBe(null);
+      expect(result.previous).toBe('http://localhost:3000/v1/companies?limit=20');
     });
 
     it('should return paginated companies with expand and cursor', async () => {
@@ -209,15 +216,24 @@ describe('OpenAPICompaniesController', () => {
       ];
 
       mockBizService.listBizCompanies.mockResolvedValue({
-        results: mockBizCompanies,
-        next: null,
-        previous: null,
+        edges: mockBizCompanies.map((company) => ({
+          node: company,
+          cursor: 'cursor-1',
+        })),
+        pageInfo: {
+          hasNextPage: false,
+          endCursor: null,
+          hasPreviousPage: false,
+          startCursor: null,
+        },
+        nodes: mockBizCompanies,
+        totalCount: 1,
       });
 
       const result = await controller.listCompanies(
         { environment: { id: 'env-1' } },
-        'current-cursor',
         10,
+        'current-cursor',
         'memberships.user',
       );
 

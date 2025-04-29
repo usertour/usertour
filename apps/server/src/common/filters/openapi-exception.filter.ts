@@ -51,6 +51,10 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
       message = 'An unexpected error occurred';
     }
 
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(exception);
+    }
+
     // Log error
     this.logger.warn(
       `Request: ${request.method} ${request.url} OpenAPI error: ${message}, ` +
