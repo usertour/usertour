@@ -5,7 +5,7 @@ import { OpenAPIAttributesService } from './attributes.service';
 import { ListAttributesDto } from './attributes.dto';
 import { OpenapiGuard } from '@/openapi/openapi.guard';
 import { OpenAPIExceptionFilter } from '@/openapi/filters/openapi-exception.filter';
-import { EnvironmentDecorator } from '@/openapi/decorators/environment.decorator';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 
 @ApiTags('Attributes')
 @Controller('v1/attributes')

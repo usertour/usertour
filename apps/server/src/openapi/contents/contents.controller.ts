@@ -18,7 +18,7 @@ import {
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
-import { EnvironmentId } from '../decorators/environment-id.decorator';
+import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { ExpandType } from './contents.dto';
 import { OpenapiGuard } from '../openapi.guard';
 

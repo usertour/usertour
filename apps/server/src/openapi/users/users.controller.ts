@@ -14,7 +14,7 @@ import { OpenAPIUsersService } from './users.service';
 import { UpsertUserRequestDto, ExpandTypes } from './users.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
-import { EnvironmentId } from '../decorators/environment-id.decorator';
+import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Users')
 @Controller('v1/users')

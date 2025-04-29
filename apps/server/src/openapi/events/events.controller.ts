@@ -2,7 +2,7 @@ import { Controller, Get, Query, Logger, UseGuards, UseFilters } from '@nestjs/c
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIEventsService } from './events.service';
 import { Environment } from '@/environments/models/environment.model';
-import { EnvironmentDecorator } from '../decorators/environment.decorator';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 

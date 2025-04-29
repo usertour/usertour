@@ -4,7 +4,7 @@ import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
 import { OpenAPICompanyMembershipService } from './company_memberships.service';
 import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
-import { EnvironmentId } from '../decorators/environment-id.decorator';
+import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Company Memberships')
 @Controller('v1/company_memberships')

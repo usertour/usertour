@@ -13,7 +13,7 @@ import { OpenAPIContentSessionService } from './sessions.service';
 import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './sessions.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
-import { EnvironmentId } from '../decorators/environment-id.decorator';
+import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Content Session')
 @Controller('v1/content-sessions')

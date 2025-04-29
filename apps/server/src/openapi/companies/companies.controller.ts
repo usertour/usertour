@@ -23,7 +23,7 @@ import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from '.
 import { OpenapiGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
-import { EnvironmentDecorator } from '../decorators/environment.decorator';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 
 @ApiTags('Companies')
