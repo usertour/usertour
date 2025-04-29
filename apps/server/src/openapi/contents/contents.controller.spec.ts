@@ -3,9 +3,11 @@ import { OpenAPIContentsController } from './contents.controller';
 import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { ExpandType } from './contents.dto';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
+import {
+  ContentNotFoundError,
+  InvalidLimitError,
+  InvalidCursorError,
+} from '@/common/errors/errors';
 import { OpenapiGuard } from '../openapi.guard';
 import { ConfigService } from '@nestjs/config';
 import { ContentsService } from '@/contents/contents.service';
@@ -117,20 +119,10 @@ describe('OpenAPIContentsController', () => {
     });
 
     it('should throw error when content not found', async () => {
-      mockContentService.getContent.mockRejectedValue(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.CONTENT.NOT_FOUND.code,
-        ),
-      );
+      mockContentService.getContent.mockRejectedValue(new ContentNotFoundError());
 
       await expect(controller.getContent('non-existent', 'env-id')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.CONTENT.NOT_FOUND.code,
-        ),
+        new ContentNotFoundError(),
       );
     });
   });
@@ -205,20 +197,10 @@ describe('OpenAPIContentsController', () => {
     });
 
     it('should throw error when invalid limit', async () => {
-      mockContentService.listContents.mockRejectedValue(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-        ),
-      );
+      mockContentService.listContents.mockRejectedValue(new InvalidLimitError());
 
       await expect(controller.listContents('env-id', -1, undefined)).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
       );
     });
   });
@@ -243,20 +225,10 @@ describe('OpenAPIContentsController', () => {
     });
 
     it('should throw error when version not found', async () => {
-      mockContentService.getContentVersion.mockRejectedValue(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.CONTENT.NOT_FOUND.code,
-        ),
-      );
+      mockContentService.getContentVersion.mockRejectedValue(new ContentNotFoundError());
 
       await expect(controller.getContentVersion('non-existent', 'env-id')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.CONTENT.NOT_FOUND.code,
-        ),
+        new ContentNotFoundError(),
       );
     });
   });
@@ -287,20 +259,18 @@ describe('OpenAPIContentsController', () => {
     });
 
     it('should throw error when invalid limit', async () => {
-      mockContentService.listContentVersions.mockRejectedValue(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-        ),
-      );
+      mockContentService.listContentVersions.mockRejectedValue(new InvalidLimitError());
 
       await expect(controller.listContentVersions('env-id', -1, undefined)).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
+      );
+    });
+
+    it('should throw error when invalid cursor', async () => {
+      mockContentService.listContentVersions.mockRejectedValue(new InvalidCursorError());
+
+      await expect(controller.listContentVersions('env-id', 10, 'invalid-cursor')).rejects.toThrow(
+        new InvalidCursorError(),
       );
     });
   });

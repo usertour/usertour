@@ -6,17 +6,10 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIErrors } from '../../openapi/constants/errors';
-
-interface OpenAPIErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    doc_url?: string;
-  };
-}
+import { ERROR_STATUS_MAP, STATUS_ERROR_MAP } from '../errors/errors';
+import { BaseError } from '../errors/base';
 
 @Catch()
 export class OpenAPIExceptionFilter implements ExceptionFilter {
@@ -30,83 +23,54 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<Request>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let errorCode = OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.code;
-    let message: string = OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.message;
+    let status: HttpStatus;
+    let errorCode: string;
+    let message: string;
 
+    // Handle HttpException
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const errorResponse = exception.getResponse() as any;
-
-      if (typeof errorResponse === 'string') {
-        message = errorResponse;
-      } else if (errorResponse?.message) {
-        message = Array.isArray(errorResponse.message)
-          ? errorResponse.message[0]
-          : errorResponse.message;
-      }
-
-      // Map common HTTP status codes to error codes
-      switch (status) {
-        case HttpStatus.BAD_REQUEST:
-          errorCode = OpenAPIErrors.COMMON.INVALID_REQUEST.code;
-          break;
-        case HttpStatus.UNAUTHORIZED:
-          errorCode = OpenAPIErrors.AUTH.INVALID_API_KEY.code;
-          break;
-        case HttpStatus.FORBIDDEN:
-          errorCode = OpenAPIErrors.COMMON.FORBIDDEN.code;
-          break;
-        case HttpStatus.NOT_FOUND:
-          errorCode = OpenAPIErrors.COMMON.NOT_FOUND.code;
-          break;
-        case HttpStatus.METHOD_NOT_ALLOWED:
-          errorCode = OpenAPIErrors.COMMON.METHOD_NOT_ALLOWED.code;
-          break;
-        case HttpStatus.NOT_ACCEPTABLE:
-          errorCode = OpenAPIErrors.COMMON.NOT_ACCEPTABLE.code;
-          break;
-        case HttpStatus.UNSUPPORTED_MEDIA_TYPE:
-          errorCode = OpenAPIErrors.COMMON.UNSUPPORTED_MEDIA_TYPE.code;
-          break;
-        case HttpStatus.TOO_MANY_REQUESTS:
-          errorCode = OpenAPIErrors.COMMON.RATE_LIMIT_EXCEEDED.code;
-          break;
-        case HttpStatus.SERVICE_UNAVAILABLE:
-          errorCode = OpenAPIErrors.COMMON.SERVICE_UNAVAILABLE.code;
-          break;
-      }
+      message =
+        typeof errorResponse === 'string'
+          ? errorResponse
+          : errorResponse?.message || 'An error occurred';
+      errorCode = STATUS_ERROR_MAP[status] || 'internal_server_error';
+    }
+    // Handle BaseError
+    else if (exception instanceof BaseError) {
+      status = ERROR_STATUS_MAP[exception.code] || HttpStatus.INTERNAL_SERVER_ERROR;
+      errorCode = exception.code;
+      message = this.getErrorMessage(exception, request);
+    }
+    // Handle other errors
+    else {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      errorCode = 'internal_server_error';
+      message = 'An unexpected error occurred';
     }
 
-    // Log the error with request context
-    this.logger.error({
-      err: exception,
-      msg: 'OpenAPI error occurred',
-      context: this.constructor.name,
-      request: {
-        method: request.method,
-        url: request.url,
-        params: request.params,
-        query: request.query,
-        body: request.body,
-      },
-      response: {
-        status,
-        errorCode,
-        message,
-      },
-    });
+    // Log error
+    this.logger.warn(
+      `Request: ${request.method} ${request.url} OpenAPI error: ${message}, ` +
+        `code: ${errorCode}, status: ${status}`,
+    );
 
-    const errorResponse: OpenAPIErrorResponse = {
+    // Return unified OpenAPI error response
+    return response.status(status).json({
       error: {
         code: errorCode,
         message,
         doc_url: this.docUrl,
       },
-    };
+    });
+  }
 
-    response.status(status).json(errorResponse);
+  // Get error message with language support
+  private getErrorMessage(error: BaseError, request: Request): string {
+    const acceptLanguage = request.headers['accept-language'];
+    return error.getMessage(acceptLanguage);
   }
 }

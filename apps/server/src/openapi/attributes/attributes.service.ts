@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
 import { ListAttributesDto } from './attributes.dto';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
-import { HttpStatus } from '@nestjs/common';
+import { InvalidLimitError } from '@/common/errors/errors';
 
 @Injectable()
 export class OpenAPIAttributesService {
@@ -15,11 +13,7 @@ export class OpenAPIAttributesService {
     const pageSize = Number(limit) || 20;
 
     if (Number.isNaN(pageSize) || pageSize < 1) {
-      throw new OpenAPIException(
-        OpenAPIErrors.USER.INVALID_LIMIT.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.USER.INVALID_LIMIT.code,
-      );
+      throw new InvalidLimitError();
     }
 
     return this.attributesService.listWithPagination(projectId, cursor, limit);

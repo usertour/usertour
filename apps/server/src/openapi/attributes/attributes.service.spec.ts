@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIAttributesService } from './attributes.service';
 import { AttributesService } from '@/attributes/attributes.service';
 import { AttributeDataTypeNames, AttributeBizTypeNames } from '@/attributes/models/attribute.model';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
-import { HttpStatus } from '@nestjs/common';
+import { InvalidLimitError } from '@/common/errors/errors';
 
 describe('OpenAPIAttributesService', () => {
   let service: OpenAPIAttributesService;
@@ -68,11 +66,7 @@ describe('OpenAPIAttributesService', () => {
       const invalidLimit = -1;
 
       await expect(service.listAttributes(projectId, { limit: invalidLimit })).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.USER.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.USER.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
       );
     });
 

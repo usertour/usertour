@@ -3,11 +3,8 @@ import { OpenAPICompaniesService } from './companies.service';
 import { BizService } from '../../biz/biz.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
 import { UpsertCompanyRequestDto, ExpandType } from './companies.dto';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { ParamsError } from '@/common/errors';
+import { CompanyNotFoundError } from '@/common/errors/errors';
 
 describe('OpenAPICompaniesService', () => {
   let service: OpenAPICompaniesService;
@@ -111,11 +108,7 @@ describe('OpenAPICompaniesService', () => {
       mockBizService.upsertBizCompany.mockResolvedValue(null);
 
       await expect(service.upsertCompany(data, 'env1', 'project1')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.message,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.code,
-        ),
+        new CompanyNotFoundError(),
       );
     });
   });
@@ -220,14 +213,10 @@ describe('OpenAPICompaniesService', () => {
     });
 
     it('should throw not found error when company does not exist', async () => {
-      mockBizService.getBizCompany.mockRejectedValue(new ParamsError('Company not found'));
+      mockBizService.getBizCompany.mockResolvedValue(null);
 
       await expect(service.getCompany('non-existent', 'env-id')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.COMPANY.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.COMPANY.NOT_FOUND.code,
-        ),
+        new CompanyNotFoundError(),
       );
     });
   });
@@ -339,16 +328,10 @@ describe('OpenAPICompaniesService', () => {
       expect(mockBizService.deleteBizCompany).toHaveBeenCalledWith(['biz1'], 'env1');
     });
 
-    it('should throw error when company not found', async () => {
-      mockBizService.getBizCompany.mockRejectedValue(new ParamsError('Company not found'));
+    it('should throw CompanyNotFoundError when company does not exist', async () => {
+      mockBizService.getBizCompany.mockResolvedValue(null);
 
-      await expect(service.deleteCompany('non-existent', 'env1')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.COMPANY.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.COMPANY.NOT_FOUND.code,
-        ),
-      );
+      await expect(service.deleteCompany('company1', 'env1')).rejects.toThrow(CompanyNotFoundError);
     });
   });
 });

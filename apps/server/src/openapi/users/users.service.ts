@@ -1,9 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
+import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
 import { UpsertUserRequestDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
@@ -21,11 +19,7 @@ export class OpenAPIUsersService {
     const bizUser = await this.bizService.getBizUser(id, environmentId, { companies: true });
 
     if (!bizUser) {
-      throw new OpenAPIException(
-        OpenAPIErrors.USER.NOT_FOUND.message,
-        HttpStatus.NOT_FOUND,
-        OpenAPIErrors.USER.NOT_FOUND.code,
-      );
+      throw new UserNotFoundError();
     }
 
     return this.mapBizUserToUser(bizUser, expand);
@@ -40,11 +34,7 @@ export class OpenAPIUsersService {
     // Validate limit
     const pageSize = Number(limit) || 20;
     if (Number.isNaN(pageSize) || pageSize < 1) {
-      throw new OpenAPIException(
-        OpenAPIErrors.USER.INVALID_LIMIT.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.USER.INVALID_LIMIT.code,
-      );
+      throw new InvalidLimitError();
     }
 
     this.logger.debug(
@@ -108,11 +98,7 @@ export class OpenAPIUsersService {
     const id = data.id;
     // Validate that only one of companies or memberships is set
     if (data.companies && data.memberships) {
-      throw new OpenAPIException(
-        OpenAPIErrors.USER.INVALID_REQUEST.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.USER.INVALID_REQUEST.code,
-      );
+      throw new InvalidRequestError();
     }
 
     const user = await this.bizService.upsertUser(id, data, environmentId);

@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIContentsService } from './contents.service';
 import { ConfigService } from '@nestjs/config';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { ExpandType } from './contents.dto';
 import { ContentsService } from '@/contents/contents.service';
+import {
+  ContentNotFoundError,
+  InvalidLimitError,
+  InvalidCursorError,
+} from '@/common/errors/errors';
 
 describe('OpenAPIContentsService', () => {
   let service: OpenAPIContentsService;
@@ -136,11 +138,7 @@ describe('OpenAPIContentsService', () => {
       mockContentsService.getContentWithRelations.mockResolvedValue(null);
 
       await expect(service.getContent('non-existent', 'env-id')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.CONTENT.NOT_FOUND.code,
-        ),
+        new ContentNotFoundError(),
       );
     });
   });
@@ -200,11 +198,7 @@ describe('OpenAPIContentsService', () => {
 
     it('should throw error when invalid limit', async () => {
       await expect(service.listContents('env-id', undefined, -1)).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
       );
     });
   });
@@ -245,11 +239,7 @@ describe('OpenAPIContentsService', () => {
       mockContentsService.getContentVersionWithRelations.mockResolvedValue(null);
 
       await expect(service.getContentVersion('non-existent', 'env-id')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.CONTENT.NOT_FOUND.code,
-        ),
+        new ContentNotFoundError(),
       );
     });
   });
@@ -303,11 +293,18 @@ describe('OpenAPIContentsService', () => {
 
     it('should throw error when invalid limit', async () => {
       await expect(service.listContentVersions('env-id', undefined, -1)).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
+      );
+    });
+
+    it('should throw error when invalid cursor', async () => {
+      mockContentsService.listContentVersionsWithRelations.mockResolvedValue({
+        edges: [],
+        pageInfo: { hasNextPage: false, endCursor: null },
+      });
+
+      await expect(service.listContentVersions('env-id', 'invalid-cursor', 10)).rejects.toThrow(
+        new InvalidCursorError(),
       );
     });
   });

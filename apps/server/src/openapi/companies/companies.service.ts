@@ -1,10 +1,9 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Company } from '../models/company.model';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
 import { BizService } from '@/biz/biz.service';
 import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
+import { CompanyNotFoundError } from '@/common/errors/errors';
 
 @Injectable()
 export class OpenAPICompaniesService {
@@ -17,6 +16,9 @@ export class OpenAPICompaniesService {
 
   async getCompany(id: string, environmentId: string, expand?: ExpandTypes): Promise<Company> {
     const bizCompany = await this.bizService.getBizCompany(id, environmentId, expand);
+    if (!bizCompany) {
+      throw new CompanyNotFoundError();
+    }
     return this.mapBizCompanyToCompany(bizCompany, expand);
   }
 
@@ -96,11 +98,7 @@ export class OpenAPICompaniesService {
     );
 
     if (!company) {
-      throw new OpenAPIException(
-        OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.message,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        OpenAPIErrors.COMMON.INTERNAL_SERVER_ERROR.code,
-      );
+      throw new CompanyNotFoundError();
     }
 
     // Map the company to the response format
@@ -109,6 +107,9 @@ export class OpenAPICompaniesService {
 
   async deleteCompany(id: string, environmentId: string): Promise<void> {
     const bizCompany = await this.bizService.getBizCompany(id, environmentId);
+    if (!bizCompany) {
+      throw new CompanyNotFoundError();
+    }
     await this.bizService.deleteBizCompany([bizCompany.id], environmentId);
   }
 }

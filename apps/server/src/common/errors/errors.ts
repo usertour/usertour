@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common';
 import { BaseError } from './base';
 
 export class UnknownError extends BaseError {
@@ -128,6 +129,126 @@ export class ContentNotPublishedError extends BaseError {
   };
 }
 
+export class InvalidApiKeyError extends BaseError {
+  code = 'E1000';
+  messageDict = {
+    en: 'Invalid API key provided',
+    'zh-CN': '提供的 API 密钥无效',
+  };
+}
+
+export class UserNotFoundError extends BaseError {
+  code = 'E1001';
+  messageDict = {
+    en: 'User not found',
+    'zh-CN': '用户未找到',
+  };
+}
+
+export class CompanyNotFoundError extends BaseError {
+  code = 'E1002';
+  messageDict = {
+    en: 'Company not found',
+    'zh-CN': '公司未找到',
+  };
+}
+
+export class CompanyMembershipNotFoundError extends BaseError {
+  code = 'E1003';
+  messageDict = {
+    en: 'Company membership not found',
+    'zh-CN': '公司成员关系未找到',
+  };
+}
+
+export class ContentNotFoundError extends BaseError {
+  code = 'E1004';
+  messageDict = {
+    en: 'Content not found',
+    'zh-CN': '内容未找到',
+  };
+}
+
+export class ContentSessionNotFoundError extends BaseError {
+  code = 'E1005';
+  messageDict = {
+    en: 'Content session not found',
+    'zh-CN': '内容会话未找到',
+  };
+}
+
+export class InvalidLimitError extends BaseError {
+  code = 'E1006';
+  messageDict = {
+    en: 'Invalid limit parameter',
+    'zh-CN': '无效的限制参数',
+  };
+}
+
+export class InvalidCursorError extends BaseError {
+  code = 'E1007';
+  messageDict = {
+    en: 'Invalid cursor parameter',
+    'zh-CN': '无效的游标参数',
+  };
+}
+
+export class InvalidCursorPreviousError extends BaseError {
+  code = 'E1008';
+  messageDict = {
+    en: 'Invalid previous cursor parameter',
+    'zh-CN': '无效的上一个游标参数',
+  };
+}
+
+export class InvalidRequestError extends BaseError {
+  code = 'E1009';
+  messageDict = {
+    en: 'Invalid request',
+    'zh-CN': '无效的请求',
+  };
+}
+
+export class MethodNotAllowedError extends BaseError {
+  code = 'E1010';
+  messageDict = {
+    en: 'Method not allowed',
+    'zh-CN': '方法不允许',
+  };
+}
+
+export class NotAcceptableError extends BaseError {
+  code = 'E1011';
+  messageDict = {
+    en: 'Not acceptable',
+    'zh-CN': '不可接受',
+  };
+}
+
+export class UnsupportedMediaTypeError extends BaseError {
+  code = 'E1012';
+  messageDict = {
+    en: 'Unsupported media type',
+    'zh-CN': '不支持的媒体类型',
+  };
+}
+
+export class RateLimitExceededError extends BaseError {
+  code = 'E1013';
+  messageDict = {
+    en: 'Too many requests',
+    'zh-CN': '请求过于频繁',
+  };
+}
+
+export class ServiceUnavailableError extends BaseError {
+  code = 'E1014';
+  messageDict = {
+    en: 'Service unavailable',
+    'zh-CN': '服务不可用',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -143,6 +264,22 @@ const errorMap = {
   E0011: AuthenticationExpiredError,
   E0012: UnsupportedFileTypeError,
   E0013: NoPermissionError,
+  E0014: ContentNotPublishedError,
+  E1000: InvalidApiKeyError,
+  E1001: UserNotFoundError,
+  E1002: CompanyNotFoundError,
+  E1003: CompanyMembershipNotFoundError,
+  E1004: ContentNotFoundError,
+  E1005: ContentSessionNotFoundError,
+  E1006: InvalidLimitError,
+  E1007: InvalidCursorError,
+  E1008: InvalidCursorPreviousError,
+  E1009: InvalidRequestError,
+  E1010: MethodNotAllowedError,
+  E1011: NotAcceptableError,
+  E1012: UnsupportedMediaTypeError,
+  E1013: RateLimitExceededError,
+  E1014: ServiceUnavailableError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
@@ -152,3 +289,31 @@ export function getErrorMessage(code: string, locale: string): string {
   }
   return new ErrorClass().getMessage(locale);
 }
+
+// Error code to HTTP status mapping
+export const ERROR_STATUS_MAP = {
+  // OpenAPI errors (E1000-E1999)
+  E1000: HttpStatus.UNAUTHORIZED, // InvalidApiKeyError
+  E1001: HttpStatus.NOT_FOUND, // UserNotFoundError
+  E1002: HttpStatus.NOT_FOUND, // CompanyNotFoundError
+  E1003: HttpStatus.NOT_FOUND, // CompanyMembershipNotFoundError
+  E1006: HttpStatus.BAD_REQUEST, // InvalidLimitError
+  E1007: HttpStatus.BAD_REQUEST, // InvalidCursorError
+  E1009: HttpStatus.BAD_REQUEST, // InvalidRequestError
+  E1010: HttpStatus.METHOD_NOT_ALLOWED, // MethodNotAllowedError
+  E1013: HttpStatus.TOO_MANY_REQUESTS, // RateLimitExceededError
+  E1014: HttpStatus.SERVICE_UNAVAILABLE, // ServiceUnavailableError
+} as const;
+
+// HTTP status to error code mapping
+export const STATUS_ERROR_MAP = {
+  [HttpStatus.BAD_REQUEST]: 'invalid_request',
+  [HttpStatus.UNAUTHORIZED]: 'invalid_api_key',
+  [HttpStatus.FORBIDDEN]: 'forbidden',
+  [HttpStatus.NOT_FOUND]: 'not_found',
+  [HttpStatus.METHOD_NOT_ALLOWED]: 'method_not_allowed',
+  [HttpStatus.NOT_ACCEPTABLE]: 'not_acceptable',
+  [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: 'unsupported_media_type',
+  [HttpStatus.TOO_MANY_REQUESTS]: 'rate_limit_exceeded',
+  [HttpStatus.SERVICE_UNAVAILABLE]: 'service_unavailable',
+} as const;

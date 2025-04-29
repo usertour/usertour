@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventsService } from './events.service';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
+import { InvalidLimitError } from '@/common/errors/errors';
 
 describe('OpenAPIEventsService', () => {
   let service: OpenAPIEventsService;
@@ -98,11 +97,7 @@ describe('OpenAPIEventsService', () => {
 
     it('should throw error for invalid limit', async () => {
       await expect(service.listEvents(mockProjectId, undefined, -1)).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.USER.INVALID_LIMIT.message,
-          400,
-          OpenAPIErrors.USER.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
       );
     });
   });

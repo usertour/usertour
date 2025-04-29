@@ -1,11 +1,6 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-  Logger,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { InvalidApiKeyError } from '@/common/errors/errors';
 
 @Injectable()
 export class OpenapiGuard implements CanActivate {
@@ -18,7 +13,7 @@ export class OpenapiGuard implements CanActivate {
     const apiKey = this.extractApiKeyFromHeader(request);
 
     if (!apiKey) {
-      throw new UnauthorizedException('API key is required');
+      throw new InvalidApiKeyError();
     }
 
     // Remove the 'ak_' prefix if present
@@ -30,11 +25,11 @@ export class OpenapiGuard implements CanActivate {
     });
 
     if (!accessToken) {
-      throw new UnauthorizedException('Invalid API key');
+      throw new InvalidApiKeyError();
     }
 
     if (!accessToken.isActive) {
-      throw new UnauthorizedException('API key is inactive');
+      throw new InvalidApiKeyError();
     }
 
     // Attach the environment to the request for later use

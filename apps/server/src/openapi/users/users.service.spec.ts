@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIUsersService } from './users.service';
 import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
+import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
 import { ExpandType } from './users.dto';
 
 describe('OpenAPIUsersService', () => {
@@ -76,13 +74,7 @@ describe('OpenAPIUsersService', () => {
     it('should throw not found error when user does not exist', async () => {
       mockBizService.getBizUser.mockResolvedValue(null);
 
-      await expect(service.getUser('user1', 'env1')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.USER.NOT_FOUND.message,
-          HttpStatus.NOT_FOUND,
-          OpenAPIErrors.USER.NOT_FOUND.code,
-        ),
-      );
+      await expect(service.getUser('user1', 'env1')).rejects.toThrow(new UserNotFoundError());
     });
   });
 
@@ -180,11 +172,7 @@ describe('OpenAPIUsersService', () => {
 
     it('should throw error when limit is invalid', async () => {
       await expect(service.listUsers('env1', undefined, -1)).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.USER.INVALID_LIMIT.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.USER.INVALID_LIMIT.code,
-        ),
+        new InvalidLimitError(),
       );
     });
   });
@@ -228,13 +216,7 @@ describe('OpenAPIUsersService', () => {
         memberships: [],
       };
 
-      await expect(service.upsertUser(mockData, 'env1')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.USER.INVALID_REQUEST.message,
-          HttpStatus.BAD_REQUEST,
-          OpenAPIErrors.USER.INVALID_REQUEST.code,
-        ),
-      );
+      await expect(service.upsertUser(mockData, 'env1')).rejects.toThrow(new InvalidRequestError());
     });
   });
 

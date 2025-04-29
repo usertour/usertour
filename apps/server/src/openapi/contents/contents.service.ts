@@ -1,12 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Content, ContentVersion } from '../models/content.model';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
 import { ExpandType } from './contents.dto';
 import { Prisma } from '@prisma/client';
 import { ContentsService } from '@/contents/contents.service';
+import {
+  ContentNotFoundError,
+  InvalidLimitError,
+  InvalidCursorError,
+} from '@/common/errors/errors';
 
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
@@ -37,11 +39,7 @@ export class OpenAPIContentsService {
     });
 
     if (!content) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.NOT_FOUND.message,
-        HttpStatus.NOT_FOUND,
-        OpenAPIErrors.CONTENT.NOT_FOUND.code,
-      );
+      throw new ContentNotFoundError();
     }
 
     return this.mapPrismaContentToApiContent(content, expand);
@@ -55,11 +53,7 @@ export class OpenAPIContentsService {
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     // Validate limit
     if (limit < 1) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-      );
+      throw new InvalidLimitError();
     }
 
     this.logger.debug(
@@ -80,11 +74,7 @@ export class OpenAPIContentsService {
 
     // If we got no results and there was a cursor, it means the cursor was invalid
     if (!connection.edges.length && cursor) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.code,
-      );
+      throw new InvalidCursorError();
     }
 
     // Get the previous page's cursor if we're not on the first page
@@ -170,11 +160,7 @@ export class OpenAPIContentsService {
     });
 
     if (!version) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.NOT_FOUND.message,
-        HttpStatus.NOT_FOUND,
-        OpenAPIErrors.CONTENT.NOT_FOUND.code,
-      );
+      throw new ContentNotFoundError();
     }
 
     return this.mapPrismaVersionToApiVersion(version);
@@ -187,11 +173,7 @@ export class OpenAPIContentsService {
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     // Validate limit
     if (limit < 1) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.INVALID_LIMIT.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.CONTENT.INVALID_LIMIT.code,
-      );
+      throw new InvalidLimitError();
     }
 
     this.logger.debug(
@@ -209,11 +191,7 @@ export class OpenAPIContentsService {
 
     // If we got no results and there was a cursor, it means the cursor was invalid
     if (!connection.edges.length && cursor) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.message,
-        HttpStatus.BAD_REQUEST,
-        OpenAPIErrors.CONTENT.INVALID_CURSOR.code,
-      );
+      throw new InvalidCursorError();
     }
 
     // Get the previous page's cursor if we're not on the first page

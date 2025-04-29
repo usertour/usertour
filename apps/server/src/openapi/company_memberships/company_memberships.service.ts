@@ -1,8 +1,7 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { BizService } from '@/biz/biz.service';
 import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
+import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
 
 @Injectable()
 export class OpenAPICompanyMembershipService {
@@ -21,11 +20,7 @@ export class OpenAPICompanyMembershipService {
       environmentId,
     );
     if (!membership) {
-      throw new OpenAPIException(
-        OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.message,
-        HttpStatus.NOT_FOUND,
-        OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.code,
-      );
+      throw new CompanyMembershipNotFoundError();
     }
     await this.bizService.deleteBizCompanyMembership(membership.id);
 

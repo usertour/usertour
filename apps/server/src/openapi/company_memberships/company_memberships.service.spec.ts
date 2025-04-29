@@ -1,9 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompanyMembershipService } from './company_memberships.service';
 import { BizService } from '@/biz/biz.service';
-import { HttpStatus } from '@nestjs/common';
-import { OpenAPIErrors } from '../constants/errors';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
+import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
 
 describe('OpenAPI:CompanyMembershipService', () => {
   let service: OpenAPICompanyMembershipService;
@@ -57,14 +55,8 @@ describe('OpenAPI:CompanyMembershipService', () => {
     it('should throw not found error when membership does not exist', async () => {
       mockBizService.getBizCompanyMembership.mockResolvedValue(null);
 
-      const error = new OpenAPIException(
-        OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.message,
-        HttpStatus.NOT_FOUND,
-        OpenAPIErrors.COMPANY_MEMBERSHIP.NOT_FOUND.code,
-      );
-
       await expect(service.deleteCompanyMembership('user-1', 'company-1', 'env-1')).rejects.toThrow(
-        error,
+        new CompanyMembershipNotFoundError(),
       );
 
       expect(mockBizService.getBizCompanyMembership).toHaveBeenCalledWith(

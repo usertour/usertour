@@ -3,9 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { ExpandType, ExpandTypes } from './sessions.dto';
 import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
 import { Prisma } from '@prisma/client';
+import { ContentSessionNotFoundError } from '@/common/errors/errors';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {
@@ -100,11 +99,7 @@ export class OpenAPIContentSessionService {
     );
 
     if (!session) {
-      throw new OpenAPIException(
-        OpenAPIErrors.CONTENT_SESSION.NOT_FOUND.message,
-        404,
-        OpenAPIErrors.CONTENT_SESSION.NOT_FOUND.code,
-      );
+      throw new ContentSessionNotFoundError();
     }
 
     return {

@@ -3,9 +3,8 @@ import { OpenAPIContentSessionService } from './sessions.service';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { ExpandType } from './sessions.dto';
-import { OpenAPIException } from '@/common/exceptions/openapi.exception';
-import { OpenAPIErrors } from '../constants/errors';
 import { ConfigService } from '@nestjs/config';
+import { ContentSessionNotFoundError } from '@/common/errors/errors';
 
 describe('OpenAPIContentSessionService', () => {
   let service: OpenAPIContentSessionService;
@@ -185,15 +184,11 @@ describe('OpenAPIContentSessionService', () => {
       );
     });
 
-    it('should throw OpenAPIException when session not found', async () => {
+    it('should throw ContentSessionNotFoundError when session not found', async () => {
       mockAnalyticsService.deleteContentSessionWithRelations.mockResolvedValue(null);
 
       await expect(service.deleteContentSession('1', 'env1')).rejects.toThrow(
-        new OpenAPIException(
-          OpenAPIErrors.CONTENT_SESSION.NOT_FOUND.message,
-          404,
-          OpenAPIErrors.CONTENT_SESSION.NOT_FOUND.code,
-        ),
+        new ContentSessionNotFoundError(),
       );
     });
   });
