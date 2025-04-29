@@ -3,12 +3,12 @@ import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIEventsService } from './events.service';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 @ApiTags('Events')
 @Controller('v1/events')
-@UseGuards(OpenapiGuard)
+@UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIEventsController {

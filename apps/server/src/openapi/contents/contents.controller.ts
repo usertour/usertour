@@ -20,11 +20,11 @@ import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { ExpandType } from './contents.dto';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 
 @ApiTags('Contents')
 @Controller('v1')
-@UseGuards(OpenapiGuard)
+@UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIContentsController {

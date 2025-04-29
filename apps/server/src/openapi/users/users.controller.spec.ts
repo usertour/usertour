@@ -3,7 +3,7 @@ import { OpenAPIUsersController } from './users.controller';
 import { OpenAPIUsersService } from './users.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 describe('OpenAPIUsersController', () => {
@@ -44,7 +44,7 @@ describe('OpenAPIUsersController', () => {
             }),
           },
         },
-        OpenapiGuard,
+        OpenAPIKeyGuard,
         OpenAPIExceptionFilter,
       ],
     }).compile();

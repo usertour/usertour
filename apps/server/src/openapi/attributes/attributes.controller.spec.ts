@@ -3,7 +3,7 @@ import { OpenAPIAttributesController } from './attributes.controller';
 import { OpenAPIAttributesService } from './attributes.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { AttributesService } from '@/attributes/attributes.service';
 import { Environment } from '@/environments/models/environment.model';
@@ -59,7 +59,7 @@ describe('OpenAPIAttributesController', () => {
           provide: AttributesService,
           useValue: mockBizAttributesService,
         },
-        OpenapiGuard,
+        OpenAPIKeyGuard,
         OpenAPIExceptionFilter,
       ],
     }).compile();

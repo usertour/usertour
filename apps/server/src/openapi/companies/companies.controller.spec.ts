@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompaniesController } from './companies.controller';
 import { OpenAPICompaniesService } from './companies.service';
 import { UpsertCompanyRequestDto } from './companies.dto';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -74,7 +74,7 @@ describe('OpenAPICompaniesController', () => {
           provide: BizService,
           useValue: mockBizService,
         },
-        OpenapiGuard,
+        OpenAPIKeyGuard,
         OpenAPIExceptionFilter,
       ],
     }).compile();

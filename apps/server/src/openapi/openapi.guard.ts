@@ -3,8 +3,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { InvalidApiKeyError } from '@/common/errors/errors';
 
 @Injectable()
-export class OpenapiGuard implements CanActivate {
-  private readonly logger = new Logger(OpenapiGuard.name);
+export class OpenAPIKeyGuard implements CanActivate {
+  private readonly logger = new Logger(OpenAPIKeyGuard.name);
 
   constructor(private prisma: PrismaService) {}
 

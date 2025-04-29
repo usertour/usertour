@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { OpenapiGuard } from './openapi.guard';
+import { OpenAPIKeyGuard } from './openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
 import { OpenAPICompaniesController } from './companies/companies.controller';
@@ -48,8 +48,8 @@ import { ContentsModule } from '@/contents/contents.module';
     OpenAPIUsersService,
     OpenAPICompanyMembershipService,
     OpenAPIContentsService,
-    OpenapiGuard,
+    OpenAPIKeyGuard,
     OpenAPIContentSessionService,
   ],
 })
-export class OpenapiModule {}
+export class OpenAPIModule {}

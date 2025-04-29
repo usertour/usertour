@@ -4,7 +4,7 @@ import { OpenAPICompanyMembershipService } from './company_memberships.service';
 import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 describe('OpenAPI:CompanyMembershipController', () => {
@@ -52,7 +52,7 @@ describe('OpenAPI:CompanyMembershipController', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
-        OpenapiGuard,
+        OpenAPIKeyGuard,
         OpenAPIExceptionFilter,
       ],
     }).compile();

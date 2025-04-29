@@ -8,7 +8,7 @@ import {
   InvalidLimitError,
   InvalidCursorError,
 } from '@/common/errors/errors';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { ConfigService } from '@nestjs/config';
 import { ContentsService } from '@/contents/contents.service';
 import { PrismaService } from 'nestjs-prisma';
@@ -53,7 +53,7 @@ describe('OpenAPIContentsController', () => {
             // Add any required PrismaService methods here
           },
         },
-        OpenapiGuard,
+        OpenAPIKeyGuard,
       ],
     }).compile();
 

@@ -11,13 +11,13 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIContentSessionService } from './sessions.service';
 import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './sessions.dto';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Content Session')
 @Controller('v1/content-sessions')
-@UseGuards(OpenapiGuard)
+@UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIContentSessionController {

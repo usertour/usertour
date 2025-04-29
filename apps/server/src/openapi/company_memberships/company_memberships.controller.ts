@@ -1,6 +1,6 @@
 import { Controller, Delete, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { OpenapiGuard } from '../openapi.guard';
+import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { OpenAPICompanyMembershipService } from './company_memberships.service';
 import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
@@ -8,7 +8,7 @@ import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Company Memberships')
 @Controller('v1/company_memberships')
-@UseGuards(OpenapiGuard)
+@UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 export class OpenAPICompanyMembershipController {
   constructor(private readonly openAPICompanyMembershipService: OpenAPICompanyMembershipService) {}
