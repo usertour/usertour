@@ -7,7 +7,7 @@ import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { OpenapiModule } from './openapi/openapi.module';
+import { OpenAPIModule } from './openapi/openapi.module';
 
 // import { AllExceptionsFilter } from './common/filter';
 
@@ -44,7 +44,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    include: [OpenapiModule],
+    include: [OpenAPIModule],
   });
   SwaggerModule.setup('api', app, document);
 
