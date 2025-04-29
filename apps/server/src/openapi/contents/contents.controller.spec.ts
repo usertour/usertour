@@ -3,7 +3,7 @@ import { OpenAPIContentsController } from './contents.controller';
 import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { ExpandType } from './contents.dto';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { OpenapiGuard } from '../openapi.guard';

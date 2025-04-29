@@ -3,7 +3,7 @@ import { OpenAPICompanyMembershipService } from './company_memberships.service';
 import { BizService } from '@/biz/biz.service';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 
 describe('OpenAPI:CompanyMembershipService', () => {
   let service: OpenAPICompanyMembershipService;

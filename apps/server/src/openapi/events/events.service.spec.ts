@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventsService } from './events.service';
-import { EventsService as BusinessEventsService } from '../../events/events.service';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { EventsService as BusinessEventsService } from '@/events/events.service';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 
 describe('OpenAPIEventsService', () => {

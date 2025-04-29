@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { UpsertCompanyRequestDto, ExpandType } from './companies.dto';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { ParamsError } from '@/common/errors';
 
 describe('OpenAPICompaniesService', () => {

@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { BizService } from '@/biz/biz.service';
 import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 
 @Injectable()

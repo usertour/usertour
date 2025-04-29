@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { UpsertUserRequestDto } from './users.dto';

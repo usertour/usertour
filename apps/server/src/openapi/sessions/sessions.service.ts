@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ExpandType, ExpandTypes } from './sessions.dto';
 import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { Prisma } from '@prisma/client';
 

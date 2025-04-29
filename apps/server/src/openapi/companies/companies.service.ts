@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { Company } from '../models/company.model';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { BizService } from '../../biz/biz.service';
 import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Content, ContentVersion } from '../models/content.model';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
 import { ExpandType } from './contents.dto';

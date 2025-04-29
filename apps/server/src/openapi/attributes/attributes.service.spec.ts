@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIAttributesService } from './attributes.service';
 import { AttributesService } from '@/attributes/attributes.service';
 import { AttributeDataTypeNames, AttributeBizTypeNames } from '@/attributes/models/attribute.model';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { HttpStatus } from '@nestjs/common';
 

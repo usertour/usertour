@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventsController } from './events.controller';
 import { OpenAPIEventsService } from './events.service';
 import { Environment } from '@/environments/models/environment.model';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { OpenapiGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';

@@ -3,7 +3,7 @@ import { OpenAPIContentsService } from './contents.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { OpenAPIErrors } from '../constants/errors';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { ExpandType } from './contents.dto';
 import { ContentsService } from '@/contents/contents.service';
 

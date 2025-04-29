@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Event } from '../models/event.model';
-import { OpenAPIException } from '../exceptions/openapi.exception';
+import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { HttpStatus } from '@nestjs/common';
-import { EventsService as BusinessEventsService } from '../../events/events.service';
+import { EventsService as BusinessEventsService } from '@/events/events.service';
 
 @Injectable()
 export class OpenAPIEventsService {
