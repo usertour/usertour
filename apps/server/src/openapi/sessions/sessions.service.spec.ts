@@ -5,6 +5,7 @@ import { AnalyticsService } from '@/analytics/analytics.service';
 import { ExpandType } from './sessions.dto';
 import { ConfigService } from '@nestjs/config';
 import { ContentSessionNotFoundError } from '@/common/errors/errors';
+import { ContentsService } from '@/contents/contents.service';
 
 describe('OpenAPIContentSessionService', () => {
   let service: OpenAPIContentSessionService;
@@ -38,7 +39,11 @@ describe('OpenAPIContentSessionService', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn(),
+    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
+
+  const mockContentsService = {
+    getContentById: jest.fn().mockResolvedValue({ id: 'content1' }),
   };
 
   beforeEach(async () => {
@@ -57,12 +62,15 @@ describe('OpenAPIContentSessionService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: ContentsService,
+          useValue: mockContentsService,
+        },
       ],
     }).compile();
 
     service = module.get<OpenAPIContentSessionService>(OpenAPIContentSessionService);
     jest.clearAllMocks();
-    mockConfigService.get.mockReturnValue('http://localhost:3000');
   });
 
   afterEach(() => {
@@ -106,12 +114,21 @@ describe('OpenAPIContentSessionService', () => {
   describe('listContentSessions', () => {
     it('should return a list of content sessions', async () => {
       mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
-        results: [mockSession],
-        hasNext: false,
-        endCursor: null,
+        edges: [
+          {
+            node: mockSession,
+            cursor: 'cursor1',
+          },
+        ],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
       });
 
-      const result = await service.listContentSessions('env1', 'content1', undefined, 10, [
+      const result = await service.listContentSessions('env1', 'content1', 10, undefined, [
         ExpandType.CONTENT,
         ExpandType.USER,
         ExpandType.COMPANY,
@@ -120,11 +137,12 @@ describe('OpenAPIContentSessionService', () => {
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
+      expect(result.next).toBeNull();
+      expect(result.previous).toBeNull();
       expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
         'env1',
         'content1',
-        undefined,
-        10,
+        { first: 10, after: undefined },
         {
           content: true,
           bizUser: true,
@@ -136,12 +154,21 @@ describe('OpenAPIContentSessionService', () => {
 
     it('should handle cursor pagination', async () => {
       mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
-        results: [mockSession],
-        hasNext: true,
-        endCursor: 'nextCursor',
+        edges: [
+          {
+            node: mockSession,
+            cursor: 'cursor2',
+          },
+        ],
+        pageInfo: {
+          hasNextPage: true,
+          hasPreviousPage: false,
+          startCursor: 'cursor2',
+          endCursor: 'cursor2',
+        },
       });
 
-      const result = await service.listContentSessions('env1', 'content1', 'cursor1', 10, [
+      const result = await service.listContentSessions('env1', 'content1', 10, undefined, [
         ExpandType.CONTENT,
         ExpandType.USER,
         ExpandType.COMPANY,
@@ -150,15 +177,52 @@ describe('OpenAPIContentSessionService', () => {
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.next).toBe(
-        'http://localhost:3000/v1/content_sessions?cursor=nextCursor&limit=10',
-      );
-      expect(result.previous).toBe('cursor1');
+      expect(result.next).toBe('http://localhost:3000/v1/content_sessions?cursor=cursor2&limit=10');
+      expect(result.previous).toBeNull();
       expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
         'env1',
         'content1',
-        'cursor1',
-        10,
+        { first: 10, after: undefined },
+        {
+          content: true,
+          bizUser: true,
+          bizCompany: true,
+          version: true,
+        },
+      );
+    });
+
+    it('should handle cursor pagination with cursor', async () => {
+      mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
+        edges: [
+          {
+            node: mockSession,
+            cursor: 'cursor2',
+          },
+        ],
+        pageInfo: {
+          hasNextPage: true,
+          hasPreviousPage: true,
+          startCursor: 'cursor2',
+          endCursor: 'cursor2',
+        },
+      });
+
+      const result = await service.listContentSessions('env1', 'content1', 10, 'cursor1', [
+        ExpandType.CONTENT,
+        ExpandType.USER,
+        ExpandType.COMPANY,
+        ExpandType.VERSION,
+      ]);
+
+      expect(result).toBeDefined();
+      expect(result.results).toHaveLength(1);
+      expect(result.next).toBe('http://localhost:3000/v1/content_sessions?cursor=cursor2&limit=10');
+      expect(result.previous).toBe('http://localhost:3000/v1/content_sessions?limit=10');
+      expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
+        'env1',
+        'content1',
+        { first: 10, after: 'cursor1' },
         {
           content: true,
           bizUser: true,

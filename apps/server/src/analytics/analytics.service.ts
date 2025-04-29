@@ -20,6 +20,7 @@ import {
 } from '@/utils/content';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
+import { PaginationConnection } from '@/common/openapi/pagination';
 
 type AnalyticsConditions = {
   contentId: string;
@@ -1096,15 +1097,19 @@ export class AnalyticsService {
   async listContentSessionsWithRelations(
     environmentId: string,
     contentId: string,
-    cursor?: string,
-    limit = 10,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
     include?: {
       content?: boolean;
       bizCompany?: boolean;
       bizUser?: boolean;
       version?: boolean;
     },
-  ) {
+  ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
     const where: Prisma.BizSessionWhereInput = {
       contentId,
       content: {
@@ -1112,22 +1117,20 @@ export class AnalyticsService {
       },
     };
 
-    const sessions = await this.prisma.bizSession.findMany({
-      where,
-      include,
-      take: Number(limit) + 1,
-      ...(cursor && { cursor: { id: cursor } }),
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const hasNext = sessions.length > limit;
-    const results = hasNext ? sessions.slice(0, -1) : sessions;
-
-    return {
-      results,
-      hasNext,
-      endCursor: hasNext ? results[results.length - 1].id : null,
-    };
+    return findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where,
+          include,
+          ...args,
+          orderBy: { createdAt: 'desc' },
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where,
+        }),
+      paginationArgs,
+    );
   }
 
   async deleteContentSessionWithRelations(id: string, environmentId: string) {

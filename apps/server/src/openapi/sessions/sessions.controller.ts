@@ -7,6 +7,7 @@ import {
   UseGuards,
   UseFilters,
   Logger,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIContentSessionService } from './sessions.service';
@@ -31,22 +32,15 @@ export class OpenAPIContentSessionController {
   async listContentSessions(
     @EnvironmentId() environmentId: string,
     @Query('contentId') contentId: string,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
     @Query('expand') expand?: string,
   ) {
-    this.logger.log('listContentSessions called', {
-      environmentId,
-      contentId,
-      cursor,
-      limit,
-      expand,
-    });
     return this.openAPIContentSessionService.listContentSessions(
       environmentId,
       contentId,
-      cursor,
       limit,
+      cursor,
       expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined,
     );
   }

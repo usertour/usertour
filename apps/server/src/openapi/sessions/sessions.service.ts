@@ -4,8 +4,14 @@ import { ExpandType, ExpandTypes } from './sessions.dto';
 import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
-import { ContentSessionNotFoundError } from '@/common/errors/errors';
+import {
+  ContentNotFoundError,
+  ContentSessionNotFoundError,
+  InvalidRequestError,
+} from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
+import { paginate } from '@/common/openapi/pagination';
+import { ContentsService } from '@/contents/contents.service';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {
@@ -23,6 +29,7 @@ export class OpenAPIContentSessionService {
   constructor(
     private readonly analyticsService: AnalyticsService,
     private readonly configService: ConfigService,
+    private readonly contentsService: ContentsService,
   ) {}
 
   private getIncludeFromExpand(expand?: ExpandTypes) {
@@ -72,25 +79,37 @@ export class OpenAPIContentSessionService {
   async listContentSessions(
     environmentId: string,
     contentId: string,
-    cursor?: string,
     limit = 10,
+    cursor?: string,
     expand?: ExpandTypes,
   ) {
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const { results, hasNext, endCursor } =
-      await this.analyticsService.listContentSessionsWithRelations(
-        environmentId,
-        contentId,
-        cursor,
-        limit,
-        this.getIncludeFromExpand(expand),
-      );
+    if (!contentId) {
+      throw new InvalidRequestError('contentId is required');
+    }
 
-    return {
-      results: results.map(this.mapToContentSession),
-      next: hasNext ? `${apiUrl}/v1/content_sessions?cursor=${endCursor}&limit=${limit}` : null,
-      previous: cursor || null,
-    };
+    const content = await this.contentsService.getContentById(contentId);
+    if (!content) {
+      throw new ContentNotFoundError();
+    }
+
+    const apiUrl = this.configService.get<string>('app.apiUrl');
+
+    return paginate(
+      apiUrl,
+      'content_sessions',
+      contentId,
+      cursor,
+      limit,
+      async (params) => {
+        return await this.analyticsService.listContentSessionsWithRelations(
+          environmentId,
+          contentId,
+          params,
+          this.getIncludeFromExpand(expand),
+        );
+      },
+      this.mapToContentSession,
+    );
   }
 
   async deleteContentSession(id: string, environmentId: string) {
