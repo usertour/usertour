@@ -93,6 +93,7 @@ export class OpenAPIContentSessionService {
     }
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const include = this.getIncludeFromExpand(expand);
 
     return paginate(
       apiUrl,
@@ -100,14 +101,13 @@ export class OpenAPIContentSessionService {
       contentId,
       cursor,
       limit,
-      async (params) => {
-        return await this.analyticsService.listContentSessionsWithRelations(
+      async (params) =>
+        await this.analyticsService.listContentSessionsWithRelations(
           environmentId,
           contentId,
           params,
-          this.getIncludeFromExpand(expand),
-        );
-      },
+          include,
+        ),
       this.mapToContentSession,
     );
   }

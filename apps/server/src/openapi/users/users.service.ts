@@ -6,7 +6,7 @@ import { UpsertUserRequestDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/types/openapi';
-import { paginate, PaginationConnection } from '@/common/openapi/pagination';
+import { paginate } from '@/common/openapi/pagination';
 
 @Injectable()
 export class OpenAPIUsersService {
@@ -33,30 +33,24 @@ export class OpenAPIUsersService {
     cursor?: string,
     expand?: ExpandTypes,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
-    // Validate limit
-    const pageSize = Number(limit) || 20;
-    if (Number.isNaN(pageSize) || pageSize < 1) {
+    if (Number.isNaN(limit) || limit < 1) {
       throw new InvalidLimitError();
     }
 
-    this.logger.debug(
-      `Listing users with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${pageSize}`,
-    );
-
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const include = {
+      companies: expand?.includes(ExpandType.COMPANIES) ?? false,
+      bizUsersOnCompany: expand?.includes(ExpandType.MEMBERSHIPS) ?? false,
+    };
 
     return paginate(
       apiUrl,
       'users',
       environmentId,
       cursor,
-      pageSize,
-      async (params) => {
-        const result = await this.bizService.listBizUsersWithRelations(environmentId, params, {
-          companies: expand?.includes(ExpandType.COMPANIES) ?? false,
-        });
-        return result as unknown as PaginationConnection<any>;
-      },
+      limit,
+      async (params) =>
+        await this.bizService.listBizUsersWithRelations(environmentId, params, include),
       (node) => this.mapBizUserToUser(node, expand),
     );
   }

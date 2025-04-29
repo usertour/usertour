@@ -121,7 +121,7 @@ describe('OpenAPIUsersService', () => {
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
         'env1',
         { first: 20 },
-        { companies: true },
+        { companies: true, bizUsersOnCompany: false },
       );
     });
 
@@ -183,7 +183,7 @@ describe('OpenAPIUsersService', () => {
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
         'env1',
         { first: 10, after: 'cursor1' },
-        { companies: true },
+        { companies: true, bizUsersOnCompany: false },
       );
     });
 

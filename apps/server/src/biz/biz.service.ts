@@ -723,28 +723,14 @@ export class BizService {
       after?: string;
       before?: string;
     },
-    include?: {
-      bizUsersOnCompany?: {
-        include?: {
-          bizUser?: boolean;
-        };
-      };
-    },
+    include?: Prisma.BizCompanyInclude,
   ) {
     const baseQuery = {
       where: {
         environmentId,
         deleted: false,
       },
-      include: {
-        bizUsersOnCompany: include?.bizUsersOnCompany
-          ? {
-              include: {
-                bizUser: include.bizUsersOnCompany.include?.bizUser ?? false,
-              },
-            }
-          : false,
-      },
+      include,
     };
 
     return await findManyCursorConnection(
@@ -787,23 +773,13 @@ export class BizService {
       after?: string;
       before?: string;
     },
-    include?: {
-      companies?: boolean;
-    },
+    include?: Prisma.BizUserInclude,
   ) {
     const baseQuery = {
       where: {
         environmentId,
       },
-      include: {
-        bizUsersOnCompany: include?.companies
-          ? {
-              include: {
-                bizCompany: true,
-              },
-            }
-          : false,
-      },
+      include,
     };
 
     return await findManyCursorConnection(

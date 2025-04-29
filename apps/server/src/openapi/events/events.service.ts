@@ -35,9 +35,7 @@ export class OpenAPIEventsService {
       projectId,
       cursor,
       limit,
-      async (params) => {
-        return await this.businessEventsService.listWithPagination(projectId, params);
-      },
+      async (params) => await this.businessEventsService.listWithPagination(projectId, params),
       (node) => ({
         id: node.id,
         object: OpenApiObjectType.EVENT,

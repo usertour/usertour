@@ -51,19 +51,19 @@ export class OpenAPIContentsService {
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const apiUrl = this.configService.get<string>('app.apiUrl');
 
+    const include = {
+      editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
+      publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
+    };
+
     return paginate(
       apiUrl,
       'contents',
       environmentId,
       cursor,
       limit,
-      async (params) => {
-        const result = await this.contentsService.listContentsWithRelations(environmentId, params, {
-          editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
-          publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
-        });
-        return result as unknown as PaginationConnection<ContentWithVersions>;
-      },
+      async (params) =>
+        await this.contentsService.listContentsWithRelations(environmentId, params, include),
       (node) => this.mapPrismaContentToApiContent(node, expand),
     );
   }

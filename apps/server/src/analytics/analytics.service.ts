@@ -1103,12 +1103,7 @@ export class AnalyticsService {
       after?: string;
       before?: string;
     },
-    include?: {
-      content?: boolean;
-      bizCompany?: boolean;
-      bizUser?: boolean;
-      version?: boolean;
-    },
+    include?: Prisma.BizSessionInclude,
   ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
     const where: Prisma.BizSessionWhereInput = {
       contentId,

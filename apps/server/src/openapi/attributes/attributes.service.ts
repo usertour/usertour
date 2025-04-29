@@ -4,8 +4,8 @@ import { ListAttributesDto } from './attributes.dto';
 import { OpenApiObjectType } from '@/common/types/openapi';
 import { AttributeBizTypeNames, AttributeDataTypeNames } from '@/attributes/models/attribute.model';
 import { Attribute } from '@/openapi/models/attribute.model';
-import { paginate, PaginationConnection } from '@/common/openapi/pagination';
 import { ConfigService } from '@nestjs/config';
+import { paginate } from '@/common/openapi/pagination';
 
 @Injectable()
 export class OpenAPIAttributesService {
@@ -24,10 +24,7 @@ export class OpenAPIAttributesService {
       projectId,
       cursor,
       limit,
-      async (params) => {
-        const result = await this.attributesService.listWithPagination(projectId, params);
-        return result as unknown as PaginationConnection<any>;
-      },
+      async (params) => this.attributesService.listWithPagination(projectId, params),
       (node) => this.mapToAttribute(node),
     );
   }

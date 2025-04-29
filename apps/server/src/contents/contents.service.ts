@@ -12,6 +12,7 @@ import { ContentType } from './models/content.model';
 import { Version } from './models/version.model';
 import { ConfigService } from '@nestjs/config';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ContentsService {
@@ -655,17 +656,11 @@ export class ContentsService {
       after?: string;
       before?: string;
     },
-    include?: {
-      editedVersion?: boolean;
-      publishedVersion?: boolean;
-    },
+    include?: Prisma.ContentInclude,
   ) {
     const baseQuery = {
       where: { environmentId },
-      include: {
-        editedVersion: include?.editedVersion,
-        publishedVersion: include?.publishedVersion,
-      },
+      include,
     };
 
     return await findManyCursorConnection(
