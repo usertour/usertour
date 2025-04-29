@@ -1,31 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
 import { ListAttributesDto } from './attributes.dto';
-import { InvalidLimitError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
 import { AttributeBizTypeNames, AttributeDataTypeNames } from '@/attributes/models/attribute.model';
 import { Attribute } from '@/openapi/models/attribute.model';
+import { paginate, PaginationConnection } from '@/common/openapi/pagination';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OpenAPIAttributesService {
-  constructor(private readonly attributesService: AttributesService) {}
+  constructor(
+    private readonly attributesService: AttributesService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async listAttributes(projectId: string, dto: ListAttributesDto) {
     const { cursor, limit = 20 } = dto;
+    const apiUrl = this.configService.get<string>('app.apiUrl');
 
-    const pageSize = Number(limit) || 20;
-
-    if (Number.isNaN(pageSize) || pageSize < 1) {
-      throw new InvalidLimitError();
-    }
-
-    const result = await this.attributesService.listWithPagination(projectId, cursor, limit);
-
-    return {
-      results: result.edges.map((edge) => this.mapToAttribute(edge.node)),
-      next: result.pageInfo.hasNextPage ? result.pageInfo.endCursor : null,
-      previous: result.pageInfo.hasPreviousPage ? result.pageInfo.startCursor : null,
-    };
+    return paginate(
+      apiUrl,
+      'attributes',
+      projectId,
+      cursor,
+      limit,
+      async (params) => {
+        const result = await this.attributesService.listWithPagination(projectId, params);
+        return result as unknown as PaginationConnection<any>;
+      },
+      (node) => this.mapToAttribute(node),
+    );
   }
 
   private mapToAttribute(attribute: any): Attribute {
