@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
 import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
 import { CompanyNotFoundError } from '@/common/errors/errors';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 @Injectable()
 export class OpenAPICompaniesService {
@@ -49,7 +50,7 @@ export class OpenAPICompaniesService {
       expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_USER)
         ? bizCompany.bizUsersOnCompany?.map((membership) => ({
             id: membership.id,
-            object: 'company_membership',
+            object: OpenApiObjectType.COMPANY_MEMBERSHIP,
             attributes: membership.data || {},
             createdAt: membership.createdAt.toISOString(),
             companyId: membership.bizCompanyId,
@@ -57,7 +58,7 @@ export class OpenAPICompaniesService {
             user: expand?.includes(ExpandType.MEMBERSHIPS_USER)
               ? {
                   id: membership.bizUser.externalId,
-                  object: 'user',
+                  object: OpenApiObjectType.USER,
                   attributes: membership.bizUser.data || {},
                   createdAt: membership.bizUser.createdAt.toISOString(),
                 }
@@ -67,13 +68,13 @@ export class OpenAPICompaniesService {
 
     return {
       id: bizCompany.externalId,
-      object: 'company',
+      object: OpenApiObjectType.COMPANY,
       attributes: bizCompany.data || {},
       createdAt: bizCompany.createdAt.toISOString(),
       users: expand?.includes(ExpandType.USERS)
         ? bizCompany.bizUsersOnCompany?.map((membership) => ({
             id: membership.bizUser.externalId,
-            object: 'user',
+            object: OpenApiObjectType.USER,
             attributes: membership.bizUser.data || {},
             createdAt: membership.bizUser.createdAt.toISOString(),
           }))

@@ -9,7 +9,7 @@ import {
   InvalidLimitError,
   InvalidCursorError,
 } from '@/common/errors/errors';
-
+import { OpenApiObjectType } from '@/common/types/openapi';
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
     editedVersion: true;
@@ -123,14 +123,14 @@ export class OpenAPIContentsService {
   ): Content {
     return {
       id: content.id,
-      object: 'content',
+      object: OpenApiObjectType.CONTENT,
       type: content.type,
       editedVersionId: content.editedVersionId,
       editedVersion:
         expand?.includes(ExpandType.EDITED_VERSION) && content.editedVersion
           ? {
               id: content.editedVersion.id,
-              object: 'content_version',
+              object: OpenApiObjectType.VERSION,
               number: content.editedVersion.sequence,
               questions: [],
               updatedAt: content.editedVersion.updatedAt.toISOString(),
@@ -142,7 +142,7 @@ export class OpenAPIContentsService {
         expand?.includes(ExpandType.PUBLISHED_VERSION) && content.publishedVersion
           ? {
               id: content.publishedVersion.id,
-              object: 'content_version',
+              object: OpenApiObjectType.VERSION,
               number: content.publishedVersion.sequence,
               questions: [],
               updatedAt: content.publishedVersion.updatedAt.toISOString(),
@@ -237,7 +237,7 @@ export class OpenAPIContentsService {
   private mapPrismaVersionToApiVersion(version: VersionWithContent): ContentVersion {
     return {
       id: version.id,
-      object: 'content_version',
+      object: OpenApiObjectType.VERSION,
       number: version.sequence,
       questions: (version.data as any[]) || [],
       updatedAt: version.updatedAt.toISOString(),

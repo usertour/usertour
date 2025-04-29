@@ -5,6 +5,7 @@ import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
 import { ContentSessionNotFoundError } from '@/common/errors/errors';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {
@@ -104,7 +105,7 @@ export class OpenAPIContentSessionService {
 
     return {
       id,
-      object: 'content_session',
+      object: OpenApiObjectType.SESSION,
       deleted: true,
     };
   }
@@ -112,7 +113,7 @@ export class OpenAPIContentSessionService {
   private mapToContentSession(session: ContentSessionWithRelations): ContentSession {
     return {
       id: session.id,
-      object: 'content_session',
+      object: OpenApiObjectType.SESSION,
       answers: session.data as any,
       completedAt: null,
       completed: session.state === 1,
@@ -120,7 +121,7 @@ export class OpenAPIContentSessionService {
       content: session.content
         ? {
             id: session.content.id,
-            object: 'content',
+            object: OpenApiObjectType.CONTENT,
             type: session.content.type,
             editedVersionId: session.content.editedVersionId,
             publishedVersionId: session.content.publishedVersionId,
@@ -133,7 +134,7 @@ export class OpenAPIContentSessionService {
       company: session.bizCompany
         ? {
             id: session.bizCompany.id,
-            object: 'company',
+            object: OpenApiObjectType.COMPANY,
             attributes: session.bizCompany.data as any,
             createdAt: session.bizCompany.createdAt.toISOString(),
           }
@@ -145,7 +146,7 @@ export class OpenAPIContentSessionService {
       user: session.bizUser
         ? {
             id: session.bizUser.id,
-            object: 'user',
+            object: OpenApiObjectType.USER,
             attributes: session.bizUser.data as any,
             createdAt: session.bizUser.createdAt.toISOString(),
           }
@@ -154,7 +155,7 @@ export class OpenAPIContentSessionService {
       version: session.version
         ? {
             id: session.version.id,
-            object: 'content_version',
+            object: OpenApiObjectType.VERSION,
             number: session.version.sequence,
             updatedAt: session.version.updatedAt.toISOString(),
             createdAt: session.version.createdAt.toISOString(),

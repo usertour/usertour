@@ -5,6 +5,7 @@ import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/com
 import { UpsertUserRequestDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 @Injectable()
 export class OpenAPIUsersService {
@@ -61,7 +62,7 @@ export class OpenAPIUsersService {
       expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_COMPANY)
         ? bizUser.bizUsersOnCompany?.map((membership) => ({
             id: membership.id,
-            object: 'company_membership',
+            object: OpenApiObjectType.COMPANY_MEMBERSHIP,
             attributes: membership.data || {},
             createdAt: membership.createdAt.toISOString(),
             companyId: membership.bizCompanyId,
@@ -69,7 +70,7 @@ export class OpenAPIUsersService {
             company: expand?.includes(ExpandType.MEMBERSHIPS_COMPANY)
               ? {
                   id: membership.bizCompany.externalId,
-                  object: 'company',
+                  object: OpenApiObjectType.COMPANY,
                   attributes: membership.bizCompany.data || {},
                   createdAt: membership.bizCompany.createdAt.toISOString(),
                 }
@@ -79,13 +80,13 @@ export class OpenAPIUsersService {
 
     return {
       id: bizUser.externalId,
-      object: 'user',
+      object: OpenApiObjectType.USER,
       attributes: bizUser.data || {},
       createdAt: bizUser.createdAt.toISOString(),
       companies: expand?.includes(ExpandType.COMPANIES)
         ? bizUser.bizUsersOnCompany?.map((membership) => ({
             id: membership.bizCompany.externalId,
-            object: 'company',
+            object: OpenApiObjectType.COMPANY,
             attributes: membership.bizCompany.data || {},
             createdAt: membership.bizCompany.createdAt.toISOString(),
           }))
@@ -112,7 +113,7 @@ export class OpenAPIUsersService {
     await this.bizService.deleteBizUser([id], environmentId);
     return {
       id,
-      object: 'user',
+      object: OpenApiObjectType.USER,
       deleted: true,
     };
   }
