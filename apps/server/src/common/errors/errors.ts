@@ -129,120 +129,139 @@ export class ContentNotPublishedError extends BaseError {
   };
 }
 
-export class InvalidApiKeyError extends BaseError {
+export abstract class OpenAPIError extends BaseError {
+  statusCode: HttpStatus;
+}
+
+export class InvalidApiKeyError extends OpenAPIError {
   code = 'E1000';
+  statusCode = HttpStatus.UNAUTHORIZED;
   messageDict = {
     en: 'Invalid API key provided',
     'zh-CN': '提供的 API 密钥无效',
   };
 }
 
-export class UserNotFoundError extends BaseError {
+export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
+  statusCode = HttpStatus.NOT_FOUND;
   messageDict = {
     en: 'User not found',
     'zh-CN': '用户未找到',
   };
 }
 
-export class CompanyNotFoundError extends BaseError {
+export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
+  statusCode = HttpStatus.NOT_FOUND;
   messageDict = {
     en: 'Company not found',
     'zh-CN': '公司未找到',
   };
 }
 
-export class CompanyMembershipNotFoundError extends BaseError {
+export class CompanyMembershipNotFoundError extends OpenAPIError {
   code = 'E1003';
+  statusCode = HttpStatus.NOT_FOUND;
   messageDict = {
     en: 'Company membership not found',
     'zh-CN': '公司成员关系未找到',
   };
 }
 
-export class ContentNotFoundError extends BaseError {
+export class ContentNotFoundError extends OpenAPIError {
   code = 'E1004';
+  statusCode = HttpStatus.NOT_FOUND;
   messageDict = {
     en: 'Content not found',
     'zh-CN': '内容未找到',
   };
 }
 
-export class ContentSessionNotFoundError extends BaseError {
+export class ContentSessionNotFoundError extends OpenAPIError {
   code = 'E1005';
+  statusCode = HttpStatus.NOT_FOUND;
   messageDict = {
     en: 'Content session not found',
     'zh-CN': '内容会话未找到',
   };
 }
 
-export class InvalidLimitError extends BaseError {
+export class InvalidLimitError extends OpenAPIError {
   code = 'E1006';
+  statusCode = HttpStatus.BAD_REQUEST;
   messageDict = {
     en: 'Invalid limit parameter',
     'zh-CN': '无效的限制参数',
   };
 }
 
-export class InvalidCursorError extends BaseError {
+export class InvalidCursorError extends OpenAPIError {
   code = 'E1007';
+  statusCode = HttpStatus.BAD_REQUEST;
   messageDict = {
     en: 'Invalid cursor parameter',
     'zh-CN': '无效的游标参数',
   };
 }
 
-export class InvalidCursorPreviousError extends BaseError {
+export class InvalidCursorPreviousError extends OpenAPIError {
   code = 'E1008';
+  statusCode = HttpStatus.BAD_REQUEST;
   messageDict = {
     en: 'Invalid previous cursor parameter',
     'zh-CN': '无效的上一个游标参数',
   };
 }
 
-export class InvalidRequestError extends BaseError {
+export class InvalidRequestError extends OpenAPIError {
   code = 'E1009';
+  statusCode = HttpStatus.BAD_REQUEST;
   messageDict = {
     en: 'Invalid request',
     'zh-CN': '无效的请求',
   };
 }
 
-export class MethodNotAllowedError extends BaseError {
+export class MethodNotAllowedError extends OpenAPIError {
   code = 'E1010';
+  statusCode = HttpStatus.METHOD_NOT_ALLOWED;
   messageDict = {
     en: 'Method not allowed',
     'zh-CN': '方法不允许',
   };
 }
 
-export class NotAcceptableError extends BaseError {
+export class NotAcceptableError extends OpenAPIError {
   code = 'E1011';
+  statusCode = HttpStatus.NOT_ACCEPTABLE;
   messageDict = {
     en: 'Not acceptable',
     'zh-CN': '不可接受',
   };
 }
 
-export class UnsupportedMediaTypeError extends BaseError {
+export class UnsupportedMediaTypeError extends OpenAPIError {
   code = 'E1012';
+  statusCode = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
   messageDict = {
     en: 'Unsupported media type',
     'zh-CN': '不支持的媒体类型',
   };
 }
 
-export class RateLimitExceededError extends BaseError {
+export class RateLimitExceededError extends OpenAPIError {
   code = 'E1013';
+  statusCode = HttpStatus.TOO_MANY_REQUESTS;
   messageDict = {
     en: 'Too many requests',
     'zh-CN': '请求过于频繁',
   };
 }
 
-export class ServiceUnavailableError extends BaseError {
+export class ServiceUnavailableError extends OpenAPIError {
   code = 'E1014';
+  statusCode = HttpStatus.SERVICE_UNAVAILABLE;
   messageDict = {
     en: 'Service unavailable',
     'zh-CN': '服务不可用',
@@ -289,31 +308,3 @@ export function getErrorMessage(code: string, locale: string): string {
   }
   return new ErrorClass().getMessage(locale);
 }
-
-// Error code to HTTP status mapping
-export const ERROR_STATUS_MAP = {
-  // OpenAPI errors (E1000-E1999)
-  E1000: HttpStatus.UNAUTHORIZED, // InvalidApiKeyError
-  E1001: HttpStatus.NOT_FOUND, // UserNotFoundError
-  E1002: HttpStatus.NOT_FOUND, // CompanyNotFoundError
-  E1003: HttpStatus.NOT_FOUND, // CompanyMembershipNotFoundError
-  E1006: HttpStatus.BAD_REQUEST, // InvalidLimitError
-  E1007: HttpStatus.BAD_REQUEST, // InvalidCursorError
-  E1009: HttpStatus.BAD_REQUEST, // InvalidRequestError
-  E1010: HttpStatus.METHOD_NOT_ALLOWED, // MethodNotAllowedError
-  E1013: HttpStatus.TOO_MANY_REQUESTS, // RateLimitExceededError
-  E1014: HttpStatus.SERVICE_UNAVAILABLE, // ServiceUnavailableError
-} as const;
-
-// HTTP status to error code mapping
-export const STATUS_ERROR_MAP = {
-  [HttpStatus.BAD_REQUEST]: 'invalid_request',
-  [HttpStatus.UNAUTHORIZED]: 'invalid_api_key',
-  [HttpStatus.FORBIDDEN]: 'forbidden',
-  [HttpStatus.NOT_FOUND]: 'not_found',
-  [HttpStatus.METHOD_NOT_ALLOWED]: 'method_not_allowed',
-  [HttpStatus.NOT_ACCEPTABLE]: 'not_acceptable',
-  [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: 'unsupported_media_type',
-  [HttpStatus.TOO_MANY_REQUESTS]: 'rate_limit_exceeded',
-  [HttpStatus.SERVICE_UNAVAILABLE]: 'service_unavailable',
-} as const;

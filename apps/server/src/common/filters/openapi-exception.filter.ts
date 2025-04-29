@@ -8,8 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { ERROR_STATUS_MAP, STATUS_ERROR_MAP } from '../errors/errors';
-import { BaseError } from '../errors/base';
+import { OpenAPIError } from '../errors/errors';
 
 @Catch()
 export class OpenAPIExceptionFilter implements ExceptionFilter {
@@ -37,11 +36,11 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
         typeof errorResponse === 'string'
           ? errorResponse
           : errorResponse?.message || 'An error occurred';
-      errorCode = STATUS_ERROR_MAP[status] || 'internal_server_error';
+      errorCode = 'internal_server_error';
     }
-    // Handle BaseError
-    else if (exception instanceof BaseError) {
-      status = ERROR_STATUS_MAP[exception.code] || HttpStatus.INTERNAL_SERVER_ERROR;
+    // Handle OpenAPIError
+    else if (exception instanceof OpenAPIError) {
+      status = exception.statusCode;
       errorCode = exception.code;
       message = this.getErrorMessage(exception, request);
     }
@@ -69,7 +68,7 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
   }
 
   // Get error message with language support
-  private getErrorMessage(error: BaseError, request: Request): string {
+  private getErrorMessage(error: OpenAPIError, request: Request): string {
     const acceptLanguage = request.headers['accept-language'];
     return error.getMessage(acceptLanguage);
   }
