@@ -18,7 +18,7 @@ export class OpenAPIUsersService {
   ) {}
 
   async getUser(id: string, environmentId: string, expand?: ExpandTypes): Promise<User> {
-    const bizUser = await this.bizService.getBizUser(id, environmentId, expand);
+    const bizUser = await this.bizService.getBizUser(id, environmentId, { companies: true });
 
     if (!bizUser) {
       throw new OpenAPIException(
@@ -56,7 +56,7 @@ export class OpenAPIUsersService {
       environmentId,
       cursor,
       pageSize,
-      expand,
+      { companies: expand?.includes(ExpandType.COMPANIES) },
     );
 
     return {

@@ -22,7 +22,7 @@ import { EnvironmentId } from '../decorators/environment-id.decorator';
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIUsersController {
-  constructor(private readonly usersService: OpenAPIUsersService) {}
+  constructor(private readonly openapiUsersService: OpenAPIUsersService) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
@@ -37,7 +37,7 @@ export class OpenAPIUsersController {
     const expandTypes = expand
       ? expand.split(',').map((e) => e.trim() as ExpandTypes[number])
       : undefined;
-    return await this.usersService.getUser(id, environmentId, expandTypes);
+    return await this.openapiUsersService.getUser(id, environmentId, expandTypes);
   }
 
   @Get()
@@ -52,14 +52,14 @@ export class OpenAPIUsersController {
     const expandTypes = expand
       ? expand.split(',').map((e) => e.trim() as ExpandTypes[number])
       : undefined;
-    return await this.usersService.listUsers(environmentId, cursor, limit, expandTypes);
+    return await this.openapiUsersService.listUsers(environmentId, cursor, limit, expandTypes);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create or update a user' })
   @ApiResponse({ status: 200, description: 'User created/updated successfully' })
   async upsertUser(@Body() data: UpsertUserRequestDto, @EnvironmentId() environmentId: string) {
-    return await this.usersService.upsertUser(data, environmentId);
+    return await this.openapiUsersService.upsertUser(data, environmentId);
   }
 
   @Delete(':id')
@@ -67,6 +67,6 @@ export class OpenAPIUsersController {
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   async deleteUser(@Param('id') id: string, @EnvironmentId() environmentId: string) {
-    return await this.usersService.deleteUser(id, environmentId);
+    return await this.openapiUsersService.deleteUser(id, environmentId);
   }
 }

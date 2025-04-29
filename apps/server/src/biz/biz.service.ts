@@ -619,7 +619,9 @@ export class BizService {
   async getBizUser(
     id: string,
     environmentId: string,
-    expand?: import('../openapi/users/users.dto').ExpandTypes,
+    include?: {
+      companies?: boolean;
+    },
   ) {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: {
@@ -627,14 +629,13 @@ export class BizService {
         environmentId,
       },
       include: {
-        bizUsersOnCompany:
-          expand?.length > 0
-            ? {
-                include: {
-                  bizCompany: true,
-                },
-              }
-            : false,
+        bizUsersOnCompany: include?.companies
+          ? {
+              include: {
+                bizCompany: true,
+              },
+            }
+          : false,
       },
     });
 
@@ -649,7 +650,9 @@ export class BizService {
     environmentId: string,
     cursor?: string,
     limit = 20,
-    expand?: import('../openapi/users/users.dto').ExpandTypes,
+    include?: {
+      companies?: boolean;
+    },
   ) {
     const pageSize = Number(limit) || 20;
     if (Number.isNaN(pageSize) || pageSize < 1) {
@@ -663,14 +666,13 @@ export class BizService {
     const baseQuery = {
       where: { environmentId },
       include: {
-        bizUsersOnCompany:
-          expand?.length > 0
-            ? {
-                include: {
-                  bizCompany: true,
-                },
-              }
-            : false,
+        bizUsersOnCompany: include?.companies
+          ? {
+              include: {
+                bizCompany: true,
+              },
+            }
+          : false,
       },
     };
 

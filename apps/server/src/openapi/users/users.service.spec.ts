@@ -70,7 +70,7 @@ describe('OpenAPIUsersService', () => {
         companies: [],
         memberships: null,
       });
-      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', [ExpandType.COMPANIES]);
+      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', { companies: true });
     });
 
     it('should throw not found error when user does not exist', async () => {
@@ -119,9 +119,9 @@ describe('OpenAPIUsersService', () => {
         next: null,
         previous: null,
       });
-      expect(bizService.listBizUsers).toHaveBeenCalledWith('env1', undefined, 20, [
-        ExpandType.COMPANIES,
-      ]);
+      expect(bizService.listBizUsers).toHaveBeenCalledWith('env1', undefined, 20, {
+        companies: true,
+      });
     });
 
     it('should handle pagination parameters', async () => {
@@ -173,9 +173,9 @@ describe('OpenAPIUsersService', () => {
         previous: 'http://localhost:3000/v1/users?cursor=previous_cursor',
       });
 
-      expect(mockBizService.listBizUsers).toHaveBeenCalledWith('env1', cursor, limit, [
-        ExpandType.COMPANIES,
-      ]);
+      expect(mockBizService.listBizUsers).toHaveBeenCalledWith('env1', cursor, limit, {
+        companies: true,
+      });
     });
 
     it('should throw error when limit is invalid', async () => {
