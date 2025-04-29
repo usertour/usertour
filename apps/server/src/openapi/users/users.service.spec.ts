@@ -11,7 +11,7 @@ describe('OpenAPIUsersService', () => {
 
   const mockBizService = {
     getBizUser: jest.fn(),
-    listBizUsers: jest.fn(),
+    listBizUsersWithRelations: jest.fn(),
     upsertUser: jest.fn(),
     deleteBizUser: jest.fn(),
   };
@@ -80,22 +80,29 @@ describe('OpenAPIUsersService', () => {
 
   describe('listUsers', () => {
     it('should return paginated users', async () => {
-      const mockBizUsers = [
-        {
-          externalId: 'user1',
-          data: {},
-          createdAt: new Date(),
-          bizUsersOnCompany: [],
-        },
-      ];
+      const mockBizUser = {
+        externalId: 'user1',
+        data: {},
+        createdAt: new Date('2025-04-27T10:56:52.198Z'),
+        bizUsersOnCompany: [],
+      };
 
-      mockBizService.listBizUsers.mockResolvedValue({
-        results: mockBizUsers,
-        nextCursor: null,
-        previousCursor: null,
+      mockBizService.listBizUsersWithRelations.mockResolvedValue({
+        edges: [
+          {
+            node: mockBizUser,
+            cursor: 'cursor1',
+          },
+        ],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
       });
 
-      const result = await service.listUsers('env1', undefined, 20, [ExpandType.COMPANIES]);
+      const result = await service.listUsers('env1', 20, undefined, [ExpandType.COMPANIES]);
 
       expect(result).toEqual({
         results: [
@@ -103,7 +110,7 @@ describe('OpenAPIUsersService', () => {
             id: 'user1',
             object: 'user',
             attributes: {},
-            createdAt: mockBizUsers[0].createdAt.toISOString(),
+            createdAt: '2025-04-27T10:56:52.198Z',
             companies: [],
             memberships: null,
           },
@@ -111,15 +118,14 @@ describe('OpenAPIUsersService', () => {
         next: null,
         previous: null,
       });
-      expect(bizService.listBizUsers).toHaveBeenCalledWith('env1', undefined, 20, {
-        companies: true,
-      });
+      expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
+        'env1',
+        { first: 20 },
+        { companies: true },
+      );
     });
 
-    it('should handle pagination parameters', async () => {
-      const cursor = 'cursor1';
-      const limit = 10;
-
+    it('should handle cursor pagination', async () => {
       const mockBizUser = {
         externalId: 'user1',
         data: {},
@@ -135,13 +141,22 @@ describe('OpenAPIUsersService', () => {
         ],
       };
 
-      mockBizService.listBizUsers.mockResolvedValue({
-        results: [mockBizUser],
-        next: 'next_cursor',
-        previous: 'previous_cursor',
+      mockBizService.listBizUsersWithRelations.mockResolvedValue({
+        edges: [
+          {
+            node: mockBizUser,
+            cursor: 'cursor2',
+          },
+        ],
+        pageInfo: {
+          hasNextPage: true,
+          hasPreviousPage: false,
+          startCursor: 'cursor2',
+          endCursor: 'cursor2',
+        },
       });
 
-      const result = await service.listUsers('env1', cursor, limit, [ExpandType.COMPANIES]);
+      const result = await service.listUsers('env1', 10, 'cursor1', [ExpandType.COMPANIES]);
 
       expect(result).toEqual({
         results: [
@@ -161,19 +176,19 @@ describe('OpenAPIUsersService', () => {
             memberships: null,
           },
         ],
-        next: 'http://localhost:3000/v1/users?cursor=next_cursor',
-        previous: 'http://localhost:3000/v1/users?cursor=previous_cursor',
+        next: 'http://localhost:3000/v1/users?cursor=cursor2&limit=10',
+        previous: 'http://localhost:3000/v1/users?limit=10',
       });
 
-      expect(mockBizService.listBizUsers).toHaveBeenCalledWith('env1', cursor, limit, {
-        companies: true,
-      });
+      expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
+        'env1',
+        { first: 10, after: 'cursor1' },
+        { companies: true },
+      );
     });
 
     it('should throw error when limit is invalid', async () => {
-      await expect(service.listUsers('env1', undefined, -1)).rejects.toThrow(
-        new InvalidLimitError(),
-      );
+      await expect(service.listUsers('env1', -1)).rejects.toThrow(new InvalidLimitError());
     });
   });
 

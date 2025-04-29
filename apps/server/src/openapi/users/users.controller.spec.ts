@@ -89,10 +89,10 @@ describe('OpenAPIUsersController', () => {
 
       mockUsersService.listUsers.mockResolvedValue(mockResponse);
 
-      const result = await controller.listUsers('env1', undefined, 20, 'companies');
+      const result = await controller.listUsers('env1', 20, undefined, 'companies');
 
       expect(result).toEqual(mockResponse);
-      expect(usersService.listUsers).toHaveBeenCalledWith('env1', undefined, 20, ['companies']);
+      expect(usersService.listUsers).toHaveBeenCalledWith('env1', 20, undefined, ['companies']);
     });
 
     it('should handle pagination parameters', async () => {
@@ -114,10 +114,10 @@ describe('OpenAPIUsersController', () => {
       const cursor = 'current_cursor';
       const limit = 10;
 
-      const result = await controller.listUsers('env1', cursor, limit, 'companies');
+      const result = await controller.listUsers('env1', limit, cursor, 'companies');
 
       expect(result).toEqual(mockResponse);
-      expect(usersService.listUsers).toHaveBeenCalledWith('env1', cursor, limit, ['companies']);
+      expect(usersService.listUsers).toHaveBeenCalledWith('env1', limit, cursor, ['companies']);
     });
   });
 

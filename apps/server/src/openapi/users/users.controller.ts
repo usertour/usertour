@@ -8,6 +8,7 @@ import {
   Delete,
   UseFilters,
   UseGuards,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIUsersService } from './users.service';
@@ -45,14 +46,14 @@ export class OpenAPIUsersController {
   @ApiResponse({ status: 200, description: 'List of users' })
   async listUsers(
     @EnvironmentId() environmentId: string,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
     @Query('expand') expand?: string,
   ) {
     const expandTypes = expand
       ? expand.split(',').map((e) => e.trim() as ExpandTypes[number])
       : undefined;
-    return await this.openapiUsersService.listUsers(environmentId, cursor, limit, expandTypes);
+    return await this.openapiUsersService.listUsers(environmentId, limit, cursor, expandTypes);
   }
 
   @Post()

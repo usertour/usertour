@@ -646,78 +646,6 @@ export class BizService {
     return bizUser;
   }
 
-  async listBizUsers(
-    environmentId: string,
-    cursor?: string,
-    limit = 20,
-    include?: {
-      companies?: boolean;
-    },
-  ) {
-    const pageSize = Number(limit) || 20;
-    if (Number.isNaN(pageSize) || pageSize < 1) {
-      throw new ParamsError('Invalid limit');
-    }
-
-    this.logger.debug(
-      `Listing users with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${pageSize}`,
-    );
-
-    const baseQuery = {
-      where: { environmentId },
-      include: {
-        bizUsersOnCompany: include?.companies
-          ? {
-              include: {
-                bizCompany: true,
-              },
-            }
-          : false,
-      },
-    };
-
-    // Get the previous page's last cursor if we're not on the first page
-    let previousPage = null;
-    if (cursor) {
-      try {
-        previousPage = await findManyCursorConnection(
-          (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
-          () => this.prisma.bizUser.count({ where: { environmentId } }),
-          { last: pageSize, before: cursor },
-        );
-      } catch (error) {
-        this.logger.warn(`Failed to get previous page: ${error.message}`);
-        throw new ParamsError('Invalid cursor for previous page');
-      }
-    }
-
-    let connection: any;
-    try {
-      connection = await findManyCursorConnection(
-        (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
-        () => this.prisma.bizUser.count({ where: { environmentId } }),
-        { first: pageSize, after: cursor },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to get current page: ${error.message}`);
-      throw new ParamsError('Invalid cursor');
-    }
-
-    // If we got no results and there was a cursor, it means the cursor was invalid
-    if (!connection.edges.length && cursor) {
-      throw new ParamsError('Invalid cursor');
-    }
-
-    return {
-      results: connection.edges.map((edge) => edge.node),
-      next: connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null,
-      previous:
-        previousPage?.edges.length > 0
-          ? previousPage.edges[previousPage.edges.length - 1].cursor
-          : null,
-    };
-  }
-
   async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string) {
     return await this.prisma.$transaction(async (tx) => {
       // First upsert the user with attributes
@@ -849,5 +777,39 @@ export class BizService {
         id: membershipId,
       },
     });
+  }
+
+  async listBizUsersWithRelations(
+    environmentId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+    include?: {
+      companies?: boolean;
+    },
+  ) {
+    const baseQuery = {
+      where: {
+        environmentId,
+      },
+      include: {
+        bizUsersOnCompany: include?.companies
+          ? {
+              include: {
+                bizCompany: true,
+              },
+            }
+          : false,
+      },
+    };
+
+    return await findManyCursorConnection(
+      (args) => this.prisma.bizUser.findMany({ ...baseQuery, ...args }),
+      () => this.prisma.bizUser.count({ where: baseQuery.where }),
+      paginationArgs,
+    );
   }
 }

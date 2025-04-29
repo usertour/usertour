@@ -6,6 +6,7 @@ import { UpsertUserRequestDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/types/openapi';
+import { paginate, PaginationConnection } from '@/common/openapi/pagination';
 
 @Injectable()
 export class OpenAPIUsersService {
@@ -28,8 +29,8 @@ export class OpenAPIUsersService {
 
   async listUsers(
     environmentId: string,
-    cursor?: string,
     limit = 20,
+    cursor?: string,
     expand?: ExpandTypes,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
     // Validate limit
@@ -43,18 +44,21 @@ export class OpenAPIUsersService {
     );
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
-    const { results, next, previous } = await this.bizService.listBizUsers(
+
+    return paginate(
+      apiUrl,
+      'users',
       environmentId,
       cursor,
       pageSize,
-      { companies: expand?.includes(ExpandType.COMPANIES) },
+      async (params) => {
+        const result = await this.bizService.listBizUsersWithRelations(environmentId, params, {
+          companies: expand?.includes(ExpandType.COMPANIES) ?? false,
+        });
+        return result as unknown as PaginationConnection<any>;
+      },
+      (node) => this.mapBizUserToUser(node, expand),
     );
-
-    return {
-      results: results.map((bizUser) => this.mapBizUserToUser(bizUser, expand)),
-      next: next ? `${apiUrl}/v1/users?cursor=${next}` : null,
-      previous: previous ? `${apiUrl}/v1/users?cursor=${previous}` : null,
-    };
   }
 
   private mapBizUserToUser(bizUser: any, expand?: ExpandTypes): User {
