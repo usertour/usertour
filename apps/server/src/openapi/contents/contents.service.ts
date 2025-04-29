@@ -4,12 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { ExpandType } from './contents.dto';
 import { Prisma } from '@prisma/client';
 import { ContentsService } from '@/contents/contents.service';
-import {
-  ContentNotFoundError,
-  InvalidLimitError,
-  InvalidCursorError,
-} from '@/common/errors/errors';
+import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
+import { paginate, PaginationConnection } from '@/common/openapi/pagination';
+
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
     editedVersion: true;
@@ -51,70 +49,23 @@ export class OpenAPIContentsService {
     limit = 20,
     expand?: ExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    // Validate limit
-    if (limit < 1) {
-      throw new InvalidLimitError();
-    }
-
-    this.logger.debug(
-      `Listing contents with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${limit}`,
-    );
-
     const apiUrl = this.configService.get<string>('app.apiUrl');
 
-    // Get the current page
-    const connection = await this.contentsService.listContentsWithRelations(
+    return paginate(
+      apiUrl,
+      'contents',
       environmentId,
-      { first: limit, after: cursor },
-      {
-        editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
-        publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
+      cursor,
+      limit,
+      async (params) => {
+        const result = await this.contentsService.listContentsWithRelations(environmentId, params, {
+          editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
+          publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
+        });
+        return result as unknown as PaginationConnection<ContentWithVersions>;
       },
+      (node) => this.mapPrismaContentToApiContent(node, expand),
     );
-
-    // If we got no results and there was a cursor, it means the cursor was invalid
-    if (!connection.edges.length && cursor) {
-      throw new InvalidCursorError();
-    }
-
-    // Get the previous page's cursor if we're not on the first page
-    let previousUrl = null;
-    if (cursor) {
-      // We're on a page after the first page, need to query the previous page
-      const previousPage = await this.contentsService.listContentsWithRelations(
-        environmentId,
-        { last: limit, before: connection.edges[0].cursor },
-        {}, // No need to include relations when just getting the cursor
-      );
-      if (previousPage.edges.length > 0) {
-        // If previous page has less than limit records, it means it's the first page
-        if (previousPage.edges.length < limit) {
-          previousUrl = `${apiUrl}/v1/contents?limit=${limit}`;
-        } else {
-          // If previous page has exactly limit records, we need to check if it's the first page
-          const firstPage = await this.contentsService.listContentsWithRelations(
-            environmentId,
-            { first: limit },
-            {}, // No need to include relations when just getting the cursor
-          );
-          // If the first page's first cursor matches the previous page's first cursor,
-          // it means the previous page is the first page
-          if (firstPage.edges[0].cursor === previousPage.edges[0].cursor) {
-            previousUrl = `${apiUrl}/v1/contents?limit=${limit}`;
-          } else {
-            previousUrl = `${apiUrl}/v1/contents?cursor=${previousPage.edges[0].cursor}&limit=${limit}`;
-          }
-        }
-      }
-    }
-
-    return {
-      results: connection.edges.map((edge) => this.mapPrismaContentToApiContent(edge.node, expand)),
-      next: connection.pageInfo.hasNextPage
-        ? `${apiUrl}/v1/contents?cursor=${connection.pageInfo.endCursor}&limit=${limit}`
-        : null,
-      previous: previousUrl,
-    };
   }
 
   private mapPrismaContentToApiContent(
@@ -171,67 +122,26 @@ export class OpenAPIContentsService {
     cursor?: string,
     limit = 20,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    // Validate limit
-    if (limit < 1) {
-      throw new InvalidLimitError();
-    }
-
-    this.logger.debug(
-      `Listing content versions with environmentId: ${environmentId}, cursor: ${cursor}, limit: ${limit}`,
-    );
-
     const apiUrl = this.configService.get<string>('app.apiUrl');
 
-    // Get the current page
-    const connection = await this.contentsService.listContentVersionsWithRelations(
+    return paginate(
+      apiUrl,
+      'content_versions',
       environmentId,
-      { first: limit, after: cursor },
-      { content: true },
+      cursor,
+      limit,
+      async (params) => {
+        const result = await this.contentsService.listContentVersionsWithRelations(
+          environmentId,
+          params,
+          {
+            content: true,
+          },
+        );
+        return result as unknown as PaginationConnection<VersionWithContent>;
+      },
+      (node) => this.mapPrismaVersionToApiVersion(node),
     );
-
-    // If we got no results and there was a cursor, it means the cursor was invalid
-    if (!connection.edges.length && cursor) {
-      throw new InvalidCursorError();
-    }
-
-    // Get the previous page's cursor if we're not on the first page
-    let previousUrl = null;
-    if (cursor) {
-      // We're on a page after the first page, need to query the previous page
-      const previousPage = await this.contentsService.listContentVersionsWithRelations(
-        environmentId,
-        { last: limit, before: connection.edges[0].cursor },
-        {}, // No need to include relations when just getting the cursor
-      );
-      if (previousPage.edges.length > 0) {
-        // If previous page has less than limit records, it means it's the first page
-        if (previousPage.edges.length < limit) {
-          previousUrl = `${apiUrl}/v1/content_versions?limit=${limit}`;
-        } else {
-          // If previous page has exactly limit records, we need to check if it's the first page
-          const firstPage = await this.contentsService.listContentVersionsWithRelations(
-            environmentId,
-            { first: limit },
-            {}, // No need to include relations when just getting the cursor
-          );
-          // If the first page's first cursor matches the previous page's first cursor,
-          // it means the previous page is the first page
-          if (firstPage.edges[0].cursor === previousPage.edges[0].cursor) {
-            previousUrl = `${apiUrl}/v1/content_versions?limit=${limit}`;
-          } else {
-            previousUrl = `${apiUrl}/v1/content_versions?cursor=${previousPage.edges[0].cursor}&limit=${limit}`;
-          }
-        }
-      }
-    }
-
-    return {
-      results: connection.edges.map((edge) => this.mapPrismaVersionToApiVersion(edge.node)),
-      next: connection.pageInfo.hasNextPage
-        ? `${apiUrl}/v1/content_versions?cursor=${connection.pageInfo.endCursor}&limit=${limit}`
-        : null,
-      previous: previousUrl,
-    };
   }
 
   private mapPrismaVersionToApiVersion(version: VersionWithContent): ContentVersion {
