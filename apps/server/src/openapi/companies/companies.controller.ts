@@ -22,7 +22,7 @@ import { OpenAPICompaniesService } from './companies.service';
 import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from './companies.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 

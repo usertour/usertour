@@ -5,7 +5,7 @@ import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenapiGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 describe('OpenAPI:CompanyMembershipController', () => {
   let controller: OpenAPICompanyMembershipController;

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIErrors } from '../constants/errors';
+import { OpenAPIErrors } from '../../openapi/constants/errors';
 
 interface OpenAPIErrorResponse {
   error: {

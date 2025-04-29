@@ -4,7 +4,7 @@ import { OpenAPIEventsService } from './events.service';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenapiGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 @ApiTags('Events')
 @Controller('v1/events')

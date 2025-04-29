@@ -4,7 +4,7 @@ import { OpenAPIAttributesService } from './attributes.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenapiGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { AttributesService } from '@/attributes/attributes.service';
 import { Environment } from '@/environments/models/environment.model';
 

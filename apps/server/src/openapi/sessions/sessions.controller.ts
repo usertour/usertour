@@ -12,7 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { OpenAPIContentSessionService } from './sessions.service';
 import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './sessions.dto';
 import { OpenapiGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Content Session')

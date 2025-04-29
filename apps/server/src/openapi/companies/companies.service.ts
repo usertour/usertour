@@ -3,7 +3,7 @@ import { Company } from '../models/company.model';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
-import { BizService } from '../../biz/biz.service';
+import { BizService } from '@/biz/biz.service';
 import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
 
 @Injectable()

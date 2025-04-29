@@ -6,7 +6,7 @@ import { OpenAPIException } from '@/common/exceptions/openapi.exception';
 import { OpenAPIErrors } from '../constants/errors';
 import { OpenapiGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ConfigService } from '@nestjs/config';
 
 describe('OpenAPIEventsController', () => {

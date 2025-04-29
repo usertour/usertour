@@ -5,8 +5,8 @@ import { UpsertCompanyRequestDto } from './companies.dto';
 import { OpenapiGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
-import { BizService } from '../../biz/biz.service';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { BizService } from '@/biz/biz.service';
 import { Environment } from '@/environments/models/environment.model';
 
 describe('OpenAPICompaniesController', () => {

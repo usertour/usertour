@@ -13,7 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@ne
 import { OpenAPIUsersService } from './users.service';
 import { UpsertUserRequestDto, ExpandTypes } from './users.dto';
 import { OpenapiGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '../filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Users')
