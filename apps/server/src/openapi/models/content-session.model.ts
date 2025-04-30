@@ -31,7 +31,7 @@ export class ContentSession {
   @ApiProperty({ example: '33af21fd-f025-43fc-a492-cf5179b38ee3' })
   id: string;
 
-  @ApiProperty({ example: OpenApiObjectType.SESSION })
+  @ApiProperty({ example: OpenApiObjectType.CONTENT_SESSION })
   object: string;
 
   @ApiProperty({ example: null, nullable: true })

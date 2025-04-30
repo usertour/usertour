@@ -8,29 +8,33 @@ import {
   DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { OpenAPIEventsService } from './events.service';
+import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
-@ApiTags('Events')
-@Controller('v1/events')
+@ApiTags('Event Definitions')
+@Controller('v1/event-definitions')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
-export class OpenAPIEventsController {
-  private readonly logger = new Logger(OpenAPIEventsController.name);
+export class OpenAPIEventDefinitionsController {
+  private readonly logger = new Logger(OpenAPIEventDefinitionsController.name);
 
-  constructor(private readonly eventsService: OpenAPIEventsService) {}
+  constructor(private readonly openAPIEventDefinitionsService: OpenAPIEventDefinitionsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List events' })
-  async listEvents(
+  @ApiOperation({ summary: 'List event definitions' })
+  async listEventDefinitions(
     @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
   ) {
-    return this.eventsService.listEvents(environment.projectId, limit, cursor);
+    return this.openAPIEventDefinitionsService.listEventDefinitions(
+      environment.projectId,
+      limit,
+      cursor,
+    );
   }
 }

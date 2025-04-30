@@ -81,7 +81,7 @@ export class OpenAPIContentsService {
         expand?.includes(ExpandType.EDITED_VERSION) && content.editedVersion
           ? {
               id: content.editedVersion.id,
-              object: OpenApiObjectType.VERSION,
+              object: OpenApiObjectType.CONTENT_VERSION,
               number: content.editedVersion.sequence,
               questions: [],
               updatedAt: content.editedVersion.updatedAt.toISOString(),
@@ -93,7 +93,7 @@ export class OpenAPIContentsService {
         expand?.includes(ExpandType.PUBLISHED_VERSION) && content.publishedVersion
           ? {
               id: content.publishedVersion.id,
-              object: OpenApiObjectType.VERSION,
+              object: OpenApiObjectType.CONTENT_VERSION,
               number: content.publishedVersion.sequence,
               questions: [],
               updatedAt: content.publishedVersion.updatedAt.toISOString(),
@@ -143,7 +143,7 @@ export class OpenAPIContentsService {
   private mapPrismaVersionToApiVersion(version: VersionWithContent): ContentVersion {
     return {
       id: version.id,
-      object: OpenApiObjectType.VERSION,
+      object: OpenApiObjectType.CONTENT_VERSION,
       number: version.sequence,
       questions: (version.data as any[]) || [],
       updatedAt: version.updatedAt.toISOString(),

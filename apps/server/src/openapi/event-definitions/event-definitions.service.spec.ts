@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIEventsService } from './events.service';
+import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { InvalidLimitError } from '@/common/errors/errors';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '@/common/types/openapi';
 
-describe('OpenAPIEventsService', () => {
-  let service: OpenAPIEventsService;
+describe('OpenAPIEventDefinitionsService', () => {
+  let service: OpenAPIEventDefinitionsService;
   let businessEventsService: BusinessEventsService;
 
   const mockBusinessEventsService = {
@@ -20,7 +20,7 @@ describe('OpenAPIEventsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        OpenAPIEventsService,
+        OpenAPIEventDefinitionsService,
         {
           provide: BusinessEventsService,
           useValue: mockBusinessEventsService,
@@ -32,14 +32,14 @@ describe('OpenAPIEventsService', () => {
       ],
     }).compile();
 
-    service = module.get<OpenAPIEventsService>(OpenAPIEventsService);
+    service = module.get<OpenAPIEventDefinitionsService>(OpenAPIEventDefinitionsService);
     businessEventsService = module.get<BusinessEventsService>(BusinessEventsService);
 
     // Clear all mocks before each test
     jest.clearAllMocks();
   });
 
-  describe('listEvents', () => {
+  describe('listEventDefinitions', () => {
     const mockProjectId = 'project-123';
     const mockCursor = 'test-cursor';
     const mockLimit = 10;
@@ -68,36 +68,36 @@ describe('OpenAPIEventsService', () => {
       results: [
         {
           id: 'event-123',
-          object: OpenApiObjectType.EVENT,
+          object: OpenApiObjectType.EVENT_DEFINITION,
           createdAt: '2024-01-01T00:00:00.000Z',
           description: 'Test Event',
           displayName: 'Test Event',
           name: 'test_event',
         },
       ],
-      next: `http://localhost:3000/v1/events?cursor=next-cursor&limit=${mockLimit}`,
-      previous: `http://localhost:3000/v1/events?limit=${mockLimit}`,
+      next: `http://localhost:3000/v1/event_definitions?cursor=next-cursor&limit=${mockLimit}`,
+      previous: `http://localhost:3000/v1/event_definitions?limit=${mockLimit}`,
     };
 
     const expectedDefaultResponse = {
       results: [
         {
           id: 'event-123',
-          object: OpenApiObjectType.EVENT,
+          object: OpenApiObjectType.EVENT_DEFINITION,
           createdAt: '2024-01-01T00:00:00.000Z',
           description: 'Test Event',
           displayName: 'Test Event',
           name: 'test_event',
         },
       ],
-      next: 'http://localhost:3000/v1/events?cursor=next-cursor&limit=20',
+      next: 'http://localhost:3000/v1/event_definitions?cursor=next-cursor&limit=20',
       previous: null,
     };
 
     it('should successfully list events', async () => {
       mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
-      const result = await service.listEvents(mockProjectId, mockLimit, mockCursor);
+      const result = await service.listEventDefinitions(mockProjectId, mockLimit, mockCursor);
 
       expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(mockProjectId, {
         first: mockLimit,
@@ -109,7 +109,7 @@ describe('OpenAPIEventsService', () => {
     it('should use default limit if not provided', async () => {
       mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
-      const result = await service.listEvents(mockProjectId);
+      const result = await service.listEventDefinitions(mockProjectId);
 
       expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(mockProjectId, {
         first: 20,
@@ -119,7 +119,9 @@ describe('OpenAPIEventsService', () => {
     });
 
     it('should throw error for invalid limit', async () => {
-      await expect(service.listEvents(mockProjectId, -1)).rejects.toThrow(new InvalidLimitError());
+      await expect(service.listEventDefinitions(mockProjectId, -1)).rejects.toThrow(
+        new InvalidLimitError(),
+      );
     });
   });
 });

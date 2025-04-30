@@ -124,7 +124,7 @@ export class OpenAPIContentSessionsService {
 
     return {
       id,
-      object: OpenApiObjectType.SESSION,
+      object: OpenApiObjectType.CONTENT_SESSION,
       deleted: true,
     };
   }
@@ -132,7 +132,7 @@ export class OpenAPIContentSessionsService {
   private mapToContentSession(session: ContentSessionWithRelations): ContentSession {
     return {
       id: session.id,
-      object: OpenApiObjectType.SESSION,
+      object: OpenApiObjectType.CONTENT_SESSION,
       answers: session.data as any,
       completedAt: null,
       completed: session.state === 1,
@@ -174,7 +174,7 @@ export class OpenAPIContentSessionsService {
       version: session.version
         ? {
             id: session.version.id,
-            object: OpenApiObjectType.VERSION,
+            object: OpenApiObjectType.CONTENT_VERSION,
             number: session.version.sequence,
             updatedAt: session.version.updatedAt.toISOString(),
             createdAt: session.version.createdAt.toISOString(),

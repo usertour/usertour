@@ -116,7 +116,7 @@ describe('OpenAPIContentsService', () => {
         editedVersion: undefined,
         publishedVersion: {
           id: 'version-2',
-          object: OpenApiObjectType.VERSION,
+          object: OpenApiObjectType.CONTENT_VERSION,
           number: 2,
           questions: [],
           updatedAt: mockContent.publishedVersion.updatedAt.toISOString(),
@@ -221,7 +221,7 @@ describe('OpenAPIContentsService', () => {
 
       expect(result).toEqual({
         id: 'version-1',
-        object: OpenApiObjectType.VERSION,
+        object: OpenApiObjectType.CONTENT_VERSION,
         number: 1,
         questions: [],
         updatedAt: mockVersion.updatedAt.toISOString(),
@@ -276,7 +276,7 @@ describe('OpenAPIContentsService', () => {
       expect(result).toEqual({
         results: mockVersions.map((version) => ({
           id: version.id,
-          object: OpenApiObjectType.VERSION,
+          object: OpenApiObjectType.CONTENT_VERSION,
           number: 1,
           questions: [],
           updatedAt: version.updatedAt.toISOString(),

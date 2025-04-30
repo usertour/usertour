@@ -90,7 +90,7 @@ describe('OpenAPIContentsController', () => {
         publishedVersionId: 'version-2',
         editedVersion: {
           id: 'version-1',
-          object: OpenApiObjectType.VERSION,
+          object: OpenApiObjectType.CONTENT_VERSION,
           number: 1,
           questions: [],
           updatedAt: new Date().toISOString(),
@@ -98,7 +98,7 @@ describe('OpenAPIContentsController', () => {
         },
         publishedVersion: {
           id: 'version-2',
-          object: OpenApiObjectType.VERSION,
+          object: OpenApiObjectType.CONTENT_VERSION,
           number: 2,
           questions: [],
           updatedAt: new Date().toISOString(),
@@ -166,7 +166,7 @@ describe('OpenAPIContentsController', () => {
             publishedVersionId: 'version-2',
             editedVersion: {
               id: 'version-1',
-              object: OpenApiObjectType.VERSION,
+              object: OpenApiObjectType.CONTENT_VERSION,
               number: 1,
               questions: [],
               updatedAt: new Date().toISOString(),
@@ -174,7 +174,7 @@ describe('OpenAPIContentsController', () => {
             },
             publishedVersion: {
               id: 'version-2',
-              object: OpenApiObjectType.VERSION,
+              object: OpenApiObjectType.CONTENT_VERSION,
               number: 2,
               questions: [],
               updatedAt: new Date().toISOString(),
@@ -213,7 +213,7 @@ describe('OpenAPIContentsController', () => {
     it('should return content version', async () => {
       const mockVersion: ContentVersion = {
         id: 'version-1',
-        object: OpenApiObjectType.VERSION,
+        object: OpenApiObjectType.CONTENT_VERSION,
         number: 1,
         questions: [],
         updatedAt: new Date().toISOString(),
@@ -243,7 +243,7 @@ describe('OpenAPIContentsController', () => {
         results: [
           {
             id: 'version-1',
-            object: OpenApiObjectType.VERSION,
+            object: OpenApiObjectType.CONTENT_VERSION,
             number: 1,
             questions: [],
             updatedAt: new Date().toISOString(),

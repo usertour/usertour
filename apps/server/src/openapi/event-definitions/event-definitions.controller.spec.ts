@@ -1,20 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIEventsController } from './events.controller';
-import { OpenAPIEventsService } from './events.service';
+import { OpenAPIEventDefinitionsController } from './event-definitions.controller';
+import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { InvalidLimitError, InvalidCursorError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
 
-describe('OpenAPIEventsController', () => {
-  let controller: OpenAPIEventsController;
-  let mockService: jest.Mocked<OpenAPIEventsService>;
+describe('OpenAPIEventDefinitionsController', () => {
+  let controller: OpenAPIEventDefinitionsController;
+  let mockService: jest.Mocked<OpenAPIEventDefinitionsService>;
   let mockConfigService: jest.Mocked<ConfigService>;
   let mockPrismaService: jest.Mocked<PrismaService>;
 
   beforeEach(async () => {
     mockService = {
-      listEvents: jest.fn(),
+      listEventDefinitions: jest.fn(),
     } as any;
 
     mockConfigService = {
@@ -26,10 +26,10 @@ describe('OpenAPIEventsController', () => {
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OpenAPIEventsController],
+      controllers: [OpenAPIEventDefinitionsController],
       providers: [
         {
-          provide: OpenAPIEventsService,
+          provide: OpenAPIEventDefinitionsService,
           useValue: mockService,
         },
         {
@@ -43,20 +43,20 @@ describe('OpenAPIEventsController', () => {
       ],
     }).compile();
 
-    controller = module.get<OpenAPIEventsController>(OpenAPIEventsController);
+    controller = module.get<OpenAPIEventDefinitionsController>(OpenAPIEventDefinitionsController);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('listEvents', () => {
-    it('should return a list of events', async () => {
-      const mockEvents = {
+  describe('listEventDefinitions', () => {
+    it('should return a list of event definitions', async () => {
+      const mockEventDefinitions = {
         results: [
           {
             id: 'event1',
-            object: OpenApiObjectType.EVENT,
+            object: OpenApiObjectType.EVENT_DEFINITION,
             name: 'Test Event 1',
             displayName: 'Test Event 1',
             description: 'Test Event 1 Description',
@@ -65,7 +65,7 @@ describe('OpenAPIEventsController', () => {
           },
           {
             id: 'event2',
-            object: OpenApiObjectType.EVENT,
+            object: OpenApiObjectType.EVENT_DEFINITION,
             name: 'Test Event 2',
             displayName: 'Test Event 2',
             description: 'Test Event 2 Description',
@@ -77,31 +77,35 @@ describe('OpenAPIEventsController', () => {
         previous: 'prev-cursor',
       };
 
-      mockService.listEvents.mockResolvedValue(mockEvents);
+      mockService.listEventDefinitions.mockResolvedValue(mockEventDefinitions);
 
-      const result = await controller.listEvents(
+      const result = await controller.listEventDefinitions(
         { id: 'env1', projectId: 'project1' } as any,
         10,
         'cursor1',
       );
 
-      expect(result).toEqual(mockEvents);
-      expect(mockService.listEvents).toHaveBeenCalledWith('project1', 10, 'cursor1');
+      expect(result).toEqual(mockEventDefinitions);
+      expect(mockService.listEventDefinitions).toHaveBeenCalledWith('project1', 10, 'cursor1');
     });
 
     it('should throw error when limit is invalid', async () => {
-      mockService.listEvents.mockRejectedValue(new InvalidLimitError());
+      mockService.listEventDefinitions.mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listEvents({ id: 'env1', projectId: 'project1' } as any, -1),
+        controller.listEventDefinitions({ id: 'env1', projectId: 'project1' } as any, -1),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
     it('should throw error when cursor is invalid', async () => {
-      mockService.listEvents.mockRejectedValue(new InvalidCursorError());
+      mockService.listEventDefinitions.mockRejectedValue(new InvalidCursorError());
 
       await expect(
-        controller.listEvents({ id: 'env1', projectId: 'project1' } as any, 10, 'invalid-cursor'),
+        controller.listEventDefinitions(
+          { id: 'env1', projectId: 'project1' } as any,
+          10,
+          'invalid-cursor',
+        ),
       ).rejects.toThrow(new InvalidCursorError());
     });
   });
