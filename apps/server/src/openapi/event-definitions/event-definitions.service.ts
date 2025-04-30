@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Event } from '../models/event.model';
+import { EventDefinition } from '../models/event-definition.model';
 import { InvalidLimitError } from '@/common/errors/errors';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { OpenApiObjectType } from '@/common/types/openapi';
@@ -19,7 +19,7 @@ export class OpenAPIEventDefinitionsService {
     projectId: string,
     limit = 20,
     cursor?: string,
-  ): Promise<{ results: Event[]; next: string | null; previous: string | null }> {
+  ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
     // Validate limit
     if (limit < 1) {
       throw new InvalidLimitError();

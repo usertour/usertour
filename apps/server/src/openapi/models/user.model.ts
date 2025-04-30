@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Company } from './company.model';
-import { Membership } from './membership.model';
+import { CompanyMembership } from './company-membership.model';
 
 export class User {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
@@ -15,9 +15,9 @@ export class User {
   @ApiProperty({ example: '2024-03-29T16:05:45.000Z' })
   createdAt: string;
 
-  @ApiProperty({ type: [Company], required: false })
+  @ApiProperty({ type: () => [Company], required: false })
   companies?: Company[];
 
-  @ApiProperty({ type: [Object], required: false })
-  memberships?: Membership[];
+  @ApiProperty({ type: () => [CompanyMembership], required: false })
+  memberships?: CompanyMembership[];
 }
