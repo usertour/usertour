@@ -7,7 +7,7 @@ import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { AttributesService } from '@/attributes/attributes.service';
 import { Environment } from '@/environments/models/environment.model';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 describe('OpenAPIAttributeDefinitionsController', () => {
   let controller: OpenAPIAttributeDefinitionsController;
   let attributeDefinitionsService: OpenAPIAttributeDefinitionsService;

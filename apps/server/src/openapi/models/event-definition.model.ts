@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 export class EventDefinition {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventDefinition } from '../models/event-definition.model';
 import { InvalidLimitError } from '@/common/errors/errors';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 import { ConfigService } from '@nestjs/config';
 import { paginate } from '@/common/openapi/pagination';
 

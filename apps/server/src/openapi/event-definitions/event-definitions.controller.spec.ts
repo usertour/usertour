@@ -4,7 +4,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { InvalidLimitError, InvalidCursorError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 describe('OpenAPIEventDefinitionsController', () => {
   let controller: OpenAPIEventDefinitionsController;

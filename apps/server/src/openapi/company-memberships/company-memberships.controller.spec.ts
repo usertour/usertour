@@ -6,7 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 describe('OpenAPICompanyMembershipsController', () => {
   let controller: OpenAPICompanyMembershipsController;

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
 import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
 import { CompanyNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 
 @Injectable()

@@ -1,5 +1,6 @@
-import { AttributeBizTypeNames, AttributeDataTypeNames } from '@/attributes/models/attribute.model';
+import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
 import { ApiProperty } from '@nestjs/swagger';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 export class Attribute {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
@@ -23,6 +24,6 @@ export class Attribute {
   @ApiProperty({ example: 'signed_up_at' })
   codeName: string;
 
-  @ApiProperty({ example: AttributeBizTypeNames.USER })
-  scope: AttributeBizTypeNames;
+  @ApiProperty({ example: OpenApiObjectType.USER })
+  scope: OpenApiObjectType;
 }

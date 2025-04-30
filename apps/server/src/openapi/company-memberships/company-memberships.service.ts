@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { BizService } from '@/biz/biz.service';
 import { DeleteCompanyMembershipResponseDto } from './company-memberships.dto';
 import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 @Injectable()
 export class OpenAPICompanyMembershipsService {

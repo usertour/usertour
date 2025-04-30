@@ -9,7 +9,7 @@ import {
   ContentSessionNotFoundError,
   InvalidRequestError,
 } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { ContentsService } from '@/contents/contents.service';
 

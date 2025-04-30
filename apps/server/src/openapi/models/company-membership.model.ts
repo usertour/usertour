@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Company } from './company.model';
 import { User } from './user.model';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 export class CompanyMembership {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })

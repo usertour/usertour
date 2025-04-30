@@ -3,7 +3,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { InvalidLimitError } from '@/common/errors/errors';
 import { ConfigService } from '@nestjs/config';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 describe('OpenAPIEventDefinitionsService', () => {
   let service: OpenAPIEventDefinitionsService;

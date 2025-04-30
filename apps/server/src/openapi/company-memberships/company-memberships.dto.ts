@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 export class DeleteCompanyMembershipResponseDto {
   @ApiProperty({ example: 'e9b32bd0-63cb-415e-9c4f-477c85b92f97' })

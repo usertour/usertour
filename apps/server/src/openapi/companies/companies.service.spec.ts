@@ -3,7 +3,7 @@ import { OpenAPICompaniesService } from './companies.service';
 import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
 import { CompanyNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 import { Prisma } from '@prisma/client';
 
 describe('OpenAPICompaniesService', () => {

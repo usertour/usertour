@@ -8,7 +8,7 @@ import {
   InvalidLimitError,
   InvalidCursorError,
 } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 describe('OpenAPIContentsService', () => {
   let service: OpenAPIContentsService;

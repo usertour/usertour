@@ -5,7 +5,7 @@ import { AttributeDataTypeNames, AttributeBizTypeNames } from '@/attributes/mode
 import { InvalidLimitError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 describe('OpenAPIAttributeDefinitionsService', () => {
   let service: OpenAPIAttributeDefinitionsService;
   let mockAttributeDefinitionsService: jest.Mocked<AttributesService>;

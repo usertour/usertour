@@ -4,7 +4,7 @@ import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
 import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
 import { ExpandType } from './users.dto';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 describe('OpenAPIUsersService', () => {
   let service: OpenAPIUsersService;

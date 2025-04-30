@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Attribute } from '../models/attribute.model';
 import { IsOptional, IsString, IsInt, Min, Max, IsEnum, Matches } from 'class-validator';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 export class ListAttributesResponseDto {
   @ApiProperty({ description: 'List of attributes', type: [Attribute] })

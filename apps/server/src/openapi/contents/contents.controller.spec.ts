@@ -12,7 +12,7 @@ import { OpenAPIKeyGuard } from '../openapi.guard';
 import { ConfigService } from '@nestjs/config';
 import { ContentsService } from '@/contents/contents.service';
 import { PrismaService } from 'nestjs-prisma';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 describe('OpenAPIContentsController', () => {
   let controller: OpenAPIContentsController;
   let contentService: OpenAPIContentsService;

@@ -5,7 +5,7 @@ import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/com
 import { UpsertUserRequestDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 
 @Injectable()

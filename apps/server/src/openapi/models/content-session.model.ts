@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Content, ContentVersion } from './content.model';
 import { Company } from './company.model';
 import { User } from './user.model';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 export class ContentSessionAnswers {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })

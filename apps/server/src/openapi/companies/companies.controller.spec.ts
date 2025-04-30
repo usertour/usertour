@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { BizService } from '@/biz/biz.service';
 import { Environment } from '@/environments/models/environment.model';
-import { OpenApiObjectType } from '@/common/types/openapi';
+import { OpenApiObjectType } from '@/common/openapi/types';
 describe('OpenAPICompaniesController', () => {
   let controller: OpenAPICompaniesController;
   const createdAt = new Date();
