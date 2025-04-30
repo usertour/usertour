@@ -268,6 +268,15 @@ export class ServiceUnavailableError extends OpenAPIError {
   };
 }
 
+export class InvalidScopeError extends OpenAPIError {
+  code = 'E1015';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid scope parameter',
+    'zh-CN': '无效的范围参数',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -299,6 +308,7 @@ const errorMap = {
   E1012: UnsupportedMediaTypeError,
   E1013: RateLimitExceededError,
   E1014: ServiceUnavailableError,
+  E1015: InvalidScopeError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

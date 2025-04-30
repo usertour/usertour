@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
 import { AttributesService } from '@/attributes/attributes.service';
 import { AttributeDataTypeNames, AttributeBizTypeNames } from '@/attributes/models/attribute.model';
-import { InvalidLimitError } from '@/common/errors/errors';
+import { InvalidLimitError, InvalidScopeError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '@/common/openapi/types';
@@ -211,6 +211,15 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         undefined,
         [{ id: 'desc' }],
       );
+    });
+
+    it('should throw InvalidScopeError when scope is invalid', async () => {
+      const projectId = 'test-project-id';
+      const invalidScope = 'invalidScope';
+
+      await expect(
+        service.listAttributeDefinitions(projectId, { scope: invalidScope as any }),
+      ).rejects.toThrow(new InvalidScopeError(invalidScope));
     });
   });
 });
