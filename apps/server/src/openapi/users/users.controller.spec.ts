@@ -5,6 +5,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { ExpandType } from './users.dto';
 
 describe('OpenAPIUsersController', () => {
   let controller: OpenAPIUsersController;
@@ -65,10 +66,10 @@ describe('OpenAPIUsersController', () => {
 
       mockUsersService.getUser.mockResolvedValue(mockUser);
 
-      const result = await controller.getUser('user1', 'env1', 'companies');
+      const result = await controller.getUser('user1', 'env1', [ExpandType.COMPANIES]);
 
       expect(result).toEqual(mockUser);
-      expect(usersService.getUser).toHaveBeenCalledWith('user1', 'env1', ['companies']);
+      expect(usersService.getUser).toHaveBeenCalledWith('user1', 'env1', [ExpandType.COMPANIES]);
     });
   });
 
@@ -89,10 +90,12 @@ describe('OpenAPIUsersController', () => {
 
       mockUsersService.listUsers.mockResolvedValue(mockResponse);
 
-      const result = await controller.listUsers('env1', 20, undefined, 'companies');
+      const result = await controller.listUsers('env1', 20, undefined, [ExpandType.COMPANIES]);
 
       expect(result).toEqual(mockResponse);
-      expect(usersService.listUsers).toHaveBeenCalledWith('env1', 20, undefined, ['companies']);
+      expect(usersService.listUsers).toHaveBeenCalledWith('env1', 20, undefined, [
+        ExpandType.COMPANIES,
+      ]);
     });
 
     it('should handle pagination parameters', async () => {
@@ -114,10 +117,12 @@ describe('OpenAPIUsersController', () => {
       const cursor = 'current_cursor';
       const limit = 10;
 
-      const result = await controller.listUsers('env1', limit, cursor, 'companies');
+      const result = await controller.listUsers('env1', limit, cursor, [ExpandType.COMPANIES]);
 
       expect(result).toEqual(mockResponse);
-      expect(usersService.listUsers).toHaveBeenCalledWith('env1', limit, cursor, ['companies']);
+      expect(usersService.listUsers).toHaveBeenCalledWith('env1', limit, cursor, [
+        ExpandType.COMPANIES,
+      ]);
     });
   });
 

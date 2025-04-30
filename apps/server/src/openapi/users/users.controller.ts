@@ -9,13 +9,22 @@ import {
   UseFilters,
   UseGuards,
   DefaultValuePipe,
+  ParseArrayPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { OpenAPIUsersService } from './users.service';
-import { UpsertUserRequestDto, ExpandTypes } from './users.dto';
+import { UpsertUserRequestDto, ExpandType } from './users.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
+import { User } from '../models/user.model';
 
 @ApiTags('Users')
 @Controller('v1/users')
@@ -23,44 +32,46 @@ import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIUsersController {
-  constructor(private readonly openapiUsersService: OpenAPIUsersService) {}
+  constructor(private readonly openAPIUsersService: OpenAPIUsersService) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ status: 200, description: 'User found' })
+  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
+  @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUser(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
-    @Query('expand') expand?: string,
-  ) {
-    const expandTypes = expand
-      ? expand.split(',').map((e) => e.trim() as ExpandTypes[number])
-      : undefined;
-    return await this.openapiUsersService.getUser(id, environmentId, expandTypes);
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+  ): Promise<User> {
+    return this.openAPIUsersService.getUser(id, environmentId, expand);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all users' })
-  @ApiResponse({ status: 200, description: 'List of users' })
+  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
+  @ApiResponse({ status: 200, description: 'List of users', type: User, isArray: true })
   async listUsers(
     @EnvironmentId() environmentId: string,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('expand') expand?: string,
-  ) {
-    const expandTypes = expand
-      ? expand.split(',').map((e) => e.trim() as ExpandTypes[number])
-      : undefined;
-    return await this.openapiUsersService.listUsers(environmentId, limit, cursor, expandTypes);
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+  ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
+    return this.openAPIUsersService.listUsers(environmentId, limit, cursor, expand);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create or update a user' })
   @ApiResponse({ status: 200, description: 'User created/updated successfully' })
   async upsertUser(@Body() data: UpsertUserRequestDto, @EnvironmentId() environmentId: string) {
-    return await this.openapiUsersService.upsertUser(data, environmentId);
+    return await this.openAPIUsersService.upsertUser(data, environmentId);
   }
 
   @Delete(':id')
@@ -68,6 +79,6 @@ export class OpenAPIUsersController {
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   async deleteUser(@Param('id') id: string, @EnvironmentId() environmentId: string) {
-    return await this.openapiUsersService.deleteUser(id, environmentId);
+    return await this.openAPIUsersService.deleteUser(id, environmentId);
   }
 }
