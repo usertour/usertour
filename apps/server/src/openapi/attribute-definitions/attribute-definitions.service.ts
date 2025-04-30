@@ -26,6 +26,7 @@ export class OpenAPIAttributeDefinitionsService {
 
     const sortOrders = parseOrderBy(orderBy);
     const bizType = scope ? mapOpenApiObjectTypeToBizType(scope) : undefined;
+    const queryParams = scope ? { scope } : {};
 
     return paginate(
       endpointUrl,
@@ -34,7 +35,7 @@ export class OpenAPIAttributeDefinitionsService {
       async (params) =>
         this.attributesService.listWithPagination(projectId, params, bizType, sortOrders),
       (node) => this.mapToAttribute(node),
-      scope ? { scope } : {},
+      queryParams,
     );
   }
 
