@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPICompanyMembershipController } from './company_memberships.controller';
-import { OpenAPICompanyMembershipService } from './company_memberships.service';
-import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
+import { OpenAPICompanyMembershipsController } from './company-memberships.controller';
+import { OpenAPICompanyMembershipsService } from './company-memberships.service';
+import { DeleteCompanyMembershipResponseDto } from './company-memberships.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { OpenApiObjectType } from '@/common/types/openapi';
 
-describe('OpenAPI:CompanyMembershipController', () => {
-  let controller: OpenAPICompanyMembershipController;
+describe('OpenAPICompanyMembershipsController', () => {
+  let controller: OpenAPICompanyMembershipsController;
 
-  const mockCompanyMembershipService = {
+  const mockCompanyMembershipsService = {
     deleteCompanyMembership: jest.fn(),
   };
 
@@ -39,11 +39,11 @@ describe('OpenAPI:CompanyMembershipController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OpenAPICompanyMembershipController],
+      controllers: [OpenAPICompanyMembershipsController],
       providers: [
         {
-          provide: OpenAPICompanyMembershipService,
-          useValue: mockCompanyMembershipService,
+          provide: OpenAPICompanyMembershipsService,
+          useValue: mockCompanyMembershipsService,
         },
         {
           provide: PrismaService,
@@ -58,10 +58,12 @@ describe('OpenAPI:CompanyMembershipController', () => {
       ],
     }).compile();
 
-    controller = module.get<OpenAPICompanyMembershipController>(OpenAPICompanyMembershipController);
+    controller = module.get<OpenAPICompanyMembershipsController>(
+      OpenAPICompanyMembershipsController,
+    );
   });
 
-  describe('deleteCompanyMembership', () => {
+  describe('OpenAPICompanyMemberships:Delete', () => {
     it('should delete company membership successfully', async () => {
       const mockResponse: DeleteCompanyMembershipResponseDto = {
         id: 'membership-1',
@@ -69,12 +71,12 @@ describe('OpenAPI:CompanyMembershipController', () => {
         deleted: true,
       };
 
-      mockCompanyMembershipService.deleteCompanyMembership.mockResolvedValue(mockResponse);
+      mockCompanyMembershipsService.deleteCompanyMembership.mockResolvedValue(mockResponse);
 
       const result = await controller.deleteCompanyMembership('user-1', 'company-1', 'env-1');
 
       expect(result).toEqual(mockResponse);
-      expect(mockCompanyMembershipService.deleteCompanyMembership).toHaveBeenCalledWith(
+      expect(mockCompanyMembershipsService.deleteCompanyMembership).toHaveBeenCalledWith(
         'user-1',
         'company-1',
         'env-1',

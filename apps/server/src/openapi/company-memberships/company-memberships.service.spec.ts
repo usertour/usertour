@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPICompanyMembershipService } from './company_memberships.service';
+import { OpenAPICompanyMembershipsService } from './company-memberships.service';
 import { BizService } from '@/biz/biz.service';
 import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
 
-describe('OpenAPI:CompanyMembershipService', () => {
-  let service: OpenAPICompanyMembershipService;
+describe('OpenAPICompanyMembershipsService', () => {
+  let service: OpenAPICompanyMembershipsService;
 
   const mockBizService = {
     getBizCompanyMembership: jest.fn(),
@@ -15,7 +15,7 @@ describe('OpenAPI:CompanyMembershipService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        OpenAPICompanyMembershipService,
+        OpenAPICompanyMembershipsService,
         {
           provide: BizService,
           useValue: mockBizService,
@@ -23,11 +23,11 @@ describe('OpenAPI:CompanyMembershipService', () => {
       ],
     }).compile();
 
-    service = module.get<OpenAPICompanyMembershipService>(OpenAPICompanyMembershipService);
+    service = module.get<OpenAPICompanyMembershipsService>(OpenAPICompanyMembershipsService);
     jest.clearAllMocks();
   });
 
-  describe('OpenAPI:CompanyMembership:Delete', () => {
+  describe('OpenAPICompanyMemberships:Delete', () => {
     it('should delete company membership when membership exists', async () => {
       const mockMembership = {
         id: 'membership-1',

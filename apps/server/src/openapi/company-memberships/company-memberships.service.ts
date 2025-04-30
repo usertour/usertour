@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BizService } from '@/biz/biz.service';
-import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
+import { DeleteCompanyMembershipResponseDto } from './company-memberships.dto';
 import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
 
 @Injectable()
-export class OpenAPICompanyMembershipService {
-  private readonly logger = new Logger(OpenAPICompanyMembershipService.name);
+export class OpenAPICompanyMembershipsService {
+  private readonly logger = new Logger(OpenAPICompanyMembershipsService.name);
 
   constructor(private readonly bizService: BizService) {}
 

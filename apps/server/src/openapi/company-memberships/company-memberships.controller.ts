@@ -2,16 +2,18 @@ import { Controller, Delete, Query, UseFilters, UseGuards } from '@nestjs/common
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { OpenAPICompanyMembershipService } from './company_memberships.service';
-import { DeleteCompanyMembershipResponseDto } from './company_memberships.dto';
+import { OpenAPICompanyMembershipsService } from './company-memberships.service';
+import { DeleteCompanyMembershipResponseDto } from './company-memberships.dto';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
 @ApiTags('Company Memberships')
 @Controller('v1/company-memberships')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
-export class OpenAPICompanyMembershipController {
-  constructor(private readonly openAPICompanyMembershipService: OpenAPICompanyMembershipService) {}
+export class OpenAPICompanyMembershipsController {
+  constructor(
+    private readonly openAPICompanyMembershipsService: OpenAPICompanyMembershipsService,
+  ) {}
 
   @Delete()
   @ApiOperation({ summary: 'Delete company membership' })
@@ -28,7 +30,7 @@ export class OpenAPICompanyMembershipController {
     @Query('companyId') companyId: string,
     @EnvironmentId() environmentId: string,
   ): Promise<DeleteCompanyMembershipResponseDto> {
-    return await this.openAPICompanyMembershipService.deleteCompanyMembership(
+    return await this.openAPICompanyMembershipsService.deleteCompanyMembership(
       userId,
       companyId,
       environmentId,

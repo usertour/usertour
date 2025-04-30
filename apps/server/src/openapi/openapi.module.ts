@@ -18,8 +18,8 @@ import { OpenAPIUsersController } from './users/users.controller';
 import { OpenAPIUsersService } from './users/users.service';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIEventsService } from './events/events.service';
-import { OpenAPICompanyMembershipController } from './company_memberships/company_memberships.controller';
-import { OpenAPICompanyMembershipService } from './company_memberships/company_memberships.service';
+import { OpenAPICompanyMembershipsController } from './company-memberships/company-memberships.controller';
+import { OpenAPICompanyMembershipsService } from './company-memberships/company-memberships.service';
 import { ContentsModule } from '@/contents/contents.module';
 
 @Module({
@@ -36,7 +36,7 @@ import { ContentsModule } from '@/contents/contents.module';
     OpenAPIAttributesController,
     OpenAPIEventsController,
     OpenAPIUsersController,
-    OpenAPICompanyMembershipController,
+    OpenAPICompanyMembershipsController,
     OpenAPIContentsController,
     OpenAPIContentSessionsController,
   ],
@@ -47,7 +47,7 @@ import { ContentsModule } from '@/contents/contents.module';
     OpenAPIAttributesService,
     OpenAPIEventsService,
     OpenAPIUsersService,
-    OpenAPICompanyMembershipService,
+    OpenAPICompanyMembershipsService,
     OpenAPIContentsService,
     OpenAPIContentSessionsService,
   ],
