@@ -110,7 +110,9 @@ describe('OpenAPIContentsController', () => {
 
       mockContentService.getContent.mockResolvedValue(mockContent);
 
-      const result = await controller.getContent('test-id', 'env-id', 'published_version');
+      const result = await controller.getContent('test-id', 'env-id', [
+        ExpandType.PUBLISHED_VERSION,
+      ]);
 
       expect(result).toEqual(mockContent);
       expect(contentService.getContent).toHaveBeenCalledWith('test-id', 'env-id', [
@@ -188,7 +190,9 @@ describe('OpenAPIContentsController', () => {
 
       mockContentService.listContents.mockResolvedValue(mockContents);
 
-      const result = await controller.listContents('env-id', 10, undefined, 'published_version');
+      const result = await controller.listContents('env-id', 10, undefined, [
+        ExpandType.PUBLISHED_VERSION,
+      ]);
 
       expect(result).toEqual(mockContents);
       expect(contentService.listContents).toHaveBeenCalledWith('env-id', undefined, 10, [

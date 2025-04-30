@@ -6,6 +6,7 @@ import {
   UseGuards,
   DefaultValuePipe,
   Controller,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -39,10 +40,9 @@ export class OpenAPIContentsController {
   async getContent(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
-    @Query('expand') expand?: string,
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<Content> {
-    const expandTypes = expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined;
-    return this.openAPIContentsService.getContent(id, environmentId, expandTypes);
+    return this.openAPIContentsService.getContent(id, environmentId, expand);
   }
 
   @Get('v1/contents')
@@ -59,10 +59,9 @@ export class OpenAPIContentsController {
     @EnvironmentId() environmentId: string,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('expand') expand?: string,
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const expandTypes = expand ? expand.split(',').map((e) => e.trim() as ExpandType) : undefined;
-    return this.openAPIContentsService.listContents(environmentId, cursor, limit, expandTypes);
+    return this.openAPIContentsService.listContents(environmentId, cursor, limit, expand);
   }
 
   @Get('v1/content-versions/:id')
