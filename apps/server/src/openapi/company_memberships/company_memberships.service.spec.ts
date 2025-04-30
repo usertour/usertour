@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompanyMembershipService } from './company_memberships.service';
 import { BizService } from '@/biz/biz.service';
 import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 describe('OpenAPI:CompanyMembershipService', () => {
   let service: OpenAPICompanyMembershipService;
@@ -39,7 +40,7 @@ describe('OpenAPI:CompanyMembershipService', () => {
 
       expect(result).toEqual({
         id: 'membership-1',
-        object: 'company_membership',
+        object: OpenApiObjectType.COMPANY_MEMBERSHIP,
         deleted: true,
       });
 

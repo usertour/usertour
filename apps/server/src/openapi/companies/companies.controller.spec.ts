@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { BizService } from '@/biz/biz.service';
 import { Environment } from '@/environments/models/environment.model';
-
+import { OpenApiObjectType } from '@/common/types/openapi';
 describe('OpenAPICompaniesController', () => {
   let controller: OpenAPICompaniesController;
   const createdAt = new Date();
@@ -98,7 +98,7 @@ describe('OpenAPICompaniesController', () => {
 
       expect(result).toEqual({
         id: 'test-id',
-        object: 'company',
+        object: OpenApiObjectType.COMPANY,
         attributes: { name: 'Test Company' },
         createdAt: createdAt.toISOString(),
         users: null,
@@ -132,13 +132,13 @@ describe('OpenAPICompaniesController', () => {
 
       expect(result).toEqual({
         id: 'test-id',
-        object: 'company',
+        object: OpenApiObjectType.COMPANY,
         attributes: { name: 'Test Company' },
         createdAt: createdAt.toISOString(),
         users: [
           {
             id: 'user-1',
-            object: 'user',
+            object: OpenApiObjectType.USER,
             attributes: { name: 'Test User' },
             createdAt: createdAt.toISOString(),
           },
@@ -181,7 +181,7 @@ describe('OpenAPICompaniesController', () => {
       expect(result.results).toEqual([
         {
           id: 'test-id-1',
-          object: 'company',
+          object: OpenApiObjectType.COMPANY,
           attributes: { name: 'Company 1' },
           createdAt: createdAt.toISOString(),
           users: null,
@@ -240,21 +240,21 @@ describe('OpenAPICompaniesController', () => {
       expect(result.results).toEqual([
         {
           id: 'test-id-1',
-          object: 'company',
+          object: OpenApiObjectType.COMPANY,
           attributes: { name: 'Company 1' },
           createdAt: createdAt.toISOString(),
           users: null,
           memberships: [
             {
               id: 'membership-1',
-              object: 'company_membership',
+              object: OpenApiObjectType.COMPANY_MEMBERSHIP,
               attributes: { role: 'admin' },
               createdAt: createdAt.toISOString(),
               companyId: 'company-1',
               userId: 'user-1',
               user: {
                 id: 'user-1',
-                object: 'user',
+                object: OpenApiObjectType.USER,
                 attributes: { name: 'Test User' },
                 createdAt: createdAt.toISOString(),
               },
@@ -285,7 +285,7 @@ describe('OpenAPICompaniesController', () => {
 
       expect(result).toEqual({
         id: 'company-1',
-        object: 'company',
+        object: OpenApiObjectType.COMPANY,
         attributes: { name: 'New Company', industry: 'Technology' },
         createdAt: createdAt.toISOString(),
         users: null,
@@ -312,7 +312,7 @@ describe('OpenAPICompaniesController', () => {
 
       expect(result).toEqual({
         id: 'company-1',
-        object: 'company',
+        object: OpenApiObjectType.COMPANY,
         attributes: { name: 'Updated Company', industry: 'Technology', size: 'Large' },
         createdAt: createdAt.toISOString(),
         users: null,

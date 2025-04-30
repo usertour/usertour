@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 export class Event {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
   id: string;
 
-  @ApiProperty({ example: 'event_definition' })
+  @ApiProperty({ example: OpenApiObjectType.EVENT })
   object: string;
 
   @ApiProperty({ example: '2022-10-17T12:34:56.000+00:00' })

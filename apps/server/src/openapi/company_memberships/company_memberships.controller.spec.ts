@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 describe('OpenAPI:CompanyMembershipController', () => {
   let controller: OpenAPICompanyMembershipController;
@@ -64,7 +65,7 @@ describe('OpenAPI:CompanyMembershipController', () => {
     it('should delete company membership successfully', async () => {
       const mockResponse: DeleteCompanyMembershipResponseDto = {
         id: 'membership-1',
-        object: 'company_membership',
+        object: OpenApiObjectType.COMPANY_MEMBERSHIP,
         deleted: true,
       };
 

@@ -126,7 +126,7 @@ export class OpenAPIContentsService {
 
     return paginate(
       apiUrl,
-      'content_versions',
+      'content-versions',
       environmentId,
       cursor,
       limit,

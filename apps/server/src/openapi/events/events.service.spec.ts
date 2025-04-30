@@ -3,6 +3,7 @@ import { OpenAPIEventsService } from './events.service';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { InvalidLimitError } from '@/common/errors/errors';
 import { ConfigService } from '@nestjs/config';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 describe('OpenAPIEventsService', () => {
   let service: OpenAPIEventsService;
@@ -67,7 +68,7 @@ describe('OpenAPIEventsService', () => {
       results: [
         {
           id: 'event-123',
-          object: 'event_definition',
+          object: OpenApiObjectType.EVENT,
           createdAt: '2024-01-01T00:00:00.000Z',
           description: 'Test Event',
           displayName: 'Test Event',
@@ -82,7 +83,7 @@ describe('OpenAPIEventsService', () => {
       results: [
         {
           id: 'event-123',
-          object: 'event_definition',
+          object: OpenApiObjectType.EVENT,
           createdAt: '2024-01-01T00:00:00.000Z',
           description: 'Test Event',
           displayName: 'Test Event',

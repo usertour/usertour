@@ -7,11 +7,11 @@ export enum OpenApiObjectType {
   CONTENT = 'content',
   USER = 'user',
   COMPANY = 'company',
-  COMPANY_MEMBERSHIP = 'company_membership',
-  VERSION = 'content_version',
-  SESSION = 'content_session',
+  COMPANY_MEMBERSHIP = 'companyMembership',
+  VERSION = 'contentVersion',
+  SESSION = 'contentSession',
   ATTRIBUTE = 'attribute',
-  EVENT = 'event_definition',
+  EVENT = 'eventDefinition',
 }
 
 /**

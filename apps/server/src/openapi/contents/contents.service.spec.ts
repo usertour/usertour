@@ -8,6 +8,7 @@ import {
   InvalidLimitError,
   InvalidCursorError,
 } from '@/common/errors/errors';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 describe('OpenAPIContentsService', () => {
   let service: OpenAPIContentsService;
@@ -59,7 +60,7 @@ describe('OpenAPIContentsService', () => {
 
       expect(result).toEqual({
         id: 'test-id',
-        object: 'content',
+        object: OpenApiObjectType.CONTENT,
         type: 'flow',
         editedVersionId: 'version-1',
         publishedVersionId: null,
@@ -108,14 +109,14 @@ describe('OpenAPIContentsService', () => {
 
       expect(result).toEqual({
         id: 'test-id',
-        object: 'content',
+        object: OpenApiObjectType.CONTENT,
         type: 'flow',
         editedVersionId: 'version-1',
         publishedVersionId: 'version-2',
         editedVersion: undefined,
         publishedVersion: {
           id: 'version-2',
-          object: 'content_version',
+          object: OpenApiObjectType.VERSION,
           number: 2,
           questions: [],
           updatedAt: mockContent.publishedVersion.updatedAt.toISOString(),
@@ -174,7 +175,7 @@ describe('OpenAPIContentsService', () => {
       expect(result).toEqual({
         results: mockContents.map((content) => ({
           id: content.id,
-          object: 'content',
+          object: OpenApiObjectType.CONTENT,
           type: 'flow',
           editedVersionId: 'version-1',
           publishedVersionId: null,
@@ -220,7 +221,7 @@ describe('OpenAPIContentsService', () => {
 
       expect(result).toEqual({
         id: 'version-1',
-        object: 'content_version',
+        object: OpenApiObjectType.VERSION,
         number: 1,
         questions: [],
         updatedAt: mockVersion.updatedAt.toISOString(),
@@ -275,13 +276,13 @@ describe('OpenAPIContentsService', () => {
       expect(result).toEqual({
         results: mockVersions.map((version) => ({
           id: version.id,
-          object: 'content_version',
+          object: OpenApiObjectType.VERSION,
           number: 1,
           questions: [],
           updatedAt: version.updatedAt.toISOString(),
           createdAt: version.createdAt.toISOString(),
         })),
-        next: 'http://localhost:3000/v1/content_versions?cursor=version-1&limit=10',
+        next: 'http://localhost:3000/v1/content-versions?cursor=version-1&limit=10',
         previous: null,
       });
       expect(mockContentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(

@@ -12,7 +12,7 @@ import { OpenAPIKeyGuard } from '../openapi.guard';
 import { ConfigService } from '@nestjs/config';
 import { ContentsService } from '@/contents/contents.service';
 import { PrismaService } from 'nestjs-prisma';
-
+import { OpenApiObjectType } from '@/common/types/openapi';
 describe('OpenAPIContentsController', () => {
   let controller: OpenAPIContentsController;
   let contentService: OpenAPIContentsService;
@@ -90,7 +90,7 @@ describe('OpenAPIContentsController', () => {
         publishedVersionId: 'version-2',
         editedVersion: {
           id: 'version-1',
-          object: 'content_version',
+          object: OpenApiObjectType.VERSION,
           number: 1,
           questions: [],
           updatedAt: new Date().toISOString(),
@@ -98,7 +98,7 @@ describe('OpenAPIContentsController', () => {
         },
         publishedVersion: {
           id: 'version-2',
-          object: 'content_version',
+          object: OpenApiObjectType.VERSION,
           number: 2,
           questions: [],
           updatedAt: new Date().toISOString(),
@@ -164,7 +164,7 @@ describe('OpenAPIContentsController', () => {
             publishedVersionId: 'version-2',
             editedVersion: {
               id: 'version-1',
-              object: 'content_version',
+              object: OpenApiObjectType.VERSION,
               number: 1,
               questions: [],
               updatedAt: new Date().toISOString(),
@@ -172,7 +172,7 @@ describe('OpenAPIContentsController', () => {
             },
             publishedVersion: {
               id: 'version-2',
-              object: 'content_version',
+              object: OpenApiObjectType.VERSION,
               number: 2,
               questions: [],
               updatedAt: new Date().toISOString(),
@@ -209,7 +209,7 @@ describe('OpenAPIContentsController', () => {
     it('should return content version', async () => {
       const mockVersion: ContentVersion = {
         id: 'version-1',
-        object: 'content_version',
+        object: OpenApiObjectType.VERSION,
         number: 1,
         questions: [],
         updatedAt: new Date().toISOString(),
@@ -239,7 +239,7 @@ describe('OpenAPIContentsController', () => {
         results: [
           {
             id: 'version-1',
-            object: 'content_version',
+            object: OpenApiObjectType.VERSION,
             number: 1,
             questions: [],
             updatedAt: new Date().toISOString(),

@@ -31,7 +31,6 @@ export class OpenAPIEventsController {
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
   ) {
-    this.logger.log(`Listing events for environment ${environment.id}`);
     return this.eventsService.listEvents(environment.projectId, limit, cursor);
   }
 }

@@ -1,11 +1,11 @@
 import {
-  Controller,
   Get,
   Param,
   Query,
   UseFilters,
   UseGuards,
   DefaultValuePipe,
+  Controller,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -23,14 +23,14 @@ import { ExpandType } from './contents.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 
 @ApiTags('Contents')
-@Controller('v1')
+@Controller()
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIContentsController {
   constructor(private readonly openAPIContentsService: OpenAPIContentsService) {}
 
-  @Get('contents/:id')
+  @Get('v1/contents/:id')
   @ApiOperation({ summary: 'Get a content by ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
@@ -45,7 +45,7 @@ export class OpenAPIContentsController {
     return this.openAPIContentsService.getContent(id, environmentId, expandTypes);
   }
 
-  @Get('contents')
+  @Get('v1/contents')
   @ApiOperation({ summary: 'List all contents' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
   @ApiQuery({
@@ -65,7 +65,7 @@ export class OpenAPIContentsController {
     return this.openAPIContentsService.listContents(environmentId, cursor, limit, expandTypes);
   }
 
-  @Get('content_versions/:id')
+  @Get('v1/content-versions/:id')
   @ApiOperation({ summary: 'Get a content version by ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Content version found', type: ContentVersion })
@@ -77,7 +77,7 @@ export class OpenAPIContentsController {
     return this.openAPIContentsService.getContentVersion(id, environmentId);
   }
 
-  @Get('content_versions')
+  @Get('v1/content-versions')
   @ApiOperation({ summary: 'List all content versions' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
   @ApiQuery({

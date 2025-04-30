@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Content, ContentVersion } from './content.model';
 import { Company } from './company.model';
 import { User } from './user.model';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 export class ContentSessionAnswers {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
@@ -30,7 +31,7 @@ export class ContentSession {
   @ApiProperty({ example: '33af21fd-f025-43fc-a492-cf5179b38ee3' })
   id: string;
 
-  @ApiProperty({ example: 'content_session' })
+  @ApiProperty({ example: OpenApiObjectType.SESSION })
   object: string;
 
   @ApiProperty({ example: null, nullable: true })

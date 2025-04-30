@@ -4,6 +4,7 @@ import { OpenAPIEventsService } from './events.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { InvalidLimitError, InvalidCursorError } from '@/common/errors/errors';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 describe('OpenAPIEventsController', () => {
   let controller: OpenAPIEventsController;
@@ -55,7 +56,7 @@ describe('OpenAPIEventsController', () => {
         results: [
           {
             id: 'event1',
-            object: 'event',
+            object: OpenApiObjectType.EVENT,
             name: 'Test Event 1',
             displayName: 'Test Event 1',
             description: 'Test Event 1 Description',
@@ -64,7 +65,7 @@ describe('OpenAPIEventsController', () => {
           },
           {
             id: 'event2',
-            object: 'event',
+            object: OpenApiObjectType.EVENT,
             name: 'Test Event 2',
             displayName: 'Test Event 2',
             description: 'Test Event 2 Description',

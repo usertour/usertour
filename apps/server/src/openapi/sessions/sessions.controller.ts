@@ -16,7 +16,7 @@ import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 
-@ApiTags('Content Session')
+@ApiTags('Content Sessions')
 @Controller('v1/content-sessions')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
