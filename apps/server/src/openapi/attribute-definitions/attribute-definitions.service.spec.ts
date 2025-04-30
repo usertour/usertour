@@ -94,10 +94,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         next: null,
         previous: null,
       });
-      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(projectId, {
-        after: undefined,
-        first: 20,
-      });
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
+        projectId,
+        {
+          after: undefined,
+          first: 20,
+        },
+        undefined,
+      );
     });
 
     it('should throw error when limit is invalid', async () => {
@@ -163,10 +167,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         next: 'http://localhost:3000/v1/attribute-definitions?cursor=cursor1&limit=20',
         previous: 'http://localhost:3000/v1/attribute-definitions?limit=20',
       });
-      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(projectId, {
-        after: cursor,
-        first: 20,
-      });
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
+        projectId,
+        {
+          after: cursor,
+          first: 20,
+        },
+        undefined,
+      );
     });
 
     it('should handle empty results', async () => {
@@ -192,10 +200,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         next: null,
         previous: null,
       });
-      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(projectId, {
-        after: undefined,
-        first: 20,
-      });
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
+        projectId,
+        {
+          after: undefined,
+          first: 20,
+        },
+        undefined,
+      );
     });
   });
 });

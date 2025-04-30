@@ -50,6 +50,7 @@ export class OpenAPIContentsService {
     expand?: ExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/contents`;
 
     const include = {
       editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
@@ -57,14 +58,13 @@ export class OpenAPIContentsService {
     };
 
     return paginate(
-      apiUrl,
-      'contents',
-      environmentId,
+      endpointUrl,
       cursor,
       limit,
       async (params) =>
-        await this.contentsService.listContentsWithRelations(environmentId, params, include),
+        this.contentsService.listContentsWithRelations(environmentId, params, include),
       (node) => this.mapPrismaContentToApiContent(node, expand),
+      expand ? { expand } : {},
     );
   }
 
@@ -123,19 +123,18 @@ export class OpenAPIContentsService {
     limit = 20,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/content-versions`;
 
     const include = {
       content: true,
     };
 
     return paginate(
-      apiUrl,
-      'content-versions',
-      environmentId,
+      endpointUrl,
       cursor,
       limit,
       async (params) =>
-        await this.contentsService.listContentVersionsWithRelations(environmentId, params, include),
+        this.contentsService.listContentVersionsWithRelations(environmentId, params, include),
       (node) => this.mapPrismaVersionToApiVersion(node),
     );
   }

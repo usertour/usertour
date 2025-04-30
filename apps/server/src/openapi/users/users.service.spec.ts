@@ -4,6 +4,7 @@ import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
 import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
 import { ExpandType } from './users.dto';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 describe('OpenAPIUsersService', () => {
   let service: OpenAPIUsersService;
@@ -162,13 +163,13 @@ describe('OpenAPIUsersService', () => {
         results: [
           {
             id: 'user1',
-            object: 'user',
+            object: OpenApiObjectType.USER,
             attributes: {},
             createdAt: '2025-04-27T10:56:52.198Z',
             companies: [
               {
                 id: 'company1',
-                object: 'company',
+                object: OpenApiObjectType.COMPANY,
                 attributes: {},
                 createdAt: '2025-04-27T10:56:52.198Z',
               },
@@ -176,8 +177,8 @@ describe('OpenAPIUsersService', () => {
             memberships: null,
           },
         ],
-        next: 'http://localhost:3000/v1/users?cursor=cursor2&limit=10',
-        previous: 'http://localhost:3000/v1/users?limit=10',
+        next: 'http://localhost:3000/v1/users?cursor=cursor2&limit=10&expand=companies',
+        previous: 'http://localhost:3000/v1/users?limit=10&expand=companies',
       });
 
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(

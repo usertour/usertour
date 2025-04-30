@@ -31,6 +31,7 @@ export class OpenAPICompaniesService {
     expand?: ExpandType[],
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/companies`;
     const include = {
       bizUsersOnCompany: {
         include: {
@@ -40,13 +41,12 @@ export class OpenAPICompaniesService {
     };
 
     return paginate(
-      apiUrl,
-      'companies',
-      environmentId,
+      endpointUrl,
       cursor,
       limit,
-      async (params) => await this.bizService.listBizCompanies(environmentId, params, include),
+      async (params) => this.bizService.listBizCompanies(environmentId, params, include),
       (node) => this.mapBizCompanyToCompany(node, expand),
+      expand ? { expand } : {},
     );
   }
 

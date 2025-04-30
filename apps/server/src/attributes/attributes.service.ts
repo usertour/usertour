@@ -55,13 +55,15 @@ export class AttributesService {
       after?: string;
       before?: string;
     },
+    bizType?: number,
   ) {
     const baseQuery = {
       where: {
         projectId,
         deleted: false,
+        ...(bizType && { bizType }),
       },
-      orderBy: { createdAt: Prisma.SortOrder.desc },
+      orderBy: { id: Prisma.SortOrder.desc },
     };
 
     return findManyCursorConnection(

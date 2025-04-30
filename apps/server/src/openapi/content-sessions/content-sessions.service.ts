@@ -93,22 +93,22 @@ export class OpenAPIContentSessionsService {
     }
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/content-sessions`;
     const include = this.getIncludeFromExpand(expand);
 
     return paginate(
-      apiUrl,
-      'content_sessions',
-      contentId,
+      endpointUrl,
       cursor,
       limit,
       async (params) =>
-        await this.analyticsService.listContentSessionsWithRelations(
+        this.analyticsService.listContentSessionsWithRelations(
           environmentId,
           contentId,
           params,
           include,
         ),
       this.mapToContentSession,
+      expand ? { expand } : {},
     );
   }
 

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Attribute } from '../models/attribute.model';
-import { IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { OpenApiObjectType } from '@/common/types/openapi';
 
 export class ListAttributesResponseDto {
   @ApiProperty({ description: 'List of attributes', type: [Attribute] })
@@ -34,4 +35,23 @@ export class ListAttributesDto {
   @Min(1)
   @Max(100)
   limit?: number;
+
+  @ApiProperty({
+    description: 'Scope of the attribute definitions',
+    required: false,
+    enum: [
+      OpenApiObjectType.USER,
+      OpenApiObjectType.COMPANY,
+      OpenApiObjectType.COMPANY_MEMBERSHIP,
+      OpenApiObjectType.EVENT_DEFINITION,
+    ],
+  })
+  @IsOptional()
+  @IsEnum([
+    OpenApiObjectType.USER,
+    OpenApiObjectType.COMPANY,
+    OpenApiObjectType.COMPANY_MEMBERSHIP,
+    OpenApiObjectType.EVENT_DEFINITION,
+  ])
+  scope?: OpenApiObjectType;
 }

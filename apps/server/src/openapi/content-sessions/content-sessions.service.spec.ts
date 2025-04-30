@@ -177,7 +177,9 @@ describe('OpenAPIContentSessionsService', () => {
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.next).toBe('http://localhost:3000/v1/content_sessions?cursor=cursor2&limit=10');
+      expect(result.next).toBe(
+        'http://localhost:3000/v1/content-sessions?cursor=cursor2&limit=10&expand=content%2Cuser%2Ccompany%2Cversion',
+      );
       expect(result.previous).toBeNull();
       expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
         'env1',
@@ -217,8 +219,12 @@ describe('OpenAPIContentSessionsService', () => {
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.next).toBe('http://localhost:3000/v1/content_sessions?cursor=cursor2&limit=10');
-      expect(result.previous).toBe('http://localhost:3000/v1/content_sessions?limit=10');
+      expect(result.next).toBe(
+        'http://localhost:3000/v1/content-sessions?cursor=cursor2&limit=10&expand=content%2Cuser%2Ccompany%2Cversion',
+      );
+      expect(result.previous).toBe(
+        'http://localhost:3000/v1/content-sessions?limit=10&expand=content%2Cuser%2Ccompany%2Cversion',
+      );
       expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
         'env1',
         'content1',

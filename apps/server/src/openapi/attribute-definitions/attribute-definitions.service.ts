@@ -15,18 +15,36 @@ export class OpenAPIAttributeDefinitionsService {
   ) {}
 
   async listAttributeDefinitions(projectId: string, dto: ListAttributesDto) {
-    const { cursor, limit = 20 } = dto;
+    const { cursor, limit = 20, scope } = dto;
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/attribute-definitions`;
 
     return paginate(
-      apiUrl,
-      'attribute-definitions',
-      projectId,
+      endpointUrl,
       cursor,
       limit,
-      async (params) => this.attributesService.listWithPagination(projectId, params),
+      async (params) => {
+        const bizType = scope ? this.mapOpenApiObjectTypeToBizType(scope) : undefined;
+        return this.attributesService.listWithPagination(projectId, params, bizType);
+      },
       (node) => this.mapToAttribute(node),
+      scope ? { scope } : {},
     );
+  }
+
+  private mapOpenApiObjectTypeToBizType(scope: OpenApiObjectType): number {
+    switch (scope) {
+      case OpenApiObjectType.USER:
+        return 1;
+      case OpenApiObjectType.COMPANY:
+        return 2;
+      case OpenApiObjectType.COMPANY_MEMBERSHIP:
+        return 3;
+      case OpenApiObjectType.EVENT_DEFINITION:
+        return 4;
+      default:
+        return 1;
+    }
   }
 
   private mapToAttribute(attribute: any): Attribute {

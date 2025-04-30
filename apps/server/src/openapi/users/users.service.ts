@@ -38,20 +38,19 @@ export class OpenAPIUsersService {
     }
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/users`;
     const include = {
       companies: expand?.includes(ExpandType.COMPANIES) ?? false,
       bizUsersOnCompany: expand?.includes(ExpandType.MEMBERSHIPS) ?? false,
     };
 
     return paginate(
-      apiUrl,
-      'users',
-      environmentId,
+      endpointUrl,
       cursor,
       limit,
-      async (params) =>
-        await this.bizService.listBizUsersWithRelations(environmentId, params, include),
+      async (params) => this.bizService.listBizUsersWithRelations(environmentId, params, include),
       (node) => this.mapBizUserToUser(node, expand),
+      expand ? { expand } : {},
     );
   }
 

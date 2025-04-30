@@ -75,8 +75,8 @@ describe('OpenAPIEventDefinitionsService', () => {
           name: 'test_event',
         },
       ],
-      next: `http://localhost:3000/v1/event_definitions?cursor=next-cursor&limit=${mockLimit}`,
-      previous: `http://localhost:3000/v1/event_definitions?limit=${mockLimit}`,
+      next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=10',
+      previous: 'http://localhost:3000/v1/event-definitions?limit=10',
     };
 
     const expectedDefaultResponse = {
@@ -90,7 +90,7 @@ describe('OpenAPIEventDefinitionsService', () => {
           name: 'test_event',
         },
       ],
-      next: 'http://localhost:3000/v1/event_definitions?cursor=next-cursor&limit=20',
+      next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=20',
       previous: null,
     };
 

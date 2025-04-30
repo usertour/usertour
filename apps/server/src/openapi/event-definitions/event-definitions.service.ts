@@ -26,11 +26,10 @@ export class OpenAPIEventDefinitionsService {
     }
 
     const apiUrl = this.configService.get<string>('app.apiUrl');
+    const endpointUrl = `${apiUrl}/v1/event-definitions`;
 
     return paginate(
-      apiUrl,
-      'event_definitions',
-      projectId,
+      endpointUrl,
       cursor,
       limit,
       async (params) => await this.businessEventsService.listWithPagination(projectId, params),
