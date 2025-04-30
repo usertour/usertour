@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import { ContentsService } from '@/contents/contents.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/types/openapi';
-import { paginate, PaginationConnection } from '@/common/openapi/pagination';
+import { paginate } from '@/common/openapi/pagination';
 
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
@@ -124,22 +124,18 @@ export class OpenAPIContentsService {
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     const apiUrl = this.configService.get<string>('app.apiUrl');
 
+    const include = {
+      content: true,
+    };
+
     return paginate(
       apiUrl,
       'content-versions',
       environmentId,
       cursor,
       limit,
-      async (params) => {
-        const result = await this.contentsService.listContentVersionsWithRelations(
-          environmentId,
-          params,
-          {
-            content: true,
-          },
-        );
-        return result as unknown as PaginationConnection<VersionWithContent>;
-      },
+      async (params) =>
+        await this.contentsService.listContentVersionsWithRelations(environmentId, params, include),
       (node) => this.mapPrismaVersionToApiVersion(node),
     );
   }

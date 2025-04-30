@@ -624,10 +624,7 @@ export class ContentsService {
       after?: string;
       before?: string;
     },
-    include?: {
-      content?: boolean;
-      steps?: boolean;
-    },
+    include?: Prisma.VersionInclude,
   ) {
     const baseQuery = {
       where: {
