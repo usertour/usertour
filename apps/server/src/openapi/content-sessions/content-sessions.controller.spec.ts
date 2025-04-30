@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentSessionController } from './sessions.controller';
-import { OpenAPIContentSessionService } from './sessions.service';
+import { OpenAPIContentSessionsController } from './content-sessions.controller';
+import { OpenAPIContentSessionsService } from './content-sessions.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
+import { ExpandType } from './content-sessions.dto';
 
-describe('OpenAPIContentSessionController', () => {
-  let controller: OpenAPIContentSessionController;
-  let service: OpenAPIContentSessionService;
+describe('OpenAPIContentSessionsController', () => {
+  let controller: OpenAPIContentSessionsController;
+  let service: OpenAPIContentSessionsService;
 
   const mockContentSession = {
     id: 'test-id',
@@ -39,10 +40,10 @@ describe('OpenAPIContentSessionController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OpenAPIContentSessionController],
+      controllers: [OpenAPIContentSessionsController],
       providers: [
         {
-          provide: OpenAPIContentSessionService,
+          provide: OpenAPIContentSessionsService,
           useValue: mockService,
         },
         {
@@ -58,8 +59,8 @@ describe('OpenAPIContentSessionController', () => {
       ],
     }).compile();
 
-    controller = module.get<OpenAPIContentSessionController>(OpenAPIContentSessionController);
-    service = module.get<OpenAPIContentSessionService>(OpenAPIContentSessionService);
+    controller = module.get<OpenAPIContentSessionsController>(OpenAPIContentSessionsController);
+    service = module.get<OpenAPIContentSessionsService>(OpenAPIContentSessionsService);
   });
 
   it('should be defined', () => {
@@ -72,7 +73,7 @@ describe('OpenAPIContentSessionController', () => {
       const contentId = 'test-content-id';
       const limit = 20;
       const cursor = 'test-cursor';
-      const expand = 'content,user';
+      const expand = [ExpandType.CONTENT, ExpandType.USER];
 
       const result = await controller.listContentSessions(
         environmentId,
@@ -119,7 +120,7 @@ describe('OpenAPIContentSessionController', () => {
     it('should return a content session', async () => {
       const id = 'test-id';
       const environmentId = 'test-env';
-      const expand = 'content,user';
+      const expand = [ExpandType.CONTENT, ExpandType.USER];
 
       const result = await controller.getContentSession(id, environmentId, expand);
 

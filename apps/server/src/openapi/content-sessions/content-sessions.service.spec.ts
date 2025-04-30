@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentSessionService } from './sessions.service';
+import { OpenAPIContentSessionsService } from './content-sessions.service';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { ExpandType } from './sessions.dto';
+import { ExpandType } from './content-sessions.dto';
 import { ConfigService } from '@nestjs/config';
 import { ContentSessionNotFoundError } from '@/common/errors/errors';
 import { ContentsService } from '@/contents/contents.service';
 
-describe('OpenAPIContentSessionService', () => {
-  let service: OpenAPIContentSessionService;
+describe('OpenAPIContentSessionsService', () => {
+  let service: OpenAPIContentSessionsService;
 
   const mockSession = {
     id: '1',
@@ -49,7 +49,7 @@ describe('OpenAPIContentSessionService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        OpenAPIContentSessionService,
+        OpenAPIContentSessionsService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -69,7 +69,7 @@ describe('OpenAPIContentSessionService', () => {
       ],
     }).compile();
 
-    service = module.get<OpenAPIContentSessionService>(OpenAPIContentSessionService);
+    service = module.get<OpenAPIContentSessionsService>(OpenAPIContentSessionsService);
     jest.clearAllMocks();
   });
 

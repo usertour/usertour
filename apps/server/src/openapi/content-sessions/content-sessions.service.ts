@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ExpandType, ExpandTypes } from './sessions.dto';
+import { ExpandType, ExpandTypes } from './content-sessions.dto';
 import { ContentSession } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
@@ -23,8 +23,8 @@ type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
 }>;
 
 @Injectable()
-export class OpenAPIContentSessionService {
-  private readonly logger = new Logger(OpenAPIContentSessionService.name);
+export class OpenAPIContentSessionsService {
+  private readonly logger = new Logger(OpenAPIContentSessionsService.name);
 
   constructor(
     private readonly analyticsService: AnalyticsService,
