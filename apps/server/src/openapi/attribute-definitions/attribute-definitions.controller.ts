@@ -1,11 +1,19 @@
-import { Controller, Get, Query, UseGuards, UseFilters } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  UseFilters,
+  ParseArrayPipe,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Environment } from '@/environments/models/environment.model';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
-import { ListAttributesDto } from './attribute-definitions.dto';
 import { OpenAPIKeyGuard } from '@/openapi/openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { OpenApiObjectType } from '@/common/openapi/types';
 
 @ApiTags('Attribute Definitions')
 @Controller('v1/attribute-definitions')
@@ -21,11 +29,19 @@ export class OpenAPIAttributeDefinitionsController {
   @ApiOperation({ summary: 'List attribute definitions' })
   async listAttributeDefinitions(
     @EnvironmentDecorator() environment: Environment,
-    @Query() dto: ListAttributesDto,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
+    @Query('scope') scope?: OpenApiObjectType,
+    @Query('cursor') cursor?: string,
+    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String })) orderBy?: string[],
+    @Query('eventName', new ParseArrayPipe({ optional: true, items: String })) eventName?: string[],
   ) {
     return this.openAPIAttributeDefinitionsService.listAttributeDefinitions(
       environment.projectId,
-      dto,
+      limit,
+      scope,
+      cursor,
+      orderBy,
+      eventName,
     );
   }
 }

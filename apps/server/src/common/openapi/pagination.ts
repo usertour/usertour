@@ -30,7 +30,13 @@ function buildUrl(endpointUrl: string, params: Record<string, any>): string {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
-      searchParams.append(key, value.toString());
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          searchParams.append(`${key}[]`, item.toString());
+        }
+      } else {
+        searchParams.append(key, value.toString());
+      }
     }
   }
   return `${endpointUrl}?${searchParams.toString()}`;

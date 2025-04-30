@@ -103,18 +103,22 @@ describe('OpenAPIAttributeDefinitionsController', () => {
         updatedAt: new Date(),
       } as Environment;
 
-      const result = await controller.listAttributeDefinitions(environment, {
-        cursor: undefined,
-        limit: undefined,
-      });
-
+      const result = await controller.listAttributeDefinitions(
+        environment,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual(mockResponse);
       expect(attributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
         'project-1',
-        {
-          cursor: undefined,
-          limit: undefined,
-        },
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
@@ -148,14 +152,24 @@ describe('OpenAPIAttributeDefinitionsController', () => {
       } as Environment;
 
       const cursor = 'current_cursor';
-      const limit = 10;
 
-      const result = await controller.listAttributeDefinitions(environment, { cursor, limit });
+      const result = await controller.listAttributeDefinitions(
+        environment,
+        20,
+        undefined,
+        cursor,
+        undefined,
+        undefined,
+      );
 
       expect(result).toEqual(mockResponse);
       expect(attributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
         'project-1',
-        { cursor, limit },
+        20,
+        undefined,
+        cursor,
+        undefined,
+        undefined,
       );
     });
   });

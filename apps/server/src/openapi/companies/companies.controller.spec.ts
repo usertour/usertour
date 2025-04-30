@@ -256,7 +256,7 @@ describe('OpenAPICompaniesController', () => {
       ]);
       expect(result.next).toBe(null);
       expect(result.previous).toBe(
-        'http://localhost:3000/v1/companies?limit=10&expand=memberships%2Cusers',
+        'http://localhost:3000/v1/companies?limit=10&expand%5B%5D=memberships&expand%5B%5D=users',
       );
     });
   });

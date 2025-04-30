@@ -177,8 +177,8 @@ describe('OpenAPIUsersService', () => {
             memberships: null,
           },
         ],
-        next: 'http://localhost:3000/v1/users?cursor=cursor2&limit=10&expand=companies',
-        previous: 'http://localhost:3000/v1/users?limit=10&expand=companies',
+        next: 'http://localhost:3000/v1/users?cursor=cursor2&limit=10&expand%5B%5D=companies',
+        previous: 'http://localhost:3000/v1/users?limit=10&expand%5B%5D=companies',
       });
 
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(

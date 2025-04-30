@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
-import { ListAttributesDto } from './attribute-definitions.dto';
 import {
   mapBizType,
   mapDataType,
@@ -21,8 +20,14 @@ export class OpenAPIAttributeDefinitionsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async listAttributeDefinitions(projectId: string, dto: ListAttributesDto) {
-    const { cursor, limit = 20, scope, orderBy } = dto;
+  async listAttributeDefinitions(
+    projectId: string,
+    limit: number,
+    scope: OpenApiObjectType,
+    cursor: string,
+    orderBy: string[],
+    eventName: string[],
+  ) {
     const apiUrl = this.configService.get<string>('app.apiUrl');
     const endpointUrl = `${apiUrl}/v1/attribute-definitions`;
 
@@ -32,14 +37,20 @@ export class OpenAPIAttributeDefinitionsService {
 
     const sortOrders = parseOrderBy(orderBy);
     const bizType = scope ? mapOpenApiObjectTypeToBizType(scope) : undefined;
-    const queryParams = scope ? { scope } : {};
+    const queryParams = { ...(scope ? { scope } : {}), ...(eventName ? { eventName } : {}) };
 
     return paginate(
       endpointUrl,
       cursor,
       limit,
       async (params) =>
-        this.attributesService.listWithPagination(projectId, params, bizType, sortOrders),
+        this.attributesService.listWithPagination(
+          projectId,
+          params,
+          bizType,
+          eventName,
+          sortOrders,
+        ),
       (node) => this.mapToAttribute(node),
       queryParams,
     );

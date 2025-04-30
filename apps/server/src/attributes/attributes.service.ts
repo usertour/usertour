@@ -56,14 +56,18 @@ export class AttributesService {
       before?: string;
     },
     bizType?: number,
+    eventName?: string[],
     orderBy?: Prisma.AttributeOrderByWithRelationInput[],
   ) {
+    const where: Prisma.AttributeWhereInput = {
+      projectId,
+      deleted: false,
+      ...(bizType && { bizType }),
+      ...(eventName && { attributeOnEvent: { some: { event: { codeName: { in: eventName } } } } }),
+    };
+
     const baseQuery = {
-      where: {
-        projectId,
-        deleted: false,
-        ...(bizType && { bizType }),
-      },
+      where,
       orderBy,
     };
 

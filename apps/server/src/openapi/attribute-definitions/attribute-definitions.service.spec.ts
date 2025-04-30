@@ -6,6 +6,7 @@ import { InvalidLimitError, InvalidScopeError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '@/common/openapi/types';
+
 describe('OpenAPIAttributeDefinitionsService', () => {
   let service: OpenAPIAttributeDefinitionsService;
   let mockAttributeDefinitionsService: jest.Mocked<AttributesService>;
@@ -73,10 +74,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
-      const result = await service.listAttributeDefinitions(projectId, {
-        cursor: undefined,
-        limit: undefined,
-      });
+      const result = await service.listAttributeDefinitions(
+        projectId,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
 
       expect(result).toEqual({
         results: [
@@ -101,6 +106,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
           first: 20,
         },
         undefined,
+        undefined,
         [{ id: 'desc' }],
       );
     });
@@ -110,7 +116,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       const invalidLimit = -1;
 
       await expect(
-        service.listAttributeDefinitions(projectId, { limit: invalidLimit }),
+        service.listAttributeDefinitions(
+          projectId,
+          invalidLimit,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+        ),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -150,7 +163,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
-      const result = await service.listAttributeDefinitions(projectId, { cursor });
+      const result = await service.listAttributeDefinitions(
+        projectId,
+        20,
+        undefined,
+        cursor,
+        undefined,
+        undefined,
+      );
 
       expect(result).toEqual({
         results: [
@@ -175,6 +195,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
           first: 20,
         },
         undefined,
+        undefined,
         [{ id: 'desc' }],
       );
     });
@@ -195,7 +216,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
-      const result = await service.listAttributeDefinitions(projectId, {});
+      const result = await service.listAttributeDefinitions(
+        projectId,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
 
       expect(result).toEqual({
         results: [],
@@ -209,6 +237,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
           first: 20,
         },
         undefined,
+        undefined,
         [{ id: 'desc' }],
       );
     });
@@ -218,7 +247,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       const invalidScope = 'invalidScope';
 
       await expect(
-        service.listAttributeDefinitions(projectId, { scope: invalidScope as any }),
+        service.listAttributeDefinitions(
+          projectId,
+          20,
+          invalidScope as any,
+          undefined,
+          undefined,
+          undefined,
+        ),
       ).rejects.toThrow(new InvalidScopeError(invalidScope));
     });
   });
