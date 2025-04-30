@@ -33,7 +33,7 @@ import { Environment } from '@/environments/models/environment.model';
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPICompaniesController {
-  constructor(private readonly companyService: OpenAPICompaniesService) {}
+  constructor(private readonly openAPICompaniesService: OpenAPICompaniesService) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get company by ID' })
@@ -46,7 +46,7 @@ export class OpenAPICompaniesController {
     @Param('id') id: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<Company> {
-    return await this.companyService.getCompany(id, environment.id, expand);
+    return await this.openAPICompaniesService.getCompany(id, environment.id, expand);
   }
 
   @Get()
@@ -65,7 +65,7 @@ export class OpenAPICompaniesController {
     @Query('cursor') cursor?: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<ListCompaniesResponseDto> {
-    return await this.companyService.listCompanies(environment.id, limit, cursor, expand);
+    return await this.openAPICompaniesService.listCompanies(environment.id, limit, cursor, expand);
   }
 
   @Post()
@@ -75,7 +75,11 @@ export class OpenAPICompaniesController {
     @EnvironmentDecorator() environment: Environment,
     @Body() data: UpsertCompanyRequestDto,
   ): Promise<Company> {
-    return await this.companyService.upsertCompany(data, environment.id, environment.projectId);
+    return await this.openAPICompaniesService.upsertCompany(
+      data,
+      environment.id,
+      environment.projectId,
+    );
   }
 
   @Delete(':id')
@@ -86,6 +90,6 @@ export class OpenAPICompaniesController {
     @EnvironmentDecorator() environment: Environment,
     @Param('id') id: string,
   ): Promise<void> {
-    return await this.companyService.deleteCompany(id, environment.id);
+    return await this.openAPICompaniesService.deleteCompany(id, environment.id);
   }
 }

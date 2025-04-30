@@ -13,7 +13,7 @@ import { EnvironmentDecorator } from '@/common/decorators/environment.decorator'
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
 export class OpenAPIAttributesController {
-  constructor(private readonly attributesService: OpenAPIAttributesService) {}
+  constructor(private readonly openAPIAttributesService: OpenAPIAttributesService) {}
 
   @Get()
   @ApiOperation({ summary: 'List attributes' })
@@ -21,6 +21,6 @@ export class OpenAPIAttributesController {
     @EnvironmentDecorator() environment: Environment,
     @Query() dto: ListAttributesDto,
   ) {
-    return this.attributesService.listAttributes(environment.projectId, dto);
+    return this.openAPIAttributesService.listAttributes(environment.projectId, dto);
   }
 }
