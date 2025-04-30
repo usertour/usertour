@@ -10,7 +10,7 @@ export enum OpenApiObjectType {
   COMPANY_MEMBERSHIP = 'companyMembership',
   CONTENT_VERSION = 'contentVersion',
   CONTENT_SESSION = 'contentSession',
-  ATTRIBUTE = 'attribute',
+  ATTRIBUTE_DEFINITION = 'attributeDefinition',
   EVENT_DEFINITION = 'eventDefinition',
 }
 

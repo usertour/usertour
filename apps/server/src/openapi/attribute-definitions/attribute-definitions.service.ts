@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
-import { ListAttributesDto } from './attributes.dto';
+import { ListAttributesDto } from './attribute-definitions.dto';
 import { OpenApiObjectType } from '@/common/types/openapi';
 import { AttributeBizTypeNames, AttributeDataTypeNames } from '@/attributes/models/attribute.model';
 import { Attribute } from '@/openapi/models/attribute.model';
@@ -8,19 +8,19 @@ import { ConfigService } from '@nestjs/config';
 import { paginate } from '@/common/openapi/pagination';
 
 @Injectable()
-export class OpenAPIAttributesService {
+export class OpenAPIAttributeDefinitionsService {
   constructor(
     private readonly attributesService: AttributesService,
     private readonly configService: ConfigService,
   ) {}
 
-  async listAttributes(projectId: string, dto: ListAttributesDto) {
+  async listAttributeDefinitions(projectId: string, dto: ListAttributesDto) {
     const { cursor, limit = 20 } = dto;
     const apiUrl = this.configService.get<string>('app.apiUrl');
 
     return paginate(
       apiUrl,
-      'attributes',
+      'attribute-definitions',
       projectId,
       cursor,
       limit,
@@ -32,7 +32,7 @@ export class OpenAPIAttributesService {
   private mapToAttribute(attribute: any): Attribute {
     return {
       id: attribute.id,
-      object: OpenApiObjectType.ATTRIBUTE,
+      object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
       createdAt: attribute.createdAt.toISOString(),
       dataType: this.mapDataType(attribute.dataType),
       description: attribute.description,

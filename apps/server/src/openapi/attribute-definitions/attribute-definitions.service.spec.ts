@@ -1,18 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIAttributesService } from './attributes.service';
+import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
 import { AttributesService } from '@/attributes/attributes.service';
 import { AttributeDataTypeNames, AttributeBizTypeNames } from '@/attributes/models/attribute.model';
 import { InvalidLimitError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
-
-describe('OpenAPIAttributesService', () => {
-  let service: OpenAPIAttributesService;
-  let mockAttributesService: jest.Mocked<AttributesService>;
+import { OpenApiObjectType } from '@/common/types/openapi';
+describe('OpenAPIAttributeDefinitionsService', () => {
+  let service: OpenAPIAttributeDefinitionsService;
+  let mockAttributeDefinitionsService: jest.Mocked<AttributesService>;
   let mockConfigService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
-    mockAttributesService = {
+    mockAttributeDefinitionsService = {
       listWithPagination: jest.fn(),
     } as any;
 
@@ -22,10 +22,10 @@ describe('OpenAPIAttributesService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        OpenAPIAttributesService,
+        OpenAPIAttributeDefinitionsService,
         {
           provide: AttributesService,
-          useValue: mockAttributesService,
+          useValue: mockAttributeDefinitionsService,
         },
         {
           provide: ConfigService,
@@ -34,7 +34,7 @@ describe('OpenAPIAttributesService', () => {
       ],
     }).compile();
 
-    service = module.get<OpenAPIAttributesService>(OpenAPIAttributesService);
+    service = module.get<OpenAPIAttributeDefinitionsService>(OpenAPIAttributeDefinitionsService);
   });
 
   describe('listAttributes', () => {
@@ -71,9 +71,9 @@ describe('OpenAPIAttributesService', () => {
         totalCount: 1,
       };
 
-      mockAttributesService.listWithPagination.mockResolvedValue(mockResponse);
+      mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
-      const result = await service.listAttributes(projectId, {
+      const result = await service.listAttributeDefinitions(projectId, {
         cursor: undefined,
         limit: undefined,
       });
@@ -82,7 +82,7 @@ describe('OpenAPIAttributesService', () => {
         results: [
           {
             id: 'attr1',
-            object: 'attribute',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
             createdAt: mockResponse.edges[0].node.createdAt.toISOString(),
             dataType: AttributeDataTypeNames.Number,
             description: 'Test attribute',
@@ -94,7 +94,7 @@ describe('OpenAPIAttributesService', () => {
         next: null,
         previous: null,
       });
-      expect(mockAttributesService.listWithPagination).toHaveBeenCalledWith(projectId, {
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(projectId, {
         after: undefined,
         first: 20,
       });
@@ -104,9 +104,9 @@ describe('OpenAPIAttributesService', () => {
       const projectId = 'test-project-id';
       const invalidLimit = -1;
 
-      await expect(service.listAttributes(projectId, { limit: invalidLimit })).rejects.toThrow(
-        new InvalidLimitError(),
-      );
+      await expect(
+        service.listAttributeDefinitions(projectId, { limit: invalidLimit }),
+      ).rejects.toThrow(new InvalidLimitError());
     });
 
     it('should handle cursor pagination', async () => {
@@ -143,15 +143,15 @@ describe('OpenAPIAttributesService', () => {
         totalCount: 1,
       };
 
-      mockAttributesService.listWithPagination.mockResolvedValue(mockResponse);
+      mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
-      const result = await service.listAttributes(projectId, { cursor });
+      const result = await service.listAttributeDefinitions(projectId, { cursor });
 
       expect(result).toEqual({
         results: [
           {
             id: 'attr1',
-            object: 'attribute',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
             createdAt: '2025-04-29T07:38:58.056Z',
             dataType: AttributeDataTypeNames.Number,
             description: 'Test attribute',
@@ -160,10 +160,10 @@ describe('OpenAPIAttributesService', () => {
             scope: AttributeBizTypeNames.USER,
           },
         ],
-        next: 'http://localhost:3000/v1/attributes?cursor=cursor1&limit=20',
-        previous: 'http://localhost:3000/v1/attributes?limit=20',
+        next: 'http://localhost:3000/v1/attribute-definitions?cursor=cursor1&limit=20',
+        previous: 'http://localhost:3000/v1/attribute-definitions?limit=20',
       });
-      expect(mockAttributesService.listWithPagination).toHaveBeenCalledWith(projectId, {
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(projectId, {
         after: cursor,
         first: 20,
       });
@@ -183,16 +183,16 @@ describe('OpenAPIAttributesService', () => {
         totalCount: 0,
       };
 
-      mockAttributesService.listWithPagination.mockResolvedValue(mockResponse);
+      mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
-      const result = await service.listAttributes(projectId, {});
+      const result = await service.listAttributeDefinitions(projectId, {});
 
       expect(result).toEqual({
         results: [],
         next: null,
         previous: null,
       });
-      expect(mockAttributesService.listWithPagination).toHaveBeenCalledWith(projectId, {
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(projectId, {
         after: undefined,
         first: 20,
       });

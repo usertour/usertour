@@ -1,19 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIAttributesController } from './attributes.controller';
-import { OpenAPIAttributesService } from './attributes.service';
+import { OpenAPIAttributeDefinitionsController } from './attribute-definitions.controller';
+import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { AttributesService } from '@/attributes/attributes.service';
 import { Environment } from '@/environments/models/environment.model';
+import { OpenApiObjectType } from '@/common/types/openapi';
+describe('OpenAPIAttributeDefinitionsController', () => {
+  let controller: OpenAPIAttributeDefinitionsController;
+  let attributeDefinitionsService: OpenAPIAttributeDefinitionsService;
 
-describe('OpenAPIAttributesController', () => {
-  let controller: OpenAPIAttributesController;
-  let attributesService: OpenAPIAttributesService;
-
-  const mockAttributesService = {
-    listAttributes: jest.fn(),
+  const mockAttributeDefinitionsService = {
+    listAttributeDefinitions: jest.fn(),
   };
 
   const mockPrismaService = {
@@ -23,18 +23,18 @@ describe('OpenAPIAttributesController', () => {
     },
   };
 
-  const mockBizAttributesService = {
+  const mockBizAttributeDefinitionsService = {
     mapDataType: jest.fn(),
     mapBizType: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OpenAPIAttributesController],
+      controllers: [OpenAPIAttributeDefinitionsController],
       providers: [
         {
-          provide: OpenAPIAttributesService,
-          useValue: mockAttributesService,
+          provide: OpenAPIAttributeDefinitionsService,
+          useValue: mockAttributeDefinitionsService,
         },
         {
           provide: PrismaService,
@@ -57,25 +57,29 @@ describe('OpenAPIAttributesController', () => {
         },
         {
           provide: AttributesService,
-          useValue: mockBizAttributesService,
+          useValue: mockBizAttributeDefinitionsService,
         },
         OpenAPIKeyGuard,
         OpenAPIExceptionFilter,
       ],
     }).compile();
 
-    controller = module.get<OpenAPIAttributesController>(OpenAPIAttributesController);
-    attributesService = module.get<OpenAPIAttributesService>(OpenAPIAttributesService);
+    controller = module.get<OpenAPIAttributeDefinitionsController>(
+      OpenAPIAttributeDefinitionsController,
+    );
+    attributeDefinitionsService = module.get<OpenAPIAttributeDefinitionsService>(
+      OpenAPIAttributeDefinitionsService,
+    );
     jest.clearAllMocks();
   });
 
-  describe('listAttributes', () => {
-    it('should return paginated attributes', async () => {
+  describe('listAttributeDefinitions', () => {
+    it('should return paginated attribute definitions', async () => {
       const mockResponse = {
         results: [
           {
             id: 'attr1',
-            object: 'attribute',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
             createdAt: new Date().toISOString(),
             dataType: 'string',
             description: 'Test attribute',
@@ -88,7 +92,7 @@ describe('OpenAPIAttributesController', () => {
         previous: null,
       };
 
-      mockAttributesService.listAttributes.mockResolvedValue(mockResponse);
+      mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
       const environment = {
         id: 'env-1',
@@ -99,16 +103,19 @@ describe('OpenAPIAttributesController', () => {
         updatedAt: new Date(),
       } as Environment;
 
-      const result = await controller.listAttributes(environment, {
+      const result = await controller.listAttributeDefinitions(environment, {
         cursor: undefined,
         limit: undefined,
       });
 
       expect(result).toEqual(mockResponse);
-      expect(attributesService.listAttributes).toHaveBeenCalledWith('project-1', {
-        cursor: undefined,
-        limit: undefined,
-      });
+      expect(attributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
+        'project-1',
+        {
+          cursor: undefined,
+          limit: undefined,
+        },
+      );
     });
 
     it('should handle pagination parameters', async () => {
@@ -116,7 +123,7 @@ describe('OpenAPIAttributesController', () => {
         results: [
           {
             id: 'attr1',
-            object: 'attribute',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
             createdAt: new Date().toISOString(),
             dataType: 'string',
             description: 'Test attribute',
@@ -129,7 +136,7 @@ describe('OpenAPIAttributesController', () => {
         previous: null,
       };
 
-      mockAttributesService.listAttributes.mockResolvedValue(mockResponse);
+      mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
       const environment = {
         id: 'env-1',
@@ -143,10 +150,13 @@ describe('OpenAPIAttributesController', () => {
       const cursor = 'current_cursor';
       const limit = 10;
 
-      const result = await controller.listAttributes(environment, { cursor, limit });
+      const result = await controller.listAttributeDefinitions(environment, { cursor, limit });
 
       expect(result).toEqual(mockResponse);
-      expect(attributesService.listAttributes).toHaveBeenCalledWith('project-1', { cursor, limit });
+      expect(attributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
+        'project-1',
+        { cursor, limit },
+      );
     });
   });
 });

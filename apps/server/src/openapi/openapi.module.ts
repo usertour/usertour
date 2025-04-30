@@ -15,8 +15,8 @@ import { OpenAPIContentSessionsController } from './content-sessions/content-ses
 import { OpenAPIContentSessionsService } from './content-sessions/content-sessions.service';
 import { OpenAPIUsersController } from './users/users.controller';
 import { OpenAPIUsersService } from './users/users.service';
-import { OpenAPIAttributesController } from './attributes/attributes.controller';
-import { OpenAPIAttributesService } from './attributes/attributes.service';
+import { OpenAPIAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
+import { OpenAPIAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
 import { OpenAPICompanyMembershipsController } from './company-memberships/company-memberships.controller';
 import { OpenAPICompanyMembershipsService } from './company-memberships/company-memberships.service';
 import { OpenAPIEventDefinitionsController } from './event-definitions/event-definitions.controller';
@@ -33,7 +33,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
   ],
   controllers: [
     OpenAPICompaniesController,
-    OpenAPIAttributesController,
+    OpenAPIAttributeDefinitionsController,
     OpenAPIEventDefinitionsController,
     OpenAPIUsersController,
     OpenAPICompanyMembershipsController,
@@ -44,7 +44,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     OpenAPIKeyGuard,
     OpenAPIExceptionFilter,
     OpenAPICompaniesService,
-    OpenAPIAttributesService,
+    OpenAPIAttributeDefinitionsService,
     OpenAPIEventDefinitionsService,
     OpenAPIUsersService,
     OpenAPICompanyMembershipsService,
