@@ -597,10 +597,7 @@ export class ContentsService {
   async getContentVersionWithRelations(
     versionId: string,
     environmentId: string,
-    include?: {
-      content?: boolean;
-      steps?: boolean;
-    },
+    include?: Prisma.VersionInclude,
   ) {
     return await this.prisma.version.findFirst({
       where: {
