@@ -87,7 +87,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             dataType: AttributeDataTypeNames.Number,
             description: 'Test attribute',
             displayName: 'Test Attribute',
-            name: 'test_attribute',
+            codeName: 'test_attribute',
             scope: AttributeBizTypeNames.USER,
           },
         ],
@@ -101,6 +101,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
           first: 20,
         },
         undefined,
+        [{ id: 'desc' }],
       );
     });
 
@@ -160,7 +161,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             dataType: AttributeDataTypeNames.Number,
             description: 'Test attribute',
             displayName: 'Test Attribute',
-            name: 'test_attribute',
+            codeName: 'test_attribute',
             scope: AttributeBizTypeNames.USER,
           },
         ],
@@ -174,6 +175,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
           first: 20,
         },
         undefined,
+        [{ id: 'desc' }],
       );
     });
 
@@ -207,6 +209,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
           first: 20,
         },
         undefined,
+        [{ id: 'desc' }],
       );
     });
   });

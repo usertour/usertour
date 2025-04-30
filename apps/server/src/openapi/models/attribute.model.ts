@@ -21,7 +21,7 @@ export class Attribute {
   displayName: string;
 
   @ApiProperty({ example: 'signed_up_at' })
-  name: string;
+  codeName: string;
 
   @ApiProperty({ example: AttributeBizTypeNames.USER })
   scope: AttributeBizTypeNames;

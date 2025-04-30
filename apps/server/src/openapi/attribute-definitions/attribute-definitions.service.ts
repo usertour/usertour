@@ -6,6 +6,7 @@ import { AttributeBizTypeNames, AttributeDataTypeNames } from '@/attributes/mode
 import { Attribute } from '@/openapi/models/attribute.model';
 import { ConfigService } from '@nestjs/config';
 import { paginate } from '@/common/openapi/pagination';
+import { parseOrderBy } from '@/common/openapi/sort';
 
 @Injectable()
 export class OpenAPIAttributeDefinitionsService {
@@ -15,18 +16,19 @@ export class OpenAPIAttributeDefinitionsService {
   ) {}
 
   async listAttributeDefinitions(projectId: string, dto: ListAttributesDto) {
-    const { cursor, limit = 20, scope } = dto;
+    const { cursor, limit = 20, scope, orderBy } = dto;
     const apiUrl = this.configService.get<string>('app.apiUrl');
     const endpointUrl = `${apiUrl}/v1/attribute-definitions`;
+
+    const sortOrders = parseOrderBy(orderBy);
+    const bizType = scope ? this.mapOpenApiObjectTypeToBizType(scope) : undefined;
 
     return paginate(
       endpointUrl,
       cursor,
       limit,
-      async (params) => {
-        const bizType = scope ? this.mapOpenApiObjectTypeToBizType(scope) : undefined;
-        return this.attributesService.listWithPagination(projectId, params, bizType);
-      },
+      async (params) =>
+        this.attributesService.listWithPagination(projectId, params, bizType, sortOrders),
       (node) => this.mapToAttribute(node),
       scope ? { scope } : {},
     );
@@ -55,7 +57,7 @@ export class OpenAPIAttributeDefinitionsService {
       dataType: this.mapDataType(attribute.dataType),
       description: attribute.description,
       displayName: attribute.displayName,
-      name: attribute.codeName,
+      codeName: attribute.codeName,
       scope: this.mapBizType(attribute.bizType),
     };
   }

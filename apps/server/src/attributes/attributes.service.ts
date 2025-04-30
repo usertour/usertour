@@ -56,6 +56,7 @@ export class AttributesService {
       before?: string;
     },
     bizType?: number,
+    orderBy?: Prisma.AttributeOrderByWithRelationInput[],
   ) {
     const baseQuery = {
       where: {
@@ -63,7 +64,7 @@ export class AttributesService {
         deleted: false,
         ...(bizType && { bizType }),
       },
-      orderBy: { id: Prisma.SortOrder.desc },
+      orderBy,
     };
 
     return findManyCursorConnection(

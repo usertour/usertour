@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Attribute } from '../models/attribute.model';
-import { IsOptional, IsString, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsEnum, Matches } from 'class-validator';
 import { OpenApiObjectType } from '@/common/types/openapi';
 
 export class ListAttributesResponseDto {
@@ -16,29 +16,8 @@ export class ListAttributesResponseDto {
 
 export class ListAttributesDto {
   @ApiProperty({
-    description: 'Cursor for pagination',
     required: false,
-  })
-  @IsOptional()
-  @IsString()
-  cursor?: string;
-
-  @ApiProperty({
-    description: 'Number of items to return',
-    required: false,
-    default: 20,
-    minimum: 1,
-    maximum: 100,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
-  @ApiProperty({
-    description: 'Scope of the attribute definitions',
-    required: false,
+    description: 'Filter by scope',
     enum: [
       OpenApiObjectType.USER,
       OpenApiObjectType.COMPANY,
@@ -54,4 +33,36 @@ export class ListAttributesDto {
     OpenApiObjectType.EVENT_DEFINITION,
   ])
   scope?: OpenApiObjectType;
+
+  @ApiProperty({
+    description: 'Number of items to return',
+    required: false,
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Cursor for pagination',
+  })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Field to order by. Prefix with - for descending order',
+    type: [String],
+    example: ['displayName', '-createdAt'],
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  @Matches(/^-?(displayName|codeName|createdAt)$/, { each: true })
+  orderBy?: string[];
 }
