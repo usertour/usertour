@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompaniesController } from './companies.controller';
 import { OpenAPICompaniesService } from './companies.service';
-import { UpsertCompanyRequestDto } from './companies.dto';
+import { UpsertCompanyRequestDto, ExpandType } from './companies.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
@@ -94,7 +94,7 @@ describe('OpenAPICompaniesController', () => {
 
       mockBizService.getBizCompany.mockResolvedValue(mockBizCompany);
 
-      const result = await controller.getCompany('test-id', { environment: { id: 'env-1' } });
+      const result = await controller.getCompany(mockEnvironment, 'test-id');
 
       expect(result).toEqual({
         id: 'test-id',
@@ -124,11 +124,7 @@ describe('OpenAPICompaniesController', () => {
 
       mockBizService.getBizCompany.mockResolvedValue(mockBizCompany);
 
-      const result = await controller.getCompany(
-        'test-id',
-        { environment: { id: 'env-1' } },
-        'users',
-      );
+      const result = await controller.getCompany(mockEnvironment, 'test-id', [ExpandType.USERS]);
 
       expect(result).toEqual({
         id: 'test-id',
@@ -172,11 +168,7 @@ describe('OpenAPICompaniesController', () => {
         },
       });
 
-      const result = await controller.listCompanies(
-        { environment: { id: 'env-1' } },
-        undefined,
-        '20',
-      );
+      const result = await controller.listCompanies(mockEnvironment, undefined, '20');
 
       expect(result.results).toEqual([
         {
@@ -230,12 +222,10 @@ describe('OpenAPICompaniesController', () => {
         totalCount: 1,
       });
 
-      const result = await controller.listCompanies(
-        { environment: { id: 'env-1' } },
-        10,
-        'current-cursor',
-        'memberships.user',
-      );
+      const result = await controller.listCompanies(mockEnvironment, 10, 'current-cursor', [
+        ExpandType.MEMBERSHIPS,
+        ExpandType.USERS,
+      ]);
 
       expect(result.results).toEqual([
         {
@@ -243,7 +233,14 @@ describe('OpenAPICompaniesController', () => {
           object: OpenApiObjectType.COMPANY,
           attributes: { name: 'Company 1' },
           createdAt: createdAt.toISOString(),
-          users: null,
+          users: [
+            {
+              id: 'user-1',
+              object: OpenApiObjectType.USER,
+              attributes: { name: 'Test User' },
+              createdAt: createdAt.toISOString(),
+            },
+          ],
           memberships: [
             {
               id: 'membership-1',
@@ -252,16 +249,13 @@ describe('OpenAPICompaniesController', () => {
               createdAt: createdAt.toISOString(),
               companyId: 'company-1',
               userId: 'user-1',
-              user: {
-                id: 'user-1',
-                object: OpenApiObjectType.USER,
-                attributes: { name: 'Test User' },
-                createdAt: createdAt.toISOString(),
-              },
+              user: undefined,
             },
           ],
         },
       ]);
+      expect(result.next).toBe(null);
+      expect(result.previous).toBe('http://localhost:3000/v1/companies?limit=10');
     });
   });
 
@@ -281,7 +275,7 @@ describe('OpenAPICompaniesController', () => {
 
       mockBizService.upsertBizCompany.mockResolvedValue(mockBizCompany);
 
-      const result = await controller.upsertCompany(mockRequest, mockEnvironment);
+      const result = await controller.upsertCompany(mockEnvironment, mockRequest);
 
       expect(result).toEqual({
         id: 'company-1',
@@ -308,7 +302,7 @@ describe('OpenAPICompaniesController', () => {
 
       mockBizService.upsertBizCompany.mockResolvedValue(mockBizCompany);
 
-      const result = await controller.upsertCompany(mockRequest, mockEnvironment);
+      const result = await controller.upsertCompany(mockEnvironment, mockRequest);
 
       expect(result).toEqual({
         id: 'company-1',
@@ -334,7 +328,7 @@ describe('OpenAPICompaniesController', () => {
       mockBizService.getBizCompany.mockResolvedValue(mockBizCompany);
       mockBizService.deleteBizCompany.mockResolvedValue(undefined);
 
-      await controller.deleteCompany('company-1', { environment: { id: 'env-1' } });
+      await controller.deleteCompany(mockEnvironment, 'company-1');
 
       expect(mockBizService.getBizCompany).toHaveBeenCalledWith('company-1', 'env-1');
       expect(mockBizService.deleteBizCompany).toHaveBeenCalledWith(['biz1'], 'env-1');

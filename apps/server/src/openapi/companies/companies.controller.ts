@@ -3,13 +3,13 @@ import {
   Get,
   Param,
   Query,
-  Request,
   Body,
   UseFilters,
   UseGuards,
   Delete,
   Post,
   DefaultValuePipe,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -42,12 +42,11 @@ export class OpenAPICompaniesController {
   @ApiResponse({ status: 200, description: 'Company found', type: Company })
   @ApiResponse({ status: 404, description: 'Company not found' })
   async getCompany(
+    @EnvironmentDecorator() environment: Environment,
     @Param('id') id: string,
-    @Request() req,
-    @Query('expand') expand?: string,
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<Company> {
-    const expandTypes = expand ? (expand.split(',') as ExpandType[]) : undefined;
-    return await this.companyService.getCompany(id, req.environment.id, expandTypes);
+    return await this.companyService.getCompany(id, environment.id, expand);
   }
 
   @Get()
@@ -61,21 +60,20 @@ export class OpenAPICompaniesController {
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
   async listCompanies(
-    @Request() req,
+    @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
-    @Query('expand') expand?: string,
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<ListCompaniesResponseDto> {
-    const expandTypes = expand ? (expand.split(',') as ExpandType[]) : undefined;
-    return await this.companyService.listCompanies(req.environment.id, limit, cursor, expandTypes);
+    return await this.companyService.listCompanies(environment.id, limit, cursor, expand);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create or update a company' })
   @ApiResponse({ status: 200, description: 'Company created/updated successfully', type: Company })
   async upsertCompany(
-    @Body() data: UpsertCompanyRequestDto,
     @EnvironmentDecorator() environment: Environment,
+    @Body() data: UpsertCompanyRequestDto,
   ): Promise<Company> {
     return await this.companyService.upsertCompany(data, environment.id, environment.projectId);
   }
@@ -84,7 +82,10 @@ export class OpenAPICompaniesController {
   @ApiOperation({ summary: 'Delete a company' })
   @ApiParam({ name: 'id', description: 'Company ID' })
   @ApiResponse({ status: 200, description: 'Company deleted successfully' })
-  async deleteCompany(@Param('id') id: string, @Request() req): Promise<void> {
-    return await this.companyService.deleteCompany(id, req.environment.id);
+  async deleteCompany(
+    @EnvironmentDecorator() environment: Environment,
+    @Param('id') id: string,
+  ): Promise<void> {
+    return await this.companyService.deleteCompany(id, environment.id);
   }
 }
