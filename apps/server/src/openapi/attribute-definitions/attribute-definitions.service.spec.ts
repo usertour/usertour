@@ -117,7 +117,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         },
         undefined,
         undefined,
-        [{ id: 'desc' }],
+        [{ displayName: 'asc' }],
       );
     });
 
@@ -224,7 +224,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         },
         undefined,
         undefined,
-        [{ id: 'desc' }],
+        [{ displayName: 'asc' }],
       );
     });
 
@@ -275,7 +275,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         },
         undefined,
         undefined,
-        [{ id: 'desc' }],
+        [{ displayName: 'asc' }],
       );
     });
 

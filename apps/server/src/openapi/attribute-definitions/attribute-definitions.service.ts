@@ -31,9 +31,9 @@ export class OpenAPIAttributeDefinitionsService {
     }
     const apiUrl = this.configService.get<string>('app.apiUrl');
     const completeUrl = `${apiUrl}${originalUrl}`;
-    const sortOrders = parseOrderBy(orderBy);
 
     const bizType = scope ? mapOpenApiObjectTypeToBizType(scope) : undefined;
+    const sortOrders = parseOrderBy(orderBy || ['displayName']);
 
     return paginate(
       completeUrl,
