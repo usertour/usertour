@@ -56,7 +56,7 @@ function buildUrl(endpointUrl: string, params: Record<string, any>): string {
 }
 
 export async function paginate<T>(
-  originalUrl: string,
+  requestUrl: string,
   cursor: string | undefined,
   limit: number,
   fetchData: (params: PaginationParams) => Promise<PaginationConnection<T>>,
@@ -90,16 +90,16 @@ export async function paginate<T>(
     if (previousPage.edges.length > 0) {
       // If previous page has less than limit records, it means it's the first page
       if (previousPage.edges.length < limit) {
-        previousUrl = buildUrl(originalUrl, { limit, ...queryParams });
+        previousUrl = buildUrl(requestUrl, { limit, ...queryParams });
       } else {
         // If previous page has exactly limit records, we need to check if it's the first page
         const firstPage = await fetchData({ first: limit });
         // If the first page's first cursor matches the previous page's first cursor,
         // it means the previous page is the first page
         if (firstPage.edges[0].cursor === previousPage.edges[0].cursor) {
-          previousUrl = buildUrl(originalUrl, { limit, ...queryParams });
+          previousUrl = buildUrl(requestUrl, { limit, ...queryParams });
         } else {
-          previousUrl = buildUrl(originalUrl, {
+          previousUrl = buildUrl(requestUrl, {
             cursor: previousPage.edges[0].cursor,
             limit,
             ...queryParams,
@@ -113,7 +113,7 @@ export async function paginate<T>(
     results: connection.edges.map((edge) => mapResult(edge.node)),
     next:
       connection.pageInfo.hasNextPage && connection.pageInfo.endCursor
-        ? buildUrl(originalUrl, {
+        ? buildUrl(requestUrl, {
             cursor: connection.pageInfo.endCursor,
             limit,
             ...queryParams,

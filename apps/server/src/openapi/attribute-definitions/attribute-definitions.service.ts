@@ -16,7 +16,7 @@ export class OpenAPIAttributeDefinitionsService {
   ) {}
 
   async listAttributeDefinitions(
-    originalUrl: string,
+    requestUrl: string,
     environment: Environment,
     limit: number,
     scope: OpenApiObjectType,
@@ -29,14 +29,12 @@ export class OpenAPIAttributeDefinitionsService {
     if (scope && !isValidOpenApiObjectType(scope)) {
       throw new InvalidScopeError(scope);
     }
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const completeUrl = `${apiUrl}${originalUrl}`;
 
     const bizType = scope ? mapOpenApiObjectTypeToBizType(scope) : undefined;
     const sortOrders = parseOrderBy(orderBy || ['displayName']);
 
     return paginate(
-      completeUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) =>

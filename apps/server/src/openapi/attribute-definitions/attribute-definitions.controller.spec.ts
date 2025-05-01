@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIAttributeDefinitionsController } from './attribute-definitions.controller';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
 import { OpenApiObjectType } from '@/common/openapi/types';
-import { Request } from 'express';
 import { Environment } from '@/environments/models/environment.model';
 import { OpenAPIKeyGuard } from '@/openapi/openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
@@ -35,12 +34,8 @@ describe('OpenAPIAttributeDefinitionsController', () => {
     updatedAt: new Date(),
   };
 
-  const createMockRequest = (query: Record<string, any> = {}): Request => {
-    return {
-      query,
-      headers: {},
-      originalUrl: '/api/v1/attribute-definitions',
-    } as Request;
+  const createMockRequest = (): string => {
+    return '/api/v1/attribute-definitions';
   };
 
   beforeEach(async () => {
@@ -71,7 +66,6 @@ describe('OpenAPIAttributeDefinitionsController', () => {
 
   describe('listAttributeDefinitions', () => {
     it('should return attribute definitions with default parameters', async () => {
-      const mockRequest = createMockRequest();
       const mockResponse = {
         results: [
           {
@@ -92,7 +86,7 @@ describe('OpenAPIAttributeDefinitionsController', () => {
       mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
       const result = await controller.listAttributeDefinitions(
-        mockRequest,
+        createMockRequest(),
         mockEnvironment,
         20,
         undefined,
@@ -114,7 +108,6 @@ describe('OpenAPIAttributeDefinitionsController', () => {
     });
 
     it('should return attribute definitions with scope filter', async () => {
-      const mockRequest = createMockRequest({ scope: OpenApiObjectType.USER });
       const mockResponse = {
         results: [
           {
@@ -135,7 +128,7 @@ describe('OpenAPIAttributeDefinitionsController', () => {
       mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
       const result = await controller.listAttributeDefinitions(
-        mockRequest,
+        createMockRequest(),
         mockEnvironment,
         20,
         OpenApiObjectType.USER,
@@ -157,7 +150,6 @@ describe('OpenAPIAttributeDefinitionsController', () => {
     });
 
     it('should return attribute definitions with event name filter', async () => {
-      const mockRequest = createMockRequest({ eventName: ['test_event'] });
       const mockResponse = {
         results: [
           {
@@ -178,7 +170,7 @@ describe('OpenAPIAttributeDefinitionsController', () => {
       mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
       const result = await controller.listAttributeDefinitions(
-        mockRequest,
+        createMockRequest(),
         mockEnvironment,
         20,
         undefined,

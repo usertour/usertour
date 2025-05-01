@@ -213,8 +213,8 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             scope: AttributeBizTypeNames.USER,
           },
         ],
-        next: 'http://localhost:3000/v1/attribute-definitions?cursor=cursor1&limit=20',
-        previous: 'http://localhost:3000/v1/attribute-definitions?limit=20',
+        next: '/v1/attribute-definitions?cursor=cursor1&limit=20',
+        previous: '/v1/attribute-definitions?limit=20',
       });
       expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
         'test-project-id',
