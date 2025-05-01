@@ -27,28 +27,41 @@ export interface PaginationConnection<T> {
 const logger = new Logger('Pagination');
 
 function buildUrl(endpointUrl: string, params: Record<string, any>): string {
-  const searchParams = new URLSearchParams();
+  const [baseUrl, existingQuery] = endpointUrl.split('?');
+  const searchParams = new URLSearchParams(existingQuery || '');
+
+  // Only remove cursor parameter from original URL
+  searchParams.delete('cursor');
+
+  // Update parameters from params
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
       if (Array.isArray(value)) {
+        // Remove existing array values for this key
+        searchParams.delete(key);
+        searchParams.delete(`${key}[]`);
+        // Add new array values
         for (const item of value) {
           searchParams.append(`${key}[]`, item.toString());
         }
       } else {
-        searchParams.append(key, value.toString());
+        // For non-array parameters, just set the value
+        searchParams.set(key, value.toString());
       }
     }
   }
-  return `${endpointUrl}?${searchParams.toString()}`;
+
+  const queryString = searchParams.toString();
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
 export async function paginate<T>(
-  endpointUrl: string,
+  originalUrl: string,
   cursor: string | undefined,
   limit: number,
   fetchData: (params: PaginationParams) => Promise<PaginationConnection<T>>,
   mapResult: (node: T) => any,
-  queryParams: Record<string, any> = {},
+  queryParams?: Record<string, any>,
 ): Promise<PaginationResult<any>> {
   // Validate limit
   if (limit < 1) {
@@ -77,16 +90,16 @@ export async function paginate<T>(
     if (previousPage.edges.length > 0) {
       // If previous page has less than limit records, it means it's the first page
       if (previousPage.edges.length < limit) {
-        previousUrl = buildUrl(endpointUrl, { limit, ...queryParams });
+        previousUrl = buildUrl(originalUrl, { limit, ...queryParams });
       } else {
         // If previous page has exactly limit records, we need to check if it's the first page
         const firstPage = await fetchData({ first: limit });
         // If the first page's first cursor matches the previous page's first cursor,
         // it means the previous page is the first page
         if (firstPage.edges[0].cursor === previousPage.edges[0].cursor) {
-          previousUrl = buildUrl(endpointUrl, { limit, ...queryParams });
+          previousUrl = buildUrl(originalUrl, { limit, ...queryParams });
         } else {
-          previousUrl = buildUrl(endpointUrl, {
+          previousUrl = buildUrl(originalUrl, {
             cursor: previousPage.edges[0].cursor,
             limit,
             ...queryParams,
@@ -100,7 +113,7 @@ export async function paginate<T>(
     results: connection.edges.map((edge) => mapResult(edge.node)),
     next:
       connection.pageInfo.hasNextPage && connection.pageInfo.endCursor
-        ? buildUrl(endpointUrl, {
+        ? buildUrl(originalUrl, {
             cursor: connection.pageInfo.endCursor,
             limit,
             ...queryParams,

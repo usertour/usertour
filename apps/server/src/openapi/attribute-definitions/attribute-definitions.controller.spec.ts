@@ -1,31 +1,46 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIAttributeDefinitionsController } from './attribute-definitions.controller';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
+import { OpenApiObjectType } from '@/common/openapi/types';
+import { Request } from 'express';
+import { Environment } from '@/environments/models/environment.model';
+import { OpenAPIKeyGuard } from '@/openapi/openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { AttributesService } from '@/attributes/attributes.service';
-import { Environment } from '@/environments/models/environment.model';
-import { OpenApiObjectType } from '@/common/openapi/types';
+
 describe('OpenAPIAttributeDefinitionsController', () => {
   let controller: OpenAPIAttributeDefinitionsController;
-  let attributeDefinitionsService: OpenAPIAttributeDefinitionsService;
 
   const mockAttributeDefinitionsService = {
     listAttributeDefinitions: jest.fn(),
   };
 
   const mockPrismaService = {
-    attribute: {
-      findMany: jest.fn(),
-      count: jest.fn(),
+    openAPIKey: {
+      findUnique: jest.fn(),
     },
   };
 
-  const mockBizAttributeDefinitionsService = {
-    mapDataType: jest.fn(),
-    mapBizType: jest.fn(),
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
+
+  const mockEnvironment: Environment = {
+    id: 'test-env-id',
+    projectId: 'test-project-id',
+    name: 'test-env',
+    token: 'test-token',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const createMockRequest = (query: Record<string, any> = {}): Request => {
+    return {
+      query,
+      headers: {},
+      originalUrl: '/api/v1/attribute-definitions',
+    } as Request;
   };
 
   beforeEach(async () => {
@@ -42,22 +57,7 @@ describe('OpenAPIAttributeDefinitionsController', () => {
         },
         {
           provide: ConfigService,
-          useValue: {
-            get: jest.fn().mockImplementation((key: string) => {
-              switch (key) {
-                case 'app.docUrl':
-                  return 'https://docs.usertour.com';
-                case 'app.apiUrl':
-                  return 'http://localhost:3000';
-                default:
-                  return null;
-              }
-            }),
-          },
-        },
-        {
-          provide: AttributesService,
-          useValue: mockBizAttributeDefinitionsService,
+          useValue: mockConfigService,
         },
         OpenAPIKeyGuard,
         OpenAPIExceptionFilter,
@@ -67,25 +67,22 @@ describe('OpenAPIAttributeDefinitionsController', () => {
     controller = module.get<OpenAPIAttributeDefinitionsController>(
       OpenAPIAttributeDefinitionsController,
     );
-    attributeDefinitionsService = module.get<OpenAPIAttributeDefinitionsService>(
-      OpenAPIAttributeDefinitionsService,
-    );
-    jest.clearAllMocks();
   });
 
   describe('listAttributeDefinitions', () => {
-    it('should return paginated attribute definitions', async () => {
+    it('should return attribute definitions with default parameters', async () => {
+      const mockRequest = createMockRequest();
       const mockResponse = {
         results: [
           {
-            id: 'attr1',
+            id: 'test-id',
             object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
-            createdAt: new Date().toISOString(),
+            codeName: 'test_code',
+            displayName: 'Test Code',
+            description: 'Test Description',
             dataType: 'string',
-            description: 'Test attribute',
-            displayName: 'Test Attribute',
-            name: 'test_attribute',
-            scope: 'user',
+            scope: OpenApiObjectType.USER,
+            createdAt: new Date().toISOString(),
           },
         ],
         next: null,
@@ -94,26 +91,20 @@ describe('OpenAPIAttributeDefinitionsController', () => {
 
       mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
-      const environment = {
-        id: 'env-1',
-        name: 'Test Environment',
-        token: 'test-token',
-        projectId: 'project-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Environment;
-
       const result = await controller.listAttributeDefinitions(
-        environment,
+        mockRequest,
+        mockEnvironment,
         20,
         undefined,
         undefined,
         undefined,
         undefined,
       );
+
       expect(result).toEqual(mockResponse);
-      expect(attributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
-        'project-1',
+      expect(mockAttributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
+        '/api/v1/attribute-definitions',
+        mockEnvironment,
         20,
         undefined,
         undefined,
@@ -122,54 +113,89 @@ describe('OpenAPIAttributeDefinitionsController', () => {
       );
     });
 
-    it('should handle pagination parameters', async () => {
+    it('should return attribute definitions with scope filter', async () => {
+      const mockRequest = createMockRequest({ scope: OpenApiObjectType.USER });
       const mockResponse = {
         results: [
           {
-            id: 'attr1',
+            id: 'test-id',
             object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
-            createdAt: new Date().toISOString(),
+            codeName: 'test_code',
+            displayName: 'Test Code',
+            description: 'Test Description',
             dataType: 'string',
-            description: 'Test attribute',
-            displayName: 'Test Attribute',
-            name: 'test_attribute',
-            scope: 'user',
+            scope: OpenApiObjectType.USER,
+            createdAt: new Date().toISOString(),
           },
         ],
-        next: 'next_cursor',
+        next: null,
         previous: null,
       };
 
       mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
 
-      const environment = {
-        id: 'env-1',
-        name: 'Test Environment',
-        token: 'test-token',
-        projectId: 'project-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Environment;
-
-      const cursor = 'current_cursor';
-
       const result = await controller.listAttributeDefinitions(
-        environment,
+        mockRequest,
+        mockEnvironment,
         20,
+        OpenApiObjectType.USER,
         undefined,
-        cursor,
         undefined,
         undefined,
       );
 
       expect(result).toEqual(mockResponse);
-      expect(attributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
-        'project-1',
+      expect(mockAttributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
+        '/api/v1/attribute-definitions',
+        mockEnvironment,
+        20,
+        OpenApiObjectType.USER,
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should return attribute definitions with event name filter', async () => {
+      const mockRequest = createMockRequest({ eventName: ['test_event'] });
+      const mockResponse = {
+        results: [
+          {
+            id: 'test-id',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
+            codeName: 'test_code',
+            displayName: 'Test Code',
+            description: 'Test Description',
+            dataType: 'string',
+            scope: OpenApiObjectType.EVENT_DEFINITION,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        next: null,
+        previous: null,
+      };
+
+      mockAttributeDefinitionsService.listAttributeDefinitions.mockResolvedValue(mockResponse);
+
+      const result = await controller.listAttributeDefinitions(
+        mockRequest,
+        mockEnvironment,
         20,
         undefined,
-        cursor,
         undefined,
         undefined,
+        ['test_event'],
+      );
+
+      expect(result).toEqual(mockResponse);
+      expect(mockAttributeDefinitionsService.listAttributeDefinitions).toHaveBeenCalledWith(
+        '/api/v1/attribute-definitions',
+        mockEnvironment,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        ['test_event'],
       );
     });
   });

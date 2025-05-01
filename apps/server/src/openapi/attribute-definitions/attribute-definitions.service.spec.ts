@@ -6,6 +6,7 @@ import { InvalidLimitError, InvalidScopeError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '@/common/openapi/types';
+import { Environment } from '@/environments/models/environment.model';
 
 describe('OpenAPIAttributeDefinitionsService', () => {
   let service: OpenAPIAttributeDefinitionsService;
@@ -40,17 +41,25 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
   describe('listAttributes', () => {
     it('should return attributes with pagination', async () => {
-      const projectId = 'test-project-id';
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
       const node = {
         id: 'attr1',
         createdAt: new Date(),
         updatedAt: new Date(),
-        bizType: 1,
+        bizType: AttributeBizTypeNames.USER,
         projectId: 'test-project-id',
         displayName: 'Test Attribute',
         codeName: 'test_attribute',
         description: 'Test attribute',
-        dataType: 1,
+        dataType: AttributeDataTypeNames.String,
         randomMax: 0,
         predefined: false,
         deleted: false,
@@ -75,7 +84,8 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
       const result = await service.listAttributeDefinitions(
-        projectId,
+        '/v1/attribute-definitions',
+        environment,
         20,
         undefined,
         undefined,
@@ -89,7 +99,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             id: 'attr1',
             object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
             createdAt: mockResponse.edges[0].node.createdAt.toISOString(),
-            dataType: AttributeDataTypeNames.Number,
+            dataType: AttributeDataTypeNames.String,
             description: 'Test attribute',
             displayName: 'Test Attribute',
             codeName: 'test_attribute',
@@ -100,7 +110,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         previous: null,
       });
       expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
-        projectId,
+        'test-project-id',
         {
           after: undefined,
           first: 20,
@@ -112,12 +122,21 @@ describe('OpenAPIAttributeDefinitionsService', () => {
     });
 
     it('should throw error when limit is invalid', async () => {
-      const projectId = 'test-project-id';
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
       const invalidLimit = -1;
 
       await expect(
         service.listAttributeDefinitions(
-          projectId,
+          '/v1/attribute-definitions',
+          environment,
           invalidLimit,
           undefined,
           undefined,
@@ -128,18 +147,26 @@ describe('OpenAPIAttributeDefinitionsService', () => {
     });
 
     it('should handle cursor pagination', async () => {
-      const projectId = 'test-project-id';
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
       const cursor = 'cursor1';
       const node = {
         id: 'attr1',
         createdAt: new Date('2025-04-29T07:38:58.056Z'),
         updatedAt: new Date(),
-        bizType: 1,
+        bizType: AttributeBizTypeNames.USER,
         projectId: 'test-project-id',
         displayName: 'Test Attribute',
         codeName: 'test_attribute',
         description: 'Test attribute',
-        dataType: 1,
+        dataType: AttributeDataTypeNames.String,
         randomMax: 0,
         predefined: false,
         deleted: false,
@@ -164,7 +191,8 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
       const result = await service.listAttributeDefinitions(
-        projectId,
+        '/v1/attribute-definitions',
+        environment,
         20,
         undefined,
         cursor,
@@ -178,7 +206,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             id: 'attr1',
             object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
             createdAt: '2025-04-29T07:38:58.056Z',
-            dataType: AttributeDataTypeNames.Number,
+            dataType: AttributeDataTypeNames.String,
             description: 'Test attribute',
             displayName: 'Test Attribute',
             codeName: 'test_attribute',
@@ -189,7 +217,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         previous: 'http://localhost:3000/v1/attribute-definitions?limit=20',
       });
       expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
-        projectId,
+        'test-project-id',
         {
           after: cursor,
           first: 20,
@@ -201,7 +229,15 @@ describe('OpenAPIAttributeDefinitionsService', () => {
     });
 
     it('should handle empty results', async () => {
-      const projectId = 'test-project-id';
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
       const mockResponse: Connection<any> = {
         edges: [],
         nodes: [],
@@ -217,7 +253,8 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
       const result = await service.listAttributeDefinitions(
-        projectId,
+        '/v1/attribute-definitions',
+        environment,
         20,
         undefined,
         undefined,
@@ -231,7 +268,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         previous: null,
       });
       expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
-        projectId,
+        'test-project-id',
         {
           after: undefined,
           first: 20,
@@ -242,15 +279,24 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       );
     });
 
-    it('should throw InvalidScopeError when scope is invalid', async () => {
-      const projectId = 'test-project-id';
-      const invalidScope = 'invalidScope';
+    it('should throw error when scope is invalid', async () => {
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
+      const invalidScope = 'invalid' as OpenApiObjectType;
 
       await expect(
         service.listAttributeDefinitions(
-          projectId,
+          '/v1/attribute-definitions',
+          environment,
           20,
-          invalidScope as any,
+          invalidScope,
           undefined,
           undefined,
           undefined,

@@ -1,17 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { AttributesService } from '@/attributes/attributes.service';
-import {
-  mapBizType,
-  mapDataType,
-  mapOpenApiObjectTypeToBizType,
-  OpenApiObjectType,
-  isValidOpenApiObjectType,
-} from '@/common/openapi/types';
-import { Attribute } from '@/openapi/models/attribute.model';
 import { ConfigService } from '@nestjs/config';
+import { AttributesService } from '@/attributes/attributes.service';
+import { Environment } from '@/environments/models/environment.model';
+import { mapBizType, mapDataType, OpenApiObjectType } from '@/common/openapi/types';
+import { InvalidScopeError } from '@/common/errors/errors';
+import { isValidOpenApiObjectType, mapOpenApiObjectTypeToBizType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { parseOrderBy } from '@/common/openapi/sort';
-import { InvalidScopeError } from '@/common/errors/errors';
 
 @Injectable()
 export class OpenAPIAttributeDefinitionsService {
@@ -21,26 +16,27 @@ export class OpenAPIAttributeDefinitionsService {
   ) {}
 
   async listAttributeDefinitions(
-    projectId: string,
+    originalUrl: string,
+    environment: Environment,
     limit: number,
     scope: OpenApiObjectType,
     cursor: string,
     orderBy: string[],
     eventName: string[],
   ) {
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/attribute-definitions`;
+    const projectId = environment.projectId;
 
     if (scope && !isValidOpenApiObjectType(scope)) {
       throw new InvalidScopeError(scope);
     }
-
+    const apiUrl = this.configService.get<string>('app.apiUrl');
+    const completeUrl = `${apiUrl}${originalUrl}`;
     const sortOrders = parseOrderBy(orderBy);
+
     const bizType = scope ? mapOpenApiObjectTypeToBizType(scope) : undefined;
-    const queryParams = { ...(scope ? { scope } : {}), ...(eventName ? { eventName } : {}) };
 
     return paginate(
-      endpointUrl,
+      completeUrl,
       cursor,
       limit,
       async (params) =>
@@ -51,24 +47,17 @@ export class OpenAPIAttributeDefinitionsService {
           eventName,
           sortOrders,
         ),
-      (node) => this.mapToAttribute(node),
-      queryParams,
+      (node) => ({
+        id: node.id,
+        object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
+        createdAt:
+          typeof node.createdAt === 'string' ? node.createdAt : node.createdAt.toISOString(),
+        dataType: mapDataType(node.dataType),
+        description: node.description,
+        displayName: node.displayName,
+        codeName: node.codeName,
+        scope: mapBizType(node.bizType),
+      }),
     );
-  }
-
-  private mapToAttribute(attribute: any): Attribute {
-    return {
-      id: attribute.id,
-      object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
-      createdAt:
-        typeof attribute.createdAt === 'string'
-          ? attribute.createdAt
-          : attribute.createdAt.toISOString(),
-      dataType: mapDataType(attribute.dataType),
-      description: attribute.description,
-      displayName: attribute.displayName,
-      codeName: attribute.codeName,
-      scope: mapBizType(attribute.bizType),
-    };
   }
 }
