@@ -21,7 +21,7 @@ export interface RequestUrlOptions {
 export const RequestUrl = createParamDecorator(
   (options: RequestUrlOptions, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const { includeProtocol = true, includeHostname = true, includeQuery = true } = options || {};
+    const { includeProtocol = false, includeHostname = false, includeQuery = true } = options || {};
 
     let url = '';
 
