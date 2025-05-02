@@ -168,7 +168,12 @@ describe('OpenAPICompaniesController', () => {
         },
       });
 
-      const result = await controller.listCompanies(mockEnvironment, undefined, '20');
+      const result = await controller.listCompanies(
+        'http://localhost:3000/v1/companies',
+        mockEnvironment,
+        undefined,
+        '20',
+      );
 
       expect(result.results).toEqual([
         {
@@ -222,10 +227,13 @@ describe('OpenAPICompaniesController', () => {
         totalCount: 1,
       });
 
-      const result = await controller.listCompanies(mockEnvironment, 10, 'current-cursor', [
-        ExpandType.MEMBERSHIPS,
-        ExpandType.USERS,
-      ]);
+      const result = await controller.listCompanies(
+        'http://localhost:3000/v1/companies',
+        mockEnvironment,
+        10,
+        'current-cursor',
+        [ExpandType.MEMBERSHIPS, ExpandType.USERS],
+      );
 
       expect(result.results).toEqual([
         {

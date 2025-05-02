@@ -26,6 +26,7 @@ import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
 
 @ApiTags('Companies')
 @Controller('v1/companies')
@@ -60,12 +61,19 @@ export class OpenAPICompaniesController {
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
   async listCompanies(
+    @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<ListCompaniesResponseDto> {
-    return await this.openAPICompaniesService.listCompanies(environment.id, limit, cursor, expand);
+    return await this.openAPICompaniesService.listCompanies(
+      requestUrl,
+      environment,
+      limit,
+      cursor,
+      expand,
+    );
   }
 
   @Post()

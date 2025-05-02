@@ -158,7 +158,14 @@ describe('OpenAPICompaniesService', () => {
         totalCount: 1,
       });
 
-      const result = await service.listCompanies('env-1');
+      const result = await service.listCompanies('http://localhost:3000/v1/companies', {
+        id: 'env-1',
+        projectId: 'project-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       expect(result).toEqual({
         results: [

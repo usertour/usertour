@@ -6,6 +6,7 @@ import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dt
 import { CompanyNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
+import { Environment } from '@/environments/models/environment.model';
 
 @Injectable()
 export class OpenAPICompaniesService {
@@ -25,13 +26,12 @@ export class OpenAPICompaniesService {
   }
 
   async listCompanies(
-    environmentId: string,
+    requestUrl: string,
+    environment: Environment,
     limit = 20,
     cursor?: string,
     expand?: ExpandType[],
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/companies`;
     const include = {
       bizUsersOnCompany: {
         include: {
@@ -39,9 +39,10 @@ export class OpenAPICompaniesService {
         },
       },
     };
+    const environmentId = environment.id;
 
     return paginate(
-      endpointUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) => this.bizService.listBizCompanies(environmentId, params, include),
