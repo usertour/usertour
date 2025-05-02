@@ -7,7 +7,7 @@ import { ContentsService } from '@/contents/contents.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-
+import { Environment } from '@/environments/models/environment.model';
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
     editedVersion: true;
@@ -44,21 +44,21 @@ export class OpenAPIContentsService {
   }
 
   async listContents(
-    environmentId: string,
+    requestUrl: string,
+    environment: Environment,
     cursor?: string,
     limit = 20,
     expand?: ExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/contents`;
-
     const include = {
       editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
       publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
     };
 
+    const environmentId = environment.id;
+
     return paginate(
-      endpointUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) =>
@@ -118,19 +118,19 @@ export class OpenAPIContentsService {
   }
 
   async listContentVersions(
-    environmentId: string,
+    requestUrl: string,
+    environment: Environment,
     cursor?: string,
     limit = 20,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/content-versions`;
+    const environmentId = environment.id;
 
     const include = {
       content: true,
     };
 
     return paginate(
-      endpointUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) =>

@@ -3,25 +3,74 @@ import { OpenAPIContentsService } from './contents.service';
 import { ConfigService } from '@nestjs/config';
 import { ExpandType } from './contents.dto';
 import { ContentsService } from '@/contents/contents.service';
-import {
-  ContentNotFoundError,
-  InvalidLimitError,
-  InvalidCursorError,
-} from '@/common/errors/errors';
+import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
+import { Environment } from '@/environments/models/environment.model';
+import { InvalidCursorError, InvalidLimitError } from '@/common/errors/errors';
 
 describe('OpenAPIContentsService', () => {
   let service: OpenAPIContentsService;
+  let contentsService: ContentsService;
 
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  const mockEnvironment: Environment = {
+    id: 'env-id',
+    projectId: 'project1',
+    name: 'Test Environment',
+    token: 'test-token',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
-  const mockContentsService = {
-    getContentWithRelations: jest.fn(),
-    listContentsWithRelations: jest.fn(),
-    getContentVersionWithRelations: jest.fn(),
-    listContentVersionsWithRelations: jest.fn(),
+  const mockContent = {
+    id: 'test-id',
+    type: 'flow',
+    editedVersionId: 'version-1',
+    publishedVersionId: null,
+    updatedAt: new Date(),
+    createdAt: new Date(),
+  };
+
+  const mockVersion = {
+    id: 'version-1',
+    sequence: 1,
+    data: [],
+    content: {},
+    updatedAt: new Date(),
+    createdAt: new Date(),
+  };
+
+  const mockContentConnection = {
+    edges: [
+      {
+        node: mockContent,
+        cursor: 'cursor1',
+      },
+    ],
+    nodes: [mockContent],
+    totalCount: 1,
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: 'cursor1',
+      endCursor: 'cursor1',
+    },
+  };
+
+  const mockVersionConnection = {
+    edges: [
+      {
+        node: mockVersion,
+        cursor: 'cursor1',
+      },
+    ],
+    nodes: [mockVersion],
+    totalCount: 1,
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: 'cursor1',
+      endCursor: 'cursor1',
+    },
   };
 
   beforeEach(async () => {
@@ -30,204 +79,152 @@ describe('OpenAPIContentsService', () => {
         OpenAPIContentsService,
         {
           provide: ConfigService,
-          useValue: mockConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('http://localhost:3000'),
+          },
         },
         {
           provide: ContentsService,
-          useValue: mockContentsService,
+          useValue: {
+            getContentWithRelations: jest.fn(),
+            listContentsWithRelations: jest.fn().mockResolvedValue(mockContentConnection),
+            getContentVersionWithRelations: jest.fn(),
+            listContentVersionsWithRelations: jest.fn().mockResolvedValue(mockVersionConnection),
+          },
         },
       ],
     }).compile();
 
     service = module.get<OpenAPIContentsService>(OpenAPIContentsService);
-    jest.clearAllMocks();
+    contentsService = module.get<ContentsService>(ContentsService);
   });
 
   describe('getContent', () => {
     it('should return content with no expand', async () => {
-      const mockContent = {
-        id: 'test-id',
-        type: 'flow',
-        editedVersionId: 'version-1',
-        publishedVersionId: null,
-        updatedAt: new Date(),
-        createdAt: new Date(),
-      };
-
-      mockContentsService.getContentWithRelations.mockResolvedValue(mockContent);
+      (contentsService.getContentWithRelations as jest.Mock).mockResolvedValue(mockContent);
 
       const result = await service.getContent('test-id', 'env-id');
 
       expect(result).toEqual({
-        id: 'test-id',
+        id: mockContent.id,
         object: OpenApiObjectType.CONTENT,
-        type: 'flow',
-        editedVersionId: 'version-1',
-        publishedVersionId: null,
+        type: mockContent.type,
+        editedVersionId: mockContent.editedVersionId,
+        publishedVersionId: mockContent.publishedVersionId,
         editedVersion: undefined,
         publishedVersion: undefined,
         updatedAt: mockContent.updatedAt.toISOString(),
         createdAt: mockContent.createdAt.toISOString(),
       });
-      expect(mockContentsService.getContentWithRelations).toHaveBeenCalledWith(
-        'test-id',
-        'env-id',
-        {
-          editedVersion: false,
-          publishedVersion: false,
-        },
-      );
+      expect(contentsService.getContentWithRelations).toHaveBeenCalledWith('test-id', 'env-id', {
+        editedVersion: false,
+        publishedVersion: false,
+      });
     });
 
     it('should return content with expand', async () => {
-      const mockContent = {
-        id: 'test-id',
-        type: 'flow',
-        editedVersionId: 'version-1',
+      const mockContentWithExpand = {
+        ...mockContent,
         publishedVersionId: 'version-2',
-        editedVersion: {
-          id: 'version-1',
-          sequence: 1,
-          data: [],
-          updatedAt: new Date(),
-          createdAt: new Date(),
-        },
-        publishedVersion: {
-          id: 'version-2',
-          sequence: 2,
-          data: [],
-          updatedAt: new Date(),
-          createdAt: new Date(),
-        },
-        updatedAt: new Date(),
-        createdAt: new Date(),
+        editedVersion: mockVersion,
+        publishedVersion: { ...mockVersion, id: 'version-2', sequence: 2 },
       };
 
-      mockContentsService.getContentWithRelations.mockResolvedValue(mockContent);
+      (contentsService.getContentWithRelations as jest.Mock).mockResolvedValue(
+        mockContentWithExpand,
+      );
 
       const result = await service.getContent('test-id', 'env-id', [ExpandType.PUBLISHED_VERSION]);
 
       expect(result).toEqual({
-        id: 'test-id',
+        id: mockContent.id,
         object: OpenApiObjectType.CONTENT,
-        type: 'flow',
-        editedVersionId: 'version-1',
+        type: mockContent.type,
+        editedVersionId: mockContent.editedVersionId,
         publishedVersionId: 'version-2',
         editedVersion: undefined,
         publishedVersion: {
           id: 'version-2',
           object: OpenApiObjectType.CONTENT_VERSION,
           number: 2,
-          questions: [],
-          updatedAt: mockContent.publishedVersion.updatedAt.toISOString(),
-          createdAt: mockContent.publishedVersion.createdAt.toISOString(),
+          questions: mockVersion.data,
+          updatedAt: mockVersion.updatedAt.toISOString(),
+          createdAt: mockVersion.createdAt.toISOString(),
         },
         updatedAt: mockContent.updatedAt.toISOString(),
         createdAt: mockContent.createdAt.toISOString(),
       });
-      expect(mockContentsService.getContentWithRelations).toHaveBeenCalledWith(
-        'test-id',
-        'env-id',
-        {
-          editedVersion: false,
-          publishedVersion: true,
-        },
-      );
+      expect(contentsService.getContentWithRelations).toHaveBeenCalledWith('test-id', 'env-id', {
+        editedVersion: false,
+        publishedVersion: true,
+      });
     });
 
     it('should throw error when content not found', async () => {
-      mockContentsService.getContentWithRelations.mockResolvedValue(null);
+      (contentsService.getContentWithRelations as jest.Mock).mockResolvedValue(null);
 
       await expect(service.getContent('non-existent', 'env-id')).rejects.toThrow(
-        new ContentNotFoundError(),
+        ContentNotFoundError,
       );
     });
   });
 
   describe('listContents', () => {
-    it('should return paginated contents with no expand', async () => {
-      const mockContents = [
-        {
-          id: 'test-id-1',
-          type: 'flow',
-          editedVersionId: 'version-1',
-          publishedVersionId: null,
-          updatedAt: new Date(),
-          createdAt: new Date(),
-        },
-      ];
+    it('should return paginated contents', async () => {
+      const result = await service.listContents(
+        'http://localhost:3000/v1/contents',
+        mockEnvironment,
+      );
 
-      const mockConnection = {
-        edges: mockContents.map((content) => ({
-          node: content,
-          cursor: content.id,
-        })),
-        pageInfo: {
-          hasNextPage: false,
-          endCursor: null,
-        },
-      };
-
-      mockContentsService.listContentsWithRelations.mockResolvedValue(mockConnection);
-
-      const result = await service.listContents('env-id', undefined, 10);
-
-      expect(result).toEqual({
-        results: mockContents.map((content) => ({
-          id: content.id,
-          object: OpenApiObjectType.CONTENT,
-          type: 'flow',
-          editedVersionId: 'version-1',
-          publishedVersionId: null,
-          editedVersion: undefined,
-          publishedVersion: undefined,
-          updatedAt: content.updatedAt.toISOString(),
-          createdAt: content.createdAt.toISOString(),
-        })),
-        next: null,
-        previous: null,
-      });
-      expect(mockContentsService.listContentsWithRelations).toHaveBeenCalledWith(
-        'env-id',
-        { first: 10 },
+      expect(contentsService.listContentsWithRelations).toHaveBeenCalledWith(
+        mockEnvironment.id,
+        { first: 20, after: undefined },
         {
           editedVersion: false,
           publishedVersion: false,
         },
       );
+      expect(result).toEqual({
+        results: [
+          {
+            id: mockContent.id,
+            object: OpenApiObjectType.CONTENT,
+            type: mockContent.type,
+            editedVersionId: mockContent.editedVersionId,
+            publishedVersionId: mockContent.publishedVersionId,
+            editedVersion: undefined,
+            publishedVersion: undefined,
+            updatedAt: mockContent.updatedAt.toISOString(),
+            createdAt: mockContent.createdAt.toISOString(),
+          },
+        ],
+        next: null,
+        previous: null,
+      });
     });
 
-    it('should throw error when invalid limit', async () => {
-      await expect(service.listContents('env-id', undefined, -1)).rejects.toThrow(
-        new InvalidLimitError(),
-      );
+    it('should throw error when limit is negative', async () => {
+      await expect(
+        service.listContents('http://localhost:3000/v1/contents', mockEnvironment, undefined, -1),
+      ).rejects.toThrow(InvalidLimitError);
     });
   });
 
   describe('getContentVersion', () => {
     it('should return content version', async () => {
-      const mockVersion = {
-        id: 'version-1',
-        sequence: 1,
-        data: [],
-        content: {},
-        updatedAt: new Date(),
-        createdAt: new Date(),
-      };
-
-      mockContentsService.getContentVersionWithRelations.mockResolvedValue(mockVersion);
+      (contentsService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(mockVersion);
 
       const result = await service.getContentVersion('version-1', 'env-id');
 
       expect(result).toEqual({
-        id: 'version-1',
+        id: mockVersion.id,
         object: OpenApiObjectType.CONTENT_VERSION,
-        number: 1,
-        questions: [],
+        number: mockVersion.sequence,
+        questions: mockVersion.data,
         updatedAt: mockVersion.updatedAt.toISOString(),
         createdAt: mockVersion.createdAt.toISOString(),
       });
-      expect(mockContentsService.getContentVersionWithRelations).toHaveBeenCalledWith(
+      expect(contentsService.getContentVersionWithRelations).toHaveBeenCalledWith(
         'version-1',
         'env-id',
         {
@@ -237,76 +234,75 @@ describe('OpenAPIContentsService', () => {
     });
 
     it('should throw error when version not found', async () => {
-      mockContentsService.getContentVersionWithRelations.mockResolvedValue(null);
+      (contentsService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(null);
 
       await expect(service.getContentVersion('non-existent', 'env-id')).rejects.toThrow(
-        new ContentNotFoundError(),
+        ContentNotFoundError,
       );
     });
   });
 
   describe('listContentVersions', () => {
     it('should return paginated content versions', async () => {
-      const mockVersions = [
+      const result = await service.listContentVersions(
+        'http://localhost:3000/v1/content-versions',
+        mockEnvironment,
+      );
+
+      expect(contentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(
+        mockEnvironment.id,
+        { first: 20, after: undefined },
         {
-          id: 'version-1',
-          sequence: 1,
-          data: [],
-          content: {},
-          updatedAt: new Date(),
-          createdAt: new Date(),
+          content: true,
         },
-      ];
-
-      const mockConnection = {
-        edges: mockVersions.map((version) => ({
-          node: version,
-          cursor: version.id,
-        })),
-        pageInfo: {
-          hasNextPage: true,
-          endCursor: 'version-1',
-        },
-      };
-
-      mockContentsService.listContentVersionsWithRelations.mockResolvedValue(mockConnection);
-
-      const result = await service.listContentVersions('env-id', undefined, 10);
-
+      );
       expect(result).toEqual({
-        results: mockVersions.map((version) => ({
-          id: version.id,
-          object: OpenApiObjectType.CONTENT_VERSION,
-          number: 1,
-          questions: [],
-          updatedAt: version.updatedAt.toISOString(),
-          createdAt: version.createdAt.toISOString(),
-        })),
-        next: 'http://localhost:3000/v1/content-versions?cursor=version-1&limit=10',
+        results: [
+          {
+            id: mockVersion.id,
+            object: OpenApiObjectType.CONTENT_VERSION,
+            number: mockVersion.sequence,
+            questions: mockVersion.data,
+            updatedAt: mockVersion.updatedAt.toISOString(),
+            createdAt: mockVersion.createdAt.toISOString(),
+          },
+        ],
+        next: null,
         previous: null,
       });
-      expect(mockContentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(
-        'env-id',
-        { first: 10 },
-        { content: true },
-      );
     });
 
-    it('should throw error when invalid limit', async () => {
-      await expect(service.listContentVersions('env-id', undefined, -1)).rejects.toThrow(
-        new InvalidLimitError(),
-      );
+    it('should throw error when limit is negative', async () => {
+      await expect(
+        service.listContentVersions(
+          'http://localhost:3000/v1/content-versions',
+          mockEnvironment,
+          undefined,
+          -1,
+        ),
+      ).rejects.toThrow(InvalidLimitError);
     });
 
-    it('should throw error when invalid cursor', async () => {
-      mockContentsService.listContentVersionsWithRelations.mockResolvedValue({
+    it('should throw error when cursor is invalid', async () => {
+      jest.spyOn(contentsService, 'listContentVersionsWithRelations').mockResolvedValue({
         edges: [],
-        pageInfo: { hasNextPage: false, endCursor: null },
+        nodes: [],
+        totalCount: 0,
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
       });
 
-      await expect(service.listContentVersions('env-id', 'invalid-cursor', 10)).rejects.toThrow(
-        new InvalidCursorError(),
-      );
+      await expect(
+        service.listContentVersions(
+          'http://localhost:3000/v1/content-versions',
+          mockEnvironment,
+          'invalid-cursor',
+        ),
+      ).rejects.toThrow(InvalidCursorError);
     });
   });
 });

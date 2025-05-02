@@ -22,7 +22,9 @@ import { Content, ContentVersion } from '../models/content.model';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { ExpandType } from './contents.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { Environment } from '@/environments/models/environment.model';
 @ApiTags('Contents')
 @Controller()
 @UseGuards(OpenAPIKeyGuard)
@@ -56,12 +58,13 @@ export class OpenAPIContentsController {
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of contents', type: Content, isArray: true })
   async listContents(
-    @EnvironmentId() environmentId: string,
+    @RequestUrl() requestUrl: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentsService.listContents(environmentId, cursor, limit, expand);
+    return this.openAPIContentsService.listContents(requestUrl, environment, cursor, limit, expand);
   }
 
   @Get('v1/content-versions/:id')
@@ -87,10 +90,11 @@ export class OpenAPIContentsController {
   })
   @ApiResponse({ status: 200, description: 'List of content versions' })
   async listContentVersions(
-    @EnvironmentId() environmentId: string,
+    @RequestUrl() requestUrl: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentsService.listContentVersions(environmentId, cursor, limit);
+    return this.openAPIContentsService.listContentVersions(requestUrl, environment, cursor, limit);
   }
 }
