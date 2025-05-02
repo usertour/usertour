@@ -5,12 +5,22 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { InvalidLimitError, InvalidCursorError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
+import { Environment } from '@/environments/models/environment.model';
 
 describe('OpenAPIEventDefinitionsController', () => {
   let controller: OpenAPIEventDefinitionsController;
   let mockService: jest.Mocked<OpenAPIEventDefinitionsService>;
   let mockConfigService: jest.Mocked<ConfigService>;
   let mockPrismaService: jest.Mocked<PrismaService>;
+
+  const mockEnvironment: Environment = {
+    id: 'env1',
+    projectId: 'project1',
+    name: 'Test Environment',
+    token: 'test-token',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   beforeEach(async () => {
     mockService = {
@@ -80,20 +90,30 @@ describe('OpenAPIEventDefinitionsController', () => {
       mockService.listEventDefinitions.mockResolvedValue(mockEventDefinitions);
 
       const result = await controller.listEventDefinitions(
-        { id: 'env1', projectId: 'project1' } as any,
+        'http://localhost:3000/v1/event-definitions',
+        mockEnvironment,
         10,
         'cursor1',
       );
 
       expect(result).toEqual(mockEventDefinitions);
-      expect(mockService.listEventDefinitions).toHaveBeenCalledWith('project1', 10, 'cursor1');
+      expect(mockService.listEventDefinitions).toHaveBeenCalledWith(
+        'http://localhost:3000/v1/event-definitions',
+        mockEnvironment,
+        10,
+        'cursor1',
+      );
     });
 
     it('should throw error when limit is invalid', async () => {
       mockService.listEventDefinitions.mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listEventDefinitions({ id: 'env1', projectId: 'project1' } as any, -1),
+        controller.listEventDefinitions(
+          'http://localhost:3000/v1/event-definitions',
+          mockEnvironment,
+          -1,
+        ),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -102,7 +122,8 @@ describe('OpenAPIEventDefinitionsController', () => {
 
       await expect(
         controller.listEventDefinitions(
-          { id: 'env1', projectId: 'project1' } as any,
+          'http://localhost:3000/v1/event-definitions',
+          mockEnvironment,
           10,
           'invalid-cursor',
         ),

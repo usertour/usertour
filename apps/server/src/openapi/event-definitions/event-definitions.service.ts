@@ -5,7 +5,7 @@ import { EventsService as BusinessEventsService } from '@/events/events.service'
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { ConfigService } from '@nestjs/config';
 import { paginate } from '@/common/openapi/pagination';
-
+import { Environment } from '@/environments/models/environment.model';
 @Injectable()
 export class OpenAPIEventDefinitionsService {
   private readonly logger = new Logger(OpenAPIEventDefinitionsService.name);
@@ -16,7 +16,8 @@ export class OpenAPIEventDefinitionsService {
   ) {}
 
   async listEventDefinitions(
-    projectId: string,
+    requestUrl: string,
+    environment: Environment,
     limit = 20,
     cursor?: string,
   ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
@@ -24,12 +25,10 @@ export class OpenAPIEventDefinitionsService {
     if (limit < 1) {
       throw new InvalidLimitError();
     }
-
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/event-definitions`;
+    const projectId = environment.projectId;
 
     return paginate(
-      endpointUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) => await this.businessEventsService.listWithPagination(projectId, params),

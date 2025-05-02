@@ -13,7 +13,7 @@ import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
 @ApiTags('Event Definitions')
 @Controller('v1/event-definitions')
 @UseGuards(OpenAPIKeyGuard)
@@ -27,12 +27,14 @@ export class OpenAPIEventDefinitionsController {
   @Get()
   @ApiOperation({ summary: 'List event definitions' })
   async listEventDefinitions(
+    @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
   ) {
     return this.openAPIEventDefinitionsService.listEventDefinitions(
-      environment.projectId,
+      requestUrl,
+      environment,
       limit,
       cursor,
     );

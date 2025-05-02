@@ -4,6 +4,7 @@ import { EventsService as BusinessEventsService } from '@/events/events.service'
 import { InvalidLimitError } from '@/common/errors/errors';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '@/common/openapi/types';
+import { Environment } from '@/environments/models/environment.model';
 
 describe('OpenAPIEventDefinitionsService', () => {
   let service: OpenAPIEventDefinitionsService;
@@ -15,6 +16,15 @@ describe('OpenAPIEventDefinitionsService', () => {
 
   const mockConfigService = {
     get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
+
+  const mockEnvironment: Environment = {
+    id: 'env-123',
+    projectId: 'project-123',
+    name: 'Test Environment',
+    token: 'test-token',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
@@ -40,7 +50,7 @@ describe('OpenAPIEventDefinitionsService', () => {
   });
 
   describe('listEventDefinitions', () => {
-    const mockProjectId = 'project-123';
+    const mockRequestUrl = 'http://localhost:3000/v1/event-definitions';
     const mockCursor = 'test-cursor';
     const mockLimit = 10;
 
@@ -97,31 +107,42 @@ describe('OpenAPIEventDefinitionsService', () => {
     it('should successfully list events', async () => {
       mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
-      const result = await service.listEventDefinitions(mockProjectId, mockLimit, mockCursor);
+      const result = await service.listEventDefinitions(
+        mockRequestUrl,
+        mockEnvironment,
+        mockLimit,
+        mockCursor,
+      );
 
-      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(mockProjectId, {
-        first: mockLimit,
-        after: mockCursor,
-      });
+      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
+        mockEnvironment.projectId,
+        {
+          first: mockLimit,
+          after: mockCursor,
+        },
+      );
       expect(result).toEqual(expectedResponse);
     });
 
     it('should use default limit if not provided', async () => {
       mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
-      const result = await service.listEventDefinitions(mockProjectId);
+      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment);
 
-      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(mockProjectId, {
-        first: 20,
-        after: undefined,
-      });
+      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
+        mockEnvironment.projectId,
+        {
+          first: 20,
+          after: undefined,
+        },
+      );
       expect(result).toEqual(expectedDefaultResponse);
     });
 
     it('should throw error for invalid limit', async () => {
-      await expect(service.listEventDefinitions(mockProjectId, -1)).rejects.toThrow(
-        new InvalidLimitError(),
-      );
+      await expect(
+        service.listEventDefinitions(mockRequestUrl, mockEnvironment, -1),
+      ).rejects.toThrow(new InvalidLimitError());
     });
   });
 });
