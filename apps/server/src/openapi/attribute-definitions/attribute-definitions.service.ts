@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AttributesService } from '@/attributes/attributes.service';
 import { Environment } from '@/environments/models/environment.model';
 import { mapBizType, mapDataType, OpenApiObjectType } from '@/common/openapi/types';
@@ -10,10 +9,7 @@ import { parseOrderBy } from '@/common/openapi/sort';
 
 @Injectable()
 export class OpenAPIAttributeDefinitionsService {
-  constructor(
-    private readonly attributesService: AttributesService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly attributesService: AttributesService) {}
 
   async listAttributeDefinitions(
     requestUrl: string,
