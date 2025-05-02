@@ -69,14 +69,21 @@ describe('OpenAPIContentSessionsController', () => {
 
   describe('listContentSessions', () => {
     it('should return paginated content sessions', async () => {
-      const environmentId = 'test-env';
       const contentId = 'test-content-id';
       const limit = 20;
       const cursor = 'test-cursor';
       const expand = [ExpandType.CONTENT, ExpandType.USER];
 
       const result = await controller.listContentSessions(
-        environmentId,
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'test-env',
+          projectId: 'test-project',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
         contentId,
         limit,
         cursor,
@@ -84,7 +91,15 @@ describe('OpenAPIContentSessionsController', () => {
       );
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
-        environmentId,
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'test-env',
+          projectId: 'test-project',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
         contentId,
         limit,
         cursor,
@@ -94,11 +109,18 @@ describe('OpenAPIContentSessionsController', () => {
     });
 
     it('should handle default limit and no expand', async () => {
-      const environmentId = 'test-env';
       const contentId = 'test-content-id';
 
       const result = await controller.listContentSessions(
-        environmentId,
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'test-env',
+          projectId: 'test-project',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
         contentId,
         20,
         undefined,
@@ -106,7 +128,15 @@ describe('OpenAPIContentSessionsController', () => {
       );
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
-        environmentId,
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'test-env',
+          projectId: 'test-project',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
         contentId,
         20,
         undefined,
@@ -119,15 +149,11 @@ describe('OpenAPIContentSessionsController', () => {
   describe('getContentSession', () => {
     it('should return a content session', async () => {
       const id = 'test-id';
-      const environmentId = 'test-env';
       const expand = [ExpandType.CONTENT, ExpandType.USER];
 
-      const result = await controller.getContentSession(id, environmentId, expand);
+      const result = await controller.getContentSession(id, 'test-env', expand);
 
-      expect(service.getContentSession).toHaveBeenCalledWith(id, environmentId, [
-        'content',
-        'user',
-      ]);
+      expect(service.getContentSession).toHaveBeenCalledWith(id, 'test-env', ['content', 'user']);
       expect(result).toEqual({ data: mockContentSession });
     });
   });
@@ -135,11 +161,10 @@ describe('OpenAPIContentSessionsController', () => {
   describe('deleteContentSession', () => {
     it('should delete a content session', async () => {
       const id = 'test-id';
-      const environmentId = 'test-env';
 
-      await controller.deleteContentSession(id, environmentId);
+      await controller.deleteContentSession(id, 'test-env');
 
-      expect(service.deleteContentSession).toHaveBeenCalledWith(id, environmentId);
+      expect(service.deleteContentSession).toHaveBeenCalledWith(id, 'test-env');
     });
   });
 });

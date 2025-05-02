@@ -12,7 +12,7 @@ import {
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { ContentsService } from '@/contents/contents.service';
-
+import { Environment } from '@/environments/models/environment.model';
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {
     content?: true;
@@ -77,7 +77,8 @@ export class OpenAPIContentSessionsService {
   }
 
   async listContentSessions(
-    environmentId: string,
+    requestUrl: string,
+    environment: Environment,
     contentId: string,
     limit = 10,
     cursor?: string,
@@ -92,12 +93,11 @@ export class OpenAPIContentSessionsService {
       throw new ContentNotFoundError();
     }
 
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/content-sessions`;
+    const environmentId = environment.id;
     const include = this.getIncludeFromExpand(expand);
 
     return paginate(
-      endpointUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) =>

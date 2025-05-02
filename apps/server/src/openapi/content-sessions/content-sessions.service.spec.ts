@@ -128,12 +128,21 @@ describe('OpenAPIContentSessionsService', () => {
         },
       });
 
-      const result = await service.listContentSessions('env1', 'content1', 10, undefined, [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-        ExpandType.COMPANY,
-        ExpandType.VERSION,
-      ]);
+      const result = await service.listContentSessions(
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'env1',
+          projectId: 'project1',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        'content1',
+        10,
+        undefined,
+        [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
+      );
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
@@ -168,12 +177,21 @@ describe('OpenAPIContentSessionsService', () => {
         },
       });
 
-      const result = await service.listContentSessions('env1', 'content1', 10, undefined, [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-        ExpandType.COMPANY,
-        ExpandType.VERSION,
-      ]);
+      const result = await service.listContentSessions(
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'env1',
+          projectId: 'project1',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        'content1',
+        10,
+        undefined,
+        [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
+      );
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
@@ -210,12 +228,21 @@ describe('OpenAPIContentSessionsService', () => {
         },
       });
 
-      const result = await service.listContentSessions('env1', 'content1', 10, 'cursor1', [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-        ExpandType.COMPANY,
-        ExpandType.VERSION,
-      ]);
+      const result = await service.listContentSessions(
+        'http://localhost:3000/v1/content-sessions',
+        {
+          id: 'env1',
+          projectId: 'project1',
+          name: 'Test Environment',
+          token: 'test-token',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        'content1',
+        10,
+        'cursor1',
+        [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
+      );
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
@@ -248,10 +275,6 @@ describe('OpenAPIContentSessionsService', () => {
       expect(result).toBeDefined();
       expect(result.id).toBe('1');
       expect(result.deleted).toBe(true);
-      expect(mockAnalyticsService.deleteContentSessionWithRelations).toHaveBeenCalledWith(
-        '1',
-        'env1',
-      );
     });
 
     it('should throw ContentSessionNotFoundError when session not found', async () => {

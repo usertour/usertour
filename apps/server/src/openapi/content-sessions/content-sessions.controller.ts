@@ -22,6 +22,9 @@ import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './conte
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { Environment } from '@/environments/models/environment.model';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 
 @ApiTags('Content Sessions')
 @Controller('v1/content-sessions')
@@ -63,14 +66,16 @@ export class OpenAPIContentSessionsController {
     type: ContentSessionsOutput,
   })
   async listContentSessions(
-    @EnvironmentId() environmentId: string,
+    @RequestUrl() requestUrl: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query('contentId') contentId: string,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<ContentSessionsOutput> {
     return this.openAPIContentSessionsService.listContentSessions(
-      environmentId,
+      requestUrl,
+      environment,
       contentId,
       limit,
       cursor,
