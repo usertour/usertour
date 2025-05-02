@@ -25,7 +25,9 @@ import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { User } from '../models/user.model';
-
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { Environment } from '@/environments/models/environment.model';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
 @ApiTags('Users')
 @Controller('v1/users')
 @UseGuards(OpenAPIKeyGuard)
@@ -59,12 +61,13 @@ export class OpenAPIUsersController {
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of users', type: User, isArray: true })
   async listUsers(
-    @EnvironmentId() environmentId: string,
+    @RequestUrl() requestUrl: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
-    return this.openAPIUsersService.listUsers(environmentId, limit, cursor, expand);
+    return this.openAPIUsersService.listUsers(requestUrl, environment, limit, cursor, expand);
   }
 
   @Post()

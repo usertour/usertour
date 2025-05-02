@@ -7,7 +7,7 @@ import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-
+import { Environment } from '@/environments/models/environment.model';
 @Injectable()
 export class OpenAPIUsersService {
   private readonly logger = new Logger(OpenAPIUsersService.name);
@@ -28,7 +28,8 @@ export class OpenAPIUsersService {
   }
 
   async listUsers(
-    environmentId: string,
+    requestUrl: string,
+    environment: Environment,
     limit = 20,
     cursor?: string,
     expand?: ExpandTypes,
@@ -37,15 +38,14 @@ export class OpenAPIUsersService {
       throw new InvalidLimitError();
     }
 
-    const apiUrl = this.configService.get<string>('app.apiUrl');
-    const endpointUrl = `${apiUrl}/v1/users`;
     const include = {
       companies: expand?.includes(ExpandType.COMPANIES) ?? false,
       bizUsersOnCompany: expand?.includes(ExpandType.MEMBERSHIPS) ?? false,
     };
+    const environmentId = environment.id;
 
     return paginate(
-      endpointUrl,
+      requestUrl,
       cursor,
       limit,
       async (params) => this.bizService.listBizUsersWithRelations(environmentId, params, include),

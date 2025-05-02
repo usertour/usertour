@@ -5,10 +5,52 @@ import { ConfigService } from '@nestjs/config';
 import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
 import { ExpandType } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
+import { Environment } from '@/environments/models/environment.model';
 
 describe('OpenAPIUsersService', () => {
   let service: OpenAPIUsersService;
   let bizService: BizService;
+
+  const mockEnvironment: Environment = {
+    id: 'env1',
+    projectId: 'project1',
+    name: 'Test Environment',
+    token: 'test-token',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockBizUser = {
+    id: 'user1',
+    externalId: 'user1',
+    data: { name: 'Test User' },
+    createdAt: new Date(),
+    bizUsersOnCompany: [],
+    memberships: null,
+  };
+
+  const mockBizUserWithCompanies = {
+    id: 'user1',
+    externalId: 'user1',
+    data: { name: 'Test User' },
+    createdAt: new Date(),
+    bizUsersOnCompany: [
+      {
+        id: 'membership1',
+        bizCompany: {
+          id: 'company1',
+          externalId: 'company1',
+          data: { name: 'Test Company' },
+          createdAt: new Date(),
+        },
+      },
+    ],
+    memberships: null,
+  };
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
 
   const mockBizService = {
     getBizUser: jest.fn(),
@@ -17,28 +59,17 @@ describe('OpenAPIUsersService', () => {
     deleteBizUser: jest.fn(),
   };
 
-  const mockConfigService = {
-    get: jest.fn().mockImplementation((key: string) => {
-      switch (key) {
-        case 'app.apiUrl':
-          return 'http://localhost:3000';
-        default:
-          return null;
-      }
-    }),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OpenAPIUsersService,
         {
-          provide: BizService,
-          useValue: mockBizService,
-        },
-        {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: BizService,
+          useValue: mockBizService,
         },
       ],
     }).compile();
@@ -49,45 +80,55 @@ describe('OpenAPIUsersService', () => {
   });
 
   describe('getUser', () => {
-    it('should return user by ID', async () => {
-      const mockBizUser = {
-        externalId: 'user1',
-        data: {},
-        createdAt: new Date(),
-        bizUsersOnCompany: [],
-      };
-
+    it('should return a user', async () => {
       mockBizService.getBizUser.mockResolvedValue(mockBizUser);
 
-      const result = await service.getUser('user1', 'env1', [ExpandType.COMPANIES]);
+      const result = await service.getUser('user1', 'env1');
 
       expect(result).toEqual({
         id: 'user1',
-        object: 'user',
-        attributes: {},
+        object: OpenApiObjectType.USER,
+        attributes: { name: 'Test User' },
         createdAt: mockBizUser.createdAt.toISOString(),
-        companies: [],
+        companies: null,
         memberships: null,
       });
       expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', { companies: true });
     });
 
-    it('should throw not found error when user does not exist', async () => {
+    it('should return a user with expanded companies', async () => {
+      mockBizService.getBizUser.mockResolvedValue(mockBizUserWithCompanies);
+
+      const result = await service.getUser('user1', 'env1', [ExpandType.COMPANIES]);
+
+      expect(result).toEqual({
+        id: 'user1',
+        object: OpenApiObjectType.USER,
+        attributes: { name: 'Test User' },
+        createdAt: mockBizUserWithCompanies.createdAt.toISOString(),
+        companies: [
+          {
+            id: 'company1',
+            object: OpenApiObjectType.COMPANY,
+            attributes: { name: 'Test Company' },
+            createdAt:
+              mockBizUserWithCompanies.bizUsersOnCompany[0].bizCompany.createdAt.toISOString(),
+          },
+        ],
+        memberships: null,
+      });
+      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', { companies: true });
+    });
+
+    it('should throw error when user not found', async () => {
       mockBizService.getBizUser.mockResolvedValue(null);
 
-      await expect(service.getUser('user1', 'env1')).rejects.toThrow(new UserNotFoundError());
+      await expect(service.getUser('non-existent', 'env1')).rejects.toThrow(UserNotFoundError);
     });
   });
 
   describe('listUsers', () => {
     it('should return paginated users', async () => {
-      const mockBizUser = {
-        externalId: 'user1',
-        data: {},
-        createdAt: new Date('2025-04-27T10:56:52.198Z'),
-        bizUsersOnCompany: [],
-      };
-
       mockBizService.listBizUsersWithRelations.mockResolvedValue({
         edges: [
           {
@@ -96,100 +137,91 @@ describe('OpenAPIUsersService', () => {
           },
         ],
         pageInfo: {
-          hasNextPage: false,
-          hasPreviousPage: false,
-          startCursor: 'cursor1',
-          endCursor: 'cursor1',
-        },
-      });
-
-      const result = await service.listUsers('env1', 20, undefined, [ExpandType.COMPANIES]);
-
-      expect(result).toEqual({
-        results: [
-          {
-            id: 'user1',
-            object: 'user',
-            attributes: {},
-            createdAt: '2025-04-27T10:56:52.198Z',
-            companies: [],
-            memberships: null,
-          },
-        ],
-        next: null,
-        previous: null,
-      });
-      expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
-        'env1',
-        { first: 20 },
-        { companies: true, bizUsersOnCompany: false },
-      );
-    });
-
-    it('should handle cursor pagination', async () => {
-      const mockBizUser = {
-        externalId: 'user1',
-        data: {},
-        createdAt: new Date('2025-04-27T10:56:52.198Z'),
-        bizUsersOnCompany: [
-          {
-            bizCompany: {
-              externalId: 'company1',
-              data: {},
-              createdAt: new Date('2025-04-27T10:56:52.198Z'),
-            },
-          },
-        ],
-      };
-
-      mockBizService.listBizUsersWithRelations.mockResolvedValue({
-        edges: [
-          {
-            node: mockBizUser,
-            cursor: 'cursor2',
-          },
-        ],
-        pageInfo: {
           hasNextPage: true,
           hasPreviousPage: false,
-          startCursor: 'cursor2',
-          endCursor: 'cursor2',
+          startCursor: null,
+          endCursor: 'next-cursor',
         },
       });
 
-      const result = await service.listUsers('env1', 10, 'cursor1', [ExpandType.COMPANIES]);
+      const result = await service.listUsers(
+        'http://localhost:3000/v1/users',
+        mockEnvironment,
+        20,
+        undefined,
+        [ExpandType.COMPANIES],
+      );
 
       expect(result).toEqual({
         results: [
           {
             id: 'user1',
             object: OpenApiObjectType.USER,
-            attributes: {},
-            createdAt: '2025-04-27T10:56:52.198Z',
-            companies: [
-              {
-                id: 'company1',
-                object: OpenApiObjectType.COMPANY,
-                attributes: {},
-                createdAt: '2025-04-27T10:56:52.198Z',
-              },
-            ],
+            attributes: { name: 'Test User' },
+            createdAt: mockBizUser.createdAt.toISOString(),
+            companies: [],
             memberships: null,
           },
         ],
-        next: 'http://localhost:3000/v1/users?cursor=cursor2&limit=10&expand%5B%5D=companies',
-        previous: 'http://localhost:3000/v1/users?limit=10&expand%5B%5D=companies',
+        next: 'http://localhost:3000/v1/users?cursor=next-cursor&limit=20&expand%5B%5D=companies',
+        previous: null,
       });
-
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
         'env1',
-        { first: 10, after: 'cursor1' },
-        { companies: true, bizUsersOnCompany: false },
+        { first: 20, after: undefined },
+        { bizUsersOnCompany: false, companies: true },
       );
     });
 
-    it('should throw error when limit is invalid', async () => {
-      await expect(service.listUsers('env1', -1)).rejects.toThrow(new InvalidLimitError());
+    it('should return paginated users with cursor', async () => {
+      mockBizService.listBizUsersWithRelations.mockResolvedValue({
+        edges: [
+          {
+            node: mockBizUser,
+            cursor: 'cursor1',
+          },
+        ],
+        pageInfo: {
+          hasNextPage: true,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: 'next-cursor',
+        },
+      });
+
+      const result = await service.listUsers(
+        'http://localhost:3000/v1/users',
+        mockEnvironment,
+        10,
+        'cursor1',
+        [ExpandType.COMPANIES],
+      );
+
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'user1',
+            object: OpenApiObjectType.USER,
+            attributes: { name: 'Test User' },
+            createdAt: mockBizUser.createdAt.toISOString(),
+            companies: [],
+            memberships: null,
+          },
+        ],
+        next: 'http://localhost:3000/v1/users?cursor=next-cursor&limit=10&expand%5B%5D=companies',
+        previous: 'http://localhost:3000/v1/users?limit=10&expand%5B%5D=companies',
+      });
+      expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
+        'env1',
+        { first: 10, after: 'cursor1' },
+        { bizUsersOnCompany: false, companies: true },
+      );
+    });
+
+    it('should throw error for invalid limit', async () => {
+      await expect(
+        service.listUsers('http://localhost:3000/v1/users', mockEnvironment, -1),
+      ).rejects.toThrow(new InvalidLimitError());
     });
   });
 
