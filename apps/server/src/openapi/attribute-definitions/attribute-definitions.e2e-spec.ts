@@ -24,9 +24,23 @@ describe('AttributeDefinitionsController (e2e)', () => {
               updatedAt: new Date().toISOString(),
               bizType: 1,
               projectId: 'test-project-id',
-              displayName: 'Test User Attribute',
-              codeName: 'test_user_attribute',
-              description: 'Test user attribute',
+              displayName: 'Test User Attribute 1',
+              codeName: 'test_user_attribute_1',
+              description: 'Test user attribute 1',
+              dataType: 1,
+              randomMax: 0,
+              predefined: false,
+              deleted: false,
+            },
+            {
+              id: 'attr1_2',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              bizType: 1,
+              projectId: 'test-project-id',
+              displayName: 'Test User Attribute 2',
+              codeName: 'test_user_attribute_2',
+              description: 'Test user attribute 2',
               dataType: 1,
               randomMax: 0,
               predefined: false,
@@ -42,9 +56,23 @@ describe('AttributeDefinitionsController (e2e)', () => {
               updatedAt: new Date().toISOString(),
               bizType: 2,
               projectId: 'test-project-id',
-              displayName: 'Test Company Attribute',
-              codeName: 'test_company_attribute',
-              description: 'Test company attribute',
+              displayName: 'Test Company Attribute 1',
+              codeName: 'test_company_attribute_1',
+              description: 'Test company attribute 1',
+              dataType: 1,
+              randomMax: 0,
+              predefined: false,
+              deleted: false,
+            },
+            {
+              id: 'attr2_2',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              bizType: 2,
+              projectId: 'test-project-id',
+              displayName: 'Test Company Attribute 2',
+              codeName: 'test_company_attribute_2',
+              description: 'Test company attribute 2',
               dataType: 1,
               randomMax: 0,
               predefined: false,
@@ -60,9 +88,23 @@ describe('AttributeDefinitionsController (e2e)', () => {
               updatedAt: new Date().toISOString(),
               bizType: 3,
               projectId: 'test-project-id',
-              displayName: 'Test Company Membership Attribute',
-              codeName: 'test_company_membership_attribute',
-              description: 'Test company membership attribute',
+              displayName: 'Test Company Membership Attribute 1',
+              codeName: 'test_company_membership_attribute_1',
+              description: 'Test company membership attribute 1',
+              dataType: 1,
+              randomMax: 0,
+              predefined: false,
+              deleted: false,
+            },
+            {
+              id: 'attr3_2',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              bizType: 3,
+              projectId: 'test-project-id',
+              displayName: 'Test Company Membership Attribute 2',
+              codeName: 'test_company_membership_attribute_2',
+              description: 'Test company membership attribute 2',
               dataType: 1,
               randomMax: 0,
               predefined: false,
@@ -78,9 +120,23 @@ describe('AttributeDefinitionsController (e2e)', () => {
               updatedAt: new Date().toISOString(),
               bizType: 4,
               projectId: 'test-project-id',
-              displayName: 'Test Event Definition Attribute',
-              codeName: 'test_event_definition_attribute',
-              description: 'Test event definition attribute',
+              displayName: 'Test Event Definition Attribute 1',
+              codeName: 'test_event_definition_attribute_1',
+              description: 'Test event definition attribute 1',
+              dataType: 1,
+              randomMax: 0,
+              predefined: false,
+              deleted: false,
+            },
+            {
+              id: 'attr4_2',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              bizType: 4,
+              projectId: 'test-project-id',
+              displayName: 'Test Event Definition Attribute 2',
+              codeName: 'test_event_definition_attribute_2',
+              description: 'Test event definition attribute 2',
               dataType: 1,
               randomMax: 0,
               predefined: false,
@@ -96,9 +152,23 @@ describe('AttributeDefinitionsController (e2e)', () => {
               updatedAt: new Date().toISOString(),
               bizType: 1,
               projectId: 'test-project-id',
-              displayName: 'Test User Attribute',
-              codeName: 'test_user_attribute',
-              description: 'Test user attribute',
+              displayName: 'Test User Attribute 1',
+              codeName: 'test_user_attribute_1',
+              description: 'Test user attribute 1',
+              dataType: 1,
+              randomMax: 0,
+              predefined: false,
+              deleted: false,
+            },
+            {
+              id: 'attr2',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              bizType: 2,
+              projectId: 'test-project-id',
+              displayName: 'Test Company Attribute 1',
+              codeName: 'test_company_attribute_1',
+              description: 'Test company attribute 1',
               dataType: 1,
               randomMax: 0,
               predefined: false,
@@ -108,7 +178,7 @@ describe('AttributeDefinitionsController (e2e)', () => {
         }
         return [];
       }),
-      count: jest.fn().mockResolvedValue(1),
+      count: jest.fn().mockResolvedValue(2),
     },
     accessToken: {
       findUnique: jest.fn().mockResolvedValue({
@@ -160,7 +230,9 @@ describe('AttributeDefinitionsController (e2e)', () => {
         .set('Authorization', `Bearer ak_${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.results[0].scope).toBe(OpenApiObjectType.USER);
+          expect(res.body.results.every((result) => result.scope === OpenApiObjectType.USER)).toBe(
+            true,
+          );
         });
     });
 
@@ -170,7 +242,9 @@ describe('AttributeDefinitionsController (e2e)', () => {
         .set('Authorization', `Bearer ak_${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.results[0].scope).toBe(OpenApiObjectType.COMPANY);
+          expect(
+            res.body.results.every((result) => result.scope === OpenApiObjectType.COMPANY),
+          ).toBe(true);
         });
     });
 
@@ -180,7 +254,11 @@ describe('AttributeDefinitionsController (e2e)', () => {
         .set('Authorization', `Bearer ak_${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.results[0].scope).toBe(OpenApiObjectType.COMPANY_MEMBERSHIP);
+          expect(
+            res.body.results.every(
+              (result) => result.scope === OpenApiObjectType.COMPANY_MEMBERSHIP,
+            ),
+          ).toBe(true);
         });
     });
 
@@ -190,7 +268,9 @@ describe('AttributeDefinitionsController (e2e)', () => {
         .set('Authorization', `Bearer ak_${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.results[0].scope).toBe(OpenApiObjectType.EVENT_DEFINITION);
+          expect(
+            res.body.results.every((result) => result.scope === OpenApiObjectType.EVENT_DEFINITION),
+          ).toBe(true);
         });
     });
 
