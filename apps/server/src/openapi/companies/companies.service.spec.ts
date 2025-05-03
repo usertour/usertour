@@ -184,7 +184,8 @@ describe('OpenAPICompaniesService', () => {
       expect(mockBizService.listBizCompanies).toHaveBeenCalledWith(
         'env-1',
         { first: 20 },
-        { bizUsersOnCompany: { include: { bizUser: false } } },
+        { bizUsersOnCompany: { include: { bizUser: undefined } } },
+        [{ createdAt: 'asc' }],
       );
     });
   });

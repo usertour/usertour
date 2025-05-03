@@ -1,21 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Company } from '../models/company.model';
-import { ConfigService } from '@nestjs/config';
 import { BizService } from '@/biz/biz.service';
-import { UpsertCompanyRequestDto, ExpandType, ExpandTypes } from './companies.dto';
-import { CompanyNotFoundError } from '@/common/errors/errors';
+import { UpsertCompanyRequestDto, ExpandType, ExpandTypes, OrderByType } from './companies.dto';
+import { CompanyNotFoundError, InvalidOrderByError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
+import { parseOrderBy } from '@/common/openapi/sort';
 
 @Injectable()
 export class OpenAPICompaniesService {
   private readonly logger = new Logger(OpenAPICompaniesService.name);
 
-  constructor(
-    private configService: ConfigService,
-    private bizService: BizService,
-  ) {}
+  constructor(private bizService: BizService) {}
 
   async getCompany(id: string, environmentId: string, expand?: ExpandTypes): Promise<Company> {
     const bizCompany = await this.bizService.getBizCompany(id, environmentId, expand);
@@ -31,21 +28,38 @@ export class OpenAPICompaniesService {
     limit = 20,
     cursor?: string,
     expand?: ExpandType[],
+    orderBy?: OrderByType[],
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
+    // Validate orderBy values
+    if (
+      orderBy?.some((value) => {
+        const field = value.startsWith('-') ? value.substring(1) : value;
+        return field !== OrderByType.CREATED_AT;
+      })
+    ) {
+      throw new InvalidOrderByError();
+    }
+
+    const isIncludeBizUsersOnCompany =
+      expand?.includes(ExpandType.MEMBERSHIPS_USER) || expand?.includes(ExpandType.USERS);
+
     const include = {
       bizUsersOnCompany: {
         include: {
-          bizUser: expand?.includes(ExpandType.MEMBERSHIPS_USER) ?? false,
+          bizUser: isIncludeBizUsersOnCompany,
         },
       },
     };
     const environmentId = environment.id;
 
+    const sortOrders = parseOrderBy(orderBy || ['createdAt']);
+
     return paginate(
       requestUrl,
       cursor,
       limit,
-      async (params) => this.bizService.listBizCompanies(environmentId, params, include),
+      async (params) =>
+        this.bizService.listBizCompanies(environmentId, params, include, sortOrders),
       (node) => this.mapBizCompanyToCompany(node, expand),
       expand ? { expand } : {},
     );

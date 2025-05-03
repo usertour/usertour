@@ -277,6 +277,15 @@ export class InvalidScopeError extends OpenAPIError {
   };
 }
 
+export class InvalidOrderByError extends OpenAPIError {
+  code = 'E1016';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid orderBy parameter. Only createdAt is supported.',
+    'zh-CN': '无效的排序参数。仅支持 createdAt。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -309,6 +318,7 @@ const errorMap = {
   E1013: RateLimitExceededError,
   E1014: ServiceUnavailableError,
   E1015: InvalidScopeError,
+  E1016: InvalidOrderByError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

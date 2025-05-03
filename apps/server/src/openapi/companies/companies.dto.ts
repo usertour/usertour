@@ -9,6 +9,11 @@ export enum ExpandType {
   MEMBERSHIPS_USER = 'memberships.user',
 }
 
+export enum OrderByType {
+  CREATED_AT = 'createdAt',
+  // NAME = 'name',
+}
+
 export type ExpandTypes = ExpandType[];
 
 export class UpsertUserDto {

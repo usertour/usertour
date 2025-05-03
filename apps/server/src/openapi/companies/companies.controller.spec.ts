@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompaniesController } from './companies.controller';
 import { OpenAPICompaniesService } from './companies.service';
-import { UpsertCompanyRequestDto, ExpandType } from './companies.dto';
+import { UpsertCompanyRequestDto, ExpandType, OrderByType } from './companies.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
@@ -232,6 +232,7 @@ describe('OpenAPICompaniesController', () => {
         mockEnvironment,
         10,
         'current-cursor',
+        [OrderByType.CREATED_AT],
         [ExpandType.MEMBERSHIPS, ExpandType.USERS],
       );
 

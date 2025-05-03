@@ -724,6 +724,7 @@ export class BizService {
       before?: string;
     },
     include?: Prisma.BizCompanyInclude,
+    orderBy?: Prisma.BizCompanyOrderByWithRelationInput[],
   ) {
     const baseQuery = {
       where: {
@@ -731,6 +732,7 @@ export class BizService {
         deleted: false,
       },
       include,
+      orderBy,
     };
 
     return await findManyCursorConnection(

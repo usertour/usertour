@@ -20,7 +20,12 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { OpenAPICompaniesService } from './companies.service';
-import { ListCompaniesResponseDto, UpsertCompanyRequestDto, ExpandType } from './companies.dto';
+import {
+  ListCompaniesResponseDto,
+  UpsertCompanyRequestDto,
+  ExpandType,
+  OrderByType,
+} from './companies.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -59,12 +64,22 @@ export class OpenAPICompaniesController {
   })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: OrderByType,
+    isArray: true,
+    description: 'Sort order. Currently only supports createdAt',
+    example: ['createdAt'],
+  })
   @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
   async listCompanies(
     @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
+    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String }))
+    orderBy?: OrderByType[],
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<ListCompaniesResponseDto> {
     return await this.openAPICompaniesService.listCompanies(
@@ -73,6 +88,7 @@ export class OpenAPICompaniesController {
       limit,
       cursor,
       expand,
+      orderBy,
     );
   }
 
