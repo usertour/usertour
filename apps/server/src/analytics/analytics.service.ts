@@ -1154,4 +1154,10 @@ export class AnalyticsService {
 
     return session;
   }
+
+  async getSessionAnswers(sessionId: string) {
+    return await this.prisma.bizAnswer.findMany({
+      where: { bizSessionId: sessionId },
+    });
+  }
 }

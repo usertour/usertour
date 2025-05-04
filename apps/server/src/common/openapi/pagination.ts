@@ -60,7 +60,7 @@ export async function paginate<T>(
   cursor: string | undefined,
   limit: number,
   fetchData: (params: PaginationParams) => Promise<PaginationConnection<T>>,
-  mapResult: (node: T) => any,
+  mapResult: (node: T) => any | Promise<any>,
   queryParams?: Record<string, any>,
 ): Promise<PaginationResult<any>> {
   // Validate limit
@@ -109,8 +109,13 @@ export async function paginate<T>(
     }
   }
 
+  const results = connection.edges.map((edge) => mapResult(edge.node));
+  const resolvedResults = await Promise.all(
+    results.map((result) => (result instanceof Promise ? result : Promise.resolve(result))),
+  );
+
   return {
-    results: connection.edges.map((edge) => mapResult(edge.node)),
+    results: resolvedResults,
     next:
       connection.pageInfo.hasNextPage && connection.pageInfo.endCursor
         ? buildUrl(requestUrl, {

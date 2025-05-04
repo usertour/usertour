@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ExpandType, OrderByType } from './content-sessions.dto';
-import { ContentSession } from '../models/content-session.model';
+import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
 import {
@@ -14,6 +14,7 @@ import { paginate } from '@/common/openapi/pagination';
 import { ContentsService } from '@/contents/contents.service';
 import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
+import { extractQuestionData } from '@/utils/content';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {
@@ -39,6 +40,63 @@ export class OpenAPIContentSessionsService {
     private readonly contentsService: ContentsService,
   ) {}
 
+  private async getSessionAnswers(
+    session: ContentSessionWithRelations,
+  ): Promise<ContentSessionAnswers[]> {
+    if (!session.version) {
+      return null;
+    }
+
+    const version = await this.contentsService.getContentVersionWithRelations(
+      session.versionId,
+      session.content.environmentId,
+      { steps: true },
+    );
+    if (!version || version.steps.length === 0) {
+      return null;
+    }
+    const steps = version.steps;
+    const answers = await this.analyticsService.getSessionAnswers(session.id);
+
+    const result: ContentSessionAnswers[] = answers
+      .map((answer) => {
+        const matchingStep = steps.find((step) => {
+          const questions = extractQuestionData(step.data as any);
+          return questions?.some((question) => question?.data?.cvid === answer.cvid);
+        });
+
+        if (!matchingStep) {
+          return null;
+        }
+
+        const questions = extractQuestionData(matchingStep.data as any);
+        const question = questions?.find((q) => q?.data?.cvid === answer.cvid);
+
+        if (!question) {
+          return null;
+        }
+
+        // Convert answer value to string
+        const answerValue =
+          answer.numberAnswer?.toString() ||
+          answer.textAnswer ||
+          (answer.listAnswer ? JSON.stringify(answer.listAnswer) : '');
+
+        return {
+          id: answer.id,
+          object: OpenApiObjectType.CONTENT_SESSION_ANSWER,
+          answerType: question.type,
+          answerValue,
+          createdAt: answer.createdAt.toISOString(),
+          questionCvid: question.data.cvid,
+          questionName: question.data.name,
+        };
+      })
+      .filter(Boolean) as ContentSessionAnswers[];
+
+    return result;
+  }
+
   async getContentSession(
     id: string,
     environmentId: string,
@@ -54,7 +112,7 @@ export class OpenAPIContentSessionsService {
       return null;
     }
 
-    return this.mapToContentSession(session, expand);
+    return await this.mapToContentSession(session, expand);
   }
 
   async listContentSessions(
@@ -125,16 +183,20 @@ export class OpenAPIContentSessionsService {
     };
   }
 
-  private mapToContentSession(
+  private async mapToContentSession(
     session: ContentSessionWithRelations,
     expand?: ExpandType[],
-  ): ContentSession {
+  ): Promise<ContentSession> {
     const shouldInclude = (type: ExpandType) => !expand || expand.includes(type);
+
+    const answers = shouldInclude(ExpandType.ANSWERS)
+      ? await this.getSessionAnswers(session)
+      : null;
 
     return {
       id: session.id,
       object: OpenApiObjectType.CONTENT_SESSION,
-      answers: session.data as any,
+      answers,
       completedAt: session.state === 1 ? session.updatedAt.toISOString() : null,
       completed: session.state === 1,
       contentId: session.contentId,

@@ -35,7 +35,7 @@ export class ContentSession {
   object: string;
 
   @ApiProperty({ example: null, nullable: true })
-  answers?: ContentSessionAnswers[];
+  answers: ContentSessionAnswers[] | null;
 
   @ApiProperty({ example: '2022-10-17T12:35:56.000+00:00', nullable: true })
   completedAt: string | null;
