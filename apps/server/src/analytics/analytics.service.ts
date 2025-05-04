@@ -1103,13 +1103,16 @@ export class AnalyticsService {
       after?: string;
       before?: string;
     },
+    userId?: string,
     include?: Prisma.BizSessionInclude,
+    orderBy?: Prisma.BizSessionOrderByWithRelationInput[],
   ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
     const where: Prisma.BizSessionWhereInput = {
       contentId,
       content: {
         environmentId,
       },
+      bizUser: userId ? { externalId: userId } : undefined,
     };
 
     return findManyCursorConnection(
@@ -1117,8 +1120,8 @@ export class AnalyticsService {
         this.prisma.bizSession.findMany({
           where,
           include,
+          orderBy,
           ...args,
-          orderBy: { createdAt: 'desc' },
         }),
       () =>
         this.prisma.bizSession.count({

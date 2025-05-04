@@ -645,7 +645,7 @@ export class WebSocketService {
   }
 
   async createSession(data: any): Promise<any> {
-    const { userId, token, contentId } = data;
+    const { userId, token, contentId, companyId } = data;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -656,7 +656,10 @@ export class WebSocketService {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(userId), environmentId },
     });
-    if (!bizUser) {
+    const bizCompany = await this.prisma.bizCompany.findFirst({
+      where: { externalId: String(companyId), environmentId },
+    });
+    if (!bizUser || (companyId && !bizCompany)) {
       return false;
     }
     const content = await this.prisma.content.findUnique({
@@ -673,6 +676,7 @@ export class WebSocketService {
         bizUserId: bizUser.id,
         contentId: content.id,
         versionId: content.publishedVersionId,
+        bizCompanyId: companyId ? bizCompany.id : null,
       },
     });
   }

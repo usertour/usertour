@@ -117,6 +117,7 @@ export class Socket extends Evented {
     userId: string;
     token: string;
     contentId: string;
+    companyId?: string;
   }): Promise<BizSession> {
     const response = await this.emitWithTimeout('create-session', params);
     return response as BizSession;

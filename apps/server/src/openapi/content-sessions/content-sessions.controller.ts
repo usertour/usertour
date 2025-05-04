@@ -18,7 +18,12 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { OpenAPIContentSessionsService } from './content-sessions.service';
-import { ContentSessionOutput, ContentSessionsOutput, ExpandType } from './content-sessions.dto';
+import {
+  ContentSessionOutput,
+  ContentSessionsOutput,
+  ExpandType,
+  OrderByType,
+} from './content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
@@ -53,6 +58,7 @@ export class OpenAPIContentSessionsController {
   @Get()
   @ApiOperation({ summary: 'List all content sessions' })
   @ApiQuery({ name: 'contentId', required: true, description: 'Content ID' })
+  @ApiQuery({ name: 'userId', required: false, description: 'User ID to filter sessions' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
   @ApiQuery({
     name: 'limit',
@@ -71,6 +77,9 @@ export class OpenAPIContentSessionsController {
     @Query('contentId') contentId: string,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
+    @Query('userId') userId?: string,
+    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String }))
+    orderBy?: OrderByType[],
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<ContentSessionsOutput> {
     return this.openAPIContentSessionsService.listContentSessions(
@@ -78,8 +87,10 @@ export class OpenAPIContentSessionsController {
       environment,
       contentId,
       limit,
+      userId,
       cursor,
       expand,
+      orderBy,
     );
   }
 
