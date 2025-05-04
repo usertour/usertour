@@ -7,6 +7,14 @@ export enum ExpandType {
   PUBLISHED_VERSION = 'published_version',
 }
 
+export enum VersionExpandType {
+  QUESTIONS = 'questions',
+}
+
+export enum OrderByType {
+  CREATED_AT = 'createdAt',
+}
+
 export class ListContentsResponseDto {
   @ApiProperty({ description: 'List of contents', type: [Content] })
   results: Content[];

@@ -1,9 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class Question {
-  @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
-  id: string;
-
   @ApiProperty({ example: 'question' })
   object: string;
 

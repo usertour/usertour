@@ -615,6 +615,7 @@ export class ContentsService {
 
   async listContentVersionsWithRelations(
     environmentId: string,
+    contentId: string,
     paginationArgs: {
       first?: number;
       last?: number;
@@ -622,9 +623,11 @@ export class ContentsService {
       before?: string;
     },
     include?: Prisma.VersionInclude,
+    orderBy?: Prisma.VersionOrderByWithRelationInput[],
   ) {
     const baseQuery = {
       where: {
+        contentId,
         content: {
           environmentId,
         },
@@ -633,6 +636,7 @@ export class ContentsService {
         content: include?.content,
         steps: include?.steps ? { orderBy: { sequence: 'asc' as const } } : false,
       },
+      orderBy,
     };
 
     return await findManyCursorConnection(
@@ -651,10 +655,12 @@ export class ContentsService {
       before?: string;
     },
     include?: Prisma.ContentInclude,
+    orderBy?: Prisma.ContentOrderByWithRelationInput[],
   ) {
     const baseQuery = {
       where: { environmentId },
       include,
+      orderBy,
     };
 
     return await findManyCursorConnection(

@@ -15,6 +15,7 @@ export enum OpenApiObjectType {
   ATTRIBUTE_DEFINITION = 'attributeDefinition',
   EVENT_DEFINITION = 'eventDefinition',
   CONTENT_SESSION_ANSWER = 'contentSessionAnswer',
+  QUESTION = 'question',
 }
 
 /**
