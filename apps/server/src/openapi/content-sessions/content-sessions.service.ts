@@ -224,6 +224,7 @@ export class OpenAPIContentSessionsService {
           ? {
               id: session.content.id,
               object: OpenApiObjectType.CONTENT,
+              name: session.content.name,
               type: session.content.type,
               editedVersionId: session.content.editedVersionId,
               publishedVersionId: session.content.publishedVersionId,

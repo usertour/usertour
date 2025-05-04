@@ -44,6 +44,9 @@ export class Content {
   @ApiProperty({ example: 'content' })
   object: string;
 
+  @ApiProperty({ example: 'My Content' })
+  name: string;
+
   @ApiProperty({ example: 'flow' })
   type: string;
 

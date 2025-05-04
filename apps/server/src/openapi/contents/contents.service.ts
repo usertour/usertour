@@ -75,6 +75,7 @@ export class OpenAPIContentsService {
     return {
       id: content.id,
       object: OpenApiObjectType.CONTENT,
+      name: content.name,
       type: content.type,
       editedVersionId: content.editedVersionId,
       editedVersion:
