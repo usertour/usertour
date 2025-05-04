@@ -11,10 +11,7 @@ export enum ExpandType {
 
 export enum OrderByType {
   CREATED_AT = 'createdAt',
-  // NAME = 'name',
 }
-
-export type ExpandTypes = ExpandType[];
 
 export class UpsertUserDto {
   @IsString()
@@ -63,7 +60,7 @@ export class ListCompaniesQueryDto {
   @IsOptional()
   @IsArray()
   @Type(() => String)
-  expand?: ExpandTypes;
+  expand?: ExpandType[];
 }
 
 export class ListCompaniesResponseDto {

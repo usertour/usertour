@@ -32,6 +32,7 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { DeleteResponseDto } from '@/common/openapi/dtos';
 
 @ApiTags('Companies')
 @Controller('v1/companies')
@@ -109,11 +110,15 @@ export class OpenAPICompaniesController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a company' })
   @ApiParam({ name: 'id', description: 'Company ID' })
-  @ApiResponse({ status: 200, description: 'Company deleted successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Company deleted successfully',
+    type: DeleteResponseDto,
+  })
   async deleteCompany(
     @EnvironmentDecorator() environment: Environment,
     @Param('id') id: string,
-  ): Promise<void> {
+  ): Promise<DeleteResponseDto> {
     return await this.openAPICompaniesService.deleteCompany(id, environment.id);
   }
 }

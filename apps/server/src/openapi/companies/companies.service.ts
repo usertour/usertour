@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Company } from '../models/company.model';
 import { BizService } from '@/biz/biz.service';
-import { UpsertCompanyRequestDto, ExpandType, ExpandTypes, OrderByType } from './companies.dto';
+import { UpsertCompanyRequestDto, ExpandType, OrderByType } from './companies.dto';
 import { CompanyNotFoundError, InvalidOrderByError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
+import { DeleteResponseDto } from '@/common/openapi/dtos';
 
 @Injectable()
 export class OpenAPICompaniesService {
@@ -14,7 +15,7 @@ export class OpenAPICompaniesService {
 
   constructor(private bizService: BizService) {}
 
-  async getCompany(id: string, environmentId: string, expand?: ExpandTypes): Promise<Company> {
+  async getCompany(id: string, environmentId: string, expand?: ExpandType[]): Promise<Company> {
     const bizCompany = await this.bizService.getBizCompany(id, environmentId, expand);
     if (!bizCompany) {
       throw new CompanyNotFoundError();
@@ -65,7 +66,7 @@ export class OpenAPICompaniesService {
     );
   }
 
-  private mapBizCompanyToCompany(bizCompany: any, expand?: ExpandTypes): Company {
+  private mapBizCompanyToCompany(bizCompany: any, expand?: ExpandType[]): Company {
     const memberships =
       expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_USER)
         ? bizCompany.bizUsersOnCompany?.map((membership) => ({
@@ -126,11 +127,17 @@ export class OpenAPICompaniesService {
     return this.mapBizCompanyToCompany(company);
   }
 
-  async deleteCompany(id: string, environmentId: string): Promise<void> {
+  async deleteCompany(id: string, environmentId: string): Promise<DeleteResponseDto> {
     const bizCompany = await this.bizService.getBizCompany(id, environmentId);
     if (!bizCompany) {
       throw new CompanyNotFoundError();
     }
     await this.bizService.deleteBizCompany([bizCompany.id], environmentId);
+
+    return {
+      id,
+      object: OpenApiObjectType.COMPANY,
+      deleted: true,
+    };
   }
 }
