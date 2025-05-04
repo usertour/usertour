@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BizService } from '@/biz/biz.service';
-import { DeleteCompanyMembershipResponseDto } from './company-memberships.dto';
 import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
+import { DeleteResponseDto } from '@/common/openapi/dtos';
 
 @Injectable()
 export class OpenAPICompanyMembershipsService {
@@ -14,7 +14,7 @@ export class OpenAPICompanyMembershipsService {
     userId: string,
     companyId: string,
     environmentId: string,
-  ): Promise<DeleteCompanyMembershipResponseDto> {
+  ): Promise<DeleteResponseDto> {
     const membership = await this.bizService.getBizCompanyMembership(
       userId,
       companyId,
