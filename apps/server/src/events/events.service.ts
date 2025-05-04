@@ -5,7 +5,7 @@ import { CreateEventInput, UpdateEventInput } from './dto/events.input';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { PaginationConnection } from '@/common/openapi/pagination';
-import { Event } from '@prisma/client';
+import { Event, Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventsService {
@@ -126,16 +126,17 @@ export class EventsService {
       after?: string;
       before?: string;
     },
+    orderBy: Prisma.EventOrderByWithRelationInput[],
   ): Promise<PaginationConnection<Event>> {
     const baseQuery = {
       where: { projectId, deleted: false },
+      orderBy,
     };
     return findManyCursorConnection(
       (args) =>
         this.prisma.event.findMany({
           ...baseQuery,
           ...args,
-          orderBy: { id: 'desc' },
         }),
       () =>
         this.prisma.event.count({

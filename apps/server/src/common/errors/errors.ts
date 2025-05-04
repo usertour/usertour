@@ -281,8 +281,8 @@ export class InvalidOrderByError extends OpenAPIError {
   code = 'E1016';
   statusCode = HttpStatus.BAD_REQUEST;
   messageDict = {
-    en: 'Invalid orderBy parameter. Only createdAt is supported.',
-    'zh-CN': '无效的排序参数。仅支持 createdAt。',
+    en: 'Invalid orderBy parameter.',
+    'zh-CN': '无效的排序参数。',
   };
 }
 

@@ -18,5 +18,5 @@ export class EventDefinition {
   displayName: string;
 
   @ApiProperty({ example: 'flow_started' })
-  name: string;
+  codeName: string;
 }

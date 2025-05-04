@@ -6,6 +6,7 @@ import {
   UseGuards,
   UseFilters,
   DefaultValuePipe,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIEventDefinitionsService } from './event-definitions.service';
@@ -31,12 +32,14 @@ export class OpenAPIEventDefinitionsController {
     @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
+    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String })) orderBy?: string[],
   ) {
     return this.openAPIEventDefinitionsService.listEventDefinitions(
       requestUrl,
       environment,
       limit,
       cursor,
+      orderBy,
     );
   }
 }
