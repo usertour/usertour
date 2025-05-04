@@ -8,6 +8,7 @@ import {
   UseGuards,
   DefaultValuePipe,
   ParseArrayPipe,
+  Post,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,18 +19,14 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { OpenAPIContentSessionsService } from './content-sessions.service';
-import {
-  ContentSessionOutput,
-  ContentSessionsOutput,
-  ExpandType,
-  OrderByType,
-} from './content-sessions.dto';
+import { ContentSessionsOutput, ExpandType, OrderByType } from './content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { ContentSession } from '../models/content-session.model';
 
 @ApiTags('Content Sessions')
 @Controller('v1/content-sessions')
@@ -43,16 +40,14 @@ export class OpenAPIContentSessionsController {
   @ApiOperation({ summary: 'Get a content session by ID' })
   @ApiParam({ name: 'id', description: 'Content Session ID' })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
-  @ApiResponse({ status: 200, description: 'Content session found', type: ContentSessionOutput })
+  @ApiResponse({ status: 200, description: 'Content session found', type: ContentSession })
   @ApiResponse({ status: 404, description: 'Content session not found' })
   async getContentSession(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
-  ): Promise<ContentSessionOutput> {
-    return {
-      data: await this.openAPIContentSessionsService.getContentSession(id, environmentId, expand),
-    };
+  ): Promise<ContentSession> {
+    return await this.openAPIContentSessionsService.getContentSession(id, environmentId, expand);
   }
 
   @Get()
@@ -100,5 +95,21 @@ export class OpenAPIContentSessionsController {
   @ApiResponse({ status: 200, description: 'Content session deleted successfully' })
   async deleteContentSession(@Param('id') id: string, @EnvironmentId() environmentId: string) {
     return this.openAPIContentSessionsService.deleteContentSession(id, environmentId);
+  }
+
+  @Post(':id/end')
+  @ApiOperation({ summary: 'End a content session' })
+  @ApiParam({ name: 'id', description: 'Content Session ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Content session ended successfully',
+    type: ContentSession,
+  })
+  @ApiResponse({ status: 404, description: 'Content session not found' })
+  async endContentSession(
+    @Param('id') id: string,
+    @EnvironmentId() environmentId: string,
+  ): Promise<ContentSession> {
+    return await this.openAPIContentSessionsService.endContentSession(id, environmentId);
   }
 }

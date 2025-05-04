@@ -183,6 +183,25 @@ export class OpenAPIContentSessionsService {
     };
   }
 
+  async endContentSession(id: string, environmentId: string) {
+    const session = await this.analyticsService.getContentSessionWithRelations(
+      id,
+      environmentId,
+      this.defaultInclude,
+    );
+
+    if (!session) {
+      throw new ContentSessionNotFoundError();
+    }
+
+    const success = await this.analyticsService.endSession(id);
+    if (!success) {
+      throw new ContentSessionNotFoundError();
+    }
+
+    return await this.getContentSession(id, environmentId);
+  }
+
   private async mapToContentSession(
     session: ContentSessionWithRelations,
     expand?: ExpandType[],
