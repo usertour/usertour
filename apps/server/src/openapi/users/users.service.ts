@@ -130,7 +130,11 @@ export class OpenAPIUsersService {
     id: string,
     environmentId: string,
   ): Promise<{ id: string; object: string; deleted: boolean }> {
-    await this.bizService.deleteBizUser([id], environmentId);
+    const bizUser = await this.bizService.getBizUser(id, environmentId);
+    if (!bizUser) {
+      throw new UserNotFoundError();
+    }
+    await this.bizService.deleteBizUser([bizUser.id], environmentId);
     return {
       id,
       object: OpenApiObjectType.USER,
