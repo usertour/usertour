@@ -1,13 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
 import { ConfigService } from '@nestjs/config';
-import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
-import { UpsertUserRequestDto } from './users.dto';
+import {
+  UserNotFoundError,
+  InvalidLimitError,
+  InvalidRequestError,
+  InvalidOrderByError,
+} from '@/common/errors/errors';
+import { UpsertUserRequestDto, UserOrderByType } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
+import { parseOrderBy } from '@/common/openapi/sort';
 @Injectable()
 export class OpenAPIUsersService {
   private readonly logger = new Logger(OpenAPIUsersService.name);
@@ -32,11 +38,22 @@ export class OpenAPIUsersService {
     environment: Environment,
     limit = 20,
     cursor?: string,
+    orderBy?: string[],
     expand?: ExpandTypes,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
     if (Number.isNaN(limit) || limit < 1) {
       throw new InvalidLimitError();
     }
+
+    if (
+      orderBy?.some((value) => {
+        const field = value.startsWith('-') ? value.substring(1) : value;
+        return field !== UserOrderByType.CREATED_AT;
+      })
+    ) {
+      throw new InvalidOrderByError();
+    }
+    const sortOrders = parseOrderBy(orderBy || ['createdAt']);
 
     const include = {
       companies: expand?.includes(ExpandType.COMPANIES) ?? false,
@@ -48,7 +65,8 @@ export class OpenAPIUsersService {
       requestUrl,
       cursor,
       limit,
-      async (params) => this.bizService.listBizUsersWithRelations(environmentId, params, include),
+      async (params) =>
+        this.bizService.listBizUsersWithRelations(environmentId, params, include, sortOrders),
       (node) => this.mapBizUserToUser(node, expand),
       expand ? { expand } : {},
     );

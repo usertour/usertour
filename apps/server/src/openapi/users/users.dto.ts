@@ -8,6 +8,10 @@ export enum ExpandType {
   MEMBERSHIPS_COMPANY = 'memberships.company',
 }
 
+export enum UserOrderByType {
+  CREATED_AT = 'createdAt',
+}
+
 export type ExpandTypes = ExpandType[];
 
 export class CompanyDto {

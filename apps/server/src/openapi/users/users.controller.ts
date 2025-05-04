@@ -65,9 +65,17 @@ export class OpenAPIUsersController {
     @EnvironmentDecorator() environment: Environment,
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
+    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String })) orderBy?: string[],
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
-    return this.openAPIUsersService.listUsers(requestUrl, environment, limit, cursor, expand);
+    return this.openAPIUsersService.listUsers(
+      requestUrl,
+      environment,
+      limit,
+      cursor,
+      orderBy,
+      expand,
+    );
   }
 
   @Post()

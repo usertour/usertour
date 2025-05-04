@@ -776,12 +776,14 @@ export class BizService {
       before?: string;
     },
     include?: Prisma.BizUserInclude,
+    orderBy?: Prisma.BizUserOrderByWithRelationInput[],
   ) {
     const baseQuery = {
       where: {
         environmentId,
       },
       include,
+      orderBy,
     };
 
     return await findManyCursorConnection(
