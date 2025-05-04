@@ -616,34 +616,14 @@ export class BizService {
     return insertAttribute;
   }
 
-  async getBizUser(
-    id: string,
-    environmentId: string,
-    include?: {
-      companies?: boolean;
-    },
-  ) {
-    const bizUser = await this.prisma.bizUser.findFirst({
+  async getBizUser(id: string, environmentId: string, include?: Prisma.BizUserInclude) {
+    return await this.prisma.bizUser.findFirst({
       where: {
         externalId: id,
         environmentId,
       },
-      include: {
-        bizUsersOnCompany: include?.companies
-          ? {
-              include: {
-                bizCompany: true,
-              },
-            }
-          : false,
-      },
+      include,
     });
-
-    if (!bizUser) {
-      throw new ParamsError('User not found');
-    }
-
-    return bizUser;
   }
 
   async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string) {

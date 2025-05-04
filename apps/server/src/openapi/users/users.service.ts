@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
-import { ConfigService } from '@nestjs/config';
 import {
   UserNotFoundError,
   InvalidLimitError,
@@ -18,13 +17,16 @@ import { parseOrderBy } from '@/common/openapi/sort';
 export class OpenAPIUsersService {
   private readonly logger = new Logger(OpenAPIUsersService.name);
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly bizService: BizService,
-  ) {}
+  constructor(private readonly bizService: BizService) {}
 
   async getUser(id: string, environmentId: string, expand?: ExpandTypes): Promise<User> {
-    const bizUser = await this.bizService.getBizUser(id, environmentId, { companies: true });
+    const bizUser = await this.bizService.getBizUser(id, environmentId, {
+      bizUsersOnCompany: {
+        include: {
+          bizCompany: true,
+        },
+      },
+    });
 
     if (!bizUser) {
       throw new UserNotFoundError();
@@ -56,8 +58,11 @@ export class OpenAPIUsersService {
     const sortOrders = parseOrderBy(orderBy || ['createdAt']);
 
     const include = {
-      companies: expand?.includes(ExpandType.COMPANIES) ?? false,
-      bizUsersOnCompany: expand?.includes(ExpandType.MEMBERSHIPS) ?? false,
+      bizUsersOnCompany: {
+        include: {
+          bizCompany: true,
+        },
+      },
     };
     const environmentId = environment.id;
 
