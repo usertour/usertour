@@ -109,7 +109,7 @@ export class OpenAPIContentSessionsService {
     );
 
     if (!session) {
-      return null;
+      throw new ContentSessionNotFoundError();
     }
 
     return await this.mapToContentSession(session, expand);
