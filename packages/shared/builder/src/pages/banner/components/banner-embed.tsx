@@ -5,6 +5,7 @@ import { convertSettings, convertToCssVars } from '@usertour-ui/shared-utils';
 import { Theme, ThemeTypesSetting } from '@usertour-ui/types';
 import { useEffect, useRef, useState } from 'react';
 import { useAws } from '../../../hooks/use-aws';
+import { useBuilderContext } from '../../../contexts';
 
 export const BannerEmbed = () => {
   const [globalStyle, setGlobalStyle] = useState<string>('');
@@ -13,6 +14,7 @@ export const BannerEmbed = () => {
 
   const [theme, setTheme] = useState<Theme | undefined>();
   const { themeList } = useThemeListContext();
+  const { projectId } = useBuilderContext();
   const { upload } = useAws();
   const handleCustomUploadRequest = (file: File): Promise<string> => {
     return upload(file);
@@ -61,6 +63,7 @@ export const BannerEmbed = () => {
             }}
           >
             <ContentEditor
+              projectId={projectId}
               zIndex={11111 + EXTENSION_CONTENT_POPPER}
               customUploadRequest={handleCustomUploadRequest}
               initialValue={createValue1 as ContentEditorRoot[]}

@@ -5,7 +5,7 @@ import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Badge } from '@usertour-ui/badge';
 import { stepIsReachable } from '@usertour-ui/builder/src/utils/content-validate';
-import { AddIcon, EditIcon, SpinnerIcon } from '@usertour-ui/icons';
+import { AddIcon, EditIcon, EyeNoneIcon, SpinnerIcon } from '@usertour-ui/icons';
 import { GoogleFontCss, LoadingContainer } from '@usertour-ui/shared-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-ui/tooltip';
 import { TooltipProvider } from '@usertour-ui/tooltip';
@@ -93,33 +93,43 @@ const ContentDetailContentStep = ({
       : undefined;
 
   if (!currentStep || !currentTheme) return null;
+
+  const isHidddenStep = currentStep.type === 'hidden';
+
   return (
     <>
       <GoogleFontCss settings={currentTheme.settings} />
       <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8" key={index}>
-        <div
-          className="w-40 h-32 flex  flex-none items-center"
-          style={{
-            height: height ? `${height}px` : undefined,
-          }}
-        >
-          <ScaledPreviewContainer
-            className="origin-[left_center]"
-            maxWidth={160}
-            maxHeight={600}
-            onContentRectChange={(contentRect, scale) => {
-              setContentRect(contentRect);
-              setScale(scale);
+        {!isHidddenStep && (
+          <div
+            className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
+            style={{
+              height: height ? `${height}px` : undefined,
             }}
           >
-            <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
-          </ScaledPreviewContainer>
-        </div>
+            <ScaledPreviewContainer
+              className="origin-[left_center]"
+              maxWidth={160}
+              maxHeight={600}
+              onContentRectChange={(contentRect, scale) => {
+                setContentRect(contentRect);
+                setScale(scale);
+              }}
+            >
+              <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
+            </ScaledPreviewContainer>
+          </div>
+        )}
+        {isHidddenStep && (
+          <div className="w-40 h-32 flex  flex-none items-center justify-center">
+            <EyeNoneIcon className="w-8 h-8" />
+          </div>
+        )}
         <div className="grow flex flex-col relative space-y-1 min-w-80	">
           <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
                     <EditIcon className="w-4 h-4 cursor-pointer" />
                   </Button>
@@ -129,22 +139,30 @@ const ContentDetailContentStep = ({
             </TooltipProvider>
           </div>
           <div className="font-bold flex flex-row space-x-1 items-center	">
-            {index + 1}、{currentStep.name}
+            {index + 1}. {currentStep.name}
           </div>
           <div className="text-sm space-x-1">
             <ContentBadge>{currentStep.type}</ContentBadge>
-            <ContentBadge>width: {currentStep.setting.width}px</ContentBadge>
-            <ContentBadge>height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
-            <ContentBadge>theme: {currentTheme.name}</ContentBadge>
+            {!isHidddenStep && (
+              <>
+                <ContentBadge>width: {currentStep.setting.width}px</ContentBadge>
+                <ContentBadge>height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
+                <ContentBadge>theme: {currentTheme.name}</ContentBadge>
+              </>
+            )}
           </div>
-          <div className="flex flex-row space-x-1">
-            <ContentBadge>
-              {!currentStep.setting.skippable && 'not skippable'}
-              {currentStep.setting.skippable && 'skippable'}
-            </ContentBadge>
-            {currentStep.setting.enabledBackdrop && <ContentBadge>backdrop enabled</ContentBadge>}
-            {!currentStep.setting.enabledBackdrop && <ContentBadge>backdrop disabled</ContentBadge>}
-          </div>
+          {!isHidddenStep && (
+            <div className="flex flex-row space-x-1">
+              <ContentBadge>
+                {!currentStep.setting.skippable && 'not skippable'}
+                {currentStep.setting.skippable && 'skippable'}
+              </ContentBadge>
+              {currentStep.setting.enabledBackdrop && <ContentBadge>backdrop enabled</ContentBadge>}
+              {!currentStep.setting.enabledBackdrop && (
+                <ContentBadge>backdrop disabled</ContentBadge>
+              )}
+            </div>
+          )}
           {!stepIsReachable(currentVersion.steps as Step[], currentStep) && (
             <div className="text-xs flex flex-row items-center text-warning space-x-1 pt-2">
               <ExclamationTriangleIcon className="h-3 w-3" />
@@ -194,7 +212,7 @@ const LauncherContentPreview = ({
           <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
                     <EditIcon className="w-4 h-4 cursor-pointer" />
                   </Button>
@@ -262,7 +280,7 @@ const ChecklistContentPreview = ({
       <GoogleFontCss settings={currentTheme.settings} />
       <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
         <div
-          className="w-40 h-32 flex  flex-none items-center"
+          className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
           style={{
             height: height ? `${height}px` : undefined,
           }}
@@ -283,7 +301,7 @@ const ChecklistContentPreview = ({
           <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
                     <EditIcon className="w-4 h-4 cursor-pointer" />
                   </Button>
@@ -332,6 +350,9 @@ export const ContentDetailContent = () => {
   const { openBuilder } = useContentBuilder();
   const { isViewOnly } = useAppContext();
   if (!version || !content || !contentType) return null;
+
+  const showAddButton = contentType === ContentTypeName.FLOWS;
+
   return (
     <>
       {state.isLoading && (
@@ -340,9 +361,7 @@ export const ContentDetailContent = () => {
         </LoadingContainer>
       )}
       <div className="flex flex-col space-y-6 grow">
-        {(contentType === ContentTypeName.FLOWS ||
-          contentType === ContentTypeName.NPS ||
-          contentType === ContentTypeName.SURVEYS) &&
+        {contentType === ContentTypeName.FLOWS &&
           version.steps?.map((step, index) => (
             <ContentDetailContentStep
               onEdit={() => openBuilder(content, contentType)}
@@ -369,7 +388,7 @@ export const ContentDetailContent = () => {
             disabled={isViewOnly}
           />
         )}
-        {contentType === ContentTypeName.FLOWS && (
+        {showAddButton && (
           <Button
             onClick={() => openBuilder(content, contentType)}
             className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer w-auto h-auto hover:bg-white "

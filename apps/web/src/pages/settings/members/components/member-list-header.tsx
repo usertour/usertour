@@ -1,7 +1,7 @@
-import { useMemberContext } from '@/contexts/member-context';
-import { Button } from '@usertour-ui/button';
-import { useState } from 'react';
-import { MemberInviteDialog } from './member-invite-dialog';
+import { useMemberContext } from "@/contexts/member-context";
+import { Button } from "@usertour-ui/button";
+import { useState } from "react";
+import { MemberInviteDialog } from "./member-invite-dialog";
 
 export const MemberListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -13,6 +13,7 @@ export const MemberListHeader = () => {
     setOpen(false);
     refetch();
   };
+
   return (
     <>
       <div className="relative ">
@@ -30,4 +31,4 @@ export const MemberListHeader = () => {
   );
 };
 
-MemberListHeader.displayName = 'MemberListHeader';
+MemberListHeader.displayName = "MemberListHeader";

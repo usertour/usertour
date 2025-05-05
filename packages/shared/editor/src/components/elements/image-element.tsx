@@ -269,7 +269,7 @@ const ImageElement = (props: RenderElementProps) => {
                   </div>
                 )}
 
-                <div className="flex">
+                <div className="flex items-center">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

@@ -43,7 +43,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -99,6 +99,7 @@ type BizEvent {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
+  event: Events
   eventId: String!
   id: ID!
 
@@ -113,7 +114,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -147,8 +148,9 @@ input BizQuery {
 
 type BizSession {
   bizEvent: [BizEvent!]
-  bizUser: BizModel!
+  bizUser: BizUser!
   bizUserId: String!
+  content: Content
   contentId: String!
 
   """Identifies the date and time when the object was created."""
@@ -160,6 +162,7 @@ type BizSession {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  version: Version
 }
 
 type BizSessionConnection {
@@ -171,6 +174,35 @@ type BizSessionConnection {
 type BizSessionEdge {
   cursor: String!
   node: BizSession!
+}
+
+type BizUser {
+  bizUsersOnCompany: [BizUserOnCompanyModel!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  environmentId: String!
+  externalId: String!
+  id: ID!
+  membership: JSON
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type BizUserOnCompanyModel {
+  bizCompany: BizModel
+  bizCompanyId: String!
+  bizUserId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  id: ID!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 input BizUserOnSegmentInput {
@@ -206,12 +238,13 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int!
+  count: Int
   success: Boolean!
 }
 
 type Content {
   buildUrl: String
+  config: JSON
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -308,7 +341,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String!
+  name: String
 }
 
 input CreatSegment {
@@ -324,7 +357,7 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   projectId: String!
 }
@@ -333,7 +366,7 @@ input CreateBizCompanyInput {
   data: JSON
   environmentId: String!
   externalId: String!
-  membership: JSON!
+  membership: JSON
   userId: String!
 }
 
@@ -345,11 +378,17 @@ input CreateBizInput {
   data: JSON
   environmentId: String!
   externalId: String!
-  membership: JSON!
+  membership: JSON
 }
 
 input CreateBizUserOnSegment {
   userOnSegment: [BizUserOnSegmentInput!]!
+}
+
+input CreateCheckoutSessionRequest {
+  interval: String!
+  planType: String!
+  projectId: String!
 }
 
 input CreateEnvironmentInput {
@@ -464,6 +503,10 @@ type Events {
   updatedAt: DateTime!
 }
 
+type GlobalConfig {
+  enabledBilling: Boolean!
+}
+
 type Invite {
   code: String!
 
@@ -539,12 +582,14 @@ type Mutation {
   createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
   createBizUser(data: CreateBizInput!): Common!
   createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
+  createCheckoutSession(data: CreateCheckoutSessionRequest!): String!
   createContent(data: ContentInput!): Content!
   createContentVersion(data: ContentVersionInput!): Version!
   createEnvironments(data: CreateEnvironmentInput!): Environment!
   createEvent(data: CreateEventInput!): Events!
   createLocalization(data: CreateLocalizationInput!): Localization!
   createMagicLink(data: MagicLinkInput!): Register!
+  createPortalSession(projectId: String!): String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
@@ -558,8 +603,10 @@ type Mutation {
   deleteEvent(data: DeleteEventInput!): Events!
   deleteLocalization(data: DeleteLocalizationInput!): Localization!
   deleteSegment(data: DeleteSegment!): Common!
+  deleteSession(sessionId: String!): Boolean!
   deleteTheme(data: DeleteThemeInput!): Theme!
   duplicateContent(data: ContentDuplicateInput!): Content!
+  endSession(sessionId: String!): Boolean!
   inviteTeamMember(data: InviteTeamMemberInput!): Boolean!
   login(data: LoginInput!): Auth!
   logout: Boolean!
@@ -610,10 +657,12 @@ type PageInfo {
 type Project {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
+  customerId: String
   environments: [Environment!]
   id: String!
   logoUrl: String
   name: String!
+  subscriptionId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -626,8 +675,12 @@ type Query {
   getContentVersion(versionId: String!): Version!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
+  getSubscriptionPlans: [SubscriptionPlanModel!]!
+  getSubscriptionUsage(projectId: String!): Int!
   getTeamMembers(projectId: String!): [UserOnProject!]!
   getTheme(themeId: String!): Theme!
+  globalConfig: GlobalConfig!
   hello(name: String!): String!
   helloWorld: String!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
@@ -636,14 +689,17 @@ type Query {
   listEvents(projectId: String!): [Events!]!
   listLocalizations(projectId: String!): [Localization!]!
   listSegment(environmentId: String!): [Segment!]!
+  listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
   queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryOembedInfo(url: String!): OEmbed!
+  querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -758,6 +814,39 @@ type Storage {
   signedUrl: String!
 }
 
+type SubscriptionModel {
+  cancelAt: String
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  interval: String!
+  isTrial: Boolean!
+  lookupKey: String!
+  overridePlan: JSON
+  planType: String!
+  projectId: String!
+  status: String!
+  subscriptionId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type SubscriptionPlanModel {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  interval: String!
+  lookupKey: String!
+  mauQuota: Int!
+  planType: String!
+  sessionCountQuota: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
 type Theme {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -783,6 +872,7 @@ input UpdateAttributeInput {
 
 input UpdateContentInput {
   buildUrl: String
+  config: JSON
   name: String
 }
 
@@ -849,7 +939,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]!
+  projects: [UserOnProject!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

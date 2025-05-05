@@ -33,9 +33,6 @@ export class BizGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
     if (args.data?.userOnSegment && args.data.userOnSegment.length > 0) {
       segmentId = args.data.userOnSegment[0].segmentId;
     }

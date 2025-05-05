@@ -3,7 +3,7 @@ import { LauncherContentWrapper, LauncherPopperContent } from '@usertour-ui/sdk/
 import { LauncherPopperContentPotal } from '@usertour-ui/sdk/src/launcher';
 import { LauncherPopper } from '@usertour-ui/sdk/src/launcher';
 import { LauncherRoot } from '@usertour-ui/sdk/src/launcher';
-import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   BizUserInfo,
@@ -26,13 +26,24 @@ interface LauncherWidgetCoreProps {
   el: HTMLElement;
   theme: Theme;
   zIndex: number;
-  handleOnClick: ({ type, data }: ContentEditorButtonElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   userInfo: BizUserInfo;
   handleActive: () => void;
+  removeBranding: boolean;
 }
 
 const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
-  const { data, handleActions, el, theme, zIndex, handleOnClick, userInfo, handleActive } = props;
+  const {
+    data,
+    handleActions,
+    el,
+    theme,
+    zIndex,
+    handleOnClick,
+    userInfo,
+    handleActive,
+    removeBranding,
+  } = props;
   const actionType = data?.behavior?.actionType;
   const [open, setOpen] = useState(false);
   const popperRef = useRef<HTMLDivElement>(null);
@@ -119,7 +130,7 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
               onClick={handleOnClick}
               userInfo={userInfo}
             />
-            <PopperMadeWith />
+            {!removeBranding && <PopperMadeWith />}
           </LauncherPopperContent>
         </LauncherPopperContentPotal>
       </LauncherPopper>
@@ -131,11 +142,8 @@ const LauncherWidgetCore = (props: LauncherWidgetCoreProps) => {
 export const LauncherWidget = (props: { launcher: Launcher }) => {
   const { launcher } = props;
   const store = launcher.getStore();
-  const { userInfo, content, zIndex, theme, triggerRef, openState } = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot,
-  );
+  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } =
+    useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
   const data = content?.data as LauncherData | undefined;
 
@@ -155,6 +163,7 @@ export const LauncherWidget = (props: { launcher: Launcher }) => {
       handleOnClick={launcher.handleOnClick}
       userInfo={userInfo as BizUserInfo}
       el={triggerRef}
+      removeBranding={sdkConfig.removeBranding}
     />
   );
 };

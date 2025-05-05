@@ -1,8 +1,5 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
-import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
@@ -22,10 +19,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour-ui/form';
-import { createAttribute } from '@usertour-ui/gql';
-import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-ui/icons';
+import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import {
+  CreateAttributeMutationVariables,
+  useCreateAttributeMutation,
+} from '@usertour-ui/shared-hooks';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
@@ -38,6 +38,7 @@ import { z } from 'zod';
 interface CreateFormProps {
   isOpen: boolean;
   onClose: () => void;
+  projectId: string;
 }
 
 const formSchema = z.object({
@@ -77,10 +78,9 @@ const defaultValues: Partial<FormValues> = {
   dataType: String(BizAttributeTypes.Number),
 };
 
-export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
-  const [createMutation] = useMutation(createAttribute);
+export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormProps) => {
+  const { invoke } = useCreateAttributeMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { project } = useAppContext();
   const { toast } = useToast();
 
   const showError = (title: string) => {
@@ -107,11 +107,10 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
         ...formValues,
         bizType: Number.parseInt(formValues.bizType),
         dataType: Number.parseInt(formValues.dataType),
-        projectId: project?.id,
-      };
-      const ret = await createMutation({ variables: { data } });
-
-      if (!ret.data?.createAttribute?.id) {
+        projectId,
+      } as CreateAttributeMutationVariables;
+      const isSuccess = await invoke(data);
+      if (!isSuccess) {
         showError('Create Attribute failed.');
       }
       onClose();
@@ -320,7 +319,7 @@ export const AttributeCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Create Attribute
               </Button>
             </DialogFooter>

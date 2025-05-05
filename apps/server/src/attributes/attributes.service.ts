@@ -36,12 +36,12 @@ export class AttributesService {
     if (bizType === 0) {
       return await this.prisma.attribute.findMany({
         where: { projectId },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { id: 'asc' },
       });
     }
     return await this.prisma.attribute.findMany({
       where: { projectId, bizType },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { id: 'asc' },
     });
   }
 }

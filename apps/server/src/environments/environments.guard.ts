@@ -29,9 +29,6 @@ export class EnvironmentsGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
     if (environmentId) {
       const data = await this.environmentsService.get(environmentId);
       if (!data || (projectId && data && projectId !== data.projectId)) {

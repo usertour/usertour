@@ -30,6 +30,7 @@ export function SegmentListProvider(props: SegmentListProviderProps): JSX.Elemen
   const { children, environmentId, bizType } = props;
   const { data, refetch, loading } = useQuery(listSegment, {
     variables: { environmentId },
+    skip: !environmentId,
   });
   const [searchParams, _] = useSearchParams();
   const [currentSegment, setCurrentSegment] = useState<Segment>();

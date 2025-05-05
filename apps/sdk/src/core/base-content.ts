@@ -1,6 +1,14 @@
 import { convertSettings } from '@usertour-ui/shared-utils';
 import { convertToCssVars } from '@usertour-ui/shared-utils';
-import { EventAttributes, SDKContent, Step, Theme, flowEndReason } from '@usertour-ui/types';
+import {
+  EventAttributes,
+  SDKContent,
+  Step,
+  Theme,
+  UserTourTypes,
+  flowEndReason,
+  flowStartReason,
+} from '@usertour-ui/types';
 import { isEqual } from 'lodash';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
@@ -188,6 +196,10 @@ export abstract class BaseContent<T = any> extends Evented {
     return this.currentStep;
   }
 
+  async updateUser(attributes: UserTourTypes.Attributes) {
+    return await this.getInstance().updateUser(attributes);
+  }
+
   async createSessionId() {
     const session = await this.getInstance().createSession(this.getContent().contentId);
     return session?.id;
@@ -248,7 +260,7 @@ export abstract class BaseContent<T = any> extends Evented {
 
   async startNewTour(contentId: string) {
     await this.cancelActiveTour();
-    await this.startTour(contentId, 'action');
+    await this.startTour(contentId, flowStartReason.ACTION);
   }
 
   handleNavigate(data: any) {
@@ -261,10 +273,15 @@ export abstract class BaseContent<T = any> extends Evented {
     return await this.getConfig().activeConditions();
   }
 
+  getSdkConfig() {
+    return this.getInstance().getSdkConfig();
+  }
+
   getStoreBaseInfo() {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
+    const sdkConfig = this.getSdkConfig();
     if (!themes || themes.length === 0) {
       return {};
     }
@@ -279,6 +296,7 @@ export abstract class BaseContent<T = any> extends Evented {
       return {};
     }
     return {
+      sdkConfig,
       assets: getAssets(theme),
       globalStyle: convertToCssVars(convertSettings(theme.settings)),
       theme,

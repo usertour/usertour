@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // PgBouncer connection
+  directUrl = env("DATABASE_DIRECT_URL") // Direct PostgreSQL connection
 }
 
 generator client {
@@ -94,18 +95,22 @@ model Code {
 }
 
 model Project {
-  id            String          @id @default(cuid())
-  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
-  name          String
-  logoUrl       String?
-  users         UserOnProject[]
-  environments  Environment[]
-  themes        Theme[]
-  attributes    Attribute[]
-  events        Event[]
-  localizations Localization[]
-  invites       Invite[]
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
+  name           String
+  logoUrl        String?
+  /// Stripe customer ID
+  customerId     String?
+  /// Stripe subscription ID
+  subscriptionId String?
+  users          UserOnProject[]
+  environments   Environment[]
+  themes         Theme[]
+  attributes     Attribute[]
+  events         Event[]
+  localizations  Localization[]
+  invites        Invite[]
 }
 
 model UserOnProject {
@@ -407,6 +412,7 @@ model BizSession {
   state     Int        @default(0)
   data      Json?      @db.JsonB
   progress  Int        @default(0)
+  projectId String     @default("")
   bizUser   BizUser    @relation(fields: [bizUserId], references: [id])
   bizUserId String
   content   Content    @relation(fields: [contentId], references: [id])
@@ -425,7 +431,6 @@ model BizEvent {
   updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
   event        Event       @relation(fields: [eventId], references: [id])
   eventId      String
-  /// stores snapshot data related to event
   data         Json?       @db.JsonB
   bizUser      BizUser     @relation(fields: [bizUserId], references: [id])
   bizUserId    String
@@ -434,6 +439,25 @@ model BizEvent {
 
   @@index([bizUserId])
   @@index([bizSessionId])
+}
+
+model BizAnswer {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+  bizEventId   String
+  bizSessionId String
+  contentId    String
+  versionId    String
+  bizUserId    String
+  cvid         String
+  numberAnswer Int?
+  textAnswer   String?
+  listAnswer   String[]
+
+  @@unique([bizSessionId, cvid])
+  @@index([contentId, cvid, bizUserId])
+  @@index([versionId, cvid, bizUserId])
 }
 
 model RefreshToken {
@@ -457,4 +481,82 @@ model RefreshToken {
   updatedAt   DateTime @updatedAt @db.Timestamptz()
 
   @@index([userId])
+}
+
+/// Subscription plan
+model SubscriptionPlan {
+  /// Primary key
+  id                String   @id @default(cuid())
+  /// Subscription plan type
+  planType          String
+  /// Billing interval (monthly, yearly, etc.)
+  interval          String
+  /// Lookup key
+  lookupKey         String
+  /// Monthly active user count quota
+  mauQuota          Int      @default(3000)
+  /// Session count quota
+  sessionCountQuota Int      @default(5000)
+  /// Create timestamp
+  createdAt         DateTime @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt         DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@unique([planType, interval])
+}
+
+/// Subscription
+model Subscription {
+  /// Primary key
+  id             String    @id @default(cuid())
+  /// Stripe subscription ID
+  subscriptionId String    @unique
+  /// Stripe price lookup key
+  lookupKey      String
+  /// Plan type (free, pro, max, etc.)
+  planType       String
+  /// Billing interval (monthly, yearly, etc.)
+  interval       String
+  /// Project ID
+  projectId      String
+  /// Stripe subscription status
+  status         String
+  /// Whether this is a trial subscription
+  isTrial        Boolean   @default(false)
+  /// Override plan quota (JSON string)
+  overridePlan   Json?     @db.JsonB
+  /// Cancel timestamp
+  cancelAt       DateTime? @db.Timestamptz()
+  /// Create timestamp
+  createdAt      DateTime  @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([projectId])
+  @@index([status, cancelAt])
+}
+
+model CheckoutSession {
+  /// Primary key
+  id             String   @id @default(cuid())
+  /// Stripe checkout session ID
+  sessionId      String
+  /// Project ID
+  projectId      String
+  /// Price lookup key
+  lookupKey      String
+  /// Payment status
+  paymentStatus  String?
+  /// Stripe subscription ID
+  subscriptionId String?
+  /// Stripe invoice ID
+  invoiceId      String?
+  /// Stripe customer ID
+  customerId     String?
+  /// Create timestamp
+  createdAt      DateTime @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([sessionId])
 }

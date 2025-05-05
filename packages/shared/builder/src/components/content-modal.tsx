@@ -18,7 +18,6 @@ import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-
 import {
   Attribute,
   Content,
-  ContentDataType,
   ContentOmbedInfo,
   ContentVersion,
   Step,
@@ -39,6 +38,7 @@ export interface ContentModalProps {
   contents: Content[];
   currentContent: Content | undefined;
   createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  projectId: string;
 }
 
 export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
@@ -52,15 +52,14 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       onChange,
       contents,
       currentIndex,
-      currentContent,
       createStep,
+      projectId,
     } = props;
     const [globalStyle, setGlobalStyle] = useState<string>('');
     const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const contentType = currentContent?.type as ContentDataType;
 
     useEffect(() => {
       if (theme) {
@@ -93,14 +92,14 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       }
     }, [themeSetting]);
 
+    const totalSteps = currentVersion?.steps?.length ?? 0;
+
     const progress = Math.min(
-      currentVersion?.steps?.length ? (currentIndex + 1 / currentVersion?.steps?.length) * 100 : 0,
+      totalSteps > 0 ? Math.round(((currentIndex + 1) / totalSteps) * 100) : 0,
       100,
     );
-    const enabledElementTypes =
-      contentType === ContentDataType.SURVEY || contentType === ContentDataType.NPS
-        ? Object.values(ContentEditorElementType)
-        : undefined;
+
+    const enabledElementTypes = Object.values(ContentEditorElementType);
 
     return (
       <>
@@ -121,6 +120,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   enabledElementTypes={enabledElementTypes}
                   customUploadRequest={handleCustomUploadRequest}
                   initialValue={data}
+                  projectId={projectId}
                   attributes={attributeList}
                   contentList={contents}
                   currentVersion={currentVersion}

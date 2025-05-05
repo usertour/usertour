@@ -11,7 +11,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 
 export interface RulesUrlPatternProps {
   index: number;

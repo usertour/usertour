@@ -7,7 +7,7 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import { BizAttributeTypes, BizEvents } from '@/common/consts/attribute';
+import { BizAttributeTypes, BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { ContentType } from '@/contents/models/content.model';
 import {
   ChecklistData,
@@ -32,6 +32,35 @@ const EVENT_CODE_MAP = {
 @Injectable()
 export class WebSocketService {
   constructor(private prisma: PrismaService) {}
+
+  async getConfig(body: any): Promise<any> {
+    const { token } = body;
+    const environment = await this.prisma.environment.findFirst({
+      where: { token },
+    });
+    const config = {
+      removeBranding: false,
+      planType: 'hobby',
+    };
+    if (!environment) {
+      return config;
+    }
+    const projectId = environment.projectId;
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    if (!project || !project.subscriptionId) {
+      return config;
+    }
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { subscriptionId: project.subscriptionId },
+    });
+    if (subscription) {
+      config.planType = subscription.planType;
+      config.removeBranding = subscription.planType !== 'hobby';
+    }
+    return config;
+  }
 
   async listContents(body: any): Promise<any> {
     const { token, versionId, userId: bizUserId, companyId } = body;
@@ -73,7 +102,9 @@ export class WebSocketService {
     const attributes = await this.prisma.attribute.findMany({
       where: {
         projectId: environment.projectId,
-        bizType: { in: [AttributeBizType.USER, AttributeBizType.COMPANY] },
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
       },
     });
     for (let index = 0; index < contents.length; index++) {
@@ -258,15 +289,13 @@ export class WebSocketService {
     const companyAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY);
     switch (rules.type) {
       case 'user-attr': {
-        const filter = createFilterItem(rules, userAttrs);
-        const segmentUser = await this.prisma.bizUser.findFirst({
-          where: {
-            environmentId: environment.id,
-            externalId: String(bizUser.externalId),
-            ...filter,
-          },
-        });
-        return !!segmentUser;
+        return await this.activedUserAttributeRulesCondition(
+          rules,
+          environment,
+          attributes,
+          bizUser,
+          companyId,
+        );
       }
       case 'segment': {
         const { segmentId } = rules.data;
@@ -301,6 +330,60 @@ export class WebSocketService {
       default: {
         return false;
       }
+    }
+  }
+
+  async activedUserAttributeRulesCondition(
+    rules: RulesCondition,
+    environment: Environment,
+    attributes: Attribute[],
+    bizUser: BizUser,
+    companyId?: string,
+  ): Promise<boolean> {
+    const attr = attributes.find((attr) => attr.id === rules.data.attrId);
+    if (!attr) {
+      return false;
+    }
+
+    const filter = createFilterItem(rules, attributes) || {};
+    const environmentId = environment.id;
+
+    switch (attr.bizType) {
+      case AttributeBizType.USER: {
+        const segmentUser = await this.prisma.bizUser.findFirst({
+          where: {
+            environmentId,
+            externalId: String(bizUser.externalId),
+            ...filter,
+          },
+        });
+        return !!segmentUser;
+      }
+
+      case AttributeBizType.COMPANY:
+      case AttributeBizType.MEMBERSHIP: {
+        if (!companyId) return false;
+
+        const bizCompany = await this.prisma.bizCompany.findFirst({
+          where: {
+            externalId: String(companyId),
+            environmentId,
+          },
+        });
+        if (!bizCompany) return false;
+
+        const segmentUser = await this.prisma.bizUserOnCompany.findFirst({
+          where: {
+            bizUserId: bizUser.id,
+            bizCompanyId: bizCompany.id,
+            ...(attr.bizType === AttributeBizType.COMPANY ? { bizCompany: filter } : filter),
+          },
+        });
+        return !!segmentUser;
+      }
+
+      default:
+        return false;
     }
   }
 
@@ -646,7 +729,7 @@ export class WebSocketService {
   }
 
   async upsertBizCompanies(data: any): Promise<any> {
-    const { companyId, userId, attributes, token } = data;
+    const { companyId, userId, attributes, token, membership } = data;
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -668,6 +751,9 @@ export class WebSocketService {
       companyId,
       attributes,
     );
+    if (membership) {
+      await this.upsertBizMembership(projectId, company.id, user.id, membership);
+    }
 
     return company;
   }
@@ -755,6 +841,7 @@ export class WebSocketService {
       data: {
         state: 0,
         progress: 0,
+        projectId: environment.projectId,
         bizUserId: bizUser.id,
         contentId: content.id,
         versionId: content.publishedVersionId,
@@ -844,6 +931,28 @@ export class WebSocketService {
           state,
         },
       });
+      if (eventName === BizEvents.QUESTION_ANSWERED) {
+        const answer: any = {
+          bizEventId: bizEvent.id,
+          contentId: currentVersion.contentId,
+          cvid: events[EventAttributes.QUESTION_CVID],
+          versionId: currentVersion.id,
+          bizUserId: user.id,
+          bizSessionId: bizSession.id,
+        };
+        if (events[EventAttributes.NUMBER_ANSWER]) {
+          answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];
+        }
+        if (events[EventAttributes.TEXT_ANSWER]) {
+          answer.textAnswer = events[EventAttributes.TEXT_ANSWER];
+        }
+        if (events[EventAttributes.LIST_ANSWER]) {
+          answer.listAnswer = events[EventAttributes.LIST_ANSWER];
+        }
+        await tx.bizAnswer.create({
+          data: answer,
+        });
+      }
 
       return bizEvent;
     });

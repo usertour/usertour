@@ -52,7 +52,16 @@ const transformsStyle = (element: ContentEditorEmebedElement) => {
     }
   } else if (element?.width?.value) {
     _style.width = `${element.width.value}px`;
-    _style.height = `${element.width.value * rate}px`;
+    _style.height = rate ? `${element.width.value * rate}px` : '100%';
+    _style.paddingBottom = '0px';
+  }
+
+  if (!element.height || element.height?.type === 'percent') {
+    const height = element?.height?.value ?? 100;
+    _style.height = `calc(${height}% + 0px)`;
+    _style.paddingBottom = '0px';
+  } else if (element?.height?.value) {
+    _style.height = `${element.height.value}px`;
     _style.paddingBottom = '0px';
   }
 
@@ -69,6 +78,7 @@ const transformsStyle = (element: ContentEditorEmebedElement) => {
       }
     }
   }
+
   return _style;
 };
 
@@ -103,6 +113,21 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
     (e: any) => {
       const value = e.target.value;
       updateElement({ ...element, width: { ...element.width, value } }, id);
+    },
+    [element],
+  );
+
+  const handleHeightValueChange = useCallback(
+    (e: any) => {
+      const value = e.target.value;
+      updateElement({ ...element, height: { ...element.height, value } }, id);
+    },
+    [element],
+  );
+
+  const handleHeightTypeChange = useCallback(
+    (type: string) => {
+      updateElement({ ...element, height: { ...element.height, type } }, id);
     },
     [element],
   );
@@ -188,7 +213,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               allowFullScreen={true}
               // allowTransparency={true}
               tabIndex={-1}
-              style={{ display: 'block' }}
+              style={{ display: 'block', pointerEvents: 'none' }}
               title="embed"
             />
           </div>
@@ -202,10 +227,10 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
       <Popover.Portal>
         <Popover.Content
           className="z-50 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-          side="bottom"
+          side="right"
           align="start"
           style={{ zIndex: zIndex }}
-          sideOffset={5}
+          sideOffset={10}
         >
           <div className="flex flex-col gap-2.5">
             <Label htmlFor="button-text">Embed URL</Label>
@@ -238,6 +263,32 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               <Select
                 onValueChange={handleWidthTypeChange}
                 defaultValue={element.width?.type ?? 'percent'}
+              >
+                <SelectTrigger className="shrink w-56">
+                  <SelectValue placeholder="Select a distribute" />
+                </SelectTrigger>
+                <SelectPortal style={{ zIndex: zIndex + EDITOR_SELECT }}>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="percent">%</SelectItem>
+                      <SelectItem value="pixels">pixels</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </SelectPortal>
+              </Select>
+            </div>
+            <Label htmlFor="button-text">Display height</Label>
+            <div className="flex gap-x-2">
+              <Input
+                type="height"
+                value={element.height?.value}
+                placeholder="Display height"
+                onChange={handleHeightValueChange}
+                className="bg-background grow "
+              />
+              <Select
+                onValueChange={handleHeightTypeChange}
+                defaultValue={element.height?.type ?? 'percent'}
               >
                 <SelectTrigger className="shrink w-56">
                   <SelectValue placeholder="Select a distribute" />
@@ -303,7 +354,7 @@ export const ContentEditorEmbed = (props: ContentEditorEmbedProps) => {
               </div>
             )}
 
-            <div className="flex">
+            <div className="flex items-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

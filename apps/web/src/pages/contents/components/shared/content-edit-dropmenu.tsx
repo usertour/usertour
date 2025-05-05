@@ -61,7 +61,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={disabled}
           >
             <CopyIcon className="mr-1" width={15} height={15} />
-            Duplicate flow
+            Duplicate {content.type}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -70,7 +70,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={content.published || disabled}
           >
             <Delete2Icon className="mr-1" />
-            Delete flow
+            Delete {content.type}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

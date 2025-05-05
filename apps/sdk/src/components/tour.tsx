@@ -1,5 +1,5 @@
 import * as SharedPopper from '@usertour-ui/sdk';
-import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import { Align, RulesCondition, Side, StepContentType } from '@usertour-ui/types';
 import { useEffect, useSyncExternalStore } from 'react';
 import { useRef } from 'react';
@@ -10,7 +10,7 @@ import { off, on } from '../utils/listener';
 type TourSharedProps = {
   store: TourStore;
   onClose: () => void;
-  handleOnClick: ({ type, data }: ContentEditorButtonElement) => void;
+  handleOnClick: (element: ContentEditorClickableElement, value?: any) => void;
   handleActions: (actions: RulesCondition[]) => Promise<void>;
 };
 
@@ -33,7 +33,7 @@ const PopperContent = ({
         onClick={handleOnClick}
         userInfo={userInfo}
       />
-      <SharedPopper.PopperMadeWith />
+      {!store.sdkConfig.removeBranding && <SharedPopper.PopperMadeWith />}
       <SharedPopper.PopperProgress width={progress} />
     </SharedPopper.PopperContentFrame>
   );

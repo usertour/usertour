@@ -7,15 +7,13 @@ import { BannerListContent } from './components/list/banner-list';
 import { ChecklistListContent } from './components/list/checklist-list';
 import { FlowListContent } from './components/list/flow-list';
 import { LauncherListContent } from './components/list/launcher-list';
-import { NpsListContent } from './components/list/nps-list';
-import { SurveyListContent } from './components/list/survey-list';
 import { ContentListSidebar } from './components/shared/content-list-sidebar';
 
 export const ContentList = () => {
   const { contentType } = useParams();
   const { environment, project } = useAppContext();
 
-  if (!contentType) {
+  if (!contentType || !environment || !project) {
     return <></>;
   }
 
@@ -35,8 +33,6 @@ export const ContentList = () => {
               {contentType === 'launchers' && <LauncherListContent />}
               {contentType === 'banners' && <BannerListContent />}
               {contentType === 'checklists' && <ChecklistListContent />}
-              {contentType === 'surveys' && <SurveyListContent />}
-              {contentType === 'nps' && <NpsListContent />}
             </div>
           </ScrollArea>
         </ThemeListProvider>

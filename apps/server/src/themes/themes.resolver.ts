@@ -49,11 +49,13 @@ export class ThemesResolver {
   }
 
   @Query(() => Theme)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async getTheme(@Args() { themeId }: ThemeIdArgs) {
     return await this.themesService.getTheme(themeId);
   }
 
   @Query(() => [Theme])
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async listThemes(@Args() { projectId }: ProjectIdArgs) {
     return await this.themesService.listThemesByProjectId(projectId);
   }

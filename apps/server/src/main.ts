@@ -1,24 +1,24 @@
-import * as fs from 'node:fs';
-import { NestApplicationOptions, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
+import { Logger } from 'nestjs-pino';
+
 // import { AllExceptionsFilter } from './common/filter';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const options: NestApplicationOptions = {};
-  //for local
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+    bufferLogs: false,
+  });
 
-  if (fs.existsSync('./src/cert')) {
-    const key = fs.readFileSync('./src/cert/key.pem');
-    const cert = fs.readFileSync('./src/cert/cert.pem');
-    options.httpsOptions = { key, cert };
-  }
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, options);
   app.enableShutdownHooks();
+
+  // Use pino logger
+  app.useLogger(app.get(Logger));
 
   // Catch all exceptions
   // app.useGlobalFilters(new AllExceptionsFilter());

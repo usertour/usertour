@@ -4,8 +4,6 @@ import { BannerDetail } from './banner/detail';
 import { ChecklistDetail } from './checklist/detail';
 import { FlowDetail } from './components/detail/flow-detail';
 import { LauncherDetail } from './launcher/launcher-detail';
-import { NpsDetail } from './nps/detail';
-import { SurveyDetail } from './survey/detail';
 
 export const ContentDetail = () => {
   const { contentId = '', contentType, type } = useParams();
@@ -14,24 +12,21 @@ export const ContentDetail = () => {
     return <></>;
   }
 
-  return (
-    <>
-      {contentType === ContentTypeName.FLOWS && <FlowDetail contentId={contentId} type={type} />}
-      {contentType === ContentTypeName.LAUNCHERS && (
-        <LauncherDetail contentId={contentId} type={type} />
-      )}
-      {contentType === ContentTypeName.CHECKLISTS && (
-        <ChecklistDetail contentId={contentId} type={type} />
-      )}
-      {contentType === ContentTypeName.BANNERS && (
-        <BannerDetail contentId={contentId} type={type} />
-      )}
-      {contentType === ContentTypeName.NPS && <NpsDetail contentId={contentId} type={type} />}
-      {contentType === ContentTypeName.SURVEYS && (
-        <SurveyDetail contentId={contentId} type={type} />
-      )}
-    </>
-  );
+  if (contentType === ContentTypeName.FLOWS) {
+    return <FlowDetail contentId={contentId} type={type} />;
+  }
+
+  if (contentType === ContentTypeName.LAUNCHERS) {
+    return <LauncherDetail contentId={contentId} type={type} />;
+  }
+
+  if (contentType === ContentTypeName.CHECKLISTS) {
+    return <ChecklistDetail contentId={contentId} type={type} />;
+  }
+
+  if (contentType === ContentTypeName.BANNERS) {
+    return <BannerDetail contentId={contentId} type={type} />;
+  }
 };
 
 ContentDetail.displayName = 'ContentDetail';

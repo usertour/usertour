@@ -1,23 +1,16 @@
-import {
-  ButtonIcon,
-  ImageIcon,
-  InputIcon,
-  RulerHorizontalIcon,
-  StarIcon,
-  TextAlignLeftIcon,
-  TextIcon,
-  VideoIcon,
-} from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import { EDITOR_SIDEBAR } from '@usertour-ui/constants';
-import { MultiCheckIcon, NpsIcon, PlusIcon3 } from '@usertour-ui/icons';
+import { PlusIcon3 } from '@usertour-ui/icons';
 import { CSSProperties, useEffect, useState } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElement,
-  ContentEditorElementType,
+  ContentEditorQuestionElement,
   ContentEditorSideBarType,
 } from '../../types/editor';
+import { cuid } from '@usertour-ui/ui-utils';
+import { isQuestionElement } from '../../utils/helper';
+import { contentTypesConfig } from '../../utils/config';
 
 const selectStyle: CSSProperties = {
   boxSizing: 'border-box',
@@ -137,107 +130,6 @@ const getStyle = (type: ContentEditorSideBarType, isActived: boolean) => {
   }
 };
 
-type SideBarButton = {
-  name: string;
-  icon: typeof TextIcon;
-  element: ContentEditorElement;
-};
-
-const sidebarButtons = [
-  {
-    name: 'Text',
-    icon: TextIcon,
-    element: {
-      type: ContentEditorElementType.TEXT,
-      data: [
-        {
-          type: 'paragraph',
-          children: [{ text: 'Enter text here' }],
-        },
-      ],
-    },
-  },
-  {
-    name: 'Button',
-    icon: ButtonIcon,
-    element: {
-      type: ContentEditorElementType.BUTTON,
-      data: {
-        action: 'goto',
-        text: 'Next',
-        type: 'default',
-      },
-    },
-  },
-  {
-    name: 'Image',
-    icon: ImageIcon,
-    element: { type: ContentEditorElementType.IMAGE, url: '' },
-  },
-  {
-    name: 'Embed',
-    icon: VideoIcon,
-    element: { type: ContentEditorElementType.EMBED, url: '' },
-  },
-  {
-    name: 'NPS',
-    icon: NpsIcon,
-    element: {
-      type: ContentEditorElementType.NPS,
-      data: { name: '', lowLabel: '', highLabel: '' },
-    },
-  },
-  {
-    name: 'Star Rating',
-    icon: StarIcon,
-    element: {
-      type: ContentEditorElementType.STAR_RATING,
-      data: { name: '', lowRange: 1, highRange: 5 },
-    },
-  },
-  {
-    name: 'Scale',
-    icon: RulerHorizontalIcon,
-    element: {
-      type: ContentEditorElementType.SCALE,
-      data: { name: '', lowRange: 1, highRange: 5 },
-    },
-  },
-  {
-    name: 'Single Line Text',
-    icon: InputIcon,
-    element: {
-      type: ContentEditorElementType.SINGLE_LINE_TEXT,
-      data: { name: '', placeholder: '', buttonText: '', required: false },
-    },
-  },
-  {
-    name: 'Multi Line Text',
-    icon: TextAlignLeftIcon,
-    element: {
-      type: ContentEditorElementType.MULTI_LINE_TEXT,
-      data: { name: '', placeholder: '', buttonText: '', required: false },
-    },
-  },
-  {
-    name: 'Multiple Choice',
-    icon: MultiCheckIcon,
-    element: {
-      type: ContentEditorElementType.MULTIPLE_CHOICE,
-      data: {
-        name: '',
-        options: [
-          { label: '', value: '' },
-          { label: '', value: '' },
-        ],
-        shuffleOptions: false,
-        enableOther: false,
-        allowMultiple: false,
-      },
-    },
-  },
-] as SideBarButton[];
-
 export const ContentEditorSideBarPopper = (
   props: Popover.PopoverProps & {
     onClick: (element: ContentEditorElement) => void;
@@ -246,9 +138,22 @@ export const ContentEditorSideBarPopper = (
   const { zIndex, enabledElementTypes } = useContentEditorContext();
 
   // Filter buttons based on enabledElementTypes
-  const filteredButtons = enabledElementTypes
-    ? sidebarButtons.filter((button) => enabledElementTypes.includes(button.element.type))
-    : sidebarButtons;
+  const filteredContentTypes = enabledElementTypes
+    ? contentTypesConfig.filter((config) => enabledElementTypes.includes(config.element.type))
+    : contentTypesConfig;
+
+  const handleClick = (element: ContentEditorElement) => {
+    if (isQuestionElement(element)) {
+      const el = element as ContentEditorQuestionElement;
+      const newElement = {
+        ...element,
+        data: { ...el.data, cvid: cuid() },
+      } as ContentEditorQuestionElement;
+      props.onClick(newElement);
+    } else {
+      props.onClick(element);
+    }
+  };
 
   return (
     <Popover.Root {...props}>
@@ -264,10 +169,10 @@ export const ContentEditorSideBarPopper = (
           }}
         >
           <div className="grid grid-cols-3 gap-2">
-            {filteredButtons.map(({ name, icon: Icon, element }, index) => (
+            {filteredContentTypes.map(({ name, icon: Icon, element }, index) => (
               <div
                 key={index}
-                onClick={() => props.onClick(element)}
+                onClick={() => handleClick(element)}
                 className="rounded-lg text-sm flex flex-col border hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer p-4 items-center justify-center pb-2"
               >
                 <Icon className="h-6 w-6 text-primary" />

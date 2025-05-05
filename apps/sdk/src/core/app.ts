@@ -5,10 +5,13 @@ import {
   BizCompany,
   BizUserInfo,
   ContentDataType,
+  PlanType,
+  SDKConfig,
   SDKContent,
   SDKSettingsMode,
   Theme,
   flowEndReason,
+  flowStartReason,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
@@ -49,6 +52,10 @@ export class App extends Evented {
     environmentId: '',
     token: '',
     mode: SDKSettingsMode.NORMAL,
+  };
+  sdkConfig: SDKConfig = {
+    planType: PlanType.HOBBY,
+    removeBranding: false,
   };
   tours: Tour[] = [];
   launchers: Launcher[] = [];
@@ -370,6 +377,7 @@ export class App extends Evented {
       return;
     }
     await this.reset();
+    await this.initSdkConfig();
     await this.initThemeData();
     await this.initContentData();
     this.initContents();
@@ -377,6 +385,10 @@ export class App extends Evented {
     await this.startContents();
     await this.startActivityMonitor();
     this.startContentPolling();
+  }
+
+  getSdkConfig() {
+    return this.sdkConfig;
   }
 
   async refresh() {
@@ -636,6 +648,14 @@ export class App extends Evented {
     }
   }
 
+  async initSdkConfig() {
+    const sdkConfig = await this.socket.getConfig(this.startOptions.token);
+    if (sdkConfig) {
+      this.sdkConfig = sdkConfig;
+      console.log('sdkConfig', this.sdkConfig);
+    }
+  }
+
   /**
    * Initializes theme data from server
    */
@@ -748,7 +768,7 @@ export class App extends Evented {
    * Starts all content items (tours, launchers, checklists)
    */
   async startContents() {
-    await this.startTour(undefined, 'start_condition');
+    await this.startTour(undefined, flowStartReason.START_CONDITION);
     await this.startLauncher();
     await this.startChecklist();
   }

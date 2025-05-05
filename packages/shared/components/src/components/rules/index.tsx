@@ -1,6 +1,6 @@
 import { hasError } from '@usertour-ui/shared-utils';
 import { Attribute, Content, RulesCondition, Segment } from '@usertour-ui/types';
-import { createContext, useContext } from 'react';
+import { RulesContext } from './rules-context';
 import { RulesGroup } from './rules-group';
 
 interface RulesProps {
@@ -20,31 +20,6 @@ interface RulesProps {
   disabled?: boolean;
 }
 
-interface RulesContextValue {
-  isHorizontal: boolean;
-  isShowIf: boolean;
-  filterItems: string[];
-  addButtonText: string;
-  attributes: Attribute[] | undefined;
-  segments: Segment[] | undefined;
-  contents: Content[];
-  currentContent?: Content | undefined;
-  saveBuildUrl?: () => boolean;
-  onElementChange?: (conditionIndex: number, type: string) => void;
-  token: string;
-  disabled: boolean;
-}
-
-export const RulesContext = createContext<RulesContextValue | undefined>(undefined);
-
-export function useRulesContext(): RulesContextValue {
-  const context = useContext(RulesContext);
-  if (!context) {
-    throw new Error('useRulesContext must be used within a RulesProvider.');
-  }
-  return context;
-}
-
 export const defaultRulesItems: string[] = [
   'user-attr',
   'current-page',
@@ -57,6 +32,7 @@ export const defaultRulesItems: string[] = [
   'time',
   'group',
 ];
+
 export const Rules = (props: RulesProps) => {
   const {
     onDataChange,

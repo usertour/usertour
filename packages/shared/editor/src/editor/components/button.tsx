@@ -109,12 +109,9 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   };
 
   useEffect(() => {
-    if (isOpen === false && (!element?.data?.actions || element?.data?.actions.length === 0)) {
-      setIsShowError(true);
-    } else {
-      setIsShowError(false);
-    }
-  }, [isOpen, element?.data?.actions]);
+    const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
+    setIsShowError(isEmptyActions);
+  }, [element?.data?.actions]);
 
   return (
     <EditorError open={isShowError}>
@@ -134,10 +131,9 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
           <Popover.Portal>
             <Popover.Content
               className="z-50 w-72 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-              side="bottom"
-              align="start"
+              side="right"
               style={{ zIndex: zIndex }}
-              sideOffset={5}
+              sideOffset={10}
               alignOffset={-2}
             >
               <div className="flex flex-col gap-2.5">
@@ -232,7 +228,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                   contents={contentList}
                   createStep={createStep}
                 />
-                <div className="flex">
+                <div className="flex items-center">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

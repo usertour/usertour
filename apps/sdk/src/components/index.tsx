@@ -44,7 +44,7 @@ const App = ({ toursStore, launchersStore, checklistsStore }: AppProps) => {
 
   return (
     <React.StrictMode>
-      <React.Suspense fallback={<div>加载中...</div>}>
+      <React.Suspense fallback={<div>Loading...</div>}>
         {tours.map((tour) => (
           <WIDGETS.Tour tour={tour} key={tour.getContent().contentId} />
         ))}

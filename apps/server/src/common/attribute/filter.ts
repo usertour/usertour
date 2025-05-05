@@ -5,7 +5,7 @@ import { BizAttributeTypes } from '../consts/attribute';
 
 export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   const { data = {} } = condition;
-  const { logic, value, attrId, value2 } = data;
+  const { logic, value, attrId, value2, listValues = [] } = data;
   const attr = attributes.find((attr) => attr.id === attrId);
   if (!attr) {
     return false;
@@ -127,26 +127,34 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
     }
   }
   if (attr.dataType === BizAttributeTypes.List) {
+    // Filter out empty values from listValues
+    const filteredValues = listValues.filter(
+      (value) => value !== null && value !== undefined && value !== '',
+    );
+
+    // Return early if no valid values
+    if (!filteredValues.length) {
+      return false;
+    }
+
     switch (logic) {
       case 'includesAtLeastOne':
         return {
-          OR: [
-            { data: { path: [attr.codeName], array_contains: value } },
-            { data: { path: [attr.codeName], array_contains: value2 } },
-          ],
+          OR: filteredValues.map((value) => ({
+            data: { path: [attr.codeName], array_contains: value },
+          })),
         };
       case 'includesAll':
         return {
-          data: { path: [attr.codeName], array_contains: [value, value2] },
+          data: { path: [attr.codeName], array_contains: filteredValues },
         };
       case 'notIncludesAtLeastOne':
         return {
           NOT: [
             {
-              OR: [
-                { data: { path: [attr.codeName], array_contains: value } },
-                { data: { path: [attr.codeName], array_contains: value2 } },
-              ],
+              OR: filteredValues.map((value) => ({
+                data: { path: [attr.codeName], array_contains: value },
+              })),
             },
           ],
         };
@@ -154,7 +162,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
         return {
           NOT: [
             {
-              data: { path: [attr.codeName], array_contains: [value, value2] },
+              data: { path: [attr.codeName], array_contains: filteredValues },
             },
           ],
         };

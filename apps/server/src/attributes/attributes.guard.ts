@@ -29,9 +29,7 @@ export class AttributesGuard implements CanActivate {
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
-    if (!roles) {
-      return true;
-    }
+
     if (attributeId) {
       const data = await this.attributesService.get(attributeId);
       if (!data || (projectId && data && projectId !== data.projectId)) {

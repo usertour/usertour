@@ -9,3 +9,11 @@ export const queryOembedInfo = gql`
     }
   }
 `;
+
+export const globalConfig = gql`
+  query globalConfig {
+    globalConfig {
+      enabledBilling
+    }
+  }
+`;

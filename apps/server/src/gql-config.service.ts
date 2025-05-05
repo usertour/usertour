@@ -24,7 +24,7 @@ export class GqlConfigService implements GqlOptionsFactory {
       includeStacktraceInErrorResponses: graphqlConfig.debug,
       playground: graphqlConfig.playgroundEnabled,
       formatError: (formattedError, error) => {
-        // this.logger.error(error);
+        this.logger.error(error);
         // @ts-expect-error allow assign
         formattedError.extensions ??= {};
         // Debug log

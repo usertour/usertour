@@ -17,7 +17,7 @@ import {
   Theme,
 } from '@usertour-ui/types';
 import { forwardRef, useMemo, useRef } from 'react';
-
+import { useBuilderContext } from '../../../contexts';
 export interface LauncherContentProps {
   zIndex: number;
   triggerRef?: React.RefObject<any> | undefined;
@@ -31,6 +31,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
   (props: LauncherContentProps, ref) => {
     const { zIndex, triggerRef, theme, data, onValueChange, onCustomUploadRequest } = props;
     const launcherRef = useRef<HTMLDivElement>(null);
+    const { projectId } = useBuilderContext();
 
     const triggerReference = useMemo(
       () => (data.tooltip.reference === LauncherPositionType.TARGET ? triggerRef : launcherRef),
@@ -54,6 +55,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
                     ContentActionsItemType.PAGE_NAVIGATE,
                     ContentActionsItemType.FLOW_START,
                   ]}
+                  projectId={projectId}
                   initialValue={
                     data.tooltip.content.length > 0
                       ? (data.tooltip.content as ContentEditorRoot[])

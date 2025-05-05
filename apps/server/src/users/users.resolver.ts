@@ -6,12 +6,13 @@ import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { User } from './models/user.model';
 import { UsersService } from './users.service';
-
+import { AuthService } from '@/auth/auth.service';
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
     private usersService: UsersService,
     private prisma: PrismaService,
+    private authService: AuthService,
   ) {}
 
   @Query(() => User)
@@ -38,9 +39,14 @@ export class UsersResolver {
   }
 
   @ResolveField('projects')
-  projects(@Parent() author: User) {
-    return this.prisma.user
+  async projects(@Parent() author: User) {
+    const userOnProjects = await this.prisma.user
       .findUnique({ where: { id: author.id } })
       .projects({ include: { project: true } });
+    const activeProject = userOnProjects?.find((p) => p.actived)?.project;
+    if (activeProject) {
+      await this.authService.addInitializeProjectJob(activeProject.id);
+    }
+    return userOnProjects;
   }
 }

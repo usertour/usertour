@@ -10,6 +10,7 @@ import { AnalyticsSessions } from '../analytics/analytics-sessions';
 import { AnalyticsSteps } from '../analytics/analytics-steps';
 import { AnalyticsTasks } from '../analytics/analytics-tasks';
 import { AnalyticsViews } from '../analytics/analytics-views';
+import { AnalyticsQuestion } from '../analytics/analytics-question';
 
 export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const { contentId } = props;
@@ -31,6 +32,9 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
                 <AnalyticsViews />
                 <AnalyticsDays />
                 {contentType === ContentDataType.FLOW && <AnalyticsSteps />}
+                {contentType === ContentDataType.FLOW && (
+                  <AnalyticsQuestion contentId={contentId} />
+                )}
                 {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
                 <AnalyticsSessions />
               </div>

@@ -2,6 +2,7 @@ import {
   BizCompany,
   BizSession,
   BizUserInfo,
+  SDKConfig,
   SDKContent,
   SDKSettingsMode,
   Theme,
@@ -35,6 +36,7 @@ export class Socket extends Evented {
         withCredentials: false,
         timeout: 5000,
         reconnection: true,
+        transports: ['websocket'],
         ...options.socketConfig,
       },
     };
@@ -96,6 +98,11 @@ export class Socket extends Evented {
       return [];
     }
     return response as SDKContent[];
+  }
+
+  async getConfig(token: string): Promise<SDKConfig> {
+    const response = await this.emitWithTimeout('get-config', { token });
+    return response as SDKConfig;
   }
 
   async listThemes(params: { token: string }): Promise<Theme[]> {

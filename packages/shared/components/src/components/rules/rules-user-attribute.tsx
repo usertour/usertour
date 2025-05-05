@@ -1,5 +1,5 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { UserIcon } from '@usertour-ui/icons';
+import { CloseIcon, UserIcon } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
 // import * as Popover from "@radix-ui/react-popover";
 import * as Popover from '@usertour-ui/popover';
@@ -14,7 +14,6 @@ import {
 import { cn } from '@usertour-ui/ui-utils';
 import { format } from 'date-fns';
 import {
-  ChangeEvent,
   Dispatch,
   SetStateAction,
   createContext,
@@ -38,11 +37,12 @@ import { ScrollArea } from '@usertour-ui/scroll-area';
 import { getUserAttrError } from '@usertour-ui/shared-utils';
 import {
   Attribute,
+  AttributeBizTypes,
   AttributeDataType,
   RulesUserAttributeData,
   RulesUserAttributeProps,
 } from '@usertour-ui/types';
-import { useRulesContext } from '.';
+import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
@@ -170,7 +170,6 @@ const RulesUserAttributeName = () => {
   const [open, setOpen] = useState(false);
   const { selectedPreset, setSelectedPreset, updateLocalData } = useRulesUserAttributeContext();
   const { attributes } = useRulesContext();
-  const { type } = useRulesUserAttributeContext();
   const handleOnSelected = (item: Attribute) => {
     setSelectedPreset(item);
     updateLocalData({ attrId: item.id });
@@ -206,57 +205,77 @@ const RulesUserAttributeName = () => {
             <CommandInput placeholder="Search attribute..." />
             <CommandEmpty>No items found.</CommandEmpty>
             <ScrollArea className="h-72">
-              {type === 'user-attr' && (
-                <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-                  {attributes
-                    ?.filter((attr) => attr.bizType === 1)
-                    .map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        className="cursor-pointer"
-                        value={item.id}
-                        onSelect={() => {
-                          handleOnSelected(item);
-                        }}
-                      >
-                        {item.displayName || item.codeName}
-                        <CheckIcon
-                          className={cn(
-                            'ml-auto h-4 w-4',
-                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              )}
-              {type === 'company-attr' && (
-                <CommandGroup
-                  heading="Company attribute"
-                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
-                >
-                  {attributes
-                    ?.filter((attr) => attr.bizType === 2)
-                    .map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        className="cursor-pointer text-sm"
-                        value={item.id}
-                        onSelect={() => {
-                          handleOnSelected(item);
-                        }}
-                      >
-                        {item.displayName || item.codeName}
-                        <CheckIcon
-                          className={cn(
-                            'ml-auto h-4 w-4',
-                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              )}
+              <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                {attributes
+                  ?.filter((attr) => attr.bizType === AttributeBizTypes.User)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.displayName || item.codeName}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+
+              <CommandGroup heading="Company attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                {attributes
+                  ?.filter((attr) => attr.bizType === AttributeBizTypes.Company)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer text-sm"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.displayName || item.codeName}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+
+              <CommandGroup
+                heading="Membership attribute"
+                style={{ zIndex: EXTENSION_CONTENT_RULES }}
+              >
+                {attributes
+                  ?.filter((attr) => attr.bizType === AttributeBizTypes.Membership)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      className="cursor-pointer text-sm"
+                      value={item.id}
+                      onSelect={() => {
+                        handleOnSelected(item);
+                      }}
+                    >
+                      {item.displayName || item.codeName}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
             </ScrollArea>
           </Command>
         </Popover.PopoverContent>
@@ -304,13 +323,67 @@ const RulesUserAttributeInput = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(
     localData?.value && isDateTime ? new Date(localData?.value) : undefined,
   );
-  const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    updateLocalData({ value: e.target.value });
-  };
-  const handleOnChange2 = (e: ChangeEvent<HTMLInputElement>) => {
-    updateLocalData({ value2: e.target.value });
-  };
+
+  // Internal state for list values management
+  const [listValues, setListValues] = useState<string[]>(['']);
   const [inputType, setInputType] = useState<string>('');
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+
+  // Handle list value changes
+  const handleListValueChange = (index: number, value: string) => {
+    const newValues = [...listValues];
+    newValues[index] = value;
+
+    // Always ensure there's an empty input at the end
+    if (value && index === newValues.length - 1) {
+      newValues.push('');
+    }
+
+    setListValues(newValues);
+
+    // Only update localData with non-empty values
+    const validValues = newValues.filter(Boolean);
+    if (validValues.length > 0) {
+      updateLocalData({ listValues: validValues });
+    } else {
+      updateLocalData({ listValues: [] });
+    }
+  };
+
+  // Handle removing a list value
+  const handleRemoveListValue = (index: number) => {
+    if (listValues.length === 1) {
+      // If it's the last input, just clear it
+      setListValues(['']);
+      updateLocalData({ listValues: [] });
+    } else {
+      const newValues = listValues.filter((_, i) => i !== index);
+      // Ensure there's an empty input at the end
+      if (!newValues[newValues.length - 1]) {
+        newValues.push('');
+      }
+      setListValues(newValues);
+
+      // Only update localData with non-empty values
+      const validValues = newValues.filter(Boolean);
+      if (validValues.length > 0) {
+        updateLocalData({ listValues: validValues });
+      } else {
+        updateLocalData({ listValues: [] });
+      }
+    }
+  };
+
+  // Initialize list values from localData
+  useEffect(() => {
+    if (selectedPreset?.dataType === AttributeDataType.List) {
+      if (localData?.listValues) {
+        setListValues([...localData.listValues, '']);
+      } else {
+        setListValues(['']);
+      }
+    }
+  }, [selectedPreset?.dataType, localData?.listValues]);
 
   useEffect(() => {
     if (selectedPreset?.dataType === AttributeDataType.Number) {
@@ -340,6 +413,40 @@ const RulesUserAttributeInput = () => {
     );
   }
 
+  if (selectedPreset?.dataType === AttributeDataType.List) {
+    if (localData?.logic === 'empty' || localData?.logic === 'any') {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-col space-y-2">
+        {listValues.map((value, index) => (
+          <div key={index} className="relative">
+            <Input
+              value={value || ''}
+              onChange={(e) => handleListValueChange(index, e.target.value)}
+              onFocus={() => setFocusedIndex(index)}
+              onBlur={() => setFocusedIndex(-1)}
+              autoFocus={index === focusedIndex}
+              placeholder="Enter new value"
+              className="pr-8"
+            />
+            {/* Show remove button when input has value or it's not the last empty input */}
+            {(value || index !== listValues.length - 1) && (
+              <Button
+                variant={'ghost'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0 w-8"
+                onClick={() => handleRemoveListValue(index)}
+              >
+                <CloseIcon className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-row space-x-4 items-center">
@@ -351,8 +458,10 @@ const RulesUserAttributeInput = () => {
           localData?.logic !== 'after' && (
             <Input
               type={inputType}
-              value={localData?.value}
-              onChange={handleOnChange}
+              value={localData?.value || ''}
+              onChange={(e) => {
+                updateLocalData({ value: e.target.value });
+              }}
               placeholder={''}
             />
           )}
@@ -361,8 +470,10 @@ const RulesUserAttributeInput = () => {
             <span>and</span>
             <Input
               type={inputType}
-              value={localData?.value2}
-              onChange={handleOnChange2}
+              value={localData?.value2 || ''}
+              onChange={(e) => {
+                updateLocalData({ value2: e.target.value });
+              }}
               placeholder={''}
             />
           </>
@@ -446,16 +557,25 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   }, [activeConditionMapping, localData?.logic]);
 
   useEffect(() => {
-    if (
-      localData?.logic !== 'empty' &&
-      localData?.logic !== 'any' &&
-      selectedPreset?.dataType !== AttributeDataType.Boolean &&
-      localData?.value
-    ) {
-      setDisplayValue(localData?.value);
-    } else {
+    // Check if we should clear the display value
+    const shouldClearDisplay =
+      localData?.logic === 'empty' ||
+      localData?.logic === 'any' ||
+      selectedPreset?.dataType === AttributeDataType.Boolean;
+
+    if (shouldClearDisplay) {
       setDisplayValue('');
+      return;
     }
+
+    // Handle list values
+    if (localData?.listValues && selectedPreset?.dataType === AttributeDataType.List) {
+      setDisplayValue(localData.listValues.join(','));
+      return;
+    }
+
+    // Handle single value
+    setDisplayValue(localData?.value || '');
   }, [localData, selectedPreset]);
 
   const value = {
@@ -493,8 +613,11 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                   <div className=" flex flex-col space-y-2">
                     <div className=" flex flex-col space-y-1">
                       <div>
-                        {type === 'user-attr' && 'User attribute'}
-                        {type === 'company-attr' && 'Company attribute'}
+                        {selectedPreset?.bizType === AttributeBizTypes.User && 'User attribute'}
+                        {selectedPreset?.bizType === AttributeBizTypes.Company &&
+                          'Company attribute'}
+                        {selectedPreset?.bizType === AttributeBizTypes.Membership &&
+                          'Membership attribute'}
                       </div>
                       <RulesUserAttributeName />
                       <RulesUserAttributeCondition />

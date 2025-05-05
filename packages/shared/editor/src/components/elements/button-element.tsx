@@ -172,7 +172,7 @@ export const ButtonElement = (props: RenderElementProps & { className?: string }
                 </SelectContent>
               </SelectPortal>
             </Select>
-            <div className="flex">
+            <div className="flex items-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

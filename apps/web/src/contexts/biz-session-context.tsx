@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { queryBizSession } from '@usertour-ui/gql';
-import { BizSessionObject, PageInfo, Pagination } from '@usertour-ui/types';
+import { BizSession, PageInfo, Pagination } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useAnalyticsContext } from './analytics-context';
 
@@ -23,7 +23,7 @@ export interface BizSessionContextValue {
   pagination: PaginationState;
   setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
   pageCount: number;
-  bizSessions: BizSessionObject[];
+  bizSessions: BizSession[];
   totalCount: number;
 }
 
@@ -42,7 +42,7 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
     ...defaultPagination,
   });
   const [currentPageInfo, setCurrentPageInfo] = useState<PageInfo>();
-  const [bizSessions, setBizSessions] = useState<BizSessionObject[]>([]);
+  const [bizSessions, setBizSessions] = useState<BizSession[]>([]);
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
   const { dateRange } = useAnalyticsContext();
@@ -104,7 +104,7 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
       return;
     }
     setCurrentPageInfo(pageInfo);
-    const c: BizSessionObject[] = edges.map((e: any) => {
+    const c: BizSession[] = edges.map((e: any) => {
       return { ...e.node };
     });
     setBizSessions(c);

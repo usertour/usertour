@@ -51,6 +51,17 @@ const config: Config = {
       domain: process.env.AWS_S3_DOMAIN,
     },
   },
+  stripe: {
+    apiKey: process.env.STRIPE_API_KEY || 'test',
+    webhookSecret: {
+      account: process.env.STRIPE_ACCOUNT_WEBHOOK_SECRET || 'test',
+      accountTest: process.env.STRIPE_ACCOUNT_TEST_WEBHOOK_SECRET || 'test',
+    },
+    sessionSuccessUrl: process.env.STRIPE_SESSION_SUCCESS_URL || '',
+    sessionCancelUrl: process.env.STRIPE_SESSION_CANCEL_URL || '',
+    portalReturnUrl: process.env.STRIPE_PORTAL_RETURN_URL || '',
+  },
+
   auth: {
     redirectUrl: process.env.LOGIN_REDIRECT_URL || '/env/1/flows',
     cookie: {
@@ -60,7 +71,7 @@ const config: Config = {
     email: {
       enabled: process.env.EMAIL_AUTH_ENABLED === 'true',
       sender: process.env.EMAIL_SENDER || 'UserTour <support@usertour.io>',
-      resendApiKey: process.env.RESEND_API_KEY,
+      resendApiKey: process.env.RESEND_API_KEY || 'test',
     },
     jwt: {
       secret: process.env.JWT_SECRET || 'test',
@@ -79,6 +90,16 @@ const config: Config = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'test',
       callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'test',
     },
+  },
+  content: {
+    limit: {
+      survey: process.env.SURVEY_CONTENT_LIMIT
+        ? Number.parseInt(process.env.SURVEY_CONTENT_LIMIT)
+        : -1,
+    },
+  },
+  globalConfig: {
+    enabledBillingUsers: process.env.ENABLED_BILLING_USERS?.split(',') || [],
   },
 };
 

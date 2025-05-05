@@ -9,6 +9,7 @@ import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
 import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
+import { createValue6, surveysValue } from '@usertour-ui/shared-editor';
 
 export const ThemeDetailPreview = () => {
   const { settings, setCustomStyle, setViewRect, selectedType } = useThemeDetailContext();
@@ -39,7 +40,8 @@ export const ThemeDetailPreview = () => {
       <Separator />
       <div className=" bg-blue-50 h-full overflow-hidden" ref={containerRef}>
         {selectedType.type === 'tooltip' && <ThemePreviewPopper />}
-        {selectedType.type === 'modal' && <ThemePreviewModal />}
+        {selectedType.type === 'modal' && <ThemePreviewModal contents={createValue6 as any} />}
+        {selectedType.type === 'nps' && <ThemePreviewModal contents={surveysValue as any} />}
         {selectedType.type === 'launcher-icon' && (
           <ThemePreviewLauncher type={LauncherDataType.ICON} />
         )}

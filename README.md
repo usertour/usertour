@@ -4,8 +4,8 @@
   <h1 align="center">
     <img alt="usertour logo" height="60" src="./assets/logo.svg">
   </h1>
-  <a href="https://www.usertour.io">Usertour</a>: An alternative to: Appcues, Userpilot, Userflow, userguiding, Chameleon , Etc...<br /><br />
-  <p>Usertour is an open-source user onboarding platform designed for developers. It allows you to create in-app product tours, checklists, and launchers in minutes—effortlessly and with full control.</p>
+  <a href="https://www.usertour.io">Usertour</a>: An alternative to: Appcues, Userpilot, Userflow, Userguiding, Chameleon , Etc...<br /><br />
+  <p>Usertour is an open-source user onboarding platform. It allows you to create in-app product tours, checklists, and surveys in minutes—effortlessly and with full control.</p>
 </div>
 <p align="center">
 <a href="https://www.producthunt.com/posts/usertour?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-usertour" target="_blank">Support with Upvote ❤️<br/><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=839855&theme=light&t=1738576180129" alt="Usertour - open source user onboarding platform | Product Hunt" style="width: 250px; height: 60px;" width="250" height="60" /></a>
@@ -80,7 +80,7 @@ Usertour makes it easy to design in-app product tours, checklists, launchers, an
 - 🚨 **Identify problem areas**: Pinpoint steps causing user confusion or drop-offs and address the issues seamlessly.
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/8e10a03e-9d81-4158-bbff-9817769246c8" width="100%" />
+  <video src="https://github.com/user-attachments/assets/98a88a60-495c-4090-a7e3-4dde7f64714c" width="100%" />
 </p>
 
 ## How to Use?

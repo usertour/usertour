@@ -65,6 +65,11 @@ export type ContentEditorWidth = {
   value?: number;
 };
 
+export type ContentEditorHeight = {
+  type?: string;
+  value?: number;
+};
+
 export type ContentEditorMargin = {
   enabled: boolean;
   top?: number;
@@ -116,63 +121,79 @@ export type ContentEditorEmebedElement = {
   oembed?: ContentOmbedInfo;
   width?: ContentEditorWidth;
   margin?: ContentEditorMargin;
+  height?: ContentEditorHeight;
 };
 
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
   data: {
+    cvid: string;
     name: string;
     lowLabel: string;
     highLabel: string;
     actions?: RulesCondition[];
     score?: number;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
 export type ContentEditorStarRatingElement = {
   type: ContentEditorElementType.STAR_RATING;
   data: {
+    cvid: string;
     name: string;
     rating?: number;
-    lowRange?: number;
-    highRange?: number;
+    lowRange: number;
+    highRange: number;
     lowLabel?: string;
     highLabel?: string;
     actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
 export type ContentEditorScaleElement = {
   type: ContentEditorElementType.SCALE;
   data: {
+    cvid: string;
     name: string;
     lowRange: number;
     highRange: number;
     lowLabel?: string;
     highLabel?: string;
     actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
 export interface ContentEditorSingleLineTextElement {
   type: ContentEditorElementType.SINGLE_LINE_TEXT;
   data: {
+    cvid: string;
     name: string;
     placeholder: string;
     buttonText: string;
     required: boolean;
     actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 
 export interface ContentEditorMultiLineTextElement {
   type: ContentEditorElementType.MULTI_LINE_TEXT;
   data: {
+    cvid: string;
     name: string;
     placeholder: string;
     buttonText: string;
     actions?: RulesCondition[];
     required: boolean;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 // Define the option type
@@ -186,12 +207,18 @@ export interface ContentEditorMultipleChoiceOption {
 export interface ContentEditorMultipleChoiceElement {
   type: ContentEditorElementType.MULTIPLE_CHOICE;
   data: {
+    cvid: string;
     name: string;
     options: ContentEditorMultipleChoiceOption[];
     shuffleOptions: boolean;
     enableOther: boolean;
     allowMultiple: boolean;
+    buttonText?: string;
     actions?: RulesCondition[];
+    lowRange?: number;
+    highRange?: number;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 
@@ -206,6 +233,18 @@ export type ContentEditorElement =
   | ContentEditorSingleLineTextElement
   | ContentEditorMultiLineTextElement
   | ContentEditorMultipleChoiceElement;
+
+export type ContentEditorQuestionElement =
+  | ContentEditorNPSElement
+  | ContentEditorStarRatingElement
+  | ContentEditorScaleElement
+  | ContentEditorSingleLineTextElement
+  | ContentEditorMultiLineTextElement
+  | ContentEditorMultipleChoiceElement;
+
+export type ContentEditorClickableElement =
+  | ContentEditorButtonElement
+  | ContentEditorQuestionElement;
 
 export type ContentEditorRootElement = {
   id?: string;
@@ -225,6 +264,7 @@ export type ContentEditorRoot = {
 
 export interface ContentEditorProps {
   zIndex: number;
+  projectId: string;
   customUploadRequest?: (file: File) => Promise<string>;
   onValueChange?: (value: ContentEditorRoot[]) => void;
   getOembedInfo?: (url: string) => Promise<ContentOmbedInfo>;

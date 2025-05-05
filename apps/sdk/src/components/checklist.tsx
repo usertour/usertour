@@ -9,7 +9,7 @@ import {
   ChecklistPopperUseIframe,
 } from '@usertour-ui/sdk/src/checklist';
 import { ChecklistRoot } from '@usertour-ui/sdk/src/checklist';
-import { ContentEditorButtonElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   BizUserInfo,
   ChecklistData,
@@ -30,9 +30,10 @@ interface ChecklistWidgetCoreProps {
   userInfo: BizUserInfo;
   assets: AssetAttributes[] | undefined;
   handleItemClick: (item: ChecklistItemType, index: number) => void;
-  handleOnClick: ({ type, data }: ContentEditorButtonElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   handleDismiss: () => Promise<void>;
   handleOpenChange: (open: boolean) => void;
+  removeBranding: boolean;
 }
 
 const ChecklistWidgetCore = (props: ChecklistWidgetCoreProps) => {
@@ -45,6 +46,7 @@ const ChecklistWidgetCore = (props: ChecklistWidgetCoreProps) => {
     handleOnClick,
     handleDismiss,
     handleOpenChange,
+    removeBranding,
   } = props;
 
   return (
@@ -67,7 +69,7 @@ const ChecklistWidgetCore = (props: ChecklistWidgetCoreProps) => {
           <ChecklistItems onClick={handleItemClick} disabledUpdate={true} />
           <ChecklistDismiss />
         </ChecklistPopperContentBody>
-        <PopperMadeWith />
+        {!removeBranding && <PopperMadeWith />}
       </ChecklistPopperUseIframe>
     </ChecklistRoot>
   );
@@ -80,7 +82,7 @@ export const ChecklistWidget = (props: ChecklistProps) => {
     checklist.getStore().subscribe,
     checklist.getStore().getSnapshot,
   );
-  const { content, theme, userInfo, openState, assets } = store;
+  const { content, theme, userInfo, openState, assets, sdkConfig } = store;
   const data = content?.data as ChecklistData;
 
   if (!theme || !data || !openState || !userInfo) {
@@ -97,6 +99,7 @@ export const ChecklistWidget = (props: ChecklistProps) => {
       handleOnClick={checklist.handleOnClick}
       handleDismiss={checklist.handleDismiss}
       handleOpenChange={checklist.handleOpenChange}
+      removeBranding={sdkConfig.removeBranding}
     />
   );
 };
