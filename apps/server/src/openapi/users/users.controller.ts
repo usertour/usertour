@@ -59,6 +59,9 @@ export class OpenAPIUsersController {
     description: 'Number of items per page',
   })
   @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
+  @ApiQuery({ name: 'email', required: false, description: 'Filter users by email' })
+  @ApiQuery({ name: 'companyId', required: false, description: 'Filter users by company ID' })
+  @ApiQuery({ name: 'segmentId', required: false, description: 'Filter users by segment ID' })
   @ApiResponse({ status: 200, description: 'List of users', type: User, isArray: true })
   async listUsers(
     @RequestUrl() requestUrl: string,
@@ -67,6 +70,9 @@ export class OpenAPIUsersController {
     @Query('cursor') cursor?: string,
     @Query('orderBy', new ParseArrayPipe({ optional: true, items: String })) orderBy?: string[],
     @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+    @Query('email') email?: string,
+    @Query('companyId') companyId?: string,
+    @Query('segmentId') segmentId?: string,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
     return this.openAPIUsersService.listUsers(
       requestUrl,
@@ -75,6 +81,9 @@ export class OpenAPIUsersController {
       cursor,
       orderBy,
       expand,
+      email,
+      companyId,
+      segmentId,
     );
   }
 

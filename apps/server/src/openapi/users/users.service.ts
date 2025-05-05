@@ -42,6 +42,9 @@ export class OpenAPIUsersService {
     cursor?: string,
     orderBy?: string[],
     expand?: ExpandTypes,
+    email?: string,
+    companyId?: string,
+    segmentId?: string,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
     if (Number.isNaN(limit) || limit < 1) {
       throw new InvalidLimitError();
@@ -71,7 +74,15 @@ export class OpenAPIUsersService {
       cursor,
       limit,
       async (params) =>
-        this.bizService.listBizUsersWithRelations(environmentId, params, include, sortOrders),
+        this.bizService.listBizUsersWithRelations(
+          environmentId,
+          params,
+          include,
+          sortOrders,
+          email,
+          companyId,
+          segmentId,
+        ),
       (node) => this.mapBizUserToUser(node, expand),
       expand ? { expand } : {},
     );

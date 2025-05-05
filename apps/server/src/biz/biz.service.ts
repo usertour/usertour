@@ -95,23 +95,46 @@ export class BizService {
   }
 
   async createBizUserOnSegment(data: BizUserOnSegmentInput[]) {
-    if (!data.every((item) => item.segmentId === data[0].segmentId)) {
-      throw new ParamsError();
+    // Validate input data
+    if (!data?.length) {
+      throw new ParamsError('No data provided');
     }
-    const segment = await this.getSegment(data[0].segmentId);
+
+    // Validate all items have the same segmentId
+    const firstSegmentId = data[0].segmentId;
+    if (!data.every((item) => item.segmentId === firstSegmentId)) {
+      throw new ParamsError('All items must have the same segmentId');
+    }
+
+    // Get segment and validate
+    const segment = await this.getSegment(firstSegmentId);
     if (!segment) {
-      throw new ParamsError();
+      throw new ParamsError('Segment not found');
     }
-    const inserts = data.filter(async (item) => {
-      return await this.prisma.bizUser.findFirst({
-        where: {
-          id: item.bizUserId,
-          environmentId: segment.environmentId,
-        },
-      });
+
+    // Batch check all users exist in one query
+    const userIds = data.map((item) => item.bizUserId);
+    const existingUsers = await this.prisma.bizUser.findMany({
+      where: {
+        id: { in: userIds },
+        environmentId: segment.environmentId,
+      },
+      select: { id: true },
     });
+
+    const existingUserIds = new Set(existingUsers.map((user) => user.id));
+
+    // Filter and map valid items
+    const inserts = data
+      .filter((item) => existingUserIds.has(item.bizUserId))
+      .map((item) => ({
+        bizUserId: item.bizUserId,
+        segmentId: item.segmentId,
+        data: item.data || {},
+      }));
+
     if (inserts.length === 0) {
-      throw new ParamsError();
+      throw new ParamsError('No valid users found');
     }
 
     return await this.prisma.bizUserOnSegment.createMany({
@@ -757,11 +780,65 @@ export class BizService {
     },
     include?: Prisma.BizUserInclude,
     orderBy?: Prisma.BizUserOrderByWithRelationInput[],
+    email?: string,
+    companyId?: string,
+    segmentId?: string,
   ) {
-    const baseQuery = {
-      where: {
-        environmentId,
-      },
+    const project = await this.prisma.environment.findFirst({
+      where: { id: environmentId },
+    });
+    const projectId = project?.projectId;
+
+    let where: Prisma.BizUserWhereInput = {
+      environmentId,
+      ...(email && {
+        data: {
+          path: ['email'],
+          equals: email,
+        },
+      }),
+      ...(companyId && {
+        bizUsersOnCompany: {
+          some: {
+            bizCompany: {
+              externalId: companyId,
+            },
+          },
+        },
+      }),
+    };
+
+    const segment = await this.prisma.segment.findFirst({
+      where: { id: segmentId },
+    });
+
+    if (segment && segment.dataType !== SegmentDataType.ALL) {
+      const attributes = await this.prisma.attribute.findMany({
+        where: {
+          projectId,
+          bizType: {
+            in: [AttributeBizType.USER],
+          },
+        },
+      });
+      if (segment.dataType === SegmentDataType.MANUAL) {
+        where.bizUsersOnSegment = {
+          some: {
+            segmentId,
+          },
+        };
+      }
+      if (segment.dataType === SegmentDataType.CONDITION) {
+        const filter = createConditionsFilter(segment.data, attributes);
+        where = {
+          ...where,
+          ...filter,
+        };
+      }
+    }
+
+    const baseQuery: Prisma.BizUserFindManyArgs = {
+      where,
       include,
       orderBy,
     };
