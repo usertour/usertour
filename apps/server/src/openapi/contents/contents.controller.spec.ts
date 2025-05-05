@@ -11,6 +11,7 @@ import {
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
+import { OrderByType } from './contents.dto';
 
 describe('OpenAPIContentsController', () => {
   let controller: OpenAPIContentsController;
@@ -28,6 +29,7 @@ describe('OpenAPIContentsController', () => {
   const mockContent = {
     id: 'test-id',
     object: OpenApiObjectType.CONTENT,
+    name: 'Test Content',
     type: 'flow',
     editedVersionId: 'version-1',
     publishedVersionId: null,
@@ -141,6 +143,7 @@ describe('OpenAPIContentsController', () => {
         'http://localhost:3000/v1/contents',
         mockEnvironment,
         undefined,
+        undefined,
         10,
         undefined,
       );
@@ -153,15 +156,16 @@ describe('OpenAPIContentsController', () => {
         mockEnvironment,
         10,
         undefined,
-        [ExpandType.EDITED_VERSION, ExpandType.PUBLISHED_VERSION],
+        [OrderByType.CREATED_AT],
       );
 
       expect(contentService.listContents).toHaveBeenCalledWith(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
         undefined,
+        [OrderByType.CREATED_AT],
         10,
-        [ExpandType.EDITED_VERSION, ExpandType.PUBLISHED_VERSION],
+        undefined,
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -182,10 +186,14 @@ describe('OpenAPIContentsController', () => {
 
   describe('getContentVersion', () => {
     it('should return content version', async () => {
-      const result = await controller.getContentVersion('version-1', 'env-id');
+      const result = await controller.getContentVersion('version-1', 'env-id', undefined);
 
       expect(result).toEqual(mockVersion);
-      expect(contentService.getContentVersion).toHaveBeenCalledWith('version-1', 'env-id');
+      expect(contentService.getContentVersion).toHaveBeenCalledWith(
+        'version-1',
+        'env-id',
+        undefined,
+      );
     });
 
     it('should throw error when version not found', async () => {
@@ -202,6 +210,7 @@ describe('OpenAPIContentsController', () => {
       const result = await controller.listContentVersions(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
+        'content-1',
         10,
         undefined,
       );
@@ -209,6 +218,9 @@ describe('OpenAPIContentsController', () => {
       expect(contentService.listContentVersions).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
+        'content-1',
+        undefined,
+        undefined,
         undefined,
         10,
       );
@@ -222,6 +234,7 @@ describe('OpenAPIContentsController', () => {
         controller.listContentVersions(
           'http://localhost:3000/v1/content-versions',
           mockEnvironment,
+          'content-1',
           -1,
           undefined,
         ),
@@ -235,6 +248,7 @@ describe('OpenAPIContentsController', () => {
         controller.listContentVersions(
           'http://localhost:3000/v1/content-versions',
           mockEnvironment,
+          'content-1',
           10,
           'invalid-cursor',
         ),

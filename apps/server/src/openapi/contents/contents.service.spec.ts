@@ -90,6 +90,7 @@ describe('OpenAPIContentsService', () => {
             listContentsWithRelations: jest.fn().mockResolvedValue(mockContentConnection),
             getContentVersionWithRelations: jest.fn(),
             listContentVersionsWithRelations: jest.fn().mockResolvedValue(mockVersionConnection),
+            getContentById: jest.fn().mockResolvedValue({ id: 'content-1' }),
           },
         },
       ],
@@ -183,6 +184,7 @@ describe('OpenAPIContentsService', () => {
           editedVersion: false,
           publishedVersion: false,
         },
+        [{ createdAt: 'asc' }],
       );
       expect(result).toEqual({
         results: [
@@ -203,10 +205,16 @@ describe('OpenAPIContentsService', () => {
       });
     });
 
-    it('should throw error when limit is negative', async () => {
+    it('should throw error for invalid limit', async () => {
       await expect(
-        service.listContents('http://localhost:3000/v1/contents', mockEnvironment, undefined, -1),
-      ).rejects.toThrow(InvalidLimitError);
+        service.listContents(
+          'http://localhost:3000/v1/contents',
+          mockEnvironment,
+          undefined,
+          undefined,
+          -1,
+        ),
+      ).rejects.toThrow(new InvalidLimitError());
     });
   });
 
@@ -220,7 +228,7 @@ describe('OpenAPIContentsService', () => {
         id: mockVersion.id,
         object: OpenApiObjectType.CONTENT_VERSION,
         number: mockVersion.sequence,
-        questions: mockVersion.data,
+        questions: null,
         updatedAt: mockVersion.updatedAt.toISOString(),
         createdAt: mockVersion.createdAt.toISOString(),
       });
@@ -247,14 +255,17 @@ describe('OpenAPIContentsService', () => {
       const result = await service.listContentVersions(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
+        'content-1',
       );
 
       expect(contentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(
         mockEnvironment.id,
+        'content-1',
         { first: 20, after: undefined },
         {
           content: true,
         },
+        [{ createdAt: 'asc' }],
       );
       expect(result).toEqual({
         results: [
@@ -262,7 +273,7 @@ describe('OpenAPIContentsService', () => {
             id: mockVersion.id,
             object: OpenApiObjectType.CONTENT_VERSION,
             number: mockVersion.sequence,
-            questions: mockVersion.data,
+            questions: null,
             updatedAt: mockVersion.updatedAt.toISOString(),
             createdAt: mockVersion.createdAt.toISOString(),
           },
@@ -277,10 +288,13 @@ describe('OpenAPIContentsService', () => {
         service.listContentVersions(
           'http://localhost:3000/v1/content-versions',
           mockEnvironment,
+          'content-1',
+          undefined,
+          undefined,
           undefined,
           -1,
         ),
-      ).rejects.toThrow(InvalidLimitError);
+      ).rejects.toThrow(new InvalidLimitError());
     });
 
     it('should throw error when cursor is invalid', async () => {
@@ -300,9 +314,80 @@ describe('OpenAPIContentsService', () => {
         service.listContentVersions(
           'http://localhost:3000/v1/content-versions',
           mockEnvironment,
+          'content-1',
           'invalid-cursor',
         ),
-      ).rejects.toThrow(InvalidCursorError);
+      ).rejects.toThrow(new InvalidCursorError());
+    });
+
+    it('should list content versions', async () => {
+      const mockContentVersion = {
+        id: 'version-1',
+        sequence: 1,
+        createdAt: new Date('2025-04-27T10:56:52.198Z'),
+        updatedAt: new Date('2025-04-27T10:56:52.198Z'),
+        content: {
+          id: 'content-1',
+          name: 'Test Content',
+          type: 'flow',
+          editedVersionId: 'version-1',
+          publishedVersionId: null,
+          environmentId: 'env-1',
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        },
+      };
+
+      (contentsService.getContentById as jest.Mock).mockResolvedValue({ id: 'content-1' });
+      (contentsService.listContentVersionsWithRelations as jest.Mock).mockResolvedValue({
+        edges: [{ node: mockContentVersion, cursor: 'cursor1' }],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
+        totalCount: 1,
+      });
+
+      const result = await service.listContentVersions(
+        'http://localhost:3000/v1/content-versions',
+        mockEnvironment,
+        'content-1',
+        undefined,
+        undefined,
+        undefined,
+        20,
+      );
+
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'version-1',
+            object: OpenApiObjectType.CONTENT_VERSION,
+            number: 1,
+            questions: null,
+            updatedAt: '2025-04-27T10:56:52.198Z',
+            createdAt: '2025-04-27T10:56:52.198Z',
+          },
+        ],
+        next: null,
+        previous: null,
+      });
+    });
+
+    it('should throw error for invalid limit in content versions', async () => {
+      await expect(
+        service.listContentVersions(
+          'http://localhost:3000/v1/content-versions',
+          mockEnvironment,
+          'content-1',
+          undefined,
+          undefined,
+          undefined,
+          -1,
+        ),
+      ).rejects.toThrow(new InvalidLimitError());
     });
   });
 });

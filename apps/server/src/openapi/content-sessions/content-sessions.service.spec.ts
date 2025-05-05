@@ -79,7 +79,41 @@ describe('OpenAPIContentSessionsService', () => {
 
   describe('getContentSession', () => {
     it('should return a content session when found', async () => {
-      mockAnalyticsService.getContentSessionWithRelations.mockResolvedValue(mockSession);
+      const mockSessionWithRelations = {
+        ...mockSession,
+        content: {
+          id: 'content1',
+          name: 'Test Content',
+          type: 'flow',
+          editedVersionId: 'version1',
+          publishedVersionId: null,
+          environmentId: 'env1',
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        },
+        bizUser: {
+          id: 'user1',
+          externalId: 'user1',
+          data: { name: 'Test User' },
+          createdAt: new Date(),
+        },
+        bizCompany: {
+          id: 'company1',
+          externalId: 'company1',
+          data: { name: 'Test Company' },
+          createdAt: new Date(),
+        },
+        version: {
+          id: 'version1',
+          sequence: 1,
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        },
+      };
+
+      mockAnalyticsService.getContentSessionWithRelations.mockResolvedValue(
+        mockSessionWithRelations,
+      );
 
       const result = await service.getContentSession('1', 'env1', [
         ExpandType.CONTENT,
@@ -90,33 +124,69 @@ describe('OpenAPIContentSessionsService', () => {
 
       expect(result).toBeDefined();
       expect(result.id).toBe('1');
+      expect(result.content).toBeDefined();
+      expect(result.user).toBeDefined();
+      expect(result.company).toBeDefined();
+      expect(result.version).toBeDefined();
       expect(mockAnalyticsService.getContentSessionWithRelations).toHaveBeenCalledWith(
         '1',
         'env1',
         {
           content: true,
-          bizUser: true,
           bizCompany: true,
+          bizUser: true,
           version: true,
         },
       );
     });
 
-    it('should return null when session not found', async () => {
+    it('should throw ContentSessionNotFoundError when session not found', async () => {
       mockAnalyticsService.getContentSessionWithRelations.mockResolvedValue(null);
 
-      const result = await service.getContentSession('1', 'env1', []);
-
-      expect(result).toBeNull();
+      await expect(service.getContentSession('1', 'env1', [])).rejects.toThrow(
+        new ContentSessionNotFoundError(),
+      );
     });
   });
 
   describe('listContentSessions', () => {
     it('should return a list of content sessions', async () => {
+      const mockSessionWithRelations = {
+        ...mockSession,
+        content: {
+          id: 'content1',
+          name: 'Test Content',
+          type: 'flow',
+          editedVersionId: 'version1',
+          publishedVersionId: null,
+          environmentId: 'env1',
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        },
+        bizUser: {
+          id: 'user1',
+          externalId: 'user1',
+          data: { name: 'Test User' },
+          createdAt: new Date(),
+        },
+        bizCompany: {
+          id: 'company1',
+          externalId: 'company1',
+          data: { name: 'Test Company' },
+          createdAt: new Date(),
+        },
+        version: {
+          id: 'version1',
+          sequence: 1,
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        },
+      };
+
       mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
         edges: [
           {
-            node: mockSession,
+            node: mockSessionWithRelations,
             cursor: 'cursor1',
           },
         ],
@@ -126,6 +196,7 @@ describe('OpenAPIContentSessionsService', () => {
           startCursor: 'cursor1',
           endCursor: 'cursor1',
         },
+        totalCount: 1,
       });
 
       const result = await service.listContentSessions(
@@ -140,6 +211,7 @@ describe('OpenAPIContentSessionsService', () => {
         },
         'content1',
         10,
+        undefined,
         undefined,
         [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
       );
@@ -152,29 +224,46 @@ describe('OpenAPIContentSessionsService', () => {
         'env1',
         'content1',
         { first: 10, after: undefined },
+        undefined,
         {
           content: true,
-          bizUser: true,
           bizCompany: true,
+          bizUser: true,
           version: true,
         },
+        [{ createdAt: 'asc' }],
       );
     });
 
-    it('should handle cursor pagination', async () => {
+    it('should handle sorting with orderBy parameter', async () => {
+      const mockSessionWithRelations = {
+        ...mockSession,
+        content: {
+          id: 'content1',
+          name: 'Test Content',
+          type: 'flow',
+          editedVersionId: 'version1',
+          publishedVersionId: null,
+          environmentId: 'env1',
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        },
+      };
+
       mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
         edges: [
           {
-            node: mockSession,
-            cursor: 'cursor2',
+            node: mockSessionWithRelations,
+            cursor: 'cursor1',
           },
         ],
         pageInfo: {
-          hasNextPage: true,
+          hasNextPage: false,
           hasPreviousPage: false,
-          startCursor: 'cursor2',
-          endCursor: 'cursor2',
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
         },
+        totalCount: 1,
       });
 
       const result = await service.listContentSessions(
@@ -190,78 +279,27 @@ describe('OpenAPIContentSessionsService', () => {
         'content1',
         10,
         undefined,
-        [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
+        undefined,
+        undefined,
+        ['-createdAt' as any],
       );
 
       expect(result).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.next).toBe(
-        'http://localhost:3000/v1/content-sessions?cursor=cursor2&limit=10&expand%5B%5D=content&expand%5B%5D=user&expand%5B%5D=company&expand%5B%5D=version',
-      );
+      expect(result.next).toBeNull();
       expect(result.previous).toBeNull();
       expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
         'env1',
         'content1',
         { first: 10, after: undefined },
+        undefined,
         {
           content: true,
-          bizUser: true,
           bizCompany: true,
+          bizUser: true,
           version: true,
         },
-      );
-    });
-
-    it('should handle cursor pagination with cursor', async () => {
-      mockAnalyticsService.listContentSessionsWithRelations.mockResolvedValue({
-        edges: [
-          {
-            node: mockSession,
-            cursor: 'cursor2',
-          },
-        ],
-        pageInfo: {
-          hasNextPage: true,
-          hasPreviousPage: true,
-          startCursor: 'cursor2',
-          endCursor: 'cursor2',
-        },
-      });
-
-      const result = await service.listContentSessions(
-        'http://localhost:3000/v1/content-sessions',
-        {
-          id: 'env1',
-          projectId: 'project1',
-          name: 'Test Environment',
-          token: 'test-token',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        'content1',
-        10,
-        'cursor1',
-        [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
-      );
-
-      expect(result).toBeDefined();
-      expect(result.results).toHaveLength(1);
-      expect(result.next).toBe(
-        'http://localhost:3000/v1/content-sessions?cursor=cursor2&limit=10&expand%5B%5D=content&expand%5B%5D=user&expand%5B%5D=company&expand%5B%5D=version',
-      );
-      expect(result.previous).toBe(
-        'http://localhost:3000/v1/content-sessions?limit=10&expand%5B%5D=content&expand%5B%5D=user&expand%5B%5D=company&expand%5B%5D=version',
-      );
-      expect(mockAnalyticsService.listContentSessionsWithRelations).toHaveBeenCalledWith(
-        'env1',
-        'content1',
-        { first: 10, after: 'cursor1' },
-        {
-          content: true,
-          bizUser: true,
-          bizCompany: true,
-          version: true,
-        },
+        [{ createdAt: 'desc' }],
       );
     });
   });

@@ -93,7 +93,13 @@ describe('OpenAPIUsersService', () => {
         companies: null,
         memberships: null,
       });
-      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', { companies: true });
+      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', {
+        bizUsersOnCompany: {
+          include: {
+            bizCompany: true,
+          },
+        },
+      });
     });
 
     it('should return a user with expanded companies', async () => {
@@ -117,7 +123,13 @@ describe('OpenAPIUsersService', () => {
         ],
         memberships: null,
       });
-      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', { companies: true });
+      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1', {
+        bizUsersOnCompany: {
+          include: {
+            bizCompany: true,
+          },
+        },
+      });
     });
 
     it('should throw error when user not found', async () => {
@@ -149,7 +161,11 @@ describe('OpenAPIUsersService', () => {
         mockEnvironment,
         20,
         undefined,
+        ['createdAt'],
         [ExpandType.COMPANIES],
+        'test@example.com',
+        'company1',
+        'segment1',
       );
 
       expect(result).toEqual({
@@ -169,7 +185,17 @@ describe('OpenAPIUsersService', () => {
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
         'env1',
         { first: 20, after: undefined },
-        { bizUsersOnCompany: false, companies: true },
+        {
+          bizUsersOnCompany: {
+            include: {
+              bizCompany: true,
+            },
+          },
+        },
+        [{ createdAt: 'asc' }],
+        'test@example.com',
+        'company1',
+        'segment1',
       );
     });
 
@@ -194,7 +220,11 @@ describe('OpenAPIUsersService', () => {
         mockEnvironment,
         10,
         'cursor1',
+        ['createdAt'],
         [ExpandType.COMPANIES],
+        'test@example.com',
+        'company1',
+        'segment1',
       );
 
       expect(result).toEqual({
@@ -214,7 +244,17 @@ describe('OpenAPIUsersService', () => {
       expect(bizService.listBizUsersWithRelations).toHaveBeenCalledWith(
         'env1',
         { first: 10, after: 'cursor1' },
-        { bizUsersOnCompany: false, companies: true },
+        {
+          bizUsersOnCompany: {
+            include: {
+              bizCompany: true,
+            },
+          },
+        },
+        [{ createdAt: 'asc' }],
+        'test@example.com',
+        'company1',
+        'segment1',
       );
     });
 
@@ -270,6 +310,13 @@ describe('OpenAPIUsersService', () => {
 
   describe('deleteUser', () => {
     it('should delete user and return success response', async () => {
+      const mockBizUser = {
+        id: 'biz-user-1',
+        externalId: 'user1',
+        data: {},
+        createdAt: new Date(),
+      };
+      mockBizService.getBizUser.mockResolvedValue(mockBizUser);
       mockBizService.deleteBizUser.mockResolvedValue(undefined);
 
       const result = await service.deleteUser('user1', 'env1');
@@ -279,7 +326,14 @@ describe('OpenAPIUsersService', () => {
         object: 'user',
         deleted: true,
       });
-      expect(bizService.deleteBizUser).toHaveBeenCalledWith(['user1'], 'env1');
+      expect(bizService.getBizUser).toHaveBeenCalledWith('user1', 'env1');
+      expect(bizService.deleteBizUser).toHaveBeenCalledWith(['biz-user-1'], 'env1');
+    });
+
+    it('should throw error when user not found', async () => {
+      mockBizService.getBizUser.mockResolvedValue(null);
+
+      await expect(service.deleteUser('non-existent', 'env1')).rejects.toThrow(UserNotFoundError);
     });
   });
 });

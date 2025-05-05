@@ -4,39 +4,47 @@ import { OpenAPIContentSessionsService } from './content-sessions.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { ExpandType } from './content-sessions.dto';
+import { OpenApiObjectType } from '@/common/openapi/types';
+import { ContentSession } from '../models/content-session.model';
 
 describe('OpenAPIContentSessionsController', () => {
   let controller: OpenAPIContentSessionsController;
   let service: OpenAPIContentSessionsService;
 
-  const mockContentSession = {
+  const fixedDate = '2025-05-05T10:48:30.000Z';
+
+  const createMockContentSession = (overrides = {}): ContentSession => ({
     id: 'test-id',
+    object: OpenApiObjectType.CONTENT_SESSION,
+    answers: null,
+    completedAt: null,
+    completed: false,
     contentId: 'test-content-id',
+    createdAt: fixedDate,
+    companyId: null,
+    isPreview: false,
+    lastActivityAt: fixedDate,
+    progress: 0,
     userId: 'test-user-id',
+    versionId: 'test-version-id',
+    ...overrides,
+  });
+
+  const createMockEnvironment = () => ({
+    id: 'test-env',
+    projectId: 'test-project',
+    name: 'Test Environment',
+    token: 'test-token',
     createdAt: new Date(),
     updatedAt: new Date(),
-  };
+  });
 
-  const mockPaginatedResponse = {
-    data: [mockContentSession],
-    pagination: {
-      next: 'http://localhost:3000/v1/content-sessions?cursor=next-cursor',
-      previous: null,
-      totalCount: 1,
-    },
-  };
-
-  const mockService = {
-    listContentSessions: jest.fn().mockResolvedValue(mockPaginatedResponse),
-    getContentSession: jest.fn().mockResolvedValue(mockContentSession),
-    deleteContentSession: jest.fn().mockResolvedValue(undefined),
-  };
-
-  const mockPrismaService = {
-    apiKey: {
-      findUnique: jest.fn(),
-    },
-  };
+  const mockService: jest.Mocked<OpenAPIContentSessionsService> = {
+    listContentSessions: jest.fn(),
+    getContentSession: jest.fn(),
+    deleteContentSession: jest.fn(),
+    endContentSession: jest.fn(),
+  } as any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,7 +62,9 @@ describe('OpenAPIContentSessionsController', () => {
         },
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: {
+            apiKey: { findUnique: jest.fn() },
+          },
         },
       ],
     }).compile();
@@ -68,6 +78,16 @@ describe('OpenAPIContentSessionsController', () => {
   });
 
   describe('listContentSessions', () => {
+    const mockPaginatedResponse = {
+      results: [createMockContentSession()],
+      next: 'http://localhost:3000/v1/content-sessions?cursor=next-cursor',
+      previous: null,
+    };
+
+    beforeEach(() => {
+      mockService.listContentSessions.mockResolvedValue(mockPaginatedResponse);
+    });
+
     it('should return paginated content sessions', async () => {
       const contentId = 'test-content-id';
       const limit = 20;
@@ -76,34 +96,24 @@ describe('OpenAPIContentSessionsController', () => {
 
       const result = await controller.listContentSessions(
         'http://localhost:3000/v1/content-sessions',
-        {
-          id: 'test-env',
-          projectId: 'test-project',
-          name: 'Test Environment',
-          token: 'test-token',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        createMockEnvironment(),
         contentId,
         limit,
         cursor,
+        undefined,
+        undefined,
         expand,
       );
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content-sessions',
-        {
-          id: 'test-env',
-          projectId: 'test-project',
-          name: 'Test Environment',
-          token: 'test-token',
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
+        createMockEnvironment(),
         contentId,
         limit,
+        undefined,
         cursor,
-        ['content', 'user'],
+        expand,
+        undefined,
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -113,32 +123,22 @@ describe('OpenAPIContentSessionsController', () => {
 
       const result = await controller.listContentSessions(
         'http://localhost:3000/v1/content-sessions',
-        {
-          id: 'test-env',
-          projectId: 'test-project',
-          name: 'Test Environment',
-          token: 'test-token',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        createMockEnvironment(),
         contentId,
         20,
+        undefined,
+        undefined,
         undefined,
         undefined,
       );
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content-sessions',
-        {
-          id: 'test-env',
-          projectId: 'test-project',
-          name: 'Test Environment',
-          token: 'test-token',
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
+        createMockEnvironment(),
         contentId,
         20,
+        undefined,
+        undefined,
         undefined,
         undefined,
       );
@@ -147,14 +147,78 @@ describe('OpenAPIContentSessionsController', () => {
   });
 
   describe('getContentSession', () => {
+    beforeEach(() => {
+      mockService.getContentSession.mockResolvedValue(createMockContentSession());
+    });
+
     it('should return a content session', async () => {
       const id = 'test-id';
       const expand = [ExpandType.CONTENT, ExpandType.USER];
 
       const result = await controller.getContentSession(id, 'test-env', expand);
 
-      expect(service.getContentSession).toHaveBeenCalledWith(id, 'test-env', ['content', 'user']);
-      expect(result).toEqual({ data: mockContentSession });
+      expect(service.getContentSession).toHaveBeenCalledWith(id, 'test-env', [
+        ExpandType.CONTENT,
+        ExpandType.USER,
+      ]);
+      expect(result).toEqual(createMockContentSession());
+    });
+
+    it('should return content session with expand', async () => {
+      const mockSessionWithExpand = createMockContentSession({
+        id: 'session-1',
+        contentId: 'content-1',
+        companyId: 'company-1',
+        userId: 'user-1',
+        versionId: 'version-1',
+        content: {
+          id: 'content-1',
+          object: OpenApiObjectType.CONTENT,
+          name: 'Test Content',
+          type: 'flow',
+          editedVersionId: 'version-1',
+          publishedVersionId: 'version-1',
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        user: {
+          id: 'user-1',
+          object: OpenApiObjectType.USER,
+          attributes: { name: 'Test User' },
+          createdAt: new Date().toISOString(),
+        },
+        company: {
+          id: 'company-1',
+          object: OpenApiObjectType.COMPANY,
+          attributes: { name: 'Test Company' },
+          createdAt: new Date().toISOString(),
+        },
+        version: {
+          id: 'version-1',
+          object: OpenApiObjectType.CONTENT_VERSION,
+          number: 1,
+          questions: null,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+      });
+
+      mockService.getContentSession.mockResolvedValue(mockSessionWithExpand);
+
+      const result = await controller.getContentSession('session-1', 'env-1', [
+        ExpandType.CONTENT,
+        ExpandType.USER,
+        ExpandType.COMPANY,
+        ExpandType.VERSION,
+      ]);
+
+      expect(result).toEqual(mockSessionWithExpand);
+      expect(mockService.getContentSession).toHaveBeenCalledWith('session-1', 'env-1', [
+        ExpandType.CONTENT,
+        ExpandType.USER,
+        ExpandType.COMPANY,
+        ExpandType.VERSION,
+      ]);
     });
   });
 

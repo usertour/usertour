@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompanyMembershipsController } from './company-memberships.controller';
 import { OpenAPICompanyMembershipsService } from './company-memberships.service';
-import { DeleteCompanyMembershipResponseDto } from './company-memberships.dto';
+import { DeleteResponseDto } from '@/common/openapi/dtos';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import { OpenAPIKeyGuard } from '../openapi.guard';
@@ -65,7 +65,7 @@ describe('OpenAPICompanyMembershipsController', () => {
 
   describe('OpenAPICompanyMemberships:Delete', () => {
     it('should delete company membership successfully', async () => {
-      const mockResponse: DeleteCompanyMembershipResponseDto = {
+      const mockResponse: DeleteResponseDto = {
         id: 'membership-1',
         object: OpenApiObjectType.COMPANY_MEMBERSHIP,
         deleted: true,

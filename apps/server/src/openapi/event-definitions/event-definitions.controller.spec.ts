@@ -65,26 +65,18 @@ describe('OpenAPIEventDefinitionsController', () => {
       const mockEventDefinitions = {
         results: [
           {
-            id: 'event1',
+            id: 'event-1',
             object: OpenApiObjectType.EVENT_DEFINITION,
-            name: 'Test Event 1',
-            displayName: 'Test Event 1',
-            description: 'Test Event 1 Description',
-            attributes: { name: 'Test Event 1' },
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: 'event2',
-            object: OpenApiObjectType.EVENT_DEFINITION,
-            name: 'Test Event 2',
-            displayName: 'Test Event 2',
-            description: 'Test Event 2 Description',
-            attributes: { name: 'Test Event 2' },
-            createdAt: new Date().toISOString(),
+            name: 'Test Event',
+            displayName: 'Test Event',
+            description: 'Test event description',
+            attributes: { name: 'Test Event' },
+            codeName: 'test_event',
+            createdAt: '2025-04-27T10:56:52.198Z',
           },
         ],
-        next: 'next-cursor',
-        previous: 'prev-cursor',
+        next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor',
+        previous: 'http://localhost:3000/v1/event-definitions?cursor=prev-cursor',
       };
 
       mockService.listEventDefinitions.mockResolvedValue(mockEventDefinitions);
@@ -94,6 +86,7 @@ describe('OpenAPIEventDefinitionsController', () => {
         mockEnvironment,
         10,
         'cursor1',
+        undefined,
       );
 
       expect(result).toEqual(mockEventDefinitions);
@@ -102,6 +95,7 @@ describe('OpenAPIEventDefinitionsController', () => {
         mockEnvironment,
         10,
         'cursor1',
+        undefined,
       );
     });
 

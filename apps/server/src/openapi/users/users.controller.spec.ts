@@ -123,9 +123,17 @@ describe('OpenAPIUsersController', () => {
 
       mockUsersService.listUsers.mockResolvedValue(mockUsers);
 
-      const result = await controller.listUsers(mockRequestUrl, mockEnvironment, 10, 'cursor1', [
-        ExpandType.COMPANIES,
-      ]);
+      const result = await controller.listUsers(
+        mockRequestUrl,
+        mockEnvironment,
+        10,
+        'cursor1',
+        ['createdAt'],
+        [ExpandType.COMPANIES],
+        'test@example.com',
+        'company1',
+        'segment1',
+      );
 
       expect(result).toEqual(mockUsers);
       expect(service.listUsers).toHaveBeenCalledWith(
@@ -133,7 +141,11 @@ describe('OpenAPIUsersController', () => {
         mockEnvironment,
         10,
         'cursor1',
+        ['createdAt'],
         [ExpandType.COMPANIES],
+        'test@example.com',
+        'company1',
+        'segment1',
       );
     });
 

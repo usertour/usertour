@@ -161,7 +161,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         id: 'attr1',
         createdAt: new Date('2025-04-29T07:38:58.056Z'),
         updatedAt: new Date(),
-        bizType: AttributeBizTypeNames.USER,
+        bizType: 4,
         projectId: 'test-project-id',
         displayName: 'Test Attribute',
         codeName: 'test_attribute',
@@ -210,7 +210,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             description: 'Test attribute',
             displayName: 'Test Attribute',
             codeName: 'test_attribute',
-            scope: AttributeBizTypeNames.USER,
+            scope: OpenApiObjectType.EVENT_DEFINITION,
           },
         ],
         next: '/v1/attribute-definitions?cursor=cursor1&limit=20',
@@ -224,6 +224,168 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         },
         undefined,
         undefined,
+        [{ displayName: 'asc' }],
+      );
+    });
+
+    it('should handle sorting with orderBy parameter', async () => {
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
+      const node = {
+        id: 'attr1',
+        createdAt: new Date('2025-04-29T07:38:58.056Z'),
+        updatedAt: new Date(),
+        bizType: AttributeBizTypeNames.USER,
+        projectId: 'test-project-id',
+        displayName: 'Test Attribute',
+        codeName: 'test_attribute',
+        description: 'Test attribute',
+        dataType: AttributeDataTypeNames.String,
+        randomMax: 0,
+        predefined: false,
+        deleted: false,
+      };
+      const mockResponse: Connection<any> = {
+        edges: [
+          {
+            cursor: 'cursor1',
+            node,
+          },
+        ],
+        nodes: [node],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
+        totalCount: 1,
+      };
+
+      mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
+
+      const result = await service.listAttributeDefinitions(
+        '/v1/attribute-definitions',
+        environment,
+        20,
+        undefined,
+        undefined,
+        ['-codeName'],
+        undefined,
+      );
+
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'attr1',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
+            createdAt: '2025-04-29T07:38:58.056Z',
+            dataType: AttributeDataTypeNames.String,
+            description: 'Test attribute',
+            displayName: 'Test Attribute',
+            codeName: 'test_attribute',
+            scope: AttributeBizTypeNames.USER,
+          },
+        ],
+        next: null,
+        previous: null,
+      });
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
+        'test-project-id',
+        {
+          after: undefined,
+          first: 20,
+        },
+        undefined,
+        undefined,
+        [{ codeName: 'desc' }],
+      );
+    });
+
+    it('should handle event name filter', async () => {
+      const environment = {
+        id: 'env-1',
+        name: 'Test Environment',
+        token: 'test-token',
+        projectId: 'test-project-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Environment;
+
+      const node = {
+        id: 'attr1',
+        createdAt: new Date('2025-04-29T07:38:58.056Z'),
+        updatedAt: new Date(),
+        bizType: 4,
+        projectId: 'test-project-id',
+        displayName: 'Test Attribute',
+        codeName: 'test_attribute',
+        description: 'Test attribute',
+        dataType: AttributeDataTypeNames.String,
+        randomMax: 0,
+        predefined: false,
+        deleted: false,
+      };
+      const mockResponse: Connection<any> = {
+        edges: [
+          {
+            cursor: 'cursor1',
+            node,
+          },
+        ],
+        nodes: [node],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
+        totalCount: 1,
+      };
+
+      mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
+
+      const result = await service.listAttributeDefinitions(
+        '/v1/attribute-definitions',
+        environment,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        ['test_event'],
+      );
+
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'attr1',
+            object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
+            createdAt: '2025-04-29T07:38:58.056Z',
+            dataType: AttributeDataTypeNames.String,
+            description: 'Test attribute',
+            displayName: 'Test Attribute',
+            codeName: 'test_attribute',
+            scope: OpenApiObjectType.EVENT_DEFINITION,
+          },
+        ],
+        next: null,
+        previous: null,
+      });
+      expect(mockAttributeDefinitionsService.listWithPagination).toHaveBeenCalledWith(
+        'test-project-id',
+        {
+          after: undefined,
+          first: 20,
+        },
+        undefined,
+        ['test_event'],
         [{ displayName: 'asc' }],
       );
     });

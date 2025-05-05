@@ -74,36 +74,6 @@ describe('OpenAPIEventDefinitionsService', () => {
       },
     };
 
-    const expectedResponse = {
-      results: [
-        {
-          id: 'event-123',
-          object: OpenApiObjectType.EVENT_DEFINITION,
-          createdAt: '2024-01-01T00:00:00.000Z',
-          description: 'Test Event',
-          displayName: 'Test Event',
-          name: 'test_event',
-        },
-      ],
-      next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=10',
-      previous: 'http://localhost:3000/v1/event-definitions?limit=10',
-    };
-
-    const expectedDefaultResponse = {
-      results: [
-        {
-          id: 'event-123',
-          object: OpenApiObjectType.EVENT_DEFINITION,
-          createdAt: '2024-01-01T00:00:00.000Z',
-          description: 'Test Event',
-          displayName: 'Test Event',
-          name: 'test_event',
-        },
-      ],
-      next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=20',
-      previous: null,
-    };
-
     it('should successfully list events', async () => {
       mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
 
@@ -120,8 +90,22 @@ describe('OpenAPIEventDefinitionsService', () => {
           first: mockLimit,
           after: mockCursor,
         },
+        [{ createdAt: 'asc' }],
       );
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'event-123',
+            object: OpenApiObjectType.EVENT_DEFINITION,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            description: 'Test Event',
+            displayName: 'Test Event',
+            codeName: 'test_event',
+          },
+        ],
+        next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=10',
+        previous: 'http://localhost:3000/v1/event-definitions?limit=10',
+      });
     });
 
     it('should use default limit if not provided', async () => {
@@ -135,8 +119,22 @@ describe('OpenAPIEventDefinitionsService', () => {
           first: 20,
           after: undefined,
         },
+        [{ createdAt: 'asc' }],
       );
-      expect(result).toEqual(expectedDefaultResponse);
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'event-123',
+            object: OpenApiObjectType.EVENT_DEFINITION,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            description: 'Test Event',
+            displayName: 'Test Event',
+            codeName: 'test_event',
+          },
+        ],
+        next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=20',
+        previous: null,
+      });
     });
 
     it('should throw error for invalid limit', async () => {
