@@ -235,19 +235,19 @@ describe('OpenAPIContentsController', () => {
       const result = await controller.listContentVersions(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
-        'content-1',
-        10,
-        undefined,
+        {
+          contentId: 'content-1',
+          limit: 10,
+        },
       );
 
       expect(contentService.listContentVersions).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
-        'content-1',
-        undefined,
-        undefined,
-        undefined,
-        10,
+        {
+          contentId: 'content-1',
+          limit: 10,
+        },
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -259,9 +259,10 @@ describe('OpenAPIContentsController', () => {
         controller.listContentVersions(
           'http://localhost:3000/v1/content-versions',
           mockEnvironment,
-          'content-1',
-          -1,
-          undefined,
+          {
+            contentId: 'content-1',
+            limit: -1,
+          },
         ),
       ).rejects.toThrow(InvalidLimitError);
     });
@@ -273,9 +274,11 @@ describe('OpenAPIContentsController', () => {
         controller.listContentVersions(
           'http://localhost:3000/v1/content-versions',
           mockEnvironment,
-          'content-1',
-          10,
-          'invalid-cursor',
+          {
+            contentId: 'content-1',
+            limit: 10,
+            cursor: 'invalid-cursor',
+          },
         ),
       ).rejects.toThrow(InvalidCursorError);
     });

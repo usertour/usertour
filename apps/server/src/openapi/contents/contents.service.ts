@@ -7,10 +7,12 @@ import {
   GetContentVersionQueryDto,
   ListContentsQueryDto,
   VersionExpandType,
+  ListContentVersionsQueryDto,
+  VersionOrderByType,
 } from './contents.dto';
 import { Prisma } from '@prisma/client';
 import { ContentsService } from '@/contents/contents.service';
-import { ContentNotFoundError, InvalidOrderByError } from '@/common/errors/errors';
+import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
@@ -136,28 +138,17 @@ export class OpenAPIContentsService {
   async listContentVersions(
     requestUrl: string,
     environment: Environment,
-    contentId: string,
-    cursor?: string,
-    orderBy?: ContentOrderByType[],
-    expand?: VersionExpandType[],
-    limit = 20,
+    query: ListContentVersionsQueryDto,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
+    const { contentId, cursor, orderBy, expand, limit = 20 } = query;
     const environmentId = environment.id;
-    // Validate orderBy values
-    if (
-      orderBy?.some((value) => {
-        const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== ContentOrderByType.CREATED_AT;
-      })
-    ) {
-      throw new InvalidOrderByError();
-    }
+
     const content = await this.contentsService.getContentById(contentId);
     if (!content) {
       throw new ContentNotFoundError();
     }
 
-    const sortOrders = parseOrderBy(orderBy || ['createdAt']);
+    const sortOrders = parseOrderBy(orderBy || [VersionOrderByType.CREATED_AT]);
 
     const include = {
       content: true,

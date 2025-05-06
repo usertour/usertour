@@ -297,7 +297,10 @@ describe('OpenAPIContentsService', () => {
       const result = await service.listContentVersions(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
-        'content-1',
+        {
+          contentId: 'content-1',
+          limit: 20,
+        },
       );
 
       expect(contentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(
@@ -327,15 +330,10 @@ describe('OpenAPIContentsService', () => {
 
     it('should throw error when limit is negative', async () => {
       await expect(
-        service.listContentVersions(
-          'http://localhost:3000/v1/content-versions',
-          mockEnvironment,
-          'content-1',
-          undefined,
-          undefined,
-          undefined,
-          -1,
-        ),
+        service.listContentVersions('http://localhost:3000/v1/content-versions', mockEnvironment, {
+          contentId: 'content-1',
+          limit: -1,
+        }),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -353,12 +351,10 @@ describe('OpenAPIContentsService', () => {
       });
 
       await expect(
-        service.listContentVersions(
-          'http://localhost:3000/v1/content-versions',
-          mockEnvironment,
-          'content-1',
-          'invalid-cursor',
-        ),
+        service.listContentVersions('http://localhost:3000/v1/content-versions', mockEnvironment, {
+          contentId: 'content-1',
+          cursor: 'invalid-cursor',
+        }),
       ).rejects.toThrow(new InvalidCursorError());
     });
 
@@ -395,11 +391,10 @@ describe('OpenAPIContentsService', () => {
       const result = await service.listContentVersions(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
-        'content-1',
-        undefined,
-        undefined,
-        undefined,
-        20,
+        {
+          contentId: 'content-1',
+          limit: 20,
+        },
       );
 
       expect(result).toEqual({
@@ -420,15 +415,10 @@ describe('OpenAPIContentsService', () => {
 
     it('should throw error for invalid limit in content versions', async () => {
       await expect(
-        service.listContentVersions(
-          'http://localhost:3000/v1/content-versions',
-          mockEnvironment,
-          'content-1',
-          undefined,
-          undefined,
-          undefined,
-          -1,
-        ),
+        service.listContentVersions('http://localhost:3000/v1/content-versions', mockEnvironment, {
+          contentId: 'content-1',
+          limit: -1,
+        }),
       ).rejects.toThrow(new InvalidLimitError());
     });
   });

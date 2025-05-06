@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Content } from '../models/content.model';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum ContentExpandType {
   EDITED_VERSION = 'edited_version',
@@ -12,6 +13,11 @@ export enum VersionExpandType {
 }
 
 export enum ContentOrderByType {
+  CREATED_AT = 'createdAt',
+  CREATED_AT_DESC = '-createdAt',
+}
+
+export enum VersionOrderByType {
   CREATED_AT = 'createdAt',
   CREATED_AT_DESC = '-createdAt',
 }
@@ -52,8 +58,12 @@ export class ListContentsQueryDto {
     required: false,
     default: 20,
   })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   @IsOptional()
-  limit?: number;
+  limit?: number = 20;
 
   @ApiProperty({
     description: 'Fields to expand in the response',
@@ -86,4 +96,53 @@ export class GetContentVersionQueryDto {
   @IsOptional()
   @IsEnum(VersionExpandType, { each: true })
   expand?: VersionExpandType[];
+}
+
+export class ListContentVersionsQueryDto {
+  @ApiProperty({
+    description: 'Content ID',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  contentId: string;
+
+  @ApiProperty({
+    description: 'Cursor for pagination',
+    required: false,
+  })
+  @IsOptional()
+  cursor?: string;
+
+  @ApiProperty({
+    description: 'Number of items per page',
+    required: false,
+    default: 20,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number = 20;
+
+  @ApiProperty({
+    description: 'Fields to expand in the response',
+    enum: VersionExpandType,
+    isArray: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(VersionExpandType, { each: true })
+  expand?: VersionExpandType[];
+
+  @ApiProperty({
+    description: 'Sort order',
+    enum: VersionOrderByType,
+    isArray: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(VersionOrderByType, { each: true })
+  orderBy?: VersionOrderByType[];
 }
