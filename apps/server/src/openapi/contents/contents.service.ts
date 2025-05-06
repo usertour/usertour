@@ -4,6 +4,7 @@ import {
   ContentExpandType,
   ContentOrderByType,
   GetContentQueryDto,
+  GetContentVersionQueryDto,
   ListContentsQueryDto,
   VersionExpandType,
 } from './contents.dto';
@@ -118,8 +119,9 @@ export class OpenAPIContentsService {
   async getContentVersion(
     id: string,
     environmentId: string,
-    expand?: VersionExpandType[],
+    query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
+    const { expand } = query;
     const version = await this.contentsService.getContentVersionWithRelations(id, environmentId, {
       content: true,
     });

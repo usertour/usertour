@@ -215,20 +215,16 @@ describe('OpenAPIContentsController', () => {
 
   describe('getContentVersion', () => {
     it('should return content version', async () => {
-      const result = await controller.getContentVersion('version-1', 'env-id', undefined);
+      const result = await controller.getContentVersion('version-1', 'env-id', {});
 
       expect(result).toEqual(mockVersion);
-      expect(contentService.getContentVersion).toHaveBeenCalledWith(
-        'version-1',
-        'env-id',
-        undefined,
-      );
+      expect(contentService.getContentVersion).toHaveBeenCalledWith('version-1', 'env-id', {});
     });
 
     it('should throw error when version not found', async () => {
       jest.spyOn(contentService, 'getContentVersion').mockRejectedValue(new ContentNotFoundError());
 
-      await expect(controller.getContentVersion('non-existent', 'env-id')).rejects.toThrow(
+      await expect(controller.getContentVersion('non-existent', 'env-id', {})).rejects.toThrow(
         ContentNotFoundError,
       );
     });

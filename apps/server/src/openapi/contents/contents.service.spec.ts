@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIContentsService } from './contents.service';
 import { ConfigService } from '@nestjs/config';
-import { ContentExpandType } from './contents.dto';
+import { ContentExpandType, VersionExpandType } from './contents.dto';
 import { ContentsService } from '@/contents/contents.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
@@ -202,7 +202,7 @@ describe('OpenAPIContentsService', () => {
     it('should return content version', async () => {
       (contentsService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(mockVersion);
 
-      const result = await service.getContentVersion('version-1', 'env-id');
+      const result = await service.getContentVersion('version-1', 'env-id', {});
 
       expect(result).toEqual({
         id: mockVersion.id,
@@ -221,10 +221,57 @@ describe('OpenAPIContentsService', () => {
       );
     });
 
+    it('should return content version with questions', async () => {
+      const mockVersionWithQuestions = {
+        ...mockVersion,
+        steps: [
+          {
+            data: [
+              {
+                element: {
+                  type: 'single-line-text',
+                  data: {
+                    cvid: 'question-1',
+                    name: 'Test Question',
+                    type: 'text',
+                  },
+                },
+                children: null,
+              },
+            ],
+          },
+        ],
+      };
+
+      (contentsService.getContentVersionWithRelations as jest.Mock)
+        .mockResolvedValueOnce(mockVersionWithQuestions)
+        .mockResolvedValueOnce(mockVersionWithQuestions);
+
+      const result = await service.getContentVersion('version-1', 'env-id', {
+        expand: [VersionExpandType.QUESTIONS],
+      });
+
+      expect(result).toEqual({
+        id: mockVersionWithQuestions.id,
+        object: OpenApiObjectType.CONTENT_VERSION,
+        number: mockVersionWithQuestions.sequence,
+        questions: [
+          {
+            object: OpenApiObjectType.QUESTION,
+            cvid: 'question-1',
+            name: 'Test Question',
+            type: 'single-line-text',
+          },
+        ],
+        updatedAt: mockVersionWithQuestions.updatedAt.toISOString(),
+        createdAt: mockVersionWithQuestions.createdAt.toISOString(),
+      });
+    });
+
     it('should throw error when version not found', async () => {
       (contentsService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getContentVersion('non-existent', 'env-id')).rejects.toThrow(
+      await expect(service.getContentVersion('non-existent', 'env-id', {})).rejects.toThrow(
         ContentNotFoundError,
       );
     });

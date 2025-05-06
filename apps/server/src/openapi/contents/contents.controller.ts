@@ -25,6 +25,7 @@ import {
   VersionExpandType,
   GetContentQueryDto,
   ListContentsQueryDto,
+  GetContentVersionQueryDto,
 } from './contents.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
@@ -74,10 +75,9 @@ export class OpenAPIContentsController {
   async getContentVersion(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String }))
-    expand?: VersionExpandType[],
+    @Query() query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
-    return this.openAPIContentsService.getContentVersion(id, environmentId, expand);
+    return this.openAPIContentsService.getContentVersion(id, environmentId, query);
   }
 
   @Get('v1/content-versions')

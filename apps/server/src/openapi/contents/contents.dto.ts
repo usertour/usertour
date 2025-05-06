@@ -75,3 +75,15 @@ export class ListContentsQueryDto {
   @IsEnum(ContentOrderByType, { each: true })
   orderBy?: ContentOrderByType[];
 }
+
+export class GetContentVersionQueryDto {
+  @ApiProperty({
+    description: 'Fields to expand in the response',
+    enum: VersionExpandType,
+    isArray: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(VersionExpandType, { each: true })
+  expand?: VersionExpandType[];
+}
