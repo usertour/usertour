@@ -44,6 +44,11 @@ describe('OpenAPIContentSessionsService', () => {
 
   const mockContentsService = {
     getContentById: jest.fn().mockResolvedValue({ id: 'content1' }),
+    getContentVersionWithRelations: jest.fn().mockResolvedValue({
+      id: 'version1',
+      sequence: 1,
+      steps: [],
+    }),
   };
 
   beforeEach(async () => {
@@ -211,16 +216,13 @@ describe('OpenAPIContentSessionsService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-        'content1',
-        10,
-        undefined,
-        undefined,
-        [
-          ContentSessionExpandType.CONTENT,
-          ContentSessionExpandType.USER,
-          ContentSessionExpandType.COMPANY,
-          ContentSessionExpandType.VERSION,
-        ],
+        {
+          contentId: 'content1',
+          limit: 10,
+          cursor: undefined,
+          expand: undefined,
+          orderBy: undefined,
+        },
       );
 
       expect(result).toBeDefined();
@@ -283,12 +285,13 @@ describe('OpenAPIContentSessionsService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-        'content1',
-        10,
-        undefined,
-        undefined,
-        undefined,
-        ['-createdAt' as any],
+        {
+          contentId: 'content1',
+          limit: 10,
+          cursor: undefined,
+          expand: undefined,
+          orderBy: ['-createdAt' as any],
+        },
       );
 
       expect(result).toBeDefined();

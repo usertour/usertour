@@ -3,16 +3,12 @@ import {
   ContentSessionExpandType,
   ContentSessionOrderByType,
   GetContentSessionQueryDto,
+  ListContentSessionsQueryDto,
 } from './content-sessions.dto';
 import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
-import {
-  ContentNotFoundError,
-  ContentSessionNotFoundError,
-  InvalidOrderByError,
-  InvalidRequestError,
-} from '@/common/errors/errors';
+import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { ContentsService } from '@/contents/contents.service';
@@ -123,33 +119,16 @@ export class OpenAPIContentSessionsService {
   async listContentSessions(
     requestUrl: string,
     environment: Environment,
-    contentId: string,
-    limit = 10,
-    userId?: string,
-    cursor?: string,
-    expand?: ContentSessionExpandType[],
-    orderBy?: ContentSessionOrderByType[],
+    query: ListContentSessionsQueryDto,
   ) {
-    if (!contentId) {
-      throw new InvalidRequestError('contentId is required');
-    }
-
-    // Validate orderBy values
-    if (
-      orderBy?.some((value) => {
-        const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== ContentSessionOrderByType.CREATED_AT;
-      })
-    ) {
-      throw new InvalidOrderByError();
-    }
+    const { contentId, limit, userId, cursor, expand, orderBy } = query;
 
     const content = await this.contentsService.getContentById(contentId);
     if (!content) {
       throw new ContentNotFoundError();
     }
 
-    const sortOrders = parseOrderBy(orderBy || ['createdAt']);
+    const sortOrders = parseOrderBy(orderBy || [ContentSessionOrderByType.CREATED_AT]);
 
     const environmentId = environment.id;
 

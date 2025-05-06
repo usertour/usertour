@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ContentSession } from '../models/content-session.model';
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNotEmpty, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum ContentSessionExpandType {
   ANSWERS = 'answers',
@@ -12,6 +13,7 @@ export enum ContentSessionExpandType {
 
 export enum ContentSessionOrderByType {
   CREATED_AT = 'createdAt',
+  CREATED_AT_DESC = '-createdAt',
 }
 
 export class ContentSessionOutput {
@@ -36,15 +38,8 @@ export class ListContentSessionsQueryDto {
     required: true,
   })
   @IsString()
+  @IsNotEmpty()
   contentId: string;
-
-  @ApiProperty({
-    description: 'Filter by company ID',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  companyId?: string;
 
   @ApiProperty({
     description: 'Filter by user ID',
@@ -53,6 +48,48 @@ export class ListContentSessionsQueryDto {
   @IsString()
   @IsOptional()
   userId?: string;
+
+  @ApiProperty({
+    description: 'Cursor for pagination',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  cursor?: string;
+
+  @ApiProperty({
+    description: 'Number of items per page',
+    required: false,
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number = 20;
+
+  @ApiProperty({
+    description: 'Fields to expand in the response',
+    enum: ContentSessionExpandType,
+    isArray: true,
+    required: false,
+  })
+  @IsEnum(ContentSessionExpandType, { each: true })
+  @IsOptional()
+  expand?: ContentSessionExpandType[];
+
+  @ApiProperty({
+    description: 'Sort order',
+    required: false,
+    enum: ContentSessionOrderByType,
+    isArray: true,
+  })
+  @IsEnum(ContentSessionOrderByType, { each: true })
+  @IsOptional()
+  orderBy?: ContentSessionOrderByType[];
 }
 
 export class GetContentSessionQueryDto {

@@ -97,12 +97,12 @@ describe('OpenAPIContentSessionsController', () => {
       const result = await controller.listContentSessions(
         'http://localhost:3000/v1/content-sessions',
         createMockEnvironment(),
-        contentId,
-        limit,
-        cursor,
-        undefined,
-        undefined,
-        expand,
+        {
+          contentId,
+          limit,
+          cursor,
+          expand,
+        },
       );
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
@@ -113,12 +113,12 @@ describe('OpenAPIContentSessionsController', () => {
           name: 'Test Environment',
           token: 'test-token',
         }),
-        contentId,
-        limit,
-        undefined,
-        cursor,
-        expand,
-        undefined,
+        {
+          contentId,
+          limit,
+          cursor,
+          expand,
+        },
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -129,12 +129,10 @@ describe('OpenAPIContentSessionsController', () => {
       const result = await controller.listContentSessions(
         'http://localhost:3000/v1/content-sessions',
         createMockEnvironment(),
-        contentId,
-        20,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+        {
+          contentId,
+          limit: 20,
+        },
       );
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
@@ -145,12 +143,10 @@ describe('OpenAPIContentSessionsController', () => {
           name: 'Test Environment',
           token: 'test-token',
         }),
-        contentId,
-        20,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+        {
+          contentId,
+          limit: 20,
+        },
       );
       expect(result).toEqual(mockPaginatedResponse);
     });

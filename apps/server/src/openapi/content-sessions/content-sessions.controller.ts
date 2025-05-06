@@ -1,29 +1,10 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Delete,
-  UseFilters,
-  UseGuards,
-  DefaultValuePipe,
-  ParseArrayPipe,
-  Post,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Param, Query, Delete, UseFilters, UseGuards, Post } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIContentSessionsService } from './content-sessions.service';
 import {
   ContentSessionsOutput,
-  ContentSessionExpandType,
-  ContentSessionOrderByType,
   GetContentSessionQueryDto,
+  ListContentSessionsQueryDto,
 } from './content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -56,15 +37,6 @@ export class OpenAPIContentSessionsController {
 
   @Get()
   @ApiOperation({ summary: 'List all content sessions' })
-  @ApiQuery({ name: 'contentId', required: true, description: 'Content ID' })
-  @ApiQuery({ name: 'userId', required: false, description: 'User ID to filter sessions' })
-  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Number of items per page',
-  })
-  @ApiQuery({ name: 'expand', required: false, enum: ContentSessionExpandType, isArray: true })
   @ApiResponse({
     status: 200,
     description: 'List of content sessions',
@@ -73,25 +45,9 @@ export class OpenAPIContentSessionsController {
   async listContentSessions(
     @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
-    @Query('contentId') contentId: string,
-    @Query('limit', new DefaultValuePipe(20)) limit: number,
-    @Query('cursor') cursor?: string,
-    @Query('userId') userId?: string,
-    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String }))
-    orderBy?: ContentSessionOrderByType[],
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String }))
-    expand?: ContentSessionExpandType[],
+    @Query() query: ListContentSessionsQueryDto,
   ): Promise<ContentSessionsOutput> {
-    return this.openAPIContentSessionsService.listContentSessions(
-      requestUrl,
-      environment,
-      contentId,
-      limit,
-      userId,
-      cursor,
-      expand,
-      orderBy,
-    );
+    return this.openAPIContentSessionsService.listContentSessions(requestUrl, environment, query);
   }
 
   @Delete(':id')
