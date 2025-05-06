@@ -3,7 +3,7 @@ import { OpenAPIContentSessionsController } from './content-sessions.controller'
 import { OpenAPIContentSessionsService } from './content-sessions.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
-import { ExpandType } from './content-sessions.dto';
+import { ContentSessionExpandType } from './content-sessions.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { ContentSession } from '../models/content-session.model';
 
@@ -92,7 +92,7 @@ describe('OpenAPIContentSessionsController', () => {
       const contentId = 'test-content-id';
       const limit = 20;
       const cursor = 'test-cursor';
-      const expand = [ExpandType.CONTENT, ExpandType.USER];
+      const expand = [ContentSessionExpandType.CONTENT, ContentSessionExpandType.USER];
 
       const result = await controller.listContentSessions(
         'http://localhost:3000/v1/content-sessions',
@@ -163,14 +163,14 @@ describe('OpenAPIContentSessionsController', () => {
 
     it('should return a content session', async () => {
       const id = 'test-id';
-      const expand = [ExpandType.CONTENT, ExpandType.USER];
 
-      const result = await controller.getContentSession(id, 'test-env', expand);
+      const result = await controller.getContentSession(id, 'test-env', {
+        expand: [ContentSessionExpandType.CONTENT, ContentSessionExpandType.USER],
+      });
 
-      expect(service.getContentSession).toHaveBeenCalledWith(id, 'test-env', [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-      ]);
+      expect(service.getContentSession).toHaveBeenCalledWith(id, 'test-env', {
+        expand: [ContentSessionExpandType.CONTENT, ContentSessionExpandType.USER],
+      });
       expect(result).toEqual(createMockContentSession());
     });
 
@@ -213,19 +213,23 @@ describe('OpenAPIContentSessionsController', () => {
 
       mockService.getContentSession.mockResolvedValue(mockSessionWithExpand);
 
-      const result = await controller.getContentSession('session-1', 'test-env', [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-        ExpandType.COMPANY,
-        ExpandType.VERSION,
-      ]);
+      const result = await controller.getContentSession('session-1', 'test-env', {
+        expand: [
+          ContentSessionExpandType.CONTENT,
+          ContentSessionExpandType.USER,
+          ContentSessionExpandType.COMPANY,
+          ContentSessionExpandType.VERSION,
+        ],
+      });
 
-      expect(service.getContentSession).toHaveBeenCalledWith('session-1', 'test-env', [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-        ExpandType.COMPANY,
-        ExpandType.VERSION,
-      ]);
+      expect(service.getContentSession).toHaveBeenCalledWith('session-1', 'test-env', {
+        expand: [
+          ContentSessionExpandType.CONTENT,
+          ContentSessionExpandType.USER,
+          ContentSessionExpandType.COMPANY,
+          ContentSessionExpandType.VERSION,
+        ],
+      });
       expect(result).toEqual(mockSessionWithExpand);
     });
   });

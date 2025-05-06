@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ExpandType, OrderByType } from './content-sessions.dto';
+import {
+  ContentSessionExpandType,
+  ContentSessionOrderByType,
+  GetContentSessionQueryDto,
+} from './content-sessions.dto';
 import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
@@ -100,8 +104,9 @@ export class OpenAPIContentSessionsService {
   async getContentSession(
     id: string,
     environmentId: string,
-    expand?: ExpandType[],
+    query?: GetContentSessionQueryDto,
   ): Promise<ContentSession> {
+    const { expand } = query;
     const session = await this.analyticsService.getContentSessionWithRelations(
       id,
       environmentId,
@@ -122,8 +127,8 @@ export class OpenAPIContentSessionsService {
     limit = 10,
     userId?: string,
     cursor?: string,
-    expand?: ExpandType[],
-    orderBy?: OrderByType[],
+    expand?: ContentSessionExpandType[],
+    orderBy?: ContentSessionOrderByType[],
   ) {
     if (!contentId) {
       throw new InvalidRequestError('contentId is required');
@@ -133,7 +138,7 @@ export class OpenAPIContentSessionsService {
     if (
       orderBy?.some((value) => {
         const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== OrderByType.CREATED_AT;
+        return field !== ContentSessionOrderByType.CREATED_AT;
       })
     ) {
       throw new InvalidOrderByError();
@@ -204,11 +209,11 @@ export class OpenAPIContentSessionsService {
 
   private async mapToContentSession(
     session: ContentSessionWithRelations,
-    expand?: ExpandType[],
+    expand?: ContentSessionExpandType[],
   ): Promise<ContentSession> {
-    const shouldInclude = (type: ExpandType) => !expand || expand.includes(type);
+    const shouldInclude = (type: ContentSessionExpandType) => !expand || expand.includes(type);
 
-    const answers = shouldInclude(ExpandType.ANSWERS)
+    const answers = shouldInclude(ContentSessionExpandType.ANSWERS)
       ? await this.getSessionAnswers(session)
       : null;
 
@@ -220,7 +225,7 @@ export class OpenAPIContentSessionsService {
       completed: session.state === 1,
       contentId: session.contentId,
       content:
-        shouldInclude(ExpandType.CONTENT) && session.content
+        shouldInclude(ContentSessionExpandType.CONTENT) && session.content
           ? {
               id: session.content.id,
               object: OpenApiObjectType.CONTENT,
@@ -235,7 +240,7 @@ export class OpenAPIContentSessionsService {
       createdAt: session.createdAt.toISOString(),
       companyId: session.bizCompany?.externalId || null,
       company:
-        shouldInclude(ExpandType.COMPANY) && session.bizCompany
+        shouldInclude(ContentSessionExpandType.COMPANY) && session.bizCompany
           ? {
               id: session.bizCompany.externalId,
               object: OpenApiObjectType.COMPANY,
@@ -248,7 +253,7 @@ export class OpenAPIContentSessionsService {
       progress: session.progress,
       userId: session.bizUser?.externalId || null,
       user:
-        shouldInclude(ExpandType.USER) && session.bizUser
+        shouldInclude(ContentSessionExpandType.USER) && session.bizUser
           ? {
               id: session.bizUser.externalId,
               object: OpenApiObjectType.USER,
@@ -258,7 +263,7 @@ export class OpenAPIContentSessionsService {
           : null,
       versionId: session.versionId,
       version:
-        shouldInclude(ExpandType.VERSION) && session.version
+        shouldInclude(ContentSessionExpandType.VERSION) && session.version
           ? {
               id: session.version.id,
               object: OpenApiObjectType.CONTENT_VERSION,

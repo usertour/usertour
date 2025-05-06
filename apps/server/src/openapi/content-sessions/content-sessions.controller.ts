@@ -19,7 +19,12 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { OpenAPIContentSessionsService } from './content-sessions.service';
-import { ContentSessionsOutput, ExpandType, OrderByType } from './content-sessions.dto';
+import {
+  ContentSessionsOutput,
+  ContentSessionExpandType,
+  ContentSessionOrderByType,
+  GetContentSessionQueryDto,
+} from './content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
@@ -39,15 +44,14 @@ export class OpenAPIContentSessionsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a content session by ID' })
   @ApiParam({ name: 'id', description: 'Content Session ID' })
-  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
   @ApiResponse({ status: 200, description: 'Content session found', type: ContentSession })
   @ApiResponse({ status: 404, description: 'Content session not found' })
   async getContentSession(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+    @Query() query: GetContentSessionQueryDto,
   ): Promise<ContentSession> {
-    return await this.openAPIContentSessionsService.getContentSession(id, environmentId, expand);
+    return await this.openAPIContentSessionsService.getContentSession(id, environmentId, query);
   }
 
   @Get()
@@ -60,7 +64,7 @@ export class OpenAPIContentSessionsController {
     required: false,
     description: 'Number of items per page',
   })
-  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
+  @ApiQuery({ name: 'expand', required: false, enum: ContentSessionExpandType, isArray: true })
   @ApiResponse({
     status: 200,
     description: 'List of content sessions',
@@ -74,8 +78,9 @@ export class OpenAPIContentSessionsController {
     @Query('cursor') cursor?: string,
     @Query('userId') userId?: string,
     @Query('orderBy', new ParseArrayPipe({ optional: true, items: String }))
-    orderBy?: OrderByType[],
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+    orderBy?: ContentSessionOrderByType[],
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String }))
+    expand?: ContentSessionExpandType[],
   ): Promise<ContentSessionsOutput> {
     return this.openAPIContentSessionsService.listContentSessions(
       requestUrl,

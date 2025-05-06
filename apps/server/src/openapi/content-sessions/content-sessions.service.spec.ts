@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIContentSessionsService } from './content-sessions.service';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { ExpandType } from './content-sessions.dto';
+import { ContentSessionExpandType } from './content-sessions.dto';
 import { ConfigService } from '@nestjs/config';
 import { ContentSessionNotFoundError } from '@/common/errors/errors';
 import { ContentsService } from '@/contents/contents.service';
@@ -115,12 +115,14 @@ describe('OpenAPIContentSessionsService', () => {
         mockSessionWithRelations,
       );
 
-      const result = await service.getContentSession('1', 'env1', [
-        ExpandType.CONTENT,
-        ExpandType.USER,
-        ExpandType.COMPANY,
-        ExpandType.VERSION,
-      ]);
+      const result = await service.getContentSession('1', 'env1', {
+        expand: [
+          ContentSessionExpandType.CONTENT,
+          ContentSessionExpandType.USER,
+          ContentSessionExpandType.COMPANY,
+          ContentSessionExpandType.VERSION,
+        ],
+      });
 
       expect(result).toBeDefined();
       expect(result.id).toBe('1');
@@ -143,7 +145,7 @@ describe('OpenAPIContentSessionsService', () => {
     it('should throw ContentSessionNotFoundError when session not found', async () => {
       mockAnalyticsService.getContentSessionWithRelations.mockResolvedValue(null);
 
-      await expect(service.getContentSession('1', 'env1', [])).rejects.toThrow(
+      await expect(service.getContentSession('1', 'env1', {})).rejects.toThrow(
         new ContentSessionNotFoundError(),
       );
     });
@@ -213,7 +215,12 @@ describe('OpenAPIContentSessionsService', () => {
         10,
         undefined,
         undefined,
-        [ExpandType.CONTENT, ExpandType.USER, ExpandType.COMPANY, ExpandType.VERSION],
+        [
+          ContentSessionExpandType.CONTENT,
+          ContentSessionExpandType.USER,
+          ContentSessionExpandType.COMPANY,
+          ContentSessionExpandType.VERSION,
+        ],
       );
 
       expect(result).toBeDefined();
