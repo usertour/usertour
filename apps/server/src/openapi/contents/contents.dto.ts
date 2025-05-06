@@ -38,3 +38,40 @@ export class GetContentQueryDto {
   @IsEnum(ContentExpandType, { each: true })
   expand?: ContentExpandType[];
 }
+
+export class ListContentsQueryDto {
+  @ApiProperty({
+    description: 'Cursor for pagination',
+    required: false,
+  })
+  @IsOptional()
+  cursor?: string;
+
+  @ApiProperty({
+    description: 'Number of items per page',
+    required: false,
+    default: 20,
+  })
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty({
+    description: 'Fields to expand in the response',
+    enum: ContentExpandType,
+    isArray: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(ContentExpandType, { each: true })
+  expand?: ContentExpandType[];
+
+  @ApiProperty({
+    description: 'Sort order',
+    enum: ContentOrderByType,
+    isArray: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(ContentOrderByType, { each: true })
+  orderBy?: ContentOrderByType[];
+}

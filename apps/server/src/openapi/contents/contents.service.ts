@@ -4,6 +4,7 @@ import {
   ContentExpandType,
   ContentOrderByType,
   GetContentQueryDto,
+  ListContentsQueryDto,
   VersionExpandType,
 } from './contents.dto';
 import { Prisma } from '@prisma/client';
@@ -54,28 +55,15 @@ export class OpenAPIContentsService {
   async listContents(
     requestUrl: string,
     environment: Environment,
-    cursor?: string,
-    orderBy?: ContentOrderByType[],
-    limit = 20,
-    expand?: ContentExpandType[],
+    query: ListContentsQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
+    const { cursor, orderBy, limit, expand } = query;
+
     const include = {
       editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
       publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     };
-
-    // Validate orderBy values
-    if (
-      orderBy?.some((value) => {
-        const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== ContentOrderByType.CREATED_AT;
-      })
-    ) {
-      throw new InvalidOrderByError();
-    }
-
-    const sortOrders = parseOrderBy(orderBy || ['createdAt']);
-
+    const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
     const environmentId = environment.id;
 
     return paginate(

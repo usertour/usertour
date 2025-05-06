@@ -166,17 +166,17 @@ describe('OpenAPIContentsController', () => {
       const result = await controller.listContents(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
-        10,
-        undefined,
+        {
+          limit: 10,
+        },
       );
 
       expect(contentService.listContents).toHaveBeenCalledWith(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
-        undefined,
-        undefined,
-        10,
-        undefined,
+        {
+          limit: 10,
+        },
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -185,18 +185,19 @@ describe('OpenAPIContentsController', () => {
       const result = await controller.listContents(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
-        10,
-        undefined,
-        [ContentOrderByType.CREATED_AT],
+        {
+          limit: 10,
+          orderBy: [ContentOrderByType.CREATED_AT],
+        },
       );
 
       expect(contentService.listContents).toHaveBeenCalledWith(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
-        undefined,
-        [ContentOrderByType.CREATED_AT],
-        10,
-        undefined,
+        {
+          limit: 10,
+          orderBy: [ContentOrderByType.CREATED_AT],
+        },
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -205,12 +206,9 @@ describe('OpenAPIContentsController', () => {
       jest.spyOn(contentService, 'listContents').mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listContents(
-          'http://localhost:3000/v1/contents',
-          mockEnvironment,
-          -1,
-          undefined,
-        ),
+        controller.listContents('http://localhost:3000/v1/contents', mockEnvironment, {
+          limit: -1,
+        }),
       ).rejects.toThrow(InvalidLimitError);
     });
   });

@@ -23,11 +23,21 @@ describe('OpenAPIContentsService', () => {
 
   const mockContent = {
     id: 'test-id',
+    object: OpenApiObjectType.CONTENT,
+    name: 'Test Content',
     type: 'flow',
     editedVersionId: 'version-1',
     publishedVersionId: null,
-    updatedAt: new Date(),
-    createdAt: new Date(),
+    editedVersion: undefined,
+    publishedVersion: undefined,
+    updatedAt: new Date('2025-05-06T06:25:54.064Z'),
+    createdAt: new Date('2025-05-06T06:25:54.064Z'),
+  };
+
+  const mockPaginatedResponse = {
+    results: [mockContent],
+    next: null,
+    previous: null,
   };
 
   const mockVersion = {
@@ -35,42 +45,8 @@ describe('OpenAPIContentsService', () => {
     sequence: 1,
     data: [],
     content: {},
-    updatedAt: new Date(),
-    createdAt: new Date(),
-  };
-
-  const mockContentConnection = {
-    edges: [
-      {
-        node: mockContent,
-        cursor: 'cursor1',
-      },
-    ],
-    nodes: [mockContent],
-    totalCount: 1,
-    pageInfo: {
-      hasNextPage: false,
-      hasPreviousPage: false,
-      startCursor: 'cursor1',
-      endCursor: 'cursor1',
-    },
-  };
-
-  const mockVersionConnection = {
-    edges: [
-      {
-        node: mockVersion,
-        cursor: 'cursor1',
-      },
-    ],
-    nodes: [mockVersion],
-    totalCount: 1,
-    pageInfo: {
-      hasNextPage: false,
-      hasPreviousPage: false,
-      startCursor: 'cursor1',
-      endCursor: 'cursor1',
-    },
+    updatedAt: new Date('2025-05-06T06:25:54.064Z'),
+    createdAt: new Date('2025-05-06T06:25:54.064Z'),
   };
 
   beforeEach(async () => {
@@ -86,10 +62,10 @@ describe('OpenAPIContentsService', () => {
         {
           provide: ContentsService,
           useValue: {
-            getContentWithRelations: jest.fn(),
-            listContentsWithRelations: jest.fn().mockResolvedValue(mockContentConnection),
-            getContentVersionWithRelations: jest.fn(),
-            listContentVersionsWithRelations: jest.fn().mockResolvedValue(mockVersionConnection),
+            getContentWithRelations: jest.fn().mockResolvedValue(mockContent),
+            listContentsWithRelations: jest.fn().mockResolvedValue(mockPaginatedResponse),
+            getContentVersionWithRelations: jest.fn().mockResolvedValue(mockContent),
+            listContentVersionsWithRelations: jest.fn().mockResolvedValue(mockPaginatedResponse),
             getContentById: jest.fn().mockResolvedValue({ id: 'content-1' }),
           },
         },
@@ -133,6 +109,7 @@ describe('OpenAPIContentsService', () => {
       expect(result).toEqual({
         id: mockContent.id,
         object: OpenApiObjectType.CONTENT,
+        name: mockContent.name,
         type: mockContent.type,
         editedVersionId: mockContent.editedVersionId,
         publishedVersionId: 'version-2',
@@ -165,9 +142,25 @@ describe('OpenAPIContentsService', () => {
 
   describe('listContents', () => {
     it('should return paginated contents', async () => {
+      const mockConnection = {
+        edges: [{ node: mockContent, cursor: 'cursor1' }],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
+        totalCount: 1,
+      };
+
+      (contentsService.listContentsWithRelations as jest.Mock).mockResolvedValue(mockConnection);
+
       const result = await service.listContents(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
+        {
+          limit: 20,
+        },
       );
 
       expect(contentsService.listContentsWithRelations).toHaveBeenCalledWith(
@@ -182,13 +175,7 @@ describe('OpenAPIContentsService', () => {
       expect(result).toEqual({
         results: [
           {
-            id: mockContent.id,
-            object: OpenApiObjectType.CONTENT,
-            type: mockContent.type,
-            editedVersionId: mockContent.editedVersionId,
-            publishedVersionId: mockContent.publishedVersionId,
-            editedVersion: undefined,
-            publishedVersion: undefined,
+            ...mockContent,
             updatedAt: mockContent.updatedAt.toISOString(),
             createdAt: mockContent.createdAt.toISOString(),
           },
@@ -199,15 +186,15 @@ describe('OpenAPIContentsService', () => {
     });
 
     it('should throw error for invalid limit', async () => {
+      jest
+        .spyOn(contentsService, 'listContentsWithRelations')
+        .mockRejectedValue(new InvalidLimitError());
+
       await expect(
-        service.listContents(
-          'http://localhost:3000/v1/contents',
-          mockEnvironment,
-          undefined,
-          undefined,
-          -1,
-        ),
-      ).rejects.toThrow(new InvalidLimitError());
+        service.listContents('http://localhost:3000/v1/contents', mockEnvironment, {
+          limit: -1,
+        }),
+      ).rejects.toThrow(InvalidLimitError);
     });
   });
 
@@ -245,6 +232,21 @@ describe('OpenAPIContentsService', () => {
 
   describe('listContentVersions', () => {
     it('should return paginated content versions', async () => {
+      const mockConnection = {
+        edges: [{ node: mockVersion, cursor: 'cursor1' }],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: 'cursor1',
+          endCursor: 'cursor1',
+        },
+        totalCount: 1,
+      };
+
+      (contentsService.listContentVersionsWithRelations as jest.Mock).mockResolvedValue(
+        mockConnection,
+      );
+
       const result = await service.listContentVersions(
         'http://localhost:3000/v1/content-versions',
         mockEnvironment,
@@ -326,8 +328,8 @@ describe('OpenAPIContentsService', () => {
           editedVersionId: 'version-1',
           publishedVersionId: null,
           environmentId: 'env-1',
-          updatedAt: new Date(),
-          createdAt: new Date(),
+          updatedAt: new Date('2025-04-27T10:56:52.198Z'),
+          createdAt: new Date('2025-04-27T10:56:52.198Z'),
         },
       };
 
@@ -360,8 +362,8 @@ describe('OpenAPIContentsService', () => {
             object: OpenApiObjectType.CONTENT_VERSION,
             number: 1,
             questions: null,
-            updatedAt: '2025-04-27T10:56:52.198Z',
-            createdAt: '2025-04-27T10:56:52.198Z',
+            updatedAt: mockContentVersion.updatedAt.toISOString(),
+            createdAt: mockContentVersion.createdAt.toISOString(),
           },
         ],
         next: null,
