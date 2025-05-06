@@ -19,7 +19,7 @@ import {
   BankCardIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
-import { Key, Webhook } from 'lucide-react';
+import { Key } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants
@@ -147,13 +147,13 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     type: SidebarNavItemType.DEVELOPER,
     icon: <Key className={ICON_CLASS_NAME} />,
   },
-  {
-    title: 'Webhooks',
-    href: '/settings/webhooks',
-    role: ADMIN_ROLES,
-    type: SidebarNavItemType.DEVELOPER,
-    icon: <Webhook className={ICON_CLASS_NAME} />,
-  },
+  // {
+  //   title: 'Webhooks',
+  //   href: '/settings/webhooks',
+  //   role: ADMIN_ROLES,
+  //   type: SidebarNavItemType.DEVELOPER,
+  //   icon: <Webhook className={ICON_CLASS_NAME} />,
+  // },
 ] as const;
 
 export const SettingsSidebarNav = () => {
