@@ -6,6 +6,7 @@ import { InvalidScopeError } from '@/common/errors/errors';
 import { isValidOpenApiObjectType, mapOpenApiObjectTypeToBizType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { parseOrderBy } from '@/common/openapi/sort';
+import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 
 @Injectable()
 export class OpenAPIAttributeDefinitionsService {
@@ -14,13 +15,10 @@ export class OpenAPIAttributeDefinitionsService {
   async listAttributeDefinitions(
     requestUrl: string,
     environment: Environment,
-    limit: number,
-    scope: OpenApiObjectType,
-    cursor: string,
-    orderBy: string[],
-    eventName: string[],
+    query: ListAttributeDefinitionsQueryDto,
   ) {
     const projectId = environment.projectId;
+    const { limit = 20, scope, cursor, orderBy, eventName } = query;
 
     if (scope && !isValidOpenApiObjectType(scope)) {
       throw new InvalidScopeError(scope);

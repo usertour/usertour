@@ -7,6 +7,7 @@ import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
+import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 
 describe('OpenAPIAttributeDefinitionsService', () => {
   let service: OpenAPIAttributeDefinitionsService;
@@ -83,14 +84,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: 20,
+      };
+
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
         environment,
-        20,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+        query,
       );
 
       expect(result).toEqual({
@@ -131,18 +132,12 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         updatedAt: new Date(),
       } as Environment;
 
-      const invalidLimit = -1;
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: -1,
+      };
 
       await expect(
-        service.listAttributeDefinitions(
-          '/v1/attribute-definitions',
-          environment,
-          invalidLimit,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-        ),
+        service.listAttributeDefinitions('/v1/attribute-definitions', environment, query),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -161,7 +156,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         id: 'attr1',
         createdAt: new Date('2025-04-29T07:38:58.056Z'),
         updatedAt: new Date(),
-        bizType: 4,
+        bizType: AttributeBizTypeNames.USER,
         projectId: 'test-project-id',
         displayName: 'Test Attribute',
         codeName: 'test_attribute',
@@ -190,14 +185,15 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: 20,
+        cursor,
+      };
+
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
         environment,
-        20,
-        undefined,
-        cursor,
-        undefined,
-        undefined,
+        query,
       );
 
       expect(result).toEqual({
@@ -210,7 +206,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             description: 'Test attribute',
             displayName: 'Test Attribute',
             codeName: 'test_attribute',
-            scope: OpenApiObjectType.EVENT_DEFINITION,
+            scope: 'user',
           },
         ],
         next: '/v1/attribute-definitions?cursor=cursor1&limit=20',
@@ -271,14 +267,15 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: 20,
+        orderBy: ['-codeName'] as any,
+      };
+
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
         environment,
-        20,
-        undefined,
-        undefined,
-        ['-codeName'],
-        undefined,
+        query,
       );
 
       expect(result).toEqual({
@@ -291,7 +288,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             description: 'Test attribute',
             displayName: 'Test Attribute',
             codeName: 'test_attribute',
-            scope: AttributeBizTypeNames.USER,
+            scope: 'user',
           },
         ],
         next: null,
@@ -323,7 +320,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         id: 'attr1',
         createdAt: new Date('2025-04-29T07:38:58.056Z'),
         updatedAt: new Date(),
-        bizType: 4,
+        bizType: AttributeBizTypeNames.USER,
         projectId: 'test-project-id',
         displayName: 'Test Attribute',
         codeName: 'test_attribute',
@@ -352,14 +349,15 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: 20,
+        eventName: ['test_event'],
+      };
+
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
         environment,
-        20,
-        undefined,
-        undefined,
-        undefined,
-        ['test_event'],
+        query,
       );
 
       expect(result).toEqual({
@@ -372,7 +370,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
             description: 'Test attribute',
             displayName: 'Test Attribute',
             codeName: 'test_attribute',
-            scope: OpenApiObjectType.EVENT_DEFINITION,
+            scope: 'user',
           },
         ],
         next: null,
@@ -414,14 +412,14 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       mockAttributeDefinitionsService.listWithPagination.mockResolvedValue(mockResponse);
 
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: 20,
+      };
+
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
         environment,
-        20,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+        query,
       );
 
       expect(result).toEqual({
@@ -451,18 +449,15 @@ describe('OpenAPIAttributeDefinitionsService', () => {
         updatedAt: new Date(),
       } as Environment;
 
-      const invalidScope = 'invalid' as OpenApiObjectType;
+      const invalidScope = 'invalid_scope';
+
+      const query: ListAttributeDefinitionsQueryDto = {
+        limit: 20,
+        scope: invalidScope as OpenApiObjectType,
+      };
 
       await expect(
-        service.listAttributeDefinitions(
-          '/v1/attribute-definitions',
-          environment,
-          20,
-          invalidScope,
-          undefined,
-          undefined,
-          undefined,
-        ),
+        service.listAttributeDefinitions('/v1/attribute-definitions', environment, query),
       ).rejects.toThrow(new InvalidScopeError(invalidScope));
     });
   });
