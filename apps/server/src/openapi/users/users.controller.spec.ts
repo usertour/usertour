@@ -6,7 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { Environment } from '@/environments/models/environment.model';
-import { ExpandType } from './users.dto';
+import { ExpandType, GetUserQueryDto, ListUsersQueryDto, UserOrderByType } from './users.dto';
 import { InvalidLimitError, InvalidCursorError } from '@/common/errors/errors';
 
 describe('OpenAPIUsersController', () => {
@@ -99,10 +99,14 @@ describe('OpenAPIUsersController', () => {
 
       mockUsersService.getUser.mockResolvedValue(mockUser);
 
-      const result = await controller.getUser('user1', 'env1', [ExpandType.COMPANIES]);
+      const query: GetUserQueryDto = {
+        expand: [ExpandType.COMPANIES],
+      };
+
+      const result = await controller.getUser('user1', 'env1', query);
 
       expect(result).toEqual(mockUser);
-      expect(service.getUser).toHaveBeenCalledWith('user1', 'env1', [ExpandType.COMPANIES]);
+      expect(service.getUser).toHaveBeenCalledWith('user1', 'env1', query);
     });
   });
 
@@ -123,36 +127,30 @@ describe('OpenAPIUsersController', () => {
 
       mockUsersService.listUsers.mockResolvedValue(mockUsers);
 
-      const result = await controller.listUsers(
-        mockRequestUrl,
-        mockEnvironment,
-        10,
-        'cursor1',
-        ['createdAt'],
-        [ExpandType.COMPANIES],
-        'test@example.com',
-        'company1',
-        'segment1',
-      );
+      const query: ListUsersQueryDto = {
+        limit: 10,
+        cursor: 'cursor1',
+        orderBy: [UserOrderByType.CREATED_AT],
+        expand: [ExpandType.COMPANIES],
+        email: 'test@example.com',
+        companyId: 'company1',
+        segmentId: 'segment1',
+      };
+
+      const result = await controller.listUsers(mockRequestUrl, mockEnvironment, query);
 
       expect(result).toEqual(mockUsers);
-      expect(service.listUsers).toHaveBeenCalledWith(
-        mockRequestUrl,
-        mockEnvironment,
-        10,
-        'cursor1',
-        ['createdAt'],
-        [ExpandType.COMPANIES],
-        'test@example.com',
-        'company1',
-        'segment1',
-      );
+      expect(service.listUsers).toHaveBeenCalledWith(mockRequestUrl, mockEnvironment, query);
     });
 
     it('should handle invalid limit', async () => {
       mockUsersService.listUsers.mockRejectedValue(new InvalidLimitError());
 
-      await expect(controller.listUsers(mockRequestUrl, mockEnvironment, -1)).rejects.toThrow(
+      const query: ListUsersQueryDto = {
+        limit: -1,
+      };
+
+      await expect(controller.listUsers(mockRequestUrl, mockEnvironment, query)).rejects.toThrow(
         InvalidLimitError,
       );
     });
@@ -160,9 +158,14 @@ describe('OpenAPIUsersController', () => {
     it('should handle invalid cursor', async () => {
       mockUsersService.listUsers.mockRejectedValue(new InvalidCursorError());
 
-      await expect(
-        controller.listUsers(mockRequestUrl, mockEnvironment, 10, 'invalid-cursor'),
-      ).rejects.toThrow(InvalidCursorError);
+      const query: ListUsersQueryDto = {
+        limit: 10,
+        cursor: 'invalid-cursor',
+      };
+
+      await expect(controller.listUsers(mockRequestUrl, mockEnvironment, query)).rejects.toThrow(
+        InvalidCursorError,
+      );
     });
   });
 

@@ -286,6 +286,21 @@ export class InvalidOrderByError extends OpenAPIError {
   };
 }
 
+export class ValidationError extends OpenAPIError {
+  code = 'E1017';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Validation error',
+    'zh-CN': '验证错误',
+  };
+
+  constructor(message: string) {
+    super();
+    this.messageDict.en = message;
+    this.messageDict['zh-CN'] = message;
+  }
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -319,6 +334,7 @@ const errorMap = {
   E1014: ServiceUnavailableError,
   E1015: InvalidScopeError,
   E1016: InvalidOrderByError,
+  E1017: ValidationError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

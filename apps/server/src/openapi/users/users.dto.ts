@@ -1,5 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsObject, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsObject,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  Min,
+  Max,
+  IsEnum,
+  IsEmail,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum ExpandType {
@@ -10,6 +21,7 @@ export enum ExpandType {
 
 export enum UserOrderByType {
   CREATED_AT = 'createdAt',
+  CREATED_AT_DESC = '-createdAt',
 }
 
 export type ExpandTypes = ExpandType[];
@@ -68,4 +80,68 @@ export class UpsertUserRequestDto {
   @ValidateNested({ each: true })
   @Type(() => MembershipDto)
   memberships?: MembershipDto[];
+}
+
+export class ListUsersQueryDto {
+  @ApiProperty({ required: false, default: 20, description: 'Number of items per page' })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
+  @ApiProperty({ required: false, description: 'Cursor for pagination' })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @ApiProperty({
+    required: false,
+    type: [String],
+    description:
+      'Order by fields. Can be single value (orderBy=createdAt or orderBy=-createdAt) or array (orderBy[]=-createdAt&orderBy[]=name)',
+    example: ['-createdAt', 'name'],
+  })
+  @IsOptional()
+  @IsEnum(UserOrderByType, { each: true })
+  orderBy?: UserOrderByType[];
+
+  @ApiProperty({
+    required: false,
+    enum: ExpandType,
+    isArray: true,
+    description:
+      'Fields to expand. Can be single value (expand=memberships), comma-separated values (expand=memberships,companies) or array (expand[]=memberships&expand[]=companies)',
+  })
+  @IsOptional()
+  @IsEnum(ExpandType, { each: true })
+  expand?: ExpandType[];
+
+  @ApiProperty({ required: false, description: 'Filter users by email' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiProperty({ required: false, description: 'Filter users by company ID' })
+  @IsOptional()
+  @IsString()
+  companyId?: string;
+
+  @ApiProperty({ required: false, description: 'Filter users by segment ID' })
+  @IsOptional()
+  @IsString()
+  segmentId?: string;
+}
+
+export class GetUserQueryDto {
+  @ApiProperty({
+    required: false,
+    enum: ExpandType,
+    isArray: true,
+    description:
+      'Fields to expand. Can be single value (expand=memberships), comma-separated values (expand=memberships,companies) or array (expand[]=memberships&expand[]=companies)',
+  })
+  @IsOptional()
+  @IsEnum(ExpandType, { each: true })
+  expand?: ExpandType[];
 }

@@ -107,7 +107,12 @@ describe('OpenAPIContentSessionsController', () => {
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content-sessions',
-        createMockEnvironment(),
+        expect.objectContaining({
+          id: 'test-env',
+          projectId: 'test-project',
+          name: 'Test Environment',
+          token: 'test-token',
+        }),
         contentId,
         limit,
         undefined,
@@ -134,7 +139,12 @@ describe('OpenAPIContentSessionsController', () => {
 
       expect(service.listContentSessions).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content-sessions',
-        createMockEnvironment(),
+        expect.objectContaining({
+          id: 'test-env',
+          projectId: 'test-project',
+          name: 'Test Environment',
+          token: 'test-token',
+        }),
         contentId,
         20,
         undefined,
@@ -198,27 +208,25 @@ describe('OpenAPIContentSessionsController', () => {
           object: OpenApiObjectType.CONTENT_VERSION,
           number: 1,
           questions: null,
-          updatedAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
         },
       });
 
       mockService.getContentSession.mockResolvedValue(mockSessionWithExpand);
 
-      const result = await controller.getContentSession('session-1', 'env-1', [
+      const result = await controller.getContentSession('session-1', 'test-env', [
         ExpandType.CONTENT,
         ExpandType.USER,
         ExpandType.COMPANY,
         ExpandType.VERSION,
       ]);
 
-      expect(result).toEqual(mockSessionWithExpand);
-      expect(mockService.getContentSession).toHaveBeenCalledWith('session-1', 'env-1', [
+      expect(service.getContentSession).toHaveBeenCalledWith('session-1', 'test-env', [
         ExpandType.CONTENT,
         ExpandType.USER,
         ExpandType.COMPANY,
         ExpandType.VERSION,
       ]);
+      expect(result).toEqual(mockSessionWithExpand);
     });
   });
 

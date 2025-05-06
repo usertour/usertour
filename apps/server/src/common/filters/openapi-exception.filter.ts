@@ -32,11 +32,19 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const errorResponse = exception.getResponse() as any;
-      message =
-        typeof errorResponse === 'string'
-          ? errorResponse
-          : errorResponse?.message || 'An error occurred';
-      errorCode = 'internal_server_error';
+
+      // Handle ValidationError
+      if (Array.isArray(errorResponse.message)) {
+        status = HttpStatus.BAD_REQUEST;
+        errorCode = 'E1017'; // ValidationError
+        message = errorResponse.message[0];
+      } else {
+        message =
+          typeof errorResponse === 'string'
+            ? errorResponse
+            : errorResponse?.message || 'An error occurred';
+        errorCode = 'E0000'; // UnknownError
+      }
     }
     // Handle OpenAPIError
     else if (exception instanceof OpenAPIError) {
@@ -47,7 +55,7 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
     // Handle other errors
     else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
-      errorCode = 'internal_server_error';
+      errorCode = 'E0000'; // UnknownError
       message = 'An unexpected error occurred';
     }
 

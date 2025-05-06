@@ -1,25 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
-import {
-  UserNotFoundError,
-  InvalidLimitError,
-  InvalidRequestError,
-  InvalidOrderByError,
-} from '@/common/errors/errors';
-import { UpsertUserRequestDto, UserOrderByType } from './users.dto';
+import { UserNotFoundError, InvalidRequestError } from '@/common/errors/errors';
+import { UpsertUserRequestDto, UserOrderByType, GetUserQueryDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
+import { ListUsersQueryDto } from './users.dto';
 @Injectable()
 export class OpenAPIUsersService {
   private readonly logger = new Logger(OpenAPIUsersService.name);
 
   constructor(private readonly bizService: BizService) {}
 
-  async getUser(id: string, environmentId: string, expand?: ExpandTypes): Promise<User> {
+  async getUser(id: string, environmentId: string, query?: GetUserQueryDto): Promise<User> {
+    const expand = query?.expand;
     const bizUser = await this.bizService.getBizUser(id, environmentId, {
       bizUsersOnCompany: {
         include: {
@@ -38,27 +35,11 @@ export class OpenAPIUsersService {
   async listUsers(
     requestUrl: string,
     environment: Environment,
-    limit = 20,
-    cursor?: string,
-    orderBy?: string[],
-    expand?: ExpandTypes,
-    email?: string,
-    companyId?: string,
-    segmentId?: string,
+    query: ListUsersQueryDto,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
-    if (Number.isNaN(limit) || limit < 1) {
-      throw new InvalidLimitError();
-    }
+    const { limit = 20, expand, cursor, orderBy, email, companyId, segmentId } = query;
 
-    if (
-      orderBy?.some((value) => {
-        const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== UserOrderByType.CREATED_AT;
-      })
-    ) {
-      throw new InvalidOrderByError();
-    }
-    const sortOrders = parseOrderBy(orderBy || ['createdAt']);
+    const sortOrders = parseOrderBy(orderBy || [UserOrderByType.CREATED_AT]);
 
     const include = {
       bizUsersOnCompany: {

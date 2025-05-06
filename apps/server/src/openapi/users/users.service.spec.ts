@@ -3,9 +3,11 @@ import { OpenAPIUsersService } from './users.service';
 import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
 import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
-import { ExpandType } from './users.dto';
+import { ExpandType, GetUserQueryDto } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
+import { ListUsersQueryDto } from './users.dto';
+import { UserOrderByType } from './users.dto';
 
 describe('OpenAPIUsersService', () => {
   let service: OpenAPIUsersService;
@@ -105,7 +107,11 @@ describe('OpenAPIUsersService', () => {
     it('should return a user with expanded companies', async () => {
       mockBizService.getBizUser.mockResolvedValue(mockBizUserWithCompanies);
 
-      const result = await service.getUser('user1', 'env1', [ExpandType.COMPANIES]);
+      const query: GetUserQueryDto = {
+        expand: [ExpandType.COMPANIES],
+      };
+
+      const result = await service.getUser('user1', 'env1', query);
 
       expect(result).toEqual({
         id: 'user1',
@@ -156,16 +162,19 @@ describe('OpenAPIUsersService', () => {
         },
       });
 
+      const query: ListUsersQueryDto = {
+        limit: 20,
+        expand: [ExpandType.COMPANIES],
+        orderBy: [UserOrderByType.CREATED_AT],
+        email: 'test@example.com',
+        companyId: 'company1',
+        segmentId: 'segment1',
+      };
+
       const result = await service.listUsers(
         'http://localhost:3000/v1/users',
         mockEnvironment,
-        20,
-        undefined,
-        ['createdAt'],
-        [ExpandType.COMPANIES],
-        'test@example.com',
-        'company1',
-        'segment1',
+        query,
       );
 
       expect(result).toEqual({
@@ -215,16 +224,20 @@ describe('OpenAPIUsersService', () => {
         },
       });
 
+      const query: ListUsersQueryDto = {
+        limit: 10,
+        cursor: 'cursor1',
+        expand: [ExpandType.COMPANIES],
+        orderBy: [UserOrderByType.CREATED_AT],
+        email: 'test@example.com',
+        companyId: 'company1',
+        segmentId: 'segment1',
+      };
+
       const result = await service.listUsers(
         'http://localhost:3000/v1/users',
         mockEnvironment,
-        10,
-        'cursor1',
-        ['createdAt'],
-        [ExpandType.COMPANIES],
-        'test@example.com',
-        'company1',
-        'segment1',
+        query,
       );
 
       expect(result).toEqual({
@@ -259,8 +272,12 @@ describe('OpenAPIUsersService', () => {
     });
 
     it('should throw error for invalid limit', async () => {
+      const query: ListUsersQueryDto = {
+        limit: -1,
+      };
+
       await expect(
-        service.listUsers('http://localhost:3000/v1/users', mockEnvironment, -1),
+        service.listUsers('http://localhost:3000/v1/users', mockEnvironment, query),
       ).rejects.toThrow(new InvalidLimitError());
     });
   });

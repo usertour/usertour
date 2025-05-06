@@ -8,8 +8,6 @@ import {
   Delete,
   UseFilters,
   UseGuards,
-  DefaultValuePipe,
-  ParseArrayPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { OpenAPIUsersService } from './users.service';
-import { UpsertUserRequestDto, ExpandType } from './users.dto';
+import { UpsertUserRequestDto, ExpandType, ListUsersQueryDto, GetUserQueryDto } from './users.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
@@ -28,6 +26,7 @@ import { User } from '../models/user.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
+
 @ApiTags('Users')
 @Controller('v1/users')
 @UseGuards(OpenAPIKeyGuard)
@@ -45,46 +44,20 @@ export class OpenAPIUsersController {
   async getUser(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+    @Query() query: GetUserQueryDto,
   ): Promise<User> {
-    return this.openAPIUsersService.getUser(id, environmentId, expand);
+    return this.openAPIUsersService.getUser(id, environmentId, query);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all users' })
-  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Number of items per page',
-  })
-  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
-  @ApiQuery({ name: 'email', required: false, description: 'Filter users by email' })
-  @ApiQuery({ name: 'companyId', required: false, description: 'Filter users by company ID' })
-  @ApiQuery({ name: 'segmentId', required: false, description: 'Filter users by segment ID' })
   @ApiResponse({ status: 200, description: 'List of users', type: User, isArray: true })
   async listUsers(
     @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
-    @Query('limit', new DefaultValuePipe(20)) limit: number,
-    @Query('cursor') cursor?: string,
-    @Query('orderBy', new ParseArrayPipe({ optional: true, items: String })) orderBy?: string[],
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
-    @Query('email') email?: string,
-    @Query('companyId') companyId?: string,
-    @Query('segmentId') segmentId?: string,
+    @Query() query: ListUsersQueryDto,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
-    return this.openAPIUsersService.listUsers(
-      requestUrl,
-      environment,
-      limit,
-      cursor,
-      orderBy,
-      expand,
-      email,
-      companyId,
-      segmentId,
-    );
+    return this.openAPIUsersService.listUsers(requestUrl, environment, query);
   }
 
   @Post()
