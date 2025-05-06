@@ -20,7 +20,12 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { OpenAPIContentsService } from './contents.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
-import { ExpandType, OrderByType, VersionExpandType } from './contents.dto';
+import {
+  ContentExpandType,
+  ContentOrderByType,
+  VersionExpandType,
+  GetContentQueryDto,
+} from './contents.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
@@ -36,16 +41,18 @@ export class OpenAPIContentsController {
 
   @Get('v1/contents/:id')
   @ApiOperation({ summary: 'Get a content by ID' })
-  @ApiParam({ name: 'id', description: 'Content ID' })
-  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
-  @ApiResponse({ status: 200, description: 'Content found', type: Content })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({
+    status: 200,
+    description: 'The content has been successfully retrieved.',
+    type: Content,
+  })
+  @ApiResponse({ status: 404, description: 'Content not found.' })
   async getContent(
     @Param('id') id: string,
     @EnvironmentId() environmentId: string,
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+    @Query() query: GetContentQueryDto,
   ): Promise<Content> {
-    return this.openAPIContentsService.getContent(id, environmentId, expand);
+    return this.openAPIContentsService.getContent(id, environmentId, query);
   }
 
   @Get('v1/contents')
@@ -56,8 +63,8 @@ export class OpenAPIContentsController {
     required: false,
     description: 'Number of items per page',
   })
-  @ApiQuery({ name: 'expand', required: false, enum: ExpandType, isArray: true })
-  @ApiQuery({ name: 'orderBy', required: false, enum: OrderByType, isArray: true })
+  @ApiQuery({ name: 'expand', required: false, enum: ContentExpandType, isArray: true })
+  @ApiQuery({ name: 'orderBy', required: false, enum: ContentOrderByType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of contents', type: Content, isArray: true })
   async listContents(
     @RequestUrl() requestUrl: string,
@@ -65,8 +72,9 @@ export class OpenAPIContentsController {
     @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('cursor') cursor?: string,
     @Query('orderBy', new ParseArrayPipe({ optional: true, items: String }))
-    orderBy?: OrderByType[],
-    @Query('expand', new ParseArrayPipe({ optional: true, items: String })) expand?: ExpandType[],
+    orderBy?: ContentOrderByType[],
+    @Query('expand', new ParseArrayPipe({ optional: true, items: String }))
+    expand?: ContentExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     return this.openAPIContentsService.listContents(
       requestUrl,
@@ -101,7 +109,7 @@ export class OpenAPIContentsController {
     description: 'Number of items per page',
     type: Number,
   })
-  @ApiQuery({ name: 'orderBy', required: false, enum: OrderByType, isArray: true })
+  @ApiQuery({ name: 'orderBy', required: false, enum: ContentOrderByType, isArray: true })
   @ApiResponse({ status: 200, description: 'List of content versions' })
   async listContentVersions(
     @RequestUrl() requestUrl: string,
@@ -112,7 +120,7 @@ export class OpenAPIContentsController {
     @Query('expand', new ParseArrayPipe({ optional: true, items: String }))
     expand?: VersionExpandType[],
     @Query('orderBy', new ParseArrayPipe({ optional: true, items: String }))
-    orderBy?: OrderByType[],
+    orderBy?: ContentOrderByType[],
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     return this.openAPIContentsService.listContentVersions(
       requestUrl,

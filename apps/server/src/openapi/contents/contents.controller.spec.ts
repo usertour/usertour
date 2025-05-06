@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIContentsController } from './contents.controller';
 import { OpenAPIContentsService } from './contents.service';
 import { Environment } from '@/environments/models/environment.model';
-import { ExpandType } from './contents.dto';
+import { ContentExpandType } from './contents.dto';
 import {
   InvalidCursorError,
   InvalidLimitError,
@@ -11,7 +11,7 @@ import {
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { OrderByType } from './contents.dto';
+import { ContentOrderByType } from './contents.dto';
 
 describe('OpenAPIContentsController', () => {
   let controller: OpenAPIContentsController;
@@ -93,40 +93,71 @@ describe('OpenAPIContentsController', () => {
 
   describe('getContent', () => {
     it('should return content with no expand', async () => {
-      const result = await controller.getContent('test-id', 'env-id');
+      const mockContent = {
+        id: 'test-id',
+        object: OpenApiObjectType.CONTENT,
+        type: 'flow',
+        editedVersionId: 'version-1',
+        publishedVersionId: 'version-2',
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+
+      (contentService.getContent as jest.Mock).mockResolvedValue(mockContent);
+
+      const result = await controller.getContent('test-id', 'env-id', {});
 
       expect(result).toEqual(mockContent);
-      expect(contentService.getContent).toHaveBeenCalledWith('test-id', 'env-id', undefined);
+      expect(contentService.getContent).toHaveBeenCalledWith('test-id', 'env-id', {});
     });
 
     it('should return content with expand', async () => {
       const mockContentWithExpand = {
-        ...mockContent,
+        id: 'test-id',
+        object: OpenApiObjectType.CONTENT,
+        type: 'flow',
+        editedVersionId: 'version-1',
         publishedVersionId: 'version-2',
-        editedVersion: mockVersion,
-        publishedVersion: { ...mockVersion, id: 'version-2', number: 2 },
+        editedVersion: {
+          id: 'version-1',
+          object: OpenApiObjectType.CONTENT_VERSION,
+          number: 1,
+          questions: [],
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        publishedVersion: {
+          id: 'version-2',
+          object: OpenApiObjectType.CONTENT_VERSION,
+          number: 2,
+          questions: [],
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
-      jest.spyOn(contentService, 'getContent').mockResolvedValue(mockContentWithExpand);
+      (contentService.getContent as jest.Mock).mockResolvedValue(mockContentWithExpand);
 
-      const result = await controller.getContent('test-id', 'env-id', [
-        ExpandType.EDITED_VERSION,
-        ExpandType.PUBLISHED_VERSION,
-      ]);
+      const result = await controller.getContent('test-id', 'env-id', {
+        expand: [ContentExpandType.EDITED_VERSION, ContentExpandType.PUBLISHED_VERSION],
+      });
 
       expect(result).toEqual(mockContentWithExpand);
-      expect(contentService.getContent).toHaveBeenCalledWith('test-id', 'env-id', [
-        ExpandType.EDITED_VERSION,
-        ExpandType.PUBLISHED_VERSION,
-      ]);
+      expect(contentService.getContent).toHaveBeenCalledWith('test-id', 'env-id', {
+        expand: [ContentExpandType.EDITED_VERSION, ContentExpandType.PUBLISHED_VERSION],
+      });
     });
 
     it('should throw error when content not found', async () => {
       jest.spyOn(contentService, 'getContent').mockRejectedValue(new ContentNotFoundError());
 
-      await expect(controller.getContent('non-existent', 'env-id')).rejects.toThrow(
-        ContentNotFoundError,
-      );
+      await expect(
+        controller.getContent('non-existent', 'env-id', {
+          expand: [ContentExpandType.EDITED_VERSION, ContentExpandType.PUBLISHED_VERSION],
+        }),
+      ).rejects.toThrow(ContentNotFoundError);
     });
   });
 
@@ -156,14 +187,14 @@ describe('OpenAPIContentsController', () => {
         mockEnvironment,
         10,
         undefined,
-        [OrderByType.CREATED_AT],
+        [ContentOrderByType.CREATED_AT],
       );
 
       expect(contentService.listContents).toHaveBeenCalledWith(
         'http://localhost:3000/v1/contents',
         mockEnvironment,
         undefined,
-        [OrderByType.CREATED_AT],
+        [ContentOrderByType.CREATED_AT],
         10,
         undefined,
       );

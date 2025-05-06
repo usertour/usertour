@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Content, ContentVersion, Question } from '../models/content.model';
-import { ExpandType, OrderByType, VersionExpandType } from './contents.dto';
+import {
+  ContentExpandType,
+  ContentOrderByType,
+  GetContentQueryDto,
+  VersionExpandType,
+} from './contents.dto';
 import { Prisma } from '@prisma/client';
 import { ContentsService } from '@/contents/contents.service';
 import { ContentNotFoundError, InvalidOrderByError } from '@/common/errors/errors';
@@ -28,10 +33,15 @@ export class OpenAPIContentsService {
 
   constructor(private contentsService: ContentsService) {}
 
-  async getContent(id: string, environmentId: string, expand?: ExpandType[]): Promise<Content> {
+  async getContent(
+    id: string,
+    environmentId: string,
+    query?: GetContentQueryDto,
+  ): Promise<Content> {
+    const { expand } = query;
     const content = await this.contentsService.getContentWithRelations(id, environmentId, {
-      editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
-      publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
+      editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
+      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     });
 
     if (!content) {
@@ -45,20 +55,20 @@ export class OpenAPIContentsService {
     requestUrl: string,
     environment: Environment,
     cursor?: string,
-    orderBy?: OrderByType[],
+    orderBy?: ContentOrderByType[],
     limit = 20,
-    expand?: ExpandType[],
+    expand?: ContentExpandType[],
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const include = {
-      editedVersion: expand?.includes(ExpandType.EDITED_VERSION) ?? false,
-      publishedVersion: expand?.includes(ExpandType.PUBLISHED_VERSION) ?? false,
+      editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
+      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     };
 
     // Validate orderBy values
     if (
       orderBy?.some((value) => {
         const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== OrderByType.CREATED_AT;
+        return field !== ContentOrderByType.CREATED_AT;
       })
     ) {
       throw new InvalidOrderByError();
@@ -81,7 +91,7 @@ export class OpenAPIContentsService {
 
   private mapPrismaContentToApiContent(
     content: ContentWithVersions,
-    expand?: ExpandType[],
+    expand?: ContentExpandType[],
   ): Content {
     return {
       id: content.id,
@@ -90,7 +100,7 @@ export class OpenAPIContentsService {
       type: content.type,
       editedVersionId: content.editedVersionId,
       editedVersion:
-        expand?.includes(ExpandType.EDITED_VERSION) && content.editedVersion
+        expand?.includes(ContentExpandType.EDITED_VERSION) && content.editedVersion
           ? {
               id: content.editedVersion.id,
               object: OpenApiObjectType.CONTENT_VERSION,
@@ -102,7 +112,7 @@ export class OpenAPIContentsService {
           : undefined,
       publishedVersionId: content.publishedVersionId,
       publishedVersion:
-        expand?.includes(ExpandType.PUBLISHED_VERSION) && content.publishedVersion
+        expand?.includes(ContentExpandType.PUBLISHED_VERSION) && content.publishedVersion
           ? {
               id: content.publishedVersion.id,
               object: OpenApiObjectType.CONTENT_VERSION,
@@ -138,7 +148,7 @@ export class OpenAPIContentsService {
     environment: Environment,
     contentId: string,
     cursor?: string,
-    orderBy?: OrderByType[],
+    orderBy?: ContentOrderByType[],
     expand?: VersionExpandType[],
     limit = 20,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
@@ -147,7 +157,7 @@ export class OpenAPIContentsService {
     if (
       orderBy?.some((value) => {
         const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== OrderByType.CREATED_AT;
+        return field !== ContentOrderByType.CREATED_AT;
       })
     ) {
       throw new InvalidOrderByError();
