@@ -1,16 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, ValidateNested, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, ValidateNested, Min, Max, IsInt, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Company } from '../models/company.model';
 
-export enum ExpandType {
+export enum CompanyExpandType {
   USERS = 'users',
   MEMBERSHIPS = 'memberships',
   MEMBERSHIPS_USER = 'memberships.user',
 }
 
-export enum OrderByType {
+export enum CompanyOrderByType {
   CREATED_AT = 'createdAt',
+  CREATED_AT_DESC = '-createdAt',
 }
 
 export class UpsertUserDto {
@@ -44,23 +45,48 @@ export class UpsertCompanyRequestDto {
 }
 
 export class ListCompaniesQueryDto {
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  cursor?: string;
-
-  @ApiProperty({ required: false, default: 20 })
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
+  @ApiProperty({
+    description: 'Number of items per page',
+    required: false,
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
   @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
   limit?: number = 20;
 
-  @ApiProperty({ required: false, enum: ExpandType, isArray: true })
+  @ApiProperty({
+    description: 'Cursor for pagination',
+    required: false,
+  })
+  @IsString()
   @IsOptional()
-  @IsArray()
-  @Type(() => String)
-  expand?: ExpandType[];
+  cursor?: string;
+
+  @ApiProperty({
+    description: 'Fields to expand',
+    required: false,
+    enum: CompanyExpandType,
+    isArray: true,
+  })
+  @IsEnum(CompanyExpandType, { each: true })
+  @IsOptional()
+  expand?: CompanyExpandType[];
+
+  @ApiProperty({
+    description: 'Sort order',
+    required: false,
+    enum: CompanyOrderByType,
+    isArray: true,
+    example: ['createdAt'],
+  })
+  @IsEnum(CompanyOrderByType, { each: true })
+  @IsOptional()
+  orderBy?: CompanyOrderByType[];
 }
 
 export class ListCompaniesResponseDto {
@@ -72,4 +98,16 @@ export class ListCompaniesResponseDto {
 
   @ApiProperty({ description: 'URL for the previous page', type: String, nullable: true })
   previous: string | null;
+}
+
+export class GetCompanyQueryDto {
+  @ApiProperty({
+    description: 'Fields to expand',
+    required: false,
+    enum: CompanyExpandType,
+    isArray: true,
+  })
+  @IsEnum(CompanyExpandType, { each: true })
+  @IsOptional()
+  expand?: CompanyExpandType[];
 }

@@ -26,8 +26,6 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
-import { UpsertUserRequestDto } from '../openapi/users/users.dto';
-import { ExpandType } from '../openapi/companies/companies.dto';
 
 @Injectable()
 export class BizService {
@@ -244,12 +242,18 @@ export class BizService {
       await tx.bizUserOnCompany.deleteMany({
         where: {
           bizCompanyId: { in: ids },
+          bizCompany: {
+            environmentId,
+          },
         },
       });
 
       await tx.bizCompanyOnSegment.deleteMany({
         where: {
           bizCompanyId: { in: ids },
+          bizCompany: {
+            environmentId,
+          },
         },
       });
 
@@ -649,18 +653,27 @@ export class BizService {
     });
   }
 
-  async upsertUser(id: string, data: UpsertUserRequestDto, environmentId: string) {
+  async upsertUser(
+    id: string,
+    environmentId: string,
+    attributes?: Record<string, any>,
+    companies?: Array<{ id: string; attributes?: Record<string, any> }>,
+    memberships?: Array<{
+      company: { id: string; attributes?: Record<string, any> };
+      attributes?: Record<string, any>;
+    }>,
+  ) {
     return await this.prisma.$transaction(async (tx) => {
       // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, id, data.attributes || {}, environmentId);
+      const user = await this.upsertBizUsers(tx, id, attributes || {}, environmentId);
 
       if (!user) {
         throw new UnknownError('Failed to upsert user');
       }
 
       // Handle companies/companies and memberships
-      if (data.companies) {
-        for (const company of data.companies) {
+      if (companies) {
+        for (const company of companies) {
           await this.upsertBizCompanies(
             tx,
             company.id,
@@ -672,8 +685,8 @@ export class BizService {
         }
       }
 
-      if (data.memberships) {
-        for (const membership of data.memberships) {
+      if (memberships) {
+        for (const membership of memberships) {
           await this.upsertBizCompanies(
             tx,
             membership.company.id,
@@ -689,26 +702,13 @@ export class BizService {
     });
   }
 
-  async getBizCompany(
-    id: string,
-    environmentId: string,
-    expand?: (ExpandType | import('../openapi/users/users.dto').ExpandType)[],
-  ) {
+  async getBizCompany(id: string, environmentId: string, include?: Prisma.BizCompanyInclude) {
     const bizCompany = await this.prisma.bizCompany.findFirst({
       where: {
         externalId: id,
         environmentId,
       },
-      include: {
-        bizUsersOnCompany:
-          expand?.length > 0
-            ? {
-                include: {
-                  bizUser: true,
-                },
-              }
-            : false,
-      },
+      include,
     });
 
     if (!bizCompany) {

@@ -1,8 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Company } from '../models/company.model';
 import { BizService } from '@/biz/biz.service';
-import { UpsertCompanyRequestDto, ExpandType, OrderByType } from './companies.dto';
-import { CompanyNotFoundError, InvalidOrderByError } from '@/common/errors/errors';
+import {
+  UpsertCompanyRequestDto,
+  CompanyExpandType,
+  ListCompaniesQueryDto,
+  GetCompanyQueryDto,
+} from './companies.dto';
+import { CompanyNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
@@ -15,8 +20,25 @@ export class OpenAPICompaniesService {
 
   constructor(private bizService: BizService) {}
 
-  async getCompany(id: string, environmentId: string, expand?: ExpandType[]): Promise<Company> {
-    const bizCompany = await this.bizService.getBizCompany(id, environmentId, expand);
+  async getCompany(
+    id: string,
+    environment: Environment,
+    query: GetCompanyQueryDto,
+  ): Promise<Company> {
+    const environmentId = environment.id;
+    const { expand } = query;
+
+    const include = {
+      bizUsersOnCompany:
+        expand?.length > 0
+          ? {
+              include: {
+                bizUser: true,
+              },
+            }
+          : false,
+    };
+    const bizCompany = await this.bizService.getBizCompany(id, environmentId, include);
     if (!bizCompany) {
       throw new CompanyNotFoundError();
     }
@@ -26,23 +48,13 @@ export class OpenAPICompaniesService {
   async listCompanies(
     requestUrl: string,
     environment: Environment,
-    limit = 20,
-    cursor?: string,
-    expand?: ExpandType[],
-    orderBy?: OrderByType[],
+    query: ListCompaniesQueryDto,
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
-    // Validate orderBy values
-    if (
-      orderBy?.some((value) => {
-        const field = value.startsWith('-') ? value.substring(1) : value;
-        return field !== OrderByType.CREATED_AT;
-      })
-    ) {
-      throw new InvalidOrderByError();
-    }
+    const { limit = 20, cursor, expand, orderBy } = query;
 
     const isIncludeBizUsersOnCompany =
-      expand?.includes(ExpandType.MEMBERSHIPS_USER) || expand?.includes(ExpandType.USERS);
+      expand?.includes(CompanyExpandType.MEMBERSHIPS_USER) ||
+      expand?.includes(CompanyExpandType.USERS);
 
     const include = {
       bizUsersOnCompany: {
@@ -66,9 +78,10 @@ export class OpenAPICompaniesService {
     );
   }
 
-  private mapBizCompanyToCompany(bizCompany: any, expand?: ExpandType[]): Company {
+  private mapBizCompanyToCompany(bizCompany: any, expand?: CompanyExpandType[]): Company {
     const memberships =
-      expand?.includes(ExpandType.MEMBERSHIPS) || expand?.includes(ExpandType.MEMBERSHIPS_USER)
+      expand?.includes(CompanyExpandType.MEMBERSHIPS) ||
+      expand?.includes(CompanyExpandType.MEMBERSHIPS_USER)
         ? bizCompany.bizUsersOnCompany?.map((membership) => ({
             id: membership.id,
             object: OpenApiObjectType.COMPANY_MEMBERSHIP,
@@ -76,7 +89,7 @@ export class OpenAPICompaniesService {
             createdAt: membership.createdAt.toISOString(),
             companyId: membership.bizCompanyId,
             userId: membership.bizUserId,
-            user: expand?.includes(ExpandType.MEMBERSHIPS_USER)
+            user: expand?.includes(CompanyExpandType.MEMBERSHIPS_USER)
               ? {
                   id: membership.bizUser.externalId,
                   object: OpenApiObjectType.USER,
@@ -92,7 +105,7 @@ export class OpenAPICompaniesService {
       object: OpenApiObjectType.COMPANY,
       attributes: bizCompany.data || {},
       createdAt: bizCompany.createdAt.toISOString(),
-      users: expand?.includes(ExpandType.USERS)
+      users: expand?.includes(CompanyExpandType.USERS)
         ? bizCompany.bizUsersOnCompany?.map((membership) => ({
             id: membership.bizUser.externalId,
             object: OpenApiObjectType.USER,

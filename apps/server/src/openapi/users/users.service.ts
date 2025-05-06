@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
-import { UserNotFoundError, InvalidRequestError } from '@/common/errors/errors';
+import { UserNotFoundError } from '@/common/errors/errors';
 import { UpsertUserRequestDto, UserOrderByType, GetUserQueryDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
@@ -108,13 +108,13 @@ export class OpenAPIUsersService {
   }
 
   async upsertUser(data: UpsertUserRequestDto, environmentId: string): Promise<User> {
-    const id = data.id;
-    // Validate that only one of companies or memberships is set
-    if (data.companies && data.memberships) {
-      throw new InvalidRequestError();
-    }
-
-    const user = await this.bizService.upsertUser(id, data, environmentId);
+    const user = await this.bizService.upsertUser(
+      data.id,
+      environmentId,
+      data.attributes,
+      data.companies,
+      data.memberships,
+    );
     return this.getUser(user.externalId, environmentId);
   }
 

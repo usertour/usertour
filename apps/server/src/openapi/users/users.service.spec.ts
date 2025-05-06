@@ -3,10 +3,9 @@ import { OpenAPIUsersService } from './users.service';
 import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
 import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
-import { ExpandType, GetUserQueryDto } from './users.dto';
+import { ExpandType, GetUserQueryDto, ListUsersQueryDto, UpsertUserRequestDto } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
-import { ListUsersQueryDto } from './users.dto';
 import { UserOrderByType } from './users.dto';
 
 describe('OpenAPIUsersService', () => {
@@ -284,17 +283,11 @@ describe('OpenAPIUsersService', () => {
 
   describe('upsertUser', () => {
     it('should upsert user', async () => {
-      const mockData = {
+      const mockData: UpsertUserRequestDto = {
         id: 'user1',
         attributes: {},
         companies: [],
-      };
-
-      const mockBizUser = {
-        externalId: 'user1',
-        data: {},
-        createdAt: new Date(),
-        bizUsersOnCompany: [],
+        memberships: null,
       };
 
       mockBizService.upsertUser.mockResolvedValue(mockBizUser);
@@ -305,21 +298,71 @@ describe('OpenAPIUsersService', () => {
       expect(result).toEqual({
         id: 'user1',
         object: 'user',
-        attributes: {},
+        attributes: { name: 'Test User' },
         createdAt: mockBizUser.createdAt.toISOString(),
         companies: null,
         memberships: null,
       });
-      expect(bizService.upsertUser).toHaveBeenCalledWith('user1', mockData, 'env1');
+      expect(bizService.upsertUser).toHaveBeenCalledWith('user1', 'env1', {}, [], null);
+    });
+
+    it('should handle memberships', async () => {
+      const mockData: UpsertUserRequestDto = {
+        id: 'user1',
+        attributes: {},
+        companies: null,
+        memberships: [
+          {
+            company: {
+              id: 'company1',
+              attributes: {},
+            },
+            attributes: {},
+          },
+        ],
+      };
+
+      mockBizService.upsertUser.mockResolvedValue(mockBizUser);
+      mockBizService.getBizUser.mockResolvedValue(mockBizUser);
+
+      const result = await service.upsertUser(mockData, 'env1');
+
+      expect(result).toEqual({
+        id: 'user1',
+        object: 'user',
+        attributes: { name: 'Test User' },
+        createdAt: mockBizUser.createdAt.toISOString(),
+        companies: null,
+        memberships: null,
+      });
+      expect(bizService.upsertUser).toHaveBeenCalledWith('user1', 'env1', {}, null, [
+        {
+          company: {
+            id: 'company1',
+            attributes: {},
+          },
+          attributes: {},
+        },
+      ]);
     });
 
     it('should throw error when both companies and memberships are set', async () => {
-      const mockData = {
+      const mockData: UpsertUserRequestDto = {
         id: 'user1',
         attributes: {},
-        companies: [],
-        memberships: [],
+        companies: [{ id: 'company1', attributes: {} }],
+        memberships: [
+          {
+            company: {
+              id: 'company2',
+              attributes: {},
+            },
+            attributes: {},
+          },
+        ],
       };
+
+      mockBizService.upsertUser.mockRejectedValue(new InvalidRequestError());
 
       await expect(service.upsertUser(mockData, 'env1')).rejects.toThrow(new InvalidRequestError());
     });
