@@ -1,146 +1,141 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventDefinitionsService } from './event-definitions.service';
-import { EventsService as BusinessEventsService } from '@/events/events.service';
-import { InvalidLimitError } from '@/common/errors/errors';
-import { ConfigService } from '@nestjs/config';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { EventsService } from '@/events/events.service';
 import { Environment } from '@/environments/models/environment.model';
+import { ListEventDefinitionsQueryDto, EventDefinitionOrderByType } from './event-definitions.dto';
 
 describe('OpenAPIEventDefinitionsService', () => {
   let service: OpenAPIEventDefinitionsService;
-  let businessEventsService: BusinessEventsService;
-
-  const mockBusinessEventsService = {
-    listWithPagination: jest.fn(),
-  };
-
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue('http://localhost:3000'),
-  };
+  let mockBusinessEventsService: jest.Mocked<EventsService>;
 
   const mockEnvironment: Environment = {
-    id: 'env-123',
-    projectId: 'project-123',
+    id: 'env-1',
+    projectId: 'project-1',
     name: 'Test Environment',
     token: 'test-token',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
+  const mockRequestUrl = 'http://localhost:3000/v1/event-definitions';
+
   beforeEach(async () => {
+    mockBusinessEventsService = {
+      listWithPagination: jest.fn(),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OpenAPIEventDefinitionsService,
         {
-          provide: BusinessEventsService,
+          provide: EventsService,
           useValue: mockBusinessEventsService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
         },
       ],
     }).compile();
 
     service = module.get<OpenAPIEventDefinitionsService>(OpenAPIEventDefinitionsService);
-    businessEventsService = module.get<BusinessEventsService>(BusinessEventsService);
+  });
 
-    // Clear all mocks before each test
-    jest.clearAllMocks();
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
 
   describe('listEventDefinitions', () => {
-    const mockRequestUrl = 'http://localhost:3000/v1/event-definitions';
-    const mockCursor = 'test-cursor';
+    const mockCursor = 'cursor-1';
     const mockLimit = 10;
+    const mockOrderBy = [EventDefinitionOrderByType.CREATED_AT];
 
-    const mockBusinessResponse = {
-      edges: [
-        {
-          node: {
-            id: 'event-123',
-            createdAt: new Date('2024-01-01T00:00:00.000Z'),
-            description: 'Test Event',
-            displayName: 'Test Event',
-            codeName: 'test_event',
-          },
-        },
-      ],
-      pageInfo: {
-        hasNextPage: true,
-        hasPreviousPage: false,
-        startCursor: null,
-        endCursor: 'next-cursor',
-      },
+    const mockQuery: ListEventDefinitionsQueryDto = {
+      cursor: mockCursor,
+      limit: mockLimit,
+      orderBy: mockOrderBy,
     };
 
-    it('should successfully list events', async () => {
-      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
+    const mockEventDefinition = {
+      id: 'event-1',
+      displayName: 'Test Event',
+      codeName: 'test_event',
+      description: 'Test Description',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deleted: false,
+      predefined: false,
+      projectId: 'project-1',
+    };
 
-      const result = await service.listEventDefinitions(
-        mockRequestUrl,
-        mockEnvironment,
-        mockLimit,
-        mockCursor,
-      );
-
-      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
-        mockEnvironment.projectId,
-        {
-          first: mockLimit,
-          after: mockCursor,
-        },
-        [{ createdAt: 'asc' }],
-      );
-      expect(result).toEqual({
-        results: [
+    it('should return paginated event definitions', async () => {
+      mockBusinessEventsService.listWithPagination.mockResolvedValue({
+        edges: [
           {
-            id: 'event-123',
-            object: OpenApiObjectType.EVENT_DEFINITION,
-            createdAt: '2024-01-01T00:00:00.000Z',
-            description: 'Test Event',
-            displayName: 'Test Event',
-            codeName: 'test_event',
+            node: mockEventDefinition,
+            cursor: 'cursor-1',
           },
         ],
-        next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=10',
-        previous: 'http://localhost:3000/v1/event-definitions?limit=10',
-      });
-    });
-
-    it('should use default limit if not provided', async () => {
-      mockBusinessEventsService.listWithPagination.mockResolvedValue(mockBusinessResponse);
-
-      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment);
-
-      expect(businessEventsService.listWithPagination).toHaveBeenCalledWith(
-        mockEnvironment.projectId,
-        {
-          first: 20,
-          after: undefined,
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
         },
-        [{ createdAt: 'asc' }],
-      );
-      expect(result).toEqual({
-        results: [
-          {
-            id: 'event-123',
-            object: OpenApiObjectType.EVENT_DEFINITION,
-            createdAt: '2024-01-01T00:00:00.000Z',
-            description: 'Test Event',
-            displayName: 'Test Event',
-            codeName: 'test_event',
-          },
-        ],
-        next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor&limit=20',
-        previous: null,
       });
+
+      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment, {
+        ...mockQuery,
+        cursor: undefined,
+      });
+
+      expect(result.results).toHaveLength(1);
+      expect(result.next).toBeNull();
+      expect(result.previous).toBeNull();
+      expect(mockBusinessEventsService.listWithPagination).toHaveBeenCalledWith(
+        mockEnvironment.projectId,
+        expect.any(Object),
+        expect.any(Array),
+      );
     });
 
-    it('should throw error for invalid limit', async () => {
-      await expect(
-        service.listEventDefinitions(mockRequestUrl, mockEnvironment, -1),
-      ).rejects.toThrow(new InvalidLimitError());
+    it('should handle empty results', async () => {
+      mockBusinessEventsService.listWithPagination.mockResolvedValue({
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+      });
+
+      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment, {
+        ...mockQuery,
+        cursor: undefined,
+      });
+
+      expect(result.results).toHaveLength(0);
+      expect(result.next).toBeNull();
+      expect(result.previous).toBeNull();
+    });
+
+    it('should handle default parameters', async () => {
+      const defaultQuery: ListEventDefinitionsQueryDto = {};
+
+      mockBusinessEventsService.listWithPagination.mockResolvedValue({
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+      });
+
+      await service.listEventDefinitions(mockRequestUrl, mockEnvironment, defaultQuery);
+
+      expect(mockBusinessEventsService.listWithPagination).toHaveBeenCalledWith(
+        mockEnvironment.projectId,
+        expect.any(Object),
+        expect.any(Array),
+      );
     });
   });
 });

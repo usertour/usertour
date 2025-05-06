@@ -4,8 +4,8 @@ import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { InvalidLimitError, InvalidCursorError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
+import { ListEventDefinitionsQueryDto, EventDefinitionOrderByType } from './event-definitions.dto';
 
 describe('OpenAPIEventDefinitionsController', () => {
   let controller: OpenAPIEventDefinitionsController;
@@ -14,13 +14,15 @@ describe('OpenAPIEventDefinitionsController', () => {
   let mockPrismaService: jest.Mocked<PrismaService>;
 
   const mockEnvironment: Environment = {
-    id: 'env1',
-    projectId: 'project1',
+    id: 'env-1',
+    projectId: 'project-1',
     name: 'Test Environment',
     token: 'test-token',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+
+  const mockRequestUrl = 'http://localhost:3000/v1/event-definitions';
 
   beforeEach(async () => {
     mockService = {
@@ -61,41 +63,58 @@ describe('OpenAPIEventDefinitionsController', () => {
   });
 
   describe('listEventDefinitions', () => {
-    it('should return a list of event definitions', async () => {
-      const mockEventDefinitions = {
-        results: [
-          {
-            id: 'event-1',
-            object: OpenApiObjectType.EVENT_DEFINITION,
-            name: 'Test Event',
-            displayName: 'Test Event',
-            description: 'Test event description',
-            attributes: { name: 'Test Event' },
-            codeName: 'test_event',
-            createdAt: '2025-04-27T10:56:52.198Z',
-          },
-        ],
-        next: 'http://localhost:3000/v1/event-definitions?cursor=next-cursor',
-        previous: 'http://localhost:3000/v1/event-definitions?cursor=prev-cursor',
-      };
+    const mockQuery: ListEventDefinitionsQueryDto = {
+      cursor: 'cursor1',
+      limit: 10,
+      orderBy: [EventDefinitionOrderByType.CREATED_AT],
+    };
 
-      mockService.listEventDefinitions.mockResolvedValue(mockEventDefinitions);
+    const mockResponse = {
+      results: [
+        {
+          id: 'event-1',
+          object: 'eventDefinition',
+          displayName: 'Test Event',
+          codeName: 'test_event',
+          description: 'Test Description',
+          createdAt: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+      next: null,
+      previous: null,
+    };
+
+    it('should return paginated event definitions', async () => {
+      mockService.listEventDefinitions.mockResolvedValue(mockResponse);
 
       const result = await controller.listEventDefinitions(
-        'http://localhost:3000/v1/event-definitions',
+        mockRequestUrl,
         mockEnvironment,
-        10,
-        'cursor1',
-        undefined,
+        mockQuery,
       );
 
-      expect(result).toEqual(mockEventDefinitions);
+      expect(result).toEqual(mockResponse);
       expect(mockService.listEventDefinitions).toHaveBeenCalledWith(
-        'http://localhost:3000/v1/event-definitions',
+        mockRequestUrl,
         mockEnvironment,
-        10,
-        'cursor1',
-        undefined,
+        mockQuery,
+      );
+    });
+
+    it('should handle default parameters', async () => {
+      const defaultQuery: ListEventDefinitionsQueryDto = {};
+      mockService.listEventDefinitions.mockResolvedValue({
+        results: [],
+        next: null,
+        previous: null,
+      });
+
+      await controller.listEventDefinitions(mockRequestUrl, mockEnvironment, defaultQuery);
+
+      expect(mockService.listEventDefinitions).toHaveBeenCalledWith(
+        mockRequestUrl,
+        mockEnvironment,
+        defaultQuery,
       );
     });
 
@@ -103,11 +122,10 @@ describe('OpenAPIEventDefinitionsController', () => {
       mockService.listEventDefinitions.mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listEventDefinitions(
-          'http://localhost:3000/v1/event-definitions',
-          mockEnvironment,
-          -1,
-        ),
+        controller.listEventDefinitions(mockRequestUrl, mockEnvironment, {
+          ...mockQuery,
+          limit: -1,
+        } as ListEventDefinitionsQueryDto),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -115,12 +133,10 @@ describe('OpenAPIEventDefinitionsController', () => {
       mockService.listEventDefinitions.mockRejectedValue(new InvalidCursorError());
 
       await expect(
-        controller.listEventDefinitions(
-          'http://localhost:3000/v1/event-definitions',
-          mockEnvironment,
-          10,
-          'invalid-cursor',
-        ),
+        controller.listEventDefinitions(mockRequestUrl, mockEnvironment, {
+          ...mockQuery,
+          cursor: 'invalid-cursor',
+        } as ListEventDefinitionsQueryDto),
       ).rejects.toThrow(new InvalidCursorError());
     });
   });
