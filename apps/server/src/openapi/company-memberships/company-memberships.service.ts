@@ -3,7 +3,7 @@ import { BizService } from '@/biz/biz.service';
 import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { DeleteResponseDto } from '@/common/openapi/dtos';
-
+import { DeleteCompanyMembershipQueryDto } from './company-memberships.dto';
 @Injectable()
 export class OpenAPICompanyMembershipsService {
   private readonly logger = new Logger(OpenAPICompanyMembershipsService.name);
@@ -11,10 +11,10 @@ export class OpenAPICompanyMembershipsService {
   constructor(private readonly bizService: BizService) {}
 
   async deleteCompanyMembership(
-    userId: string,
-    companyId: string,
     environmentId: string,
+    query: DeleteCompanyMembershipQueryDto,
   ): Promise<DeleteResponseDto> {
+    const { userId, companyId } = query;
     const membership = await this.bizService.getBizCompanyMembership(
       userId,
       companyId,
