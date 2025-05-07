@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { InvalidApiKeyError } from '@/common/errors/errors';
+import { InvalidApiKeyError, MissingApiKeyError } from '@/common/errors/errors';
 
 @Injectable()
 export class OpenAPIKeyGuard implements CanActivate {
@@ -13,7 +13,7 @@ export class OpenAPIKeyGuard implements CanActivate {
     const apiKey = this.extractApiKeyFromHeader(request);
 
     if (!apiKey) {
-      throw new InvalidApiKeyError();
+      throw new MissingApiKeyError();
     }
 
     // Remove the 'ak_' prefix if present

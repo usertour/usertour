@@ -135,10 +135,19 @@ export abstract class OpenAPIError extends BaseError {
 
 export class InvalidApiKeyError extends OpenAPIError {
   code = 'E1000';
-  statusCode = HttpStatus.UNAUTHORIZED;
+  statusCode = HttpStatus.FORBIDDEN;
   messageDict = {
     en: 'Invalid API key provided',
     'zh-CN': '提供的 API 密钥无效',
+  };
+}
+
+export class MissingApiKeyError extends OpenAPIError {
+  code = 'E1010';
+  statusCode = HttpStatus.UNAUTHORIZED;
+  messageDict = {
+    en: 'Missing API key',
+    'zh-CN': '缺少 API 密钥',
   };
 }
 
@@ -223,33 +232,6 @@ export class InvalidRequestError extends OpenAPIError {
   };
 }
 
-export class MethodNotAllowedError extends OpenAPIError {
-  code = 'E1010';
-  statusCode = HttpStatus.METHOD_NOT_ALLOWED;
-  messageDict = {
-    en: 'Method not allowed',
-    'zh-CN': '方法不允许',
-  };
-}
-
-export class NotAcceptableError extends OpenAPIError {
-  code = 'E1011';
-  statusCode = HttpStatus.NOT_ACCEPTABLE;
-  messageDict = {
-    en: 'Not acceptable',
-    'zh-CN': '不可接受',
-  };
-}
-
-export class UnsupportedMediaTypeError extends OpenAPIError {
-  code = 'E1012';
-  statusCode = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
-  messageDict = {
-    en: 'Unsupported media type',
-    'zh-CN': '不支持的媒体类型',
-  };
-}
-
 export class RateLimitExceededError extends OpenAPIError {
   code = 'E1013';
   statusCode = HttpStatus.TOO_MANY_REQUESTS;
@@ -327,9 +309,7 @@ const errorMap = {
   E1007: InvalidCursorError,
   E1008: InvalidCursorPreviousError,
   E1009: InvalidRequestError,
-  E1010: MethodNotAllowedError,
-  E1011: NotAcceptableError,
-  E1012: UnsupportedMediaTypeError,
+  E1010: MissingApiKeyError,
   E1013: RateLimitExceededError,
   E1014: ServiceUnavailableError,
   E1015: InvalidScopeError,
