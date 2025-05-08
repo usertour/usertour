@@ -4,8 +4,8 @@ import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class
 import { Type } from 'class-transformer';
 
 export enum ContentExpandType {
-  EDITED_VERSION = 'edited_version',
-  PUBLISHED_VERSION = 'published_version',
+  EDITED_VERSION = 'editedVersion',
+  PUBLISHED_VERSION = 'publishedVersion',
 }
 
 export enum VersionExpandType {
