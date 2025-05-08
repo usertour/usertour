@@ -151,14 +151,7 @@ export class OpenAPIContentSessionsService {
   }
 
   async deleteContentSession(id: string, environmentId: string) {
-    const session = await this.analyticsService.deleteContentSessionWithRelations(
-      id,
-      environmentId,
-    );
-
-    if (!session) {
-      throw new ContentSessionNotFoundError();
-    }
+    await this.analyticsService.deleteContentSessionWithRelations(id, environmentId);
 
     return {
       id,

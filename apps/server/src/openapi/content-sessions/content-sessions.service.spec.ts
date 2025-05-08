@@ -325,12 +325,14 @@ describe('OpenAPIContentSessionsService', () => {
       expect(result.deleted).toBe(true);
     });
 
-    it('should throw ContentSessionNotFoundError when session not found', async () => {
+    it('should return deleted response even when session not found', async () => {
       mockAnalyticsService.deleteContentSessionWithRelations.mockResolvedValue(null);
 
-      await expect(service.deleteContentSession('1', 'env1')).rejects.toThrow(
-        new ContentSessionNotFoundError(),
-      );
+      const result = await service.deleteContentSession('1', 'env1');
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe('1');
+      expect(result.deleted).toBe(true);
     });
   });
 });
