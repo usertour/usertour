@@ -5,11 +5,11 @@ import {
   ContentOrderByType,
   GetContentQueryDto,
   GetContentVersionQueryDto,
-  ListContentsQueryDto,
+  ListContentQueryDto,
   VersionExpandType,
   ListContentVersionsQueryDto,
   VersionOrderByType,
-} from './contents.dto';
+} from './content.dto';
 import { Prisma } from '@prisma/client';
 import { ContentsService } from '@/contents/contents.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
@@ -32,8 +32,8 @@ type VersionWithContent = Prisma.VersionGetPayload<{
 }>;
 
 @Injectable()
-export class OpenAPIContentsService {
-  private readonly logger = new Logger(OpenAPIContentsService.name);
+export class OpenAPIContentService {
+  private readonly logger = new Logger(OpenAPIContentService.name);
 
   constructor(private contentsService: ContentsService) {}
 
@@ -58,7 +58,7 @@ export class OpenAPIContentsService {
   async listContents(
     requestUrl: string,
     environment: Environment,
-    query: ListContentsQueryDto,
+    query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const { cursor, orderBy, limit, expand } = query;
 

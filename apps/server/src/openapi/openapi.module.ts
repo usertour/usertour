@@ -9,8 +9,8 @@ import { BizModule } from '@/biz/biz.module';
 import { ContentsModule } from '@/contents/contents.module';
 import { OpenAPICompaniesController } from './companies/companies.controller';
 import { OpenAPICompaniesService } from './companies/companies.service';
-import { OpenAPIContentsController } from './contents/contents.controller';
-import { OpenAPIContentsService } from './contents/contents.service';
+import { OpenAPIContentController } from './content/content.controller';
+import { OpenAPIContentService } from './content/content.service';
 import { OpenAPIContentSessionsController } from './content-sessions/content-sessions.controller';
 import { OpenAPIContentSessionsService } from './content-sessions/content-sessions.service';
 import { OpenAPIUsersController } from './users/users.controller';
@@ -37,7 +37,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     OpenAPIEventDefinitionsController,
     OpenAPIUsersController,
     OpenAPICompanyMembershipsController,
-    OpenAPIContentsController,
+    OpenAPIContentController,
     OpenAPIContentSessionsController,
   ],
   providers: [
@@ -48,7 +48,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     OpenAPIEventDefinitionsService,
     OpenAPIUsersService,
     OpenAPICompanyMembershipsService,
-    OpenAPIContentsService,
+    OpenAPIContentService,
     OpenAPIContentSessionsService,
   ],
 })

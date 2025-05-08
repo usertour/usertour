@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentsController } from './contents.controller';
-import { OpenAPIContentsService } from './contents.service';
+import { OpenAPIContentController } from './content.controller';
+import { OpenAPIContentService } from './content.service';
 import { Environment } from '@/environments/models/environment.model';
-import { ContentExpandType } from './contents.dto';
+import { ContentExpandType } from './content.dto';
 import {
   InvalidCursorError,
   InvalidLimitError,
@@ -11,11 +11,11 @@ import {
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
-import { ContentOrderByType } from './contents.dto';
+import { ContentOrderByType } from './content.dto';
 
-describe('OpenAPIContentsController', () => {
-  let controller: OpenAPIContentsController;
-  let contentService: OpenAPIContentsService;
+describe('OpenAPIContentController', () => {
+  let controller: OpenAPIContentController;
+  let contentService: OpenAPIContentService;
 
   const mockEnvironment: Environment = {
     id: 'env-id',
@@ -56,10 +56,10 @@ describe('OpenAPIContentsController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OpenAPIContentsController],
+      controllers: [OpenAPIContentController],
       providers: [
         {
-          provide: OpenAPIContentsService,
+          provide: OpenAPIContentService,
           useValue: {
             getContent: jest.fn().mockResolvedValue(mockContent),
             listContents: jest.fn().mockResolvedValue(mockPaginatedResponse),
@@ -87,8 +87,8 @@ describe('OpenAPIContentsController', () => {
       ],
     }).compile();
 
-    controller = module.get<OpenAPIContentsController>(OpenAPIContentsController);
-    contentService = module.get<OpenAPIContentsService>(OpenAPIContentsService);
+    controller = module.get<OpenAPIContentController>(OpenAPIContentController);
+    contentService = module.get<OpenAPIContentService>(OpenAPIContentService);
   });
 
   describe('getContent', () => {
@@ -162,9 +162,9 @@ describe('OpenAPIContentsController', () => {
   });
 
   describe('listContents', () => {
-    it('should return paginated contents', async () => {
+    it('should return paginated content', async () => {
       const result = await controller.listContents(
-        'http://localhost:3000/v1/contents',
+        'http://localhost:3000/v1/content',
         mockEnvironment,
         {
           limit: 10,
@@ -172,7 +172,7 @@ describe('OpenAPIContentsController', () => {
       );
 
       expect(contentService.listContents).toHaveBeenCalledWith(
-        'http://localhost:3000/v1/contents',
+        'http://localhost:3000/v1/content',
         mockEnvironment,
         {
           limit: 10,
@@ -181,9 +181,9 @@ describe('OpenAPIContentsController', () => {
       expect(result).toEqual(mockPaginatedResponse);
     });
 
-    it('should return paginated contents with expand', async () => {
+    it('should return paginated content with expand', async () => {
       const result = await controller.listContents(
-        'http://localhost:3000/v1/contents',
+        'http://localhost:3000/v1/content',
         mockEnvironment,
         {
           limit: 10,
@@ -192,7 +192,7 @@ describe('OpenAPIContentsController', () => {
       );
 
       expect(contentService.listContents).toHaveBeenCalledWith(
-        'http://localhost:3000/v1/contents',
+        'http://localhost:3000/v1/content',
         mockEnvironment,
         {
           limit: 10,
@@ -206,7 +206,7 @@ describe('OpenAPIContentsController', () => {
       jest.spyOn(contentService, 'listContents').mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listContents('http://localhost:3000/v1/contents', mockEnvironment, {
+        controller.listContents('http://localhost:3000/v1/content', mockEnvironment, {
           limit: -1,
         }),
       ).rejects.toThrow(InvalidLimitError);

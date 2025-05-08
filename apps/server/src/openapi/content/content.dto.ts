@@ -22,8 +22,8 @@ export enum VersionOrderByType {
   CREATED_AT_DESC = '-createdAt',
 }
 
-export class ListContentsResponseDto {
-  @ApiProperty({ description: 'List of contents', type: [Content] })
+export class ListContentResponseDto {
+  @ApiProperty({ description: 'List of content', type: [Content] })
   results: Content[];
 
   @ApiProperty({ description: 'URL for the next page', type: String, nullable: true })
@@ -45,7 +45,7 @@ export class GetContentQueryDto {
   expand?: ContentExpandType[];
 }
 
-export class ListContentsQueryDto {
+export class ListContentQueryDto {
   @ApiProperty({
     description: 'Cursor for pagination',
     required: false,

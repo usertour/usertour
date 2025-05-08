@@ -1,15 +1,15 @@
 import { Get, Param, Query, UseFilters, UseGuards, Controller } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { OpenAPIContentsService } from './contents.service';
+import { OpenAPIContentService } from './content.service';
 import { Content, ContentVersion } from '../models/content.model';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import {
   GetContentQueryDto,
-  ListContentsQueryDto,
+  ListContentQueryDto,
   GetContentVersionQueryDto,
   ListContentVersionsQueryDto,
-} from './contents.dto';
+} from './content.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
@@ -20,10 +20,10 @@ import { Environment } from '@/environments/models/environment.model';
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @ApiBearerAuth()
-export class OpenAPIContentsController {
-  constructor(private readonly openAPIContentsService: OpenAPIContentsService) {}
+export class OpenAPIContentController {
+  constructor(private readonly openAPIContentService: OpenAPIContentService) {}
 
-  @Get('v1/contents/:id')
+  @Get('v1/content/:id')
   @ApiOperation({ summary: 'Get a content by ID' })
   @ApiResponse({
     status: 200,
@@ -36,18 +36,18 @@ export class OpenAPIContentsController {
     @EnvironmentId() environmentId: string,
     @Query() query: GetContentQueryDto,
   ): Promise<Content> {
-    return this.openAPIContentsService.getContent(id, environmentId, query);
+    return this.openAPIContentService.getContent(id, environmentId, query);
   }
 
-  @Get('v1/contents')
-  @ApiOperation({ summary: 'List all contents' })
-  @ApiResponse({ status: 200, description: 'List of contents', type: Content, isArray: true })
+  @Get('v1/content')
+  @ApiOperation({ summary: 'List all content' })
+  @ApiResponse({ status: 200, description: 'List of content', type: Content, isArray: true })
   async listContents(
     @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
-    @Query() query: ListContentsQueryDto,
+    @Query() query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentsService.listContents(requestUrl, environment, query);
+    return this.openAPIContentService.listContents(requestUrl, environment, query);
   }
 
   @Get('v1/content-versions/:id')
@@ -60,7 +60,7 @@ export class OpenAPIContentsController {
     @EnvironmentId() environmentId: string,
     @Query() query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
-    return this.openAPIContentsService.getContentVersion(id, environmentId, query);
+    return this.openAPIContentService.getContentVersion(id, environmentId, query);
   }
 
   @Get('v1/content-versions')
@@ -71,6 +71,6 @@ export class OpenAPIContentsController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: ListContentVersionsQueryDto,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentsService.listContentVersions(requestUrl, environment, query);
+    return this.openAPIContentService.listContentVersions(requestUrl, environment, query);
   }
 }

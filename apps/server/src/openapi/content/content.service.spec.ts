@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenAPIContentsService } from './contents.service';
+import { OpenAPIContentService } from './content.service';
 import { ConfigService } from '@nestjs/config';
-import { ContentExpandType, VersionExpandType } from './contents.dto';
+import { ContentExpandType, VersionExpandType } from './content.dto';
 import { ContentsService } from '@/contents/contents.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
 import { InvalidCursorError, InvalidLimitError } from '@/common/errors/errors';
 
-describe('OpenAPIContentsService', () => {
-  let service: OpenAPIContentsService;
+describe('OpenAPIContentService', () => {
+  let service: OpenAPIContentService;
   let contentsService: ContentsService;
 
   const mockEnvironment: Environment = {
@@ -52,7 +52,7 @@ describe('OpenAPIContentsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        OpenAPIContentsService,
+        OpenAPIContentService,
         {
           provide: ConfigService,
           useValue: {
@@ -72,7 +72,7 @@ describe('OpenAPIContentsService', () => {
       ],
     }).compile();
 
-    service = module.get<OpenAPIContentsService>(OpenAPIContentsService);
+    service = module.get<OpenAPIContentService>(OpenAPIContentService);
     contentsService = module.get<ContentsService>(ContentsService);
   });
 
@@ -156,7 +156,7 @@ describe('OpenAPIContentsService', () => {
       (contentsService.listContentsWithRelations as jest.Mock).mockResolvedValue(mockConnection);
 
       const result = await service.listContents(
-        'http://localhost:3000/v1/contents',
+        'http://localhost:3000/v1/content',
         mockEnvironment,
         {
           limit: 20,
@@ -191,7 +191,7 @@ describe('OpenAPIContentsService', () => {
         .mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        service.listContents('http://localhost:3000/v1/contents', mockEnvironment, {
+        service.listContents('http://localhost:3000/v1/content', mockEnvironment, {
           limit: -1,
         }),
       ).rejects.toThrow(InvalidLimitError);
