@@ -29,7 +29,7 @@ export const ApiListHeader = () => {
           You can switch environments using the menu with your company name in the top-left corner.
           <br />
           <a
-            href="https://docs.usertour.io/how-to-guides/environments/"
+            href="https://docs.usertour.io/api-reference/introduction"
             className="text-primary  "
             target="_blank"
             rel="noreferrer"
