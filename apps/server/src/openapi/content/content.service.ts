@@ -55,7 +55,7 @@ export class OpenAPIContentService {
     return this.mapPrismaContentToApiContent(content, expand);
   }
 
-  async listContents(
+  async listContent(
     requestUrl: string,
     environment: Environment,
     query: ListContentQueryDto,
@@ -74,7 +74,7 @@ export class OpenAPIContentService {
       cursor,
       limit,
       async (params) =>
-        this.contentsService.listContentsWithRelations(environmentId, params, include, sortOrders),
+        this.contentsService.listContentWithRelations(environmentId, params, include, sortOrders),
       (node) => this.mapPrismaContentToApiContent(node, expand),
       expand ? { expand } : {},
     );

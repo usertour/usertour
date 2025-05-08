@@ -646,7 +646,7 @@ export class ContentsService {
     );
   }
 
-  async listContentsWithRelations(
+  async listContentWithRelations(
     environmentId: string,
     paginationArgs: {
       first?: number;

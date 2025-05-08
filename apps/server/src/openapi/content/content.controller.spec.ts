@@ -62,7 +62,7 @@ describe('OpenAPIContentController', () => {
           provide: OpenAPIContentService,
           useValue: {
             getContent: jest.fn().mockResolvedValue(mockContent),
-            listContents: jest.fn().mockResolvedValue(mockPaginatedResponse),
+            listContent: jest.fn().mockResolvedValue(mockPaginatedResponse),
             getContentVersion: jest.fn().mockResolvedValue(mockVersion),
             listContentVersions: jest.fn().mockResolvedValue(mockPaginatedResponse),
           },
@@ -161,9 +161,9 @@ describe('OpenAPIContentController', () => {
     });
   });
 
-  describe('listContents', () => {
+  describe('listContent', () => {
     it('should return paginated content', async () => {
-      const result = await controller.listContents(
+      const result = await controller.listContent(
         'http://localhost:3000/v1/content',
         mockEnvironment,
         {
@@ -171,7 +171,7 @@ describe('OpenAPIContentController', () => {
         },
       );
 
-      expect(contentService.listContents).toHaveBeenCalledWith(
+      expect(contentService.listContent).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content',
         mockEnvironment,
         {
@@ -182,7 +182,7 @@ describe('OpenAPIContentController', () => {
     });
 
     it('should return paginated content with expand', async () => {
-      const result = await controller.listContents(
+      const result = await controller.listContent(
         'http://localhost:3000/v1/content',
         mockEnvironment,
         {
@@ -191,7 +191,7 @@ describe('OpenAPIContentController', () => {
         },
       );
 
-      expect(contentService.listContents).toHaveBeenCalledWith(
+      expect(contentService.listContent).toHaveBeenCalledWith(
         'http://localhost:3000/v1/content',
         mockEnvironment,
         {
@@ -203,10 +203,10 @@ describe('OpenAPIContentController', () => {
     });
 
     it('should throw error when limit is negative', async () => {
-      jest.spyOn(contentService, 'listContents').mockRejectedValue(new InvalidLimitError());
+      jest.spyOn(contentService, 'listContent').mockRejectedValue(new InvalidLimitError());
 
       await expect(
-        controller.listContents('http://localhost:3000/v1/content', mockEnvironment, {
+        controller.listContent('http://localhost:3000/v1/content', mockEnvironment, {
           limit: -1,
         }),
       ).rejects.toThrow(InvalidLimitError);

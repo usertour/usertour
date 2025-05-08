@@ -15,7 +15,7 @@ import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 
-@ApiTags('Contents')
+@ApiTags('Content')
 @Controller()
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -42,12 +42,12 @@ export class OpenAPIContentController {
   @Get('v1/content')
   @ApiOperation({ summary: 'List all content' })
   @ApiResponse({ status: 200, description: 'List of content', type: Content, isArray: true })
-  async listContents(
+  async listContent(
     @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
     @Query() query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentService.listContents(requestUrl, environment, query);
+    return this.openAPIContentService.listContent(requestUrl, environment, query);
   }
 
   @Get('v1/content-versions/:id')
