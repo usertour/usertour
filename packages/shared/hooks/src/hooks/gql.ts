@@ -376,16 +376,20 @@ export const useListAccessTokensQuery = (environmentId: string | undefined) => {
 
 export const useDeleteAccessTokenMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteAccessToken);
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+  const invoke = async (environmentId: string, accessTokenId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { environmentId, accessTokenId } });
     return !!response.data?.deleteAccessToken;
   };
   return { invoke, loading, error };
 };
 
-export const useGetAccessTokenQuery = (id: string, options?: QueryHookOptions) => {
+export const useGetAccessTokenQuery = (
+  environmentId: string,
+  accessTokenId: string,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error } = useQuery(GetAccessToken, {
-    variables: { id },
+    variables: { environmentId, accessTokenId },
     ...options,
   });
   return { data: data?.getAccessToken, loading, error };

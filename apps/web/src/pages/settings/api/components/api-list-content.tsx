@@ -4,9 +4,11 @@ import { Skeleton } from '@usertour-ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { AccessToken } from '@usertour-ui/shared-hooks';
 import { ApiListAction } from './api-list-action';
+import { useAppContext } from '@/contexts/app-context';
 
 export const ApiListContent = () => {
   const { accessTokens, loading, refetch } = useApiContext();
+  const { environment } = useAppContext();
 
   if (loading) {
     return (
@@ -18,7 +20,7 @@ export const ApiListContent = () => {
     );
   }
 
-  if (!accessTokens) {
+  if (!accessTokens || !environment) {
     return (
       <div className="flex items-center justify-center h-32 text-red-500">
         <AlertCircle className="w-5 h-5 mr-2" />
@@ -49,7 +51,7 @@ export const ApiListContent = () => {
             <TableCell>{token.name}</TableCell>
             <TableCell>{token.accessToken}</TableCell>
             <TableCell>
-              <ApiListAction token={token} />
+              <ApiListAction token={token} environmentId={environment.id} />
             </TableCell>
           </TableRow>
         ))}

@@ -89,9 +89,9 @@ export class EnvironmentsService {
     });
   }
 
-  async findOneAccessToken(id: string) {
+  async findOneAccessToken(environmentId: string, id: string) {
     const accessToken = await this.prisma.accessToken.findUnique({
-      where: { id },
+      where: { id, environmentId },
     });
 
     if (!accessToken) {
@@ -101,8 +101,8 @@ export class EnvironmentsService {
     return accessToken;
   }
 
-  async removeAccessToken(id: string) {
-    await this.findOneAccessToken(id);
+  async removeAccessToken(environmentId: string, id: string) {
+    await this.findOneAccessToken(environmentId, id);
 
     return this.prisma.accessToken.delete({
       where: { id },

@@ -25,7 +25,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // Constants
 const ALL_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER, TeamMemberRole.VIEWER] as const;
 const OWNER_ROLES = [TeamMemberRole.OWNER] as const;
-const ADMIN_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER] as const;
+// const ADMIN_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER] as const;
 const ICON_CLASS_NAME = 'w-4 h-4';
 
 // Types
@@ -143,7 +143,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'API',
     href: '/settings/api',
-    role: ADMIN_ROLES,
+    role: OWNER_ROLES,
     type: SidebarNavItemType.DEVELOPER,
     icon: <Key className={ICON_CLASS_NAME} />,
   },

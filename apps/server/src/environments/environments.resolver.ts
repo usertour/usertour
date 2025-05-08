@@ -54,8 +54,14 @@ export class EnvironmentsResolver {
 
   @Query(() => String)
   @Roles([RolesScopeEnum.OWNER])
-  async getAccessToken(@Args('id') id: string) {
-    const accessToken = await this.environmentsService.findOneAccessToken(id);
+  async getAccessToken(
+    @Args('environmentId') environmentId: string,
+    @Args('accessTokenId') accessTokenId: string,
+  ) {
+    const accessToken = await this.environmentsService.findOneAccessToken(
+      environmentId,
+      accessTokenId,
+    );
     return `ak_${accessToken.accessToken}`;
   }
 
@@ -70,8 +76,11 @@ export class EnvironmentsResolver {
 
   @Mutation(() => Boolean)
   @Roles([RolesScopeEnum.OWNER])
-  async deleteAccessToken(@Args('id') id: string) {
-    await this.environmentsService.removeAccessToken(id);
+  async deleteAccessToken(
+    @Args('environmentId') environmentId: string,
+    @Args('accessTokenId') accessTokenId: string,
+  ) {
+    await this.environmentsService.removeAccessToken(environmentId, accessTokenId);
     return true;
   }
 }

@@ -30,13 +30,13 @@ export const CreateAccessToken = gql`
 `;
 
 export const DeleteAccessToken = gql`
-  mutation DeleteAccessToken($id: String!) {
-    deleteAccessToken(id: $id)
+  mutation DeleteAccessToken($environmentId: String!, $accessTokenId: String!) {
+    deleteAccessToken(environmentId: $environmentId, accessTokenId: $accessTokenId)
   }
 `;
 
 export const GetAccessToken = gql`
-  query GetAccessToken($id: String!) {
-    getAccessToken(id: $id)
+  query GetAccessToken($environmentId: String!, $accessTokenId: String!) {
+    getAccessToken(environmentId: $environmentId, accessTokenId: $accessTokenId)
   }
 `;

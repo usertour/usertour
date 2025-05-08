@@ -595,7 +595,7 @@ type Mutation {
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
-  deleteAccessToken(id: String!): Boolean!
+  deleteAccessToken(accessTokenId: String!, environmentId: String!): Boolean!
   deleteAttribute(data: DeleteAttributeInput!): Attribute!
   deleteBizCompany(data: BizUserOrCompanyIdsInput!): Common!
   deleteBizCompanyOnSegment(data: DeleteBizCompanyOnSegment!): Common!
@@ -673,7 +673,7 @@ type Project {
 
 type Query {
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
-  getAccessToken(id: String!): String!
+  getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!

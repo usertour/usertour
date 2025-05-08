@@ -31,6 +31,7 @@ import { ApiKeyDialog } from './api-key-dialog';
 // Type definitions
 type ApiListActionProps = {
   token: AccessToken;
+  environmentId: string;
 };
 
 type DeleteDialogProps = {
@@ -73,16 +74,20 @@ const DeleteDialog = ({ token, isOpen, onOpenChange, onDelete, isLoading }: Dele
 /**
  * Component for managing API token actions (currently only delete)
  */
-export const ApiListAction = ({ token }: ApiListActionProps) => {
+export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRevealDialogOpen, setIsRevealDialogOpen] = useState(false);
   const [shouldFetchToken, setShouldFetchToken] = useState(false);
   const { refetch } = useApiContext();
   const { isViewOnly } = useAppContext();
   const { invoke: deleteAccessToken, loading: isDeleting } = useDeleteAccessTokenMutation();
-  const { data: fullToken, loading: isTokenLoading } = useGetAccessTokenQuery(token.id, {
-    skip: !shouldFetchToken,
-  });
+  const { data: fullToken, loading: isTokenLoading } = useGetAccessTokenQuery(
+    environmentId,
+    token.id,
+    {
+      skip: !shouldFetchToken,
+    },
+  );
   const { toast } = useToast();
 
   const handleReveal = () => {
@@ -92,7 +97,7 @@ export const ApiListAction = ({ token }: ApiListActionProps) => {
 
   const handleDelete = async () => {
     try {
-      const success = await deleteAccessToken(token.id);
+      const success = await deleteAccessToken(environmentId, token.id);
       if (success) {
         await refetch();
         setIsDeleteDialogOpen(false);
