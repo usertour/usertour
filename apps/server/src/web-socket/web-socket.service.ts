@@ -3,12 +3,8 @@ import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
 import { BizEvents, EventAttributes } from '@/common/consts/attribute';
-import { ContentType } from '@/contents/models/content.model';
-import {
-  ChecklistData,
-  ContentConfigObject,
-  RulesCondition,
-} from '@/contents/models/version.model';
+import { ContentType } from '@/content/models/content.model';
+import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { Environment } from '@/environments/models/environment.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable } from '@nestjs/common';
@@ -60,7 +56,7 @@ export class WebSocketService {
     return config;
   }
 
-  async listContents(body: any): Promise<any> {
+  async listContent(body: any): Promise<any> {
     const { token, versionId, userId: bizUserId, companyId } = body;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
@@ -86,11 +82,11 @@ export class WebSocketService {
           ]
         : [];
     }
-    const contents = await this.prisma.content.findMany({
+    const contentList = await this.prisma.content.findMany({
       where: { environmentId, published: true },
       // include: { steps: true },
     });
-    if (contents.length === 0) {
+    if (contentList.length === 0) {
       return;
     }
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -105,8 +101,8 @@ export class WebSocketService {
         },
       },
     });
-    for (let index = 0; index < contents.length; index++) {
-      const content = contents[index];
+    for (let index = 0; index < contentList.length; index++) {
+      const content = contentList[index];
       const version = await this.prisma.version.findUnique({
         where: { id: content.publishedVersionId },
         include: { steps: { orderBy: { sequence: 'asc' } } },

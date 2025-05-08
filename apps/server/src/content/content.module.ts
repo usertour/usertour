@@ -2,13 +2,13 @@ import { EnvironmentsModule } from '@/environments/environments.module';
 import { LocalizationsModule } from '@/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { Module } from '@nestjs/common';
-import { ContentsGuard } from './contents.guard';
-import { ContentsResolver } from './contents.resolver';
-import { ContentsService } from './contents.service';
+import { ContentGuard } from './content.guard';
+import { ContentResolver } from './content.resolver';
+import { ContentService } from './content.service';
 
 @Module({
   imports: [ProjectsModule, EnvironmentsModule, LocalizationsModule],
-  providers: [ContentsResolver, ContentsService, ContentsGuard],
-  exports: [ContentsService],
+  providers: [ContentResolver, ContentService, ContentGuard],
+  exports: [ContentService],
 })
-export class ContentsModule {}
+export class ContentModule {}

@@ -1,6 +1,6 @@
 import { BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { ContentType } from '@/contents/models/content.model';
+import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';

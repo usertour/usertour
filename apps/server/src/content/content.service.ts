@@ -15,7 +15,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class ContentsService {
+export class ContentService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
@@ -331,8 +331,8 @@ export class ContentsService {
       return true;
     }
 
-    // Get all contents in the same environment
-    const contents = await this.prisma.content.findMany({
+    // Get all content in the same environment
+    const contentList = await this.prisma.content.findMany({
       where: {
         environmentId: content.environmentId,
         type: ContentType.FLOW,
@@ -352,13 +352,13 @@ export class ContentsService {
       });
     };
 
-    const questionContents = contents.filter(
+    const questionContent = contentList.filter(
       (content) =>
         hasQuestions(content.editedVersion as unknown as Version) ||
         hasQuestions(content.publishedVersion as unknown as Version),
     );
 
-    if (questionContents.length > surveyLimit) {
+    if (questionContent.length > surveyLimit) {
       return false;
     }
 

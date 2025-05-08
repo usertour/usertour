@@ -5,7 +5,7 @@ import { AnalyticsService } from '@/analytics/analytics.service';
 import { ContentSessionExpandType } from './content-sessions.dto';
 import { ConfigService } from '@nestjs/config';
 import { ContentSessionNotFoundError } from '@/common/errors/errors';
-import { ContentsService } from '@/contents/contents.service';
+import { ContentService } from '@/content/content.service';
 
 describe('OpenAPIContentSessionsService', () => {
   let service: OpenAPIContentSessionsService;
@@ -42,7 +42,7 @@ describe('OpenAPIContentSessionsService', () => {
     get: jest.fn().mockReturnValue('http://localhost:3000'),
   };
 
-  const mockContentsService = {
+  const mockContentService = {
     getContentById: jest.fn().mockResolvedValue({ id: 'content1' }),
     getContentVersionWithRelations: jest.fn().mockResolvedValue({
       id: 'version1',
@@ -68,8 +68,8 @@ describe('OpenAPIContentSessionsService', () => {
           useValue: mockConfigService,
         },
         {
-          provide: ContentsService,
-          useValue: mockContentsService,
+          provide: ContentService,
+          useValue: mockContentService,
         },
       ],
     }).compile();

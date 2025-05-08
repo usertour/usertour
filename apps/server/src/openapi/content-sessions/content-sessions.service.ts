@@ -11,7 +11,7 @@ import { Prisma } from '@prisma/client';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { ContentsService } from '@/contents/contents.service';
+import { ContentService } from '@/content/content.service';
 import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content';
@@ -37,7 +37,7 @@ export class OpenAPIContentSessionsService {
 
   constructor(
     private readonly analyticsService: AnalyticsService,
-    private readonly contentsService: ContentsService,
+    private readonly contentService: ContentService,
   ) {}
 
   private async getSessionAnswers(
@@ -47,7 +47,7 @@ export class OpenAPIContentSessionsService {
       return null;
     }
 
-    const version = await this.contentsService.getContentVersionWithRelations(
+    const version = await this.contentService.getContentVersionWithRelations(
       session.versionId,
       session.content.environmentId,
       { steps: true },
@@ -123,7 +123,7 @@ export class OpenAPIContentSessionsService {
   ) {
     const { contentId, limit, userId, cursor, expand, orderBy } = query;
 
-    const content = await this.contentsService.getContentById(contentId);
+    const content = await this.contentService.getContentById(contentId);
     if (!content) {
       throw new ContentNotFoundError();
     }

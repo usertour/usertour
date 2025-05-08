@@ -6,7 +6,7 @@ import { AnalyticsModule } from '@/analytics/analytics.module';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { EventsModule } from '@/events/events.module';
 import { BizModule } from '@/biz/biz.module';
-import { ContentsModule } from '@/contents/contents.module';
+import { ContentModule } from '@/content/content.module';
 import { OpenAPICompaniesController } from './companies/companies.controller';
 import { OpenAPICompaniesService } from './companies/companies.service';
 import { OpenAPIContentController } from './content/content.controller';
@@ -29,7 +29,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     AttributesModule,
     EventsModule,
     BizModule,
-    ContentsModule,
+    ContentModule,
   ],
   controllers: [
     OpenAPICompaniesController,

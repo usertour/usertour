@@ -7,7 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { PrismaService } from 'nestjs-prisma';
-import { ContentsModule } from '@/contents/contents.module';
+import { ContentModule } from '@/content/content.module';
 
 describe('AttributeDefinitionsController (e2e)', () => {
   let app: INestApplication;
@@ -207,7 +207,7 @@ describe('AttributeDefinitionsController (e2e)', () => {
           isGlobal: true,
         }),
         AttributesModule,
-        ContentsModule,
+        ContentModule,
         OpenAPIModule,
       ],
     })

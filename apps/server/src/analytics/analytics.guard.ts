@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
 import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
-import { ContentsService } from '@/contents/contents.service';
+import { ContentService } from '@/content/content.service';
 import { EnvironmentsService } from '@/environments/environments.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { NoPermissionError } from '@/common/errors';
@@ -16,8 +16,8 @@ export class AnalyticsGuard implements CanActivate {
     private readonly environmentsService: EnvironmentsService,
     @Inject(ProjectsService)
     private readonly projectsService: ProjectsService,
-    @Inject(ContentsService)
-    private readonly contentsService: ContentsService,
+    @Inject(ContentService)
+    private readonly contentService: ContentService,
     @Inject(AnalyticsService)
     private readonly analyticsService: AnalyticsService,
   ) {
@@ -38,7 +38,7 @@ export class AnalyticsGuard implements CanActivate {
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
 
     if (contentId) {
-      const content = await this.contentsService.getContent(contentId);
+      const content = await this.contentService.getContent(contentId);
       if (content) {
         environmentId = content.environmentId;
       }

@@ -5,7 +5,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { AuthModule } from '@/auth/auth.module';
 import { BizModule } from '@/biz/biz.module';
 import config from '@/common/configs/config';
-import { ContentsModule } from '@/contents/contents.module';
+import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
@@ -100,7 +100,7 @@ import { OpenAPIModule } from './openapi/openapi.module';
     WebSocketModule,
     AuthModule,
     UsersModule,
-    ContentsModule,
+    ContentModule,
     EnvironmentsModule,
     ProjectsModule,
     UtilitiesModule,

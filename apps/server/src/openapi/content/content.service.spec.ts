@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIContentService } from './content.service';
 import { ConfigService } from '@nestjs/config';
 import { ContentExpandType, VersionExpandType } from './content.dto';
-import { ContentsService } from '@/contents/contents.service';
+import { ContentService } from '@/content/content.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
@@ -10,7 +10,7 @@ import { InvalidCursorError, InvalidLimitError } from '@/common/errors/errors';
 
 describe('OpenAPIContentService', () => {
   let service: OpenAPIContentService;
-  let contentsService: ContentsService;
+  let contentService: ContentService;
 
   const mockEnvironment: Environment = {
     id: 'env-id',
@@ -60,7 +60,7 @@ describe('OpenAPIContentService', () => {
           },
         },
         {
-          provide: ContentsService,
+          provide: ContentService,
           useValue: {
             getContentWithRelations: jest.fn().mockResolvedValue(mockContent),
             listContentWithRelations: jest.fn().mockResolvedValue(mockPaginatedResponse),
@@ -73,18 +73,18 @@ describe('OpenAPIContentService', () => {
     }).compile();
 
     service = module.get<OpenAPIContentService>(OpenAPIContentService);
-    contentsService = module.get<ContentsService>(ContentsService);
+    contentService = module.get<ContentService>(ContentService);
   });
 
   describe('getContent', () => {
     it('should return content with no expand', async () => {
-      (contentsService.getContentWithRelations as jest.Mock).mockResolvedValue(mockContent);
+      (contentService.getContentWithRelations as jest.Mock).mockResolvedValue(mockContent);
 
       const result = await service.getContent('test-id', 'env-id', {});
 
       expect(result).toBeDefined();
       expect(result.id).toBe('test-id');
-      expect(contentsService.getContentWithRelations).toHaveBeenCalledWith('test-id', 'env-id', {
+      expect(contentService.getContentWithRelations).toHaveBeenCalledWith('test-id', 'env-id', {
         editedVersion: false,
         publishedVersion: false,
       });
@@ -98,7 +98,7 @@ describe('OpenAPIContentService', () => {
         publishedVersion: { ...mockVersion, id: 'version-2', sequence: 2 },
       };
 
-      (contentsService.getContentWithRelations as jest.Mock).mockResolvedValue(
+      (contentService.getContentWithRelations as jest.Mock).mockResolvedValue(
         mockContentWithExpand,
       );
 
@@ -125,14 +125,14 @@ describe('OpenAPIContentService', () => {
         updatedAt: mockContent.updatedAt.toISOString(),
         createdAt: mockContent.createdAt.toISOString(),
       });
-      expect(contentsService.getContentWithRelations).toHaveBeenCalledWith('test-id', 'env-id', {
+      expect(contentService.getContentWithRelations).toHaveBeenCalledWith('test-id', 'env-id', {
         editedVersion: false,
         publishedVersion: true,
       });
     });
 
     it('should throw error when content not found', async () => {
-      (contentsService.getContentWithRelations as jest.Mock).mockResolvedValue(null);
+      (contentService.getContentWithRelations as jest.Mock).mockResolvedValue(null);
 
       await expect(service.getContent('non-existent', 'env-id', {})).rejects.toThrow(
         ContentNotFoundError,
@@ -141,7 +141,7 @@ describe('OpenAPIContentService', () => {
   });
 
   describe('listContent', () => {
-    it('should return paginated contents', async () => {
+    it('should return paginated content', async () => {
       const mockConnection = {
         edges: [{ node: mockContent, cursor: 'cursor1' }],
         pageInfo: {
@@ -153,7 +153,7 @@ describe('OpenAPIContentService', () => {
         totalCount: 1,
       };
 
-      (contentsService.listContentWithRelations as jest.Mock).mockResolvedValue(mockConnection);
+      (contentService.listContentWithRelations as jest.Mock).mockResolvedValue(mockConnection);
 
       const result = await service.listContent(
         'http://localhost:3000/v1/content',
@@ -163,7 +163,7 @@ describe('OpenAPIContentService', () => {
         },
       );
 
-      expect(contentsService.listContentWithRelations).toHaveBeenCalledWith(
+      expect(contentService.listContentWithRelations).toHaveBeenCalledWith(
         mockEnvironment.id,
         { first: 20, after: undefined },
         {
@@ -187,7 +187,7 @@ describe('OpenAPIContentService', () => {
 
     it('should throw error for invalid limit', async () => {
       jest
-        .spyOn(contentsService, 'listContentWithRelations')
+        .spyOn(contentService, 'listContentWithRelations')
         .mockRejectedValue(new InvalidLimitError());
 
       await expect(
@@ -200,7 +200,7 @@ describe('OpenAPIContentService', () => {
 
   describe('getContentVersion', () => {
     it('should return content version', async () => {
-      (contentsService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(mockVersion);
+      (contentService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(mockVersion);
 
       const result = await service.getContentVersion('version-1', 'env-id', {});
 
@@ -212,7 +212,7 @@ describe('OpenAPIContentService', () => {
         updatedAt: mockVersion.updatedAt.toISOString(),
         createdAt: mockVersion.createdAt.toISOString(),
       });
-      expect(contentsService.getContentVersionWithRelations).toHaveBeenCalledWith(
+      expect(contentService.getContentVersionWithRelations).toHaveBeenCalledWith(
         'version-1',
         'env-id',
         {
@@ -243,7 +243,7 @@ describe('OpenAPIContentService', () => {
         ],
       };
 
-      (contentsService.getContentVersionWithRelations as jest.Mock)
+      (contentService.getContentVersionWithRelations as jest.Mock)
         .mockResolvedValueOnce(mockVersionWithQuestions)
         .mockResolvedValueOnce(mockVersionWithQuestions);
 
@@ -269,7 +269,7 @@ describe('OpenAPIContentService', () => {
     });
 
     it('should throw error when version not found', async () => {
-      (contentsService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(null);
+      (contentService.getContentVersionWithRelations as jest.Mock).mockResolvedValue(null);
 
       await expect(service.getContentVersion('non-existent', 'env-id', {})).rejects.toThrow(
         ContentNotFoundError,
@@ -290,7 +290,7 @@ describe('OpenAPIContentService', () => {
         totalCount: 1,
       };
 
-      (contentsService.listContentVersionsWithRelations as jest.Mock).mockResolvedValue(
+      (contentService.listContentVersionsWithRelations as jest.Mock).mockResolvedValue(
         mockConnection,
       );
 
@@ -303,7 +303,7 @@ describe('OpenAPIContentService', () => {
         },
       );
 
-      expect(contentsService.listContentVersionsWithRelations).toHaveBeenCalledWith(
+      expect(contentService.listContentVersionsWithRelations).toHaveBeenCalledWith(
         mockEnvironment.id,
         'content-1',
         { first: 20, after: undefined },
@@ -338,7 +338,7 @@ describe('OpenAPIContentService', () => {
     });
 
     it('should throw error when cursor is invalid', async () => {
-      jest.spyOn(contentsService, 'listContentVersionsWithRelations').mockResolvedValue({
+      jest.spyOn(contentService, 'listContentVersionsWithRelations').mockResolvedValue({
         edges: [],
         nodes: [],
         totalCount: 0,
@@ -376,8 +376,8 @@ describe('OpenAPIContentService', () => {
         },
       };
 
-      (contentsService.getContentById as jest.Mock).mockResolvedValue({ id: 'content-1' });
-      (contentsService.listContentVersionsWithRelations as jest.Mock).mockResolvedValue({
+      (contentService.getContentById as jest.Mock).mockResolvedValue({ id: 'content-1' });
+      (contentService.listContentVersionsWithRelations as jest.Mock).mockResolvedValue({
         edges: [{ node: mockContentVersion, cursor: 'cursor1' }],
         pageInfo: {
           hasNextPage: false,

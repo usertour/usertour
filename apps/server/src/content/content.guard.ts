@@ -3,13 +3,13 @@ import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
 import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
-import { ContentsService } from '@/contents/contents.service';
+import { ContentService } from '@/content/content.service';
 import { EnvironmentsService } from '@/environments/environments.service';
 import { LocalizationsService } from '@/localizations/localizations.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { NoPermissionError } from '@/common/errors';
 
-export class ContentsGuard implements CanActivate {
+export class ContentGuard implements CanActivate {
   private readonly reflector: Reflector;
 
   constructor(
@@ -17,8 +17,8 @@ export class ContentsGuard implements CanActivate {
     private readonly environmentsService: EnvironmentsService,
     @Inject(ProjectsService)
     private readonly projectsService: ProjectsService,
-    @Inject(ContentsService)
-    private readonly contentsService: ContentsService,
+    @Inject(ContentService)
+    private readonly contentService: ContentService,
     @Inject(LocalizationsService)
     private readonly localizationsService: LocalizationsService,
   ) {
@@ -44,7 +44,7 @@ export class ContentsGuard implements CanActivate {
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
     if (contentId) {
-      const content = await this.contentsService.getContent(contentId);
+      const content = await this.contentService.getContent(contentId);
       if (content) {
         if (environmentId && environmentId !== content.environmentId) {
           throw new NoPermissionError();
@@ -53,7 +53,7 @@ export class ContentsGuard implements CanActivate {
       }
     }
     if (versionId) {
-      const version = await this.contentsService.getContentVersion(versionId);
+      const version = await this.contentService.getContentVersion(versionId);
       if (version?.content) {
         if (environmentId && environmentId !== version.content.environmentId) {
           throw new NoPermissionError();
@@ -62,7 +62,7 @@ export class ContentsGuard implements CanActivate {
       }
     }
     if (stepId) {
-      const stepContent = await this.contentsService.getContentByStepId(stepId);
+      const stepContent = await this.contentService.getContentByStepId(stepId);
       if (stepContent) {
         if (environmentId && environmentId !== stepContent.environmentId) {
           throw new NoPermissionError();
