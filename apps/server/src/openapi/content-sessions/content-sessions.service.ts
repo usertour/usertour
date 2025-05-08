@@ -190,7 +190,7 @@ export class OpenAPIContentSessionsService {
     session: ContentSessionWithRelations,
     expand?: ContentSessionExpandType[],
   ): Promise<ContentSession> {
-    const shouldInclude = (type: ContentSessionExpandType) => !expand || expand.includes(type);
+    const shouldInclude = (type: ContentSessionExpandType) => expand?.includes(type);
 
     const answers = shouldInclude(ContentSessionExpandType.ANSWERS)
       ? await this.getSessionAnswers(session)
