@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@apollo/client';
+import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
@@ -15,7 +15,7 @@ import {
   listSegment,
   login,
   queryContentQuestionAnalytics,
-  queryContents,
+  queryContent,
   querySessionDetail,
   removeTeamMember,
   signUp,
@@ -26,6 +26,9 @@ import {
   getSubscriptionByProjectId,
   getSubscriptionUsage,
   globalConfig,
+  ListAccessTokens,
+  DeleteAccessToken,
+  GetAccessToken,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -58,7 +61,7 @@ export const useContentListQuery = ({
   orderBy = { field: 'createdAt', direction: 'desc' },
   pagination = { first: 1000 },
 }: UseContentListQueryProps) => {
-  const { data, refetch, error } = useQuery(queryContents, {
+  const { data, refetch, error } = useQuery(queryContent, {
     variables: {
       ...pagination,
       query,
@@ -66,7 +69,7 @@ export const useContentListQuery = ({
     },
   });
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const contentList = data?.queryContents?.edges.map((e: any) => e.node);
+  const contentList = data?.queryContent?.edges.map((e: any) => e.node);
 
   const contents = contentList ? (contentList as Content[]) : [];
 
@@ -352,4 +355,42 @@ export const useGetSubscriptionUsageQuery = (projectId: string) => {
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useQuery(globalConfig);
   return { data: data?.globalConfig, loading, error };
+};
+
+export interface AccessToken {
+  id: string;
+  name: string;
+  accessToken: string;
+  createdAt: string;
+}
+
+export const useListAccessTokensQuery = (environmentId: string | undefined) => {
+  const { data, loading, error, refetch } = useQuery(ListAccessTokens, {
+    variables: { environmentId },
+    skip: !environmentId,
+  });
+
+  const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
+  return { accessTokens, loading, error, refetch };
+};
+
+export const useDeleteAccessTokenMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteAccessToken);
+  const invoke = async (environmentId: string, accessTokenId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { environmentId, accessTokenId } });
+    return !!response.data?.deleteAccessToken;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetAccessTokenQuery = (
+  environmentId: string,
+  accessTokenId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error } = useQuery(GetAccessToken, {
+    variables: { environmentId, accessTokenId },
+    ...options,
+  });
+  return { data: data?.getAccessToken, loading, error };
 };

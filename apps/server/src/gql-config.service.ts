@@ -24,10 +24,23 @@ export class GqlConfigService implements GqlOptionsFactory {
       includeStacktraceInErrorResponses: graphqlConfig.debug,
       playground: graphqlConfig.playgroundEnabled,
       formatError: (formattedError, error) => {
-        this.logger.error(error);
+        // Log the complete error with context
+        this.logger.error({
+          err: error,
+          msg: 'GraphQL error occurred',
+          context: this.constructor.name,
+          ...(error instanceof GraphQLError
+            ? {
+                originalError: error.originalError,
+                path: error.path,
+                locations: error.locations,
+              }
+            : {}),
+        });
+
         // @ts-expect-error allow assign
         formattedError.extensions ??= {};
-        // Debug log
+
         // Handle BaseError instances
         if (error instanceof GraphQLError && error.originalError instanceof BaseError) {
           return {

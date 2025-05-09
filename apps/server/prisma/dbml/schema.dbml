@@ -117,6 +117,22 @@ Table Environment {
   bizUsers BizUser [not null]
   bizCompanies BizCompany [not null]
   segments Segment [not null]
+  accessTokens AccessToken [not null]
+}
+
+Table AccessToken {
+  id String [pk]
+  prefix String [not null, default: 'ak_']
+  accessToken String [unique, not null]
+  name String [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  expiresAt DateTime
+  lastUsedAt DateTime
+  description String
 }
 
 Table Theme {
@@ -306,6 +322,7 @@ Table BizCompany {
   bizUsersOnCompany BizUserOnCompany [not null]
   bizUsers BizUser [not null]
   bizCompaniesOnSegment BizCompanyOnSegment [not null]
+  BizSession BizSession [not null]
 
   indexes {
     (environmentId, externalId) [unique]
@@ -402,6 +419,8 @@ Table BizSession {
   projectId String [not null, default: '']
   bizUser BizUser [not null]
   bizUserId String [not null]
+  bizCompany BizCompany
+  bizCompanyId String
   content Content [not null]
   contentId String [not null]
   version Version [not null]
@@ -521,6 +540,8 @@ Ref: UserOnProject.userId > User.id [delete: Cascade]
 
 Ref: Environment.projectId > Project.id
 
+Ref: AccessToken.environmentId > Environment.id
+
 Ref: Theme.projectId > Project.id
 
 Ref: Content.environmentId > Environment.id
@@ -572,6 +593,8 @@ Ref: AttributeOnEvent.eventId > Event.id
 Ref: AttributeOnEvent.attributeId > Attribute.id
 
 Ref: BizSession.bizUserId > BizUser.id
+
+Ref: BizSession.bizCompanyId > BizCompany.id
 
 Ref: BizSession.contentId > Content.id
 

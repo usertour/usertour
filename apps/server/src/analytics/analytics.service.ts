@@ -1,6 +1,6 @@
 import { BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { ContentType } from '@/contents/models/content.model';
+import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
@@ -20,6 +20,7 @@ import {
 } from '@/utils/content';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
+import { PaginationConnection } from '@/common/openapi/pagination';
 
 type AnalyticsConditions = {
   contentId: string;
@@ -1075,5 +1076,88 @@ export class AnalyticsService {
       total,
       npsScore,
     };
+  }
+
+  async getContentSessionWithRelations(
+    id: string,
+    environmentId: string,
+    include?: {
+      content?: boolean;
+      bizCompany?: boolean;
+      bizUser?: boolean;
+      version?: boolean;
+    },
+  ) {
+    return await this.prisma.bizSession.findUnique({
+      where: { id, content: { environmentId } },
+      include,
+    });
+  }
+
+  async listContentSessionsWithRelations(
+    environmentId: string,
+    contentId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+    userId?: string,
+    include?: Prisma.BizSessionInclude,
+    orderBy?: Prisma.BizSessionOrderByWithRelationInput[],
+  ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
+    const where: Prisma.BizSessionWhereInput = {
+      contentId,
+      content: {
+        environmentId,
+      },
+      bizUser: userId ? { externalId: userId } : undefined,
+    };
+
+    return findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where,
+          include,
+          orderBy,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where,
+        }),
+      paginationArgs,
+    );
+  }
+
+  async deleteContentSessionWithRelations(id: string, environmentId: string) {
+    const session = await this.prisma.bizSession.findUnique({
+      where: { id, content: { environmentId } },
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bizAnswer.deleteMany({
+        where: { bizSessionId: id },
+      });
+      await tx.bizEvent.deleteMany({
+        where: { bizSessionId: id },
+      });
+      await tx.bizSession.delete({
+        where: { id },
+      });
+    });
+
+    return session;
+  }
+
+  async getSessionAnswers(sessionId: string) {
+    return await this.prisma.bizAnswer.findMany({
+      where: { bizSessionId: sessionId },
+    });
   }
 }
