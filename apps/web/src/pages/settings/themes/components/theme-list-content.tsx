@@ -10,7 +10,7 @@ export const ThemeListContent = () => {
   }
   return (
     // <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-4 min-w-80 "></div>
-    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 min-w-80">
+    <div className="flex flex-wrap gap-4 ">
       {!loading &&
         themeList &&
         themeList.map((theme: Theme) => <ThemeListPreview theme={theme} key={theme.id} />)}

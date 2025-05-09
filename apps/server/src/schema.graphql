@@ -2,6 +2,19 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AccessToken {
+  accessToken: String!
+  createdAt: DateTime!
+  description: String
+  expiresAt: DateTime
+  id: ID!
+  isActive: Boolean!
+  lastUsedAt: DateTime
+  name: String!
+  prefix: String!
+  updatedAt: DateTime!
+}
+
 input ActiveUserProjectInput {
   projectId: String!
   userId: String!
@@ -353,6 +366,11 @@ input CreatSegment {
   name: String
 }
 
+input CreateAccessTokenInput {
+  description: String
+  name: String!
+}
+
 input CreateAttributeInput {
   bizType: Int!
   codeName: String!
@@ -362,23 +380,8 @@ input CreateAttributeInput {
   projectId: String!
 }
 
-input CreateBizCompanyInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON
-  userId: String!
-}
-
 input CreateBizCompanyOnSegment {
   companyOnSegment: [BizCompanyOnSegmentInput!]!
-}
-
-input CreateBizInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON
 }
 
 input CreateBizUserOnSegment {
@@ -577,10 +580,9 @@ type Mutation {
   changePassword(data: ChangePasswordInput!): User!
   changeTeamMemberRole(data: ChangeTeamMemberRoleInput!): Boolean!
   copyTheme(data: CopyThemeInput!): Theme!
+  createAccessToken(environmentId: String!, input: CreateAccessTokenInput!): AccessToken!
   createAttribute(data: CreateAttributeInput!): Attribute!
-  createBizCompany(data: CreateBizCompanyInput!): Common!
   createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
-  createBizUser(data: CreateBizInput!): Common!
   createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
   createCheckoutSession(data: CreateCheckoutSessionRequest!): String!
   createContent(data: ContentInput!): Content!
@@ -593,6 +595,7 @@ type Mutation {
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
+  deleteAccessToken(accessTokenId: String!, environmentId: String!): Boolean!
   deleteAttribute(data: DeleteAttributeInput!): Attribute!
   deleteBizCompany(data: BizUserOrCompanyIdsInput!): Common!
   deleteBizCompanyOnSegment(data: DeleteBizCompanyOnSegment!): Common!
@@ -670,6 +673,7 @@ type Project {
 
 type Query {
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
+  getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
@@ -683,6 +687,7 @@ type Query {
   globalConfig: GlobalConfig!
   hello(name: String!): String!
   helloWorld: String!
+  listAccessTokens(environmentId: String!): [AccessToken!]!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
   listContentVersions(contentId: String!): [Version!]!
@@ -695,9 +700,9 @@ type Query {
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
+  queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
   queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
-  queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!

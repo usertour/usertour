@@ -37,7 +37,7 @@ import { RulesTaskIsClicked } from './task-clicked';
 export const RULES_ITEMS = [
   {
     type: 'user-attr',
-    text: 'User attribute',
+    text: 'Attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },

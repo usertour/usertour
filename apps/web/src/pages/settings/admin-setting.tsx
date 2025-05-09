@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { SettingsLocalizationList } from './localizations';
 import { SettingsMemberList } from './members';
 import { SettingsBilling } from './billing';
+import { SettingsApiList } from './api';
 
 export const AdminSettings = () => {
   const { settingType } = useParams();
@@ -31,6 +32,9 @@ export const AdminSettings = () => {
   }
   if (settingType === 'billing') {
     return <SettingsBilling />;
+  }
+  if (settingType === 'api') {
+    return <SettingsApiList />;
   }
   return <SettingsAccountDetail />;
 };

@@ -466,6 +466,7 @@ export class App extends Evented {
   async createSession(contentId: string) {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;
+    const companyId = this.companyInfo?.externalId;
     if (!userId || !token) {
       return;
     }
@@ -473,6 +474,7 @@ export class App extends Evented {
       userId,
       contentId,
       token,
+      companyId,
     });
   }
 

@@ -4,8 +4,8 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 import { BizEvent } from './biz-event';
-import { Content } from '@/contents/models/content.model';
-import { Version } from '@/contents/models/version.model';
+import { Content } from '@/content/models/content.model';
+import { Version } from '@/content/models/version.model';
 
 @ObjectType()
 export class BizSession extends BaseModel {

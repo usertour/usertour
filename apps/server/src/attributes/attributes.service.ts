@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.input';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AttributesService {
@@ -43,5 +45,36 @@ export class AttributesService {
       where: { projectId, bizType },
       orderBy: { id: 'asc' },
     });
+  }
+
+  async listWithPagination(
+    projectId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+    bizType?: number,
+    eventName?: string[],
+    orderBy?: Prisma.AttributeOrderByWithRelationInput[],
+  ) {
+    const where: Prisma.AttributeWhereInput = {
+      projectId,
+      deleted: false,
+      ...(bizType && { bizType }),
+      ...(eventName && { attributeOnEvent: { some: { event: { codeName: { in: eventName } } } } }),
+    };
+
+    const baseQuery = {
+      where,
+      orderBy,
+    };
+
+    return findManyCursorConnection(
+      (args) => this.prisma.attribute.findMany({ ...baseQuery, ...args }),
+      () => this.prisma.attribute.count({ where: baseQuery.where }),
+      paginationArgs,
+    );
   }
 }
