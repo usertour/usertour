@@ -30,6 +30,19 @@ export class Socket extends Evented {
     super();
     autoBind(this);
 
+    const resolvedUrl = new URL(options.wsUri, window.location.origin);
+    const baseUri = resolvedUrl.origin;
+
+    let basePath = resolvedUrl.pathname;
+    if (basePath !== '/' && basePath.endsWith('/')) {
+      basePath = basePath.slice(0, -1);
+    }
+    if (basePath === '/') {
+      basePath = '';
+    }
+
+    const ioPathSegment = (options.socketConfig?.path || '/socket.io/').replace(/^\/+|\/+$/g, '');
+
     this.options = {
       ...options,
       socketConfig: {
@@ -37,11 +50,12 @@ export class Socket extends Evented {
         timeout: 5000,
         reconnection: true,
         transports: ['websocket'],
+        path: `${basePath}/${ioPathSegment}/`,
         ...options.socketConfig,
       },
     };
 
-    this.socket = io(this.options.wsUri, this.options.socketConfig);
+    this.socket = io(baseUri, this.options.socketConfig);
     this.setupErrorHandling();
   }
 
