@@ -56,7 +56,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -127,7 +127,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -198,7 +198,7 @@ type BizUser {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -251,7 +251,7 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int!
+  count: Int
   success: Boolean!
 }
 
@@ -354,7 +354,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String!
+  name: String
 }
 
 input CreatSegment {
@@ -375,28 +375,13 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   projectId: String!
 }
 
-input CreateBizCompanyInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON!
-  userId: String!
-}
-
 input CreateBizCompanyOnSegment {
   companyOnSegment: [BizCompanyOnSegmentInput!]!
-}
-
-input CreateBizInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON!
 }
 
 input CreateBizUserOnSegment {
@@ -982,7 +967,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]!
+  projects: [UserOnProject!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

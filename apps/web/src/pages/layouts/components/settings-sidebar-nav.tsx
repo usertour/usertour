@@ -123,8 +123,9 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Integrations',
     href: '/settings/integrations',
-    role: allRoles,
-    icon: <IntegrationPlugIcon className={iconClassName} />,
+    role: ALL_ROLES,
+    type: SidebarNavItemType.GENERAL,
+    icon: <IntegrationPlugIcon className={ICON_CLASS_NAME} />,
   },
   {
     title: 'Team',
