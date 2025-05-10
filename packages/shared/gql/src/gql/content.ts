@@ -112,8 +112,8 @@ export const updateContentStep = gql`
   }
 `;
 
-export const queryContents = gql`
-  query queryContents(
+export const queryContent = gql`
+  query queryContent(
     $first: Int
     $last: Int
     $after: String
@@ -121,7 +121,7 @@ export const queryContents = gql`
     $query: ContentQuery!
     $orderBy: ContentOrder!
   ) {
-    queryContents(
+    queryContent(
       first: $first
       last: $last
       after: $after

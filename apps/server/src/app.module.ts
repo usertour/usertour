@@ -5,11 +5,10 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { AuthModule } from '@/auth/auth.module';
 import { BizModule } from '@/biz/biz.module';
 import config from '@/common/configs/config';
-import { ContentsModule } from '@/contents/contents.module';
+import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
-import { PrismaService } from '@/prisma.service';
 import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 import { UsersModule } from '@/users/users.module';
@@ -30,6 +29,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 import api from '@opentelemetry/api';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { OpenAPIModule } from './openapi/openapi.module';
 
 @Module({
   imports: [
@@ -63,6 +63,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
           env: process.env.NODE_ENV,
           uid: (req as any).user?.id || 'anonymous',
         }),
+        level: 'debug',
         transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
       },
     }),
@@ -100,7 +101,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
     WebSocketModule,
     AuthModule,
     UsersModule,
-    ContentsModule,
+    ContentModule,
     EnvironmentsModule,
     ProjectsModule,
     UtilitiesModule,
@@ -113,8 +114,9 @@ import { IntegrationsModule } from './integrations/integrations.module';
     TeamModule,
     SubscriptionModule,
     IntegrationsModule,
+    OpenAPIModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppResolver, PrismaService],
+  providers: [AppService, AppResolver],
 })
 export class AppModule {}

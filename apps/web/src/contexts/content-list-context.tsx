@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
-import { queryContents } from '@usertour-ui/gql';
+import { queryContent } from '@usertour-ui/gql';
 import { Content, PageInfo, Pagination } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -93,7 +93,7 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  const { data, refetch, loading } = useQuery(queryContents, {
+  const { data, refetch, loading } = useQuery(queryContent, {
     variables: {
       ...requestPagination,
       query: { environmentId, type: getQueryType(contentType), ...query },
@@ -102,7 +102,7 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
     skip: !environmentId,
   });
 
-  const contentList = data?.queryContents;
+  const contentList = data?.queryContent;
 
   useEffect(() => {
     const { pageIndex, pageSize } = pagination;

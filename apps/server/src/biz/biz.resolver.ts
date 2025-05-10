@@ -7,7 +7,6 @@ import { BizGuard } from './biz.guard';
 import { BizService } from './biz.service';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
-import { CreateBizCompanyInput, CreateBizInput } from './dto/biz.input';
 import {
   BizUserOrCompanyIdsInput,
   CreatSegment,
@@ -26,20 +25,6 @@ import { Segment } from './models/segment.model';
 @UseGuards(BizGuard)
 export class BizResolver {
   constructor(private service: BizService) {}
-
-  @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
-  async createBizUser(@Args('data') data: CreateBizInput) {
-    const ret = await this.service.upsertBizUsers(data);
-    return { success: ret };
-  }
-
-  @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
-  async createBizCompany(@Args('data') data: CreateBizCompanyInput) {
-    const ret = await this.service.upsertBizCompany(data);
-    return { success: ret };
-  }
 
   @Query(() => BizConnection)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
@@ -103,8 +88,11 @@ export class BizResolver {
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
   async deleteBizUser(@Args('data') data: BizUserOrCompanyIdsInput) {
-    const [, , r3] = await this.service.deleteBizUser(data.ids, data.environmentId);
-    return { success: r3.count > 0, count: r3.count };
+    const result = await this.service.deleteBizUser(data.ids, data.environmentId);
+    return {
+      success: result?.count > 0,
+      count: result?.count || 0,
+    };
   }
 
   @Mutation(() => Common)

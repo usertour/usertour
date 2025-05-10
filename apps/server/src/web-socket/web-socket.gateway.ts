@@ -19,8 +19,8 @@ export class WebSocketGateway {
   }
 
   @SubscribeMessage('list-contents')
-  async listContents(@MessageBody() body: any): Promise<any> {
-    return await this.service.listContents(body);
+  async listContent(@MessageBody() body: any): Promise<any> {
+    return await this.service.listContent(body);
   }
 
   @SubscribeMessage('list-themes')

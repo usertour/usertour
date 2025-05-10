@@ -1,19 +1,10 @@
 import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model';
+import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import {
-  capitalizeFirstLetter,
-  filterNullAttributes,
-  getAttributeType,
-  isNull,
-} from '@/common/attribute/attribute';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import { BizAttributeTypes, BizEvents, EventAttributes } from '@/common/consts/attribute';
-import { ContentType } from '@/contents/models/content.model';
-import {
-  ChecklistData,
-  ContentConfigObject,
-  RulesCondition,
-} from '@/contents/models/version.model';
+import { BizEvents, EventAttributes } from '@/common/consts/attribute';
+import { ContentType } from '@/content/models/content.model';
+import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { Environment } from '@/environments/models/environment.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable } from '@nestjs/common';
@@ -31,7 +22,10 @@ const EVENT_CODE_MAP = {
 
 @Injectable()
 export class WebSocketService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private bizService: BizService,
+  ) {}
 
   async getConfig(body: any): Promise<any> {
     const { token } = body;
@@ -62,7 +56,7 @@ export class WebSocketService {
     return config;
   }
 
-  async listContents(body: any): Promise<any> {
+  async listContent(body: any): Promise<any> {
     const { token, versionId, userId: bizUserId, companyId } = body;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
@@ -88,11 +82,11 @@ export class WebSocketService {
           ]
         : [];
     }
-    const contents = await this.prisma.content.findMany({
+    const contentList = await this.prisma.content.findMany({
       where: { environmentId, published: true },
       // include: { steps: true },
     });
-    if (contents.length === 0) {
+    if (contentList.length === 0) {
       return;
     }
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -107,8 +101,8 @@ export class WebSocketService {
         },
       },
     });
-    for (let index = 0; index < contents.length; index++) {
-      const content = contents[index];
+    for (let index = 0; index < contentList.length; index++) {
+      const content = contentList[index];
       const version = await this.prisma.version.findUnique({
         where: { id: content.publishedVersionId },
         include: { steps: { orderBy: { sequence: 'asc' } } },
@@ -567,165 +561,7 @@ export class WebSocketService {
     if (!environmenet) {
       return;
     }
-    const environmentId = environmenet.id;
-    const projectId = environmenet.projectId;
-    const insertAttribute = await this.insertBizAttributes(
-      projectId,
-      AttributeBizType.USER,
-      attributes,
-    );
-
-    const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
-    });
-    if (!user) {
-      return await this.prisma.bizUser.create({
-        data: {
-          externalId: String(userId),
-          environmentId,
-          data: insertAttribute,
-        },
-      });
-    }
-    const userData = JSON.parse(JSON.stringify(user.data));
-    const insertData = filterNullAttributes({
-      ...userData,
-      ...insertAttribute,
-    });
-
-    return await this.prisma.bizUser.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        data: insertData,
-      },
-    });
-  }
-
-  async insertBizAttributes(
-    projectId: string,
-    bizType: AttributeBizType,
-    attributes: any,
-  ): Promise<any> {
-    const insertAttribute = {};
-    for (const codeName in attributes) {
-      const attrValue = attributes[codeName];
-      const attrName = codeName;
-      if (isNull(attrValue)) {
-        insertAttribute[attrName] = null;
-        continue;
-      }
-      const dataType = getAttributeType(attrValue);
-      const attribute = await this.prisma.attribute.findFirst({
-        where: {
-          projectId,
-          codeName: attrName,
-          bizType,
-        },
-      });
-      if (!attribute) {
-        const newAttr = await this.prisma.attribute.create({
-          data: {
-            codeName: attrName,
-            dataType: dataType,
-            displayName: capitalizeFirstLetter(attrName),
-            projectId,
-            bizType,
-          },
-        });
-        if (newAttr) {
-          insertAttribute[attrName] = attrValue;
-          continue;
-        }
-      }
-      if (attribute && attribute.dataType === dataType) {
-        if (dataType === BizAttributeTypes.DateTime) {
-          insertAttribute[attrName] = new Date(attrValue).toISOString();
-        } else {
-          insertAttribute[attrName] = attrValue;
-        }
-      }
-    }
-    return insertAttribute;
-  }
-
-  async upsertBizCompanyAttributes(
-    projectId: string,
-    environmentId: string,
-    companyId: string,
-    attributes: any,
-  ): Promise<any> {
-    const company = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(companyId), environmentId },
-    });
-    const insertAttribute = await this.insertBizAttributes(
-      projectId,
-      AttributeBizType.COMPANY,
-      attributes,
-    );
-    if (company) {
-      const userData = JSON.parse(JSON.stringify(company.data));
-      const insertData = filterNullAttributes({
-        ...userData,
-        ...insertAttribute,
-      });
-      return await this.prisma.bizCompany.update({
-        where: {
-          id: company.id,
-        },
-        data: {
-          data: insertData,
-        },
-      });
-    }
-    return await this.prisma.bizCompany.create({
-      data: {
-        externalId: String(companyId),
-        environmentId,
-        data: insertAttribute,
-      },
-    });
-  }
-
-  async upsertBizMembership(
-    projectId: string,
-    bizCompanyId: string,
-    bizUserId: string,
-    membership: any,
-  ): Promise<any> {
-    const insertAttribute = await this.insertBizAttributes(
-      projectId,
-      AttributeBizType.MEMBERSHIP,
-      membership,
-    );
-
-    const relation = await this.prisma.bizUserOnCompany.findFirst({
-      where: { bizCompanyId, bizUserId },
-    });
-
-    if (relation) {
-      const userData = JSON.parse(JSON.stringify(relation.data));
-      const insertData = filterNullAttributes({
-        ...userData,
-        ...insertAttribute,
-      });
-      return await this.prisma.bizUserOnCompany.update({
-        where: {
-          id: relation.id,
-        },
-        data: {
-          data: insertData,
-        },
-      });
-    }
-    return await this.prisma.bizUserOnCompany.create({
-      data: {
-        bizUserId,
-        bizCompanyId,
-        data: insertAttribute,
-      },
-    });
+    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environmenet.id);
   }
 
   async upsertBizCompanies(data: any): Promise<any> {
@@ -736,26 +572,14 @@ export class WebSocketService {
     if (!environmenet) {
       return;
     }
-    const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId: environmenet.id },
-    });
-    if (!user) {
-      return;
-    }
-
-    const environmentId = environmenet.id;
-    const projectId = environmenet.projectId;
-    const company = await this.upsertBizCompanyAttributes(
-      projectId,
-      environmentId,
+    return await this.bizService.upsertBizCompanies(
+      this.prisma,
       companyId,
+      userId,
       attributes,
+      environmenet.id,
+      membership,
     );
-    if (membership) {
-      await this.upsertBizMembership(projectId, company.id, user.id, membership);
-    }
-
-    return company;
   }
 
   async listAttributes({ token }: any): Promise<any> {
@@ -817,7 +641,7 @@ export class WebSocketService {
   }
 
   async createSession(data: any): Promise<any> {
-    const { userId, token, contentId } = data;
+    const { userId, token, contentId, companyId } = data;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -828,7 +652,10 @@ export class WebSocketService {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(userId), environmentId },
     });
-    if (!bizUser) {
+    const bizCompany = await this.prisma.bizCompany.findFirst({
+      where: { externalId: String(companyId), environmentId },
+    });
+    if (!bizUser || (companyId && !bizCompany)) {
       return false;
     }
     const content = await this.prisma.content.findUnique({
@@ -845,6 +672,7 @@ export class WebSocketService {
         bizUserId: bizUser.id,
         contentId: content.id,
         versionId: content.publishedVersionId,
+        bizCompanyId: companyId ? bizCompany.id : null,
       },
     });
   }

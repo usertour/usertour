@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
-import { CloseIcon, EditIcon } from '@usertour-ui/icons';
+import { Delete2Icon, EditIcon } from '@usertour-ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { useState } from 'react';
 import { AttributeDeleteForm } from './attribute-delete-form';
@@ -75,8 +75,11 @@ export const AttributeListAction = (props: AttributeListActionProps) => {
               Edit attribute
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDeleteOpen}>
-              <CloseIcon className="w-6" width={16} height={16} />
+            <DropdownMenuItem
+              onClick={handleDeleteOpen}
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+            >
+              <Delete2Icon className="w-6" width={16} height={16} />
               Delete attribute
             </DropdownMenuItem>
           </DropdownMenuContent>
