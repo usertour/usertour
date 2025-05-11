@@ -29,6 +29,7 @@ import {
   ListAccessTokens,
   DeleteAccessToken,
   GetAccessToken,
+  updateProjectName,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -393,4 +394,13 @@ export const useGetAccessTokenQuery = (
     ...options,
   });
   return { data: data?.getAccessToken, loading, error };
+};
+
+export const useUpdateProjectNameMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectName);
+  const invoke = async (projectId: string, name: string): Promise<boolean> => {
+    const response = await mutation({ variables: { projectId, name } });
+    return !!response.data?.updateProjectName;
+  };
+  return { invoke, loading, error };
 };

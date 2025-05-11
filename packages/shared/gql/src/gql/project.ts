@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
-export const updateProject = gql`
-  mutation updateProject($id: String!, $name: String!) {
-    updateProject(id: $id, data: { name: $name }) {
+export const updateProjectName = gql`
+  mutation updateProjectName($projectId: String!, $name: String!) {
+    updateProjectName(projectId: $projectId, name: $name) {
       id
       name
     }

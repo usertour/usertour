@@ -32,4 +32,17 @@ export class ProjectsService {
       where: { userId, projectId },
     });
   }
+
+  async updateProjectName(userId: string, projectId: string, name: string) {
+    // Check if user has access to the project
+    const userProject = await this.getUserProject(userId, projectId);
+    if (!userProject) {
+      throw new ParamsError('Project not found or no access');
+    }
+
+    return this.prisma.project.update({
+      where: { id: projectId },
+      data: { name },
+    });
+  }
 }
