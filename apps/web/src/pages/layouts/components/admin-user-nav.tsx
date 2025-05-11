@@ -77,6 +77,9 @@ export const AdminUserNav = () => {
     }
   };
 
+  const activeProject = projects.find((p) => p.actived);
+  const otherProjects = projects.filter((p) => !p.actived);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -120,18 +123,36 @@ export const AdminUserNav = () => {
           <DropdownMenuLabel className="font-normal">My Organizations</DropdownMenuLabel> */}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>My Organizations</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>My Companies</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="w-56">
-                {projects.map((p) => (
+                <DropdownMenuLabel className="text-xs	">CURRENT COMPANY</DropdownMenuLabel>
+                {activeProject && (
                   <DropdownMenuItem
-                    key={p.id}
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => handleActiveProject(p.id)}
+                    key={activeProject.id}
+                    className="flex items-center justify-between cursor-pointer "
+                    onClick={() => handleActiveProject(activeProject.id)}
                   >
-                    {p.name} {p.actived && <Badge variant={'success'}>Current</Badge>}
+                    <span className="truncate max-w-[120px]">{activeProject.name}</span>{' '}
+                    {<Badge variant={'outline'}>{activeProject.role}</Badge>}
                   </DropdownMenuItem>
-                ))}
+                )}
+                <DropdownMenuSeparator />
+                {otherProjects.length > 0 && (
+                  <>
+                    <DropdownMenuLabel className="text-xs">OTHER COMPANIES</DropdownMenuLabel>
+                    {otherProjects.map((p) => (
+                      <DropdownMenuItem
+                        key={p.id}
+                        className="flex items-center justify-between cursor-pointer "
+                        onClick={() => handleActiveProject(p.id)}
+                      >
+                        <span className="truncate max-w-[120px]">{p.name}</span>{' '}
+                        {<Badge variant={'outline'}>{p.role}</Badge>}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>

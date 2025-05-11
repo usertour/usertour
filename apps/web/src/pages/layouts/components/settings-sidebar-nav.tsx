@@ -93,7 +93,7 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 // Data
 const sidebarNavItems: readonly SidebarNavItem[] = [
   {
-    title: 'General',
+    title: 'Company',
     href: '/settings/general',
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
@@ -193,7 +193,7 @@ export const SettingsSidebarNav = () => {
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <NavSection
-          title="Project"
+          title="General"
           items={generalItems}
           currentPath={location.pathname}
           onNavigate={handleNavigate}
