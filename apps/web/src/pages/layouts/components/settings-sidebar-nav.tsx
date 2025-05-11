@@ -17,6 +17,7 @@ import {
   AccountIcon,
   FlashlightIcon,
   BankCardIcon,
+  ProjectIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
 import { Key } from 'lucide-react';
@@ -91,6 +92,13 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 
 // Data
 const sidebarNavItems: readonly SidebarNavItem[] = [
+  {
+    title: 'Company',
+    href: '/settings/companies',
+    role: OWNER_ROLES,
+    type: SidebarNavItemType.GENERAL,
+    icon: <ProjectIcon className={ICON_CLASS_NAME} />,
+  },
   {
     title: 'Themes',
     href: '/settings/themes',
@@ -181,7 +189,7 @@ export const SettingsSidebarNav = () => {
   return (
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>
-        <h2 className="text-lg font-semibold">Project Settings</h2>
+        <h2 className="text-lg font-semibold">Settings</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <NavSection
@@ -192,7 +200,7 @@ export const SettingsSidebarNav = () => {
         />
         <div className="h-2" />
         <NavSection
-          title="Developer"
+          title="Advanced"
           items={developerItems}
           currentPath={location.pathname}
           onNavigate={handleNavigate}

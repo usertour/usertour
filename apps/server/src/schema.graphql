@@ -630,6 +630,7 @@ type Mutation {
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
+  updateProjectName(name: String!, projectId: String!): Project!
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
