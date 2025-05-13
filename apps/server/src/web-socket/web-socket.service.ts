@@ -20,6 +20,15 @@ const EVENT_CODE_MAP = {
   unactived: { eventCodeName: BizEvents.FLOW_STARTED, expectResult: false },
 } as const;
 
+interface SegmentDataItem {
+  data: {
+    logic: string;
+    attrId: string;
+  };
+  type: 'company-attr' | 'user-attr' | 'membership-attr';
+  operators: 'and' | 'or';
+}
+
 @Injectable()
 export class WebSocketService {
   constructor(
@@ -280,7 +289,6 @@ export class WebSocketService {
     externalCompanyId?: string,
   ): Promise<boolean> {
     const userAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.USER);
-    const companyAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY);
     switch (rules.type) {
       case 'user-attr': {
         return await this.activedUserAttributeRulesCondition(
@@ -311,7 +319,7 @@ export class WebSocketService {
           return await this.activedCompanySegmentRulesCondition(
             rules,
             environment,
-            companyAttrs,
+            attributes,
             bizUser,
             externalCompanyId,
           );
@@ -381,6 +389,70 @@ export class WebSocketService {
     }
   }
 
+  private filterConditionsByBizType(
+    segmentData: SegmentDataItem[],
+    attributes: Attribute[],
+    bizType: AttributeBizType,
+  ): SegmentDataItem[] {
+    return segmentData.filter((item) =>
+      attributes.find((attr) => attr.bizType === bizType && item.data.attrId === attr.id),
+    );
+  }
+
+  private async findCompanyBySegmentConditions(
+    segment: any,
+    attributes: Attribute[],
+    bizCompany: any,
+    environment: Environment,
+  ): Promise<boolean> {
+    if (segment.dataType !== SegmentDataType.CONDITION) {
+      return false;
+    }
+
+    const segmentData = segment.data as unknown as SegmentDataItem[];
+
+    if (!Array.isArray(segmentData)) {
+      return false;
+    }
+
+    const companyConditions = this.filterConditionsByBizType(
+      segmentData,
+      attributes,
+      AttributeBizType.COMPANY,
+    );
+    const userConditions = this.filterConditionsByBizType(
+      segmentData,
+      attributes,
+      AttributeBizType.USER,
+    );
+    const membershipConditions = this.filterConditionsByBizType(
+      segmentData,
+      attributes,
+      AttributeBizType.MEMBERSHIP,
+    );
+
+    const companyFilter = createConditionsFilter(companyConditions, attributes);
+    const userFilter = createConditionsFilter(userConditions, attributes);
+    const membershipFilter = createConditionsFilter(membershipConditions, attributes);
+
+    const hasUserFilter = userFilter && Object.keys(userFilter).length > 0;
+    const hasMembershipFilter = membershipFilter && Object.keys(membershipFilter).length > 0;
+
+    const segmentItem = await this.prisma.bizUserOnCompany.findFirst({
+      where: {
+        ...(hasMembershipFilter ? membershipFilter : {}),
+        bizCompany: {
+          id: bizCompany.id,
+          environmentId: environment.id,
+          ...(companyFilter ? companyFilter : {}),
+        },
+        ...(hasUserFilter ? { bizUser: userFilter } : {}),
+      },
+    });
+
+    return !!segmentItem;
+  }
+
   async activedCompanySegmentRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -395,40 +467,38 @@ export class WebSocketService {
     const bizCompany = await this.prisma.bizCompany.findFirst({
       where: { externalId: String(externalCompanyId), environmentId: environment.id },
     });
+
     if (!segment || !bizCompany) {
       return false;
     }
+
     const relation = await this.prisma.bizUserOnCompany.findFirst({
       where: { bizUserId: bizUser.id, bizCompanyId: bizCompany.id },
     });
+
     if (!relation) {
       return false;
     }
+
     if (segment.dataType === SegmentDataType.ALL) {
       return logic === 'is';
     }
+
     if (segment.dataType === SegmentDataType.MANUAL) {
       const item = await this.prisma.bizCompanyOnSegment.findFirst({
         where: { segmentId, bizCompanyId: bizCompany.id },
       });
-      if (logic === 'is') {
-        return !!item;
-      }
-      return !item;
+      return logic === 'is' ? !!item : !item;
     }
-    if (segment.dataType === SegmentDataType.CONDITION) {
-      const filter = createConditionsFilter(segment.data, attributes);
-      const segmentItem = await this.prisma.bizCompany.findFirst({
-        where: {
-          id: bizCompany.id,
-          environmentId: environment.id,
-          ...filter,
-        },
-      });
 
-      return logic === 'is' ? !!segmentItem : !segmentItem;
-    }
-    return false;
+    const found = await this.findCompanyBySegmentConditions(
+      segment,
+      attributes,
+      bizCompany,
+      environment,
+    );
+
+    return logic === 'is' ? found : !found;
   }
 
   async activedUserSegmentRulesCondition(
