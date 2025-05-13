@@ -52,14 +52,4 @@ export class WebSocketGateway {
   async sendEvent(@MessageBody() body: any): Promise<any> {
     return await this.service.trackEvent(body);
   }
-
-  // @SubscribeMessage("list-attributes")
-  // async listAttributes(@MessageBody() body: any): Promise<any> {
-  //   return await this.service.listAttributes(body);
-  // }
-
-  // @SubscribeMessage("list-segments")
-  // async listBizUserSegments(@MessageBody() body: any): Promise<any> {
-  //   return await this.service.listBizUserSegments(body);
-  // }
 }

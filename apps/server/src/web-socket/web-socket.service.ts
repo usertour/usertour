@@ -425,6 +425,7 @@ export class WebSocketService {
           ...filter,
         },
       });
+
       return logic === 'is' ? !!segmentItem : !segmentItem;
     }
     return false;
@@ -586,64 +587,6 @@ export class WebSocketService {
       environmenet.id,
       membership,
     );
-  }
-
-  async listAttributes({ token }: any): Promise<any> {
-    const environmenet = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environmenet) {
-      return;
-    }
-    const projectId = environmenet.projectId;
-    return await this.prisma.attribute.findMany({
-      where: {
-        projectId,
-        bizType: AttributeBizType.USER,
-      },
-    });
-  }
-
-  async listBizUserSegments(body: any): Promise<any> {
-    const { token, bizUserId } = body;
-    const ids = [];
-    const environmenet = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environmenet) {
-      return false;
-    }
-    const environmentId = environmenet.id;
-    const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(bizUserId), environmentId },
-      include: { bizUsersOnSegment: true },
-    });
-    for (const onSegment of user.bizUsersOnSegment) {
-      ids.push(onSegment.segmentId);
-    }
-    const attributes = await this.prisma.attribute.findMany({
-      where: {
-        projectId: environmenet.projectId,
-        bizType: AttributeBizType.USER,
-      },
-    });
-    const segments = await this.prisma.segment.findMany({
-      where: { dataType: SegmentDataType.CONDITION, environmentId },
-    });
-    for (const segment of segments) {
-      const filter = createConditionsFilter(segment.data, attributes);
-      const segmentUsers = this.prisma.bizUser.findMany({
-        where: {
-          environmentId,
-          externalId: String(bizUserId),
-          ...filter,
-        },
-      });
-      if (segmentUsers) {
-        ids.push(segment.id);
-      }
-    }
-    return ids;
   }
 
   async createSession(data: any): Promise<any> {
