@@ -106,6 +106,7 @@ export class Socket extends Evented {
     userId?: string;
     contentId?: string;
     versionId?: string;
+    companyId?: string;
   }): Promise<SDKContent[]> {
     const response = await this.emitWithTimeout('list-contents', params);
     if (!Array.isArray(response)) {

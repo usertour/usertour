@@ -57,7 +57,7 @@ export class WebSocketService {
   }
 
   async listContent(body: any): Promise<any> {
-    const { token, versionId, userId: bizUserId, companyId } = body;
+    const { token, versionId, userId: externalUserId, companyId: externalCompanyId } = body;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -90,7 +90,7 @@ export class WebSocketService {
       return;
     }
     const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(bizUserId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     const response: any[] = [];
     const attributes = await this.prisma.attribute.findMany({
@@ -125,7 +125,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId,
+              externalCompanyId,
             )
           : [];
       const hideRules =
@@ -135,7 +135,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId,
+              externalCompanyId,
             )
           : [];
       const data =
@@ -145,7 +145,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId,
+              externalCompanyId,
             )
           : version.data;
       const steps = await this.activedStepTriggers(
@@ -153,7 +153,7 @@ export class WebSocketService {
         environment,
         attributes,
         bizUser,
-        companyId,
+        externalCompanyId,
       );
       const resp = {
         ...version,
@@ -175,7 +175,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string,
+    externalCompanyId?: string,
   ) {
     const items = await Promise.all(
       data.items.map(async (item) => {
@@ -185,7 +185,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId,
+              externalCompanyId,
             )
           : [];
         const onlyShowTaskConditions = item.onlyShowTaskConditions
@@ -194,7 +194,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId,
+              externalCompanyId,
             )
           : [];
         return {
@@ -212,7 +212,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string,
+    externalCompanyId?: string,
   ): Promise<Step[]> {
     const stepsData = [...steps];
     for (let index = 0; index < stepsData.length; index++) {
@@ -226,7 +226,7 @@ export class WebSocketService {
               environment,
               attributes,
               bizUser,
-              companyId,
+              externalCompanyId,
             );
             stepsData[index].trigger[subIndex].conditions = triggerData;
           }
@@ -241,7 +241,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string,
+    externalCompanyId?: string,
   ): Promise<RulesCondition[]> {
     const conditions = [...rulesConditions];
     for (let index = 0; index < conditions.length; index++) {
@@ -254,7 +254,7 @@ export class WebSocketService {
             environment,
             attributes,
             bizUser,
-            companyId,
+            externalCompanyId,
           );
           conditions[index].conditions[subIndex].actived = isAcvited;
         }
@@ -264,7 +264,7 @@ export class WebSocketService {
           environment,
           attributes,
           bizUser,
-          companyId,
+          externalCompanyId,
         );
         conditions[index] = { ...rules, actived: isAcvited };
       }
@@ -277,7 +277,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string,
+    externalCompanyId?: string,
   ): Promise<boolean> {
     const userAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.USER);
     const companyAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY);
@@ -288,7 +288,7 @@ export class WebSocketService {
           environment,
           attributes,
           bizUser,
-          companyId,
+          externalCompanyId,
         );
       }
       case 'segment': {
@@ -307,13 +307,13 @@ export class WebSocketService {
             bizUser,
           );
         }
-        if (segment.bizType === SegmentBizType.COMPANY && companyId) {
+        if (segment.bizType === SegmentBizType.COMPANY && externalCompanyId) {
           return await this.activedCompanySegmentRulesCondition(
             rules,
             environment,
             companyAttrs,
             bizUser,
-            companyId,
+            externalCompanyId,
           );
         }
         return false;
@@ -332,7 +332,7 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId?: string,
+    externalCompanyId?: string,
   ): Promise<boolean> {
     const attr = attributes.find((attr) => attr.id === rules.data.attrId);
     if (!attr) {
@@ -356,11 +356,11 @@ export class WebSocketService {
 
       case AttributeBizType.COMPANY:
       case AttributeBizType.MEMBERSHIP: {
-        if (!companyId) return false;
+        if (!externalCompanyId) return false;
 
         const bizCompany = await this.prisma.bizCompany.findFirst({
           where: {
-            externalId: String(companyId),
+            externalId: String(externalCompanyId),
             environmentId,
           },
         });
@@ -386,14 +386,14 @@ export class WebSocketService {
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
-    companyId: string,
+    externalCompanyId: string,
   ): Promise<boolean> {
     const { segmentId, logic = 'is' } = rules.data;
     const segment = await this.prisma.segment.findFirst({
       where: { id: segmentId },
     });
     const bizCompany = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(companyId), environmentId: environment.id },
+      where: { externalId: String(externalCompanyId), environmentId: environment.id },
     });
     if (!segment || !bizCompany) {
       return false;
@@ -565,7 +565,13 @@ export class WebSocketService {
   }
 
   async upsertBizCompanies(data: any): Promise<any> {
-    const { companyId, userId, attributes, token, membership } = data;
+    const {
+      companyId: externalCompanyId,
+      userId: externalUserId,
+      attributes,
+      token,
+      membership,
+    } = data;
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -574,8 +580,8 @@ export class WebSocketService {
     }
     return await this.bizService.upsertBizCompanies(
       this.prisma,
-      companyId,
-      userId,
+      externalCompanyId,
+      externalUserId,
       attributes,
       environmenet.id,
       membership,
@@ -641,7 +647,7 @@ export class WebSocketService {
   }
 
   async createSession(data: any): Promise<any> {
-    const { userId, token, contentId, companyId } = data;
+    const { userId: externalUserId, token, contentId, companyId: externalCompanyId } = data;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -650,12 +656,12 @@ export class WebSocketService {
     }
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     const bizCompany = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(companyId), environmentId },
+      where: { externalId: String(externalCompanyId), environmentId },
     });
-    if (!bizUser || (companyId && !bizCompany)) {
+    if (!bizUser || (externalCompanyId && !bizCompany)) {
       return false;
     }
     const content = await this.prisma.content.findUnique({
@@ -672,7 +678,7 @@ export class WebSocketService {
         bizUserId: bizUser.id,
         contentId: content.id,
         versionId: content.publishedVersionId,
-        bizCompanyId: companyId ? bizCompany.id : null,
+        bizCompanyId: externalCompanyId ? bizCompany.id : null,
       },
     });
   }
