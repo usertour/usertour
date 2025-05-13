@@ -188,6 +188,13 @@ const RulesUserAttributeName = () => {
     },
     [attributes],
   );
+  const userAttributes =
+    attributes?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [];
+  const companyAttributes =
+    attributes?.filter((attr) => attr.bizType === AttributeBizTypes.Company) || [];
+  const membershipAttributes =
+    attributes?.filter((attr) => attr.bizType === AttributeBizTypes.Membership) || [];
+
   return (
     <div className="flex flex-row">
       <Popover.Popover open={open} onOpenChange={setOpen}>
@@ -205,10 +212,9 @@ const RulesUserAttributeName = () => {
             <CommandInput placeholder="Search attribute..." />
             <CommandEmpty>No items found.</CommandEmpty>
             <ScrollArea className="h-72">
-              <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-                {attributes
-                  ?.filter((attr) => attr.bizType === AttributeBizTypes.User)
-                  .map((item) => (
+              {userAttributes.length > 0 && (
+                <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                  {userAttributes.map((item) => (
                     <CommandItem
                       key={item.id}
                       className="cursor-pointer"
@@ -226,12 +232,15 @@ const RulesUserAttributeName = () => {
                       />
                     </CommandItem>
                   ))}
-              </CommandGroup>
+                </CommandGroup>
+              )}
 
-              <CommandGroup heading="Company attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-                {attributes
-                  ?.filter((attr) => attr.bizType === AttributeBizTypes.Company)
-                  .map((item) => (
+              {companyAttributes.length > 0 && (
+                <CommandGroup
+                  heading="Company attribute"
+                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
+                >
+                  {companyAttributes.map((item) => (
                     <CommandItem
                       key={item.id}
                       className="cursor-pointer text-sm"
@@ -249,15 +258,15 @@ const RulesUserAttributeName = () => {
                       />
                     </CommandItem>
                   ))}
-              </CommandGroup>
+                </CommandGroup>
+              )}
 
-              <CommandGroup
-                heading="Membership attribute"
-                style={{ zIndex: EXTENSION_CONTENT_RULES }}
-              >
-                {attributes
-                  ?.filter((attr) => attr.bizType === AttributeBizTypes.Membership)
-                  .map((item) => (
+              {membershipAttributes.length > 0 && (
+                <CommandGroup
+                  heading="Membership attribute"
+                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
+                >
+                  {membershipAttributes.map((item) => (
                     <CommandItem
                       key={item.id}
                       className="cursor-pointer text-sm"
@@ -275,7 +284,8 @@ const RulesUserAttributeName = () => {
                       />
                     </CommandItem>
                   ))}
-              </CommandGroup>
+                </CommandGroup>
+              )}
             </ScrollArea>
           </Command>
         </Popover.PopoverContent>
