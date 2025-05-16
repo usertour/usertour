@@ -65,19 +65,64 @@ function parseOpeningPadding(openingPadding?: OpeningPadding): PaddingObject {
   };
 }
 
+interface ModalPosition {
+  box: {
+    zIndex: string;
+    inset: string;
+    borderTopLeftRadius: string;
+    borderTopRightRadius: string;
+    borderBottomRightRadius: string;
+    borderBottomLeftRadius: string;
+  };
+  top: {
+    zIndex: string;
+    width: string;
+    height: string;
+  };
+  right: {
+    zIndex: string;
+    left: string;
+    height: string;
+  };
+  bottom: {
+    zIndex: string;
+    left: string;
+    top: string;
+  };
+  left: {
+    zIndex: string;
+    width: string;
+    top: string;
+  };
+  default: {
+    zIndex: string;
+  };
+}
+
+/**
+ * Calculate the position and dimensions for a modal and its backdrop elements
+ * @param reference - The reference element
+ * @param rect - The rectangle dimensions of the reference element
+ * @param modalOverlayOpeningPadding - Padding around the opening
+ * @param modalOverlayOpeningRadius - Border radius for the opening
+ * @returns Object containing positioning information for modal and backdrop elements
+ */
 export function positionModal(
   reference: Element,
   rect: Rect,
   modalOverlayOpeningPadding?: number,
-  modalOverlayOpeningRadius?: any,
-) {
-  // const { y, height } = _getVisibleHeight(targetElement, scrollParent);
-  // const { x, width, left } = targetElement.getBoundingClientRect();
-  const defaultIndex = '9999';
-  // const { rects, elements } = state;
-  // const referenceRect = elements.reference.getBoundingClientRect();
+  modalOverlayOpeningRadius?: {
+    borderTopLeftRadius: string;
+    borderTopRightRadius: string;
+    borderBottomRightRadius: string;
+    borderBottomLeftRadius: string;
+  },
+): ModalPosition {
+  const DEFAULT_Z_INDEX = '9999';
   const referenceRect = rect;
   const targetStyle = getComputedStyle(reference);
+
+  // Get border radius from target element or use provided radius
   const targetBorderRadius = {
     borderTopLeftRadius: targetStyle.borderTopLeftRadius,
     borderTopRightRadius: targetStyle.borderTopRightRadius,
@@ -85,71 +130,88 @@ export function positionModal(
     borderBottomLeftRadius: targetStyle.borderBottomLeftRadius,
   };
   const borderRadius = modalOverlayOpeningRadius || targetBorderRadius;
+
+  // Calculate padding
   const openingPadding = parseOpeningPadding(modalOverlayOpeningPadding);
   const horizontalPadding = openingPadding.paddingLeft + openingPadding.paddingRight;
   const verticalPadding = openingPadding.paddingTop + openingPadding.paddingBottom;
 
-  // getBoundingClientRect is not consistent. Some browsers use x and y, while others use left and top
-  const rrect = {
+  // Calculate rectangle dimensions with padding
+  const paddedRect = {
     width: referenceRect.width + horizontalPadding,
     height: referenceRect.height + verticalPadding,
     x: referenceRect.x - openingPadding.paddingLeft,
     y: referenceRect.y - openingPadding.paddingTop,
   };
-  const { width, height, x = 0, y = 0 } = rrect;
-  // const windowRect = getViewportRect(document.documentElement, "fixed")
-  // const {width: w, height: h} = windowRect;
-  const w =
-    ('BackCompat' === document.compatMode ? document.body : document.documentElement).clientWidth ||
-    window.innerWidth;
-  const h =
-    ('BackCompat' === document.compatMode ? document.body : document.documentElement)
-      .clientHeight || window.innerHeight;
-  const z = getBodyZoom();
-  const inset_top = y;
-  const inset_right = (w - x * z - width * z) / z;
-  const inset_bottom = (h - y * z - height * z) / z;
-  const inset_left = x;
-  const top_width = inset_left + width;
-  const top_height = inset_top;
-  const right_left = top_width;
-  const right_height = h - inset_bottom;
-  const bottom_left = inset_left;
-  const bottom_top = inset_top + height;
-  const left_width = inset_left;
-  const left_top = inset_top;
-  // let borderRadiusStyle = `border-top-left-radius:${borderRadius.borderTopLeftRadius};`;
-  // borderRadiusStyle += `border-top-right-radius:${borderRadius.borderTopRightRadius};`;
-  // borderRadiusStyle += `border-bottom-right-radius:${borderRadius.borderBottomRightRadius};`;
-  // borderRadiusStyle += `border-bottom-left-radius:${borderRadius.borderBottomLeftRadius};`;
+
+  // Get viewport dimensions
+  const viewport = {
+    width:
+      ('BackCompat' === document.compatMode ? document.body : document.documentElement)
+        .clientWidth || window.innerWidth,
+    height:
+      ('BackCompat' === document.compatMode ? document.body : document.documentElement)
+        .clientHeight || window.innerHeight,
+  };
+
+  // Calculate zoom factor
+  const zoom = getBodyZoom();
+
+  // Calculate inset values
+  const inset = {
+    top: paddedRect.y,
+    right: (viewport.width - paddedRect.x * zoom - paddedRect.width * zoom) / zoom,
+    bottom: (viewport.height - paddedRect.y * zoom - paddedRect.height * zoom) / zoom,
+    left: paddedRect.x,
+  };
+
+  // Calculate dimensions for each section
+  const dimensions = {
+    top: {
+      width: inset.left + paddedRect.width,
+      height: inset.top,
+    },
+    right: {
+      left: inset.left + paddedRect.width,
+      height: viewport.height - inset.bottom,
+    },
+    bottom: {
+      left: inset.left,
+      top: inset.top + paddedRect.height,
+    },
+    left: {
+      width: inset.left,
+      top: inset.top,
+    },
+  };
 
   return {
     box: {
-      zIndex: defaultIndex,
-      inset: `${inset_top}px ${inset_right}px ${inset_bottom}px ${inset_left}px`,
+      zIndex: DEFAULT_Z_INDEX,
+      inset: `${inset.top}px ${inset.right}px ${inset.bottom}px ${inset.left}px`,
       ...borderRadius,
     },
     top: {
-      zIndex: defaultIndex,
-      width: `${top_width}px`,
-      height: `${top_height}px`,
+      zIndex: DEFAULT_Z_INDEX,
+      width: `${dimensions.top.width}px`,
+      height: `${dimensions.top.height}px`,
     },
     right: {
-      zIndex: defaultIndex,
-      left: `${right_left}px`,
-      height: `${right_height}px`,
+      zIndex: DEFAULT_Z_INDEX,
+      left: `${dimensions.right.left}px`,
+      height: `${dimensions.right.height}px`,
     },
     bottom: {
-      zIndex: defaultIndex,
-      left: `${bottom_left}px`,
-      top: `${bottom_top}px`,
+      zIndex: DEFAULT_Z_INDEX,
+      left: `${dimensions.bottom.left}px`,
+      top: `${dimensions.bottom.top}px`,
     },
     left: {
-      zIndex: defaultIndex,
-      width: `${left_width}px`,
-      top: `${left_top}px`,
+      zIndex: DEFAULT_Z_INDEX,
+      width: `${dimensions.left.width}px`,
+      top: `${dimensions.left.top}px`,
     },
-    default: { zIndex: defaultIndex },
+    default: { zIndex: DEFAULT_Z_INDEX },
   };
 }
 
