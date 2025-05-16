@@ -153,22 +153,37 @@ export function positionModal(
   };
 }
 
-export const getReClippingRect = (rect: Rect, overflow: SideObject) => {
+/**
+ * Adjusts a rectangle's dimensions and position based on overflow values
+ * @param rect - The original rectangle to adjust
+ * @param overflow - Object containing overflow values for each side
+ * @returns A new rectangle with adjusted dimensions and position
+ */
+export const getReClippingRect = (rect: Rect, overflow: SideObject): Rect => {
   const { top, bottom, left, right } = overflow;
-  const __rect = { ...rect };
-  if (overflow.top > 0) {
-    __rect.height -= top;
-    __rect.y += top;
+  const adjustedRect = { ...rect };
+
+  // Adjust top overflow
+  if (top > 0) {
+    adjustedRect.height -= top;
+    adjustedRect.y += top;
   }
-  if (overflow.bottom > 0) {
-    __rect.height -= bottom;
+
+  // Adjust bottom overflow
+  if (bottom > 0) {
+    adjustedRect.height -= bottom;
   }
-  if (overflow.left > 0) {
-    __rect.width -= left;
-    __rect.x += left;
+
+  // Adjust left overflow
+  if (left > 0) {
+    adjustedRect.width -= left;
+    adjustedRect.x += left;
   }
-  if (overflow.right > 0) {
-    __rect.width -= right;
+
+  // Adjust right overflow
+  if (right > 0) {
+    adjustedRect.width -= right;
   }
-  return __rect;
+
+  return adjustedRect;
 };
