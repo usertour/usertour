@@ -179,7 +179,6 @@ export class Tour extends BaseContent<TourStore> {
 
   async handleClose(reason?: contentEndReason) {
     await this.close(reason);
-    await this.startTour(undefined, contentStartReason.START_CONDITION);
   }
 
   async handleActions(actions: RulesCondition[]) {
