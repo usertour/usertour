@@ -2,34 +2,67 @@ import { getComputedStyle } from '@usertour-ui/dom';
 
 import type { Rect, SideObject } from '@floating-ui/dom';
 
-function getBodyZoom() {
-  const styles: any = getComputedStyle(window.document.body);
-  if (styles.zoom && '1' !== styles.zoom) {
-    const z = Number.parseFloat(styles.zoom);
-    if (!Number.isNaN(z)) {
-      return z;
-    }
+/**
+ * Get the zoom level of the body element
+ * @returns The zoom level of the body element
+ */
+function getBodyZoom(): number {
+  const styles = getComputedStyle(window.document.body);
+  const zoom = styles.zoom;
+
+  if (!zoom || zoom === '1') {
+    return 1;
   }
-  return 1;
+
+  const zoomValue = Number.parseFloat(zoom);
+  return Number.isNaN(zoomValue) ? 1 : zoomValue;
 }
 
-// function parseCssPropertyToFloat(str: string) {
-//   return str ? Number.parseFloat(str.replace(/px$/, '')) : 0;
-// }
+/**
+ * The padding object
+ */
+interface PaddingObject {
+  paddingLeft: number;
+  paddingRight: number;
+  paddingTop: number;
+  paddingBottom: number;
+}
 
-function parseOpeningPadding(openingPadding: any) {
-  const isHasKeys = openingPadding && Object.keys(openingPadding).length > 0;
-  const singlePadding = isHasKeys ? 0 : openingPadding;
-  const padding = {
-    paddingLeft: singlePadding,
-    paddingRight: singlePadding,
-    paddingTop: singlePadding,
-    paddingBottom: singlePadding,
+/**
+ * The opening padding
+ */
+type OpeningPadding = number | Partial<PaddingObject> | undefined;
+
+/**
+ * Parse the opening padding
+ * @param openingPadding - The opening padding
+ * @returns The parsed opening padding
+ */
+function parseOpeningPadding(openingPadding?: OpeningPadding): PaddingObject {
+  const defaultPadding = {
+    paddingLeft: 0,
+    paddingRight: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   };
-  if (isHasKeys) {
-    return { ...padding, ...openingPadding };
+
+  if (typeof openingPadding === 'number') {
+    return {
+      paddingLeft: openingPadding,
+      paddingRight: openingPadding,
+      paddingTop: openingPadding,
+      paddingBottom: openingPadding,
+    };
   }
-  return padding;
+
+  if (!openingPadding || Object.keys(openingPadding).length === 0) {
+    return defaultPadding;
+  }
+
+  return {
+    ...defaultPadding,
+    ...openingPadding,
+  };
 }
 
 export function positionModal(
@@ -72,7 +105,6 @@ export function positionModal(
   const h =
     ('BackCompat' === document.compatMode ? document.body : document.documentElement)
       .clientHeight || window.innerHeight;
-  //支持目标网页缩放时的选择框计算
   const z = getBodyZoom();
   const inset_top = y;
   const inset_right = (w - x * z - width * z) / z;
