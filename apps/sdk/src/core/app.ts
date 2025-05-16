@@ -10,8 +10,8 @@ import {
   SDKContent,
   SDKSettingsMode,
   Theme,
-  flowEndReason,
-  flowStartReason,
+  contentEndReason,
+  contentStartReason,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
@@ -20,7 +20,14 @@ import { render } from '../components';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { compareContentPriorities } from '../utils/content';
-import { initializeContentItems } from '../utils/content-utils';
+import {
+  findTourFromUrl,
+  initializeContentItems,
+  findLatestActivatedTour,
+  findLatestStepNumber,
+  findChecklistFromUrl,
+  findLatestActivatedChecklist,
+} from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { AppEvents } from '../utils/event';
 import { extensionIsRunning } from '../utils/extension';
@@ -36,6 +43,7 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
+import { checklistIsDimissed, flowIsDismissed } from '../utils/conditions';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -48,6 +56,7 @@ interface AppStartOptions {
 export class App extends Evented {
   socket = new Socket({ wsUri: getWsUri() });
   activeTour: Tour | undefined;
+  activeChecklist: Checklist | undefined;
   startOptions: AppStartOptions = {
     environmentId: '',
     token: '',
@@ -577,12 +586,35 @@ export class App extends Evented {
    * Starts all registered checklists
    */
   async startChecklist() {
+    const userInfo = this.userInfo;
+    if (this.activeChecklist || !userInfo?.externalId) {
+      return;
+    }
+
+    const checklistFromUrl = findChecklistFromUrl(this.checklists);
+    if (checklistFromUrl) {
+      this.activeChecklist = checklistFromUrl;
+      this.activeChecklist.start(contentStartReason.START_FROM_URL);
+      return;
+    }
+    const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
+    if (latestActivatedChecklist) {
+      const content = latestActivatedChecklist.getContent();
+      // if the checklist is not dismissed, start the next step
+      if (!checklistIsDimissed(content)) {
+        this.activeChecklist = latestActivatedChecklist;
+        this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+        return;
+      }
+    }
+
     const sortedChecklists = this.checklists
       .filter((checklist) => checklist.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
 
-    for (const checklist of sortedChecklists) {
-      checklist.autoStart();
+    if (sortedChecklists.length > 0) {
+      this.activeChecklist = sortedChecklists[0];
+      this.activeChecklist.autoStart();
     }
   }
 
@@ -610,22 +642,71 @@ export class App extends Evented {
       return;
     }
 
+    const tourFromUrl = findTourFromUrl(this.tours);
+    if (tourFromUrl) {
+      this.activeTour = tourFromUrl;
+      this.activeTour.start(contentStartReason.START_FROM_URL);
+      return;
+    }
+
+    // If contentId is provided, start that specific tour
+    if (contentId) {
+      const activeTour = this.tours.find((tour) => tour.getContent().contentId === contentId);
+      if (!activeTour) {
+        return;
+      }
+      this.activeTour = activeTour;
+      this.activeTour.start(contentStartReason.START_FROM_SESSION);
+      return;
+    }
+
+    const latestActivatedTour = findLatestActivatedTour(this.tours);
+    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
+      const content = latestActivatedTour.getContent();
+      // if the tour is not dismissed, start the next step
+      if (!flowIsDismissed(content)) {
+        const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
+
+        // Find the next step after the latest seen step
+        const steps = content.steps || [];
+        const cvid = latestStepNumber >= 0 ? steps[latestStepNumber]?.cvid : undefined;
+        if (cvid) {
+          this.activeTour = latestActivatedTour;
+          await this.activeTour.start(reason, cvid);
+          return;
+        }
+      }
+    }
+
+    // If no unfinished content found, start the highest priority tour
     const autoStartTours = this.tours
       .filter((tour) => tour.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
-    const activeTour = contentId
-      ? this.tours.find((tour) => tour.getContent().contentId === contentId)
-      : autoStartTours[0];
 
+    const activeTour = autoStartTours[0];
     if (!activeTour) {
       return;
     }
 
     this.activeTour = activeTour;
-    if (contentId) {
-      this.activeTour.start(reason);
-    } else {
-      this.activeTour.autoStart(reason);
+    this.activeTour.autoStart(reason);
+  }
+
+  /**
+   * Closes the currently active checklist
+   */
+  closeActiveChecklist() {
+    if (this.activeChecklist) {
+      this.activeChecklist.close();
+    }
+  }
+
+  /**
+   * Unsets the active checklist reference
+   */
+  unsetActiveChecklist() {
+    if (this.activeChecklist) {
+      this.activeChecklist = undefined;
     }
   }
 
@@ -633,19 +714,17 @@ export class App extends Evented {
    * Closes the currently active tour
    * @param reason - Optional reason for closing the tour
    */
-  async closeActiveTour(reason?: flowEndReason) {
+  async closeActiveTour(reason?: contentEndReason) {
     if (this.activeTour) {
       await this.activeTour.close(reason);
-      this.activeTour = undefined;
     }
   }
 
   /**
-   * Cancels and destroys the active tour
+   * Unsets the active tour reference
    */
-  async cancelActiveTour() {
+  unsetActiveTour() {
     if (this.activeTour) {
-      this.activeTour.destroy();
       this.activeTour = undefined;
     }
   }
@@ -654,7 +733,6 @@ export class App extends Evented {
     const sdkConfig = await this.socket.getConfig(this.startOptions.token);
     if (sdkConfig) {
       this.sdkConfig = sdkConfig;
-      console.log('sdkConfig', this.sdkConfig);
     }
   }
 
@@ -754,6 +832,7 @@ export class App extends Evented {
     this.tours = [];
     this.stopContentPolling();
     await this.closeActiveTour();
+    this.closeActiveChecklist();
   }
 
   /**
@@ -770,7 +849,7 @@ export class App extends Evented {
    * Starts all content items (tours, launchers, checklists)
    */
   async startContents() {
-    await this.startTour(undefined, flowStartReason.START_CONDITION);
+    await this.startTour(undefined, contentStartReason.START_CONDITION);
     await this.startLauncher();
     await this.startChecklist();
   }

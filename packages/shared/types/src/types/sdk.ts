@@ -1,30 +1,38 @@
 import { BizEvent } from './biz';
 import { ContentVersion } from './contents';
+import { BizSession } from './statistics';
 import { PlanType } from './subscription';
 
 export type SDKContent = ContentVersion & {
   name: string;
   totalSessions: number;
+  dismissedSessions: number;
+  completedSessions: number;
+  latestSession?: BizSession;
   events: BizEvent[];
 };
 
-export enum flowEndReason {
+export enum contentEndReason {
   USER_CLOSED = 'user_closed',
   ELEMENT_NOT_FOUND = 'element_not_found',
 }
 
-export enum flowStartReason {
+export enum contentStartReason {
   START_CONDITION = 'start_condition',
+  START_FROM_URL = 'start_from_url',
+  START_FROM_SESSION = 'start_from_session',
   MANUAL_START = 'manual_start',
   ACTION = 'action',
 }
 
 export const flowReasonTitleMap = {
-  [flowStartReason.START_CONDITION]: 'Matched auto-start condition',
-  [flowStartReason.MANUAL_START]: 'Manually started',
-  [flowStartReason.ACTION]: 'Button clicked',
-  [flowEndReason.USER_CLOSED]: 'User closed',
-  [flowEndReason.ELEMENT_NOT_FOUND]: 'Element not found',
+  [contentStartReason.START_CONDITION]: 'Matched auto-start condition',
+  [contentStartReason.START_FROM_URL]: 'Started from URL',
+  [contentStartReason.START_FROM_SESSION]: 'Started from session',
+  [contentStartReason.MANUAL_START]: 'Manually started',
+  [contentStartReason.ACTION]: 'Button clicked',
+  [contentEndReason.USER_CLOSED]: 'User closed',
+  [contentEndReason.ELEMENT_NOT_FOUND]: 'Element not found',
 };
 
 export interface SDKConfig {

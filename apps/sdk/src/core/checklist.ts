@@ -40,14 +40,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
   getReusedSessionId() {
     const content = this.getContent();
-    if (!content.data || !content.events.length) {
+    if (!content.data || !content?.latestSession) {
       return null;
     }
     const isDismissed = checklistIsDimissed(content);
     if (isDismissed) {
       return null;
     }
-    return content.events[0].bizSessionId;
+    return content.latestSession.id;
   }
 
   private handleVisibilityState() {
@@ -101,7 +101,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   itemIsCompleted(item: ChecklistItemType) {
-    return !!this.getContent().events.find(
+    return !!this.getContent().latestSession?.bizEvent?.find(
       (event) =>
         event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
         event.data.checklist_task_id === item.id,
@@ -123,7 +123,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       } else if (action.type === ContentActionsItemType.CHECKLIST_DISMIS) {
-        this.dismiss();
+        this.close();
       }
     }
   }
@@ -227,14 +227,19 @@ export class Checklist extends BaseContent<ChecklistStore> {
     });
   }
 
-  dismiss() {
+  isActiveChecklist() {
+    return this.getActiveChecklist() === this;
+  }
+
+  close() {
     this.setDismissed(true);
     this.hide();
     this.trigger(BizEvents.CHECKLIST_DISMISSED);
+    this.destroy();
   }
 
   async handleDismiss() {
-    this.dismiss();
+    this.close();
   }
 
   handleOpenChange(open: boolean) {
@@ -242,10 +247,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   destroy() {
+    if (this.isActiveChecklist()) {
+      this.unsetActiveChecklist();
+    }
     this.setStore(defaultChecklistStore);
   }
-
-  async cancel() {}
 
   reset() {}
 

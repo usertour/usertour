@@ -13,12 +13,12 @@ import {
   SDKContent,
   Step,
   StepContentType,
-  flowEndReason,
-  flowStartReason,
+  contentEndReason,
+  contentStartReason,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
 import { TourStore } from '../types/store';
-import { activedRulesConditions, isActive } from '../utils/conditions';
+import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
 import { type App } from './app';
@@ -41,21 +41,16 @@ export class Tour extends BaseContent<TourStore> {
     await this.activeContentConditions();
   }
 
-  show() {
+  show(cvid?: string) {
     const content = this.getContent();
     if (!content.steps || !content.steps.length) {
       return;
     }
-    const step = content.steps[0];
-    const cvid = step.cvid;
-    if (cvid) {
-      this.goto(cvid);
-    }
-  }
-
-  async cancel() {
-    if (this.isActiveTour()) {
-      this.cancelActiveTour();
+    const stepToShow = content.steps.find((step) => step.cvid === cvid) || content.steps[0];
+    if (stepToShow?.cvid) {
+      this.goto(stepToShow.cvid);
+    } else {
+      this.close();
     }
   }
 
@@ -82,7 +77,15 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   getReusedSessionId() {
-    return null;
+    const content = this.getContent();
+    if (!content.data || !content.latestSession) {
+      return null;
+    }
+    const isDismissed = flowIsDismissed(content);
+    if (isDismissed) {
+      return null;
+    }
+    return content.latestSession.id;
   }
 
   private buildStoreData() {
@@ -101,13 +104,13 @@ export class Tour extends BaseContent<TourStore> {
     const userInfo = this.getUserInfo();
     const content = this.getContent();
     if (!content.steps || !userInfo || !userInfo.externalId) {
-      await this.cancelActiveTour();
+      await this.close();
       return;
     }
     const total = content.steps.length;
     const currentStep = content.steps.find((step) => step.cvid === stepCvid);
     if (!currentStep) {
-      this.handleClose(flowEndReason.USER_CLOSED);
+      this.handleClose(contentEndReason.USER_CLOSED);
       return;
     }
     this.reset();
@@ -132,7 +135,7 @@ export class Tour extends BaseContent<TourStore> {
   async showPopper(tourStore: TourStore) {
     const currentStep = this.getCurrentStep();
     if (!currentStep?.target || currentStep.cvid !== this.getCurrentStep()?.cvid || !document) {
-      await this.cancelActiveTour();
+      await this.close();
       return;
     }
     if (this.watcher) {
@@ -152,7 +155,7 @@ export class Tour extends BaseContent<TourStore> {
       });
     });
     this.watcher.once('element-found-timeout', () => {
-      this.handleClose(flowEndReason.ELEMENT_NOT_FOUND);
+      this.handleClose(contentEndReason.ELEMENT_NOT_FOUND);
     });
     this.watcher.findElement();
   }
@@ -162,7 +165,7 @@ export class Tour extends BaseContent<TourStore> {
     this.setStore({ ...tourStore, openState });
   }
 
-  async close(reason: flowEndReason = flowEndReason.USER_CLOSED) {
+  async close(reason: contentEndReason = contentEndReason.USER_CLOSED) {
     const userInfo = this.getUserInfo();
     const content = this.getContent();
     if (!content?.steps || !this.getCurrentStep() || !userInfo?.externalId) {
@@ -174,24 +177,36 @@ export class Tour extends BaseContent<TourStore> {
     this.destroy();
   }
 
-  async handleClose(reason?: flowEndReason) {
-    await this.closeActiveTour(reason);
-    await this.startTour(undefined, flowStartReason.START_CONDITION);
+  async handleClose(reason?: contentEndReason) {
+    await this.close(reason);
+    await this.startTour(undefined, contentStartReason.START_CONDITION);
   }
 
   async handleActions(actions: RulesCondition[]) {
-    for (const action of actions) {
+    // Separate PAGE_NAVIGATE actions from other actions
+    const pageNavigateActions = actions.filter(
+      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
+    );
+    const otherActions = actions.filter(
+      (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
+    );
+
+    // Execute non-PAGE_NAVIGATE actions first
+    for (const action of otherActions) {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
         await this.startNewTour(action.data.contentId);
       } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
         await this.handleClose();
-      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
-        this.handleNavigate(action.data);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       }
+    }
+
+    // Execute PAGE_NAVIGATE actions last
+    for (const action of pageNavigateActions) {
+      this.handleNavigate(action.data);
     }
   }
 
@@ -281,8 +296,8 @@ export class Tour extends BaseContent<TourStore> {
     }
 
     if (isTimeout) {
-      await this.closeActiveTour();
-      await this.startTour(undefined, flowStartReason.START_CONDITION);
+      await this.close();
+      await this.startTour(undefined, contentStartReason.START_CONDITION);
     } else {
       this.hide();
     }
@@ -330,25 +345,44 @@ export class Tour extends BaseContent<TourStore> {
     return this.isActiveTour() && this.getCurrentStep() && openState;
   }
 
+  /**
+   * Resets the tour
+   */
   reset() {
     this.setCurrentStep(null);
     this.setStore(defaultTourStore);
   }
 
+  /**
+   * Destroys the tour
+   */
   destroy() {
+    // Unset the active tour reference
+    if (this.isActiveTour()) {
+      this.unsetActiveTour();
+    }
+    // Reset the tour
     this.reset();
+    // Destroy the element watcher
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
     }
   }
 
+  /**
+   * Initializes event listeners
+   */
   initializeEventListeners() {
     this.once(AppEvents.CONTENT_AUTO_START_ACTIVATED, async (args: any) => {
       await this.reportAutoStartEvent(args.reason);
     });
   }
 
+  /**
+   * Reports the auto start event
+   * @param reason - The reason for the auto start
+   */
   async reportAutoStartEvent(reason?: string) {
     await this.reportEventWithSession(
       {
@@ -361,7 +395,11 @@ export class Tour extends BaseContent<TourStore> {
     );
   }
 
-  private async reportCloseEvent(reason: flowEndReason) {
+  /**
+   * Reports the close event
+   * @param reason - The reason for the close
+   */
+  private async reportCloseEvent(reason: contentEndReason) {
     const content = this.getContent();
     const currentStep = this.getCurrentStep();
     if (!currentStep) {
@@ -386,6 +424,13 @@ export class Tour extends BaseContent<TourStore> {
     );
   }
 
+  /**
+   * Reports the step events
+   * @param currentStep - The current step
+   * @param index - The index of the current step
+   * @param progress - The progress of the current step
+   * @param isComplete - Whether the current step is complete
+   */
   private async reportStepEvents(
     currentStep: Step,
     index: number,

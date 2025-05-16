@@ -79,7 +79,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       this.setStore({ ...store, triggerRef: el as HTMLElement });
     });
     this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, () => {
-      this.dismiss();
+      this.close();
     });
     this.watcher.findElement();
   }
@@ -99,7 +99,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       } else if (action.type === ContentActionsItemType.LAUNCHER_DISMIS) {
-        this.dismiss();
+        this.close();
       }
     }
   }
@@ -112,7 +112,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       await this.reportActiveEvent();
       if (data?.tooltip?.settings?.dismissAfterFirstActivation) {
         setTimeout(() => {
-          this.dismiss();
+          this.close();
         }, 2000);
       }
     });
@@ -124,7 +124,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     });
   }
 
-  dismiss() {
+  close() {
     this.setDismissed(true);
     this.hide();
     this.trigger(BizEvents.LAUNCHER_DISMISSED);
@@ -136,10 +136,6 @@ export class Launcher extends BaseContent<LauncherStore> {
       this.watcher.destroy();
       this.watcher = null;
     }
-  }
-
-  async cancel() {
-    //this.dismiss();
   }
 
   reset() {}

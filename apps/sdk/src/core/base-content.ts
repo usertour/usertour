@@ -6,8 +6,7 @@ import {
   Step,
   Theme,
   UserTourTypes,
-  flowEndReason,
-  flowStartReason,
+  contentStartReason,
 } from '@usertour-ui/types';
 import { isEqual } from 'lodash';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
@@ -43,7 +42,6 @@ export abstract class BaseContent<T = any> extends Evented {
 
   async autoStart(reason?: string) {
     if (!this.canAutoStart()) {
-      await this.cancel();
       return;
     }
     if (this.isStarted) {
@@ -58,7 +56,7 @@ export abstract class BaseContent<T = any> extends Evented {
     await this.start(reason);
   }
 
-  async start(reason?: string) {
+  async start(reason?: string, cvid?: string) {
     const reusedSessionId = this.getReusedSessionId();
     const sessionId = reusedSessionId || (await this.createSessionId());
     if (!sessionId) {
@@ -67,7 +65,7 @@ export abstract class BaseContent<T = any> extends Evented {
     this.sessionId = sessionId;
     this.isStarted = true;
     this.trigger(AppEvents.CONTENT_AUTO_START_ACTIVATED, { reason });
-    this.show();
+    this.show(cvid);
   }
 
   canAutoStart() {
@@ -176,10 +174,6 @@ export abstract class BaseContent<T = any> extends Evented {
     return this.getInstance().getBaseZIndex();
   }
 
-  closeActiveTour(reason?: flowEndReason) {
-    return this.getInstance().closeActiveTour(reason);
-  }
-
   startTour(contentId: string | undefined, reason: string) {
     return this.getInstance().startTour(contentId, reason);
   }
@@ -254,13 +248,21 @@ export abstract class BaseContent<T = any> extends Evented {
     return this.getInstance().companyInfo;
   }
 
-  async cancelActiveTour() {
-    return await this.getInstance().cancelActiveTour();
+  unsetActiveTour() {
+    return this.getInstance().unsetActiveTour();
+  }
+
+  unsetActiveChecklist() {
+    return this.getInstance().unsetActiveChecklist();
+  }
+
+  getActiveChecklist() {
+    return this.getInstance().activeChecklist;
   }
 
   async startNewTour(contentId: string) {
-    await this.cancelActiveTour();
-    await this.startTour(contentId, flowStartReason.ACTION);
+    await this.getInstance().closeActiveTour();
+    await this.startTour(contentId, contentStartReason.ACTION);
   }
 
   handleNavigate(data: any) {
@@ -312,8 +314,8 @@ export abstract class BaseContent<T = any> extends Evented {
   abstract getReusedSessionId(): string | null;
   abstract monitor(): Promise<void>;
   abstract destroy(): void;
-  abstract show(): void;
-  abstract cancel(): Promise<void>;
+  abstract show(cvid?: string): void;
+  abstract close(reason?: string): void;
   abstract reset(): void;
   abstract refresh(): void;
   abstract initializeEventListeners(): void;

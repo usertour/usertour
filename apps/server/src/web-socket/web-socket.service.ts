@@ -8,7 +8,7 @@ import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/mo
 import { Environment } from '@/environments/models/environment.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable } from '@nestjs/common';
-import { BizEvent, BizUser, Step } from '@prisma/client';
+import { BizUser, Content, Step } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
 const EVENT_CODE_MAP = {
@@ -116,9 +116,12 @@ export class WebSocketService {
         where: { id: content.publishedVersionId },
         include: { steps: { orderBy: { sequence: 'asc' } } },
       });
-      const events = await this.listEvents(content.id, bizUser.id);
-      const totalSessions = await this.getTotalSessions(content.id, bizUser.id);
-
+      const latestSession = await this.getLatestSession(content.id, bizUser.id);
+      // TODO: remove the code after the sdk is updated
+      const events = latestSession ? await this.listEvents(latestSession.id) : [];
+      const totalSessions = await this.getTotalSessions(content, bizUser.id);
+      const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
+      const completedSessions = await this.getCompletedSessions(content, bizUser.id);
       const config = version.config
         ? (version.config as ContentConfigObject)
         : {
@@ -171,8 +174,11 @@ export class WebSocketService {
         config: { ...config, autoStartRules, hideRules },
         type: content.type,
         name: content.name,
+        latestSession,
         events,
         totalSessions,
+        dismissedSessions,
+        completedSessions,
       };
       response.push(resp);
     }
@@ -586,29 +592,80 @@ export class WebSocketService {
     return session ? expectResult : !expectResult;
   }
 
-  async listEvents(contentId: string, bizUserId: string): Promise<any> {
-    const sessions = await this.prisma.bizSession.findMany({
-      where: { contentId, bizUserId, deleted: false },
-      orderBy: { createdAt: 'desc' },
-      take: 1,
+  async listEvents(sessionId: string): Promise<any> {
+    return await this.prisma.bizEvent.findMany({
+      where: { bizSessionId: sessionId },
+      include: { event: true },
     });
-    const data: BizEvent[] = [];
-    for (let index = 0; index < sessions.length; index++) {
-      const session = sessions[index];
-      const events = await this.prisma.bizEvent.findMany({
-        where: { bizSessionId: session.id },
-        include: { event: true },
-      });
-      if (events) {
-        data.push(...events);
-      }
-    }
-    return data;
   }
 
-  async getTotalSessions(contentId: string, bizUserId: string): Promise<any> {
-    return await this.prisma.bizSession.count({
+  async getLatestSession(contentId: string, bizUserId: string): Promise<any> {
+    return await this.prisma.bizSession.findFirst({
       where: { contentId, bizUserId, deleted: false },
+      include: { bizEvent: { include: { event: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getDismissedSessions(content: Content, bizUserId: string): Promise<any> {
+    let codeName = '';
+    if (content.type === ContentType.FLOW) {
+      codeName = BizEvents.FLOW_ENDED;
+    } else if (content.type === ContentType.LAUNCHER) {
+      codeName = BizEvents.LAUNCHER_DISMISSED;
+    } else if (content.type === ContentType.CHECKLIST) {
+      codeName = BizEvents.CHECKLIST_DISMISSED;
+    }
+    return await this.prisma.bizSession.count({
+      where: {
+        contentId: content.id,
+        bizUserId,
+        deleted: false,
+        bizEvent: {
+          some: {
+            event: {
+              codeName,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getCompletedSessions(content: Content, bizUserId: string): Promise<any> {
+    let codeName = '';
+    if (content.type === ContentType.FLOW) {
+      codeName = BizEvents.FLOW_COMPLETED;
+    } else if (content.type === ContentType.LAUNCHER) {
+      codeName = BizEvents.LAUNCHER_ACTIVATED;
+    } else if (content.type === ContentType.CHECKLIST) {
+      codeName = BizEvents.CHECKLIST_COMPLETED;
+    }
+    return await this.prisma.bizSession.count({
+      where: {
+        contentId: content.id,
+        bizUserId,
+        deleted: false,
+        bizEvent: {
+          some: {
+            event: {
+              codeName,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getTotalSessions(content: Content, bizUserId: string): Promise<any> {
+    return await this.prisma.bizSession.count({
+      where: { contentId: content.id, bizUserId, deleted: false },
+    });
+  }
+
+  async getActiveSessions(content: Content, bizUserId: string): Promise<any> {
+    return await this.prisma.bizSession.count({
+      where: { contentId: content.id, bizUserId, deleted: false, state: 0 },
     });
   }
 
@@ -733,7 +790,7 @@ export class WebSocketService {
     }
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { content: true },
+      include: { content: true, bizEvent: { include: { event: true } } },
     });
     if (!bizSession || bizSession.state === 1) {
       return false;
