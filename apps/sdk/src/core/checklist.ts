@@ -38,16 +38,27 @@ export class Checklist extends BaseContent<ChecklistStore> {
     this.handleVisibilityState();
   }
 
+  /**
+   * Retrieves the session ID for a checklist that can be reused.
+   * A session can be reused if:
+   * 1. The checklist has valid data and a latest session
+   * 2. The checklist has not been dismissed
+   *
+   * @returns {string | null} The session ID if reusable, null otherwise
+   */
   getReusedSessionId() {
-    const content = this.getContent();
-    if (!content.data || !content?.latestSession) {
+    const checklistContent = this.getContent();
+    const hasValidContent = checklistContent.data && checklistContent.latestSession;
+
+    if (!hasValidContent || !checklistContent.latestSession) {
       return null;
     }
-    const isDismissed = checklistIsDimissed(content);
-    if (isDismissed) {
+
+    if (checklistIsDimissed(checklistContent)) {
       return null;
     }
-    return content.latestSession.id;
+
+    return checklistContent.latestSession.id;
   }
 
   private handleVisibilityState() {
