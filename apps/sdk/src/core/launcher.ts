@@ -85,24 +85,46 @@ export class Launcher extends BaseContent<LauncherStore> {
     this.updateStore({ ...storeData });
   }
 
+  /**
+   * Shows the launcher by initializing the element watcher and setting up event listeners
+   * This method will:
+   * 1. Validate the target element exists
+   * 2. Clean up any existing watcher
+   * 3. Initialize a new element watcher
+   * 4. Set up event handlers for element found and timeout scenarios
+   */
   show() {
     const data = this.getContent().data as LauncherData;
+
+    // Early return if document or target element is not available
     if (!document || !data.target.element) {
       return;
     }
+
+    // Clean up existing watcher if present
     if (this.watcher) {
       this.watcher.destroy();
     }
+
+    // Initialize store data and watcher
     const storeData = this.buildStoreData();
     const store = { ...storeData, openState: false };
     this.setStore({ ...store });
+
+    // Create and configure new element watcher
     this.watcher = new ElementWatcher(data.target.element);
+
+    // Set up element found handler
     this.watcher.once(AppEvents.ELEMENT_FOUND, (el) => {
       this.setStore({ ...store, triggerRef: el as HTMLElement });
     });
+
+    // Set up timeout handler
     this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, () => {
       this.close();
     });
+
+    // Start element search
     this.watcher.findElement();
   }
 
