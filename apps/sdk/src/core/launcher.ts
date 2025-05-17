@@ -168,34 +168,63 @@ export class Launcher extends BaseContent<LauncherStore> {
     }
   }
 
+  /**
+   * Initializes event listeners for launcher lifecycle events
+   * Sets up handlers for activation, dismissal, and visibility events
+   */
   initializeEventListeners() {
     const content = this.getContent();
     const data = content.data as LauncherData;
+    const { tooltip } = data;
 
+    // Handle launcher activation
     this.once(BizEvents.LAUNCHER_ACTIVATED, async () => {
       await this.reportActiveEvent();
-      if (data?.tooltip?.settings?.dismissAfterFirstActivation) {
+
+      // Auto-dismiss after activation if configured
+      if (tooltip?.settings?.dismissAfterFirstActivation) {
         setTimeout(() => {
           this.close();
         }, 2000);
       }
     });
+
+    // Handle launcher dismissal
     this.once(BizEvents.LAUNCHER_DISMISSED, () => {
       this.reportDismissEvent();
     });
+
+    // Handle launcher visibility
     this.once(BizEvents.LAUNCHER_SEEN, () => {
       this.reportSeenEvent();
     });
   }
 
+  /**
+   * Closes the launcher and triggers dismissal events
+   * This method:
+   * 1. Marks the launcher as dismissed
+   * 2. Hides the launcher UI
+   * 3. Triggers dismissal events
+   */
   close() {
     this.setDismissed(true);
     this.hide();
     this.trigger(BizEvents.LAUNCHER_DISMISSED);
   }
 
+  /**
+   * Destroys the launcher instance and cleans up resources
+   * This method:
+   * 1. Resets the store to default state
+   * 2. Destroys the element watcher if it exists
+   * 3. Cleans up any remaining references
+   */
   destroy() {
+    // Reset store to default state
     this.setStore(defaultLauncherStore);
+
+    // Clean up element watcher
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
