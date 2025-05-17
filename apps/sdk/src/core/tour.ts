@@ -170,25 +170,58 @@ export class Tour extends BaseContent<TourStore> {
     return content.steps.find((step) => step.cvid === cvid) ?? null;
   }
 
-  async goto(stepCvid: string) {
+  /**
+   * Navigates to a specific step in the tour by its cvid
+   * This method handles:
+   * 1. Validating user and content state
+   * 2. Finding and setting the target step
+   * 3. Displaying the step based on its type (tooltip or modal)
+   *
+   * @param stepCvid - The cvid of the step to navigate to
+   * @throws Will close the tour if validation fails or step is not found
+   */
+  async goto(stepCvid: string): Promise<void> {
+    // Validate user and content state
     const userInfo = this.getUserInfo();
     const content = this.getContent();
-    if (!content.steps || !userInfo || !userInfo.externalId) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
-      return;
-    }
-    const currentStep = this.getStepByCvid(stepCvid);
-    if (!currentStep) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
-      return;
-    }
-    this.reset();
-    this.setCurrentStep(currentStep);
 
-    if (currentStep.type === 'tooltip') {
-      await this.showPopper(currentStep);
-    } else if (currentStep.type === 'modal') {
-      await this.showModal(currentStep);
+    if (!this.isValidTourState(content, userInfo)) {
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
+
+    // Find and validate target step
+    const targetStep = this.getStepByCvid(stepCvid);
+    if (!targetStep) {
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
+
+    // Reset tour state and set new step
+    this.reset();
+    this.setCurrentStep(targetStep);
+
+    // Display step based on its type
+    await this.displayStep(targetStep);
+  }
+
+  /**
+   * Validates if the tour can proceed with the current state
+   * @private
+   */
+  private isValidTourState(content: SDKContent, userInfo: any): boolean {
+    return Boolean(content.steps?.length && userInfo?.externalId);
+  }
+
+  /**
+   * Displays a step based on its type
+   * @private
+   */
+  private async displayStep(step: Step): Promise<void> {
+    if (step.type === 'tooltip') {
+      await this.showPopper(step);
+    } else if (step.type === 'modal') {
+      await this.showModal(step);
     }
   }
 
