@@ -116,6 +116,7 @@ export enum FrequencyUnits {
 export enum StepContentType {
   TOOLTIP = 'tooltip',
   MODAL = 'modal',
+  HIDDEN = 'hidden',
 }
 export type RulesFrequencyValueEvery = {
   times?: number;

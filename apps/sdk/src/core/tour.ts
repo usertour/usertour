@@ -249,11 +249,11 @@ export class Tour extends BaseContent<TourStore> {
    * @private
    */
   private async displayStep(step: Step): Promise<void> {
-    if (step.type === 'tooltip') {
+    if (step.type === StepContentType.TOOLTIP) {
       await this.showPopper(step);
-    } else if (step.type === 'modal') {
+    } else if (step.type === StepContentType.MODAL) {
       await this.showModal(step);
-    } else if (step.type === 'hidden') {
+    } else if (step.type === StepContentType.HIDDEN) {
       await this.showHidden(step);
     } else {
       this.close(contentEndReason.SYSTEM_CLOSED);
