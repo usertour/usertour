@@ -32,9 +32,21 @@ export class Checklist extends BaseContent<ChecklistStore> {
     super(instance, content, defaultChecklistStore);
   }
 
+  /**
+   * Monitors the checklist state and updates its visibility.
+   * This method:
+   * 1. Activates content conditions
+   * 2. Monitors item conditions
+   * 3. Handles visibility state based on checklist status
+   */
   async monitor() {
+    // Activate content conditions first
     await this.activeContentConditions();
+
+    // Monitor individual item conditions
     await this.itemConditionsMonitor();
+
+    // Update visibility state based on checklist status
     this.handleVisibilityState();
   }
 
@@ -61,20 +73,30 @@ export class Checklist extends BaseContent<ChecklistStore> {
     return checklistContent.latestSession.id;
   }
 
+  /**
+   * Handles the visibility state of the checklist.
+   * This method:
+   * 1. Checks if checklist has started and not been dismissed
+   * 2. Manages visibility based on temporary hidden state
+   * 3. Triggers first seen event when checklist becomes visible
+   */
   private handleVisibilityState() {
+    // Return early if checklist hasn't started or has been dismissed
     if (!this.hasStarted() || this.hasDismissed()) {
       return;
     }
+
     const { openState } = this.getStore().getSnapshot();
+
+    // Handle temporarily hidden state
     if (this.isTemporarilyHidden()) {
-      //hide checklist
       if (openState) {
         this.hide();
       }
       return;
     }
 
-    //show checklist
+    // Show checklist if it's not already open
     if (!openState) {
       this.open();
       this.trigger(AppEvents.CHECKLIST_FIRST_SEEN);
