@@ -1,4 +1,4 @@
-import { BizEvents, ContentDataType, SDKContent } from '@usertour-ui/types';
+import { BizEvents, ContentDataType, contentEndReason, SDKContent } from '@usertour-ui/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
@@ -29,7 +29,11 @@ export function initializeContentItems<T extends Tour | Launcher | Checklist>(
   const validItems = currentItems.filter((item) => {
     const contentId = item.getContent().contentId;
     if (!contentIdMap.has(contentId)) {
-      item.destroy();
+      if (contentType === ContentDataType.LAUNCHER) {
+        item.close();
+      } else {
+        item.close(contentEndReason.CONTENT_NOT_FOUND);
+      }
       return false;
     }
     return true;

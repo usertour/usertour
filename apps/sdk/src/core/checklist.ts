@@ -5,6 +5,7 @@ import {
   ChecklistData,
   ChecklistItemType,
   ContentActionsItemType,
+  contentEndReason,
   EventAttributes,
   RulesCondition,
   SDKContent,
@@ -211,7 +212,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       } else if (action.type === ContentActionsItemType.CHECKLIST_DISMIS) {
-        this.close();
+        this.close(contentEndReason.USER_CLOSED);
       }
     }
   }
@@ -334,15 +335,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
     return this.getActiveChecklist() === this;
   }
 
-  close() {
+  close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
     this.setDismissed(true);
     this.hide();
-    this.trigger(BizEvents.CHECKLIST_DISMISSED);
+    this.reportDismissEvent(reason);
     this.destroy();
   }
 
   async handleDismiss() {
-    this.close();
+    this.close(contentEndReason.USER_CLOSED);
   }
 
   /**
@@ -374,9 +375,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Initializes event listeners for checklist lifecycle and item events.
    */
   initializeEventListeners() {
-    this.once(BizEvents.CHECKLIST_DISMISSED, () => {
-      this.reportDismissEvent();
-    });
     this.once(AppEvents.CHECKLIST_FIRST_SEEN, () => {
       this.reportSeenEvent();
     });
@@ -437,9 +435,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
   /**
    * Reports the checklist dismiss event.
    */
-  private async reportDismissEvent() {
+  private async reportDismissEvent(reason: contentEndReason = contentEndReason.USER_CLOSED) {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_DISMISSED, {
-      [EventAttributes.CHECKLIST_END_REASON]: 'dismissed',
+      [EventAttributes.CHECKLIST_END_REASON]: reason,
     });
   }
 

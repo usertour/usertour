@@ -16,6 +16,7 @@ export enum contentEndReason {
   USER_CLOSED = 'user_closed',
   TOOLTIP_TARGET_MISSING = 'tooltip_target_missing',
   SYSTEM_CLOSED = 'system_closed',
+  CONTENT_NOT_FOUND = 'content_not_found',
 }
 
 export enum contentStartReason {
@@ -34,6 +35,7 @@ export const flowReasonTitleMap = {
   [contentStartReason.ACTION]: 'Button clicked',
   [contentEndReason.USER_CLOSED]: 'User closed',
   [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
+  [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
 };
 
 export interface SDKConfig {
