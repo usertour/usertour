@@ -159,20 +159,43 @@ export class Checklist extends BaseContent<ChecklistStore> {
     };
   }
 
+  /**
+   * Checks if a checklist item is completed by looking for a completion event.
+   *
+   * @param {ChecklistItemType} item - The checklist item to check
+   * @returns {boolean} True if the item has a completion event, false otherwise
+   */
   itemIsCompleted(item: ChecklistItemType) {
-    return !!this.getContent().latestSession?.bizEvent?.find(
+    const latestSession = this.getContent().latestSession;
+    return !!latestSession?.bizEvent?.find(
       (event) =>
         event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
         event.data.checklist_task_id === item.id,
     );
   }
 
+  /**
+   * Handles click events on content editor elements.
+   * Processes button clicks and executes associated actions.
+   *
+   * @param {ContentEditorClickableElement} element - The clicked element with its type and data
+   */
   handleOnClick = async ({ type, data }: ContentEditorClickableElement) => {
     if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
   };
 
+  /**
+   * Processes a list of actions for the checklist.
+   * Supported actions:
+   * - Start a new tour
+   * - Navigate to a page
+   * - Evaluate JavaScript code
+   * - Dismiss the checklist
+   *
+   * @param {RulesCondition[]} actions - List of actions to process
+   */
   async handleActions(actions: RulesCondition[]) {
     for (const action of actions) {
       if (action.type === ContentActionsItemType.FLOW_START) {
