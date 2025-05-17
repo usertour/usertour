@@ -69,19 +69,12 @@ const ChecklistProgressColumn = ({
     return <></>;
   }
 
-  const completeEvent = eventList?.find((e) => e.codeName === BizEvents.CHECKLIST_COMPLETED);
-  const dismissedEvent = eventList.find((e) => e.codeName === BizEvents.CHECKLIST_DISMISSED);
-
-  const taskCompletedEvent = eventList.find(
-    (e) => e.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
+  const completeBizEvent = bizEvent.find(
+    (e) => e.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
   );
-
-  if (!completeEvent || !dismissedEvent) {
-    return <></>;
-  }
-
-  const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent.id);
-  const dismissedBizEvent = bizEvent.find((e) => e.eventId === dismissedEvent.id);
+  const dismissedBizEvent = bizEvent.find(
+    (e) => e.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
+  );
 
   // Sort events by creation time
   const firstEvent = bizEvent.sort(
@@ -89,7 +82,7 @@ const ChecklistProgressColumn = ({
   )[0];
 
   const checklistItemIds = bizEvent
-    .filter((e) => e.eventId === taskCompletedEvent?.id)
+    .filter((e) => e.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
     .map((e) => e.data?.checklist_task_id);
 
   const completedItemIds = data.items.filter((item) => checklistItemIds.includes(item.id));
