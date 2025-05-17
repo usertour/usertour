@@ -225,39 +225,108 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  async showPopper(currentStep: Step) {
-    if (!currentStep?.target || currentStep.cvid !== this.getCurrentStep()?.cvid || !document) {
+  /**
+   * Displays a tooltip step in the tour
+   * This method handles:
+   * 1. Validating the step and its target
+   * 2. Setting up the element watcher
+   * 3. Handling element found and timeout events
+   * 4. Updating the store with the new state
+   *
+   * @param currentStep - The step to display as a tooltip
+   * @throws Will close the tour if validation fails or target is missing
+   */
+  async showPopper(currentStep: Step): Promise<void> {
+    // Validate step and target
+    if (!this.isValidPopperStep(currentStep)) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
+
+    // Report step seen event
+    await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
+
+    // Set up element watcher
     const store = this.buildStoreData();
+    this.setupElementWatcher(currentStep, store);
+  }
+
+  /**
+   * Validates if a step can be displayed as a popper
+   * @private
+   */
+  private isValidPopperStep(step: Step): boolean {
+    return Boolean(step?.target && step.cvid === this.getCurrentStep()?.cvid && document);
+  }
+
+  /**
+   * Sets up the element watcher for a popper step
+   * @private
+   */
+  private setupElementWatcher(step: Step, store: TourStore): void {
+    // Clean up existing watcher
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
     }
-    await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
-    this.watcher = new ElementWatcher(currentStep.target);
+
+    // Create new watcher
+    if (!step.target) {
+      this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
+    this.watcher = new ElementWatcher(step.target);
+
+    // Handle element found
     this.watcher.once('element-found', (el) => {
-      const openState = !this.isTemporarilyHidden();
-      const { isComplete, progress } = this.getCurrentStepInfo(currentStep);
-      if (openState) {
-        smoothScroll(el as Element, { block: 'center' });
-      }
-      this.setStore({
-        ...store,
-        progress,
-        triggerRef: el,
-        openState,
-      });
-      if (isComplete) {
-        this.reportStepEvents(currentStep, BizEvents.FLOW_COMPLETED);
+      if (el instanceof Element) {
+        this.handleElementFound(el, step, store);
       }
     });
+
+    // Handle element not found
     this.watcher.once('element-found-timeout', async () => {
-      await this.reportTooltipTargetMissingEvent(currentStep);
-      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+      await this.handleElementNotFound(step);
     });
+
+    // Start watching
     this.watcher.findElement();
+  }
+
+  /**
+   * Handles when the target element is found
+   * @private
+   */
+  private handleElementFound(el: Element, step: Step, store: TourStore): void {
+    const openState = !this.isTemporarilyHidden();
+    const { isComplete, progress } = this.getCurrentStepInfo(step);
+
+    // Scroll element into view if tour is visible
+    if (openState) {
+      smoothScroll(el, { block: 'center' });
+    }
+
+    // Update store
+    this.setStore({
+      ...store,
+      progress,
+      triggerRef: el,
+      openState,
+    });
+
+    // Report completion if this is the last step
+    if (isComplete) {
+      this.reportStepEvents(step, BizEvents.FLOW_COMPLETED);
+    }
+  }
+
+  /**
+   * Handles when the target element is not found
+   * @private
+   */
+  private async handleElementNotFound(step: Step): Promise<void> {
+    await this.reportTooltipTargetMissingEvent(step);
+    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
 
   /**
