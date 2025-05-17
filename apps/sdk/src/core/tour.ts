@@ -108,15 +108,27 @@ export class Tour extends BaseContent<TourStore> {
     });
   }
 
-  getReusedSessionId() {
+  /**
+   * Gets the ID of the latest session that can be reused
+   * A session can be reused if:
+   * 1. The content has data and a latest session
+   * 2. The flow has not been dismissed
+   *
+   * @returns {string | null} The session ID if it can be reused, null otherwise
+   */
+  getReusedSessionId(): string | null {
     const content = this.getContent();
+
+    // Check if content has required data
     if (!content.data || !content.latestSession) {
       return null;
     }
-    const isDismissed = flowIsDismissed(content);
-    if (isDismissed) {
+
+    // Check if flow has been dismissed
+    if (flowIsDismissed(content)) {
       return null;
     }
+
     return content.latestSession.id;
   }
 
