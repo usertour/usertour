@@ -13,6 +13,7 @@ import {
   SDKContent,
   Step,
   StepContentType,
+  StepTrigger,
   contentEndReason,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
@@ -545,15 +546,38 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  async activeTriggerConditions() {
+  /**
+   * Activates and processes trigger conditions for the current step
+   * This method:
+   * 1. Processes each trigger's conditions
+   * 2. Executes actions for triggers with met conditions
+   * 3. Updates the step with remaining triggers
+   *
+   * @returns {Promise<void>}
+   */
+  async activeTriggerConditions(): Promise<void> {
     const currentStep = this.getCurrentStep();
+
+    // Early return if no triggers to process
     if (!currentStep?.trigger?.length) {
       return;
     }
 
-    const remainingTriggers = [];
+    // Process triggers and collect remaining ones
+    const remainingTriggers = await this.processTriggers(currentStep.trigger);
 
-    for (const trigger of currentStep.trigger) {
+    // Update step with remaining triggers if step hasn't changed
+    await this.updateStepWithRemainingTriggers(currentStep, remainingTriggers);
+  }
+
+  /**
+   * Processes a list of triggers and executes actions for those with met conditions
+   * @private
+   */
+  private async processTriggers(triggers: StepTrigger[]): Promise<StepTrigger[]> {
+    const remainingTriggers: StepTrigger[] = [];
+
+    for (const trigger of triggers) {
       const { conditions, ...rest } = trigger;
       const activatedConditions = await activedRulesConditions(conditions);
 
@@ -568,10 +592,24 @@ export class Tour extends BaseContent<TourStore> {
       }
     }
 
+    return remainingTriggers;
+  }
+
+  /**
+   * Updates the current step with remaining triggers if the step hasn't changed
+   * @private
+   */
+  private async updateStepWithRemainingTriggers(
+    originalStep: Step,
+    remainingTriggers: StepTrigger[],
+  ): Promise<void> {
     const newCurrentStep = this.getCurrentStep();
-    if (!newCurrentStep || currentStep.cvid !== newCurrentStep.cvid) {
+
+    // Only update if the step hasn't changed
+    if (!newCurrentStep || originalStep.cvid !== newCurrentStep.cvid) {
       return;
     }
+
     this.setCurrentStep({
       ...newCurrentStep,
       trigger: remainingTriggers,
