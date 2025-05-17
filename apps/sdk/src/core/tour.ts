@@ -29,6 +29,7 @@ import { logger } from '../utils/logger';
 
 export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
+  private triggerTimeouts: NodeJS.Timeout[] = []; // Store timeout IDs
 
   constructor(instance: App, content: SDKContent) {
     super(instance, content, defaultTourStore);
@@ -635,7 +636,7 @@ export class Tour extends BaseContent<TourStore> {
    */
   private async processTriggers(triggers: StepTrigger[]): Promise<StepTrigger[]> {
     const remainingTriggers: StepTrigger[] = [];
-
+    const MAX_WAIT_TIME = 300; // Maximum wait time in seconds
     for (const trigger of triggers) {
       const { conditions, ...rest } = trigger;
       const activatedConditions = await activedRulesConditions(conditions);
@@ -646,8 +647,20 @@ export class Tour extends BaseContent<TourStore> {
           conditions: activatedConditions,
         });
       } else {
-        // Execute actions immediately when conditions are met
-        await this.handleActions(trigger.actions);
+        const waitTime = Math.min(trigger.wait ?? 0, MAX_WAIT_TIME);
+        if (waitTime > 0) {
+          const timeoutId = setTimeout(() => {
+            // Execute actions immediately when conditions are met
+            this.handleActions(trigger.actions);
+            // Remove the timeout ID from the array after execution
+            this.triggerTimeouts = this.triggerTimeouts.filter((id) => id !== timeoutId);
+          }, waitTime * 1000);
+          // Store the timeout ID
+          this.triggerTimeouts.push(timeoutId);
+        } else {
+          // Execute actions immediately when conditions are met
+          await this.handleActions(trigger.actions);
+        }
       }
     }
 
@@ -709,6 +722,12 @@ export class Tour extends BaseContent<TourStore> {
    * Destroys the tour
    */
   destroy() {
+    // Clear all pending timeouts
+    for (const timeoutId of this.triggerTimeouts) {
+      clearTimeout(timeoutId);
+    }
+    this.triggerTimeouts = [];
+
     // Unset the active tour reference
     if (this.isActiveTour()) {
       this.unsetActiveTour();

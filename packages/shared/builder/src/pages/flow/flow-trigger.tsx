@@ -111,6 +111,18 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
     });
   };
 
+  const handleOnWaitChange = (wait: number, index: number) => {
+    setShowError(false);
+    updateCurrentStep((step) => {
+      if (step.trigger?.[index]) {
+        step.trigger[index].wait = wait;
+      } else {
+        step.trigger = [{ conditions: [], actions: [], wait, id: cuid() }];
+      }
+      return step;
+    });
+  };
+
   const handleOnClick = () => {
     updateCurrentStep((step) => {
       if (!step.trigger) {
@@ -230,6 +242,10 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
               conditions={trigger.conditions}
               actions={trigger.actions}
               token={token}
+              wait={trigger.wait ?? 0}
+              onWaitChange={(wait) => {
+                handleOnWaitChange(wait, index);
+              }}
               onRulesConditionElementChange={
                 isWebBuilder
                   ? undefined

@@ -553,3 +553,25 @@ export const parseUrlParams = (url: string, paramName: string): string | null =>
     return null;
   }
 };
+
+export const wait = (seconds: number): Promise<void> => {
+  if (typeof seconds !== 'number' || Number.isNaN(seconds)) {
+    return Promise.reject(new Error('Invalid wait time: must be a number'));
+  }
+
+  if (seconds < 0) {
+    return Promise.reject(new Error('Invalid wait time: cannot be negative'));
+  }
+
+  if (seconds === 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    try {
+      setTimeout(resolve, seconds * 1000);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};

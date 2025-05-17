@@ -15,6 +15,7 @@ export type StepTrigger = {
   id?: string;
   actions: RulesCondition[];
   conditions: RulesCondition[];
+  wait?: number;
 };
 
 export type StepSettings = {
