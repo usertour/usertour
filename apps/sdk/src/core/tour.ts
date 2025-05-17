@@ -255,6 +255,8 @@ export class Tour extends BaseContent<TourStore> {
       await this.showModal(step);
     } else if (step.type === 'hidden') {
       await this.showHidden(step);
+    } else {
+      this.close(contentEndReason.SYSTEM_CLOSED);
     }
   }
 
