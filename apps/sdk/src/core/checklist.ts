@@ -28,6 +28,12 @@ interface ChecklistItemStatus {
 export class Checklist extends BaseContent<ChecklistStore> {
   // Replace boolean flags with status enum
   private itemStatus: Map<string, ChecklistItemStatus> = new Map();
+
+  /**
+   * Constructs a Checklist instance.
+   * @param {App} instance - The app instance
+   * @param {SDKContent} content - The checklist content
+   */
   constructor(instance: App, content: SDKContent) {
     super(instance, content, defaultChecklistStore);
   }
@@ -339,10 +345,19 @@ export class Checklist extends BaseContent<ChecklistStore> {
     this.close();
   }
 
+  /**
+   * Handles the open/close state change of the checklist.
+   * Triggers the appropriate event based on the open state.
+   * @param {boolean} open - Whether the checklist is open
+   */
   handleOpenChange(open: boolean) {
     this.trigger(open ? BizEvents.CHECKLIST_SEEN : BizEvents.CHECKLIST_HIDDEN);
   }
 
+  /**
+   * Destroys the checklist instance and resets its store.
+   * Unsets the active checklist if this is the current one.
+   */
   destroy() {
     if (this.isActiveChecklist()) {
       this.unsetActiveChecklist();
@@ -350,8 +365,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
     this.setStore(defaultChecklistStore);
   }
 
+  /**
+   * Resets the checklist state. (Currently a placeholder for future logic)
+   */
   reset() {}
 
+  /**
+   * Initializes event listeners for checklist lifecycle and item events.
+   */
   initializeEventListeners() {
     this.once(BizEvents.CHECKLIST_DISMISSED, () => {
       this.reportDismissEvent();
@@ -382,7 +403,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
     });
   }
 
-  // Add helper method for common event reporting
+  /**
+   * Reports a checklist event with session and additional data.
+   * @param {BizEvents} eventName - The event name
+   * @param {Partial<Record<EventAttributes, any>>} additionalData - Additional event data
+   * @param {ReportEventOptions} options - Reporting options
+   */
   private async reportChecklistEvent(
     eventName: BizEvents,
     additionalData: Partial<Record<EventAttributes, any>> = {},
@@ -408,24 +434,40 @@ export class Checklist extends BaseContent<ChecklistStore> {
     );
   }
 
+  /**
+   * Reports the checklist dismiss event.
+   */
   private async reportDismissEvent() {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_DISMISSED, {
       [EventAttributes.CHECKLIST_END_REASON]: 'dismissed',
     });
   }
 
+  /**
+   * Reports the checklist seen event.
+   */
   private async reportSeenEvent() {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_SEEN);
   }
 
+  /**
+   * Reports the checklist hidden event.
+   */
   private async reportHiddenEvent() {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_HIDDEN);
   }
 
+  /**
+   * Reports the checklist start event and creates a new session.
+   */
   private async reportStartEvent() {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {}, { isCreateSession: true });
   }
 
+  /**
+   * Reports the checklist task click event.
+   * @param {ChecklistItemType} item - The clicked checklist item
+   */
   private async reportTaskClickEvent(item: ChecklistItemType) {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_TASK_CLICKED, {
       [EventAttributes.CHECKLIST_TASK_ID]: item.id,
@@ -433,6 +475,10 @@ export class Checklist extends BaseContent<ChecklistStore> {
     });
   }
 
+  /**
+   * Reports the checklist task complete event.
+   * @param {ChecklistItemType} item - The completed checklist item
+   */
   private async reportTaskCompleteEvent(item: ChecklistItemType) {
     await this.reportChecklistEvent(BizEvents.CHECKLIST_TASK_COMPLETED, {
       [EventAttributes.CHECKLIST_TASK_ID]: item.id,
