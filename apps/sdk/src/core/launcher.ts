@@ -16,9 +16,20 @@ export class Launcher extends BaseContent<LauncherStore> {
     super(instance, content, defaultLauncherStore);
   }
 
-  async monitor() {
+  /**
+   * Monitors the launcher's visibility state and ensures it's properly handled
+   * This method:
+   * 1. Activates content conditions to check if the launcher should be shown
+   * 2. Handles the visibility state of the launcher based on conditions
+   *
+   * @returns {Promise<void>} A promise that resolves when monitoring is complete
+   */
+  async monitor(): Promise<void> {
+    // First, check and activate any content conditions
     await this.activeContentConditions();
-    this.handleVisibilityState();
+
+    // Then, handle the visibility state based on conditions
+    await this.handleVisibilityState();
   }
 
   /**
