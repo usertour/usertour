@@ -25,6 +25,7 @@ import { type App } from './app';
 import { BaseContent } from './base-content';
 import { defaultTourStore } from './common';
 import { ElementWatcher } from './element-watcher';
+import { logger } from '../utils/logger';
 
 export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
@@ -52,7 +53,7 @@ export class Tour extends BaseContent<TourStore> {
       // Always activate content conditions
       await this.activeContentConditions();
     } catch (error) {
-      console.error('Error in tour monitoring:', error);
+      logger.error('Error in tour monitoring:', error);
       // Optionally handle the error or rethrow
       throw error;
     }
