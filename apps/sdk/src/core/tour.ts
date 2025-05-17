@@ -253,6 +253,8 @@ export class Tour extends BaseContent<TourStore> {
       await this.showPopper(step);
     } else if (step.type === 'modal') {
       await this.showModal(step);
+    } else if (step.type === 'hidden') {
+      await this.showHidden(step);
     }
   }
 
@@ -381,6 +383,25 @@ export class Tour extends BaseContent<TourStore> {
     // Set up modal state
     const openState = !this.isTemporarilyHidden();
     this.setStore({ ...store, openState, progress });
+
+    // If this is the last step, report completion
+    if (isComplete) {
+      await this.reportStepEvents(currentStep, BizEvents.FLOW_COMPLETED);
+    }
+  }
+
+  /**
+   * Displays a hidden step in the tour
+   * This method handles:
+   * 1. Reporting the step seen event
+   * 2. Reporting the completion event if it's the last step
+   *
+   */
+  async showHidden(currentStep: Step) {
+    const { isComplete } = this.getCurrentStepInfo(currentStep);
+
+    // Report that the step has been seen
+    await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
 
     // If this is the last step, report completion
     if (isComplete) {
