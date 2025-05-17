@@ -469,12 +469,25 @@ export class Tour extends BaseContent<TourStore> {
     });
   }
 
-  async checkStepVisible() {
+  /**
+   * Checks and updates the visibility state of the current step
+   * This method handles:
+   * 1. Validating the current step state
+   * 2. Handling temporarily hidden state
+   * 3. Managing modal visibility
+   * 4. Checking tooltip target visibility
+   *
+   * @returns {Promise<void>}
+   */
+  async checkStepVisible(): Promise<void> {
     const { triggerRef, currentStep, openState } = this.getStore().getSnapshot();
+
+    // Early return if no current step
     if (!this.getCurrentStep() || !currentStep) {
       return;
     }
 
+    // Handle temporarily hidden state
     if (this.isTemporarilyHidden()) {
       if (openState) {
         this.hide();
@@ -482,6 +495,7 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
 
+    // Handle modal visibility
     if (currentStep.type === StepContentType.MODAL) {
       if (!openState) {
         this.open();
@@ -489,6 +503,20 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
 
+    // Handle tooltip visibility
+    await this.checkTooltipVisibility(currentStep, triggerRef, openState);
+  }
+
+  /**
+   * Checks and updates the visibility of a tooltip step
+   * @private
+   */
+  private async checkTooltipVisibility(
+    currentStep: Step,
+    triggerRef: Element | null,
+    currentOpenState: boolean,
+  ): Promise<void> {
+    // Early return if not a tooltip or missing required data
     if (
       !triggerRef ||
       !this.watcher ||
@@ -498,15 +526,18 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
 
+    // Check element visibility
     const { isHidden, isTimeout } = await this.watcher.checkVisibility();
 
+    // Update visibility state
     if (!isHidden) {
-      if (!openState) {
+      if (!currentOpenState) {
         this.open();
       }
       return;
     }
 
+    // Handle timeout or hidden state
     if (isTimeout) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
     } else {
