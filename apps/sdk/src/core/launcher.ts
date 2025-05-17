@@ -128,22 +128,42 @@ export class Launcher extends BaseContent<LauncherStore> {
     this.watcher.findElement();
   }
 
-  async handleOnClick({ type, data }: ContentEditorClickableElement) {
+  /**
+   * Handles click events on the launcher
+   * @param {ContentEditorClickableElement} clickEvent - The click event data containing type and actions
+   */
+  async handleOnClick(clickEvent: ContentEditorClickableElement) {
+    const { type, data } = clickEvent;
+
     if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
   }
 
-  async handleActions(actions: RulesCondition[]) {
-    for (const action of actions) {
-      if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.startNewTour(action.data.contentId);
-      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
-        this.handleNavigate(action.data);
-      } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
-        evalCode(action.data.value);
-      } else if (action.type === ContentActionsItemType.LAUNCHER_DISMIS) {
-        this.close();
+  /**
+   * Processes a list of actions to be executed
+   * @param {RulesCondition[]} actionRules - List of action rules to be processed
+   */
+  async handleActions(actionRules: RulesCondition[]) {
+    for (const actionRule of actionRules) {
+      const { type, data } = actionRule;
+
+      switch (type) {
+        case ContentActionsItemType.FLOW_START:
+          await this.startNewTour(data.contentId);
+          break;
+
+        case ContentActionsItemType.PAGE_NAVIGATE:
+          this.handleNavigate(data);
+          break;
+
+        case ContentActionsItemType.JAVASCRIPT_EVALUATE:
+          evalCode(data.value);
+          break;
+
+        case ContentActionsItemType.LAUNCHER_DISMIS:
+          this.close();
+          break;
       }
     }
   }
