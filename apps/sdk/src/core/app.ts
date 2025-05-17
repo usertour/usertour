@@ -492,7 +492,7 @@ export class App extends Evented {
    */
   createContainer() {
     if (!document) {
-      logger.error("Can't find document!");
+      logger.error('Document not found!');
       return;
     }
 
@@ -745,7 +745,7 @@ export class App extends Evented {
     if (data) {
       this.themes = data;
     } else {
-      logger.error('list themes error !');
+      logger.error('Failed to fetch themes!');
     }
   }
 
