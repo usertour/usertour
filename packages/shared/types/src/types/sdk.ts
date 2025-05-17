@@ -15,6 +15,7 @@ export type SDKContent = ContentVersion & {
 export enum contentEndReason {
   USER_CLOSED = 'user_closed',
   ELEMENT_NOT_FOUND = 'element_not_found',
+  SYSTEM_CLOSED = 'system_closed',
 }
 
 export enum contentStartReason {

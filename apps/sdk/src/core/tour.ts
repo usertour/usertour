@@ -14,7 +14,6 @@ import {
   Step,
   StepContentType,
   contentEndReason,
-  contentStartReason,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
 import { TourStore } from '../types/store';
@@ -50,7 +49,7 @@ export class Tour extends BaseContent<TourStore> {
     if (stepToShow?.cvid) {
       this.goto(stepToShow.cvid);
     } else {
-      this.close();
+      this.close(contentEndReason.SYSTEM_CLOSED);
     }
   }
 
@@ -104,13 +103,13 @@ export class Tour extends BaseContent<TourStore> {
     const userInfo = this.getUserInfo();
     const content = this.getContent();
     if (!content.steps || !userInfo || !userInfo.externalId) {
-      await this.close();
+      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
     const total = content.steps.length;
     const currentStep = content.steps.find((step) => step.cvid === stepCvid);
     if (!currentStep) {
-      this.handleClose(contentEndReason.USER_CLOSED);
+      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
     this.reset();
@@ -135,7 +134,7 @@ export class Tour extends BaseContent<TourStore> {
   async showPopper(tourStore: TourStore) {
     const currentStep = this.getCurrentStep();
     if (!currentStep?.target || currentStep.cvid !== this.getCurrentStep()?.cvid || !document) {
-      await this.close();
+      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
     if (this.watcher) {
@@ -197,7 +196,7 @@ export class Tour extends BaseContent<TourStore> {
       } else if (action.type === ContentActionsItemType.FLOW_START) {
         await this.startNewTour(action.data.contentId);
       } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
-        await this.handleClose();
+        await this.handleClose(contentEndReason.USER_CLOSED);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       }
@@ -295,8 +294,7 @@ export class Tour extends BaseContent<TourStore> {
     }
 
     if (isTimeout) {
-      await this.close();
-      await this.startTour(undefined, contentStartReason.START_CONDITION);
+      await this.close(contentEndReason.SYSTEM_CLOSED);
     } else {
       this.hide();
     }
