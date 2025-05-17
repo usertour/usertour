@@ -103,31 +103,57 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
   }
 
+  /**
+   * Shows the checklist by initializing its store data with closed state.
+   * This method sets up the initial state of the checklist without displaying it.
+   */
   show() {
     const storeData = this.buildStoreData();
     this.setStore({ ...storeData, openState: false });
   }
 
+  /**
+   * Refreshes the checklist data while maintaining its current open/closed state.
+   * This method updates the store with fresh data without changing visibility.
+   */
   refresh() {
     const { openState, ...storeData } = this.buildStoreData();
     this.updateStore({ ...storeData });
   }
 
+  /**
+   * Builds the store data for the checklist.
+   * This method:
+   * 1. Gets base information and content data
+   * 2. Processes checklist items with their completion and visibility states
+   * 3. Returns a complete store data object with default values
+   *
+   * @returns {ChecklistStore} The complete store data object
+   */
   private buildStoreData() {
+    // Get base information and content
     const baseInfo = this.getStoreBaseInfo();
     const content = this.getContent();
-    const data = content.data as ChecklistData;
+    const checklistData = content.data as ChecklistData;
     const isDismissed = checklistIsDimissed(content);
 
-    const items = data.items.map((item) => ({
+    // Process checklist items
+    const processedItems = checklistData.items.map((item) => ({
       ...item,
       isCompleted: isDismissed ? false : this.itemIsCompleted(item),
       isVisible: true,
     }));
 
+    // Return complete store data
     return {
       ...defaultChecklistStore,
-      content: { ...content, data: { ...data, items } },
+      content: {
+        ...content,
+        data: {
+          ...checklistData,
+          items: processedItems,
+        },
+      },
       openState: false,
       ...baseInfo,
     };
