@@ -145,18 +145,9 @@ const FlowProgressColumn = ({
     return <></>;
   }
 
-  const completeEvent = eventList?.find((e) => e.codeName === BizEvents.FLOW_COMPLETED);
-  const itemSeenEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_STEP_SEEN);
-
-  const endedEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_ENDED);
-
-  if (!completeEvent || !itemSeenEvent || !endedEvent) {
-    return <></>;
-  }
-
-  const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent.id);
+  const completeBizEvent = bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_COMPLETED);
   const lastSeenBizEvent = bizEvent
-    .filter((e) => e.eventId === itemSeenEvent.id)
+    .filter((e) => e.event?.codeName === BizEvents.FLOW_STEP_SEEN)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   // Sort events by creation time
@@ -164,7 +155,7 @@ const FlowProgressColumn = ({
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   )[0];
 
-  const endedBizEvent = bizEvent.find((e) => e.eventId === endedEvent.id);
+  const endedBizEvent = bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_ENDED);
 
   const completeDate =
     completeBizEvent && firstEvent
