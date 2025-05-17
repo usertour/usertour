@@ -40,17 +40,31 @@ export class Tour extends BaseContent<TourStore> {
     await this.activeContentConditions();
   }
 
-  show(cvid?: string) {
+  /**
+   * Shows a specific step in the tour by its cvid, or the first step if no cvid is provided
+   * @param cvid - Optional cvid of the step to show. If not provided, shows the first step
+   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   */
+  async show(cvid?: string): Promise<void> {
     const content = this.getContent();
-    if (!content.steps || !content.steps.length) {
+
+    // Validate content has steps
+    if (!content.steps?.length) {
+      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    const stepToShow = content.steps.find((step) => step.cvid === cvid) || content.steps[0];
-    if (stepToShow?.cvid) {
-      this.goto(stepToShow.cvid);
-    } else {
-      this.close(contentEndReason.SYSTEM_CLOSED);
+
+    // Find the target step
+    const targetStep = cvid ? content.steps.find((step) => step.cvid === cvid) : content.steps[0];
+
+    // If no valid step found, close the tour
+    if (!targetStep?.cvid) {
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
     }
+
+    // Navigate to the target step
+    await this.goto(targetStep.cvid);
   }
 
   refresh() {
