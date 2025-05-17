@@ -33,12 +33,41 @@ export class Tour extends BaseContent<TourStore> {
     super(instance, content, defaultTourStore);
   }
 
-  async monitor() {
-    if (this.isActiveTour()) {
-      this.checkStepVisible();
-      this.activeTriggerConditions();
+  /**
+   * Monitors and updates the tour state
+   * This method handles:
+   * 1. Checking step visibility for active tours
+   * 2. Activating trigger conditions
+   * 3. Activating content conditions
+   *
+   * @returns {Promise<void>}
+   */
+  async monitor(): Promise<void> {
+    try {
+      // Handle active tour monitoring
+      if (this.isActiveTour()) {
+        await this.monitorActiveTour();
+      }
+
+      // Always activate content conditions
+      await this.activeContentConditions();
+    } catch (error) {
+      console.error('Error in tour monitoring:', error);
+      // Optionally handle the error or rethrow
+      throw error;
     }
-    await this.activeContentConditions();
+  }
+
+  /**
+   * Monitors an active tour by checking visibility and trigger conditions
+   * @private
+   */
+  private async monitorActiveTour(): Promise<void> {
+    // Check if the current step is visible
+    await this.checkStepVisible();
+
+    // Activate any trigger conditions
+    await this.activeTriggerConditions();
   }
 
   /**
@@ -616,13 +645,26 @@ export class Tour extends BaseContent<TourStore> {
     });
   }
 
-  isActiveTour() {
+  /**
+   * Checks if this tour instance is the currently active tour
+   * @returns {boolean} True if this tour is the active tour, false otherwise
+   */
+  isActiveTour(): boolean {
     return this.getActiveTour() === this;
   }
 
-  isShow() {
+  /**
+   * Checks if the tour is currently visible and active
+   * A tour is considered shown when:
+   * 1. It is the active tour
+   * 2. It has a current step
+   * 3. Its open state is true
+   *
+   * @returns {boolean} True if the tour is visible and active, false otherwise
+   */
+  isShow(): boolean {
     const { openState } = this.getStore().getSnapshot();
-    return this.isActiveTour() && this.getCurrentStep() && openState;
+    return this.isActiveTour() && Boolean(this.getCurrentStep()) && openState;
   }
 
   /**
