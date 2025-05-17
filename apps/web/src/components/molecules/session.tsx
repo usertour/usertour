@@ -16,15 +16,8 @@ const LauncherProgressColumn = ({
     return <></>;
   }
 
-  const activatedEvent = eventList?.find((e) => e.codeName === BizEvents.LAUNCHER_ACTIVATED);
-  const dismissedEvent = eventList.find((e) => e.codeName === BizEvents.LAUNCHER_DISMISSED);
-
-  if (!activatedEvent || !dismissedEvent) {
-    return <></>;
-  }
-
-  const isActivated = !!bizEvent.find((e) => e?.eventId === activatedEvent.id);
-  const isDismissed = !!bizEvent.find((e) => e?.eventId === dismissedEvent.id);
+  const isActivated = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.LAUNCHER_ACTIVATED);
+  const isDismissed = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
 
   return (
     <div className="flex flex-row items-center space-x-3">
