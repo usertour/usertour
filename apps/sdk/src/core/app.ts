@@ -83,7 +83,7 @@ export class App extends Evented {
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
   private contentPollingInterval: number | undefined;
-  private readonly CONTENT_POLLING_INTERVAL = 10000; // 10 seconds
+  private readonly CONTENT_POLLING_INTERVAL = 60000; // 1 minute
 
   constructor() {
     super();
