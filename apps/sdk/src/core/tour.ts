@@ -67,26 +67,45 @@ export class Tour extends BaseContent<TourStore> {
     await this.goto(targetStep.cvid);
   }
 
-  refresh() {
+  /**
+   * Refreshes the current step with the latest content data
+   * This method updates the current step with any changes from the content definition
+   * while preserving the current trigger state
+   * @returns void
+   */
+  refresh(): void {
     const content = this.getContent();
-    const newStep = content.steps?.find((step) => step.cvid === this.getCurrentStep()?.cvid);
     const currentStep = this.getCurrentStep();
-    if (!newStep || !currentStep) {
+
+    // Early return if no current step or content steps
+    if (!currentStep?.cvid || !content.steps?.length) {
       return;
     }
-    const { trigger, ...rest } = newStep;
 
-    const step = {
+    // Find the updated step definition
+    const updatedStep = content.steps.find((step) => step.cvid === currentStep.cvid);
+    if (!updatedStep) {
+      return;
+    }
+
+    // Preserve current trigger state while updating other properties
+    const { trigger, ...rest } = updatedStep;
+    const preservedStep = {
       ...rest,
-      trigger: trigger?.filter((t) => currentStep.trigger?.find((tt) => tt.id === t.id)),
+      trigger: trigger?.filter((t) =>
+        currentStep.trigger?.some((currentTrigger) => currentTrigger.id === t.id),
+      ),
     };
 
-    this.setCurrentStep(step);
+    // Update the current step
+    this.setCurrentStep(preservedStep);
 
+    // Update store with new data
     const { openState, triggerRef, progress, ...storeData } = this.buildStoreData();
-
-    //todo replace element watcher target
-    this.updateStore({ ...storeData, currentStep: step });
+    this.updateStore({
+      ...storeData,
+      currentStep: preservedStep,
+    });
   }
 
   getReusedSessionId() {
