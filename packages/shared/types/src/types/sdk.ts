@@ -14,7 +14,7 @@ export type SDKContent = ContentVersion & {
 
 export enum contentEndReason {
   USER_CLOSED = 'user_closed',
-  ELEMENT_NOT_FOUND = 'element_not_found',
+  TOOLTIP_TARGET_MISSING = 'tooltip_target_missing',
   SYSTEM_CLOSED = 'system_closed',
 }
 
@@ -33,7 +33,7 @@ export const flowReasonTitleMap = {
   [contentStartReason.MANUAL_START]: 'Manually started',
   [contentStartReason.ACTION]: 'Button clicked',
   [contentEndReason.USER_CLOSED]: 'User closed',
-  [contentEndReason.ELEMENT_NOT_FOUND]: 'Element not found',
+  [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
 };
 
 export interface SDKConfig {

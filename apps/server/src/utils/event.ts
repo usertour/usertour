@@ -88,8 +88,26 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.LAUNCHER_DISMISSED,
 ] as const;
 
+// Events that should invalidate subsequent events
+const INVALIDATING_EVENTS = [
+  BizEvents.CHECKLIST_DISMISSED,
+  BizEvents.LAUNCHER_DISMISSED,
+  BizEvents.FLOW_ENDED,
+] as const;
+
+const hasInvalidatingEvent = (bizEvents: BizSession['bizEvent']) => {
+  return bizEvents?.some((event) =>
+    INVALIDATING_EVENTS.includes(event.event?.codeName as (typeof INVALIDATING_EVENTS)[number]),
+  );
+};
+
 export const isValidEvent = (eventName: string, bizSession: BizSession, events: any) => {
   const bizEvents = bizSession.bizEvent;
+
+  // Check if any invalidating event has occurred
+  if (hasInvalidatingEvent(bizEvents)) {
+    return false;
+  }
 
   // Check if event has specific validation rules
   const validationRule = EVENT_VALIDATION_RULES[eventName as keyof typeof EVENT_VALIDATION_RULES];

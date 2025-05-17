@@ -106,71 +106,104 @@ export class Tour extends BaseContent<TourStore> {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    const total = content.steps.length;
     const currentStep = content.steps.find((step) => step.cvid === stepCvid);
     if (!currentStep) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
     this.reset();
-    const index = content.steps.findIndex((step) => step.cvid === currentStep.cvid);
-    const isComplete = index + 1 === total;
-    const progress = ((index + 1) / total) * 100;
     this.setCurrentStep(currentStep);
-    const storeData = this.buildStoreData();
-    const data = {
-      ...storeData,
-      progress,
-    };
 
     if (currentStep.type === 'tooltip') {
-      await this.showPopper(data);
+      await this.showPopper(currentStep);
     } else {
-      await this.showModal(data);
+      await this.showModal(currentStep);
     }
-    await this.reportStepEvents(currentStep, index, progress, isComplete);
   }
 
-  async showPopper(tourStore: TourStore) {
-    const currentStep = this.getCurrentStep();
+  async showPopper(currentStep: Step) {
     if (!currentStep?.target || currentStep.cvid !== this.getCurrentStep()?.cvid || !document) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
+    const store = this.buildStoreData();
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
     }
+    await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
     this.watcher = new ElementWatcher(currentStep.target);
     this.watcher.once('element-found', (el) => {
       const openState = !this.isTemporarilyHidden();
+      const { isComplete, progress } = this.getCurrentStepInfo(currentStep);
       if (openState) {
         smoothScroll(el as Element, { block: 'center' });
       }
       this.setStore({
-        ...tourStore,
+        ...store,
+        progress,
         triggerRef: el,
         openState,
       });
+      if (isComplete) {
+        this.reportStepEvents(currentStep, BizEvents.FLOW_COMPLETED);
+      }
     });
-    this.watcher.once('element-found-timeout', () => {
-      this.handleClose(contentEndReason.ELEMENT_NOT_FOUND);
+    this.watcher.once('element-found-timeout', async () => {
+      await this.reportTooltipTargetMissingEvent(currentStep);
+      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
     });
     this.watcher.findElement();
   }
 
-  async showModal(tourStore: TourStore) {
+  /**
+   * Display a modal step in the tour
+   * This method handles:
+   * 1. Building the store data
+   * 2. Reporting step seen event
+   * 3. Setting up the modal state
+   * 4. Reporting completion event if it's the last step
+   *
+   * @param currentStep - The step to be displayed as a modal
+   */
+  async showModal(currentStep: Step) {
+    // Build store data and get step information
+    const store = this.buildStoreData();
+    const { progress, isComplete } = this.getCurrentStepInfo(currentStep);
+
+    // Report that the step has been seen
+    await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
+
+    // Set up modal state
     const openState = !this.isTemporarilyHidden();
-    this.setStore({ ...tourStore, openState });
+    this.setStore({ ...store, openState, progress });
+
+    // If this is the last step, report completion
+    if (isComplete) {
+      await this.reportStepEvents(currentStep, BizEvents.FLOW_COMPLETED);
+    }
   }
 
+  /**
+   * Close the current tour
+   * This method handles:
+   * 1. Validating the tour state
+   * 2. Reporting the close event
+   * 3. Setting the tour as dismissed
+   * 4. Cleaning up resources
+   *
+   * @param reason - The reason for closing the tour, defaults to USER_CLOSED
+   */
   async close(reason: contentEndReason = contentEndReason.USER_CLOSED) {
+    // Validate tour state
     const userInfo = this.getUserInfo();
     const content = this.getContent();
     if (!content?.steps || !this.getCurrentStep() || !userInfo?.externalId) {
       this.destroy();
       return;
     }
+
+    // Report close event and clean up
     await this.reportCloseEvent(reason);
     this.setDismissed(true);
     this.destroy();
@@ -180,17 +213,14 @@ export class Tour extends BaseContent<TourStore> {
     await this.close(reason);
   }
 
+  /**
+   * Handles the actions for the current step
+   * This method executes all actions in sequence
+   *
+   * @param actions - The actions to be handled
+   */
   async handleActions(actions: RulesCondition[]) {
-    // Separate PAGE_NAVIGATE actions from other actions
-    const pageNavigateActions = actions.filter(
-      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
-    );
-    const otherActions = actions.filter(
-      (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
-    );
-
-    // Execute non-PAGE_NAVIGATE actions first
-    for (const action of otherActions) {
+    for (const action of actions) {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
@@ -199,15 +229,22 @@ export class Tour extends BaseContent<TourStore> {
         await this.handleClose(contentEndReason.USER_CLOSED);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
+      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
+        this.handleNavigate(action.data);
       }
-    }
-
-    // Execute PAGE_NAVIGATE actions last
-    for (const action of pageNavigateActions) {
-      this.handleNavigate(action.data);
     }
   }
 
+  /**
+   * Handles the click event on an element
+   * This method handles:
+   * 1. Updating the user's attributes if the element is a question element
+   * 2. Reporting the question answer event
+   * 3. Handling any actions associated with the element
+   *
+   * @param element - The element that was clicked
+   * @param value - The value of the element
+   */
   async handleOnClick(element: ContentEditorClickableElement, value?: any) {
     if (isQuestionElement(element)) {
       const el = element as ContentEditorQuestionElement;
@@ -223,6 +260,16 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
+  /**
+   * Reports the question answer event
+   * This method handles:
+   * 1. Reporting the question answer event with the correct event name
+   * 2. Adding the question cvid, name, and type to the event data
+   * 3. Handling multiple choice, scale, NPS, and star rating elements
+   *
+   * @param element - The question element that was answered
+   * @param value - The value of the answer
+   */
   async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
     const { data, type } = element;
     const { cvid } = data;
@@ -377,6 +424,25 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   /**
+   * Get detailed information about the current step
+   * @param currentStep - The current step to get information for
+   * @returns Object containing step information including:
+   *          - total: Total number of steps in the tour
+   *          - index: Current step index (0-based)
+   *          - progress: Progress percentage (0-100)
+   *          - isComplete: Whether this is the last step
+   */
+  getCurrentStepInfo(currentStep: Step) {
+    const content = this.getContent();
+    const total = content.steps?.length ?? 0;
+    const index = content.steps?.findIndex((step) => step.cvid === currentStep.cvid) ?? 0;
+    const progress = Math.round(((index + 1) / total) * 100);
+    const isComplete = index + 1 === total;
+
+    return { total, index, progress, isComplete };
+  }
+
+  /**
    * Reports the auto start event
    * @param reason - The reason for the auto start
    */
@@ -397,14 +463,11 @@ export class Tour extends BaseContent<TourStore> {
    * @param reason - The reason for the close
    */
   private async reportCloseEvent(reason: contentEndReason) {
-    const content = this.getContent();
     const currentStep = this.getCurrentStep();
     if (!currentStep) {
       return;
     }
-    const total = content.steps?.length ?? 0;
-    const index = content.steps?.findIndex((step) => step.cvid === currentStep.cvid) ?? 0;
-    const progress = Math.round(((index + 1) / total) * 100);
+    const { index, progress } = this.getCurrentStepInfo(currentStep);
 
     await this.reportEventWithSession(
       {
@@ -422,38 +485,47 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   /**
+   * Reports the tooltip target missing event
+   * @param currentStep - The current step where target is missing
+   */
+  private async reportTooltipTargetMissingEvent(currentStep: Step) {
+    const { index, progress } = this.getCurrentStepInfo(currentStep);
+
+    await this.reportEventWithSession({
+      eventName: BizEvents.TOOLTIP_TARGET_MISSING,
+      eventData: {
+        flow_step_number: index,
+        flow_step_cvid: currentStep.cvid,
+        flow_step_name: currentStep.name,
+        flow_step_progress: progress,
+      },
+    });
+  }
+
+  /**
    * Reports the step events
    * @param currentStep - The current step
    * @param index - The index of the current step
    * @param progress - The progress of the current step
    * @param isComplete - Whether the current step is complete
    */
-  private async reportStepEvents(
-    currentStep: Step,
-    index: number,
-    progress: number,
-    isComplete: boolean,
-  ) {
+  private async reportStepEvents(currentStep: Step, eventName: BizEvents) {
+    const { index, progress } = this.getCurrentStepInfo(currentStep);
+
     const eventData = {
       flow_step_number: index,
       flow_step_cvid: currentStep.cvid,
       flow_step_name: currentStep.name,
       flow_step_progress: Math.round(progress),
     };
+    const isDeleteSession = eventName === BizEvents.FLOW_COMPLETED;
 
-    await this.reportEventWithSession({
-      eventData,
-      eventName: BizEvents.FLOW_STEP_SEEN,
-    });
-
-    if (isComplete) {
-      await this.reportEventWithSession(
-        {
-          eventData,
-          eventName: BizEvents.FLOW_COMPLETED,
-        },
-        { isDeleteSession: true },
-      );
-    }
+    await this.reportEventWithSession(
+      {
+        eventData,
+        eventName,
+      },
+      { isDeleteSession },
+    );
   }
 }
