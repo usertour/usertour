@@ -815,7 +815,10 @@ export class WebSocketService {
       return false;
     }
 
-    const progress = getEventProgress(eventName, events.flow_step_progress);
+    const progress =
+      events?.flow_step_progress !== undefined
+        ? getEventProgress(eventName, events.flow_step_progress)
+        : undefined;
     const state = getEventState(eventName);
 
     return await this.prisma.$transaction(async (tx) => {
@@ -831,7 +834,7 @@ export class WebSocketService {
       await tx.bizSession.update({
         where: { id: bizSession.id },
         data: {
-          progress,
+          ...(progress !== undefined && { progress }),
           state,
         },
       });

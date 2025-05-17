@@ -99,6 +99,22 @@ export class Tour extends BaseContent<TourStore> {
     } as TourStore;
   }
 
+  /**
+   * Get a step by its cvid
+   * @param cvid - The cvid of the step to get
+   * @returns The step with the given cvid, or null if it doesn't exist
+   */
+  getStepByCvid(cvid: string): Step | null {
+    if (!cvid) {
+      return null;
+    }
+    const content = this.getContent();
+    if (!content?.steps?.length) {
+      return null;
+    }
+    return content.steps.find((step) => step.cvid === cvid) ?? null;
+  }
+
   async goto(stepCvid: string) {
     const userInfo = this.getUserInfo();
     const content = this.getContent();
@@ -106,7 +122,7 @@ export class Tour extends BaseContent<TourStore> {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    const currentStep = content.steps.find((step) => step.cvid === stepCvid);
+    const currentStep = this.getStepByCvid(stepCvid);
     if (!currentStep) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
@@ -116,7 +132,7 @@ export class Tour extends BaseContent<TourStore> {
 
     if (currentStep.type === 'tooltip') {
       await this.showPopper(currentStep);
-    } else {
+    } else if (currentStep.type === 'modal') {
       await this.showModal(currentStep);
     }
   }
@@ -195,17 +211,11 @@ export class Tour extends BaseContent<TourStore> {
    * @param reason - The reason for closing the tour, defaults to USER_CLOSED
    */
   async close(reason: contentEndReason = contentEndReason.USER_CLOSED) {
-    // Validate tour state
-    const userInfo = this.getUserInfo();
-    const content = this.getContent();
-    if (!content?.steps || !this.getCurrentStep() || !userInfo?.externalId) {
-      this.destroy();
-      return;
-    }
-
-    // Report close event and clean up
+    // Report close event
     await this.reportCloseEvent(reason);
+    // Set the tour as dismissed
     this.setDismissed(true);
+    // Destroy the tour
     this.destroy();
   }
 
@@ -464,21 +474,24 @@ export class Tour extends BaseContent<TourStore> {
    */
   private async reportCloseEvent(reason: contentEndReason) {
     const currentStep = this.getCurrentStep();
-    if (!currentStep) {
-      return;
+    const eventData: Record<string, any> = {
+      flow_end_reason: reason,
+    };
+
+    if (currentStep) {
+      const { index, progress } = this.getCurrentStepInfo(currentStep);
+      Object.assign(eventData, {
+        flow_step_number: index,
+        flow_step_cvid: currentStep.cvid,
+        flow_step_name: currentStep.name,
+        flow_step_progress: progress,
+      });
     }
-    const { index, progress } = this.getCurrentStepInfo(currentStep);
 
     await this.reportEventWithSession(
       {
         eventName: BizEvents.FLOW_ENDED,
-        eventData: {
-          flow_end_reason: reason,
-          flow_step_number: index,
-          flow_step_cvid: currentStep.cvid,
-          flow_step_name: currentStep.name,
-          flow_step_progress: progress,
-        },
+        eventData,
       },
       { isDeleteSession: true },
     );
