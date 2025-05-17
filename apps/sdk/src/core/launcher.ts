@@ -21,7 +21,15 @@ export class Launcher extends BaseContent<LauncherStore> {
     this.handleVisibilityState();
   }
 
+  /**
+   * Handles the visibility state of the launcher based on various conditions
+   * This method manages the launcher's visibility by checking:
+   * 1. If the launcher has started and not been dismissed
+   * 2. If the target element is visible in the viewport
+   * 3. If the launcher is temporarily hidden
+   */
   private async handleVisibilityState() {
+    // Early return if launcher hasn't started, is dismissed, or watcher is not initialized
     if (!this.hasStarted() || this.hasDismissed() || !this.watcher) {
       return;
     }
@@ -29,11 +37,15 @@ export class Launcher extends BaseContent<LauncherStore> {
     const { openState } = this.getStore().getSnapshot();
     const { isHidden } = await this.watcher.checkVisibility();
 
+    // Hide launcher if it's temporarily hidden or target element is not visible
     if (this.isTemporarilyHidden() || isHidden) {
-      openState && this.hide();
+      if (openState) {
+        this.hide();
+      }
       return;
     }
 
+    // Show launcher if it's not already open
     if (!openState) {
       this.open();
       this.trigger(BizEvents.LAUNCHER_SEEN);
