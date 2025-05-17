@@ -233,8 +233,13 @@ export class Launcher extends BaseContent<LauncherStore> {
 
   reset() {}
 
-  private getEventData() {
+  /**
+   * Builds event data object with launcher information
+   * @returns {Record<string, string | number>} Object containing launcher metadata
+   */
+  private getEventData(): Record<string, string | number> {
     const content = this.getContent();
+
     return {
       [EventAttributes.LAUNCHER_ID]: content.contentId,
       [EventAttributes.LAUNCHER_NAME]: content.name,
@@ -243,6 +248,10 @@ export class Launcher extends BaseContent<LauncherStore> {
     };
   }
 
+  /**
+   * Reports when the launcher becomes visible to the user
+   * Creates a new session for tracking
+   */
   private async reportSeenEvent() {
     await this.reportEventWithSession(
       {
@@ -253,6 +262,10 @@ export class Launcher extends BaseContent<LauncherStore> {
     );
   }
 
+  /**
+   * Reports when the launcher is dismissed by the user
+   * Deletes the current tracking session
+   */
   private async reportDismissEvent() {
     await this.reportEventWithSession(
       {
@@ -263,6 +276,10 @@ export class Launcher extends BaseContent<LauncherStore> {
     );
   }
 
+  /**
+   * Reports when the launcher is activated by the user
+   * Deletes the current tracking session after activation
+   */
   private async reportActiveEvent() {
     await this.reportEventWithSession(
       {
