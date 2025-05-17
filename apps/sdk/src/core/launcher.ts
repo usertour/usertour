@@ -56,10 +56,16 @@ export class Launcher extends BaseContent<LauncherStore> {
     return null;
   }
 
-  private buildStoreData() {
+  /**
+   * Builds the store data for the launcher
+   * Combines default store data with content-specific data and base information
+   * @returns {LauncherStore} The complete store data object
+   */
+  private buildStoreData(): LauncherStore {
     const content = this.getContent();
     const baseInfo = this.getStoreBaseInfo();
     const { zIndex } = content.data;
+
     return {
       ...defaultLauncherStore,
       content,
@@ -70,6 +76,10 @@ export class Launcher extends BaseContent<LauncherStore> {
     } as LauncherStore;
   }
 
+  /**
+   * Refreshes the launcher's store data
+   * Updates the store with new data while preserving the current open state and trigger reference
+   */
   refresh() {
     const { openState, triggerRef, ...storeData } = this.buildStoreData();
     this.updateStore({ ...storeData });
