@@ -281,6 +281,9 @@ export class Tour extends BaseContent<TourStore> {
     // Report step seen event
     await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
 
+    // Activate trigger conditions
+    await this.activeTriggerConditions();
+
     // Set up element watcher
     const store = this.buildStoreData();
     this.setupElementWatcher(currentStep, store);
@@ -381,6 +384,9 @@ export class Tour extends BaseContent<TourStore> {
 
     // Report that the step has been seen
     await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
+
+    // Activate trigger conditions
+    await this.activeTriggerConditions();
 
     // Set up modal state
     const openState = !this.isTemporarilyHidden();
