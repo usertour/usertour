@@ -132,15 +132,25 @@ export class Tour extends BaseContent<TourStore> {
     return content.latestSession.id;
   }
 
-  private buildStoreData() {
+  /**
+   * Builds the store data for the tour
+   * This method combines the base store info with the current step data
+   * and sets default values for required fields
+   *
+   * @returns {TourStore} The complete store data object
+   */
+  private buildStoreData(): TourStore {
+    // Get base store information
     const baseInfo = this.getStoreBaseInfo();
     const currentStep = this.getCurrentStep();
+
+    // Combine all store data with proper defaults
     return {
-      ...defaultTourStore,
-      triggerRef: null,
-      ...baseInfo,
-      currentStep,
-      openState: true,
+      ...defaultTourStore, // Start with default values
+      triggerRef: null, // Reset trigger reference
+      ...baseInfo, // Add base information
+      currentStep, // Add current step
+      openState: true, // Set initial open state
     } as TourStore;
   }
 
