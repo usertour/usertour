@@ -219,47 +219,58 @@ export class Checklist extends BaseContent<ChecklistStore> {
     this.trigger(BizEvents.CHECKLIST_TASK_CLICKED, { item });
   };
 
+  /**
+   * Monitors and updates the conditions of checklist items.
+   * This method:
+   * 1. Checks completion and visibility conditions for each item
+   * 2. Updates item status and store if changes are detected
+   * 3. Triggers appropriate events for completed items
+   */
   private async itemConditionsMonitor() {
+    // Get content and validate
     const content = this.getStore().getSnapshot().content;
     if (!content) return;
-    const data = content?.data as ChecklistData;
-    const items = data?.items;
+
+    const checklistData = content.data as ChecklistData;
+    const items = checklistData.items;
     if (!items?.length) return;
 
+    // Initialize tracking variables
     let hasChanges = false;
     const updateItems = [...items];
 
+    // Process all items in parallel
     await Promise.all(
       items.map(async (item) => {
-        // Get current item status
         const currentStatus = this.getItemStatus(item.id);
-        // Get completed status
-        const activedConditions = await activedRulesConditions(item.completeConditions, {
+
+        // Check completion conditions
+        const activeConditions = await activedRulesConditions(item.completeConditions, {
           'task-is-clicked': currentStatus.clicked,
         });
-        const completed = item.isCompleted
+        const isCompleted = item.isCompleted
           ? true
-          : canCompleteChecklistItem(data.completionOrder, items, item) &&
-            isActive(activedConditions);
+          : canCompleteChecklistItem(checklistData.completionOrder, items, item) &&
+            isActive(activeConditions);
 
-        // Only check visibility conditions if onlyShowTask is true
-        let visible = true;
+        // Check visibility conditions
+        let isVisible = true;
         if (item.onlyShowTask) {
           const visibleConditions = await activedRulesConditions(item.onlyShowTaskConditions);
-          visible = isActive(visibleConditions);
+          isVisible = isActive(visibleConditions);
         }
 
-        // Check if status actually changed
-        if (currentStatus.completed !== completed || currentStatus.visible !== visible) {
-          this.updateItemStatus(item.id, { completed, visible });
+        // Update status if changed
+        if (currentStatus.completed !== isCompleted || currentStatus.visible !== isVisible) {
+          this.updateItemStatus(item.id, { completed: isCompleted, visible: isVisible });
 
-          // Update content array
+          // Update item in the array
           const itemIndex = updateItems.findIndex((i) => i.id === item.id);
           if (itemIndex !== -1) {
             updateItems[itemIndex] = {
               ...updateItems[itemIndex],
-              isCompleted: completed,
-              isVisible: visible,
+              isCompleted,
+              isVisible,
             };
             hasChanges = true;
           }
@@ -267,23 +278,27 @@ export class Checklist extends BaseContent<ChecklistStore> {
       }),
     );
 
-    // Only update store if there were actual changes
+    // Update store and trigger events if changes occurred
     if (hasChanges) {
+      // Update store with filtered visible items
       this.updateStore({
         content: {
           ...content,
           data: {
-            ...data,
+            ...checklistData,
             items: updateItems.filter((item) => item.isVisible !== false),
           },
         },
       });
+
+      // Trigger completion events
       for (const item of updateItems) {
         if (item.isCompleted) {
           this.trigger(BizEvents.CHECKLIST_TASK_COMPLETED, { item });
         }
       }
 
+      // Check if all items are completed
       if (updateItems.every((item) => item.isCompleted)) {
         this.trigger(BizEvents.CHECKLIST_COMPLETED);
       }
