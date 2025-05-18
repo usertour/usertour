@@ -7,7 +7,7 @@ import type { Rect, SideObject } from '@floating-ui/dom';
  * @returns The zoom factor of the body element (defaults to 1 if zoom is not set or invalid)
  */
 function getBodyZoom(): number {
-  const zoom = getComputedStyle(window.document.body)?.zoom;
+  const zoom = getComputedStyle(window.document.body).getPropertyValue('zoom');
   return zoom && zoom !== '1' ? Number(zoom) || 1 : 1;
 }
 
