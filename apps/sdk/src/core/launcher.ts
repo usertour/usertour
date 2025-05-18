@@ -156,26 +156,30 @@ export class Launcher extends BaseContent<LauncherStore> {
    * @param {RulesCondition[]} actionRules - List of action rules to be processed
    */
   async handleActions(actionRules: RulesCondition[]) {
-    for (const actionRule of actionRules) {
+    // Split actions into two groups
+    const pageNavigateActions = actionRules.filter(
+      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
+    );
+    const otherActions = actionRules.filter(
+      (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
+    );
+
+    // Execute non-PAGE_NAVIGATE actions first
+    for (const actionRule of otherActions) {
       const { type, data } = actionRule;
 
-      switch (type) {
-        case ContentActionsItemType.FLOW_START:
-          await this.startNewTour(data.contentId);
-          break;
-
-        case ContentActionsItemType.PAGE_NAVIGATE:
-          this.handleNavigate(data);
-          break;
-
-        case ContentActionsItemType.JAVASCRIPT_EVALUATE:
-          evalCode(data.value);
-          break;
-
-        case ContentActionsItemType.LAUNCHER_DISMIS:
-          this.close();
-          break;
+      if (type === ContentActionsItemType.FLOW_START) {
+        await this.startNewTour(data.contentId);
+      } else if (type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
+        evalCode(data.value);
+      } else if (type === ContentActionsItemType.LAUNCHER_DISMIS) {
+        this.close();
       }
+    }
+
+    // Execute PAGE_NAVIGATE actions last
+    for (const actionRule of pageNavigateActions) {
+      this.handleNavigate(actionRule.data);
     }
   }
 

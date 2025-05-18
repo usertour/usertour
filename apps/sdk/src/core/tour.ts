@@ -448,7 +448,16 @@ export class Tour extends BaseContent<TourStore> {
    * @param actions - The actions to be handled
    */
   async handleActions(actions: RulesCondition[]) {
-    for (const action of actions) {
+    // Split actions into two groups
+    const pageNavigateActions = actions.filter(
+      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
+    );
+    const otherActions = actions.filter(
+      (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
+    );
+
+    // Execute non-PAGE_NAVIGATE actions first
+    for (const action of otherActions) {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
@@ -457,9 +466,12 @@ export class Tour extends BaseContent<TourStore> {
         await this.handleClose(contentEndReason.USER_CLOSED);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
-      } else if (action.type === ContentActionsItemType.PAGE_NAVIGATE) {
-        this.handleNavigate(action.data);
       }
+    }
+
+    // Execute PAGE_NAVIGATE actions last
+    for (const action of pageNavigateActions) {
+      this.handleNavigate(action.data);
     }
   }
 
