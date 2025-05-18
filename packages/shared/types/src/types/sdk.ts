@@ -38,6 +38,7 @@ export const flowReasonTitleMap = {
   [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
   [contentEndReason.SESSION_TIMEOUT]: 'Session timeout',
+  [contentEndReason.SYSTEM_CLOSED]: 'System closed',
 };
 
 export interface SDKConfig {
