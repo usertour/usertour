@@ -333,7 +333,7 @@ export class WebSocketService {
         return false;
       }
       case 'flow': {
-        return await this.activedContentRulesCondition(rules, environment, bizUser);
+        return await this.activedContentRulesCondition(rules, bizUser);
       }
       default: {
         return false;
@@ -543,36 +543,12 @@ export class WebSocketService {
     return false;
   }
 
-  async activedContentRulesCondition(
-    rules: RulesCondition,
-    environment: Environment,
-    bizUser: BizUser,
-  ): Promise<boolean> {
+  async activedContentRulesCondition(rules: RulesCondition, bizUser: BizUser): Promise<boolean> {
     const { contentId, logic } = rules.data;
-
-    // Check content existence
-    const content = await this.prisma.content.findFirst({
-      where: { id: contentId },
-    });
-    if (!content || !logic) {
-      return false;
-    }
 
     const { eventCodeName, expectResult } = EVENT_CODE_MAP[logic];
 
     if (!eventCodeName) {
-      return false;
-    }
-
-    // Get specific event
-    const event = await this.prisma.event.findFirst({
-      where: {
-        codeName: eventCodeName,
-        projectId: environment.projectId,
-      },
-    });
-
-    if (!event) {
       return false;
     }
 
@@ -583,7 +559,9 @@ export class WebSocketService {
         contentId,
         bizEvent: {
           some: {
-            eventId: event.id,
+            event: {
+              codeName: eventCodeName,
+            },
           },
         },
       },
