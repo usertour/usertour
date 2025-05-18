@@ -125,8 +125,7 @@ const getFlowReasons = (events: BizEvent[]) => {
         startEvent?.data?.[EventAttributes.FLOW_START_REASON] as contentStartReason
       ] || '',
     endReason:
-      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason] ||
-      '',
+      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason],
   };
 };
 
