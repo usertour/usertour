@@ -336,9 +336,13 @@ export class ContentService {
       where: {
         environmentId: content.environmentId,
         type: ContentType.FLOW,
+        deleted: false,
+        published: true,
+        id: {
+          not: content.id,
+        },
       },
       include: {
-        editedVersion: { include: { steps: true } },
         publishedVersion: { include: { steps: true } },
       },
     });
@@ -352,13 +356,11 @@ export class ContentService {
       });
     };
 
-    const questionContent = contentList.filter(
-      (content) =>
-        hasQuestions(content.editedVersion as unknown as Version) ||
-        hasQuestions(content.publishedVersion as unknown as Version),
+    const questionContent = contentList.filter((content) =>
+      hasQuestions(content.publishedVersion as unknown as Version),
     );
 
-    if (questionContent.length > surveyLimit) {
+    if (questionContent.length >= surveyLimit) {
       return false;
     }
 
