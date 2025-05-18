@@ -332,7 +332,7 @@ export class WebSocketService {
         }
         return false;
       }
-      case 'content': {
+      case 'flow': {
         return await this.activedContentRulesCondition(rules, environment, bizUser);
       }
       default: {
