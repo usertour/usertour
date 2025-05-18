@@ -354,7 +354,7 @@ const getLatestEvent = (
   return findLatestEvent(bizEvents);
 };
 
-const findLatestEvent = (bizEvents: BizEvent[]) => {
+export const findLatestEvent = (bizEvents: BizEvent[]) => {
   const initialValue = bizEvents[0];
   const lastEvent = bizEvents.reduce(
     (accumulator: typeof initialValue, currentValue: typeof initialValue) => {

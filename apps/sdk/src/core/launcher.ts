@@ -222,7 +222,7 @@ export class Launcher extends BaseContent<LauncherStore> {
    * 2. Hides the launcher UI
    * 3. Triggers dismissal events
    */
-  close() {
+  async close() {
     this.setDismissed(true);
     this.hide();
     this.trigger(BizEvents.LAUNCHER_DISMISSED);

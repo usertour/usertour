@@ -219,7 +219,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       } else if (action.type === ContentActionsItemType.CHECKLIST_DISMIS) {
-        this.close(contentEndReason.USER_CLOSED);
+        await this.close(contentEndReason.USER_CLOSED);
       }
     }
 
@@ -347,15 +347,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
     return this.getActiveChecklist() === this;
   }
 
-  close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
+  async close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
     this.setDismissed(true);
     this.hide();
-    this.reportDismissEvent(reason);
+    await this.reportDismissEvent(reason);
     this.destroy();
   }
 
   async handleDismiss() {
-    this.close(contentEndReason.USER_CLOSED);
+    await this.close(contentEndReason.USER_CLOSED);
   }
 
   /**

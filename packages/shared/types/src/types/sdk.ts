@@ -17,6 +17,7 @@ export enum contentEndReason {
   TOOLTIP_TARGET_MISSING = 'tooltip_target_missing',
   SYSTEM_CLOSED = 'system_closed',
   CONTENT_NOT_FOUND = 'content_not_found',
+  SESSION_TIMEOUT = 'session_timeout',
 }
 
 export enum contentStartReason {
@@ -36,6 +37,7 @@ export const flowReasonTitleMap = {
   [contentEndReason.USER_CLOSED]: 'User closed',
   [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
+  [contentEndReason.SESSION_TIMEOUT]: 'Session timeout',
 };
 
 export interface SDKConfig {
