@@ -638,6 +638,10 @@ export class App extends Evented {
    */
   async startTour(contentId: string | undefined, reason: string) {
     const userInfo = this.userInfo;
+    if (contentId && this.activeTour) {
+      await this.activeTour?.close(contentEndReason.USER_CLOSED);
+    }
+
     if (this.activeTour || !userInfo?.externalId) {
       return;
     }

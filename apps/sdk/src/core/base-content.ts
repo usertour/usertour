@@ -449,7 +449,6 @@ export abstract class BaseContent<T = any> extends Evented {
    * @returns {Promise<void>} A promise that resolves when the new tour is started
    */
   async startNewTour(contentId: string) {
-    await this.getInstance().closeActiveTour();
     await this.startTour(contentId, contentStartReason.ACTION);
   }
 
