@@ -346,9 +346,9 @@ const getLatestEvent = (
     if (content.id === contentId || content.type !== contentType) {
       continue;
     }
-    const bizEvents = content.latestSession?.bizEvent;
-    if (bizEvents && bizEvents.length > 0) {
-      bizEvents.push(...bizEvents.filter((e) => e?.event?.codeName === eventCodeName));
+    const sessionBizEvents = content.latestSession?.bizEvent;
+    if (sessionBizEvents && sessionBizEvents.length > 0) {
+      bizEvents.push(...sessionBizEvents.filter((e) => e?.event?.codeName === eventCodeName));
     }
   }
   return findLatestEvent(bizEvents);
