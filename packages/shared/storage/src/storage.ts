@@ -7,7 +7,7 @@ export interface StorageDataShape {
 }
 
 export class AppStorage {
-  prefix = 'TOURLY_STORAGE@0.0.1';
+  prefix = 'USERTOUR@0.0.1';
   defaultExpire = 5;
 
   constructor(prefix?: string, defaultExpire?: number) {

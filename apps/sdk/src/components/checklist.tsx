@@ -7,8 +7,8 @@ import {
   ChecklistItems,
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
+  ChecklistRoot,
 } from '@usertour-ui/sdk/src/checklist';
-import { ChecklistRoot } from '@usertour-ui/sdk/src/checklist';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   BizUserInfo,
@@ -20,11 +20,12 @@ import {
 import { useSyncExternalStore } from 'react';
 import { Checklist } from '../core/checklist';
 
-type ChecklistProps = {
+// Types
+type ChecklistWidgetProps = {
   checklist: Checklist;
 };
 
-interface ChecklistWidgetCoreProps {
+type ChecklistWidgetCoreProps = {
   data: ChecklistData;
   theme: Theme;
   userInfo: BizUserInfo;
@@ -34,54 +35,62 @@ interface ChecklistWidgetCoreProps {
   handleDismiss: () => Promise<void>;
   handleOpenChange: (open: boolean) => void;
   removeBranding: boolean;
-}
-
-const ChecklistWidgetCore = (props: ChecklistWidgetCoreProps) => {
-  const {
-    data,
-    theme,
-    userInfo,
-    assets,
-    handleItemClick,
-    handleOnClick,
-    handleDismiss,
-    handleOpenChange,
-    removeBranding,
-  } = props;
-
-  return (
-    <ChecklistRoot
-      data={data}
-      theme={theme}
-      defaultOpen={data.initialDisplay === ChecklistInitialDisplay.EXPANDED}
-      onDismiss={handleDismiss}
-      onOpenChange={handleOpenChange}
-    >
-      <ChecklistPopperUseIframe zIndex={1111} assets={assets}>
-        <ChecklistDropdown />
-        <ChecklistPopperContentBody>
-          <ContentEditorSerialize
-            contents={data.content}
-            onClick={handleOnClick}
-            userInfo={userInfo}
-          />
-          <ChecklistProgress />
-          <ChecklistItems onClick={handleItemClick} disabledUpdate={true} />
-          <ChecklistDismiss />
-        </ChecklistPopperContentBody>
-        {!removeBranding && <PopperMadeWith />}
-      </ChecklistPopperUseIframe>
-    </ChecklistRoot>
-  );
 };
 
-export const ChecklistWidget = (props: ChecklistProps) => {
-  const { checklist } = props;
+// Components
+const ChecklistContent = ({
+  data,
+  userInfo,
+  handleOnClick,
+  handleItemClick,
+}: Pick<ChecklistWidgetCoreProps, 'data' | 'userInfo' | 'handleOnClick' | 'handleItemClick'>) => (
+  <>
+    <ContentEditorSerialize contents={data.content} onClick={handleOnClick} userInfo={userInfo} />
+    <ChecklistProgress />
+    <ChecklistItems onClick={handleItemClick} disabledUpdate={true} />
+    <ChecklistDismiss />
+  </>
+);
 
+const ChecklistWidgetCore = ({
+  data,
+  theme,
+  userInfo,
+  assets,
+  handleItemClick,
+  handleOnClick,
+  handleDismiss,
+  handleOpenChange,
+  removeBranding,
+}: ChecklistWidgetCoreProps) => (
+  <ChecklistRoot
+    data={data}
+    theme={theme}
+    defaultOpen={data.initialDisplay === ChecklistInitialDisplay.EXPANDED}
+    onDismiss={handleDismiss}
+    onOpenChange={handleOpenChange}
+  >
+    <ChecklistPopperUseIframe zIndex={1111} assets={assets}>
+      <ChecklistDropdown />
+      <ChecklistPopperContentBody>
+        <ChecklistContent
+          data={data}
+          userInfo={userInfo}
+          handleOnClick={handleOnClick}
+          handleItemClick={handleItemClick}
+        />
+      </ChecklistPopperContentBody>
+      {!removeBranding && <PopperMadeWith />}
+    </ChecklistPopperUseIframe>
+  </ChecklistRoot>
+);
+
+export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
   const store = useSyncExternalStore(
     checklist.getStore().subscribe,
     checklist.getStore().getSnapshot,
   );
+
   const { content, theme, userInfo, openState, assets, sdkConfig } = store;
   const data = content?.data as ChecklistData;
 

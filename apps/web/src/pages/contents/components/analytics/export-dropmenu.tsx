@@ -14,8 +14,8 @@ import type {
   BizSession,
   BizEvent,
   ContentVersion,
-  flowStartReason,
-  flowEndReason,
+  contentStartReason,
+  contentEndReason,
 } from '@usertour-ui/types';
 import {
   AttributeBizTypes,
@@ -122,10 +122,11 @@ const getFlowReasons = (events: BizEvent[]) => {
   return {
     startReason:
       flowReasonTitleMap[
-        startEvent?.data?.[EventAttributes.FLOW_START_REASON] as flowStartReason
+        startEvent?.data?.[EventAttributes.FLOW_START_REASON] as contentStartReason
       ] || '',
     endReason:
-      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as flowEndReason] || '',
+      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason] ||
+      '',
   };
 };
 

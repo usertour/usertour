@@ -75,7 +75,9 @@ interface SessionValue {
   price: string | null;
 }
 
-const HobbySessionLimit = 10000;
+const HobbySessionLimit = 5000;
+const ProSessionLimit = 50000;
+const GrowthSessionLimit = 300000;
 
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
@@ -117,7 +119,7 @@ const plans: Plan[] = [
     disabled: false,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: 'Unlimited sessions' },
+      { icon: BarChart4, text: `${ProSessionLimit} sessions/month` },
       { icon: Newspaper, text: 'Unlimited surveys/NPS' },
       { icon: Zap, text: 'Unlimited Event Tracking' },
       { icon: Users2, text: '3 team members' },
@@ -335,8 +337,8 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
           name: 'Sessions (Monthly)',
           values: [
             { count: `${HobbySessionLimit}`, price: null },
-            { count: 'Unlimited', price: null },
-            { count: 'Unlimited', price: null },
+            { count: `${ProSessionLimit}`, price: null },
+            { count: `${GrowthSessionLimit}`, price: null },
             { count: 'Unlimited', price: null },
           ],
         },

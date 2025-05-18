@@ -2,7 +2,7 @@ import { Button } from '@usertour-ui/button';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-ui/constants';
 import { Delete2Icon } from '@usertour-ui/icons';
 import { Label } from '@usertour-ui/label';
-import { Rules } from '@usertour-ui/shared-components';
+import { Rules, RulesWait } from '@usertour-ui/shared-components';
 import { defaultRulesItems } from '@usertour-ui/shared-components/src/components/rules';
 import { ContentActions } from '@usertour-ui/shared-editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour-ui/types';
@@ -19,11 +19,13 @@ interface ContentTriggerProps {
   currentStep: Step;
   token: string;
   showError: boolean;
+  wait: number;
   onActionsChange: (actions: RulesCondition[], hasError: boolean) => void;
   onConditonsChange: (conds: RulesCondition[], hasError: boolean) => void;
   onDelete: () => void;
   createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
   onRulesConditionElementChange?: (conditionIndex: number, type: string) => void;
+  onWaitChange: (wait: number) => void;
 }
 
 export const ContentTrigger = (props: ContentTriggerProps) => {
@@ -43,6 +45,8 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
     currentContent,
     showError,
     onRulesConditionElementChange,
+    onWaitChange,
+    wait,
   } = props;
 
   return (
@@ -62,6 +66,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               )}
               onElementChange={onRulesConditionElementChange}
             />
+            <RulesWait defaultValue={wait} onValueChange={onWaitChange} disabled={false} />
             <Label>Action to perform when triggered</Label>
             <ContentActions
               zIndex={zIndex + EXTENSION_SELECT}
