@@ -463,8 +463,8 @@ export class BizService {
 
   async upsertBizCompanies(
     tx: Prisma.TransactionClient,
-    companyId: string,
-    userId: string,
+    externalCompanyId: string,
+    externalUserId: string,
     attributes: any,
     environmentId: string,
     membership: any,
@@ -476,7 +476,7 @@ export class BizService {
       return;
     }
     const user = await tx.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
       return;
@@ -487,7 +487,7 @@ export class BizService {
       tx,
       projectId,
       environmentId,
-      companyId,
+      externalCompanyId,
       attributes,
     );
     await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {});
@@ -514,11 +514,11 @@ export class BizService {
     tx: Prisma.TransactionClient,
     projectId: string,
     environmentId: string,
-    companyId: string,
+    externalCompanyId: string,
     attributes: any,
   ): Promise<any> {
     const company = await tx.bizCompany.findFirst({
-      where: { externalId: String(companyId), environmentId },
+      where: { externalId: String(externalCompanyId), environmentId },
     });
 
     const insertAttribute = await this.insertBizAttributes(
@@ -546,7 +546,7 @@ export class BizService {
 
     return await tx.bizCompany.create({
       data: {
-        externalId: String(companyId),
+        externalId: String(externalCompanyId),
         environmentId,
         data: insertAttribute,
       },

@@ -15,6 +15,7 @@ export type StepTrigger = {
   id?: string;
   actions: RulesCondition[];
   conditions: RulesCondition[];
+  wait?: number;
 };
 
 export type StepSettings = {
@@ -116,6 +117,7 @@ export enum FrequencyUnits {
 export enum StepContentType {
   TOOLTIP = 'tooltip',
   MODAL = 'modal',
+  HIDDEN = 'hidden',
 }
 export type RulesFrequencyValueEvery = {
   times?: number;
