@@ -4,18 +4,11 @@ import type { Rect, SideObject } from '@floating-ui/dom';
 
 /**
  * Get the zoom factor of the body element
- * @returns The zoom factor of the body element
+ * @returns The zoom factor of the body element (defaults to 1 if zoom is not set or invalid)
  */
 function getBodyZoom(): number {
-  const styles = getComputedStyle(window.document.body);
-  const zoom = styles.zoom;
-
-  if (!zoom || zoom === '1') {
-    return 1;
-  }
-
-  const zoomValue = Number.parseFloat(zoom);
-  return Number.isNaN(zoomValue) ? 1 : zoomValue;
+  const zoom = getComputedStyle(window.document.body)?.zoom;
+  return zoom && zoom !== '1' ? Number(zoom) || 1 : 1;
 }
 
 // function parseCssPropertyToFloat(str: string) {
