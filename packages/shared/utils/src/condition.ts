@@ -50,41 +50,26 @@ const parsePattern = (pattern: string) => {
 };
 
 const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[]) => {
-  if (!_url || typeof _url !== 'string') {
-    return false;
-  }
-
-  // Normalize URL by removing trailing slashes
-  const normalizedUrl = _url.replace(/\/+$/, '');
-
   const isMatchIncludesConditions =
     includes.length > 0
       ? includes.some((_include) => {
-          if (!_include || typeof _include !== 'string') {
-            return false;
-          }
           const reg = parsePattern(_include);
           if (reg) {
-            return reg.test(normalizedUrl);
+            return reg.test(_url);
           }
           return false;
         })
       : true;
-
   const isMatchExcludesConditions =
     excludes.length > 0
       ? excludes.some((_exclude) => {
-          if (!_exclude || typeof _exclude !== 'string') {
-            return false;
-          }
           const reg = parsePattern(_exclude);
           if (reg) {
-            return reg.test(normalizedUrl);
+            return reg.test(_url);
           }
           return false;
         })
       : false;
-
   return isMatchIncludesConditions && !isMatchExcludesConditions;
 };
 
