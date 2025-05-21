@@ -50,25 +50,26 @@ const parsePattern = (pattern: string) => {
 };
 
 const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[]) => {
-  // const _url = window.location.href;
-  const isMatchIncludesConditions = includes
-    ? includes.some((_include) => {
-        const reg = parsePattern(_include);
-        if (reg) {
-          return _url.match(reg);
-        }
-        return false;
-      })
-    : false;
-  const isMatchExcludesConditions = excludes
-    ? excludes.some((_exclude) => {
-        const reg = parsePattern(_exclude);
-        if (reg) {
-          return _url.match(reg);
-        }
-        return false;
-      })
-    : false;
+  const isMatchIncludesConditions =
+    includes.length > 0
+      ? includes.some((_include) => {
+          const reg = parsePattern(_include);
+          if (reg) {
+            return reg.test(_url);
+          }
+          return false;
+        })
+      : true;
+  const isMatchExcludesConditions =
+    excludes.length > 0
+      ? excludes.some((_exclude) => {
+          const reg = parsePattern(_exclude);
+          if (reg) {
+            return reg.test(_url);
+          }
+          return false;
+        })
+      : false;
   return isMatchIncludesConditions && !isMatchExcludesConditions;
 };
 
