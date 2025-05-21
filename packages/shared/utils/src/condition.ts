@@ -50,25 +50,41 @@ const parsePattern = (pattern: string) => {
 };
 
 const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[]) => {
-  // const _url = window.location.href;
-  const isMatchIncludesConditions = includes
-    ? includes.some((_include) => {
-        const reg = parsePattern(_include);
-        if (reg) {
-          return _url.match(reg);
-        }
-        return false;
-      })
-    : false;
-  const isMatchExcludesConditions = excludes
-    ? excludes.some((_exclude) => {
-        const reg = parsePattern(_exclude);
-        if (reg) {
-          return _url.match(reg);
-        }
-        return false;
-      })
-    : false;
+  if (!_url || typeof _url !== 'string') {
+    return false;
+  }
+
+  // Normalize URL by removing trailing slashes
+  const normalizedUrl = _url.replace(/\/+$/, '');
+
+  const isMatchIncludesConditions =
+    includes.length > 0
+      ? includes.some((_include) => {
+          if (!_include || typeof _include !== 'string') {
+            return false;
+          }
+          const reg = parsePattern(_include);
+          if (reg) {
+            return reg.test(normalizedUrl);
+          }
+          return false;
+        })
+      : true;
+
+  const isMatchExcludesConditions =
+    excludes.length > 0
+      ? excludes.some((_exclude) => {
+          if (!_exclude || typeof _exclude !== 'string') {
+            return false;
+          }
+          const reg = parsePattern(_exclude);
+          if (reg) {
+            return reg.test(normalizedUrl);
+          }
+          return false;
+        })
+      : false;
+
   return isMatchIncludesConditions && !isMatchExcludesConditions;
 };
 

@@ -88,10 +88,16 @@ export default defineConfig(({ command }) => {
       ...defaultConfig.build,
     },
     server: {
-      host: 'js.usertour.local',
       port: 5173,
       https: false,
       open: true,
+      hmr: {
+        overlay: true,
+      },
+    },
+    optimizeDeps: {
+      include: ['@dnd-kit/core', '@radix-ui/react-popover'],
+      force: true,
     },
   };
 
