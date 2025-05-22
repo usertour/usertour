@@ -76,6 +76,7 @@ export default defineConfig(({ command }) => {
         // the proper extensions will be added
         fileName: 'usertour',
       },
+      sourcemap: true,
     },
   };
 
@@ -86,6 +87,7 @@ export default defineConfig(({ command }) => {
     },
     build: {
       ...defaultConfig.build,
+      sourcemap: true,
     },
     server: {
       port: 5173,
@@ -117,6 +119,7 @@ export default defineConfig(({ command }) => {
           },
           commonjsOptions: { include: [] },
           outDir: `dist/${version}/${folderName}`,
+          sourcemap: true,
         },
         plugins: [...buildPlugins],
       };
@@ -142,6 +145,7 @@ export default defineConfig(({ command }) => {
         },
         commonjsOptions: { include: [] },
         outDir: `dist/${version}/${folderName}`,
+        sourcemap: true,
       },
       plugins: [...buildPlugins],
     };
