@@ -352,7 +352,7 @@ export abstract class BaseContent<T = any> extends Evented {
       return false;
     }
     const latestEvent = findLatestEvent(bizEvents);
-    if (latestEvent.createdAt) {
+    if (latestEvent?.createdAt) {
       const now = new Date();
       const eventTime = new Date(latestEvent.createdAt);
       return differenceInHours(now, eventTime) > SESSION_TIMEOUT_HOURS;
