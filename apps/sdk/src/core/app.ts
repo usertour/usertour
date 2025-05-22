@@ -84,6 +84,9 @@ export class App extends Evented {
   private root: ReactDOM.Root | undefined;
   private contentPollingInterval: number | undefined;
   private readonly CONTENT_POLLING_INTERVAL = 60000; // 1 minute
+  private isMonitoring = false;
+  private readonly MONITOR_INTERVAL = 200;
+  private lastCheck = 0;
 
   constructor() {
     super();
@@ -673,7 +676,7 @@ export class App extends Evented {
 
         // Find the next step after the latest seen step
         const steps = content.steps || [];
-        const cvid = latestStepNumber >= 0 ? steps[latestStepNumber]?.cvid : undefined;
+        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
         if (cvid) {
           this.activeTour = latestActivatedTour;
           await this.activeTour.start(reason, cvid);
@@ -775,16 +778,14 @@ export class App extends Evented {
    */
   async startActivityMonitor() {
     let rafId: number;
-    let lastCheck = 0;
-    const CHECK_INTERVAL = 200;
 
-    const handleUserActivity = () => {
+    const handleUserActivity = async () => {
       if (this.stopLoop) return;
 
       const now = Date.now();
-      if (now - lastCheck >= CHECK_INTERVAL) {
-        lastCheck = now;
-        this.monitor();
+      if (now - this.lastCheck >= this.MONITOR_INTERVAL) {
+        this.lastCheck = now;
+        await this.executeMonitor();
       }
     };
 
@@ -801,52 +802,35 @@ export class App extends Evented {
     handleUserActivity();
   }
 
-  /**
-   * Monitors and activates content conditions
-   */
-  async monitor() {
-    if (!this.originContents) {
-      return;
-    }
-    if (extensionIsRunning()) {
-      this.endAll();
+  private async executeMonitor(): Promise<void> {
+    if (this.isMonitoring) {
       return;
     }
 
-    //active conditions
-    for (const tour of this.tours) {
-      tour.monitor();
-    }
-    for (const launcher of this.launchers) {
-      launcher.monitor();
-    }
-    for (const checklist of this.checklists) {
-      checklist.monitor();
-    }
+    try {
+      this.isMonitoring = true;
 
-    this.startContents();
-  }
+      if (!this.originContents) {
+        return;
+      }
+      if (extensionIsRunning()) {
+        this.endAll();
+        return;
+      }
 
-  /**
-   * Resets the application state
-   */
-  async reset() {
-    this.stopLoop = false;
-    this.originContents = undefined;
-    this.tours = [];
-    this.stopContentPolling();
-    await this.closeActiveTour();
-    this.closeActiveChecklist();
-  }
+      // Execute all monitoring tasks in parallel using Promise.all
+      await Promise.all([
+        ...this.tours.map((tour) => tour.monitor()),
+        ...this.launchers.map((launcher) => launcher.monitor()),
+        ...this.checklists.map((checklist) => checklist.monitor()),
+      ]);
 
-  /**
-   * Ends all active content and resets the application
-   */
-  async endAll() {
-    this.userInfo = undefined;
-    this.companyInfo = undefined;
-    await this.reset();
-    this.stopLoop = true;
+      await this.startContents();
+    } catch (error) {
+      logger.error('Error in app monitoring:', error);
+    } finally {
+      this.isMonitoring = false;
+    }
   }
 
   /**
@@ -965,5 +949,28 @@ export class App extends Evented {
       clearInterval(this.contentPollingInterval);
       this.contentPollingInterval = undefined;
     }
+  }
+
+  /**
+   * Resets the application state
+   */
+  async reset() {
+    this.stopLoop = false;
+    this.originContents = undefined;
+    this.isMonitoring = false;
+    this.tours = [];
+    this.stopContentPolling();
+    await this.closeActiveTour();
+    this.closeActiveChecklist();
+  }
+
+  /**
+   * Ends all active content and resets the application
+   */
+  async endAll() {
+    this.userInfo = undefined;
+    this.companyInfo = undefined;
+    await this.reset();
+    this.stopLoop = true;
   }
 }

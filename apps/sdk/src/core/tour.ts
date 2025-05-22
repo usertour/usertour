@@ -338,6 +338,10 @@ export class Tour extends BaseContent<TourStore> {
    */
   private handleElementFound(el: Element, step: Step, store: TourStore): void {
     const openState = !this.isTemporarilyHidden();
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
     const { isComplete, progress } = this.getCurrentStepInfo(step);
 
     // Scroll element into view if tour is visible
@@ -364,6 +368,10 @@ export class Tour extends BaseContent<TourStore> {
    * @private
    */
   private async handleElementNotFound(step: Step): Promise<void> {
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
     await this.reportTooltipTargetMissingEvent(step);
     await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
@@ -494,6 +502,7 @@ export class Tour extends BaseContent<TourStore> {
         });
       }
       await this.reportQuestionAnswer(el, value);
+      await this.refreshContents();
     }
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions);
