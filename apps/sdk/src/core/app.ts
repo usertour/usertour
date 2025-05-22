@@ -676,7 +676,7 @@ export class App extends Evented {
 
         // Find the next step after the latest seen step
         const steps = content.steps || [];
-        const cvid = latestStepNumber >= 0 ? steps[latestStepNumber]?.cvid : undefined;
+        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
         if (cvid) {
           this.activeTour = latestActivatedTour;
           await this.activeTour.start(reason, cvid);
