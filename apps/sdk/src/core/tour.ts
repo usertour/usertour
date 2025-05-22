@@ -502,6 +502,7 @@ export class Tour extends BaseContent<TourStore> {
         });
       }
       await this.reportQuestionAnswer(el, value);
+      await this.refreshContents();
     }
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions);
