@@ -229,13 +229,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
   }
 
-  handleItemClick = (item: ChecklistItemType) => {
-    this.handleActions(item.clickedActions);
+  handleItemClick = async (item: ChecklistItemType) => {
     // Update item status when clicked
     this.updateItemStatus(item.id, {
       clicked: true,
     });
-    this.trigger(BizEvents.CHECKLIST_TASK_CLICKED, { item });
+    //report event
+    await this.reportTaskClickEvent(item);
+    //handle actions
+    await this.handleActions(item.clickedActions);
   };
 
   /**

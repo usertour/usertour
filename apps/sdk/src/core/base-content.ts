@@ -352,7 +352,7 @@ export abstract class BaseContent<T = any> extends Evented {
       return false;
     }
     const latestEvent = findLatestEvent(bizEvents);
-    if (latestEvent.createdAt) {
+    if (latestEvent?.createdAt) {
       const now = new Date();
       const eventTime = new Date(latestEvent.createdAt);
       return differenceInHours(now, eventTime) > SESSION_TIMEOUT_HOURS;
@@ -508,6 +508,14 @@ export abstract class BaseContent<T = any> extends Evented {
       zIndex,
       userInfo,
     };
+  }
+
+  /**
+   * Refreshes the app contents
+   * @returns {Promise<void>} A promise that resolves when the app contents are refreshed
+   */
+  async refreshContents() {
+    await this.getInstance().refresh();
   }
 
   /**
