@@ -1,10 +1,16 @@
 import { Button } from '@usertour-ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useAppContext } from '@/contexts/app-context';
 
 export const UpgradePlanBanner = ({ projectId }: { projectId: string }) => {
   const navigate = useNavigate();
   const { currentUsage, totalLimit, loading } = useSubscriptionContext();
+  const { globalConfig } = useAppContext();
+
+  if (globalConfig?.isSelfHostedMode) {
+    return null;
+  }
 
   if (currentUsage < totalLimit || loading) {
     return null;

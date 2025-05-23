@@ -322,8 +322,9 @@ export class ContentService {
       throw new ParamsError();
     }
     const surveyLimit = this.configService.get('content.limit.survey');
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
 
-    if (content.type !== ContentType.FLOW || surveyLimit === -1) {
+    if (content.type !== ContentType.FLOW || surveyLimit === -1 || isSelfHostedMode) {
       return true;
     }
 
