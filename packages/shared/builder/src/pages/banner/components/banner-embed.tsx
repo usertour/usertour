@@ -53,7 +53,7 @@ export const BannerEmbed = () => {
 
   return (
     <>
-      <div id="usertour-widget" ref={containerRef}>
+      <div ref={containerRef}>
         <div className="usertour-banner usertour-banner--animate-true usertour-banner--embed-mode-BODY_FIRST usertour-banner--sticky-false usertour-banner--overlay-false">
           <div
             className="w-full"
