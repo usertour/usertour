@@ -41,6 +41,7 @@ import { PlanType, type Subscription } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
 import { Skeleton } from '@usertour-ui/skeleton';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { HobbySessionLimit, ProSessionLimit, GrowthSessionLimit } from '@usertour-ui/constants';
 
 // Define plan type
 interface Plan {
@@ -75,10 +76,6 @@ interface SessionValue {
   count: string;
   price: string | null;
 }
-
-const HobbySessionLimit = 5000;
-const ProSessionLimit = 50000;
-const GrowthSessionLimit = 300000;
 
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
