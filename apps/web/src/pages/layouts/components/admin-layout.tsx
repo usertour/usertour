@@ -183,28 +183,12 @@ AdminLayout.displayName = 'AdminLayout';
 
 export const AdminNewLayout = (props: AdminLayoutProps) => {
   const { children } = props;
-  const { project, userInfo } = useAppContext();
-  const { type } = useParams();
-
-  useUserTracking(userInfo);
 
   return (
     <>
-      <EnvironmentListProvider projectId={project?.id}>
-        <AttributeListProvider projectId={project?.id}>
-          <Helmet>
-            <title>Usertour App</title>
-            <body
-              className={
-                type === 'builder'
-                  ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                  : 'bg-slate-100'
-              }
-            />
-          </Helmet>
-          <div className="flex h-[100dvh] w-full">{children}</div>
-        </AttributeListProvider>
-      </EnvironmentListProvider>
+      <AdminLayout>
+        <div className="flex h-[100dvh] w-full">{children}</div>
+      </AdminLayout>
     </>
   );
 };
