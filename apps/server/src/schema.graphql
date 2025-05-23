@@ -508,6 +508,7 @@ type Events {
 
 type GlobalConfig {
   enabledBilling: Boolean!
+  isSelfHostedMode: Boolean!
 }
 
 type Invite {

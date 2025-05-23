@@ -4,6 +4,7 @@ import {
   EnvironmentListProvider,
   useEnvironmentListContext,
 } from '@/contexts/environment-list-context';
+import { SubscriptionProvider } from '@/contexts/subscription-context';
 import { userTourToken } from '@/utils/env';
 import { Button } from '@usertour-ui/button';
 import { storage } from '@usertour-ui/shared-utils';
@@ -16,6 +17,7 @@ import usertour from 'usertour.js';
 import { AdminEnvSwitcher } from './admin-env-switcher';
 import { AdminMainNav } from './admin-main-nav';
 import { AdminUserNav } from './admin-user-nav';
+import { UpgradePlanBanner } from './upgrade-plan-banner';
 
 export const AdminLayoutHeader = () => {
   return (
@@ -155,24 +157,31 @@ export const AdminLayout = (props: AdminLayoutProps) => {
   const { children } = props;
   const { project, userInfo } = useAppContext();
   const { type } = useParams();
-
+  const projectId = project?.id;
   useUserTracking(userInfo);
+
+  if (!projectId) {
+    return null;
+  }
 
   return (
     <>
-      <EnvironmentListProvider projectId={project?.id}>
-        <AttributeListProvider projectId={project?.id}>
-          <Helmet>
-            <title>Usertour App</title>
-            <body
-              className={
-                type === 'builder'
-                  ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                  : 'bg-slate-100'
-              }
-            />
-          </Helmet>
-          {children}
+      <EnvironmentListProvider projectId={projectId}>
+        <AttributeListProvider projectId={projectId}>
+          <SubscriptionProvider projectId={projectId}>
+            <Helmet>
+              <title>Usertour App</title>
+              <body
+                className={
+                  type === 'builder'
+                    ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
+                    : 'bg-slate-100'
+                }
+              />
+            </Helmet>
+            <UpgradePlanBanner projectId={projectId} />
+            {children}
+          </SubscriptionProvider>
         </AttributeListProvider>
       </EnvironmentListProvider>
     </>
@@ -183,28 +192,12 @@ AdminLayout.displayName = 'AdminLayout';
 
 export const AdminNewLayout = (props: AdminLayoutProps) => {
   const { children } = props;
-  const { project, userInfo } = useAppContext();
-  const { type } = useParams();
-
-  useUserTracking(userInfo);
 
   return (
     <>
-      <EnvironmentListProvider projectId={project?.id}>
-        <AttributeListProvider projectId={project?.id}>
-          <Helmet>
-            <title>Usertour App</title>
-            <body
-              className={
-                type === 'builder'
-                  ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                  : 'bg-slate-100'
-              }
-            />
-          </Helmet>
-          <div className="flex h-[100dvh] w-full">{children}</div>
-        </AttributeListProvider>
-      </EnvironmentListProvider>
+      <AdminLayout>
+        <div className="flex h-[100dvh] w-full">{children}</div>
+      </AdminLayout>
     </>
   );
 };

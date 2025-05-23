@@ -43,7 +43,7 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { checklistIsDimissed, flowIsDismissed } from '../utils/conditions';
+import { checklistIsDimissed, flowIsDismissed, flowIsSeen } from '../utils/conditions';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -170,6 +170,21 @@ export class App extends Evented {
   init(startOptions: AppStartOptions) {
     if (!this.isPreview()) {
       this.startOptions = Object.assign({}, startOptions);
+    }
+  }
+
+  async startContent(contentId: string, opts?: UserTourTypes.StartOptions) {
+    const content = this.originContents?.find((content) => content.contentId === contentId);
+    if (!content) {
+      return;
+    }
+    if (content.type === ContentDataType.FLOW) {
+      if (opts?.once && flowIsSeen(content)) {
+        return;
+      }
+      await this.startTour(contentId, contentStartReason.START_FROM_PROGRAM);
+    } else if (content.type === ContentDataType.CHECKLIST) {
+      await this.startChecklist(contentId, contentStartReason.START_FROM_PROGRAM);
     }
   }
 
@@ -588,8 +603,12 @@ export class App extends Evented {
   /**
    * Starts all registered checklists
    */
-  async startChecklist() {
+  async startChecklist(contentId?: string, reason?: string) {
     const userInfo = this.userInfo;
+    if (contentId && this.activeChecklist) {
+      await this.activeChecklist?.close(contentEndReason.SYSTEM_CLOSED);
+    }
+
     if (this.activeChecklist || !userInfo?.externalId) {
       return;
     }
@@ -600,6 +619,19 @@ export class App extends Evented {
       this.activeChecklist.start(contentStartReason.START_FROM_URL);
       return;
     }
+
+    if (contentId) {
+      const activeChecklist = this.checklists.find(
+        (checklist) => checklist.getContent().contentId === contentId,
+      );
+      if (!activeChecklist) {
+        return;
+      }
+      this.activeChecklist = activeChecklist;
+      this.activeChecklist.start(reason);
+      return;
+    }
+
     const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
     if (latestActivatedChecklist) {
       const content = latestActivatedChecklist.getContent();
@@ -617,7 +649,7 @@ export class App extends Evented {
 
     if (sortedChecklists.length > 0) {
       this.activeChecklist = sortedChecklists[0];
-      this.activeChecklist.autoStart();
+      this.activeChecklist.autoStart(reason);
     }
   }
 

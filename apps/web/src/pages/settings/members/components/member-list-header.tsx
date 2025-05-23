@@ -10,6 +10,7 @@ import {
   useCreatePortalSessionMutation,
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
+import { useAppContext } from '@/contexts/app-context';
 
 interface MemberListHeaderProps {
   projectId: string;
@@ -19,6 +20,7 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { refetch, members = [] } = useMemberContext();
   const { toast } = useToast();
+  const { globalConfig } = useAppContext();
 
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
   const { subscription } = useGetSubscriptionByProjectIdQuery(projectId) as {
@@ -29,8 +31,11 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
 
   const canInviteMembers = useMemo(() => {
+    if (globalConfig?.isSelfHostedMode) {
+      return true;
+    }
     return (planType === PlanType.PRO && members.length < 3) || planType === PlanType.GROWTH;
-  }, [planType, members.length]);
+  }, [planType, members.length, globalConfig?.isSelfHostedMode]);
 
   const handleCreate = useCallback(() => {
     setIsDialogOpen(true);

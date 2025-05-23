@@ -115,14 +115,9 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
         isIdentified: () => {
           return app.isIdentified();
         },
-        start: async (
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          contentId: string,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          opts?: UserTourTypes.StartOptions,
-        ) => {},
+        start: async (contentId: string, opts?: UserTourTypes.StartOptions) => {
+          return app.startContent(contentId, opts);
+        },
         endAll: async () => {
           return await app.endAll();
         },

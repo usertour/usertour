@@ -99,5 +99,6 @@ export interface Config {
   };
   globalConfig: {
     enabledBillingUsers: string[];
+    isSelfHostedMode: boolean;
   };
 }

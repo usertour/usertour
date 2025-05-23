@@ -32,14 +32,15 @@ import { Fragment, useState, useEffect } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   useCreateCheckoutSessionMutation,
-  useGetSubscriptionByProjectIdQuery,
   useCreatePortalSessionMutation,
-  useGetSubscriptionUsageQuery,
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
-import { PlanType, type Subscription } from '@usertour-ui/types';
+import { PlanType } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
 import { Skeleton } from '@usertour-ui/skeleton';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { HobbySessionLimit, ProSessionLimit, GrowthSessionLimit } from '@usertour-ui/constants';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 // Define plan type
 interface Plan {
@@ -74,10 +75,6 @@ interface SessionValue {
   count: string;
   price: string | null;
 }
-
-const HobbySessionLimit = 5000;
-const ProSessionLimit = 50000;
-const GrowthSessionLimit = 300000;
 
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
@@ -520,18 +517,17 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
 
 const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
-  const { subscription, loading: subscriptionLoading } = useGetSubscriptionByProjectIdQuery(
-    projectId,
-  ) as {
-    subscription: Subscription | null;
-    loading: boolean;
-  };
+  const {
+    subscription,
+    currentUsage,
+    totalLimit,
+    planType,
+    loading: subscriptionLoading,
+  } = useSubscriptionContext();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
-  const { usage } = useGetSubscriptionUsageQuery(projectId);
-  const currentUsage = usage ?? 0;
-  const totalLimit = HobbySessionLimit;
-  const planType = subscription?.planType ?? PlanType.HOBBY;
+
+  const percent = (currentUsage / totalLimit) * 100;
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -573,8 +569,8 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               View and manage your billing plan
             </h2>
           </div>
-          <div className="col-span-5">
-            <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center p-4 pt-1 xl:p-4 rounded-xl xl:justify-between bg-zinc-950/5 dark:bg-white/5">
+          <div className="flex flex-col col-span-5 space-y-2 p-4 pt-1 xl:p-4 rounded-xl bg-zinc-950/5 dark:bg-white/5">
+            <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center xl:justify-between">
               <div className="flex items-center gap-2 grow">
                 <div className="flex flex-col w-full">
                   <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
@@ -612,13 +608,10 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                         <Skeleton className="h-3 w-24 bg-background" />
                       </div>
                     </div>
-                  ) : planType === PlanType.HOBBY ? (
+                  ) : (
                     <div className="flex flex-col gap-1 text-xs mt-2">
                       <div className="flex items-center gap-4 w-full">
-                        <Progress
-                          value={((currentUsage / totalLimit) * 100) as number}
-                          className="h-1 grow max-w-60"
-                        />
+                        <Progress value={Math.min(percent, 100)} className="h-1 grow max-w-60" />
                         <span className="text-zinc-950/60 dark:text-white/50 flex-none">
                           {currentUsage} / {totalLimit}
                         </span>
@@ -626,7 +619,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                       <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
                         <span>Monthly sessions</span>
                         <span>•</span>
-                        <span>{Math.round((currentUsage / totalLimit) * 100)}% used</span>
+                        <span>{percent.toFixed(2)}% used</span>
                         <span>•</span>
                         <span>
                           {currentUsage < totalLimit * 0.8
@@ -635,7 +628,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                         </span>
                       </div>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               </div>
               <Button
@@ -670,6 +663,16 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 </div>
               </Button>
             </div>
+            {percent >= 100 && (
+              <div className="flex items-center gap-1 text-red-500 text-sm font-medium">
+                <span>
+                  Usage exceeded limit. Please upgrade your plan to continue using all features.{' '}
+                </span>
+                <QuestionTooltip>
+                  All content will be hidden after exceeding the limit.
+                </QuestionTooltip>
+              </div>
+            )}
           </div>
         </div>
         <Separator />
@@ -707,7 +710,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 plan={plan}
                 isYearly={isYearly}
                 projectId={projectId}
-                currentPlanType={subscription?.planType ?? PlanType.HOBBY}
+                currentPlanType={planType}
               />
             ))}
           </div>

@@ -14,6 +14,7 @@ export const globalConfig = gql`
   query globalConfig {
     globalConfig {
       enabledBilling
+      isSelfHostedMode
     }
   }
 `;
