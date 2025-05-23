@@ -32,16 +32,15 @@ import { Fragment, useState, useEffect } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   useCreateCheckoutSessionMutation,
-  useGetSubscriptionByProjectIdQuery,
   useCreatePortalSessionMutation,
-  useGetSubscriptionUsageQuery,
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
-import { PlanType, type Subscription } from '@usertour-ui/types';
+import { PlanType } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
 import { Skeleton } from '@usertour-ui/skeleton';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { HobbySessionLimit, ProSessionLimit, GrowthSessionLimit } from '@usertour-ui/constants';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 // Define plan type
 interface Plan {
@@ -518,23 +517,15 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
 
 const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
-  const { subscription, loading: subscriptionLoading } = useGetSubscriptionByProjectIdQuery(
-    projectId,
-  ) as {
-    subscription: Subscription | null;
-    loading: boolean;
-  };
+  const {
+    subscription,
+    currentUsage,
+    totalLimit,
+    planType,
+    loading: subscriptionLoading,
+  } = useSubscriptionContext();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
-  const { usage } = useGetSubscriptionUsageQuery(projectId);
-  const currentUsage = usage ?? 0;
-  const planType = subscription?.planType ?? PlanType.HOBBY;
-  const totalLimit =
-    planType === PlanType.HOBBY
-      ? HobbySessionLimit
-      : planType === PlanType.PRO
-        ? ProSessionLimit
-        : GrowthSessionLimit;
 
   const percent = (currentUsage / totalLimit) * 100;
 
@@ -719,7 +710,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 plan={plan}
                 isYearly={isYearly}
                 projectId={projectId}
-                currentPlanType={subscription?.planType ?? PlanType.HOBBY}
+                currentPlanType={planType}
               />
             ))}
           </div>
