@@ -43,6 +43,7 @@ import type {
   AttributeBizTypes,
   Attribute,
   Subscription,
+  GlobalConfig,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -355,7 +356,7 @@ export const useGetSubscriptionUsageQuery = (projectId: string) => {
 
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useQuery(globalConfig);
-  return { data: data?.globalConfig, loading, error };
+  return { data: data?.globalConfig as GlobalConfig | undefined, loading, error };
 };
 
 export interface AccessToken {

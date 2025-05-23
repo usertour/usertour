@@ -430,6 +430,12 @@ export const flowIsDismissed = (content: SDKContent) => {
   );
 };
 
+export const flowIsSeen = (content: SDKContent) => {
+  return content?.latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+  );
+};
+
 export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const now = new Date();
   if (content.type === ContentDataType.FLOW) {

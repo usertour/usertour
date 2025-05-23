@@ -117,55 +117,53 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
 
     return (
       <>
-        <div id="usertour-widget">
-          <Popper triggerRef={triggerRef} open={true} zIndex={zIndex} globalStyle={globalStyle}>
-            {currentStep.setting?.enabledBackdrop && (
-              <PopperOverlay blockTarget={currentStep.setting.enabledBlockTarget} />
-            )}
-            <PopperContentPotal
-              sideOffset={currentStep.setting.sideOffset}
-              alignOffset={currentStep.setting.alignOffset}
-              side={
-                currentStep.setting?.alignType === 'auto'
-                  ? 'bottom'
-                  : ((currentStep.setting?.side as Side) ?? 'bottom')
-              }
-              align={
-                currentStep.setting?.alignType === 'auto'
-                  ? 'center'
-                  : ((currentStep.setting?.align as Align) ?? 'center')
-              }
-              avoidCollisions={currentStep.setting?.alignType === 'auto'}
-              width={`${currentStep.setting.width}px`}
-              arrowSize={{
-                width: themeSetting?.tooltip.notchSize ?? 20,
-                height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
-              }}
-              arrowColor={themeSetting?.mainColor.background}
-              ref={ref}
-            >
-              <PopperContent>
-                {currentStep.setting.skippable && <PopperClose />}
-                <ContentEditor
-                  zIndex={zIndex + EXTENSION_CONTENT_POPPER}
-                  customUploadRequest={handleCustomUploadRequest}
-                  initialValue={data}
-                  attributes={attributeList}
-                  enabledElementTypes={enabledElementTypes}
-                  currentStep={currentStep}
-                  contentList={contents}
-                  currentVersion={currentVersion}
-                  onValueChange={handleEditorValueChange}
-                  getOembedInfo={getOembedInfo}
-                  createStep={createStep}
-                  projectId={projectId}
-                />
-                <PopperMadeWith />
-                <PopperProgress width={progress} />
-              </PopperContent>
-            </PopperContentPotal>
-          </Popper>
-        </div>
+        <Popper triggerRef={triggerRef} open={true} zIndex={zIndex} globalStyle={globalStyle}>
+          {currentStep.setting?.enabledBackdrop && (
+            <PopperOverlay blockTarget={currentStep.setting.enabledBlockTarget} />
+          )}
+          <PopperContentPotal
+            sideOffset={currentStep.setting.sideOffset}
+            alignOffset={currentStep.setting.alignOffset}
+            side={
+              currentStep.setting?.alignType === 'auto'
+                ? 'bottom'
+                : ((currentStep.setting?.side as Side) ?? 'bottom')
+            }
+            align={
+              currentStep.setting?.alignType === 'auto'
+                ? 'center'
+                : ((currentStep.setting?.align as Align) ?? 'center')
+            }
+            avoidCollisions={currentStep.setting?.alignType === 'auto'}
+            width={`${currentStep.setting.width}px`}
+            arrowSize={{
+              width: themeSetting?.tooltip.notchSize ?? 20,
+              height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
+            }}
+            arrowColor={themeSetting?.mainColor.background}
+            ref={ref}
+          >
+            <PopperContent>
+              {currentStep.setting.skippable && <PopperClose />}
+              <ContentEditor
+                zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+                customUploadRequest={handleCustomUploadRequest}
+                initialValue={data}
+                attributes={attributeList}
+                enabledElementTypes={enabledElementTypes}
+                currentStep={currentStep}
+                contentList={contents}
+                currentVersion={currentVersion}
+                onValueChange={handleEditorValueChange}
+                getOembedInfo={getOembedInfo}
+                createStep={createStep}
+                projectId={projectId}
+              />
+              <PopperMadeWith />
+              <PopperProgress width={progress} />
+            </PopperContent>
+          </PopperContentPotal>
+        </Popper>
       </>
     );
   },

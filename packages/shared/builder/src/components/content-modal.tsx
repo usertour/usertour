@@ -103,38 +103,36 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
 
     return (
       <>
-        <div id="usertour-widget">
-          <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
-            <PopperModalContentPotal
-              position={currentStep.setting.position}
-              positionOffsetX={currentStep.setting.positionOffsetX}
-              positionOffsetY={currentStep.setting.positionOffsetY}
-              enabledBackdrop={currentStep.setting.enabledBackdrop}
-              width={`${currentStep.setting.width}px`}
-              ref={ref}
-            >
-              <PopperContent>
-                {currentStep.setting.skippable && <PopperClose />}
-                <ContentEditor
-                  zIndex={zIndex + EXTENSION_CONTENT_MODAL}
-                  enabledElementTypes={enabledElementTypes}
-                  customUploadRequest={handleCustomUploadRequest}
-                  initialValue={data}
-                  projectId={projectId}
-                  attributes={attributeList}
-                  contentList={contents}
-                  currentVersion={currentVersion}
-                  currentStep={currentStep}
-                  onValueChange={handleEditorValueChange}
-                  getOembedInfo={getOembedInfo}
-                  createStep={createStep}
-                />
-                <PopperMadeWith />
-                <PopperProgress width={progress} />
-              </PopperContent>
-            </PopperModalContentPotal>
-          </Popper>
-        </div>
+        <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
+          <PopperModalContentPotal
+            position={currentStep.setting.position}
+            positionOffsetX={currentStep.setting.positionOffsetX}
+            positionOffsetY={currentStep.setting.positionOffsetY}
+            enabledBackdrop={currentStep.setting.enabledBackdrop}
+            width={`${currentStep.setting.width}px`}
+            ref={ref}
+          >
+            <PopperContent>
+              {currentStep.setting.skippable && <PopperClose />}
+              <ContentEditor
+                zIndex={zIndex + EXTENSION_CONTENT_MODAL}
+                enabledElementTypes={enabledElementTypes}
+                customUploadRequest={handleCustomUploadRequest}
+                initialValue={data}
+                projectId={projectId}
+                attributes={attributeList}
+                contentList={contents}
+                currentVersion={currentVersion}
+                currentStep={currentStep}
+                onValueChange={handleEditorValueChange}
+                getOembedInfo={getOembedInfo}
+                createStep={createStep}
+              />
+              <PopperMadeWith />
+              <PopperProgress width={progress} />
+            </PopperContent>
+          </PopperModalContentPotal>
+        </Popper>
       </>
     );
   },
