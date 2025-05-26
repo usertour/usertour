@@ -11,6 +11,7 @@ import {
   Users2,
   Calendar,
   BarChart4,
+  Waypoints,
 } from 'lucide-react';
 import { ChatIcon, BoxIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
@@ -91,7 +92,7 @@ const plans: Plan[] = [
       { icon: Users2, text: '1 team members' },
       { icon: Calendar, text: '1 years data retention' },
       { icon: BoxIcon, text: '1 environments' },
-      { icon: Lock, text: '100 API requests/min' },
+      { icon: Waypoints, text: '100 API requests/min' },
       { icon: MessageSquare, text: 'Community support' },
     ],
   },
@@ -111,7 +112,7 @@ const plans: Plan[] = [
       { icon: Users2, text: '3 team members' },
       { icon: Calendar, text: '3 years data retention' },
       { icon: BoxIcon, text: '2 environments' },
-      { icon: Lock, text: '500 API requests/min' },
+      { icon: Waypoints, text: '500 API requests/min' },
       { icon: Mails, text: 'Email support' },
     ],
   },
@@ -131,7 +132,7 @@ const plans: Plan[] = [
       { icon: Users2, text: '10 team members' },
       { icon: Calendar, text: '5 years data retention' },
       { icon: BoxIcon, text: '3 environments' },
-      { icon: Lock, text: '1000 API requests/min' },
+      { icon: Waypoints, text: '1000 API requests/min' },
       { icon: ChatIcon, text: 'Live chat support' },
     ],
   },
@@ -152,7 +153,7 @@ const plans: Plan[] = [
       { icon: Users2, text: 'Unlimited team members' },
       { icon: Calendar, text: '7 years data retention' },
       { icon: BoxIcon, text: 'Unlimited environments' },
-      { icon: Lock, text: '3000 API requests/min' },
+      { icon: Waypoints, text: '3000 API requests/min' },
       { icon: Headphones, text: 'Priority support' },
     ],
   },
