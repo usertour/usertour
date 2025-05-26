@@ -34,7 +34,11 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
     if (globalConfig?.isSelfHostedMode) {
       return true;
     }
-    return (planType === PlanType.STARTER && members.length < 3) || planType === PlanType.GROWTH;
+    return (
+      (planType === PlanType.STARTER && members.length < 3) ||
+      (planType === PlanType.GROWTH && members.length < 10) ||
+      planType === PlanType.BUSINESS
+    );
   }, [planType, members.length, globalConfig?.isSelfHostedMode]);
 
   const handleCreate = useCallback(() => {
