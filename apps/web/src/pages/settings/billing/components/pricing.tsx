@@ -142,7 +142,6 @@ const plans: Plan[] = [
     yearlyPrice: '$207',
     description: 'For large companies',
     buttonText: 'Upgrade',
-    buttonLink: 'mailto:support@usertour.io',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
