@@ -34,7 +34,7 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
     if (globalConfig?.isSelfHostedMode) {
       return true;
     }
-    return (planType === PlanType.PRO && members.length < 3) || planType === PlanType.GROWTH;
+    return (planType === PlanType.STARTER && members.length < 3) || planType === PlanType.GROWTH;
   }, [planType, members.length, globalConfig?.isSelfHostedMode]);
 
   const handleCreate = useCallback(() => {
@@ -52,7 +52,7 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
       if (!subscription?.planType || subscription?.planType === PlanType.HOBBY) {
         const url = await createCheckout({
           projectId,
-          planType: PlanType.PRO,
+          planType: PlanType.STARTER,
           interval: 'monthly',
         });
         window.location.href = url;

@@ -534,7 +534,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
       if (!subscription?.planType || subscription?.planType === PlanType.HOBBY) {
         const url = await createCheckout({
           projectId,
-          planType: PlanType.PRO,
+          planType: PlanType.STARTER,
           interval: isYearly ? 'yearly' : 'monthly',
         });
         window.location.href = url;

@@ -1,7 +1,12 @@
 import { useQuery } from '@apollo/client';
 import { getSubscriptionByProjectId, getSubscriptionUsage } from '@usertour-ui/gql';
 import { PlanType, type Subscription } from '@usertour-ui/types';
-import { HobbySessionLimit, ProSessionLimit, GrowthSessionLimit } from '@usertour-ui/constants';
+import {
+  HobbySessionLimit,
+  ProSessionLimit,
+  GrowthSessionLimit,
+  BusinessSessionLimit,
+} from '@usertour-ui/constants';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface SubscriptionProviderProps {
@@ -37,13 +42,16 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
 
   const subscription = subscriptionData?.getSubscriptionByProjectId;
   const currentUsage = usageData?.getSubscriptionUsage ?? 0;
-  const planType = subscription?.planType ?? PlanType.HOBBY;
-  const totalLimit =
-    planType === PlanType.HOBBY
-      ? HobbySessionLimit
-      : planType === PlanType.PRO
-        ? ProSessionLimit
-        : GrowthSessionLimit;
+  const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
+
+  const planLimits: Record<PlanType, number> = {
+    [PlanType.HOBBY]: HobbySessionLimit,
+    [PlanType.STARTER]: ProSessionLimit,
+    [PlanType.GROWTH]: GrowthSessionLimit,
+    [PlanType.BUSINESS]: BusinessSessionLimit,
+  };
+
+  const totalLimit = planLimits[planType] ?? HobbySessionLimit;
 
   const value: SubscriptionContextValue = {
     subscription,
