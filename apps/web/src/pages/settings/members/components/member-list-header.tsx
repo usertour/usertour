@@ -74,16 +74,27 @@ export const MemberListHeader = ({ projectId }: MemberListHeaderProps) => {
     }
   };
 
+  const getButtonText = useCallback(() => {
+    if (canInviteMembers) {
+      return 'Invite team member';
+    }
+
+    switch (planType) {
+      case PlanType.HOBBY:
+        return 'Upgrade to Starter';
+      case PlanType.STARTER:
+        return 'Upgrade to Growth';
+      case PlanType.GROWTH:
+        return 'Upgrade to Business';
+    }
+  }, [canInviteMembers, planType]);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-2xl font-semibold tracking-tight">Team</h3>
         <Button onClick={canInviteMembers ? handleCreate : handleUpgrade} className="flex-none">
-          {canInviteMembers
-            ? 'Invite team member'
-            : planType === PlanType.HOBBY
-              ? 'Upgrade to Pro'
-              : 'Upgrade to Growth'}
+          {getButtonText()}
         </Button>
       </div>
       <MemberInviteDialog isOpen={isDialogOpen} onClose={handleOnClose} />
