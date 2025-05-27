@@ -51,7 +51,7 @@ const defaultValues: Partial<FormValues> = {
 export const EnvironmentCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   const [createMutation] = useMutation(createEnvironments);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { project } = useAppContext();
+  const { project, globalConfig } = useAppContext();
   const { toast } = useToast();
   const { planType } = useSubscriptionContext();
   const { environmentList } = useEnvironmentListContext();
@@ -64,7 +64,8 @@ export const EnvironmentCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
     [PlanType.BUSINESS]: Number.POSITIVE_INFINITY,
   };
 
-  const isLimit = (environmentList?.length ?? 0) >= PLAN_LIMITS[planType];
+  const isLimit =
+    !globalConfig?.isSelfHostedMode && (environmentList?.length ?? 0) >= PLAN_LIMITS[planType];
 
   const showError = (title: string) => {
     toast({
