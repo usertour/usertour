@@ -13,6 +13,7 @@ export type Subscription = {
 
 export enum PlanType {
   HOBBY = 'hobby',
-  PRO = 'pro',
+  STARTER = 'starter',
   GROWTH = 'growth',
+  BUSINESS = 'business',
 }

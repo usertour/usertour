@@ -1,4 +1,4 @@
-import { ParamsError, UnknownError } from '@/common/errors';
+import { ParamsError, TeamMemberLimitError } from '@/common/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -96,6 +96,40 @@ export class TeamService {
     });
   }
 
+  private async validateTeamMemberLimit(projectId: string, subscriptionId: string | undefined) {
+    if (!subscriptionId) {
+      throw new TeamMemberLimitError();
+    }
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { subscriptionId, projectId },
+    });
+    if (!subscription) {
+      throw new TeamMemberLimitError();
+    }
+    const membersCount = await this.prisma.userOnProject.count({
+      where: { projectId },
+    });
+    const inviteCount = await this.prisma.invite.count({
+      where: { projectId, expired: false, canceled: false, deleted: false },
+    });
+    const totalCount = membersCount + inviteCount;
+
+    // hobby plan only has 1 member
+    if (subscription?.planType === 'hobby') {
+      throw new TeamMemberLimitError();
+    }
+
+    // starter plan has 3 members limit
+    if (subscription.planType === 'starter' && totalCount >= 3) {
+      throw new TeamMemberLimitError();
+    }
+
+    // growth plan has 10 members limit
+    if (subscription.planType === 'growth' && totalCount >= 10) {
+      throw new TeamMemberLimitError();
+    }
+  }
+
   async inviteTeamMember(
     senderUserId: string,
     email: string,
@@ -103,33 +137,33 @@ export class TeamService {
     name: string,
     role: Role,
   ) {
-    try {
-      if (role === Role.OWNER) {
-        throw new ParamsError();
-      }
-      const sender = await this.prisma.user.findUnique({
-        where: { id: senderUserId },
-      });
-      const project = await this.prisma.project.findUnique({
-        where: { id: projectId },
-      });
-      if (!project || !sender) {
-        throw new ParamsError();
-      }
-      const result = await this.prisma.invite.create({
-        data: {
-          email,
-          name,
-          role,
-          projectId,
-          userId: sender.id,
-        },
-      });
-      await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
-    } catch (error) {
-      this.logger.error(error);
-      throw new UnknownError();
+    if (role === Role.OWNER) {
+      throw new ParamsError();
     }
+    const sender = await this.prisma.user.findUnique({
+      where: { id: senderUserId },
+    });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project || !sender) {
+      throw new ParamsError();
+    }
+
+    // validate team member limit
+    await this.validateTeamMemberLimit(projectId, project.subscriptionId);
+
+    const result = await this.prisma.invite.create({
+      data: {
+        email,
+        name,
+        role,
+        projectId,
+        userId: sender.id,
+      },
+    });
+    await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
   }
 
   async sendEmail(data: unknown) {

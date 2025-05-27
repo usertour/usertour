@@ -3,6 +3,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
 import { EventCreateForm } from './event-create-form';
+import { PlusIcon } from 'lucide-react';
 
 export const EventListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -22,6 +23,7 @@ export const EventListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Events</h3>
             <Button onClick={handleCreate} disabled={isViewOnly}>
+              <PlusIcon className="w-4 h-4" />
               New Events
             </Button>
           </div>

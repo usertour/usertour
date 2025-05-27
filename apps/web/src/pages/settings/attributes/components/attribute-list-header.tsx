@@ -4,6 +4,7 @@ import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import { AttributeCreateForm } from '@usertour-ui/shared-editor';
+import { PlusIcon } from 'lucide-react';
 
 export const AttributeListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -24,6 +25,7 @@ export const AttributeListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Attributes</h3>
             <Button onClick={handleCreate} disabled={isViewOnly}>
+              <PlusIcon className="w-4 h-4" />
               New Attribute
             </Button>
           </div>
