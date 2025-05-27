@@ -7,7 +7,7 @@ import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { Environment } from '@/environments/models/environment.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { BizUser, Content, Step } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -31,6 +31,7 @@ interface SegmentDataItem {
 
 @Injectable()
 export class WebSocketService {
+  private readonly logger = new Logger(WebSocketService.name);
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
@@ -332,7 +333,7 @@ export class WebSocketService {
         }
         return false;
       }
-      case 'flow': {
+      case 'content': {
         return await this.activedContentRulesCondition(rules, bizUser);
       }
       default: {

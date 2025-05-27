@@ -2,7 +2,9 @@
 
 import { Icons } from '@/components/atoms/icons';
 import { useAppContext } from '@/contexts/app-context';
+import { useMemberContext } from '@/contexts/member-context';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Alert, AlertDescription, AlertTitle } from '@usertour-ui/alert';
 import { Button } from '@usertour-ui/button';
 import {
   Dialog,
@@ -14,13 +16,18 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
 import { Input } from '@usertour-ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
-import { useInviteTeamMemberMutation } from '@usertour-ui/shared-hooks';
+import {
+  useGetSubscriptionByProjectIdQuery,
+  useInviteTeamMemberMutation,
+} from '@usertour-ui/shared-hooks';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { TeamMemberRole } from '@usertour-ui/types';
+import { PlanType, Subscription, TeamMemberRole } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
+import { AlertCircle } from 'lucide-react';
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 interface InviteDialogProps {
@@ -58,6 +65,26 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
   const { toast } = useToast();
+  const { members = [] } = useMemberContext();
+  const { globalConfig } = useAppContext();
+  const navigate = useNavigate();
+
+  const { subscription } = useGetSubscriptionByProjectIdQuery(project?.id as string) as {
+    subscription: Subscription | null;
+  };
+
+  const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
+
+  const canInviteMembers = useMemo(() => {
+    if (globalConfig?.isSelfHostedMode) {
+      return true;
+    }
+    return (
+      (planType === PlanType.STARTER && members.length < 3) ||
+      (planType === PlanType.GROWTH && members.length < 10) ||
+      planType === PlanType.BUSINESS
+    );
+  }, [planType, members.length, globalConfig?.isSelfHostedMode]);
 
   const showError = (title: string) => {
     toast({
@@ -97,13 +124,54 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
     setIsLoading(false);
   }
 
+  if (!canInviteMembers) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+          </DialogHeader>
+          <Alert className="bg-primary/10 border-primary/5">
+            <AlertCircle className="h-4 w-4 !text-primary" />
+            <AlertTitle>Maximum team members reached</AlertTitle>
+            <AlertDescription>
+              You have reached the maximum number of members allowed on your current plan. To add
+              more members, you'll have to{' '}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-normal inline"
+                onClick={() => {
+                  onClose();
+                  navigate(`/project/${project?.id}/settings/billing`);
+                }}
+              >
+                Upgrade your plan
+              </Button>
+            </AlertDescription>
+          </Alert>
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate(`/project/${project?.id}/settings/billing`);
+              }}
+            >
+              Upgrade
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-xl">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create New Member</DialogTitle>
+              <DialogTitle>Add Team Member</DialogTitle>
             </DialogHeader>
             <div>
               <div className="space-y-4 py-2 pb-4 pt-4">

@@ -71,7 +71,11 @@ export class EnvironmentsResolver {
     @Args('environmentId') environmentId: string,
     @Args('input') input: CreateAccessTokenInput,
   ) {
-    return this.environmentsService.createAccessToken(environmentId, input);
+    const accessToken = await this.environmentsService.createAccessToken(environmentId, input);
+    return {
+      ...accessToken,
+      accessToken: `ak_${accessToken.accessToken}`,
+    };
   }
 
   @Mutation(() => Boolean)

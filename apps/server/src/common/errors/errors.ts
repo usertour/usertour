@@ -129,6 +129,14 @@ export class ContentNotPublishedError extends BaseError {
   };
 }
 
+export class TeamMemberLimitError extends BaseError {
+  code = 'E0015';
+  messageDict = {
+    en: 'You have reached your team member limit. Please upgrade your Usertour account under Settings → Billing.',
+    'zh-CN': '您已经达到了团队成员的限制，请在设置 → 账单中升级您的 Usertour 账户。',
+  };
+}
+
 export abstract class OpenAPIError extends BaseError {
   statusCode: HttpStatus;
 }
