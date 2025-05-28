@@ -10,8 +10,8 @@ import {
   SDKContent,
   SDKSettingsMode,
   Theme,
-  flowEndReason,
-  flowStartReason,
+  contentEndReason,
+  contentStartReason,
   Integrations,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
@@ -21,7 +21,14 @@ import { render } from '../components';
 import { ReportEventOptions, ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { compareContentPriorities } from '../utils/content';
-import { initializeContentItems } from '../utils/content-utils';
+import {
+  findTourFromUrl,
+  initializeContentItems,
+  findLatestActivatedTour,
+  findLatestStepNumber,
+  findChecklistFromUrl,
+  findLatestActivatedChecklist,
+} from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { AppEvents } from '../utils/event';
 import { extensionIsRunning } from '../utils/extension';
@@ -37,6 +44,7 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
+import { checklistIsDimissed, flowIsDismissed, flowIsSeen } from '../utils/conditions';
 import { tpa } from './third-party-analytics/third-party-analytics';
 import { GoogleAnalyticsAdapter } from './third-party-analytics/adapters/ga';
 import { AmplitudeAdapter } from './third-party-analytics/adapters/amplitude';
@@ -59,6 +67,7 @@ interface AppStartOptions {
 export class App extends Evented {
   socket = new Socket({ wsUri: getWsUri() });
   activeTour: Tour | undefined;
+  activeChecklist: Checklist | undefined;
   startOptions: AppStartOptions = {
     environmentId: '',
     token: '',
@@ -85,7 +94,10 @@ export class App extends Evented {
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
   private contentPollingInterval: number | undefined;
-  private readonly CONTENT_POLLING_INTERVAL = 10000; // 10 seconds
+  private readonly CONTENT_POLLING_INTERVAL = 60000; // 1 minute
+  private isMonitoring = false;
+  private readonly MONITOR_INTERVAL = 200;
+  private lastCheck = 0;
 
   constructor() {
     super();
@@ -171,6 +183,21 @@ export class App extends Evented {
       this.startOptions = Object.assign({}, startOptions);
     }
     this.registerIntegrations();
+  }
+
+  async startContent(contentId: string, opts?: UserTourTypes.StartOptions) {
+    const content = this.originContents?.find((content) => content.contentId === contentId);
+    if (!content) {
+      return;
+    }
+    if (content.type === ContentDataType.FLOW) {
+      if (opts?.once && flowIsSeen(content)) {
+        return;
+      }
+      await this.startTour(contentId, contentStartReason.START_FROM_PROGRAM);
+    } else if (content.type === ContentDataType.CHECKLIST) {
+      await this.startChecklist(contentId, contentStartReason.START_FROM_PROGRAM);
+    }
   }
 
   /**
@@ -503,7 +530,7 @@ export class App extends Evented {
    */
   createContainer() {
     if (!document) {
-      logger.error("Can't find document!");
+      logger.error('Document not found!');
       return;
     }
 
@@ -596,13 +623,53 @@ export class App extends Evented {
   /**
    * Starts all registered checklists
    */
-  async startChecklist() {
+  async startChecklist(contentId?: string, reason?: string) {
+    const userInfo = this.userInfo;
+    if (contentId && this.activeChecklist) {
+      await this.activeChecklist?.close(contentEndReason.SYSTEM_CLOSED);
+    }
+
+    if (this.activeChecklist || !userInfo?.externalId) {
+      return;
+    }
+
+    const checklistFromUrl = findChecklistFromUrl(this.checklists);
+    if (checklistFromUrl) {
+      this.activeChecklist = checklistFromUrl;
+      this.activeChecklist.start(contentStartReason.START_FROM_URL);
+      return;
+    }
+
+    if (contentId) {
+      const activeChecklist = this.checklists.find(
+        (checklist) => checklist.getContent().contentId === contentId,
+      );
+      if (!activeChecklist) {
+        return;
+      }
+      this.activeChecklist = activeChecklist;
+      this.activeChecklist.start(reason);
+      return;
+    }
+
+    const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
+    if (latestActivatedChecklist) {
+      const content = latestActivatedChecklist.getContent();
+      // if the checklist is not dismissed, start the next step
+      if (!checklistIsDimissed(content)) {
+        this.activeChecklist = latestActivatedChecklist;
+        this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+        return;
+      }
+    }
+
     const sortedChecklists = this.checklists
       .filter((checklist) => checklist.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
 
-    for (const checklist of sortedChecklists) {
-      checklist.autoStart();
+    if (sortedChecklists.length > 0) {
+      this.activeChecklist = sortedChecklists[0];
+      this.activeChecklist.autoStart(reason);
     }
   }
 
@@ -626,26 +693,79 @@ export class App extends Evented {
    */
   async startTour(contentId: string | undefined, reason: string) {
     const userInfo = this.userInfo;
+    if (contentId && this.activeTour) {
+      await this.activeTour?.close(contentEndReason.USER_CLOSED);
+    }
+
     if (this.activeTour || !userInfo?.externalId) {
       return;
     }
 
+    const tourFromUrl = findTourFromUrl(this.tours);
+    if (tourFromUrl) {
+      this.activeTour = tourFromUrl;
+      this.activeTour.start(contentStartReason.START_FROM_URL);
+      return;
+    }
+
+    // If contentId is provided, start that specific tour
+    if (contentId) {
+      const activeTour = this.tours.find((tour) => tour.getContent().contentId === contentId);
+      if (!activeTour) {
+        return;
+      }
+      this.activeTour = activeTour;
+      this.activeTour.start(contentStartReason.START_FROM_SESSION);
+      return;
+    }
+
+    const latestActivatedTour = findLatestActivatedTour(this.tours);
+    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
+      const content = latestActivatedTour.getContent();
+      // if the tour is not dismissed, start the next step
+      if (!flowIsDismissed(content)) {
+        const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
+
+        // Find the next step after the latest seen step
+        const steps = content.steps || [];
+        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
+        if (cvid) {
+          this.activeTour = latestActivatedTour;
+          await this.activeTour.start(reason, cvid);
+          return;
+        }
+      }
+    }
+
+    // If no unfinished content found, start the highest priority tour
     const autoStartTours = this.tours
       .filter((tour) => tour.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
-    const activeTour = contentId
-      ? this.tours.find((tour) => tour.getContent().contentId === contentId)
-      : autoStartTours[0];
 
+    const activeTour = autoStartTours[0];
     if (!activeTour) {
       return;
     }
 
     this.activeTour = activeTour;
-    if (contentId) {
-      this.activeTour.start(reason);
-    } else {
-      this.activeTour.autoStart(reason);
+    this.activeTour.autoStart(reason);
+  }
+
+  /**
+   * Closes the currently active checklist
+   */
+  closeActiveChecklist() {
+    if (this.activeChecklist) {
+      this.activeChecklist.close();
+    }
+  }
+
+  /**
+   * Unsets the active checklist reference
+   */
+  unsetActiveChecklist() {
+    if (this.activeChecklist) {
+      this.activeChecklist = undefined;
     }
   }
 
@@ -653,19 +773,17 @@ export class App extends Evented {
    * Closes the currently active tour
    * @param reason - Optional reason for closing the tour
    */
-  async closeActiveTour(reason?: flowEndReason) {
+  async closeActiveTour(reason?: contentEndReason) {
     if (this.activeTour) {
       await this.activeTour.close(reason);
-      this.activeTour = undefined;
     }
   }
 
   /**
-   * Cancels and destroys the active tour
+   * Unsets the active tour reference
    */
-  async cancelActiveTour() {
+  unsetActiveTour() {
     if (this.activeTour) {
-      this.activeTour.destroy();
       this.activeTour = undefined;
     }
   }
@@ -674,7 +792,6 @@ export class App extends Evented {
     const sdkConfig = await this.socket.getConfig(this.startOptions.token);
     if (sdkConfig) {
       this.sdkConfig = sdkConfig;
-      console.log('sdkConfig', this.sdkConfig);
     }
   }
 
@@ -687,7 +804,7 @@ export class App extends Evented {
     if (data) {
       this.themes = data;
     } else {
-      logger.error('list themes error !');
+      logger.error('Failed to fetch themes!');
     }
   }
 
@@ -713,16 +830,14 @@ export class App extends Evented {
    */
   async startActivityMonitor() {
     let rafId: number;
-    let lastCheck = 0;
-    const CHECK_INTERVAL = 200;
 
-    const handleUserActivity = () => {
+    const handleUserActivity = async () => {
       if (this.stopLoop) return;
 
       const now = Date.now();
-      if (now - lastCheck >= CHECK_INTERVAL) {
-        lastCheck = now;
-        this.monitor();
+      if (now - this.lastCheck >= this.MONITOR_INTERVAL) {
+        this.lastCheck = now;
+        await this.executeMonitor();
       }
     };
 
@@ -739,58 +854,42 @@ export class App extends Evented {
     handleUserActivity();
   }
 
-  /**
-   * Monitors and activates content conditions
-   */
-  async monitor() {
-    if (!this.originContents) {
-      return;
-    }
-    if (extensionIsRunning()) {
-      this.endAll();
+  private async executeMonitor(): Promise<void> {
+    if (this.isMonitoring) {
       return;
     }
 
-    //active conditions
-    for (const tour of this.tours) {
-      tour.monitor();
-    }
-    for (const launcher of this.launchers) {
-      launcher.monitor();
-    }
-    for (const checklist of this.checklists) {
-      checklist.monitor();
-    }
+    try {
+      this.isMonitoring = true;
 
-    this.startContents();
-  }
+      if (!this.originContents) {
+        return;
+      }
+      if (extensionIsRunning()) {
+        this.endAll();
+        return;
+      }
 
-  /**
-   * Resets the application state
-   */
-  async reset() {
-    this.stopLoop = false;
-    this.originContents = undefined;
-    this.tours = [];
-    this.stopContentPolling();
-    await this.closeActiveTour();
-  }
+      // Execute all monitoring tasks in parallel using Promise.all
+      await Promise.all([
+        ...this.tours.map((tour) => tour.monitor()),
+        ...this.launchers.map((launcher) => launcher.monitor()),
+        ...this.checklists.map((checklist) => checklist.monitor()),
+      ]);
 
-  /**
-   * Ends all active content and resets the application
-   */
-  async endAll() {
-    this.userInfo = undefined;
-    this.companyInfo = undefined;
-    await this.reset();
-    this.stopLoop = true;
+      await this.startContents();
+    } catch (error) {
+      logger.error('Error in app monitoring:', error);
+    } finally {
+      this.isMonitoring = false;
+    }
   }
 
   /**
    * Starts all content items (tours, launchers, checklists)
    */
   async startContents() {
-    await this.startTour(undefined, flowStartReason.START_CONDITION);
+    await this.startTour(undefined, contentStartReason.START_CONDITION);
     await this.startLauncher();
     await this.startChecklist();
   }
@@ -902,6 +1001,29 @@ export class App extends Evented {
       clearInterval(this.contentPollingInterval);
       this.contentPollingInterval = undefined;
     }
+  }
+
+  /**
+   * Resets the application state
+   */
+  async reset() {
+    this.stopLoop = false;
+    this.originContents = undefined;
+    this.isMonitoring = false;
+    this.tours = [];
+    this.stopContentPolling();
+    await this.closeActiveTour();
+    this.closeActiveChecklist();
+  }
+
+  /**
+   * Ends all active content and resets the application
+   */
+  async endAll() {
+    this.userInfo = undefined;
+    this.companyInfo = undefined;
+    await this.reset();
+    this.stopLoop = true;
   }
 
   /**

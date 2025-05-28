@@ -466,7 +466,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
         {enabledBackdrop && (
           <div
             className="usertour-widget-backdrop"
-            style={{ position: 'fixed', visibility: 'visible' }}
+            style={{ position: 'fixed', visibility: 'visible', zIndex: context.zIndex + 1 }}
           />
         )}
         <div
@@ -648,7 +648,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
           style={{
             width,
             height,
-            overflow: 'scroll',
+            overflow: 'hidden',
           }}
         >
           <div className="usertour-widget-popper__frame-wrapper">
@@ -699,11 +699,10 @@ const PopperMadeWith = forwardRef<HTMLDivElement>((_, ref) => {
     <>
       <div ref={ref} className="absolute bottom-2 left-3 text-xs	opacity-50	hover:opacity-75		">
         <a
-          href="https://www.usertour.io"
+          href="https://www.usertour.io?utm_source=usertour-widget"
           className="!text-sdk-foreground !no-underline	 flex flex-row space-x-0.5 items-center !font-sans "
           target="_blank"
           rel="noreferrer"
-          // onClick={()=>{window.top?.open("https://www.usertour.io", "_blank")}}
         >
           <UsertourIcon width={14} height={14} />
           <span>Made with Usertour</span>

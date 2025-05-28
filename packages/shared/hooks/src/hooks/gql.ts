@@ -29,6 +29,7 @@ import {
   ListAccessTokens,
   DeleteAccessToken,
   GetAccessToken,
+  updateProjectName,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -42,6 +43,7 @@ import type {
   AttributeBizTypes,
   Attribute,
   Subscription,
+  GlobalConfig,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -354,7 +356,7 @@ export const useGetSubscriptionUsageQuery = (projectId: string) => {
 
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useQuery(globalConfig);
-  return { data: data?.globalConfig, loading, error };
+  return { data: data?.globalConfig as GlobalConfig | undefined, loading, error };
 };
 
 export interface AccessToken {
@@ -393,4 +395,13 @@ export const useGetAccessTokenQuery = (
     ...options,
   });
   return { data: data?.getAccessToken, loading, error };
+};
+
+export const useUpdateProjectNameMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectName);
+  const invoke = async (projectId: string, name: string): Promise<boolean> => {
+    const response = await mutation({ variables: { projectId, name } });
+    return !!response.data?.updateProjectName;
+  };
+  return { invoke, loading, error };
 };

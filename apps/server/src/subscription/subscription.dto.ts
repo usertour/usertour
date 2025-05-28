@@ -8,7 +8,7 @@ export type SubscriptionInterval = 'monthly' | 'yearly';
 /**
  * Subscription plan type
  */
-export type SubscriptionPlanType = 'hobby' | 'pro' | 'growth' | 'enterprise';
+export type SubscriptionPlanType = 'hobby' | 'starter' | 'growth' | 'business';
 
 /**
  * Subscription status

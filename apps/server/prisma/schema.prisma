@@ -536,7 +536,7 @@ model Subscription {
   subscriptionId String    @unique
   /// Stripe price lookup key
   lookupKey      String
-  /// Plan type (free, pro, max, etc.)
+  /// Plan type (hobby, starter, growth, business)
   planType       String
   /// Billing interval (monthly, yearly, etc.)
   interval       String

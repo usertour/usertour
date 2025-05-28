@@ -124,7 +124,7 @@ function queryNodeListBySelectors(
     return nodes;
   }
   for (const s of selectors) {
-    const els = rootDocument.querySelectorAll(s);
+    const els = rootDocument.querySelectorAll(s.replace(/\\\\/g, '\\'));
     if (els && els.length > 0) {
       nodes.push(...Array.from(els));
     }
@@ -378,7 +378,8 @@ export function finderV2(target: Target, root: Element | Document) {
       '5st': 4,
     };
     if (customSelector) {
-      const els = root.querySelectorAll(customSelector);
+      const selector = customSelector.replace(/\\\\/g, '\\');
+      const els = root.querySelectorAll(selector);
       if (els.length > 0) {
         const el = (els[sequenceMapping[sequence]] as HTMLElement) || els[0];
         if (content && el.innerText.trim() !== content) {
