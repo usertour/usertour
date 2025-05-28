@@ -18,9 +18,10 @@ import {
   FlashlightIcon,
   BankCardIcon,
   ProjectIcon,
+  PlugIcon,
+  KeyIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
-import { Key } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants
@@ -153,7 +154,14 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     href: '/settings/api',
     role: OWNER_ROLES,
     type: SidebarNavItemType.DEVELOPER,
-    icon: <Key className={ICON_CLASS_NAME} />,
+    icon: <KeyIcon className={ICON_CLASS_NAME} />,
+  },
+  {
+    title: 'Integrations',
+    href: '/settings/integrations',
+    role: OWNER_ROLES,
+    type: SidebarNavItemType.DEVELOPER,
+    icon: <PlugIcon className={ICON_CLASS_NAME} />,
   },
   // {
   //   title: 'Webhooks',
