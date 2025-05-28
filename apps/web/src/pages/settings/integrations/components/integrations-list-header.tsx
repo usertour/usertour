@@ -13,8 +13,10 @@ export const IntegrationsListHeader = () => {
           </h3>
         </div>
         <div className="text-sm text-muted-foreground">
-          The integrations are used to authenticate your backend application via Usertour's REST
-          API, which can be used to update user properties and track events.
+          With integrations, you can stream Usertour-generated events to other external providers.{' '}
+          <br />
+          Note that integrations are tied to a single environment - you are currently looking at{' '}
+          <span className="font-bold text-foreground">{environment?.name}</span> environment. <br />
           <br />
           <a
             href="https://docs.usertour.io/api-reference/introduction"
@@ -22,7 +24,7 @@ export const IntegrationsListHeader = () => {
             target="_blank"
             rel="noreferrer"
           >
-            <span>Read the API documentation.</span>
+            <span>Read the Integrations documentation.</span>
             <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
           </a>
         </div>
