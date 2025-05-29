@@ -30,7 +30,7 @@ import {
   EditIcon,
   SpinnerIcon,
 } from '@usertour-ui/icons';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { DropdownMenuItem } from '@usertour-ui/dropdown-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@usertour-ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@usertour-ui/select';
@@ -135,7 +135,7 @@ const IntegrationCard = ({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
-                  <DotsHorizontalIcon className="h-4 w-4" />
+                  <DotsVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="z-[101]">
@@ -161,8 +161,7 @@ const IntegrationCard = ({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Disconnect Integration</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to disconnect {integration.name}? This action cannot be
-                    undone.
+                    Are you sure you want to disconnect {integration.name}?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -191,7 +190,7 @@ const IntegrationCard = ({
           </Button>
         )}
       </div>
-      <div className="mt-2 font-medium flex items-center justify-between">
+      <div className="mt-2 font-medium flex items-center">
         <span>{integration.name}</span>
         {enabled && (
           <div className="flex items-center gap-1 ml-2">
