@@ -8,6 +8,9 @@ import {
   QUEUE_POSTHOG_EVENT,
 } from '@/common/consts/queen';
 import { HttpModule } from '@nestjs/axios';
+import { ProjectsModule } from '@/projects/projects.module';
+import { EnvironmentsModule } from '@/environments/environments.module';
+import { IntegrationResolver } from './integration.resolver';
 
 @Module({
   imports: [
@@ -15,8 +18,10 @@ import { HttpModule } from '@nestjs/axios';
     BullModule.registerQueue({ name: QUEUE_MIXPANEL_EVENT }),
     BullModule.registerQueue({ name: QUEUE_POSTHOG_EVENT }),
     HttpModule,
+    ProjectsModule,
+    EnvironmentsModule,
   ],
-  providers: [IntegrationService, AmplitudeEventProcessor],
+  providers: [IntegrationService, AmplitudeEventProcessor, IntegrationResolver],
   exports: [IntegrationService],
 })
 export class IntegrationModule {}

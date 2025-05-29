@@ -6,6 +6,7 @@ export const ListIntegrations = gql`
       id
       code
       key
+      config
       enabled
       createdAt
       updatedAt  

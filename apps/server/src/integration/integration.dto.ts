@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { IsBoolean, IsJSON, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
 
 @InputType()
@@ -17,6 +17,5 @@ export class UpdateIntegrationInput {
 
   @Field(() => GraphQLJSON, { nullable: true })
   @IsOptional()
-  @IsJSON()
   config?: JsonValue;
 }

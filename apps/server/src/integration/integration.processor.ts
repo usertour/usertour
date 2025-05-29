@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { HttpService } from '@nestjs/axios';
 import { PrismaService } from 'nestjs-prisma';
-import { AMPLITUDE_API_ENDPOINT } from '@/common/consts/endpoint';
+import { AMPLITUDE_API_ENDPOINT, AMPLITUDE_API_ENDPOINT_EU } from '@/common/consts/endpoint';
 import { QUEUE_AMPLITUDE_EVENT } from '@/common/consts/queen';
 import { firstValueFrom } from 'rxjs';
 
@@ -42,6 +42,10 @@ export class AmplitudeEventProcessor extends WorkerHost {
       this.logger.warn(`Amplitude integration not configured for environment ${environmentId}`);
       return;
     }
+    const endpoint =
+      (integration?.config as { region?: string })?.region === 'EU'
+        ? AMPLITUDE_API_ENDPOINT_EU
+        : AMPLITUDE_API_ENDPOINT;
 
     try {
       const event = {
@@ -54,7 +58,7 @@ export class AmplitudeEventProcessor extends WorkerHost {
 
       await firstValueFrom(
         this.httpService.post(
-          AMPLITUDE_API_ENDPOINT,
+          endpoint,
           {
             api_key: integration.key,
             events: [event],

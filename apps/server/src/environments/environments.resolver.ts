@@ -12,8 +12,6 @@ import { EnvironmentsService } from './environments.service';
 import { Environment } from './models/environment.model';
 import { AccessToken } from './dto/access-token.dto';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
-import { Integration } from './models/integration.model';
-import { UpdateIntegrationInput } from './dto/integration.dto';
 
 @Resolver(() => Environment)
 @UseGuards(EnvironmentsGuard)
@@ -88,33 +86,5 @@ export class EnvironmentsResolver {
   ) {
     await this.environmentsService.removeAccessToken(environmentId, accessTokenId);
     return true;
-  }
-
-  /**
-   * List all integrations for a given environment
-   * @param environmentId - The ID of the environment
-   * @returns List of integrations
-   */
-  @Query(() => [Integration])
-  @Roles([RolesScopeEnum.OWNER])
-  async listIntegrations(@Args('environmentId') environmentId: string) {
-    return this.environmentsService.findAllIntegrations(environmentId);
-  }
-
-  /**
-   * Update an integration's configuration
-   * @param environmentId - The ID of the environment
-   * @param code - The code of the integration
-   * @param input - The update data
-   * @returns The updated integration
-   */
-  @Mutation(() => Integration)
-  @Roles([RolesScopeEnum.OWNER])
-  async updateIntegration(
-    @Args('environmentId') environmentId: string,
-    @Args('code') code: string,
-    @Args('input') input: UpdateIntegrationInput,
-  ) {
-    return this.environmentsService.updateIntegration(environmentId, code, input);
   }
 }

@@ -33,6 +33,7 @@ import {
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { DropdownMenuItem } from '@usertour-ui/dropdown-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@usertour-ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@usertour-ui/select';
 
 interface Integration {
   name: string;
@@ -207,7 +208,11 @@ const IntegrationCard = ({
 interface IntegrationConfigProps {
   integration: Integration;
   onClose: () => void;
-  onSubmit: (config: { key: string; enabled: boolean }) => Promise<void>;
+  onSubmit: (config: {
+    key: string;
+    enabled: boolean;
+    config?: { region?: string };
+  }) => Promise<void>;
   loading: boolean;
   integrationsData?: IntegrationModel[];
 }
@@ -221,6 +226,13 @@ const AmplitudeConfig = ({
 }: IntegrationConfigProps) => {
   const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
   const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
+  const [region, setRegion] = useState(
+    (currentIntegration?.config as { region?: string })?.region || 'US',
+  );
+
+  const handleSubmit = () => {
+    onSubmit({ key: apiKey, enabled: true, config: { region: region || 'US' } });
+  };
 
   return (
     <DialogContent>
@@ -246,22 +258,33 @@ const AmplitudeConfig = ({
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-2 mt-2">
-        <p className="text-sm text-muted-foreground">API Key:</p>
-        <Input
-          type="text"
-          placeholder="Enter Amplitude API key"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-        />
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-muted-foreground">API Key:</p>
+          <Input
+            type="text"
+            placeholder="Enter Amplitude API key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-muted-foreground">Region:</p>
+          <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Default(US)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="US">Default(US)</SelectItem>
+              <SelectItem value="EU">EU</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button
-          onClick={() => onSubmit({ key: apiKey, enabled: true })}
-          disabled={!apiKey || loading}
-        >
+        <Button onClick={handleSubmit} disabled={!apiKey || loading}>
           {loading ? 'Saving...' : 'Save'}
         </Button>
       </DialogFooter>
@@ -428,7 +451,11 @@ export const IntegrationsListContent = () => {
     }
   };
 
-  const handleSubmit = async (config: { key: string; enabled: boolean }) => {
+  const handleSubmit = async (config: {
+    key: string;
+    enabled: boolean;
+    config?: { region?: string };
+  }) => {
     if (!selectedCode) return;
 
     try {
