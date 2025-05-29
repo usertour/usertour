@@ -209,10 +209,18 @@ interface IntegrationConfigProps {
   onClose: () => void;
   onSubmit: (config: { key: string; enabled: boolean }) => Promise<void>;
   loading: boolean;
+  integrationsData?: IntegrationModel[];
 }
 
-const AmplitudeConfig = ({ integration, onClose, onSubmit, loading }: IntegrationConfigProps) => {
-  const [apiKey, setApiKey] = useState('');
+const AmplitudeConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps) => {
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
 
   return (
     <DialogContent>
@@ -262,16 +270,42 @@ const AmplitudeConfig = ({ integration, onClose, onSubmit, loading }: Integratio
   );
 };
 
-const HubSpotConfig = ({ integration, onClose, onSubmit, loading }: IntegrationConfigProps) => {
-  const [apiKey, setApiKey] = useState('');
+const HubSpotConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps) => {
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Connect {integration.name}</DialogTitle>
-        <DialogDescription>Enter your HubSpot API key to connect the integration</DialogDescription>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <ArrowRightIcon2 className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          Enter your HubSpot API key to connect the integration Add the following info to connect
+          HubSpot to Usertour:
+        </DialogDescription>
       </DialogHeader>
-      <div className="py-4">
+      <div className="flex flex-col gap-2 mt-2">
+        <p className="text-sm text-muted-foreground">API Key:</p>
         <Input
           type="text"
           placeholder="Enter HubSpot API key"
@@ -287,7 +321,7 @@ const HubSpotConfig = ({ integration, onClose, onSubmit, loading }: IntegrationC
           onClick={() => onSubmit({ key: apiKey, enabled: true })}
           disabled={!apiKey || loading}
         >
-          {loading ? 'Connecting...' : 'Connect'}
+          {loading ? 'Saving...' : 'Save'}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -302,16 +336,42 @@ const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigPr
 };
 
 // Default config for integrations without specific config
-const DefaultConfig = ({ integration, onClose, onSubmit, loading }: IntegrationConfigProps) => {
-  const [apiKey, setApiKey] = useState('');
+const DefaultConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps) => {
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Connect {integration.name}</DialogTitle>
-        <DialogDescription>Enter your API key to connect the integration</DialogDescription>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <ArrowRightIcon2 className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          Enter your API key to connect the integration Add the following info to connect
+          {integration.name} to Usertour:
+        </DialogDescription>
       </DialogHeader>
-      <div className="py-4">
+      <div className="flex flex-col gap-2 mt-2">
+        <p className="text-sm text-muted-foreground">API Key:</p>
         <Input
           type="text"
           placeholder="Enter API key"
@@ -327,7 +387,7 @@ const DefaultConfig = ({ integration, onClose, onSubmit, loading }: IntegrationC
           onClick={() => onSubmit({ key: apiKey, enabled: true })}
           disabled={!apiKey || loading}
         >
-          {loading ? 'Connecting...' : 'Connect'}
+          {loading ? 'Saving...' : 'Save'}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -426,6 +486,7 @@ export const IntegrationsListContent = () => {
             onClose={() => setSelectedCode(null)}
             onSubmit={handleSubmit}
             loading={updating}
+            integrationsData={integrationsData}
           />
         )}
       </Dialog>
