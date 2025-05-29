@@ -184,7 +184,7 @@ const IntegrationCard = ({
           </Button>
         )}
       </div>
-      <div className="mt-2 font-medium flex items-center ">
+      <div className="mt-2 font-medium flex items-center justify-between">
         <span>{integration.name}</span>
         {enabled && (
           <div className="flex items-center gap-1 ml-2">
