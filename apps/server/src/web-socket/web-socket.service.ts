@@ -10,6 +10,7 @@ import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { BizUser, Content, Step } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
+import { IntegrationService } from '@/integration/integration.service';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -35,6 +36,7 @@ export class WebSocketService {
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
+    private integrationService: IntegrationService,
   ) {}
 
   async getConfig(body: any): Promise<any> {
@@ -752,7 +754,7 @@ export class WebSocketService {
   }
 
   async trackEvent(data: any): Promise<any> {
-    const { userId, token, eventName, sessionId, eventData } = data;
+    const { userId: externalUserId, token, eventName, sessionId, eventData } = data;
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -762,7 +764,7 @@ export class WebSocketService {
     const environmentId = environmenet.id;
     const projectId = environmenet.projectId;
     const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
       return false;
@@ -800,7 +802,7 @@ export class WebSocketService {
         : undefined;
     const state = getEventState(eventName);
 
-    return await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const insert = {
         bizUserId: user.id,
         eventId: event.id,
@@ -842,5 +844,21 @@ export class WebSocketService {
 
       return bizEvent;
     });
+
+    // Track event to Amplitude
+    await this.integrationService.trackEvent({
+      eventName,
+      userId: String(externalUserId),
+      environmentId,
+      eventProperties: {
+        ...events,
+        contentId: bizSession.contentId,
+        sessionId: bizSession.id,
+        versionId: bizSession.versionId,
+      },
+      userProperties: user.data as Record<string, any>,
+    });
+
+    return result;
   }
 }
