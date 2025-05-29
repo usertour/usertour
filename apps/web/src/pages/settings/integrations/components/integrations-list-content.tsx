@@ -24,6 +24,7 @@ import { useToast } from '@usertour-ui/use-toast';
 import { IntegrationModel } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
 import {
+  ArrowRightIcon,
   ArrowRightIcon2,
   CircleIcon,
   DisconnectIcon,
@@ -230,7 +231,7 @@ const AmplitudeConfig = ({
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
               <img src="/images/logo.png" className="w-full h-full" />
             </div>
-            <ArrowRightIcon2 className="w-6 h-6" />
+            <ArrowRightIcon className="w-6 h-6" />
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
               <img
                 src={integration.imagePath}
@@ -239,11 +240,10 @@ const AmplitudeConfig = ({
               />
             </div>
           </div>
-          <h2 className="mt-6 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+          <h2 className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
         </DialogTitle>
         <DialogDescription className="mt-2 text-center">
-          Enter your Amplitude API key to connect the integration Add the following info to connect
-          Amplitude to Usertour:
+          {integration.description}
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-2 mt-2">
