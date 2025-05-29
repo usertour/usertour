@@ -771,7 +771,7 @@ export class WebSocketService {
     }
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { content: true, bizEvent: { include: { event: true } } },
+      include: { content: true, bizEvent: { include: { event: true } }, version: true },
     });
     if (!bizSession || bizSession.state === 1) {
       return false;
@@ -845,19 +845,28 @@ export class WebSocketService {
       return bizEvent;
     });
 
-    // Track event to Amplitude
-    await this.integrationService.trackEvent({
+    const trackEventData = {
       eventName,
       userId: String(externalUserId),
       environmentId,
       eventProperties: {
         ...events,
-        contentId: bizSession.contentId,
-        sessionId: bizSession.id,
-        versionId: bizSession.versionId,
       },
       userProperties: user.data as Record<string, any>,
-    });
+    };
+    if (bizSession.content.type === ContentType.FLOW) {
+      trackEventData.eventProperties = {
+        ...trackEventData.eventProperties,
+        [EventAttributes.FLOW_ID]: bizSession.content.id,
+        [EventAttributes.FLOW_NAME]: bizSession.content.name,
+        [EventAttributes.FLOW_SESSION_ID]: bizSession.id,
+        [EventAttributes.FLOW_VERSION_ID]: bizSession.version.id,
+        [EventAttributes.FLOW_VERSION_NUMBER]: bizSession.version.sequence,
+      };
+    }
+
+    // Track event to Amplitude
+    await this.integrationService.trackEvent(trackEventData);
 
     return result;
   }
