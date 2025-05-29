@@ -4,6 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
 import { ParamsError } from '@/common/errors';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
+import { UpdateIntegrationInput } from './dto/integration.dto';
 
 @Injectable()
 export class EnvironmentsService {
@@ -106,6 +107,68 @@ export class EnvironmentsService {
 
     return this.prisma.accessToken.delete({
       where: { id },
+    });
+  }
+
+  /**
+   * Find all integrations for a given environment
+   * @param environmentId - The ID of the environment
+   * @returns List of integrations
+   */
+  async findAllIntegrations(environmentId: string) {
+    return this.prisma.integration.findMany({
+      where: {
+        environmentId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Find a specific integration by ID and environment ID
+   * @param environmentId - The ID of the environment
+   * @param id - The ID of the integration
+   * @returns The integration if found
+   * @throws ParamsError if integration not found
+   */
+  async findOneIntegration(environmentId: string, id: string) {
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        id,
+        environmentId,
+      },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    return integration;
+  }
+
+  /**
+   * Update an integration's configuration
+   * @param environmentId - The ID of the environment
+   * @param code - The code of the integration
+   * @param input - The update data
+   * @returns The updated integration
+   */
+  async updateIntegration(environmentId: string, code: string, input: UpdateIntegrationInput) {
+    const updateData: any = {};
+    if (input.enabled !== undefined) updateData.enabled = input.enabled;
+    if (input.key !== undefined) updateData.key = input.key;
+    if (input.config !== undefined) updateData.config = input.config;
+
+    return this.prisma.integration.upsert({
+      where: { environmentId_code: { environmentId, code } },
+      update: updateData,
+      create: {
+        environmentId,
+        code,
+        ...updateData,
+      },
     });
   }
 }

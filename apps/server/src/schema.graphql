@@ -511,6 +511,21 @@ type GlobalConfig {
   isSelfHostedMode: Boolean!
 }
 
+type Integration {
+  code: String!
+  config: JSON
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  enabled: Boolean!
+  environmentId: String!
+  id: ID!
+  key: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
 type Invite {
   code: String!
 
@@ -630,6 +645,7 @@ type Mutation {
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
+  updateIntegration(code: String!, environmentId: String!, input: UpdateIntegrationInput!): Integration!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProjectName(name: String!, projectId: String!): Project!
   updateSegment(data: UpdateSegment!): Segment!
@@ -694,6 +710,7 @@ type Query {
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
   listContentVersions(contentId: String!): [Version!]!
   listEvents(projectId: String!): [Events!]!
+  listIntegrations(environmentId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
   listSegment(environmentId: String!): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
@@ -896,6 +913,12 @@ input UpdateEventInput {
   displayName: String
   eventId: String
   id: String!
+}
+
+input UpdateIntegrationInput {
+  config: JSON
+  enabled: Boolean
+  key: String
 }
 
 input UpdateLocalizationInput {

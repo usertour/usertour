@@ -141,6 +141,7 @@ model Environment {
   bizCompanies BizCompany[]
   segments     Segment[]
   accessTokens AccessToken[]
+  integrations Integration[]
 }
 
 model AccessToken {
@@ -581,4 +582,47 @@ model CheckoutSession {
   updatedAt      DateTime @default(now()) @updatedAt @db.Timestamptz()
 
   @@index([sessionId])
+}
+
+model Integration {
+  id              String           @id @default(cuid())
+  /// code of integration (e.g., "ga", "mixpanel", "posthog")
+  code            String
+  /// api key or  of integration 
+  key             String           @default("")
+  /// JSON schema for configuration (optional)
+  config          Json?            @db.JsonB
+  /// Whether the integration is enabled
+  enabled         Boolean          @default(false)
+  /// environment of integration
+  environment     Environment      @relation(fields: [environmentId], references: [id])
+  /// environment id
+  environmentId   String
+  /// Create timestamp
+  createdAt       DateTime         @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt       DateTime         @default(now()) @updatedAt @db.Timestamptz()
+  /// integration logs
+  integrationLogs IntegrationLog[]
+
+  @@unique([environmentId, code])
+}
+
+model IntegrationLog {
+  /// Primary key
+  id            String      @id @default(cuid())
+  /// Create timestamp
+  createdAt     DateTime    @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt     DateTime    @updatedAt @db.Timestamptz()
+  /// integration
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  /// integration id
+  integrationId String
+  /// status of integration log
+  status        String
+  /// data of integration log
+  data          Json?       @db.JsonB
+
+  @@index([integrationId, status])
 }

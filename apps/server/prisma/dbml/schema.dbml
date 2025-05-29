@@ -118,6 +118,7 @@ Table Environment {
   bizCompanies BizCompany [not null]
   segments Segment [not null]
   accessTokens AccessToken [not null]
+  integrations Integration [not null]
 }
 
 Table AccessToken {
@@ -493,7 +494,7 @@ Table Subscription {
   id String [pk, note: 'Primary key']
   subscriptionId String [unique, not null, note: 'Stripe subscription ID']
   lookupKey String [not null, note: 'Stripe price lookup key']
-  planType String [not null, note: 'Plan type (free, pro, max, etc.)']
+  planType String [not null, note: 'Plan type (hobby, starter, growth, business)']
   interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
   projectId String [not null, note: 'Project ID']
   status String [not null, note: 'Stripe subscription status']
@@ -517,6 +518,33 @@ Table CheckoutSession {
   customerId String [note: 'Stripe customer ID']
   createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
   updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+}
+
+Table Integration {
+  id String [pk]
+  code String [not null, note: 'code of integration (e.g., "ga", "mixpanel", "posthog")']
+  key String [not null, default: '', note: 'api key or  of integration ']
+  config Json [note: 'JSON schema for configuration (optional)']
+  enabled Boolean [not null, default: false, note: 'Whether the integration is enabled']
+  environment Environment [not null, note: 'environment of integration']
+  environmentId String [not null, note: 'environment id']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+  integrationLogs IntegrationLog [not null, note: 'integration logs']
+
+  indexes {
+    (environmentId, code) [unique]
+  }
+}
+
+Table IntegrationLog {
+  id String [pk, note: 'Primary key']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [not null, note: 'Update timestamp']
+  integration Integration [not null, note: 'integration']
+  integrationId String [not null, note: 'integration id']
+  status String [not null, note: 'status of integration log']
+  data Json [note: 'data of integration log']
 }
 
 Enum Role {
@@ -607,3 +635,7 @@ Ref: BizEvent.bizUserId > BizUser.id
 Ref: BizEvent.bizSessionId > BizSession.id
 
 Ref: RefreshToken.userId > User.id
+
+Ref: Integration.environmentId > Environment.id
+
+Ref: IntegrationLog.integrationId > Integration.id

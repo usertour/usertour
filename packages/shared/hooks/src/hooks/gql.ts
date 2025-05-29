@@ -30,7 +30,10 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   updateProjectName,
+  ListIntegrations,
+  UpdateIntegration,
 } from '@usertour-ui/gql';
+
 import type {
   Content,
   ContentDataType,
@@ -44,6 +47,7 @@ import type {
   Attribute,
   Subscription,
   GlobalConfig,
+  UpdateIntegrationInput,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -402,6 +406,23 @@ export const useUpdateProjectNameMutation = () => {
   const invoke = async (projectId: string, name: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, name } });
     return !!response.data?.updateProjectName;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListIntegrationsQuery = (environmentId: string, options?: QueryHookOptions) => {
+  const { data, loading, error, refetch } = useQuery(ListIntegrations, {
+    variables: { environmentId },
+    ...options,
+  });
+  return { data: data?.listIntegrations, loading, error, refetch };
+};
+
+export const useUpdateIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateIntegration);
+  const invoke = async (environmentId: string, code: string, input: UpdateIntegrationInput) => {
+    const response = await mutation({ variables: { environmentId, code, input } });
+    return response.data?.updateIntegration;
   };
   return { invoke, loading, error };
 };
