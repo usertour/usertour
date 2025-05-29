@@ -8,7 +8,6 @@ import {
   DialogFooter,
 } from '@usertour-ui/dialog';
 import { Input } from '@usertour-ui/input';
-import { Skeleton } from '@usertour-ui/skeleton';
 import { useState } from 'react';
 import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
@@ -116,24 +115,6 @@ const IntegrationCard = ({ integration, enabled, onConnect }: IntegrationCardPro
   );
 };
 
-const IntegrationCardSkeleton = () => {
-  return (
-    <li className="cursor-default rounded-lg border border-input px-4 py-6 text-sm">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-8 rounded-lg" />
-        <Skeleton className="h-8 w-20" />
-      </div>
-      <div className="mt-2">
-        <Skeleton className="h-5 w-24" />
-      </div>
-      <div className="mt-1">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="mt-1 h-4 w-3/4" />
-      </div>
-    </li>
-  );
-};
-
 export const IntegrationsListContent = () => {
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
@@ -141,7 +122,7 @@ export const IntegrationsListContent = () => {
   const { environment } = useAppContext();
 
   const environmentId = environment?.id || '';
-  const { data: integrationsData, loading, refetch } = useListIntegrationsQuery(environmentId);
+  const { data: integrationsData, refetch } = useListIntegrationsQuery(environmentId);
   const { invoke: updateIntegration, loading: updating } = useUpdateIntegrationMutation();
 
   const handleConnect = (code: string) => {
@@ -171,16 +152,6 @@ export const IntegrationsListContent = () => {
       });
     }
   };
-
-  if (loading) {
-    return (
-      <ul className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {[...Array(6)].map((_, index) => (
-          <IntegrationCardSkeleton key={index} />
-        ))}
-      </ul>
-    );
-  }
 
   return (
     <>
