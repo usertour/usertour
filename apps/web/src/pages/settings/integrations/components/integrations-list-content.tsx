@@ -23,7 +23,13 @@ import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertou
 import { useToast } from '@usertour-ui/use-toast';
 import { IntegrationModel } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
-import { CircleIcon, Delete2Icon, EditIcon, SpinnerIcon } from '@usertour-ui/icons';
+import {
+  ArrowRightIcon2,
+  CircleIcon,
+  DisconnectIcon,
+  EditIcon,
+  SpinnerIcon,
+} from '@usertour-ui/icons';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { DropdownMenuItem } from '@usertour-ui/dropdown-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@usertour-ui/dropdown-menu';
@@ -143,7 +149,7 @@ const IntegrationCard = ({
                   className="text-red-600 cursor-pointer"
                   onClick={() => setShowDisconnectAlert(true)}
                 >
-                  <Delete2Icon className="mr-1 w-4 h-4" />
+                  <DisconnectIcon className="mr-1 w-4 h-4" />
                   Disconnect
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -198,9 +204,138 @@ const IntegrationCard = ({
   );
 };
 
+interface IntegrationConfigProps {
+  integration: Integration;
+  onClose: () => void;
+  onSubmit: (config: { key: string; enabled: boolean }) => Promise<void>;
+  loading: boolean;
+}
+
+const AmplitudeConfig = ({ integration, onClose, onSubmit, loading }: IntegrationConfigProps) => {
+  const [apiKey, setApiKey] = useState('');
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <ArrowRightIcon2 className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          Enter your Amplitude API key to connect the integration Add the following info to connect
+          Amplitude to Usertour:
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col gap-2 mt-2">
+        <p className="text-sm text-muted-foreground">API Key:</p>
+        <Input
+          type="text"
+          placeholder="Enter Amplitude API key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+        />
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => onSubmit({ key: apiKey, enabled: true })}
+          disabled={!apiKey || loading}
+        >
+          {loading ? 'Saving...' : 'Save'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
+const HubSpotConfig = ({ integration, onClose, onSubmit, loading }: IntegrationConfigProps) => {
+  const [apiKey, setApiKey] = useState('');
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Connect {integration.name}</DialogTitle>
+        <DialogDescription>Enter your HubSpot API key to connect the integration</DialogDescription>
+      </DialogHeader>
+      <div className="py-4">
+        <Input
+          type="text"
+          placeholder="Enter HubSpot API key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+        />
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => onSubmit({ key: apiKey, enabled: true })}
+          disabled={!apiKey || loading}
+        >
+          {loading ? 'Connecting...' : 'Connect'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
+// Configuration mapping for different integration types
+const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
+  amplitude: AmplitudeConfig,
+  hubspot: HubSpotConfig,
+  // Add more integration configs here
+};
+
+// Default config for integrations without specific config
+const DefaultConfig = ({ integration, onClose, onSubmit, loading }: IntegrationConfigProps) => {
+  const [apiKey, setApiKey] = useState('');
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Connect {integration.name}</DialogTitle>
+        <DialogDescription>Enter your API key to connect the integration</DialogDescription>
+      </DialogHeader>
+      <div className="py-4">
+        <Input
+          type="text"
+          placeholder="Enter API key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+        />
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => onSubmit({ key: apiKey, enabled: true })}
+          disabled={!apiKey || loading}
+        >
+          {loading ? 'Connecting...' : 'Connect'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
 export const IntegrationsListContent = () => {
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState('');
   const { toast } = useToast();
   const { environment } = useAppContext();
 
@@ -236,20 +371,16 @@ export const IntegrationsListContent = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!selectedCode || !apiKey) return;
+  const handleSubmit = async (config: { key: string; enabled: boolean }) => {
+    if (!selectedCode) return;
 
     try {
-      await updateIntegration(environmentId, selectedCode, {
-        key: apiKey,
-        enabled: true,
-      });
+      await updateIntegration(environmentId, selectedCode, config);
       toast({
         title: 'Success',
         description: 'Integration connected successfully',
       });
       setSelectedCode(null);
-      setApiKey('');
       refetch();
     } catch (error) {
       toast({
@@ -259,6 +390,12 @@ export const IntegrationsListContent = () => {
       });
     }
   };
+
+  const selectedIntegration = selectedCode
+    ? integrations.find((i) => i.code === selectedCode)
+    : null;
+  const ConfigComponent =
+    selectedIntegration && selectedCode ? integrationConfigs[selectedCode] || DefaultConfig : null;
 
   return (
     <>
@@ -283,28 +420,14 @@ export const IntegrationsListContent = () => {
       </ul>
 
       <Dialog open={!!selectedCode} onOpenChange={() => setSelectedCode(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Connect Integration</DialogTitle>
-            <DialogDescription>Enter your API key to connect the integration</DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              type="text"
-              placeholder="Enter API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedCode(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!apiKey || updating}>
-              {updating ? 'Connecting...' : 'Connect'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        {selectedIntegration && ConfigComponent && (
+          <ConfigComponent
+            integration={selectedIntegration}
+            onClose={() => setSelectedCode(null)}
+            onSubmit={handleSubmit}
+            loading={updating}
+          />
+        )}
       </Dialog>
     </>
   );
