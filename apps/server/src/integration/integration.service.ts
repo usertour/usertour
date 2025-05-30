@@ -5,6 +5,7 @@ import {
   QUEUE_AMPLITUDE_EVENT,
   QUEUE_HEAP_EVENT,
   QUEUE_HUBSPOT_EVENT,
+  QUEUE_POSTHOG_EVENT,
 } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateIntegrationInput } from './integration.dto';
@@ -14,6 +15,8 @@ import {
   AMPLITUDE_API_ENDPOINT_EU,
   HEAP_API_ENDPOINT,
   HUBSPOT_API_ENDPOINT,
+  POSTHOG_API_ENDPOINT_EU,
+  POSTHOG_API_ENDPOINT_US,
 } from '@/common/consts/endpoint';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
@@ -27,6 +30,7 @@ export class IntegrationService {
     @InjectQueue(QUEUE_AMPLITUDE_EVENT) private amplitudeQueue: Queue,
     @InjectQueue(QUEUE_HEAP_EVENT) private heapQueue: Queue,
     @InjectQueue(QUEUE_HUBSPOT_EVENT) private hubspotQueue: Queue,
+    @InjectQueue(QUEUE_POSTHOG_EVENT) private posthogQueue: Queue,
     private prisma: PrismaService,
     private httpService: HttpService,
   ) {}
@@ -55,6 +59,9 @@ export class IntegrationService {
     // Only track HubSpot event if user has an email
     if (integration.find((i) => i.code === 'hubspot' && userProperties?.email)) {
       // await this.hubspotQueue.add('trackEvent', data);
+    }
+    if (integration.find((i) => i.code === 'posthog')) {
+      await this.posthogQueue.add('trackEvent', data);
     }
   }
 
@@ -315,5 +322,47 @@ export class IntegrationService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Track an event to Posthog
+   * @param data - The event data
+   * @returns The event data
+   */
+  async trackPosthogEvent(data: TrackEventData): Promise<void> {
+    const { eventName, environmentId, eventProperties, userId } = data;
+
+    // Get Posthog integration
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        environmentId,
+        code: 'posthog',
+        enabled: true,
+      },
+    });
+
+    if (!integration?.key) {
+      throw new ParamsError('Posthog integration not configured for environment');
+    }
+
+    const endpoint =
+      (integration?.config as { region?: string })?.region === 'EU'
+        ? POSTHOG_API_ENDPOINT_EU
+        : POSTHOG_API_ENDPOINT_US;
+
+    const event = {
+      api_key: integration.key,
+      event: eventName,
+      distinct_id: userId,
+      properties: eventProperties,
+    };
+
+    this.logger.debug(`Tracking event to Posthog: ${JSON.stringify(event)}`);
+
+    await firstValueFrom(
+      this.httpService.post(`${endpoint}/i/v0/e/`, event, {
+        timeout: 5000,
+      }),
+    );
   }
 }

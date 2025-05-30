@@ -5,6 +5,7 @@ import {
   AmplitudeEventProcessor,
   HeapEventProcessor,
   HubspotEventProcessor,
+  PosthogEventProcessor,
 } from './integration.processor';
 import {
   QUEUE_AMPLITUDE_EVENT,
@@ -25,16 +26,18 @@ import { IntegrationResolver } from './integration.resolver';
     BullModule.registerQueue({ name: QUEUE_POSTHOG_EVENT }),
     BullModule.registerQueue({ name: QUEUE_HEAP_EVENT }),
     BullModule.registerQueue({ name: QUEUE_HUBSPOT_EVENT }),
+    BullModule.registerQueue({ name: QUEUE_POSTHOG_EVENT }),
     HttpModule,
     ProjectsModule,
     EnvironmentsModule,
   ],
   providers: [
     IntegrationService,
+    IntegrationResolver,
     AmplitudeEventProcessor,
     HeapEventProcessor,
     HubspotEventProcessor,
-    IntegrationResolver,
+    PosthogEventProcessor,
   ],
   exports: [IntegrationService],
 })
