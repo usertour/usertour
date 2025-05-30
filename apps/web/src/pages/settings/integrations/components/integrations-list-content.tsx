@@ -40,6 +40,7 @@ interface Integration {
   code: string;
   description: string;
   imagePath: string;
+  disabled?: boolean;
 }
 
 const integrations: Integration[] = [
@@ -63,6 +64,7 @@ const integrations: Integration[] = [
     description:
       'Sync Usertour directly with your Hubspot to write Usertour activities to Hubspot.',
     imagePath: '/images/integrations/hubspot.png',
+    disabled: true,
   },
   {
     name: 'Mixpanel',
@@ -549,6 +551,8 @@ export const IntegrationsListContent = () => {
             integrationsData?.find((i: IntegrationModel) => i.code === integration.code)?.enabled ??
             false;
           const isLoading = updating && selectedCode === integration.code;
+          const isDisabled = integration.disabled;
+          if (isDisabled) return null;
 
           return (
             <IntegrationCard
