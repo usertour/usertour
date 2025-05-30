@@ -5,6 +5,7 @@ import {
   AmplitudeEventProcessor,
   HeapEventProcessor,
   HubspotEventProcessor,
+  MixpanelEventProcessor,
   PosthogEventProcessor,
 } from './integration.processor';
 import {
@@ -27,6 +28,7 @@ import { IntegrationResolver } from './integration.resolver';
     BullModule.registerQueue({ name: QUEUE_HEAP_EVENT }),
     BullModule.registerQueue({ name: QUEUE_HUBSPOT_EVENT }),
     BullModule.registerQueue({ name: QUEUE_POSTHOG_EVENT }),
+    BullModule.registerQueue({ name: QUEUE_MIXPANEL_EVENT }),
     HttpModule,
     ProjectsModule,
     EnvironmentsModule,
@@ -38,6 +40,7 @@ import { IntegrationResolver } from './integration.resolver';
     HeapEventProcessor,
     HubspotEventProcessor,
     PosthogEventProcessor,
+    MixpanelEventProcessor,
   ],
   exports: [IntegrationService],
 })

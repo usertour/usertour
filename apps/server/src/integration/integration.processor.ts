@@ -5,6 +5,7 @@ import {
   QUEUE_AMPLITUDE_EVENT,
   QUEUE_HEAP_EVENT,
   QUEUE_HUBSPOT_EVENT,
+  QUEUE_MIXPANEL_EVENT,
   QUEUE_POSTHOG_EVENT,
 } from '@/common/consts/queen';
 import { IntegrationService } from './integration.service';
@@ -82,6 +83,25 @@ export class PosthogEventProcessor extends WorkerHost {
       this.logger.debug(`Successfully sent event to Posthog: ${JSON.stringify(job.data)}`);
     } catch (error) {
       this.logger.error(`Failed to send event to Posthog: ${job.data}`, error);
+    }
+  }
+}
+
+@Processor(QUEUE_MIXPANEL_EVENT)
+export class MixpanelEventProcessor extends WorkerHost {
+  private readonly logger = new Logger(MixpanelEventProcessor.name);
+
+  constructor(private integrationService: IntegrationService) {
+    super();
+  }
+
+  async process(job: Job<TrackEventData>) {
+    try {
+      this.integrationService.trackMixpanelEvent(job.data);
+
+      this.logger.debug(`Successfully sent event to Mixpanel: ${JSON.stringify(job.data)}`);
+    } catch (error) {
+      this.logger.error(`Failed to send event to Mixpanel: ${job.data}`, error);
     }
   }
 }

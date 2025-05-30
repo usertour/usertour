@@ -5,6 +5,7 @@ import {
   QUEUE_AMPLITUDE_EVENT,
   QUEUE_HEAP_EVENT,
   QUEUE_HUBSPOT_EVENT,
+  QUEUE_MIXPANEL_EVENT,
   QUEUE_POSTHOG_EVENT,
 } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
@@ -15,6 +16,8 @@ import {
   AMPLITUDE_API_ENDPOINT_EU,
   HEAP_API_ENDPOINT,
   HUBSPOT_API_ENDPOINT,
+  MIXPANEL_API_ENDPOINT,
+  MIXPANEL_API_ENDPOINT_EU,
   POSTHOG_API_ENDPOINT_EU,
   POSTHOG_API_ENDPOINT_US,
 } from '@/common/consts/endpoint';
@@ -31,6 +34,7 @@ export class IntegrationService {
     @InjectQueue(QUEUE_HEAP_EVENT) private heapQueue: Queue,
     @InjectQueue(QUEUE_HUBSPOT_EVENT) private hubspotQueue: Queue,
     @InjectQueue(QUEUE_POSTHOG_EVENT) private posthogQueue: Queue,
+    @InjectQueue(QUEUE_MIXPANEL_EVENT) private mixpanelQueue: Queue,
     private prisma: PrismaService,
     private httpService: HttpService,
   ) {}
@@ -62,6 +66,9 @@ export class IntegrationService {
     }
     if (integration.find((i) => i.code === 'posthog')) {
       await this.posthogQueue.add('trackEvent', data);
+    }
+    if (integration.find((i) => i.code === 'mixpanel')) {
+      await this.mixpanelQueue.add('trackEvent', data);
     }
   }
 
@@ -162,7 +169,7 @@ export class IntegrationService {
 
     await firstValueFrom(
       this.httpService.post(
-        endpoint,
+        `${endpoint}/batch`,
         {
           api_key: integration.key,
           events: [event],
@@ -209,7 +216,7 @@ export class IntegrationService {
     this.logger.debug(`Tracking event to Heap: ${JSON.stringify(event)}`);
 
     await firstValueFrom(
-      this.httpService.post(HEAP_API_ENDPOINT, event, {
+      this.httpService.post(`${HEAP_API_ENDPOINT}/api/track`, event, {
         timeout: 5000,
       }),
     );
@@ -362,6 +369,52 @@ export class IntegrationService {
     await firstValueFrom(
       this.httpService.post(`${endpoint}/i/v0/e/`, event, {
         timeout: 5000,
+      }),
+    );
+  }
+
+  async trackMixpanelEvent(data: TrackEventData): Promise<void> {
+    const { eventName, environmentId, eventProperties, userId } = data;
+
+    // Get Posthog integration
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        environmentId,
+        code: 'mixpanel',
+        enabled: true,
+      },
+    });
+
+    if (!integration?.key) {
+      throw new ParamsError('Mixpanel integration not configured for environment');
+    }
+
+    const endpoint =
+      (integration?.config as { region?: string })?.region === 'EU'
+        ? MIXPANEL_API_ENDPOINT_EU
+        : MIXPANEL_API_ENDPOINT;
+
+    const event = [
+      {
+        event: eventName,
+        properties: {
+          ...eventProperties,
+          distinct_id: userId,
+          token: integration.key,
+          $insert_id: eventName,
+        },
+      },
+    ];
+
+    this.logger.debug(`Tracking event to Mixpanel: ${JSON.stringify(event)}`);
+
+    await firstValueFrom(
+      this.httpService.post(`${endpoint}/track`, event, {
+        timeout: 5000,
+        headers: {
+          Authorization: `Bearer ${integration.key}`,
+          'Content-Type': 'application/json',
+        },
       }),
     );
   }

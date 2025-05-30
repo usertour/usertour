@@ -484,12 +484,88 @@ const PosthogConfig = ({
   );
 };
 
+const MixpanelConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps) => {
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
+  const [region, setRegion] = useState(
+    (currentIntegration?.config as { region?: string })?.region || 'US',
+  );
+
+  const handleSubmit = () => {
+    onSubmit({ key: apiKey, enabled: true, config: { region: region || 'US' } });
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <ArrowRightIcon className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          {integration.description}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col gap-2 mt-2">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-muted-foreground">Project Token :</p>
+          <Input
+            type="text"
+            placeholder="Type Project Token here"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-muted-foreground">Region:</p>
+          <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Default(US)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="US">Default(US)</SelectItem>
+              <SelectItem value="EU">EU</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={!apiKey || loading}>
+          {loading ? 'Saving...' : 'Save'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
 // Configuration mapping for different integration types
 const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
   amplitude: AmplitudeConfig,
   hubspot: HubSpotConfig,
   heap: HeapConfig,
   posthog: PosthogConfig,
+  mixpanel: MixpanelConfig,
   // Add more integration configs here
 };
 
