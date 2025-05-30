@@ -64,7 +64,6 @@ const integrations: Integration[] = [
     description:
       'Sync Usertour directly with your Hubspot to write Usertour activities to Hubspot.',
     imagePath: '/images/integrations/hubspot.png',
-    disabled: true,
   },
   {
     name: 'Mixpanel',
