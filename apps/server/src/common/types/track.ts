@@ -3,6 +3,7 @@ export interface TrackEventData {
   bizSessionId: string;
   userId: string;
   environmentId: string;
+  projectId: string;
   eventProperties: Record<string, any>;
   userProperties: Record<string, any>;
 }

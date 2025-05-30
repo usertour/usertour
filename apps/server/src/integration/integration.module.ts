@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { IntegrationService } from './integration.service';
-import { AmplitudeEventProcessor, HeapEventProcessor } from './integration.processor';
+import {
+  AmplitudeEventProcessor,
+  HeapEventProcessor,
+  HubspotEventProcessor,
+} from './integration.processor';
 import {
   QUEUE_AMPLITUDE_EVENT,
   QUEUE_HEAP_EVENT,
+  QUEUE_HUBSPOT_EVENT,
   QUEUE_MIXPANEL_EVENT,
   QUEUE_POSTHOG_EVENT,
 } from '@/common/consts/queen';
@@ -19,11 +24,18 @@ import { IntegrationResolver } from './integration.resolver';
     BullModule.registerQueue({ name: QUEUE_MIXPANEL_EVENT }),
     BullModule.registerQueue({ name: QUEUE_POSTHOG_EVENT }),
     BullModule.registerQueue({ name: QUEUE_HEAP_EVENT }),
+    BullModule.registerQueue({ name: QUEUE_HUBSPOT_EVENT }),
     HttpModule,
     ProjectsModule,
     EnvironmentsModule,
   ],
-  providers: [IntegrationService, AmplitudeEventProcessor, HeapEventProcessor, IntegrationResolver],
+  providers: [
+    IntegrationService,
+    AmplitudeEventProcessor,
+    HeapEventProcessor,
+    HubspotEventProcessor,
+    IntegrationResolver,
+  ],
   exports: [IntegrationService],
 })
 export class IntegrationModule {}

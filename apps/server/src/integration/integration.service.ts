@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { QUEUE_AMPLITUDE_EVENT, QUEUE_HEAP_EVENT } from '@/common/consts/queen';
+import {
+  QUEUE_AMPLITUDE_EVENT,
+  QUEUE_HEAP_EVENT,
+  QUEUE_HUBSPOT_EVENT,
+} from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateIntegrationInput } from './integration.dto';
 import { ParamsError } from '@/common/errors';
@@ -9,6 +13,7 @@ import {
   AMPLITUDE_API_ENDPOINT,
   AMPLITUDE_API_ENDPOINT_EU,
   HEAP_API_ENDPOINT,
+  HUBSPOT_API_ENDPOINT,
 } from '@/common/consts/endpoint';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
@@ -21,6 +26,7 @@ export class IntegrationService {
   constructor(
     @InjectQueue(QUEUE_AMPLITUDE_EVENT) private amplitudeQueue: Queue,
     @InjectQueue(QUEUE_HEAP_EVENT) private heapQueue: Queue,
+    @InjectQueue(QUEUE_HUBSPOT_EVENT) private hubspotQueue: Queue,
     private prisma: PrismaService,
     private httpService: HttpService,
   ) {}
@@ -31,7 +37,7 @@ export class IntegrationService {
    * @returns The event data
    */
   async trackEvent(data: TrackEventData): Promise<any> {
-    const { environmentId } = data;
+    const { environmentId, userProperties } = data;
 
     // Get Amplitude integration
     const integration = await this.prisma.integration.findMany({
@@ -45,6 +51,10 @@ export class IntegrationService {
     }
     if (integration.find((i) => i.code === 'heap')) {
       await this.heapQueue.add('trackEvent', data);
+    }
+    // Only track HubSpot event if user has an email
+    if (integration.find((i) => i.code === 'hubspot' && userProperties?.email)) {
+      // await this.hubspotQueue.add('trackEvent', data);
     }
   }
 
@@ -196,5 +206,114 @@ export class IntegrationService {
         timeout: 5000,
       }),
     );
+  }
+
+  /**
+   * Track an event to HubSpot
+   * @param data - The event data
+   * @returns The event data
+   */
+  async trackHubspotEvent(data: TrackEventData): Promise<void> {
+    const { eventName, environmentId, eventProperties, userProperties, projectId } = data;
+
+    // Get HubSpot integration
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        environmentId,
+        code: 'hubspot',
+        enabled: true,
+      },
+    });
+
+    if (!integration?.key) {
+      throw new ParamsError('HubSpot integration not configured for environment');
+    }
+
+    const { email } = userProperties;
+
+    if (!email) {
+      throw new ParamsError('User email not found');
+    }
+
+    const eventRecord = await this.prisma.event.findFirst({
+      where: { codeName: eventName, projectId },
+      include: {
+        attributeOnEvent: {
+          include: {
+            attribute: true,
+          },
+        },
+      },
+    });
+
+    const { displayName } = eventRecord;
+
+    // Convert attribute data types to HubSpot field types
+    const getHubspotFieldType = (dataType: number) => {
+      switch (dataType) {
+        case 1: // NUMBER
+          return 'number';
+        case 2: // BOOLEAN
+          return 'boolean';
+        case 3: // DATE
+          return 'date';
+        default:
+          return 'string';
+      }
+    };
+
+    // First, define the event
+    const eventDefinition = {
+      name: `usertour_${eventName}`,
+      description: displayName,
+      propertyDefinitions: eventRecord.attributeOnEvent.map((aoe) => ({
+        name: aoe.attribute.codeName,
+        label: aoe.attribute.displayName,
+        type: getHubspotFieldType(aoe.attribute.dataType),
+      })),
+    };
+
+    // Then send the event
+    const hubspotEvent = {
+      email,
+      eventName: `usertour_${eventName}`,
+      properties: eventProperties,
+    };
+
+    this.logger.debug(`Creating HubSpot event: ${JSON.stringify(hubspotEvent)}`);
+
+    try {
+      // Define the event
+      await firstValueFrom(
+        this.httpService.post(
+          `${HUBSPOT_API_ENDPOINT}/events/v3/event-definitions`,
+          eventDefinition,
+          {
+            headers: {
+              Authorization: `Bearer ${integration.key}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 5000,
+          },
+        ),
+      );
+
+      // Send the event
+      await firstValueFrom(
+        this.httpService.post(`${HUBSPOT_API_ENDPOINT}/events/v3/send`, hubspotEvent, {
+          headers: {
+            Authorization: `Bearer ${integration.key}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 5000,
+        }),
+      );
+    } catch (error) {
+      this.logger.error('HubSpot event creation failed:', {
+        error: error.response?.data || error.message,
+        event: hubspotEvent,
+      });
+      throw error;
+    }
   }
 }

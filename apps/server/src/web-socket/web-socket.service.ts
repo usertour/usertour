@@ -851,6 +851,7 @@ export class WebSocketService {
       bizSessionId: bizSession.id,
       userId: String(externalUserId),
       environmentId,
+      projectId,
       eventProperties: {
         ...events,
       },
@@ -868,7 +869,7 @@ export class WebSocketService {
     }
 
     // Track event to Amplitude
-    await this.integrationService.trackEvent(trackEventData);
+    this.integrationService.trackEvent(trackEventData);
 
     return result;
   }

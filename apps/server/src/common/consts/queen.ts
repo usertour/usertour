@@ -9,3 +9,4 @@ export const QUEUE_AMPLITUDE_EVENT = 'amplitude-event';
 export const QUEUE_MIXPANEL_EVENT = 'mixpanel-event';
 export const QUEUE_POSTHOG_EVENT = 'posthog-event';
 export const QUEUE_HEAP_EVENT = 'heap-event';
+export const QUEUE_HUBSPOT_EVENT = 'hubspot-event';

@@ -1,7 +1,11 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_AMPLITUDE_EVENT, QUEUE_HEAP_EVENT } from '@/common/consts/queen';
+import {
+  QUEUE_AMPLITUDE_EVENT,
+  QUEUE_HEAP_EVENT,
+  QUEUE_HUBSPOT_EVENT,
+} from '@/common/consts/queen';
 import { IntegrationService } from './integration.service';
 import { TrackEventData } from '@/common/types/track';
 
@@ -40,6 +44,26 @@ export class HeapEventProcessor extends WorkerHost {
       this.logger.debug(`Successfully sent event to Heap: ${JSON.stringify(job.data)}`);
     } catch (error) {
       this.logger.error(`Failed to send event to Heap: ${job.data}`, error);
+      throw error;
+    }
+  }
+}
+
+@Processor(QUEUE_HUBSPOT_EVENT)
+export class HubspotEventProcessor extends WorkerHost {
+  private readonly logger = new Logger(HubspotEventProcessor.name);
+
+  constructor(private integrationService: IntegrationService) {
+    super();
+  }
+
+  async process(job: Job<TrackEventData>) {
+    try {
+      this.integrationService.trackHubspotEvent(job.data);
+
+      this.logger.debug(`Successfully sent event to HubSpot: ${JSON.stringify(job.data)}`);
+    } catch (error) {
+      this.logger.error(`Failed to send event to HubSpot: ${job.data}`, error);
       throw error;
     }
   }
