@@ -75,8 +75,7 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         connection: {
-          host: configService.get('redis.host'),
-          port: configService.get('redis.port'),
+          url: configService.get('redis.url'),
           family: 0,
           password: configService.get('redis.password') || undefined,
         },
