@@ -17,7 +17,6 @@ export const IntegrationsListHeader = () => {
           <br />
           Note that integrations are tied to a single environment - you are currently looking at{' '}
           <span className="font-bold text-foreground">{environment?.name}</span> environment. <br />
-          <br />
           <a
             href="https://docs.usertour.io/api-reference/introduction"
             className="text-primary  "

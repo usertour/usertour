@@ -250,7 +250,7 @@ const AmplitudeConfig = ({
               />
             </div>
           </div>
-          <h2 className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
         </DialogTitle>
         <DialogDescription className="mt-2 text-center">
           {integration.description}
@@ -318,7 +318,7 @@ const HubSpotConfig = ({
               />
             </div>
           </div>
-          <h2 className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
         </DialogTitle>
         <DialogDescription className="mt-2 text-center">
           {integration.description}
@@ -348,10 +348,71 @@ const HubSpotConfig = ({
   );
 };
 
+const HeapConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps) => {
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
+
+  const handleSubmit = () => {
+    onSubmit({ key: apiKey, enabled: true });
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <ArrowRightIcon className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          {integration.description}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col gap-2 mt-2">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-muted-foreground">Heap App ID:</p>
+          <Input
+            type="text"
+            placeholder="Enter Amplitude API key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={!apiKey || loading}>
+          {loading ? 'Connecting...' : 'Connect'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
 // Configuration mapping for different integration types
 const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
   amplitude: AmplitudeConfig,
   hubspot: HubSpotConfig,
+  heap: HeapConfig,
   // Add more integration configs here
 };
 
@@ -383,7 +444,7 @@ const DefaultConfig = ({
               />
             </div>
           </div>
-          <h2 className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</h2>
+          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
         </DialogTitle>
         <DialogDescription className="mt-2 text-center">
           {integration.description}

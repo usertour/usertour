@@ -1,77 +1,45 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { HttpService } from '@nestjs/axios';
-import { PrismaService } from 'nestjs-prisma';
-import { AMPLITUDE_API_ENDPOINT, AMPLITUDE_API_ENDPOINT_EU } from '@/common/consts/endpoint';
-import { QUEUE_AMPLITUDE_EVENT } from '@/common/consts/queen';
-import { firstValueFrom } from 'rxjs';
-
-interface IntegrationEventData {
-  eventName: string;
-  userId: string;
-  environmentId: string;
-  eventProperties?: Record<string, any>;
-  userProperties?: Record<string, any>;
-}
+import { QUEUE_AMPLITUDE_EVENT, QUEUE_HEAP_EVENT } from '@/common/consts/queen';
+import { IntegrationService } from './integration.service';
+import { TrackEventData } from '@/common/types/track';
 
 @Processor(QUEUE_AMPLITUDE_EVENT)
 export class AmplitudeEventProcessor extends WorkerHost {
   private readonly logger = new Logger(AmplitudeEventProcessor.name);
 
-  constructor(
-    private prisma: PrismaService,
-    private readonly httpService: HttpService,
-  ) {
+  constructor(private integrationService: IntegrationService) {
     super();
   }
 
-  async process(job: Job<IntegrationEventData>) {
-    const { eventName, userId, environmentId, eventProperties, userProperties } = job.data;
-
-    // Get Amplitude integration
-    const integration = await this.prisma.integration.findFirst({
-      where: {
-        environmentId,
-        code: 'amplitude',
-        enabled: true,
-      },
-    });
-
-    if (!integration?.key) {
-      this.logger.warn(`Amplitude integration not configured for environment ${environmentId}`);
-      return;
-    }
-    const endpoint =
-      (integration?.config as { region?: string })?.region === 'EU'
-        ? AMPLITUDE_API_ENDPOINT_EU
-        : AMPLITUDE_API_ENDPOINT;
-
+  async process(job: Job<TrackEventData>) {
     try {
-      const event = {
-        event_type: eventName,
-        user_id: userId,
-        event_properties: eventProperties,
-        user_properties: userProperties,
-        time: Date.now(),
-      };
+      this.integrationService.trackAmplitudeEvent(job.data);
 
-      await firstValueFrom(
-        this.httpService.post(
-          endpoint,
-          {
-            api_key: integration.key,
-            events: [event],
-          },
-          {
-            timeout: 5000,
-          },
-        ),
-      );
-
-      this.logger.debug(`Successfully sent event to Amplitude: ${eventName}`);
+      this.logger.debug(`Successfully sent event to Amplitude: ${JSON.stringify(job.data)}`);
     } catch (error) {
-      this.logger.error(`Failed to send event to Amplitude: ${eventName}`, error);
+      this.logger.error(`Failed to send event to Amplitude: ${job.data}`, error);
+      throw error;
+    }
+  }
+}
+
+@Processor(QUEUE_HEAP_EVENT)
+export class HeapEventProcessor extends WorkerHost {
+  private readonly logger = new Logger(HeapEventProcessor.name);
+
+  constructor(private integrationService: IntegrationService) {
+    super();
+  }
+
+  async process(job: Job<TrackEventData>) {
+    try {
+      this.integrationService.trackHeapEvent(job.data);
+
+      this.logger.debug(`Successfully sent event to Heap: ${JSON.stringify(job.data)}`);
+    } catch (error) {
+      this.logger.error(`Failed to send event to Heap: ${job.data}`, error);
       throw error;
     }
   }

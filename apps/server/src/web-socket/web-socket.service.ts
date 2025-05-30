@@ -11,6 +11,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { BizUser, Content, Step } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
+import { TrackEventData } from '@/common/types/track';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -845,8 +846,9 @@ export class WebSocketService {
       return bizEvent;
     });
 
-    const trackEventData = {
+    const trackEventData: TrackEventData = {
       eventName,
+      bizSessionId: bizSession.id,
       userId: String(externalUserId),
       environmentId,
       eventProperties: {
