@@ -261,7 +261,7 @@ const AmplitudeConfig = ({
           <p className="text-sm text-muted-foreground">API Key:</p>
           <Input
             type="text"
-            placeholder="Enter Amplitude API key"
+            placeholder="Type Amplitude API key here"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
           />
@@ -325,10 +325,10 @@ const HubSpotConfig = ({
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-2 mt-2">
-        <p className="text-sm text-muted-foreground">API Key:</p>
+        <p className="text-sm text-muted-foreground">Private App Token:</p>
         <Input
           type="text"
-          placeholder="Enter HubSpot API key"
+          placeholder="Type Private App Token here"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
         />
@@ -390,7 +390,7 @@ const HeapConfig = ({
           <p className="text-sm text-muted-foreground">Heap App ID:</p>
           <Input
             type="text"
-            placeholder="Enter Amplitude API key"
+            placeholder="Type Heap App ID here"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
           />
