@@ -18,19 +18,22 @@ import * as z from 'zod';
 const accountFormSchema = z.object({
   email: z
     .string()
-    .min(2, {
-      message: 'Password must be at least 6 characters.',
+    .email({
+      message: 'Please enter a valid email address.',
     })
-    .max(30, {
-      message: 'Password must not be longer than 30 characters.',
+    .min(3, {
+      message: 'Email must be at least 3 characters.',
+    })
+    .max(255, {
+      message: 'Email must not be longer than 255 characters.',
     }),
   password: z
     .string()
     .min(2, {
-      message: 'Password must be at least 6 characters.',
+      message: 'Password must be at least 2 characters.',
     })
-    .max(30, {
-      message: 'Password must not be longer than 30 characters.',
+    .max(100, {
+      message: 'Password must not be longer than 100 characters.',
     }),
 });
 
