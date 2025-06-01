@@ -254,7 +254,7 @@ const AmplitudeConfig = ({
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl">
       <DialogHeader>
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
@@ -322,7 +322,7 @@ const HubSpotConfig = ({
   const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl">
       <DialogHeader>
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
@@ -383,7 +383,7 @@ const HeapConfig = ({
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl">
       <DialogHeader>
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
@@ -446,7 +446,7 @@ const PosthogConfig = ({
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl">
       <DialogHeader>
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
@@ -661,7 +661,7 @@ const DefaultConfig = ({
   const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl">
       <DialogHeader>
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
