@@ -570,7 +570,7 @@ const MixpanelConfig = ({
           />
           <Label className="text-sm">Stream events from Usertour to Mixpanel</Label>
           <QuestionTooltip>
-            When enabled, Userflow-generated events will be continuously streamed into your Mixpanel
+            When enabled, Usertour-generated events will be continuously streamed into your Mixpanel
             project.
           </QuestionTooltip>
         </div>
