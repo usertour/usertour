@@ -45,24 +45,14 @@ stages:
           - task: Docker@2
             displayName: Build image from dockerfile
             inputs:
-              command: build
+              command: buildAndPush
               repository: $(imageRepository)
               dockerfile: $(dockerfilePath)
+              containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 latest
                 $(tag)
                 $(Build.SourceBranchName)
-              arguments: "--cache-from $(containerRegistry)/$(imageRepository):$(Build.SourceBranchName) --build-arg BUILDKIT_INLINE_CACHE=1"
-
-          - task: Docker@2
-            displayName: push image to container registry
-            inputs:
-              command: push
-              repository: $(imageRepository)
-              tags: |
-                $(tag)
-                $(Build.SourceBranchName)
-
           - upload: deployment
             artifact: deployment
 
@@ -73,9 +63,6 @@ stages:
 
     jobs:
       - deployment: Deploy
-        variables:
-          - name: alex-webapp-cpu-request
-            value: 0.5
         displayName: Deploy
         pool:
           vmImage: $(vmImageName)
