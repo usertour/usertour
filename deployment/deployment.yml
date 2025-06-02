@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usertour-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-tour-app
+  template:
+    metadata:
+      labels:
+        app: user-tour-app
+    spec:
+      containers:
+        - name: user-tour-app
+          image: shipmnts.azurecr.io/shipmnts/usertour
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: usertour-secret
+
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "500m"
+      restartPolicy: Always

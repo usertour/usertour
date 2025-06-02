@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: usertour-service
+spec:
+  selector:
+    app: user-tour-app
+  ports:
+    - protocol: TCP
+      port: 8011
+      targetPort: 80
+  type: ClusterIP
