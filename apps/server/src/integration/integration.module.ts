@@ -19,6 +19,8 @@ import { HttpModule } from '@nestjs/axios';
 import { ProjectsModule } from '@/projects/projects.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { IntegrationResolver } from './integration.resolver';
+import { BizModule } from '@/biz/biz.module';
+import { IntegrationController } from './integration.controller';
 
 @Module({
   imports: [
@@ -31,6 +33,7 @@ import { IntegrationResolver } from './integration.resolver';
     BullModule.registerQueue({ name: QUEUE_MIXPANEL_EVENT }),
     HttpModule,
     ProjectsModule,
+    BizModule,
     EnvironmentsModule,
   ],
   providers: [
@@ -42,6 +45,7 @@ import { IntegrationResolver } from './integration.resolver';
     PosthogEventProcessor,
     MixpanelEventProcessor,
   ],
+  controllers: [IntegrationController],
   exports: [IntegrationService],
 })
 export class IntegrationModule {}

@@ -67,7 +67,6 @@ export class UtilitiesService {
         requestUrl = `${endpoint.url}?url=${encodeURIComponent(url)}&format=json`;
       }
       const resp = await this.httpService.axiosRef.get(requestUrl);
-      console.log('resp data:', resp.data);
       if (resp.data) {
         return {
           html: resp.data.html,

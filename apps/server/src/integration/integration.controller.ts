@@ -1,17 +1,17 @@
-import { Get, Body, Param } from '@nestjs/common';
+import { Post, Body, Param, Controller } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
 import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { IntegrationService } from './integration.service';
 
+@Controller('api')
 export class IntegrationController {
   private readonly logger = new Logger(IntegrationController.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly integrationService: IntegrationService) {}
 
-  @Get('api/mixpanel_webhook/:key')
+  @Post('mixpanel_webhook/:accessToken')
   @Public()
-  async mixpanelWebhook(@Body() body: any, @Param('key') key: string) {
-    console.log(body);
-    console.log(key);
+  async mixpanelWebhook(@Body() body: any, @Param('accessToken') accessToken: string) {
+    return this.integrationService.syncCohort(accessToken, body);
   }
 }

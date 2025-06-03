@@ -17,7 +17,7 @@ import {
   DeleteSegment,
   UpdateSegment,
 } from './dto/segment.input';
-import { Segment, SegmentDataType } from './models/segment.model';
+import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
 import { ParamsError, UnknownError } from '@/common/errors';
 import {
   capitalizeFirstLetter,
@@ -48,6 +48,30 @@ export class BizService {
   async creatSegment(data: CreatSegment) {
     return await this.prisma.segment.create({
       data,
+    });
+  }
+
+  async findSegmentBySource(environmentId: string, source: string, sourceId: string) {
+    return await this.prisma.segment.findFirst({
+      where: { environmentId, source, sourceId },
+    });
+  }
+
+  async createUserSegmentWithSource(
+    environmentId: string,
+    name: string,
+    source: string,
+    sourceId: string,
+  ) {
+    return await this.prisma.segment.create({
+      data: {
+        environmentId,
+        name,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+        source,
+        sourceId,
+      },
     });
   }
 
@@ -415,7 +439,7 @@ export class BizService {
 
   async upsertBizUsers(
     tx: Prisma.TransactionClient,
-    userId: string,
+    externalUserId: string,
     attributes: any,
     environmentId: string,
   ): Promise<any> {
@@ -434,12 +458,12 @@ export class BizService {
     );
 
     const user = await tx.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
       return await tx.bizUser.create({
         data: {
-          externalId: String(userId),
+          externalId: String(externalUserId),
           environmentId,
           data: insertAttribute,
         },
@@ -654,7 +678,7 @@ export class BizService {
   }
 
   async upsertUser(
-    id: string,
+    externalUserId: string,
     environmentId: string,
     attributes?: Record<string, any>,
     companies?: Array<{ id: string; attributes?: Record<string, any> }>,
@@ -665,7 +689,7 @@ export class BizService {
   ) {
     return await this.prisma.$transaction(async (tx) => {
       // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, id, attributes || {}, environmentId);
+      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
       if (!user) {
         throw new UnknownError('Failed to upsert user');
@@ -677,7 +701,7 @@ export class BizService {
           await this.upsertBizCompanies(
             tx,
             company.id,
-            id,
+            externalUserId,
             company.attributes || {},
             environmentId,
             {},
@@ -690,7 +714,7 @@ export class BizService {
           await this.upsertBizCompanies(
             tx,
             membership.company.id,
-            id,
+            externalUserId,
             membership.company.attributes || {},
             environmentId,
             membership.attributes || {},

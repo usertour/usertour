@@ -528,7 +528,7 @@ const MixpanelConfig = ({
   );
   const { globalConfig } = useAppContext();
 
-  const webhookUrl = `${globalConfig?.apiUrl}/api/webhook_mixpanel/${currentIntegration?.accessToken}`;
+  const webhookUrl = `${globalConfig?.apiUrl}/api/mixpanel_webhook/${currentIntegration?.accessToken}`;
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
 

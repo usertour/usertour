@@ -358,6 +358,10 @@ model Segment {
   name                  String                @default("")
   bizType               Int                   @default(1)
   dataType              Int                   @default(1)
+  /// Source of the segment (e.g., "mixpanel", "heap", etc.)
+  source                String?               @default("internal")
+  /// Source ID of the segment (e.g., "mixpanel_cohort_id")
+  sourceId              String?
   environment           Environment           @relation(fields: [environmentId], references: [id])
   environmentId         String
   columns               Json?                 @db.JsonB

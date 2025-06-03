@@ -337,6 +337,8 @@ Table Segment {
   name String [not null, default: '']
   bizType Int [not null, default: 1]
   dataType Int [not null, default: 1]
+  source String [default: 'internal', note: 'Source of the segment (e.g., "mixpanel", "heap", etc.)']
+  sourceId String [note: 'Source ID of the segment (e.g., "mixpanel_cohort_id")']
   environment Environment [not null]
   environmentId String [not null]
   columns Json

@@ -24,6 +24,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { TrackEventData } from '@/common/types/track';
+import { BizService } from '@/biz/biz.service';
 
 @Injectable()
 export class IntegrationService {
@@ -37,6 +38,7 @@ export class IntegrationService {
     @InjectQueue(QUEUE_MIXPANEL_EVENT) private mixpanelQueue: Queue,
     private prisma: PrismaService,
     private httpService: HttpService,
+    private bizService: BizService,
   ) {}
 
   /**
@@ -419,7 +421,145 @@ export class IntegrationService {
     );
   }
 
-  async syncCohort(): Promise<void> {
-    //
+  private async getOrCreateSegment(
+    environmentId: string,
+    name: string,
+    sourceId: string,
+    source = 'mixpanel',
+  ) {
+    const segment = await this.bizService.findSegmentBySource(environmentId, source, sourceId);
+    if (segment) {
+      return segment;
+    }
+    return await this.bizService.createUserSegmentWithSource(environmentId, name, source, sourceId);
+  }
+
+  private async processMember(
+    member: any,
+    config: { mixpanelUserIdProperty: string },
+    environmentId: string,
+    segment: any,
+    action: 'add' | 'remove',
+  ) {
+    const userId = member[config.mixpanelUserIdProperty];
+    if (!userId) {
+      this.logger.warn('Skipping member without userId property');
+      return;
+    }
+
+    if (action === 'add') {
+      const { [config.mixpanelUserIdProperty]: externalUserId, ...attributes } = member;
+      const bizUser = await this.bizService.upsertUser(externalUserId, environmentId, attributes);
+      await this.bizService.createBizUserOnSegment([
+        {
+          segmentId: segment.id,
+          bizUserId: bizUser.id,
+        },
+      ]);
+    } else {
+      const bizUser = await this.bizService.getBizUser(userId, environmentId);
+      if (bizUser) {
+        await this.bizService.deleteBizUserOnSegment({
+          segmentId: segment.id,
+          bizUserIds: [bizUser.id],
+        });
+      }
+    }
+  }
+
+  async syncCohort(
+    accessToken: string,
+    data: any,
+  ): Promise<{ action: string; status: string; error?: { message: string; code: number } }> {
+    const { action, parameters } = data;
+    const { mixpanel_cohort_name, members, mixpanel_cohort_id } = parameters;
+
+    try {
+      // Validate integration
+      const integration = await this.prisma.integration.findFirst({
+        where: {
+          accessToken,
+          code: 'mixpanel',
+          enabled: true,
+        },
+      });
+
+      const config = integration?.config as {
+        mixpanelUserIdProperty: string;
+        exportEvents?: boolean;
+        syncCohorts?: boolean;
+        region?: string;
+      };
+      const environmentId = integration?.environmentId;
+
+      if (!integration || !config?.mixpanelUserIdProperty || !config?.syncCohorts) {
+        throw new ParamsError('Mixpanel integration not configured correctly');
+      }
+
+      this.logger.debug(
+        `Processing Mixpanel cohort sync: ${action} for cohort ${mixpanel_cohort_name}`,
+      );
+
+      // Handle different actions
+      switch (action) {
+        case 'members':
+        case 'add_members': {
+          const segment = await this.getOrCreateSegment(
+            environmentId,
+            mixpanel_cohort_name,
+            mixpanel_cohort_id,
+          );
+
+          for (const member of members) {
+            await this.processMember(member, config, environmentId, segment, 'add');
+          }
+          break;
+        }
+
+        case 'remove_members': {
+          const segment = await this.bizService.findSegmentBySource(
+            environmentId,
+            'mixpanel',
+            mixpanel_cohort_id,
+          );
+
+          if (!segment) {
+            this.logger.debug('Segment not found for remove_members action, skipping');
+            return {
+              action,
+              status: 'success',
+            };
+          }
+
+          for (const member of members) {
+            await this.processMember(member, config, environmentId, segment, 'remove');
+          }
+          break;
+        }
+
+        default:
+          throw new Error(`Unknown action type: ${action}`);
+      }
+
+      return {
+        action,
+        status: 'success',
+      };
+    } catch (error) {
+      this.logger.error(`Error processing Mixpanel cohort sync: ${error.message}`, {
+        error,
+        action,
+        parameters,
+      });
+
+      return {
+        action,
+        status: 'failure',
+        error: {
+          message: error.message,
+          code: error instanceof ParamsError ? 400 : 500,
+        },
+      };
+    }
   }
 }
