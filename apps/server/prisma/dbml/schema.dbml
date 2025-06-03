@@ -524,6 +524,7 @@ Table Integration {
   id String [pk]
   code String [not null, note: 'code of integration (e.g., "ga", "mixpanel", "posthog")']
   key String [not null, default: '', note: 'api key or  of integration ']
+  accessToken String [unique, not null, note: 'access token of integration']
   config Json [note: 'JSON schema for configuration (optional)']
   enabled Boolean [not null, default: false, note: 'Whether the integration is enabled']
   environment Environment [not null, note: 'environment of integration']

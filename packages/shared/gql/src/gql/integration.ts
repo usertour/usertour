@@ -8,6 +8,7 @@ export const ListIntegrations = gql`
       key
       config
       enabled
+      accessToken
       createdAt
       updatedAt  
     }
@@ -22,6 +23,7 @@ export const UpdateIntegration = gql`
       key
       config
       enabled
+      accessToken
       createdAt
       updatedAt
     }

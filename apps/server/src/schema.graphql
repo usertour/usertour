@@ -507,11 +507,13 @@ type Events {
 }
 
 type GlobalConfig {
+  apiUrl: String!
   enabledBilling: Boolean!
   isSelfHostedMode: Boolean!
 }
 
 type Integration {
+  accessToken: String!
   code: String!
   config: JSON
 

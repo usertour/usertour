@@ -83,9 +83,11 @@ export class UtilitiesService {
     const enabledBillingUsers = this.configService.get('globalConfig.enabledBillingUsers');
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     const enabledBilling = enabledBillingUsers.includes(user.id);
+    const apiUrl = this.configService.get('app.apiUrl');
     return {
       enabledBilling,
       isSelfHostedMode,
+      apiUrl,
     };
   }
 }

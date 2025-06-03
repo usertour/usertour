@@ -11,6 +11,9 @@ export class Integration extends BaseModel {
   @Field()
   key: string;
 
+  @Field()
+  accessToken: string;
+
   @Field(() => GraphQLJSON, { nullable: true })
   config: JsonValue;
 

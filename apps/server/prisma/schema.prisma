@@ -590,6 +590,8 @@ model Integration {
   code            String
   /// api key or  of integration 
   key             String           @default("")
+  /// access token of integration
+  accessToken     String           @unique @default(cuid())
   /// JSON schema for configuration (optional)
   config          Json?            @db.JsonB
   /// Whether the integration is enabled

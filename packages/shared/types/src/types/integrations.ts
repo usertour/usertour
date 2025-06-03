@@ -8,6 +8,7 @@ export type IntegrationModel = {
   id: string;
   code: string;
   key: string;
+  accessToken: string;
   config?: any;
   enabled: boolean;
   createdAt: string;

@@ -418,4 +418,8 @@ export class IntegrationService {
       }),
     );
   }
+
+  async syncCohort(): Promise<void> {
+    //
+  }
 }

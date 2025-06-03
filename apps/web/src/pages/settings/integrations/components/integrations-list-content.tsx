@@ -518,7 +518,7 @@ const MixpanelConfig = ({
     (currentIntegration?.config as MixpanelIntegrationConfig)?.region || 'US',
   );
   const [exportEvents, setExportEvents] = useState(
-    (currentIntegration?.config as MixpanelIntegrationConfig)?.exportEvents ?? true,
+    (currentIntegration?.config as MixpanelIntegrationConfig)?.exportEvents ?? false,
   );
   const [syncCohorts, setSyncCohorts] = useState(
     (currentIntegration?.config as MixpanelIntegrationConfig)?.syncCohorts ?? false,
@@ -526,7 +526,9 @@ const MixpanelConfig = ({
   const [mixpanelUserIdProperty, setMixpanelUserIdProperty] = useState(
     (currentIntegration?.config as MixpanelIntegrationConfig)?.mixpanelUserIdProperty || '',
   );
-  const webhookUrl = 'https://api.usertour.io/webhook_mixpanel/';
+  const { globalConfig } = useAppContext();
+
+  const webhookUrl = `${globalConfig?.apiUrl}/api/webhook_mixpanel/${currentIntegration?.accessToken}`;
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
 
@@ -749,7 +751,14 @@ export const IntegrationsListContent = () => {
   } = useListIntegrationsQuery(environmentId);
   const { invoke: updateIntegration, loading: updating } = useUpdateIntegrationMutation();
 
-  const handleConnect = (code: string) => {
+  const handleConnect = async (code: string) => {
+    const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
+    //initial integration when connect first time
+    await updateIntegration(environmentId, code, {
+      enabled: currentIntegration?.enabled ?? false,
+      key: currentIntegration?.key || '',
+    });
+    await refetch();
     setSelectedCode(code);
   };
 

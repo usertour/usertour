@@ -7,4 +7,7 @@ export class GlobalConfig {
 
   @Field(() => Boolean)
   isSelfHostedMode: boolean;
+
+  @Field(() => String)
+  apiUrl: string;
 }
