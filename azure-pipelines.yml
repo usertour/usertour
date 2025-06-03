@@ -17,7 +17,6 @@ variables:
   containerRegistry: "shipmnts.azurecr.io"
   dockerfilePath: "**/Dockerfile"
   tag: "$(Build.BuildId)"
-  imagePullSecret: "shipmnts1291b589-auth"
 
   # Agent VM image name
   vmImageName: "ubuntu-latest"
@@ -36,14 +35,8 @@ stages:
             inputs:
               command: login
               containerRegistry: $(dockerRegistryServiceConnection)
-          - task: Bash@3
-            displayName: Pulling docker image
-            inputs:
-              targetType: inline
-              script: |
-                docker pull $(containerRegistry)/$(imageRepository):$(Build.SourceBranchName) || exit 0
           - task: Docker@2
-            displayName: Build image from dockerfile
+            displayName: Build image from dockerfile and push to registry
             inputs:
               command: buildAndPush
               repository: $(imageRepository)
@@ -72,20 +65,11 @@ stages:
             deploy:
               steps:
                 - task: KubernetesManifest@0
-                  displayName: Create imagePullSecret
-                  inputs:
-                    action: createSecret
-                    secretName: $(imagePullSecret)
-                    dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
-                - task: KubernetesManifest@0
                   displayName: Deploy to Kubernetes cluster
                   inputs:
                     action: deploy
                     manifests: |
                       $(Pipeline.Workspace)/deployment/deployment.yml
                       $(Pipeline.Workspace)/deployment/service.yml
-                    imagePullSecrets: |
-                      $(imagePullSecret)
                     containers: |
                       $(containerRegistry)/$(imageRepository):$(tag)

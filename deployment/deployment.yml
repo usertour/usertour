@@ -12,6 +12,9 @@ spec:
       labels:
         app: user-tour-app
     spec:
+      imagePullSecrets:
+        - name: acr-pull
+
       containers:
         - name: user-tour-app
           image: shipmnts.azurecr.io/shipmnts/usertour
