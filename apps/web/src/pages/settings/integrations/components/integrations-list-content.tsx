@@ -31,6 +31,8 @@ import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@
 import { Switch } from '@usertour-ui/switch';
 import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { Copy } from 'lucide-react';
+import { useCopyToClipboard } from 'react-use';
 
 interface Integration {
   name: string;
@@ -524,6 +526,16 @@ const MixpanelConfig = ({
   const [mixpanelUserIdProperty, setMixpanelUserIdProperty] = useState(
     (currentIntegration?.config as MixpanelIntegrationConfig)?.mixpanelUserIdProperty || '',
   );
+  const webhookUrl = 'https://api.usertour.io/webhook_mixpanel/';
+  const [_, copyToClipboard] = useCopyToClipboard();
+  const { toast } = useToast();
+
+  const handleCopy = () => {
+    copyToClipboard(webhookUrl);
+    toast({
+      title: 'Webhook URL copied to clipboard',
+    });
+  };
 
   const handleSubmit = () => {
     onSubmit({
@@ -611,15 +623,32 @@ const MixpanelConfig = ({
         </div>
 
         {syncCohorts && (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
-            <Input
-              type="text"
-              placeholder="Type Mixpanel User ID Property here"
-              value={mixpanelUserIdProperty}
-              onChange={(e) => setMixpanelUserIdProperty(e.target.value)}
-            />
-          </div>
+          <>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
+              <Input
+                type="text"
+                placeholder="Type Mixpanel User ID Property here"
+                value={mixpanelUserIdProperty}
+                onChange={(e) => setMixpanelUserIdProperty(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1 ">
+              <Label htmlFor="link">Webhook URL</Label>
+              <div className="relative flex-1">
+                <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-0.5 right-0.5 size-7"
+                  onClick={handleCopy}
+                >
+                  <Copy className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+          </>
         )}
       </div>
       <DialogFooter>
