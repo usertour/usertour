@@ -45,6 +45,7 @@ enum AnalyticsOrderField {
 input AnalyticsQuery {
   contentId: String!
   endDate: String!
+  environmentId: String!
   startDate: String!
   timezone: String!
 }
@@ -721,8 +722,8 @@ type Query {
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
-  queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
-  queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
+  queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!

@@ -13,4 +13,7 @@ export class AnalyticsQuery {
 
   @Field(() => String, { nullable: false })
   timezone: string;
+
+  @Field(() => String, { nullable: false })
+  environmentId: string;
 }

@@ -9,6 +9,7 @@ import { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
 import { AnalyticsNPS } from './analytics-nps';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { AnalyticsScale } from './analytics-scale';
+import { useAppContext } from '@/contexts/app-context';
 
 interface AnalyticsMultipleChoiceProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -91,8 +92,10 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
   const { contentId } = props;
   const { dateRange, timezone, analyticsData } = useAnalyticsContext();
   const { content, refetch } = useContentDetailContext();
+  const { environment } = useAppContext();
   const { questionAnalytics, refetch: refetchQuestionAnalytics } =
     useQueryContentQuestionAnalyticsQuery(
+      environment?.id ?? '',
       contentId,
       dateRange?.from?.toISOString() ?? '',
       dateRange?.to?.toISOString() ?? '',

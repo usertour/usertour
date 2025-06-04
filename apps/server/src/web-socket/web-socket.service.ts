@@ -863,6 +863,7 @@ export class WebSocketService {
           versionId: currentVersion.id,
           bizUserId: user.id,
           bizSessionId: bizSession.id,
+          environmentId,
         };
         if (events[EventAttributes.NUMBER_ANSWER]) {
           answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];

@@ -489,22 +489,24 @@ model BizEvent {
 }
 
 model BizAnswer {
-  id           String   @id @default(cuid())
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
-  bizEventId   String
-  bizSessionId String
-  contentId    String
-  versionId    String
-  bizUserId    String
-  cvid         String
-  numberAnswer Int?
-  textAnswer   String?
-  listAnswer   String[]
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+  bizEventId    String
+  bizSessionId  String
+  contentId     String
+  versionId     String
+  bizUserId     String
+  cvid          String
+  environmentId String?
+  numberAnswer  Int?
+  textAnswer    String?
+  listAnswer    String[]
 
   @@unique([bizSessionId, cvid])
   @@index([contentId, cvid, bizUserId])
   @@index([versionId, cvid, bizUserId])
+  @@index([environmentId, contentId, cvid, bizUserId])
 }
 
 model RefreshToken {
