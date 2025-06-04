@@ -70,8 +70,18 @@ export const ContentDetailHeader = () => {
   const [_, setSearchParams] = useSearchParams();
   if (!contentType || !content) return null;
 
-  const isDisabled =
-    (content.published && content.editedVersionId === content.publishedVersionId) || false;
+  const isDisabledPublish =
+    !!content?.contentOnEnvironments?.find(
+      (item) =>
+        item.published &&
+        item.publishedVersionId === version?.id &&
+        item.environment.id === environment?.id,
+    ) ||
+    (content?.published &&
+      content?.publishedVersionId === version?.id &&
+      content?.environmentId === environment?.id);
+
+  const isDisabled = isDisabledPublish || false;
 
   const handleBack = () => {
     navigator(`/env/${environment?.id}/${contentType}`);

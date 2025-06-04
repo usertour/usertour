@@ -3,6 +3,7 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { Step } from './step.model';
 import GraphQLJSON from 'graphql-type-json';
 import { JsonValue } from '@prisma/client/runtime/library';
+import { Environment } from '@/environments/models/environment.model';
 
 export enum ContentType {
   CHECKLIST = 'checklist',
@@ -13,6 +14,27 @@ export enum ContentType {
   SURVEY = 'survey',
   TRACKER = 'tracker',
   EVENT = 'event',
+}
+
+@ObjectType()
+export class ContentOnEnvironment extends BaseModel {
+  @Field(() => Environment)
+  environment: Environment;
+
+  @Field(() => String)
+  environmentId: string;
+
+  @Field(() => String)
+  contentId: string;
+
+  @Field(() => Boolean)
+  published: boolean;
+
+  @Field(() => Date)
+  publishedAt: Date;
+
+  @Field(() => String)
+  publishedVersionId: string;
 }
 
 @ObjectType()
@@ -49,4 +71,7 @@ export class Content extends BaseModel {
 
   @Field(() => [Step], { nullable: true })
   steps?: [Step];
+
+  @Field(() => [ContentOnEnvironment], { nullable: true })
+  contentOnEnvironments?: [ContentOnEnvironment];
 }

@@ -89,14 +89,14 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
-  async publishedContentVersion(@Args('data') { versionId }: VersionIdInput) {
-    return await this.contentService.publishedContentVersion(versionId);
+  async publishedContentVersion(@Args('data') { versionId, environmentId }: VersionIdInput) {
+    return await this.contentService.publishedContentVersion(versionId, environmentId);
   }
 
   @Mutation(() => Common)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
-  async unpublishedContentVersion(@Args('data') { contentId }: ContentIdInput) {
-    await this.contentService.unpublishedContentVersion(contentId);
+  async unpublishedContentVersion(@Args('data') { contentId, environmentId }: ContentIdInput) {
+    await this.contentService.unpublishedContentVersion(contentId, environmentId);
     return { success: true };
   }
 
@@ -168,10 +168,59 @@ export class ContentResolver {
     })
     orderBy: ContentOrder,
   ) {
+    const { environmentId, published, ...rest } = query;
     const conditions = {
-      ...query,
+      ...rest,
       deleted: false,
     } as any;
+    const env = await this.prisma.environment.findUnique({
+      where: {
+        id: environmentId,
+      },
+      include: {
+        project: true,
+      },
+    });
+
+    conditions.environment = { project: { id: env.project.id } };
+
+    if (!published) {
+      conditions.OR = [
+        {
+          environmentId,
+          published: false,
+          contentOnEnvironments: { none: {} },
+        },
+        {
+          environmentId: { not: environmentId },
+          contentOnEnvironments: { none: {} },
+        },
+        {
+          contentOnEnvironments: {
+            none: {
+              environmentId,
+            },
+          },
+        },
+      ];
+    } else {
+      conditions.OR = [
+        {
+          environmentId,
+          published: true,
+          contentOnEnvironments: { none: {} },
+        },
+        {
+          contentOnEnvironments: {
+            some: {
+              environmentId,
+              published: true,
+            },
+          },
+        },
+      ];
+    }
+
     if (conditions.name) {
       conditions.name = { contains: conditions.name };
     }
@@ -179,9 +228,15 @@ export class ContentResolver {
       return await findManyCursorConnection(
         (args) =>
           this.prisma.content.findMany({
-            // include: { steps: { select: { id: true } } },
             where: {
               ...conditions,
+            },
+            include: {
+              contentOnEnvironments: {
+                include: {
+                  environment: true,
+                },
+              },
             },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,

@@ -1,6 +1,7 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { Button } from '@usertour-ui/button';
 import {
@@ -31,6 +32,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   const [mutation] = useMutation(unpublishedContentVersion);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { environment } = useAppContext();
   const showError = (title: string) => {
     toast({
       variant: 'destructive',
@@ -43,12 +45,13 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
     try {
       const variables = {
         contentId: content.id,
+        environmentId: environment?.id,
       };
       const ret = await mutation({ variables });
       if (ret.data?.unpublishedContentVersion?.success) {
         toast({
           variant: 'success',
-          title: `The ${name} has been successfully created`,
+          title: `The ${name} has been successfully unpublished in ${environment?.name}`,
         });
       }
       onSuccess();
@@ -64,7 +67,8 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
         <DialogHeader>
           <DialogTitle>Unpublish {name}</DialogTitle>
           <DialogDescription>
-            When you unpublish a {name}, users will no longer be able to view it.
+            When you unpublish a {name}, users will no longer be able to view it in{' '}
+            <span className="font-bold text-foreground">{environment?.name}</span>.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

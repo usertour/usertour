@@ -111,6 +111,7 @@ model Project {
   events         Event[]
   localizations  Localization[]
   invites        Invite[]
+  contents       Content[]
 }
 
 model UserOnProject {
@@ -128,19 +129,21 @@ model UserOnProject {
 }
 
 model Environment {
-  id           String        @id @default(cuid())
-  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
-  name         String?
-  token        String        @default(cuid())
-  deleted      Boolean       @default(false)
-  project      Project       @relation(fields: [projectId], references: [id])
-  projectId    String
-  contents     Content[]
-  bizUsers     BizUser[]
-  bizCompanies BizCompany[]
-  segments     Segment[]
-  accessTokens AccessToken[]
+  id                    String                 @id @default(cuid())
+  createdAt             DateTime               @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @db.Timestamptz(6)
+  name                  String?
+  token                 String                 @default(cuid())
+  deleted               Boolean                @default(false)
+  project               Project                @relation(fields: [projectId], references: [id])
+  projectId             String
+  contents              Content[]
+  bizUsers              BizUser[]
+  bizCompanies          BizCompany[]
+  segments              Segment[]
+  accessTokens          AccessToken[]
+  contentOnEnvironments ContentOnEnvironment[]
+  bizSessions           BizSession[]
 }
 
 model AccessToken {
@@ -178,24 +181,43 @@ model Theme {
 }
 
 model Content {
-  id                 String       @id @default(cuid())
-  createdAt          DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime     @updatedAt @db.Timestamptz(6)
-  publishedAt        DateTime?    @default(now()) @db.Timestamptz(6)
-  name               String?
-  buildUrl           String?
-  type               String       @default("flow")
-  published          Boolean      @default(false)
-  deleted            Boolean      @default(false)
-  environment        Environment  @relation(fields: [environmentId], references: [id])
+  id                    String                 @id @default(cuid())
+  createdAt             DateTime               @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @db.Timestamptz(6)
+  publishedAt           DateTime?              @default(now()) @db.Timestamptz(6)
+  name                  String?
+  buildUrl              String?
+  type                  String                 @default("flow")
+  published             Boolean                @default(false)
+  deleted               Boolean                @default(false)
+  environment           Environment?           @relation(fields: [environmentId], references: [id])
+  environmentId         String?
+  project               Project?               @relation(fields: [projectId], references: [id])
+  projectId             String?
+  config                Json?                  @db.JsonB
+  versions              Version[]              @relation("ContentVersions")
+  editedVersion         Version?               @relation("EditedVersion", fields: [editedVersionId], references: [id])
+  publishedVersion      Version?               @relation("publishedVersion", fields: [publishedVersionId], references: [id])
+  publishedVersionId    String?                @unique
+  editedVersionId       String?                @unique
+  bizSession            BizSession[]
+  contentOnEnvironments ContentOnEnvironment[]
+}
+
+model ContentOnEnvironment {
+  id                 String      @id @default(cuid())
+  createdAt          DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime    @updatedAt @db.Timestamptz(6)
+  environment        Environment @relation(fields: [environmentId], references: [id])
   environmentId      String
-  config             Json?        @db.JsonB
-  versions           Version[]    @relation("ContentVersions")
-  editedVersion      Version?     @relation("EditedVersion", fields: [editedVersionId], references: [id])
-  publishedVersion   Version?     @relation("publishedVersion", fields: [publishedVersionId], references: [id])
-  publishedVersionId String?      @unique
-  editedVersionId    String?      @unique
-  bizSession         BizSession[]
+  content            Content     @relation(fields: [contentId], references: [id])
+  contentId          String
+  published          Boolean     @default(false)
+  publishedAt        DateTime    @default(now()) @db.Timestamptz(6)
+  publishedVersion   Version     @relation(fields: [publishedVersionId], references: [id])
+  publishedVersionId String
+
+  @@unique([environmentId, contentId])
 }
 
 model Version {
@@ -216,6 +238,7 @@ model Version {
   publishByContent      Content?                @relation("publishedVersion")
   bizSession            BizSession[]
   versionOnLocalization VersionOnLocalization[]
+  contentOnEnvironment  ContentOnEnvironment[]
 
   @@unique([contentId, sequence])
 }
@@ -425,23 +448,25 @@ model AttributeOnEvent {
 }
 
 model BizSession {
-  id           String      @id @default(cuid())
-  createdAt    DateTime    @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
-  deleted      Boolean     @default(false)
-  state        Int         @default(0)
-  data         Json?       @db.JsonB
-  progress     Int         @default(0)
-  projectId    String      @default("")
-  bizUser      BizUser     @relation(fields: [bizUserId], references: [id])
-  bizUserId    String
-  bizCompany   BizCompany? @relation(fields: [bizCompanyId], references: [id])
-  bizCompanyId String?
-  content      Content     @relation(fields: [contentId], references: [id])
-  contentId    String
-  version      Version     @relation(fields: [versionId], references: [id])
-  versionId    String
-  bizEvent     BizEvent[]
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(6)
+  deleted       Boolean      @default(false)
+  state         Int          @default(0)
+  data          Json?        @db.JsonB
+  progress      Int          @default(0)
+  projectId     String       @default("")
+  environment   Environment? @relation(fields: [environmentId], references: [id])
+  environmentId String?
+  bizUser       BizUser      @relation(fields: [bizUserId], references: [id])
+  bizUserId     String
+  bizCompany    BizCompany?  @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId  String?
+  content       Content      @relation(fields: [contentId], references: [id])
+  contentId     String
+  version       Version      @relation(fields: [versionId], references: [id])
+  versionId     String
+  bizEvent      BizEvent[]
 
   @@index([bizUserId])
   @@index([contentId])

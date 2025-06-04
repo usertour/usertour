@@ -21,11 +21,22 @@ type ContentVersionActionProps = {
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
   const { refetch, content } = useContentDetailContext();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, environment } = useAppContext();
 
   const { refetch: refetchVersionList } = useContentVersionListContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
+
+  const isDisabledPublish =
+    !!content?.contentOnEnvironments?.find(
+      (item) =>
+        item.published &&
+        item.publishedVersionId === version.id &&
+        item.environment.id === environment?.id,
+    ) ||
+    (content?.published &&
+      content?.publishedVersionId === version.id &&
+      content?.environmentId === environment?.id);
 
   return (
     <>
@@ -41,7 +52,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[100px]">
           <DropdownMenuItem
-            disabled={content?.publishedVersionId === version.id}
+            disabled={isDisabledPublish}
             onClick={() => {
               setOpenPublish(true);
             }}

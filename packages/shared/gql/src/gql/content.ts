@@ -30,6 +30,17 @@ export const getContent = gql`
         target
         setting
       }
+      contentOnEnvironments {
+        id
+        published
+        publishedAt
+        publishedVersionId
+        environmentId
+        environment {
+          id
+          name
+        }
+      }
     }
   }
 `;
@@ -151,6 +162,17 @@ export const queryContent = gql`
             cvid
             sequence
           }
+          contentOnEnvironments {
+            id
+            published
+            publishedAt
+            publishedVersionId
+            environmentId
+            environment {
+              id
+              name
+            }
+          }
         }
       }
       pageInfo {
@@ -195,8 +217,8 @@ export const duplicateContent = gql`
 `;
 
 export const publishedContentVersion = gql`
-  mutation publishedContentVersion($versionId: String!) {
-    publishedContentVersion(data: { versionId: $versionId }) {
+  mutation publishedContentVersion($versionId: String!, $environmentId: String!) {
+    publishedContentVersion(data: { versionId: $versionId, environmentId: $environmentId }) {
       id
     }
   }
@@ -211,8 +233,8 @@ export const restoreContentVersion = gql`
 `;
 
 export const unpublishedContentVersion = gql`
-  mutation unpublishedContentVersion($contentId: String!) {
-    unpublishedContentVersion(data: { contentId: $contentId }) {
+  mutation unpublishedContentVersion($contentId: String!, $environmentId: String!) {
+    unpublishedContentVersion(data: { contentId: $contentId, environmentId: $environmentId }) {
       success
     }
   }

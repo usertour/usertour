@@ -56,7 +56,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -127,7 +127,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -198,7 +198,7 @@ type BizUser {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -251,13 +251,14 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int!
+  count: Int
   success: Boolean!
 }
 
 type Content {
   buildUrl: String
   config: JSON
+  contentOnEnvironments: [ContentOnEnvironment!]
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -295,6 +296,7 @@ type ContentEdge {
 
 input ContentIdInput {
   contentId: String!
+  environmentId: String
 }
 
 input ContentInput {
@@ -306,6 +308,22 @@ input ContentInput {
   steps: [StepInput!]
   themeId: String
   type: String!
+}
+
+type ContentOnEnvironment {
+  contentId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  environment: Environment!
+  environmentId: String!
+  id: ID!
+  published: Boolean!
+  publishedAt: DateTime!
+  publishedVersionId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 input ContentOrder {
@@ -354,7 +372,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String!
+  name: String
 }
 
 input CreatSegment {
@@ -375,7 +393,7 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   projectId: String!
 }
@@ -946,7 +964,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]!
+  projects: [UserOnProject!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -983,6 +1001,7 @@ type Version {
 }
 
 input VersionIdInput {
+  environmentId: String
   versionId: String
 }
 

@@ -1,5 +1,6 @@
 'use client';
 import { Icons } from '@/components/atoms/icons';
+import { useAppContext } from '@/contexts/app-context';
 import { useMutation, useQuery } from '@apollo/client';
 import { Button } from '@usertour-ui/button';
 import {
@@ -15,6 +16,7 @@ import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { ContentVersion } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import * as React from 'react';
+import { useCallback } from 'react';
 
 interface ContentPublishFormProps {
   versionId: string;
@@ -29,6 +31,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const [version, setVersion] = React.useState<ContentVersion>();
+  const { environment } = useAppContext();
 
   const contentVersion = useQuery(getContentVersion, {
     variables: { versionId: versionId },
@@ -42,15 +45,17 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
 
   const showToast = (isSuccess: boolean, message?: string) => {
     const variant = isSuccess ? 'success' : 'destructive';
-    const title = isSuccess ? 'The flow published successfully.' : 'The flow published failed.';
+    const title = isSuccess
+      ? `The flow published successfully to ${environment?.name}.`
+      : 'The flow published failed.';
     toast({ variant, title: message || title });
   };
 
-  async function handleOnSubmit() {
+  const handleOnSubmit = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data } = await mutation({
-        variables: { versionId: versionId },
+        variables: { versionId: versionId, environmentId: environment?.id },
       });
       const isSuccess = !!data.publishedContentVersion.id;
       showToast(isSuccess);
@@ -60,17 +65,17 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       showToast(false, getErrorMessage(error));
       setIsLoading(false);
     }
-  }
+  }, [environment, mutation, onSubmit, versionId]);
 
   return (
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Publish flow </DialogTitle>
+          <DialogTitle>Publish flow</DialogTitle>
         </DialogHeader>
         <div>
-          The version you are about to publish is{' '}
-          <span className="font-bold">v{version?.sequence}</span>
+          You are about to publish version <span className="font-bold">v{version?.sequence}</span>{' '}
+          to environment <span className="font-bold">{environment?.name}</span>
         </div>
         <DialogFooter>
           <DialogClose asChild>

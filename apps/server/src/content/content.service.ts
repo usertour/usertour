@@ -288,26 +288,88 @@ export class ContentService {
     });
   }
 
-  async publishedContentVersion(versionId: string) {
+  async publishedContentVersion(versionId: string, environmentId: string) {
     const version = await this.getContentVersionById(versionId);
-
-    return await this.prisma.content.update({
+    const oldContent = await this.prisma.content.findUnique({
       where: { id: version.contentId },
-      data: {
-        published: true,
-        publishedVersionId: version.id,
-        publishedAt: new Date(),
-      },
+      include: { contentOnEnvironments: true },
+    });
+    if (
+      oldContent.published &&
+      oldContent.publishedVersionId &&
+      (!oldContent.contentOnEnvironments || oldContent.contentOnEnvironments.length === 0)
+    ) {
+      // Update or create ContentOnEnvironment
+      await this.prisma.contentOnEnvironment.create({
+        data: {
+          environmentId: oldContent.environmentId,
+          contentId: oldContent.id,
+          published: true,
+          publishedAt: new Date(),
+          publishedVersionId: oldContent.publishedVersionId,
+        },
+      });
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      // Update Content table
+      const content = await tx.content.update({
+        where: { id: version.contentId },
+        data: {
+          published: true,
+          publishedVersionId: version.id,
+          publishedAt: new Date(),
+        },
+      });
+
+      // Update or create ContentOnEnvironment
+      await tx.contentOnEnvironment.upsert({
+        where: {
+          environmentId_contentId: {
+            environmentId: environmentId,
+            contentId: content.id,
+          },
+        },
+        create: {
+          environmentId: environmentId,
+          contentId: content.id,
+          published: true,
+          publishedAt: new Date(),
+          publishedVersionId: version.id,
+        },
+        update: {
+          published: true,
+          publishedAt: new Date(),
+          publishedVersionId: version.id,
+        },
+      });
+
+      return content;
     });
   }
 
-  async unpublishedContentVersion(contentId: string) {
-    return await this.prisma.content.update({
-      where: { id: contentId },
-      data: {
-        published: false,
-        publishedVersionId: null,
-      },
+  async unpublishedContentVersion(contentId: string, environmentId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      // Update Content table
+      const content = await tx.content.update({
+        where: { id: contentId },
+        data: {
+          published: false,
+          publishedVersionId: null,
+        },
+      });
+
+      // Delete ContentOnEnvironment record
+      await tx.contentOnEnvironment.delete({
+        where: {
+          environmentId_contentId: {
+            environmentId: environmentId,
+            contentId: content.id,
+          },
+        },
+      });
+
+      return content;
     });
   }
 
@@ -426,7 +488,7 @@ export class ContentService {
   async getContent(id: string) {
     return await this.prisma.content.findUnique({
       where: { id },
-      // include: { steps: true },
+      include: { contentOnEnvironments: { include: { environment: true } } },
     });
   }
 
