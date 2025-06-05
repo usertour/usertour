@@ -12,6 +12,8 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRenameForm } from '../shared/content-rename-form';
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { Environment } from '@usertour-ui/types';
 
 const navigations = [
   {
@@ -67,21 +69,26 @@ export const ContentDetailHeader = () => {
   const { version, isSaveing } = useContentVersionContext();
   const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
+  const { environmentList } = useEnvironmentListContext();
   const [_, setSearchParams] = useSearchParams();
   if (!contentType || !content) return null;
 
-  const isDisabledPublish =
-    !!content?.contentOnEnvironments?.find(
+  const isPublishedInAllEnvironments = environmentList?.every((env: Environment) =>
+    content?.contentOnEnvironments?.find(
       (item) =>
-        item.published &&
-        item.publishedVersionId === version?.id &&
-        item.environment.id === environment?.id,
-    ) ||
-    (content?.published &&
-      content?.publishedVersionId === version?.id &&
-      content?.environmentId === environment?.id);
+        item.published && item.publishedVersionId === version?.id && item.environment.id === env.id,
+    ),
+  );
 
-  const isDisabled = isDisabledPublish || false;
+  const isPublishedInOneEnvironment =
+    content?.published &&
+    content?.publishedVersionId === version?.id &&
+    content?.environmentId === environment?.id;
+
+  const isDisabled =
+    content?.contentOnEnvironments && content?.contentOnEnvironments.length > 0
+      ? isPublishedInAllEnvironments
+      : isPublishedInOneEnvironment;
 
   const handleBack = () => {
     navigator(`/env/${environment?.id}/${contentType}`);

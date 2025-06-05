@@ -488,7 +488,10 @@ export class ContentService {
   async getContent(id: string) {
     return await this.prisma.content.findUnique({
       where: { id },
-      include: { contentOnEnvironments: { include: { environment: true } } },
+      include: {
+        publishedVersion: true,
+        contentOnEnvironments: { include: { environment: true, publishedVersion: true } },
+      },
     });
   }
 

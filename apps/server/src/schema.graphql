@@ -270,6 +270,7 @@ type Content {
   name: String
   published: Boolean!
   publishedAt: DateTime!
+  publishedVersion: Version
   publishedVersionId: String
   steps: [Step!]
   type: String
@@ -321,6 +322,7 @@ type ContentOnEnvironment {
   id: ID!
   published: Boolean!
   publishedAt: DateTime!
+  publishedVersion: Version!
   publishedVersionId: String!
 
   """Identifies the date and time when the object was last updated."""

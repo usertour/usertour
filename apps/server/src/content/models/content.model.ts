@@ -4,6 +4,7 @@ import { Step } from './step.model';
 import GraphQLJSON from 'graphql-type-json';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { Environment } from '@/environments/models/environment.model';
+import { Version } from './version.model';
 
 export enum ContentType {
   CHECKLIST = 'checklist',
@@ -35,6 +36,9 @@ export class ContentOnEnvironment extends BaseModel {
 
   @Field(() => String)
   publishedVersionId: string;
+
+  @Field(() => Version)
+  publishedVersion: Version;
 }
 
 @ObjectType()
@@ -62,6 +66,9 @@ export class Content extends BaseModel {
 
   @Field(() => String, { nullable: true })
   publishedVersionId?: string;
+
+  @Field(() => Version, { nullable: true })
+  publishedVersion?: Version;
 
   @Field(() => Boolean)
   published: boolean;

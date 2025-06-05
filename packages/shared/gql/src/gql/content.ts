@@ -16,6 +16,10 @@ export const getContent = gql`
       createdAt
       updatedAt
       type
+      publishedVersion {
+        id
+        sequence
+      }
       steps {
         id
         name
@@ -39,6 +43,10 @@ export const getContent = gql`
         environment {
           id
           name
+        }
+        publishedVersion {
+          id
+          sequence
         }
       }
     }

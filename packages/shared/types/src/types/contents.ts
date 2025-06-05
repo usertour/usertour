@@ -65,6 +65,8 @@ export type ContentOnEnvironment = {
   publishedAt: Date;
 
   publishedVersionId: string;
+
+  publishedVersion: ContentVersion;
 };
 
 export type Content = {
@@ -78,6 +80,7 @@ export type Content = {
       scale: number;
     };
   };
+  publishedVersion?: ContentVersion;
   buildUrl?: string;
   published?: boolean;
   createdAt?: string;
