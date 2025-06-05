@@ -23,3 +23,9 @@ export const isPublishedInAllEnvironments = (
     ? isPublishedInAllEnvironments
     : isPublishedInOneEnvironment;
 };
+
+export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
+  return content?.contentOnEnvironments
+    ? content?.contentOnEnvironments?.length > 0
+    : content?.published && content?.publishedVersionId;
+};

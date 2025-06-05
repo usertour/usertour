@@ -11,7 +11,8 @@ import { ReactNode, useState } from 'react';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
-import { useAppContext } from '@/contexts/app-context';
+import { isPublishedAtLeastOneEnvironment } from '@usertour-ui/shared-utils';
+
 type ContentEditDropdownMenuProps = {
   content: Content;
   children: ReactNode;
@@ -23,13 +24,8 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
   const [openUnpublish, setOpenUnpublish] = useState(false);
-  const { environment } = useAppContext();
 
-  const isPublished =
-    content?.contentOnEnvironments?.find(
-      (item) => item.published && item.environment.id === environment?.id,
-    ) ||
-    (content?.published && content?.environmentId === environment?.id);
+  const isPublished = isPublishedAtLeastOneEnvironment(content);
 
   const handleOnClick = () => {
     setOpenDelete(true);
