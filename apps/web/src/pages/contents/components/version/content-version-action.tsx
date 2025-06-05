@@ -73,19 +73,20 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         versionId={version.id}
         open={openPublish}
         onOpenChange={setOpenPublish}
-        onSubmit={() => {
+        onSubmit={async () => {
+          await refetch();
+          await refetchVersionList();
           setOpenPublish(false);
-          refetch();
         }}
       />
       <ContentRestoreForm
         version={version}
         open={openRetore}
         onOpenChange={setOpenRestore}
-        onSubmit={() => {
+        onSubmit={async () => {
+          await refetch();
+          await refetchVersionList();
           setOpenRestore(false);
-          refetch();
-          refetchVersionList();
         }}
       />
     </>

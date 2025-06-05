@@ -114,7 +114,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       const publishedVersion = getPublishedVersionInfo(env.id);
       return publishedVersion?.id === version?.id;
     });
-  }, [environmentList, version?.id]);
+  }, [environmentList, version?.id, content?.contentOnEnvironments, content?.publishedVersion]);
 
   const handleOnSubmit = useCallback(async () => {
     if (!environmentList) {
