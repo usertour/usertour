@@ -73,7 +73,7 @@ export const ContentDetailHeader = () => {
   const [_, setSearchParams] = useSearchParams();
   if (!contentType || !content) return null;
 
-  const isDisabled = isPublishedInAllEnvironments(content, environmentList, version, environment);
+  const isDisabled = isPublishedInAllEnvironments(content, environmentList, version);
 
   const handleBack = () => {
     navigator(`/env/${environment?.id}/${contentType}`);

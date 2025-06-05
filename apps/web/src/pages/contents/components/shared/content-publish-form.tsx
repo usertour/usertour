@@ -54,22 +54,30 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     }
   }, [open]);
 
-  const getPublishedVersionInfo = (envId: string) => {
-    if (content?.contentOnEnvironments && content?.contentOnEnvironments.length > 0) {
-      const envContent = content?.contentOnEnvironments?.find(
-        (env) => env.environment.id === envId,
-      );
-      if (envContent?.published) {
-        return envContent?.publishedVersion;
+  const getPublishedVersionInfo = React.useCallback(
+    (envId: string) => {
+      if (content?.contentOnEnvironments && content?.contentOnEnvironments.length > 0) {
+        const envContent = content?.contentOnEnvironments?.find(
+          (env) => env.environment.id === envId,
+        );
+        if (envContent?.published) {
+          return envContent?.publishedVersion;
+        }
+      } else {
+        if (content?.published && content?.publishedVersion && content.environmentId === envId) {
+          return content?.publishedVersion;
+        }
       }
-    } else {
-      if (content?.published && content?.publishedVersion) {
-        return content?.publishedVersion;
-      }
-    }
 
-    return null;
-  };
+      return null;
+    },
+    [
+      content?.contentOnEnvironments,
+      content?.published,
+      content?.publishedVersion,
+      content?.environmentId,
+    ],
+  );
 
   const showToast = (isSuccess: boolean, message?: string) => {
     const variant = isSuccess ? 'default' : 'destructive';

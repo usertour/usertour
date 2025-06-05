@@ -5,7 +5,6 @@ export const isPublishedInAllEnvironments = (
   content: Content | null,
   environmentList: Environment[] | null,
   version: ContentVersion | null,
-  environment: Environment | null,
 ) => {
   const isPublishedInAllEnvironments = environmentList?.every((env: Environment) =>
     content?.contentOnEnvironments?.find(
@@ -17,15 +16,20 @@ export const isPublishedInAllEnvironments = (
   const isPublishedInOneEnvironment =
     content?.published &&
     content?.publishedVersionId === version?.id &&
-    content?.environmentId === environment?.id;
+    environmentList &&
+    environmentList?.length === 1;
 
   return content?.contentOnEnvironments && content?.contentOnEnvironments.length > 0
-    ? isPublishedInAllEnvironments
-    : isPublishedInOneEnvironment;
+    ? Boolean(isPublishedInAllEnvironments)
+    : Boolean(isPublishedInOneEnvironment);
 };
 
 export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
-  return content?.contentOnEnvironments
-    ? content?.contentOnEnvironments?.length > 0
-    : content?.published && content?.publishedVersionId;
+  if (content?.contentOnEnvironments && content?.contentOnEnvironments?.length > 0) {
+    return true;
+  }
+  if (content?.published && content?.publishedVersionId) {
+    return true;
+  }
+  return false;
 };

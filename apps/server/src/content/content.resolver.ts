@@ -198,6 +198,7 @@ export class ContentResolver {
           },
           {
             contentOnEnvironments: {
+              some: {},
               none: {
                 environmentId,
               },

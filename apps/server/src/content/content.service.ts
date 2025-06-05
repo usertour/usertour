@@ -368,8 +368,8 @@ export class ContentService {
         },
       });
 
-      // Delete ContentOnEnvironment record
-      await tx.contentOnEnvironment.delete({
+      // Check if ContentOnEnvironment record exists before deleting
+      const contentOnEnv = await tx.contentOnEnvironment.findUnique({
         where: {
           environmentId_contentId: {
             environmentId: environmentId,
@@ -377,6 +377,17 @@ export class ContentService {
           },
         },
       });
+
+      if (contentOnEnv) {
+        await tx.contentOnEnvironment.delete({
+          where: {
+            environmentId_contentId: {
+              environmentId: environmentId,
+              contentId: content.id,
+            },
+          },
+        });
+      }
 
       return content;
     });

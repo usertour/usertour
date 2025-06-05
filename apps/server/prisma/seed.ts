@@ -69,7 +69,7 @@ async function main() {
         environment: true,
       },
     });
-    console.log(`Found ${contents.length} contents to update`);
+    console.log(`Found ${contents.length} empty projectId contents to update`);
 
     for (const [index, content] of contents.entries()) {
       if (!content.environment?.projectId) {
@@ -85,6 +85,42 @@ async function main() {
       });
       if (index % 100 === 0) {
         console.log(`Processed ${index + 1}/${contents.length} contents`);
+      }
+    }
+
+    const contents2 = await prisma.content.findMany({
+      where: {
+        published: true,
+        publishedVersionId: {
+          not: null,
+        },
+        contentOnEnvironments: {
+          none: {},
+        },
+      },
+    });
+    console.log(
+      `Found ${contents2.length} published contents without contentOnEnvironments records to update`,
+    );
+
+    for (const [index, content] of contents2.entries()) {
+      try {
+        await prisma.contentOnEnvironment.create({
+          data: {
+            environmentId: content.environmentId,
+            contentId: content.id,
+            published: true,
+            publishedAt: content.publishedAt,
+            publishedVersionId: content.publishedVersionId,
+          },
+        });
+        if (index % 100 === 0) {
+          console.log(
+            `Processed ${index + 1}/${contents2.length} published contents without contentOnEnvironments records`,
+          );
+        }
+      } catch (error) {
+        console.error(`Failed to create contentOnEnvironment for content ${content.id}:`, error);
       }
     }
 

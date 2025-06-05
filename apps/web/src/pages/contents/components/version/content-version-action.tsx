@@ -24,19 +24,14 @@ type ContentVersionActionProps = {
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
   const { refetch, content } = useContentDetailContext();
-  const { isViewOnly, environment } = useAppContext();
+  const { isViewOnly } = useAppContext();
 
   const { refetch: refetchVersionList } = useContentVersionListContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
   const { environmentList } = useEnvironmentListContext();
 
-  const isDisabledPublish = isPublishedInAllEnvironments(
-    content,
-    environmentList,
-    version,
-    environment,
-  );
+  const isDisabledPublish = isPublishedInAllEnvironments(content, environmentList, version);
 
   return (
     <>
