@@ -15,6 +15,9 @@ import { useState } from 'react';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
+import { isPublishedInAllEnvironments } from '@usertour-ui/shared-utils';
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+
 type ContentVersionActionProps = {
   version: ContentVersion;
 };
@@ -26,17 +29,14 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { refetch: refetchVersionList } = useContentVersionListContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
+  const { environmentList } = useEnvironmentListContext();
 
-  const isDisabledPublish =
-    !!content?.contentOnEnvironments?.find(
-      (item) =>
-        item.published &&
-        item.publishedVersionId === version.id &&
-        item.environment.id === environment?.id,
-    ) ||
-    (content?.published &&
-      content?.publishedVersionId === version.id &&
-      content?.environmentId === environment?.id);
+  const isDisabledPublish = isPublishedInAllEnvironments(
+    content,
+    environmentList,
+    version,
+    environment,
+  );
 
   return (
     <>

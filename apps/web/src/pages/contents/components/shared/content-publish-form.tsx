@@ -36,7 +36,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { environmentList } = useEnvironmentListContext();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const [version, setVersion] = React.useState<ContentVersion>();
-  const { content } = useContentDetailContext();
+  const { content, refetch } = useContentDetailContext();
 
   const contentVersion = useQuery(getContentVersion, {
     variables: { versionId },
@@ -148,6 +148,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
           : 'Some environments failed to publish.',
       );
 
+      await refetch();
       onSubmit(allSuccess);
       setIsLoading(false);
     } catch (error) {

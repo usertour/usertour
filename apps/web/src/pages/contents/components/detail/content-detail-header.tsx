@@ -13,7 +13,7 @@ import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRenameForm } from '../shared/content-rename-form';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@usertour-ui/types';
+import { isPublishedInAllEnvironments } from '@usertour-ui/shared-utils';
 
 const navigations = [
   {
@@ -73,22 +73,7 @@ export const ContentDetailHeader = () => {
   const [_, setSearchParams] = useSearchParams();
   if (!contentType || !content) return null;
 
-  const isPublishedInAllEnvironments = environmentList?.every((env: Environment) =>
-    content?.contentOnEnvironments?.find(
-      (item) =>
-        item.published && item.publishedVersionId === version?.id && item.environment.id === env.id,
-    ),
-  );
-
-  const isPublishedInOneEnvironment =
-    content?.published &&
-    content?.publishedVersionId === version?.id &&
-    content?.environmentId === environment?.id;
-
-  const isDisabled =
-    content?.contentOnEnvironments && content?.contentOnEnvironments.length > 0
-      ? isPublishedInAllEnvironments
-      : isPublishedInOneEnvironment;
+  const isDisabled = isPublishedInAllEnvironments(content, environmentList, version, environment);
 
   const handleBack = () => {
     navigator(`/env/${environment?.id}/${contentType}`);
