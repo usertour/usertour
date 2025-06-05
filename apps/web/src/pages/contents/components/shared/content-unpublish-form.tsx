@@ -30,7 +30,7 @@ interface ContentUnpublishFormProps {
 }
 
 export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
-  const { onSuccess, content, open, onOpenChange, name } = props;
+  const { onSuccess, content, open, onOpenChange } = props;
   const [mutation] = useMutation(unpublishedContentVersion);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -135,7 +135,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
       toast({
         variant: allSuccess ? 'default' : 'destructive',
         title: allSuccess
-          ? `The ${name} has been successfully unpublished from ${envNames}`
+          ? `The ${content?.type} has been successfully unpublished from ${envNames}`
           : 'Some environments failed to unpublish',
       });
 
@@ -155,10 +155,10 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Unpublish flow</DialogTitle>
+          <DialogTitle>Unpublish {content?.type}</DialogTitle>
           <DialogDescription>
-            When you unpublish a flow, users will no longer be able to view it. <br />
-            Select the environments you want to unpublish the flow from.
+            When you unpublish a {content?.type}, users will no longer be able to view it. <br />
+            Select the environments you want to unpublish the {content?.type} from.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">

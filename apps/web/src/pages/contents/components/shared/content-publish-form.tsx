@@ -144,7 +144,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       showToast(
         allSuccess,
         allSuccess
-          ? `The flow published successfully to ${envNames}.`
+          ? `The ${content?.type} published successfully to ${envNames}.`
           : 'Some environments failed to publish.',
       );
 
@@ -161,7 +161,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Publish flow</DialogTitle>
+          <DialogTitle>Publish {content?.type}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">

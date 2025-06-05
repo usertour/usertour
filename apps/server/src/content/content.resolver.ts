@@ -184,41 +184,43 @@ export class ContentResolver {
 
     conditions.environment = { project: { id: env.project.id } };
 
-    if (!published) {
-      conditions.OR = [
-        {
-          environmentId,
-          published: false,
-          contentOnEnvironments: { none: {} },
-        },
-        {
-          environmentId: { not: environmentId },
-          contentOnEnvironments: { none: {} },
-        },
-        {
-          contentOnEnvironments: {
-            none: {
-              environmentId,
+    if (published !== undefined) {
+      if (!published) {
+        conditions.OR = [
+          {
+            environmentId,
+            published: false,
+            contentOnEnvironments: { none: {} },
+          },
+          {
+            environmentId: { not: environmentId },
+            contentOnEnvironments: { none: {} },
+          },
+          {
+            contentOnEnvironments: {
+              none: {
+                environmentId,
+              },
             },
           },
-        },
-      ];
-    } else {
-      conditions.OR = [
-        {
-          environmentId,
-          published: true,
-          contentOnEnvironments: { none: {} },
-        },
-        {
-          contentOnEnvironments: {
-            some: {
-              environmentId,
-              published: true,
+        ];
+      } else {
+        conditions.OR = [
+          {
+            environmentId,
+            published: true,
+            contentOnEnvironments: { none: {} },
+          },
+          {
+            contentOnEnvironments: {
+              some: {
+                environmentId,
+                published: true,
+              },
             },
           },
-        },
-      ];
+        ];
+      }
     }
 
     if (conditions.name) {
