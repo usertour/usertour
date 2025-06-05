@@ -21,7 +21,15 @@ export class ContentService {
 
   async createContent(input: ContentInput) {
     const { steps = [], name, buildUrl, environmentId, config, data, themeId, type } = input;
+
     try {
+      const environment = await this.prisma.environment.findUnique({
+        where: { id: environmentId },
+      });
+      if (!environment) {
+        throw new ParamsError();
+      }
+
       return await this.prisma.$transaction(async (tx) => {
         const content = await tx.content.create({
           data: {
@@ -29,6 +37,7 @@ export class ContentService {
             buildUrl,
             type,
             environmentId,
+            projectId: environment.projectId,
           },
         });
         const version = await tx.version.create({
@@ -385,6 +394,7 @@ export class ContentService {
   async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {
     const duplicateContent = await this.prisma.content.findUnique({
       where: { id: contentId },
+      include: { environment: true },
     });
     if (!duplicateContent || duplicateContent.deleted) {
       throw new ParamsError();
@@ -415,6 +425,7 @@ export class ContentService {
             buildUrl: duplicateContent.buildUrl,
             environmentId: targetEnvironmentId || duplicateContent.environmentId,
             type: duplicateContent.type,
+            projectId: duplicateContent.projectId,
           },
         });
 
