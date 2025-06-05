@@ -47,16 +47,19 @@ export class Socket extends Evented {
 
   private setupErrorHandling(): void {
     this.socket.on('connect_error', (error) => {
-      this.trigger('error', error);
+      console.error('[usertour] Socket connection error:', error);
+      // this.trigger('error', error);
     });
   }
 
-  private async emitWithTimeout<T>(event: string, data: any): Promise<T> {
+  private async emitWithTimeout<T>(event: string, data: any): Promise<T | undefined> {
     try {
       return await this.socket.emitWithAck(event, data);
     } catch (error) {
-      this.trigger('error', error);
-      throw error;
+      console.error(`[usertour] Error emitting event ${event}:`, error);
+      // this.trigger('error', error);
+      // throw error;
+      return undefined;
     }
   }
 
