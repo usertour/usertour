@@ -599,7 +599,7 @@ export class ContentService {
 
   async getContentWithRelations(
     id: string,
-    environmentId: string,
+    projectId: string,
     include?: {
       editedVersion?: boolean;
       publishedVersion?: boolean;
@@ -608,7 +608,7 @@ export class ContentService {
     return await this.prisma.content.findFirst({
       where: {
         id,
-        environmentId,
+        projectId,
       },
       include: {
         editedVersion: include?.editedVersion ?? false,
@@ -619,14 +619,14 @@ export class ContentService {
 
   async getContentVersionWithRelations(
     versionId: string,
-    environmentId: string,
+    projectId: string,
     include?: Prisma.VersionInclude,
   ) {
     return await this.prisma.version.findFirst({
       where: {
         id: versionId,
         content: {
-          environmentId,
+          projectId,
         },
       },
       include: {
@@ -637,7 +637,7 @@ export class ContentService {
   }
 
   async listContentVersionsWithRelations(
-    environmentId: string,
+    projectId: string,
     contentId: string,
     paginationArgs: {
       first?: number;
@@ -652,7 +652,7 @@ export class ContentService {
       where: {
         contentId,
         content: {
-          environmentId,
+          projectId,
         },
       },
       include: {
@@ -670,7 +670,7 @@ export class ContentService {
   }
 
   async listContentWithRelations(
-    environmentId: string,
+    projectId: string,
     paginationArgs: {
       first?: number;
       last?: number;
@@ -681,7 +681,7 @@ export class ContentService {
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
   ) {
     const baseQuery = {
-      where: { environmentId },
+      where: { projectId },
       include,
       orderBy,
     };

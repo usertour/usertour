@@ -1127,7 +1127,7 @@ export class AnalyticsService {
     },
   ) {
     return await this.prisma.bizSession.findUnique({
-      where: { id, content: { environmentId } },
+      where: { id, environmentId },
       include,
     });
   }
@@ -1147,9 +1147,7 @@ export class AnalyticsService {
   ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
     const where: Prisma.BizSessionWhereInput = {
       contentId,
-      content: {
-        environmentId,
-      },
+      environmentId,
       bizUser: userId ? { externalId: userId } : undefined,
     };
 
@@ -1171,7 +1169,7 @@ export class AnalyticsService {
 
   async deleteContentSessionWithRelations(id: string, environmentId: string) {
     const session = await this.prisma.bizSession.findUnique({
-      where: { id, content: { environmentId } },
+      where: { id, environmentId },
     });
 
     if (!session) {
