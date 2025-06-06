@@ -383,8 +383,9 @@ input CreatSegment {
   columns: JSON
   data: JSON
   dataType: SegmentDataType!
-  environmentId: String!
+  environmentId: String
   name: String
+  projectId: String
 }
 
 input CreateAccessTokenInput {
@@ -716,7 +717,7 @@ type Query {
   listContentVersions(contentId: String!): [Version!]!
   listEvents(projectId: String!): [Events!]!
   listLocalizations(projectId: String!): [Localization!]!
-  listSegment(environmentId: String!): [Segment!]!
+  listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
   me: User!
@@ -775,9 +776,10 @@ type Segment {
   createdAt: DateTime!
   data: JSON
   dataType: SegmentDataType!
-  environmentId: String!
+  environmentId: String
   id: ID!
   name: String
+  projectId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

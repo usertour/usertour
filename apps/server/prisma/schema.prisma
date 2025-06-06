@@ -112,6 +112,7 @@ model Project {
   localizations  Localization[]
   invites        Invite[]
   contents       Content[]
+  segments       Segment[]
 }
 
 model UserOnProject {
@@ -380,8 +381,10 @@ model Segment {
   name                  String                @default("")
   bizType               Int                   @default(1)
   dataType              Int                   @default(1)
-  environment           Environment           @relation(fields: [environmentId], references: [id])
-  environmentId         String
+  environment           Environment?          @relation(fields: [environmentId], references: [id])
+  environmentId         String?
+  project               Project?              @relation(fields: [projectId], references: [id])
+  projectId             String?
   columns               Json?                 @db.JsonB
   data                  Json?                 @db.JsonB
   deleted               Boolean               @default(false)

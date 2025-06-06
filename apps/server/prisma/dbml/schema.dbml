@@ -87,6 +87,7 @@ Table Project {
   localizations Localization [not null]
   invites Invite [not null]
   contents Content [not null]
+  segments Segment [not null]
 }
 
 Table UserOnProject {
@@ -361,8 +362,10 @@ Table Segment {
   name String [not null, default: '']
   bizType Int [not null, default: 1]
   dataType Int [not null, default: 1]
-  environment Environment [not null]
-  environmentId String [not null]
+  environment Environment
+  environmentId String
+  project Project
+  projectId String
   columns Json
   data Json
   deleted Boolean [not null, default: false]
@@ -613,6 +616,8 @@ Ref: BizUserOnCompany.bizUserId > BizUser.id
 Ref: BizCompany.environmentId > Environment.id
 
 Ref: Segment.environmentId > Environment.id
+
+Ref: Segment.projectId > Project.id
 
 Ref: BizUserOnSegment.segmentId > Segment.id
 

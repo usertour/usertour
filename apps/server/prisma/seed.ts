@@ -2,6 +2,30 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+enum SegmentDataType {
+  ALL = 1,
+  CONDITION = 2,
+  MANUAL = 3,
+}
+
+enum SegmentBizType {
+  USER = 1,
+  COMPANY = 2,
+}
+
+const usedSegmentIds = [
+  'cm7w4yt8m05vddj0o9o2aov4w',
+  'cm86pmvff052q2ulka6rkyoyr',
+  'cm8rmc7ht0kgwjdriyoh1gktc',
+  'cm8rxwjyd0nhgjdritflga0ac',
+  'cm93rer4a08wevqhtl0v8btiu',
+  'cm99r4wc60hsdy2bn1a37bwpz',
+  'cm9h9bed01982y2bn3kl3q1eu',
+  'cm9h9e5hq19fby2bnd3r2u7b7',
+  'cmagcsv7i000314e19yurmwtx',
+  'cmah089ew00n91485mry5mdls',
+];
+
 async function main() {
   console.log('Starting data backfill...');
 
@@ -28,9 +52,7 @@ async function main() {
           environmentId: bizSession.content.environmentId,
         },
       });
-      if (index % 100 === 0) {
-        console.log(`Processed ${index + 1}/${bizSessions.length} bizSessions`);
-      }
+      console.log(`Processed ${index + 1}/${bizSessions.length} bizSessions`);
     }
 
     // Step 2: Backfill bizAnswer.environmentId from related content
@@ -56,9 +78,7 @@ async function main() {
           environmentId: bizSession.environmentId,
         },
       });
-      if (index % 100 === 0) {
-        console.log(`Processed ${index + 1}/${bizAnswers.length} bizAnswers`);
-      }
+      console.log(`Processed ${index + 1}/${bizAnswers.length} bizAnswers`);
     }
 
     // Step 3: Backfill content.projectId from related environment
@@ -83,9 +103,7 @@ async function main() {
           projectId: content.environment.projectId,
         },
       });
-      if (index % 100 === 0) {
-        console.log(`Processed ${index + 1}/${contents.length} contents`);
-      }
+      console.log(`Processed ${index + 1}/${contents.length} contents`);
     }
 
     const contents2 = await prisma.content.findMany({
@@ -114,11 +132,9 @@ async function main() {
             publishedVersionId: content.publishedVersionId,
           },
         });
-        if (index % 100 === 0) {
-          console.log(
-            `Processed ${index + 1}/${contents2.length} published contents without contentOnEnvironments records`,
-          );
-        }
+        console.log(
+          `Processed ${index + 1}/${contents2.length} published contents without contentOnEnvironments records`,
+        );
       } catch (error) {
         console.error(`Failed to create contentOnEnvironment for content ${content.id}:`, error);
       }
@@ -127,6 +143,123 @@ async function main() {
     console.log('\nData backfill completed successfully!');
   } catch (error) {
     console.error('Error during data backfill:', error);
+  }
+
+  const segments = await prisma.segment.findMany({
+    where: { projectId: null },
+    include: { environment: true },
+  });
+  console.log(`Found ${segments.length} segments without projectId to update`);
+
+  for (const [index, segment] of segments.entries()) {
+    await prisma.segment.update({
+      where: { id: segment.id },
+      data: { projectId: segment.environment.projectId },
+    });
+    console.log(`Processed ${index + 1}/${segments.length} segments for projectId backfill`);
+  }
+
+  const projects = await prisma.project.findMany({
+    include: { segments: true },
+  });
+  console.log(`Found ${projects.length} projects to process for segment cleanup`);
+
+  for (const project of projects) {
+    console.log(`\nProcessing project ${project.id}...`);
+
+    const bizUserSegments = project.segments.filter(
+      (segment) =>
+        segment.bizType === SegmentBizType.USER && segment.dataType === SegmentDataType.ALL,
+    );
+    console.log(`Found ${bizUserSegments.length} USER segments with ALL data type`);
+
+    const bizCompanySegments = project.segments.filter(
+      (segment) =>
+        segment.bizType === SegmentBizType.COMPANY && segment.dataType === SegmentDataType.ALL,
+    );
+    console.log(`Found ${bizCompanySegments.length} COMPANY segments with ALL data type`);
+
+    if (bizUserSegments.length > 1) {
+      const usedUserSegments = bizUserSegments.filter((segment) =>
+        usedSegmentIds.includes(segment.id),
+      );
+      console.log(`Found ${usedUserSegments.length} used USER segments`);
+
+      if (usedUserSegments.length > 0) {
+        // Keep all used segments, delete others
+        const segmentsToDelete = bizUserSegments
+          .filter((segment) => !usedSegmentIds.includes(segment.id))
+          .map((segment) => segment.id);
+
+        if (segmentsToDelete.length > 0) {
+          console.log(`Deleting ${segmentsToDelete.length} unused USER segments`);
+          await prisma.segment.deleteMany({
+            where: {
+              projectId: project.id,
+              bizType: SegmentBizType.USER,
+              dataType: SegmentDataType.ALL,
+              id: { in: segmentsToDelete },
+            },
+          });
+        }
+      } else {
+        // Keep first segment, delete others
+        const segmentsToDelete = bizUserSegments.slice(1).map((segment) => segment.id);
+
+        if (segmentsToDelete.length > 0) {
+          console.log(`Deleting ${segmentsToDelete.length} USER segments, keeping first one`);
+          await prisma.segment.deleteMany({
+            where: {
+              projectId: project.id,
+              bizType: SegmentBizType.USER,
+              dataType: SegmentDataType.ALL,
+              id: { in: segmentsToDelete },
+            },
+          });
+        }
+      }
+    }
+
+    if (bizCompanySegments.length > 1) {
+      const usedCompanySegments = bizCompanySegments.filter((segment) =>
+        usedSegmentIds.includes(segment.id),
+      );
+      console.log(`Found ${usedCompanySegments.length} used COMPANY segments`);
+
+      if (usedCompanySegments.length > 0) {
+        // Keep all used segments, delete others
+        const segmentsToDelete = bizCompanySegments
+          .filter((segment) => !usedSegmentIds.includes(segment.id))
+          .map((segment) => segment.id);
+
+        if (segmentsToDelete.length > 0) {
+          console.log(`Deleting ${segmentsToDelete.length} unused COMPANY segments`);
+          await prisma.segment.deleteMany({
+            where: {
+              projectId: project.id,
+              bizType: SegmentBizType.COMPANY,
+              dataType: SegmentDataType.ALL,
+              id: { in: segmentsToDelete },
+            },
+          });
+        }
+      } else {
+        // Keep first segment, delete others
+        const segmentsToDelete = bizCompanySegments.slice(1).map((segment) => segment.id);
+
+        if (segmentsToDelete.length > 0) {
+          console.log(`Deleting ${segmentsToDelete.length} COMPANY segments, keeping first one`);
+          await prisma.segment.deleteMany({
+            where: {
+              projectId: project.id,
+              bizType: SegmentBizType.COMPANY,
+              dataType: SegmentDataType.ALL,
+              id: { in: segmentsToDelete },
+            },
+          });
+        }
+      }
+    }
   }
 
   // Step 4: Create initial user if none exists
