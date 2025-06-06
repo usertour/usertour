@@ -127,9 +127,9 @@ async function main() {
           data: {
             environmentId: content.environmentId,
             contentId: content.id,
-            published: true,
-            publishedAt: content.publishedAt,
-            publishedVersionId: content.publishedVersionId,
+            published: content.published ?? false,
+            publishedAt: content.publishedAt ?? undefined,
+            publishedVersionId: content.publishedVersionId ?? undefined,
           },
         });
         console.log(
@@ -152,6 +152,10 @@ async function main() {
   console.log(`Found ${segments.length} segments without projectId to update`);
 
   for (const [index, segment] of segments.entries()) {
+    if (!segment.environment) {
+      console.warn(`Skipping segment ${segment.id}: No environment found`);
+      continue;
+    }
     await prisma.segment.update({
       where: { id: segment.id },
       data: { projectId: segment.environment.projectId },
