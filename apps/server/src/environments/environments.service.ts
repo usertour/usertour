@@ -47,9 +47,24 @@ export class EnvironmentsService {
   }
 
   async delete(id: string) {
-    return await this.prisma.environment.update({
-      where: { id },
-      data: { deleted: true },
+    return await this.prisma.$transaction(async (tx) => {
+      // Check if there are any ContentOnEnvironment records
+      const contentCount = await tx.contentOnEnvironment.count({
+        where: { environmentId: id },
+      });
+
+      // Only delete ContentOnEnvironment records if they exist
+      if (contentCount > 0) {
+        await tx.contentOnEnvironment.deleteMany({
+          where: { environmentId: id },
+        });
+      }
+
+      // Update environment to mark as deleted
+      return await tx.environment.update({
+        where: { id },
+        data: { deleted: true },
+      });
     });
   }
 

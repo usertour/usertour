@@ -29,10 +29,10 @@ export class OpenAPIContentSessionsController {
   @ApiResponse({ status: 404, description: 'Content session not found' })
   async getContentSession(
     @Param('id') id: string,
-    @EnvironmentId() environmentId: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query() query: GetContentSessionQueryDto,
   ): Promise<ContentSession> {
-    return await this.openAPIContentSessionsService.getContentSession(id, environmentId, query);
+    return await this.openAPIContentSessionsService.getContentSession(id, environment, query);
   }
 
   @Get()
@@ -69,8 +69,8 @@ export class OpenAPIContentSessionsController {
   @ApiResponse({ status: 404, description: 'Content session not found' })
   async endContentSession(
     @Param('id') id: string,
-    @EnvironmentId() environmentId: string,
+    @EnvironmentDecorator() environment: Environment,
   ): Promise<ContentSession> {
-    return await this.openAPIContentSessionsService.endContentSession(id, environmentId);
+    return await this.openAPIContentSessionsService.endContentSession(id, environment);
   }
 }

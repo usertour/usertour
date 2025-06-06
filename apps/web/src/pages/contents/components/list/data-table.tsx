@@ -36,7 +36,13 @@ import { useAppContext } from '@/contexts/app-context';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, environment } = useAppContext();
+
+  const isPublished =
+    content?.contentOnEnvironments?.find(
+      (item) => item.published && item.environment.id === environment?.id,
+    ) ||
+    (content?.published && content?.environmentId === environment?.id);
 
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
@@ -58,13 +64,13 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
       <div className="grow flex flex-row text-sm items-center space-x-1 text-xs">
         <span>Status:</span>
         <div className="flex flex-row space-x-1 items-center ">
-          {content.published && (
+          {isPublished && (
             <>
               <CircleIcon className="w-3 h-3 text-success" />
               <span>Published</span>
             </>
           )}
-          {!content.published && (
+          {!isPublished && (
             <>
               <CircleIcon className="w-3 h-3 text-slate-300" />
               <span>Unpublished</span>
@@ -145,6 +151,7 @@ const ContentTableItem = ({
   const containerRef = useRef(null);
   const [currentStep, setCurrentStep] = useState<Step | undefined>();
   const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
+  const { environment } = useAppContext();
 
   const { themeList } = useThemeListContext();
 
@@ -181,7 +188,7 @@ const ContentTableItem = ({
     (e: React.MouseEvent<HTMLDivElement>) => {
       const el = containerRef.current as any;
       if (el?.contains(e.target)) {
-        navigate(`/env/${content.environmentId}/${contentType}/${content.id}/detail`);
+        navigate(`/env/${environment?.id}/${contentType}/${content.id}/detail`);
       }
     },
     [content],

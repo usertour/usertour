@@ -3,7 +3,6 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { OpenAPIContentService } from './content.service';
 import { Content, ContentVersion } from '../models/content.model';
-import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import {
   GetContentQueryDto,
   ListContentQueryDto,
@@ -33,10 +32,10 @@ export class OpenAPIContentController {
   @ApiResponse({ status: 404, description: 'Content not found.' })
   async getContent(
     @Param('id') id: string,
-    @EnvironmentId() environmentId: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query() query: GetContentQueryDto,
   ): Promise<Content> {
-    return this.openAPIContentService.getContent(id, environmentId, query);
+    return this.openAPIContentService.getContent(id, environment, query);
   }
 
   @Get('v1/content')
@@ -57,10 +56,10 @@ export class OpenAPIContentController {
   @ApiResponse({ status: 404, description: 'Content version not found' })
   async getContentVersion(
     @Param('id') id: string,
-    @EnvironmentId() environmentId: string,
+    @EnvironmentDecorator() environment: Environment,
     @Query() query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
-    return this.openAPIContentService.getContentVersion(id, environmentId, query);
+    return this.openAPIContentService.getContentVersion(id, environment, query);
   }
 
   @Get('v1/content-versions')
