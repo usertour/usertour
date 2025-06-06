@@ -49,7 +49,7 @@ async function main() {
       await prisma.bizSession.update({
         where: { id: bizSession.id },
         data: {
-          environmentId: bizSession.content.environmentId,
+          environmentId: bizSession.content?.environmentId ?? undefined,
         },
       });
       console.log(`Processed ${index + 1}/${bizSessions.length} bizSessions`);
@@ -75,7 +75,7 @@ async function main() {
       await prisma.bizAnswer.update({
         where: { id: bizAnswer.id },
         data: {
-          environmentId: bizSession.environmentId,
+          environmentId: bizSession?.environmentId ?? undefined,
         },
       });
       console.log(`Processed ${index + 1}/${bizAnswers.length} bizAnswers`);
@@ -100,7 +100,7 @@ async function main() {
       await prisma.content.update({
         where: { id: content.id },
         data: {
-          projectId: content.environment.projectId,
+          projectId: content.environment?.projectId ?? undefined,
         },
       });
       console.log(`Processed ${index + 1}/${contents.length} contents`);
@@ -125,7 +125,7 @@ async function main() {
       try {
         await prisma.contentOnEnvironment.create({
           data: {
-            environmentId: content.environmentId,
+            environmentId: content.environmentId ?? undefined,
             contentId: content.id,
             published: content.published ?? false,
             publishedAt: content.publishedAt ?? undefined,
