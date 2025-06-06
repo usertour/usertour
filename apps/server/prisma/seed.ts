@@ -123,13 +123,22 @@ async function main() {
 
     for (const [index, content] of contents2.entries()) {
       try {
+        if (!content.environmentId) {
+          console.warn(`Skipping content ${content.id}: No environmentId found`);
+          continue;
+        }
+
+        if (!content.publishedVersionId) {
+          console.warn(`Skipping content ${content.id}: No publishedVersionId found`);
+          continue;
+        }
+
         await prisma.contentOnEnvironment.create({
           data: {
-            environmentId: content.environmentId ?? undefined,
+            environmentId: content.environmentId,
             contentId: content.id,
             published: content.published ?? false,
-            publishedAt: content.publishedAt ?? undefined,
-            publishedVersionId: content.publishedVersionId ?? undefined,
+            publishedVersionId: content.publishedVersionId,
           },
         });
         console.log(
