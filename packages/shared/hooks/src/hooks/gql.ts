@@ -260,13 +260,14 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
 };
 
 export const useQueryContentQuestionAnalyticsQuery = (
+  environmentId: string,
   contentId: string,
   startDate: string,
   endDate: string,
   timezone: string,
 ) => {
   const { data, loading, error, refetch } = useQuery(queryContentQuestionAnalytics, {
-    variables: { contentId, startDate, endDate, timezone },
+    variables: { contentId, startDate, endDate, timezone, environmentId },
   });
   const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
   return { questionAnalytics, loading, error, refetch };

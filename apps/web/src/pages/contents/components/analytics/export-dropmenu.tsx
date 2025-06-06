@@ -33,6 +33,7 @@ import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useAppContext } from '@/contexts/app-context';
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
   if (!date) return '';
@@ -142,12 +143,14 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { eventList } = useEventListContext();
   const { content } = useContentDetailContext();
   const { attributeList } = useAttributeListContext();
+  const { environment } = useAppContext();
   const { data } = useQuery(getContentVersion, {
     variables: { versionId: content?.publishedVersionId || content?.editedVersionId },
   });
   const version = data?.getContentVersion as ContentVersion;
 
   const query = {
+    environmentId: environment?.id ?? '',
     contentId,
     startDate: dateRange?.from?.toISOString(),
     endDate: dateRange?.to?.toISOString(),

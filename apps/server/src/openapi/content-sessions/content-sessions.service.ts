@@ -49,7 +49,7 @@ export class OpenAPIContentSessionsService {
 
     const version = await this.contentService.getContentVersionWithRelations(
       session.versionId,
-      session.content.environmentId,
+      session.content.projectId,
       { steps: true },
     );
     if (!version || version.steps.length === 0) {
@@ -99,13 +99,13 @@ export class OpenAPIContentSessionsService {
 
   async getContentSession(
     id: string,
-    environmentId: string,
+    environment: Environment,
     query?: GetContentSessionQueryDto,
   ): Promise<ContentSession> {
     const { expand } = query;
     const session = await this.analyticsService.getContentSessionWithRelations(
       id,
-      environmentId,
+      environment.id,
       this.defaultInclude,
     );
 
@@ -160,10 +160,10 @@ export class OpenAPIContentSessionsService {
     };
   }
 
-  async endContentSession(id: string, environmentId: string) {
+  async endContentSession(id: string, environment: Environment) {
     const session = await this.analyticsService.getContentSessionWithRelations(
       id,
-      environmentId,
+      environment.id,
       this.defaultInclude,
     );
 
@@ -176,7 +176,7 @@ export class OpenAPIContentSessionsService {
       throw new ContentSessionNotFoundError();
     }
 
-    return await this.getContentSession(id, environmentId);
+    return await this.getContentSession(id, environment, {});
   }
 
   private async mapToContentSession(

@@ -4,6 +4,7 @@ import { queryBizSession } from '@usertour-ui/gql';
 import { BizSession, PageInfo, Pagination } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useAnalyticsContext } from './analytics-context';
+import { useAppContext } from './app-context';
 
 const defaultPagination = {
   pageIndex: 0,
@@ -46,11 +47,13 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
   const { dateRange } = useAnalyticsContext();
+  const { environment } = useAppContext();
 
   const { data, refetch } = useQuery(queryBizSession, {
     variables: {
       ...requestPagination,
       query: {
+        environmentId: environment?.id ?? '',
         contentId,
         startDate: dateRange?.from?.toISOString(),
         endDate: dateRange?.to?.toISOString(),

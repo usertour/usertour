@@ -39,11 +39,11 @@ export class OpenAPIContentService {
 
   async getContent(
     id: string,
-    environmentId: string,
+    environment: Environment,
     query?: GetContentQueryDto,
   ): Promise<Content> {
     const { expand } = query;
-    const content = await this.contentService.getContentWithRelations(id, environmentId, {
+    const content = await this.contentService.getContentWithRelations(id, environment.projectId, {
       editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
       publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     });
@@ -67,14 +67,18 @@ export class OpenAPIContentService {
       publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     };
     const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
-    const environmentId = environment.id;
 
     return paginate(
       requestUrl,
       cursor,
       limit,
       async (params) =>
-        this.contentService.listContentWithRelations(environmentId, params, include, sortOrders),
+        this.contentService.listContentWithRelations(
+          environment.projectId,
+          params,
+          include,
+          sortOrders,
+        ),
       (node) => this.mapPrismaContentToApiContent(node, expand),
       expand ? { expand } : {},
     );
@@ -120,11 +124,12 @@ export class OpenAPIContentService {
 
   async getContentVersion(
     id: string,
-    environmentId: string,
+    environment: Environment,
     query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
     const { expand } = query;
-    const version = await this.contentService.getContentVersionWithRelations(id, environmentId, {
+    const projectId = environment.projectId;
+    const version = await this.contentService.getContentVersionWithRelations(id, projectId, {
       content: true,
     });
 
@@ -141,7 +146,7 @@ export class OpenAPIContentService {
     query: ListContentVersionsQueryDto,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     const { contentId, cursor, orderBy, expand, limit = 20 } = query;
-    const environmentId = environment.id;
+    const projectId = environment.projectId;
 
     const content = await this.contentService.getContentById(contentId);
     if (!content) {
@@ -160,7 +165,7 @@ export class OpenAPIContentService {
       limit,
       async (params) =>
         this.contentService.listContentVersionsWithRelations(
-          environmentId,
+          projectId,
           contentId,
           params,
           include,
@@ -193,7 +198,7 @@ export class OpenAPIContentService {
   private async mapPrismaQuestionsToApiQuestions(version: VersionWithContent): Promise<Question[]> {
     const versionWithSteps = await this.contentService.getContentVersionWithRelations(
       version.id,
-      version.content.environmentId,
+      version.content.projectId,
       { steps: true },
     );
 

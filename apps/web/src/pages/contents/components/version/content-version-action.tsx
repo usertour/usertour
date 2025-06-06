@@ -15,6 +15,9 @@ import { useState } from 'react';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
+import { isPublishedInAllEnvironments } from '@usertour-ui/shared-utils';
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+
 type ContentVersionActionProps = {
   version: ContentVersion;
 };
@@ -26,6 +29,9 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { refetch: refetchVersionList } = useContentVersionListContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
+  const { environmentList } = useEnvironmentListContext();
+
+  const isDisabledPublish = isPublishedInAllEnvironments(content, environmentList, version);
 
   return (
     <>
@@ -41,7 +47,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[100px]">
           <DropdownMenuItem
-            disabled={content?.publishedVersionId === version.id}
+            disabled={isDisabledPublish}
             onClick={() => {
               setOpenPublish(true);
             }}
@@ -67,19 +73,20 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         versionId={version.id}
         open={openPublish}
         onOpenChange={setOpenPublish}
-        onSubmit={() => {
+        onSubmit={async () => {
+          await refetch();
+          await refetchVersionList();
           setOpenPublish(false);
-          refetch();
         }}
       />
       <ContentRestoreForm
         version={version}
         open={openRetore}
         onOpenChange={setOpenRestore}
-        onSubmit={() => {
+        onSubmit={async () => {
+          await refetch();
+          await refetchVersionList();
           setOpenRestore(false);
-          refetch();
-          refetchVersionList();
         }}
       />
     </>

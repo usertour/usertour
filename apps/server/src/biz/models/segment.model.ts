@@ -23,8 +23,11 @@ registerEnumType(SegmentBizType, {
 
 @ObjectType()
 export class Segment extends BaseModel {
-  @Field(() => String)
-  environmentId: string;
+  @Field(() => String, { nullable: true })
+  projectId?: string;
+
+  @Field(() => String, { nullable: true })
+  environmentId?: string;
 
   @Field(() => String, { nullable: true })
   name?: string;
