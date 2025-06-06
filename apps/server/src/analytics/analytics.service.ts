@@ -876,8 +876,12 @@ export class AnalyticsService {
       where: { bizSessionId: sessionId, eventId: seenEvent.id },
       orderBy: { createdAt: 'desc' },
     });
+    const endBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId, eventId: endEvent.id },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    if (!endEvent || !seenEvent || !bizSession) {
+    if (!endEvent || !seenEvent || !bizSession || endBizEvent) {
       return false;
     }
 

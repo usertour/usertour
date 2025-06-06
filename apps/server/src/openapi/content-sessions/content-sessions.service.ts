@@ -176,7 +176,7 @@ export class OpenAPIContentSessionsService {
       throw new ContentSessionNotFoundError();
     }
 
-    return await this.getContentSession(id, environment);
+    return await this.getContentSession(id, environment, {});
   }
 
   private async mapToContentSession(
