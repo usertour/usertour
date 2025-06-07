@@ -45,6 +45,7 @@ enum AnalyticsOrderField {
 input AnalyticsQuery {
   contentId: String!
   endDate: String!
+  environmentId: String!
   startDate: String!
   timezone: String!
 }
@@ -258,6 +259,7 @@ type Common {
 type Content {
   buildUrl: String
   config: JSON
+  contentOnEnvironments: [ContentOnEnvironment!]
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -268,6 +270,7 @@ type Content {
   name: String
   published: Boolean!
   publishedAt: DateTime!
+  publishedVersion: Version
   publishedVersionId: String
   steps: [Step!]
   type: String
@@ -295,6 +298,7 @@ type ContentEdge {
 
 input ContentIdInput {
   contentId: String!
+  environmentId: String
 }
 
 input ContentInput {
@@ -306,6 +310,23 @@ input ContentInput {
   steps: [StepInput!]
   themeId: String
   type: String!
+}
+
+type ContentOnEnvironment {
+  contentId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  environment: Environment!
+  environmentId: String!
+  id: ID!
+  published: Boolean!
+  publishedAt: DateTime!
+  publishedVersion: Version!
+  publishedVersionId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 input ContentOrder {
@@ -362,8 +383,9 @@ input CreatSegment {
   columns: JSON
   data: JSON
   dataType: SegmentDataType!
-  environmentId: String!
+  environmentId: String
   name: String
+  projectId: String
 }
 
 input CreateAccessTokenInput {
@@ -714,7 +736,7 @@ type Query {
   listEvents(projectId: String!): [Events!]!
   listIntegrations(environmentId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
-  listSegment(environmentId: String!): [Segment!]!
+  listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
   me: User!
@@ -722,8 +744,8 @@ type Query {
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
-  queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
-  queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
+  queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!
@@ -773,9 +795,10 @@ type Segment {
   createdAt: DateTime!
   data: JSON
   dataType: SegmentDataType!
-  environmentId: String!
+  environmentId: String
   id: ID!
   name: String
+  projectId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -1008,6 +1031,7 @@ type Version {
 }
 
 input VersionIdInput {
+  environmentId: String
   versionId: String
 }
 

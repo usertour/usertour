@@ -46,8 +46,15 @@ export class BizService {
   }
 
   async creatSegment(data: CreatSegment) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: data.environmentId },
+    });
+    if (!environment) {
+      throw new ParamsError('Environment not found');
+    }
+
     return await this.prisma.segment.create({
-      data,
+      data: { ...data, projectId: environment.projectId },
     });
   }
 
@@ -110,8 +117,14 @@ export class BizService {
   }
 
   async listSegment(environmentId: string) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId },
+    });
+    if (!environment) {
+      throw new ParamsError('Environment not found');
+    }
     return await this.prisma.segment.findMany({
-      where: { environmentId },
+      where: { projectId: environment.projectId },
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -301,11 +314,12 @@ export class BizService {
       if (!environmenet) {
         return false;
       }
+      const projectId = environmenet.projectId;
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
         segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, environmentId },
+          where: { id: segmentId, projectId },
         });
         if (!segment) {
           return false;
@@ -316,7 +330,7 @@ export class BizService {
       }
       const attributes = await this.prisma.attribute.findMany({
         where: {
-          projectId: environmenet.projectId,
+          projectId,
           bizType: AttributeBizType.USER,
         },
       });
@@ -373,11 +387,12 @@ export class BizService {
       if (!environmenet) {
         return false;
       }
+      const projectId = environmenet.projectId;
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
         segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, environmentId },
+          where: { id: segmentId, projectId },
         });
         if (!segment) {
           return false;

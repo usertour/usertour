@@ -96,8 +96,26 @@ export class WebSocketService {
         : [];
     }
     const contentList = await this.prisma.content.findMany({
-      where: { environmentId, published: true },
-      // include: { steps: true },
+      where: {
+        OR: [
+          {
+            environmentId,
+            published: true,
+            contentOnEnvironments: { none: {} },
+          },
+          {
+            contentOnEnvironments: {
+              some: {
+                environmentId,
+                published: true,
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        contentOnEnvironments: true,
+      },
     });
     if (contentList.length === 0) {
       return;
@@ -116,8 +134,12 @@ export class WebSocketService {
     });
     for (let index = 0; index < contentList.length; index++) {
       const content = contentList[index];
+      const publishedVersionId =
+        content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+          ?.publishedVersionId || content.publishedVersionId;
+
       const version = await this.prisma.version.findUnique({
-        where: { id: content.publishedVersionId },
+        where: { id: publishedVersionId },
         include: { steps: { orderBy: { sequence: 'asc' } } },
       });
       const latestSession = await this.getLatestSession(content.id, bizUser.id);
@@ -718,18 +740,27 @@ export class WebSocketService {
     }
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
+      include: {
+        contentOnEnvironments: true,
+      },
     });
     if (!content) {
       return false;
     }
+
+    const publishedVersionId =
+      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+        ?.publishedVersionId || content.publishedVersionId;
+
     return await this.prisma.bizSession.create({
       data: {
         state: 0,
         progress: 0,
         projectId: environment.projectId,
+        environmentId: environment.id,
         bizUserId: bizUser.id,
         contentId: content.id,
-        versionId: content.publishedVersionId,
+        versionId: publishedVersionId,
         bizCompanyId: externalCompanyId ? bizCompany.id : null,
       },
     });
@@ -772,7 +803,11 @@ export class WebSocketService {
     }
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { content: true, bizEvent: { include: { event: true } }, version: true },
+      include: {
+        content: { include: { contentOnEnvironments: true } },
+        bizEvent: { include: { event: true } },
+        version: true,
+      },
     });
     if (!bizSession || bizSession.state === 1) {
       return false;
@@ -788,8 +823,12 @@ export class WebSocketService {
       return false;
     }
 
+    const publishedVersionId =
+      bizSession.content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+        ?.publishedVersionId || bizSession.content.publishedVersionId;
+
     const currentVersion = await this.prisma.version.findUnique({
-      where: { id: bizSession.content.publishedVersionId },
+      where: { id: publishedVersionId },
       include: { steps: true },
     });
 
@@ -828,6 +867,7 @@ export class WebSocketService {
           versionId: currentVersion.id,
           bizUserId: user.id,
           bizSessionId: bizSession.id,
+          environmentId,
         };
         if (events[EventAttributes.NUMBER_ANSWER]) {
           answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];

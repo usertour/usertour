@@ -37,4 +37,8 @@ export class ContentIdInput {
   @Field()
   @IsNotEmpty()
   contentId: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  environmentId?: string;
 }

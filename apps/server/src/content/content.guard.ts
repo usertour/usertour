@@ -46,27 +46,18 @@ export class ContentGuard implements CanActivate {
     if (contentId) {
       const content = await this.contentService.getContent(contentId);
       if (content) {
-        if (environmentId && environmentId !== content.environmentId) {
-          throw new NoPermissionError();
-        }
         environmentId = content.environmentId;
       }
     }
     if (versionId) {
       const version = await this.contentService.getContentVersion(versionId);
       if (version?.content) {
-        if (environmentId && environmentId !== version.content.environmentId) {
-          throw new NoPermissionError();
-        }
         environmentId = version.content.environmentId;
       }
     }
     if (stepId) {
       const stepContent = await this.contentService.getContentByStepId(stepId);
       if (stepContent) {
-        if (environmentId && environmentId !== stepContent.environmentId) {
-          throw new NoPermissionError();
-        }
         environmentId = stepContent.environmentId;
       }
     }

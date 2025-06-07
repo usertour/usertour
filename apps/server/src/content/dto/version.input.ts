@@ -18,6 +18,9 @@ export class VersionInput {
 export class VersionIdInput {
   @Field({ nullable: true })
   versionId?: string;
+
+  @Field(() => String, { nullable: true })
+  environmentId?: string;
 }
 
 @InputType()

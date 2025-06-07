@@ -4,6 +4,7 @@ import { AnalyticsData, AnalyticsQuery } from '@usertour-ui/types';
 import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
+import { useAppContext } from './app-context';
 
 export interface AnalyticsProviderProps {
   children?: ReactNode;
@@ -33,11 +34,13 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
     to: endOfDay(new Date(now)),
   };
   const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);
+  const { environment } = useAppContext();
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const { data, refetch } = useQuery(queryContentAnalytics, {
     variables: {
+      environmentId: environment?.id,
       contentId,
       startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
       endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,

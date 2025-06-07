@@ -21,7 +21,15 @@ export class ContentService {
 
   async createContent(input: ContentInput) {
     const { steps = [], name, buildUrl, environmentId, config, data, themeId, type } = input;
+
     try {
+      const environment = await this.prisma.environment.findUnique({
+        where: { id: environmentId },
+      });
+      if (!environment) {
+        throw new ParamsError();
+      }
+
       return await this.prisma.$transaction(async (tx) => {
         const content = await tx.content.create({
           data: {
@@ -29,6 +37,7 @@ export class ContentService {
             buildUrl,
             type,
             environmentId,
+            projectId: environment.projectId,
           },
         });
         const version = await tx.version.create({
@@ -288,26 +297,99 @@ export class ContentService {
     });
   }
 
-  async publishedContentVersion(versionId: string) {
+  async publishedContentVersion(versionId: string, environmentId: string) {
     const version = await this.getContentVersionById(versionId);
-
-    return await this.prisma.content.update({
+    const oldContent = await this.prisma.content.findUnique({
       where: { id: version.contentId },
-      data: {
-        published: true,
-        publishedVersionId: version.id,
-        publishedAt: new Date(),
-      },
+      include: { contentOnEnvironments: true },
+    });
+    if (
+      oldContent.published &&
+      oldContent.publishedVersionId &&
+      (!oldContent.contentOnEnvironments || oldContent.contentOnEnvironments.length === 0)
+    ) {
+      // Update or create ContentOnEnvironment
+      await this.prisma.contentOnEnvironment.create({
+        data: {
+          environmentId: oldContent.environmentId,
+          contentId: oldContent.id,
+          published: true,
+          publishedAt: new Date(),
+          publishedVersionId: oldContent.publishedVersionId,
+        },
+      });
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      // Update Content table
+      const content = await tx.content.update({
+        where: { id: version.contentId },
+        data: {
+          published: true,
+          publishedVersionId: version.id,
+          publishedAt: new Date(),
+        },
+      });
+
+      // Update or create ContentOnEnvironment
+      await tx.contentOnEnvironment.upsert({
+        where: {
+          environmentId_contentId: {
+            environmentId: environmentId,
+            contentId: content.id,
+          },
+        },
+        create: {
+          environmentId: environmentId,
+          contentId: content.id,
+          published: true,
+          publishedAt: new Date(),
+          publishedVersionId: version.id,
+        },
+        update: {
+          published: true,
+          publishedAt: new Date(),
+          publishedVersionId: version.id,
+        },
+      });
+
+      return content;
     });
   }
 
-  async unpublishedContentVersion(contentId: string) {
-    return await this.prisma.content.update({
-      where: { id: contentId },
-      data: {
-        published: false,
-        publishedVersionId: null,
-      },
+  async unpublishedContentVersion(contentId: string, environmentId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      // Update Content table
+      const content = await tx.content.update({
+        where: { id: contentId },
+        data: {
+          published: false,
+          publishedVersionId: null,
+        },
+      });
+
+      // Check if ContentOnEnvironment record exists before deleting
+      const contentOnEnv = await tx.contentOnEnvironment.findUnique({
+        where: {
+          environmentId_contentId: {
+            environmentId: environmentId,
+            contentId: content.id,
+          },
+        },
+      });
+
+      if (contentOnEnv) {
+        await tx.contentOnEnvironment.delete({
+          where: {
+            environmentId_contentId: {
+              environmentId: environmentId,
+              contentId: content.id,
+            },
+          },
+        });
+      }
+
+      return content;
     });
   }
 
@@ -323,6 +405,7 @@ export class ContentService {
   async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {
     const duplicateContent = await this.prisma.content.findUnique({
       where: { id: contentId },
+      include: { environment: true },
     });
     if (!duplicateContent || duplicateContent.deleted) {
       throw new ParamsError();
@@ -353,6 +436,7 @@ export class ContentService {
             buildUrl: duplicateContent.buildUrl,
             environmentId: targetEnvironmentId || duplicateContent.environmentId,
             type: duplicateContent.type,
+            projectId: duplicateContent.projectId,
           },
         });
 
@@ -426,7 +510,10 @@ export class ContentService {
   async getContent(id: string) {
     return await this.prisma.content.findUnique({
       where: { id },
-      // include: { steps: true },
+      include: {
+        publishedVersion: true,
+        contentOnEnvironments: { include: { environment: true, publishedVersion: true } },
+      },
     });
   }
 
@@ -512,7 +599,7 @@ export class ContentService {
 
   async getContentWithRelations(
     id: string,
-    environmentId: string,
+    projectId: string,
     include?: {
       editedVersion?: boolean;
       publishedVersion?: boolean;
@@ -521,7 +608,7 @@ export class ContentService {
     return await this.prisma.content.findFirst({
       where: {
         id,
-        environmentId,
+        projectId,
       },
       include: {
         editedVersion: include?.editedVersion ?? false,
@@ -532,14 +619,14 @@ export class ContentService {
 
   async getContentVersionWithRelations(
     versionId: string,
-    environmentId: string,
+    projectId: string,
     include?: Prisma.VersionInclude,
   ) {
     return await this.prisma.version.findFirst({
       where: {
         id: versionId,
         content: {
-          environmentId,
+          projectId,
         },
       },
       include: {
@@ -550,7 +637,7 @@ export class ContentService {
   }
 
   async listContentVersionsWithRelations(
-    environmentId: string,
+    projectId: string,
     contentId: string,
     paginationArgs: {
       first?: number;
@@ -565,7 +652,7 @@ export class ContentService {
       where: {
         contentId,
         content: {
-          environmentId,
+          projectId,
         },
       },
       include: {
@@ -583,7 +670,7 @@ export class ContentService {
   }
 
   async listContentWithRelations(
-    environmentId: string,
+    projectId: string,
     paginationArgs: {
       first?: number;
       last?: number;
@@ -594,7 +681,7 @@ export class ContentService {
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
   ) {
     const baseQuery = {
-      where: { environmentId },
+      where: { projectId },
       include,
       orderBy,
     };
