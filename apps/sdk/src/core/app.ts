@@ -601,6 +601,22 @@ export class App extends Evented {
   }
 
   /**
+   * Gets the latest activated checklist from the session
+   * @returns latestActivatedChecklist if the checklist is not dismissed, null otherwise
+   */
+  async getChecklistFromSession() {
+    const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
+    if (latestActivatedChecklist) {
+      const content = latestActivatedChecklist.getContent();
+      // if the checklist is not dismissed, start the next step
+      if (!checklistIsDimissed(content)) {
+        return latestActivatedChecklist;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Starts all registered checklists
    */
   async startChecklist(contentId?: string, reason?: string) {
@@ -612,9 +628,18 @@ export class App extends Evented {
     if (this.activeChecklist || !userInfo?.externalId) {
       return;
     }
+    const latestActivatedChecklist = await this.getChecklistFromSession();
 
     const checklistFromUrl = findChecklistFromUrl(this.checklists);
     if (checklistFromUrl) {
+      if (
+        latestActivatedChecklist &&
+        latestActivatedChecklist.getContent().contentId === checklistFromUrl.getContent().contentId
+      ) {
+        this.activeChecklist = latestActivatedChecklist;
+        this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+        return;
+      }
       this.activeChecklist = checklistFromUrl;
       this.activeChecklist.start(contentStartReason.START_FROM_URL);
       return;
@@ -627,20 +652,23 @@ export class App extends Evented {
       if (!activeChecklist) {
         return;
       }
+      if (
+        latestActivatedChecklist &&
+        latestActivatedChecklist.getContent().contentId === activeChecklist.getContent().contentId
+      ) {
+        this.activeChecklist = latestActivatedChecklist;
+        this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+        return;
+      }
       this.activeChecklist = activeChecklist;
       this.activeChecklist.start(reason);
       return;
     }
 
-    const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
     if (latestActivatedChecklist) {
-      const content = latestActivatedChecklist.getContent();
-      // if the checklist is not dismissed, start the next step
-      if (!checklistIsDimissed(content)) {
-        this.activeChecklist = latestActivatedChecklist;
-        this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
-        return;
-      }
+      this.activeChecklist = latestActivatedChecklist;
+      this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+      return;
     }
 
     const sortedChecklists = this.checklists
@@ -667,6 +695,32 @@ export class App extends Evented {
   }
 
   /**
+   * Gets the latest activated tour from the session
+   * @returns latestActivatedTour and cvid if the tour is not dismissed, null otherwise
+   */
+  async getTourFromSession() {
+    const latestActivatedTour = findLatestActivatedTour(this.tours);
+    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
+      const content = latestActivatedTour.getContent();
+      // if the tour is not dismissed, start the next step
+      if (!flowIsDismissed(content)) {
+        const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
+
+        // Find the next step after the latest seen step
+        const steps = content.steps || [];
+        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
+        if (cvid) {
+          return {
+            latestActivatedTour,
+            cvid,
+          };
+        }
+      }
+    }
+    return {};
+  }
+
+  /**
    * Starts a tour with given content ID and reason
    * @param contentId - Optional content ID to start specific tour
    * @param reason - Reason for starting the tour
@@ -680,9 +734,18 @@ export class App extends Evented {
     if (this.activeTour || !userInfo?.externalId) {
       return;
     }
+    const { latestActivatedTour, cvid } = await this.getTourFromSession();
 
     const tourFromUrl = findTourFromUrl(this.tours);
     if (tourFromUrl) {
+      if (
+        latestActivatedTour &&
+        latestActivatedTour.getContent().contentId === tourFromUrl.getContent().contentId
+      ) {
+        this.activeTour = latestActivatedTour;
+        this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+        return;
+      }
       this.activeTour = tourFromUrl;
       this.activeTour.start(contentStartReason.START_FROM_URL);
       return;
@@ -694,27 +757,23 @@ export class App extends Evented {
       if (!activeTour) {
         return;
       }
+      if (
+        latestActivatedTour &&
+        latestActivatedTour.getContent().contentId === activeTour.getContent().contentId
+      ) {
+        this.activeTour = latestActivatedTour;
+        this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+        return;
+      }
       this.activeTour = activeTour;
-      this.activeTour.start(contentStartReason.START_FROM_SESSION);
+      this.activeTour.start(reason);
       return;
     }
 
-    const latestActivatedTour = findLatestActivatedTour(this.tours);
-    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
-      const content = latestActivatedTour.getContent();
-      // if the tour is not dismissed, start the next step
-      if (!flowIsDismissed(content)) {
-        const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
-
-        // Find the next step after the latest seen step
-        const steps = content.steps || [];
-        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
-        if (cvid) {
-          this.activeTour = latestActivatedTour;
-          await this.activeTour.start(reason, cvid);
-          return;
-        }
-      }
+    if (latestActivatedTour) {
+      this.activeTour = latestActivatedTour;
+      this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+      return;
     }
 
     // If no unfinished content found, start the highest priority tour

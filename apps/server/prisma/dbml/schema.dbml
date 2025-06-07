@@ -528,7 +528,6 @@ Table Subscription {
   subscriptionId String [unique, not null, note: 'Stripe subscription ID']
   lookupKey String [not null, note: 'Stripe price lookup key']
   planType String [not null, note: 'Plan type (hobby, starter, growth, business)']
-  planType String [not null, note: 'Plan type (hobby, starter, growth, business)']
   interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
   projectId String [not null, note: 'Project ID']
   status String [not null, note: 'Stripe subscription status']
