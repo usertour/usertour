@@ -23,10 +23,9 @@ import { compareContentPriorities } from '../utils/content';
 import {
   findTourFromUrl,
   initializeContentItems,
-  findLatestActivatedTour,
-  findLatestStepNumber,
   findChecklistFromUrl,
-  findLatestActivatedChecklist,
+  findLatestActivatedTourAndCvid,
+  findLatestValidActivatedChecklist,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { AppEvents } from '../utils/event';
@@ -37,13 +36,13 @@ import { loadCSSResource } from '../utils/loader';
 import { logger } from '../utils/logger';
 import { getValidMessage, sendPreviewSuccessMessage } from '../utils/postmessage';
 import { Checklist } from './checklist';
-import { createMockUser } from './common';
+import { createMockUser, DEFAULT_TARGET_MISSING_SECONDS, SESSION_TIMEOUT_HOURS } from './common';
 import { Evented } from './evented';
 import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { checklistIsDimissed, flowIsDismissed, flowIsSeen } from '../utils/conditions';
+import { flowIsSeen } from '../utils/conditions';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -87,6 +86,8 @@ export class App extends Evented {
   private isMonitoring = false;
   private readonly MONITOR_INTERVAL = 200;
   private lastCheck = 0;
+  private sessionTimeoutHours = SESSION_TIMEOUT_HOURS;
+  private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS;
 
   constructor() {
     super();
@@ -108,6 +109,46 @@ export class App extends Evented {
    */
   getBaseZIndex() {
     return this.baseZIndex;
+  }
+
+  /**
+   * Sets the session timeout in hours
+   * @param hours - Number of hours before a session times out
+   * @throws {Error} If hours is greater than 720 (30 days)
+   */
+  setSessionTimeout(hours: number) {
+    if (hours > 24 * 30) {
+      throw new Error('Session timeout cannot exceed 30 days (720 hours)');
+    }
+    this.sessionTimeoutHours = hours;
+  }
+
+  /**
+   * Gets the current session timeout in hours
+   * @returns The current session timeout in hours
+   */
+  getSessionTimeout(): number {
+    return this.sessionTimeoutHours;
+  }
+
+  /**
+   * Sets the time allowed for target element to be missing
+   * @param seconds - Time in seconds
+   * @throws {Error} If seconds is greater than 10
+   */
+  setTargetMissingSeconds(seconds: number) {
+    if (seconds > 10) {
+      throw new Error('Target missing time cannot exceed 10 seconds');
+    }
+    this.targetMissingSeconds = seconds;
+  }
+
+  /**
+   * Gets the time allowed for target element to be missing
+   * @returns Time in seconds
+   */
+  getTargetMissingSeconds() {
+    return this.targetMissingSeconds;
   }
 
   /**
@@ -604,19 +645,20 @@ export class App extends Evented {
    * Starts all registered checklists
    */
   async startChecklist(contentId?: string, reason?: string) {
-    const userInfo = this.userInfo;
+    // if the active checklist is not dismissed, close it
     if (contentId && this.activeChecklist) {
       await this.activeChecklist?.close(contentEndReason.SYSTEM_CLOSED);
     }
 
-    if (this.activeChecklist || !userInfo?.externalId) {
+    // if the user is not identified, do nothing
+    if (this.activeChecklist || !this.userInfo?.externalId) {
       return;
     }
 
     const checklistFromUrl = findChecklistFromUrl(this.checklists);
-    if (checklistFromUrl) {
+    if (checklistFromUrl && !checklistFromUrl.hasDismissed()) {
       this.activeChecklist = checklistFromUrl;
-      this.activeChecklist.start(contentStartReason.START_FROM_URL);
+      await this.activeChecklist.start(contentStartReason.START_FROM_URL);
       return;
     }
 
@@ -628,19 +670,16 @@ export class App extends Evented {
         return;
       }
       this.activeChecklist = activeChecklist;
-      this.activeChecklist.start(reason);
+      await this.activeChecklist.start(reason);
       return;
     }
 
-    const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
-    if (latestActivatedChecklist) {
-      const content = latestActivatedChecklist.getContent();
-      // if the checklist is not dismissed, start the next step
-      if (!checklistIsDimissed(content)) {
-        this.activeChecklist = latestActivatedChecklist;
-        this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
-        return;
-      }
+    // find the latest valid activated checklist
+    const latestActivatedChecklist = findLatestValidActivatedChecklist(this.checklists);
+    if (latestActivatedChecklist && !latestActivatedChecklist.hasDismissed()) {
+      this.activeChecklist = latestActivatedChecklist;
+      await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+      return;
     }
 
     const sortedChecklists = this.checklists
@@ -649,7 +688,7 @@ export class App extends Evented {
 
     if (sortedChecklists.length > 0) {
       this.activeChecklist = sortedChecklists[0];
-      this.activeChecklist.autoStart(reason);
+      await this.activeChecklist.autoStart(reason);
     }
   }
 
@@ -672,19 +711,29 @@ export class App extends Evented {
    * @param reason - Reason for starting the tour
    */
   async startTour(contentId: string | undefined, reason: string) {
-    const userInfo = this.userInfo;
+    // if the active tour is not dismissed, close it
     if (contentId && this.activeTour) {
-      await this.activeTour?.close(contentEndReason.USER_CLOSED);
+      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
     }
 
-    if (this.activeTour || !userInfo?.externalId) {
+    if (this.activeTour || !this.userInfo?.externalId) {
       return;
     }
 
+    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours);
+    const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
+    const cvid = latestActivatedTourAndCvid?.cvid;
+
     const tourFromUrl = findTourFromUrl(this.tours);
-    if (tourFromUrl) {
+    // If the tour from url is not dismissed, start it
+    if (tourFromUrl && !tourFromUrl.hasDismissed()) {
+      if (latestActivatedTour?.getContent().contentId === tourFromUrl.getContent().contentId) {
+        this.activeTour = latestActivatedTour;
+        await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+        return;
+      }
       this.activeTour = tourFromUrl;
-      this.activeTour.start(contentStartReason.START_FROM_URL);
+      await this.activeTour.start(contentStartReason.START_FROM_URL);
       return;
     }
 
@@ -694,27 +743,21 @@ export class App extends Evented {
       if (!activeTour) {
         return;
       }
+      if (latestActivatedTour?.getContent().contentId === activeTour.getContent().contentId) {
+        this.activeTour = latestActivatedTour;
+        await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+        return;
+      }
       this.activeTour = activeTour;
-      this.activeTour.start(contentStartReason.START_FROM_SESSION);
+      await this.activeTour.start(reason);
       return;
     }
 
-    const latestActivatedTour = findLatestActivatedTour(this.tours);
+    // If the latest activated tour is not dismissed, start it
     if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
-      const content = latestActivatedTour.getContent();
-      // if the tour is not dismissed, start the next step
-      if (!flowIsDismissed(content)) {
-        const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
-
-        // Find the next step after the latest seen step
-        const steps = content.steps || [];
-        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
-        if (cvid) {
-          this.activeTour = latestActivatedTour;
-          await this.activeTour.start(reason, cvid);
-          return;
-        }
-      }
+      this.activeTour = latestActivatedTour;
+      await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+      return;
     }
 
     // If no unfinished content found, start the highest priority tour
@@ -728,7 +771,7 @@ export class App extends Evented {
     }
 
     this.activeTour = activeTour;
-    this.activeTour.autoStart(reason);
+    await this.activeTour.autoStart(reason);
   }
 
   /**
