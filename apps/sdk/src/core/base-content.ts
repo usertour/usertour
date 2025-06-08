@@ -6,7 +6,6 @@ import {
   Step,
   Theme,
   UserTourTypes,
-  contentEndReason,
   contentStartReason,
 } from '@usertour-ui/types';
 import { isEqual } from 'lodash';
@@ -17,7 +16,7 @@ import { AppEvents } from '../utils/event';
 import { window } from '../utils/globals';
 import { buildNavigateUrl } from '../utils/navigate-utils';
 import { App } from './app';
-import { getAssets, SESSION_TIMEOUT_HOURS } from './common';
+import { getAssets } from './common';
 import { Config } from './config';
 import { Evented } from './evented';
 import { ExternalStore } from './store';
@@ -70,12 +69,14 @@ export abstract class BaseContent<T = any> extends Evented {
    * @returns {Promise<void>} A promise that resolves when the content is started
    */
   async start(reason?: string, cvid?: string) {
+    // let reusedSessionId: string | null;
     const reusedSessionId = this.getReusedSessionId();
-    if (reusedSessionId && this.sessionIsTimeout()) {
-      this.sessionId = reusedSessionId;
-      await this.close(contentEndReason.SESSION_TIMEOUT);
-      return;
-    }
+    // if (reusedSessionId && this.sessionIsTimeout()) {
+    //   this.sessionId = reusedSessionId;
+    //   await this.endSession(contentEndReason.SESSION_TIMEOUT);
+    //   reusedSessionId = null;
+    //   this.sessionId = '';
+    // }
     const sessionId = reusedSessionId || (await this.createSessionId());
     if (!sessionId) {
       throw new Error('Failed to create user session.');
@@ -352,12 +353,21 @@ export abstract class BaseContent<T = any> extends Evented {
       return false;
     }
     const latestEvent = findLatestEvent(bizEvents);
+    const sessionTimeoutHours = this.getInstance().getSessionTimeout();
     if (latestEvent?.createdAt) {
       const now = new Date();
       const eventTime = new Date(latestEvent.createdAt);
-      return differenceInHours(now, eventTime) > SESSION_TIMEOUT_HOURS;
+      return differenceInHours(now, eventTime) > sessionTimeoutHours;
     }
     return false;
+  }
+
+  /**
+   * Get the target missing seconds
+   * @returns {number} The target missing seconds
+   */
+  getTargetMissingSeconds() {
+    return this.getInstance().getTargetMissingSeconds();
   }
 
   /**

@@ -124,6 +124,8 @@ export class Launcher extends BaseContent<LauncherStore> {
 
     // Create and configure new element watcher
     this.watcher = new ElementWatcher(data.target.element);
+    // Set the target missing seconds
+    this.watcher.setTargetMissingSeconds(this.getTargetMissingSeconds());
 
     // Set up element found handler
     this.watcher.once(AppEvents.ELEMENT_FOUND, (el) => {

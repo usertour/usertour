@@ -2,7 +2,7 @@ import { BizEvents, ContentDataType, contentEndReason, SDKContent } from '@usert
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
-import { parseUrlParams } from './conditions';
+import { checklistIsDimissed, flowIsDismissed, parseUrlParams } from './conditions';
 import { window } from './globals';
 
 /**
@@ -88,6 +88,35 @@ export const findLatestActivatedTour = (tours: Tour[]): Tour | undefined => {
 };
 
 /**
+ * Finds the latest activated tour and cvid from the session
+ * @param tours Array of tours to search through
+ * @returns The latest activated tour and cvid if the tour is not dismissed, undefined otherwise
+ */
+export const findLatestActivatedTourAndCvid = (
+  tours: Tour[],
+): { latestActivatedTour: Tour; cvid: string } | undefined => {
+  const latestActivatedTour = findLatestActivatedTour(tours);
+  // if the tour is dismissed, return null
+  if (!latestActivatedTour || flowIsDismissed(latestActivatedTour.getContent())) {
+    return undefined;
+  }
+  // if the tour is not dismissed, return the latest step cvid
+  const content = latestActivatedTour.getContent();
+  const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
+
+  // Find the next step after the latest seen step
+  const steps = content.steps || [];
+  const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
+  if (cvid) {
+    return {
+      latestActivatedTour,
+      cvid,
+    };
+  }
+  return undefined;
+};
+
+/**
  * Finds the latest step number from step seen events
  * @param bizEvents Array of business events to search through
  * @returns The latest step number or -1 if no steps were seen
@@ -153,4 +182,23 @@ export const findChecklistFromUrl = (checklists: Checklist[]): Checklist | undef
     return undefined;
   }
   return checklists.find((checklist) => checklist.getContent().contentId === contentId);
+};
+
+/**
+ * Finds the latest valid checklist from the session
+ * @param checklists Array of checklists to search through
+ * @returns The latest valid checklist or undefined if no checklists exist
+ */
+export const findLatestValidActivatedChecklist = (
+  checklists: Checklist[],
+): Checklist | undefined => {
+  const latestActivatedChecklist = findLatestActivatedChecklist(checklists);
+  if (latestActivatedChecklist) {
+    const content = latestActivatedChecklist.getContent();
+    // if the checklist is not dismissed, start the next step
+    if (!checklistIsDimissed(content)) {
+      return latestActivatedChecklist;
+    }
+  }
+  return undefined;
 };

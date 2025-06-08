@@ -23,10 +23,9 @@ import { compareContentPriorities } from '../utils/content';
 import {
   findTourFromUrl,
   initializeContentItems,
-  findLatestActivatedTour,
-  findLatestStepNumber,
   findChecklistFromUrl,
-  findLatestActivatedChecklist,
+  findLatestActivatedTourAndCvid,
+  findLatestValidActivatedChecklist,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { AppEvents } from '../utils/event';
@@ -37,13 +36,13 @@ import { loadCSSResource } from '../utils/loader';
 import { logger } from '../utils/logger';
 import { getValidMessage, sendPreviewSuccessMessage } from '../utils/postmessage';
 import { Checklist } from './checklist';
-import { createMockUser } from './common';
+import { createMockUser, DEFAULT_TARGET_MISSING_SECONDS, SESSION_TIMEOUT_HOURS } from './common';
 import { Evented } from './evented';
 import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { checklistIsDimissed, flowIsDismissed, flowIsSeen } from '../utils/conditions';
+import { flowIsSeen } from '../utils/conditions';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -87,6 +86,8 @@ export class App extends Evented {
   private isMonitoring = false;
   private readonly MONITOR_INTERVAL = 200;
   private lastCheck = 0;
+  private sessionTimeoutHours = SESSION_TIMEOUT_HOURS;
+  private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS;
 
   constructor() {
     super();
@@ -108,6 +109,46 @@ export class App extends Evented {
    */
   getBaseZIndex() {
     return this.baseZIndex;
+  }
+
+  /**
+   * Sets the session timeout in hours
+   * @param hours - Number of hours before a session times out
+   * @throws {Error} If hours is greater than 720 (30 days)
+   */
+  setSessionTimeout(hours: number) {
+    if (hours > 24 * 30) {
+      throw new Error('Session timeout cannot exceed 30 days (720 hours)');
+    }
+    this.sessionTimeoutHours = hours;
+  }
+
+  /**
+   * Gets the current session timeout in hours
+   * @returns The current session timeout in hours
+   */
+  getSessionTimeout(): number {
+    return this.sessionTimeoutHours;
+  }
+
+  /**
+   * Sets the time allowed for target element to be missing
+   * @param seconds - Time in seconds
+   * @throws {Error} If seconds is greater than 10
+   */
+  setTargetMissingSeconds(seconds: number) {
+    if (seconds > 10) {
+      throw new Error('Target missing time cannot exceed 10 seconds');
+    }
+    this.targetMissingSeconds = seconds;
+  }
+
+  /**
+   * Gets the time allowed for target element to be missing
+   * @returns Time in seconds
+   */
+  getTargetMissingSeconds() {
+    return this.targetMissingSeconds;
   }
 
   /**
@@ -601,45 +642,21 @@ export class App extends Evented {
   }
 
   /**
-   * Gets the latest activated checklist from the session
-   * @returns latestActivatedChecklist if the checklist is not dismissed, null otherwise
-   */
-  async getChecklistFromSession() {
-    const latestActivatedChecklist = findLatestActivatedChecklist(this.checklists);
-    if (latestActivatedChecklist) {
-      const content = latestActivatedChecklist.getContent();
-      // if the checklist is not dismissed, start the next step
-      if (!checklistIsDimissed(content)) {
-        return latestActivatedChecklist;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Starts all registered checklists
    */
   async startChecklist(contentId?: string, reason?: string) {
-    const userInfo = this.userInfo;
+    // if the active checklist is not dismissed, close it
     if (contentId && this.activeChecklist) {
       await this.activeChecklist?.close(contentEndReason.SYSTEM_CLOSED);
     }
 
-    if (this.activeChecklist || !userInfo?.externalId) {
+    // if the user is not identified, do nothing
+    if (this.activeChecklist || !this.userInfo?.externalId) {
       return;
     }
-    const latestActivatedChecklist = await this.getChecklistFromSession();
 
     const checklistFromUrl = findChecklistFromUrl(this.checklists);
-    if (checklistFromUrl) {
-      if (
-        latestActivatedChecklist &&
-        latestActivatedChecklist.getContent().contentId === checklistFromUrl.getContent().contentId
-      ) {
-        this.activeChecklist = latestActivatedChecklist;
-        await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
-        return;
-      }
+    if (checklistFromUrl && !checklistFromUrl.hasDismissed()) {
       this.activeChecklist = checklistFromUrl;
       await this.activeChecklist.start(contentStartReason.START_FROM_URL);
       return;
@@ -652,20 +669,14 @@ export class App extends Evented {
       if (!activeChecklist) {
         return;
       }
-      if (
-        latestActivatedChecklist &&
-        latestActivatedChecklist.getContent().contentId === activeChecklist.getContent().contentId
-      ) {
-        this.activeChecklist = latestActivatedChecklist;
-        await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
-        return;
-      }
       this.activeChecklist = activeChecklist;
       await this.activeChecklist.start(reason);
       return;
     }
 
-    if (latestActivatedChecklist) {
+    // find the latest valid activated checklist
+    const latestActivatedChecklist = findLatestValidActivatedChecklist(this.checklists);
+    if (latestActivatedChecklist && !latestActivatedChecklist.hasDismissed()) {
       this.activeChecklist = latestActivatedChecklist;
       await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
       return;
@@ -695,53 +706,28 @@ export class App extends Evented {
   }
 
   /**
-   * Gets the latest activated tour from the session
-   * @returns latestActivatedTour and cvid if the tour is not dismissed, null otherwise
-   */
-  async getTourFromSession() {
-    const latestActivatedTour = findLatestActivatedTour(this.tours);
-    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
-      const content = latestActivatedTour.getContent();
-      // if the tour is not dismissed, start the next step
-      if (!flowIsDismissed(content)) {
-        const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
-
-        // Find the next step after the latest seen step
-        const steps = content.steps || [];
-        const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
-        if (cvid) {
-          return {
-            latestActivatedTour,
-            cvid,
-          };
-        }
-      }
-    }
-    return {};
-  }
-
-  /**
    * Starts a tour with given content ID and reason
    * @param contentId - Optional content ID to start specific tour
    * @param reason - Reason for starting the tour
    */
   async startTour(contentId: string | undefined, reason: string) {
-    const userInfo = this.userInfo;
+    // if the active tour is not dismissed, close it
     if (contentId && this.activeTour) {
-      await this.activeTour?.close(contentEndReason.USER_CLOSED);
+      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
     }
 
-    if (this.activeTour || !userInfo?.externalId) {
+    if (this.activeTour || !this.userInfo?.externalId) {
       return;
     }
-    const { latestActivatedTour, cvid } = await this.getTourFromSession();
+
+    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours);
+    const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
+    const cvid = latestActivatedTourAndCvid?.cvid;
 
     const tourFromUrl = findTourFromUrl(this.tours);
-    if (tourFromUrl) {
-      if (
-        latestActivatedTour &&
-        latestActivatedTour.getContent().contentId === tourFromUrl.getContent().contentId
-      ) {
+    // If the tour from url is not dismissed, start it
+    if (tourFromUrl && !tourFromUrl.hasDismissed()) {
+      if (latestActivatedTour?.getContent().contentId === tourFromUrl.getContent().contentId) {
         this.activeTour = latestActivatedTour;
         await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
         return;
@@ -757,10 +743,7 @@ export class App extends Evented {
       if (!activeTour) {
         return;
       }
-      if (
-        latestActivatedTour &&
-        latestActivatedTour.getContent().contentId === activeTour.getContent().contentId
-      ) {
+      if (latestActivatedTour?.getContent().contentId === activeTour.getContent().contentId) {
         this.activeTour = latestActivatedTour;
         await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
         return;
@@ -770,7 +753,8 @@ export class App extends Evented {
       return;
     }
 
-    if (latestActivatedTour) {
+    // If the latest activated tour is not dismissed, start it
+    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
       this.activeTour = latestActivatedTour;
       await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
       return;
