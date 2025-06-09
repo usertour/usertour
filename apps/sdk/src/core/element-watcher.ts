@@ -5,6 +5,7 @@ import { isVisible } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
 import { Evented } from './evented';
+import { DEFAULT_TARGET_MISSING_SECONDS } from './common';
 
 /**
  * Interface to track element visibility state
@@ -19,7 +20,6 @@ type CheckContentIsVisible = {
 // Constants for element watching configuration
 const RETRY_LIMIT = 30; // Maximum number of retry attempts
 const RETRY_DELAY = 200; // Delay between retries in milliseconds
-const VISIBILITY_TIMEOUT = 6000; // Maximum time to wait for element visibility
 
 /**
  * ElementWatcher class for monitoring DOM elements
@@ -30,10 +30,19 @@ export class ElementWatcher extends Evented {
   private timer: NodeJS.Timeout | null = null; // Timer for retry mechanism
   private element: Element | null = null; // Reference to the found element
   private checker: CheckContentIsVisible | null = null; // Visibility state tracker
+  private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
 
   constructor(target: ElementSelectorPropsData) {
     super();
     this.target = target;
+  }
+
+  /**
+   * Sets the time allowed for target element to be missing
+   * @param seconds - Time in seconds
+   */
+  setTargetMissingSeconds(seconds: number) {
+    this.targetMissingSeconds = seconds;
   }
 
   /**
@@ -43,7 +52,7 @@ export class ElementWatcher extends Evented {
   findElement(retryTimes = 0): void {
     this.clearTimer();
 
-    if (retryTimes >= RETRY_LIMIT) {
+    if (retryTimes >= RETRY_LIMIT || retryTimes * RETRY_DELAY > this.targetMissingSeconds * 1000) {
       this.trigger(AppEvents.ELEMENT_FOUND_TIMEOUT);
       return;
     }
@@ -146,7 +155,7 @@ export class ElementWatcher extends Evented {
       this.checker = {
         ...this.checker,
         checkHiddenTs: now,
-        isTimeout: now - this.checker.startHiddenTs > VISIBILITY_TIMEOUT,
+        isTimeout: now - this.checker.startHiddenTs > this.targetMissingSeconds * 1000,
       };
     }
   }

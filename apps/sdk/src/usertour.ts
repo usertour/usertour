@@ -128,6 +128,12 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
         setBaseZIndex: (baseZIndex: number) => {
           app.setBaseZIndex(baseZIndex);
         },
+        setSessionTimeout: (hours: number) => {
+          app.setSessionTimeout(hours);
+        },
+        setTargetMissingSeconds: (seconds: number) => {
+          app.setTargetMissingSeconds(seconds);
+        },
         // eslint-disable-next-line es5/no-rest-parameters
         on: (
           //@ts-ignore

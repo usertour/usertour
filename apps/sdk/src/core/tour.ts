@@ -315,6 +315,7 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
     this.watcher = new ElementWatcher(step.target);
+    this.watcher.setTargetMissingSeconds(this.getTargetMissingSeconds());
 
     // Handle element found
     this.watcher.once('element-found', (el) => {
