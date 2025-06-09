@@ -7,6 +7,7 @@ import {
   QUEUE_HUBSPOT_EVENT,
   QUEUE_MIXPANEL_EVENT,
   QUEUE_POSTHOG_EVENT,
+  QUEUE_SEGMENT_EVENT,
 } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
 import { MixpanelWebhookDto, UpdateIntegrationInput } from './integration.dto';
@@ -20,6 +21,8 @@ import {
   MIXPANEL_API_ENDPOINT_EU,
   POSTHOG_API_ENDPOINT_EU,
   POSTHOG_API_ENDPOINT_US,
+  SEGMENT_API_ENDPOINT,
+  SEGMENT_API_ENDPOINT_EU,
 } from '@/common/consts/endpoint';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
@@ -38,6 +41,7 @@ export class IntegrationService {
     @InjectQueue(QUEUE_HUBSPOT_EVENT) private hubspotQueue: Queue,
     @InjectQueue(QUEUE_POSTHOG_EVENT) private posthogQueue: Queue,
     @InjectQueue(QUEUE_MIXPANEL_EVENT) private mixpanelQueue: Queue,
+    @InjectQueue(QUEUE_SEGMENT_EVENT) private segmentQueue: Queue,
     private prisma: PrismaService,
     private httpService: HttpService,
     private bizService: BizService,
@@ -73,6 +77,9 @@ export class IntegrationService {
     }
     if (integration.find((i) => i.code === 'mixpanel')) {
       await this.mixpanelQueue.add('trackEvent', data);
+    }
+    if (integration.find((i) => i.code === 'segment')) {
+      await this.segmentQueue.add('trackEvent', data);
     }
   }
 
@@ -419,6 +426,44 @@ export class IntegrationService {
           Authorization: `Bearer ${integration.key}`,
           'Content-Type': 'application/json',
         },
+      }),
+    );
+  }
+
+  async trackSegmentEvent(data: TrackEventData): Promise<void> {
+    const { eventName, environmentId, eventProperties, userId } = data;
+
+    // Get Segment integration
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        environmentId,
+        code: 'segment',
+        enabled: true,
+      },
+    });
+
+    if (!integration?.key) {
+      throw new ParamsError('Segment integration not configured for environment');
+    }
+
+    const endpoint =
+      (integration?.config as { region?: string })?.region === 'EU'
+        ? SEGMENT_API_ENDPOINT_EU
+        : SEGMENT_API_ENDPOINT;
+
+    const event = {
+      event: eventName,
+      properties: eventProperties,
+      userId,
+      timestamp: new Date().toISOString(),
+      writeKey: integration.key,
+    };
+
+    this.logger.debug(`Tracking event to Segment: ${JSON.stringify(event)}`);
+
+    await firstValueFrom(
+      this.httpService.post(`${endpoint}/v1/track`, event, {
+        timeout: 5000,
       }),
     );
   }

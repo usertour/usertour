@@ -7,6 +7,7 @@ import {
   QUEUE_HUBSPOT_EVENT,
   QUEUE_MIXPANEL_EVENT,
   QUEUE_POSTHOG_EVENT,
+  QUEUE_SEGMENT_EVENT,
 } from '@/common/consts/queen';
 import { IntegrationService } from './integration.service';
 import { TrackEventData } from '@/common/types/track';
@@ -102,6 +103,25 @@ export class MixpanelEventProcessor extends WorkerHost {
       this.logger.debug(`Successfully sent event to Mixpanel: ${JSON.stringify(job.data)}`);
     } catch (error) {
       this.logger.error(`Failed to send event to Mixpanel: ${job.data}`, error);
+    }
+  }
+}
+
+@Processor(QUEUE_SEGMENT_EVENT)
+export class SegmentEventProcessor extends WorkerHost {
+  private readonly logger = new Logger(SegmentEventProcessor.name);
+
+  constructor(private integrationService: IntegrationService) {
+    super();
+  }
+
+  async process(job: Job<TrackEventData>) {
+    try {
+      this.integrationService.trackSegmentEvent(job.data);
+
+      this.logger.debug(`Successfully sent event to Segment: ${JSON.stringify(job.data)}`);
+    } catch (error) {
+      this.logger.error(`Failed to send event to Segment: ${job.data}`, error);
     }
   }
 }

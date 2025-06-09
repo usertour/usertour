@@ -7,6 +7,7 @@ import {
   HubspotEventProcessor,
   MixpanelEventProcessor,
   PosthogEventProcessor,
+  SegmentEventProcessor,
 } from './integration.processor';
 import {
   QUEUE_AMPLITUDE_EVENT,
@@ -14,6 +15,7 @@ import {
   QUEUE_HUBSPOT_EVENT,
   QUEUE_MIXPANEL_EVENT,
   QUEUE_POSTHOG_EVENT,
+  QUEUE_SEGMENT_EVENT,
 } from '@/common/consts/queen';
 import { HttpModule } from '@nestjs/axios';
 import { ProjectsModule } from '@/projects/projects.module';
@@ -31,6 +33,7 @@ import { IntegrationController } from './integration.controller';
     BullModule.registerQueue({ name: QUEUE_HUBSPOT_EVENT }),
     BullModule.registerQueue({ name: QUEUE_POSTHOG_EVENT }),
     BullModule.registerQueue({ name: QUEUE_MIXPANEL_EVENT }),
+    BullModule.registerQueue({ name: QUEUE_SEGMENT_EVENT }),
     HttpModule,
     ProjectsModule,
     BizModule,
@@ -44,6 +47,7 @@ import { IntegrationController } from './integration.controller';
     HubspotEventProcessor,
     PosthogEventProcessor,
     MixpanelEventProcessor,
+    SegmentEventProcessor,
   ],
   controllers: [IntegrationController],
   exports: [IntegrationService],
