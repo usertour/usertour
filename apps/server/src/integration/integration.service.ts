@@ -9,7 +9,7 @@ import {
   QUEUE_POSTHOG_EVENT,
 } from '@/common/consts/queen';
 import { PrismaService } from 'nestjs-prisma';
-import { UpdateIntegrationInput } from './integration.dto';
+import { MixpanelWebhookDto, UpdateIntegrationInput } from './integration.dto';
 import { ParamsError } from '@/common/errors';
 import {
   AMPLITUDE_API_ENDPOINT,
@@ -25,6 +25,8 @@ import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { TrackEventData } from '@/common/types/track';
 import { BizService } from '@/biz/biz.service';
+import { IntegrationSource } from '@/common/types/integration';
+import { Segment } from '@prisma/client';
 
 @Injectable()
 export class IntegrationService {
@@ -422,23 +424,23 @@ export class IntegrationService {
   }
 
   private async getOrCreateSegment(
-    environmentId: string,
+    projectId: string,
     name: string,
     sourceId: string,
-    source = 'mixpanel',
+    source: IntegrationSource,
   ) {
-    const segment = await this.bizService.findSegmentBySource(environmentId, source, sourceId);
+    const segment = await this.bizService.findSegmentBySource(projectId, source, sourceId);
     if (segment) {
       return segment;
     }
-    return await this.bizService.createUserSegmentWithSource(environmentId, name, source, sourceId);
+    return await this.bizService.createUserSegmentWithSource(projectId, name, source, sourceId);
   }
 
   private async processMember(
     member: any,
     config: { mixpanelUserIdProperty: string },
     environmentId: string,
-    segment: any,
+    segment: Segment,
     action: 'add' | 'remove',
   ) {
     const userId = member[config.mixpanelUserIdProperty];
@@ -450,12 +452,15 @@ export class IntegrationService {
     if (action === 'add') {
       const { [config.mixpanelUserIdProperty]: externalUserId, ...attributes } = member;
       const bizUser = await this.bizService.upsertUser(externalUserId, environmentId, attributes);
-      await this.bizService.createBizUserOnSegment([
-        {
-          segmentId: segment.id,
-          bizUserId: bizUser.id,
-        },
-      ]);
+      if (bizUser) {
+        await this.bizService.createBizUserOnSegment([
+          {
+            segmentId: segment.id,
+            bizUserId: bizUser.id,
+            data: {},
+          },
+        ]);
+      }
     } else {
       const bizUser = await this.bizService.getBizUser(userId, environmentId);
       if (bizUser) {
@@ -469,8 +474,9 @@ export class IntegrationService {
 
   async syncCohort(
     accessToken: string,
-    data: any,
+    data: MixpanelWebhookDto,
   ): Promise<{ action: string; status: string; error?: { message: string; code: number } }> {
+    console.log('syncCohort', data);
     const { action, parameters } = data;
     const { mixpanel_cohort_name, members, mixpanel_cohort_id } = parameters;
 
@@ -482,6 +488,9 @@ export class IntegrationService {
           code: 'mixpanel',
           enabled: true,
         },
+        include: {
+          environment: true,
+        },
       });
 
       const config = integration?.config as {
@@ -491,6 +500,7 @@ export class IntegrationService {
         region?: string;
       };
       const environmentId = integration?.environmentId;
+      const projectId = integration?.environment?.projectId;
 
       if (!integration || !config?.mixpanelUserIdProperty || !config?.syncCohorts) {
         throw new ParamsError('Mixpanel integration not configured correctly');
@@ -505,9 +515,10 @@ export class IntegrationService {
         case 'members':
         case 'add_members': {
           const segment = await this.getOrCreateSegment(
-            environmentId,
+            projectId,
             mixpanel_cohort_name,
             mixpanel_cohort_id,
+            IntegrationSource.MIXPANEL,
           );
 
           for (const member of members) {
@@ -518,8 +529,8 @@ export class IntegrationService {
 
         case 'remove_members': {
           const segment = await this.bizService.findSegmentBySource(
-            environmentId,
-            'mixpanel',
+            projectId,
+            IntegrationSource.MIXPANEL,
             mixpanel_cohort_id,
           );
 

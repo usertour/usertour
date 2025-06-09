@@ -26,6 +26,7 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
+import { IntegrationSource } from '@/common/types/integration';
 
 @Injectable()
 export class BizService {
@@ -58,21 +59,21 @@ export class BizService {
     });
   }
 
-  async findSegmentBySource(environmentId: string, source: string, sourceId: string) {
+  async findSegmentBySource(projectId: string, source: IntegrationSource, sourceId: string) {
     return await this.prisma.segment.findFirst({
-      where: { environmentId, source, sourceId },
+      where: { projectId, source, sourceId },
     });
   }
 
   async createUserSegmentWithSource(
-    environmentId: string,
+    projectId: string,
     name: string,
     source: string,
     sourceId: string,
   ) {
     return await this.prisma.segment.create({
       data: {
-        environmentId,
+        projectId,
         name,
         bizType: SegmentBizType.USER,
         dataType: SegmentDataType.MANUAL,
@@ -147,12 +148,19 @@ export class BizService {
       throw new ParamsError('Segment not found');
     }
 
+    // Get the environmentId of the first bizUser
+    const firstBizUser = await this.prisma.bizUser.findFirst({
+      where: {
+        id: data[0].bizUserId,
+      },
+    });
+
     // Batch check all users exist in one query
     const userIds = data.map((item) => item.bizUserId);
     const existingUsers = await this.prisma.bizUser.findMany({
       where: {
         id: { in: userIds },
-        environmentId: segment.environmentId,
+        environmentId: firstBizUser.environmentId,
       },
       select: { id: true },
     });
