@@ -216,7 +216,6 @@ interface MixpanelIntegrationConfig extends BaseIntegrationConfig {
 
 interface SegmentIntegrationConfig extends BaseIntegrationConfig {
   exportEvents?: boolean;
-  syncCohorts?: boolean;
 }
 
 interface AmplitudeIntegrationConfig extends BaseIntegrationConfig {}
@@ -690,21 +689,6 @@ const SegmentConfig = ({
   const [exportEvents, setExportEvents] = useState(
     (currentIntegration?.config as SegmentIntegrationConfig)?.exportEvents ?? false,
   );
-  const [syncCohorts, setSyncCohorts] = useState(
-    (currentIntegration?.config as SegmentIntegrationConfig)?.syncCohorts ?? false,
-  );
-  const { globalConfig } = useAppContext();
-
-  const webhookUrl = `${globalConfig?.apiUrl}/api/segment_webhook/${currentIntegration?.accessToken}`;
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const { toast } = useToast();
-
-  const handleCopy = () => {
-    copyToClipboard(webhookUrl);
-    toast({
-      title: 'Webhook URL copied to clipboard',
-    });
-  };
 
   const handleSubmit = () => {
     onSubmit({
@@ -713,7 +697,6 @@ const SegmentConfig = ({
       config: {
         region: region || 'US',
         exportEvents,
-        syncCohorts,
       },
     });
   };
@@ -779,33 +762,6 @@ const SegmentConfig = ({
               </Select>
             </div>
           </>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={syncCohorts}
-            onCheckedChange={setSyncCohorts}
-            className="data-[state=unchecked]:bg-input"
-          />
-          <Label className="text-sm">Cohort sync from Segment</Label>
-        </div>
-
-        {syncCohorts && (
-          <div className="flex flex-col gap-1 ">
-            <Label htmlFor="link">Webhook URL</Label>
-            <div className="relative flex-1">
-              <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute top-0.5 right-0.5 size-7"
-                onClick={handleCopy}
-              >
-                <Copy className="size-3.5" />
-              </Button>
-            </div>
-          </div>
         )}
       </div>
       <DialogFooter>
