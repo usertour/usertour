@@ -214,6 +214,11 @@ interface MixpanelIntegrationConfig extends BaseIntegrationConfig {
   mixpanelUserIdProperty?: string;
 }
 
+interface SegmentIntegrationConfig extends BaseIntegrationConfig {
+  exportEvents?: boolean;
+  syncCohorts?: boolean;
+}
+
 interface AmplitudeIntegrationConfig extends BaseIntegrationConfig {}
 
 interface PosthogIntegrationConfig extends BaseIntegrationConfig {}
@@ -670,6 +675,151 @@ const MixpanelConfig = ({
   );
 };
 
+const SegmentConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps<SegmentIntegrationConfig>) => {
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
+  const [region, setRegion] = useState(
+    (currentIntegration?.config as SegmentIntegrationConfig)?.region || 'US',
+  );
+  const [exportEvents, setExportEvents] = useState(
+    (currentIntegration?.config as SegmentIntegrationConfig)?.exportEvents ?? false,
+  );
+  const [syncCohorts, setSyncCohorts] = useState(
+    (currentIntegration?.config as SegmentIntegrationConfig)?.syncCohorts ?? false,
+  );
+  const { globalConfig } = useAppContext();
+
+  const webhookUrl = `${globalConfig?.apiUrl}/api/segment_webhook/${currentIntegration?.accessToken}`;
+  const [_, copyToClipboard] = useCopyToClipboard();
+  const { toast } = useToast();
+
+  const handleCopy = () => {
+    copyToClipboard(webhookUrl);
+    toast({
+      title: 'Webhook URL copied to clipboard',
+    });
+  };
+
+  const handleSubmit = () => {
+    onSubmit({
+      key: apiKey,
+      enabled: true,
+      config: {
+        region: region || 'US',
+        exportEvents,
+        syncCohorts,
+      },
+    });
+  };
+
+  return (
+    <DialogContent className="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <DotsHorizontalIcon className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          {integration.description}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col gap-4 mt-2">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={exportEvents}
+            onCheckedChange={setExportEvents}
+            className="data-[state=unchecked]:bg-input"
+          />
+          <Label className="text-sm">Stream events from Usertour to Segment</Label>
+          <QuestionTooltip>
+            When enabled, Usertour-generated events will be continuously streamed into your Segment
+            project.
+          </QuestionTooltip>
+        </div>
+
+        {exportEvents && (
+          <>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">Segment Write Key :</p>
+              <Input
+                type="text"
+                placeholder="Type Write Key here"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">Region:</p>
+              <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Default(US)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="US">Default(US)</SelectItem>
+                  <SelectItem value="EU">EU</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={syncCohorts}
+            onCheckedChange={setSyncCohorts}
+            className="data-[state=unchecked]:bg-input"
+          />
+          <Label className="text-sm">Cohort sync from Segment</Label>
+        </div>
+
+        {syncCohorts && (
+          <div className="flex flex-col gap-1 ">
+            <Label htmlFor="link">Webhook URL</Label>
+            <div className="relative flex-1">
+              <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
+              <Button
+                type="submit"
+                size="icon"
+                variant="ghost"
+                className="absolute top-0.5 right-0.5 size-7"
+                onClick={handleCopy}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={(exportEvents && !apiKey) || loading}>
+          {loading ? 'Saving...' : 'Save'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
 // Configuration mapping for different integration types
 const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
   amplitude: AmplitudeConfig,
@@ -677,6 +827,7 @@ const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigPr
   heap: HeapConfig,
   posthog: PosthogConfig,
   mixpanel: MixpanelConfig,
+  segment: SegmentConfig,
   // Add more integration configs here
 };
 
