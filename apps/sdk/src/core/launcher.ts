@@ -226,6 +226,7 @@ export class Launcher extends BaseContent<LauncherStore> {
    */
   async close() {
     this.setDismissed(true);
+    this.setStarted(false);
     this.hide();
     this.trigger(BizEvents.LAUNCHER_DISMISSED);
   }
