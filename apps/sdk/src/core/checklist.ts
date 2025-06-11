@@ -81,6 +81,36 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
+   * Ends the latest session
+   * @param reason - The reason for ending the session
+   */
+  async endLatestSession(reason: contentEndReason) {
+    const content = this.getContent();
+    const sessionId = this.getReusedSessionId();
+    if (!sessionId) {
+      return;
+    }
+    const baseEventData = {
+      [EventAttributes.CHECKLIST_ID]: content.contentId,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: content.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: content.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+      [EventAttributes.CHECKLIST_END_REASON]: reason,
+    };
+
+    await this.reportEventWithSession(
+      {
+        sessionId,
+        eventName: BizEvents.CHECKLIST_DISMISSED,
+        eventData: {
+          ...baseEventData,
+        },
+      },
+      { isDeleteSession: true },
+    );
+  }
+
+  /**
    * Handles the visibility state of the checklist.
    * This method:
    * 1. Checks if checklist has started and not been dismissed
@@ -89,7 +119,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    */
   private handleVisibilityState() {
     // Return early if checklist hasn't started or has been dismissed
-    if (!this.hasStarted() || this.hasDismissed()) {
+    if (!this.hasStarted()) {
       return;
     }
 
@@ -229,6 +259,10 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
   }
 
+  /**
+   * Handles the click event of a checklist item
+   * @param item - The checklist item that was clicked
+   */
   handleItemClick = async (item: ChecklistItemType) => {
     // Update item status when clicked
     this.updateItemStatus(item.id, {
@@ -326,6 +360,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
   }
 
+  /**
+   * Retrieves the status of a checklist item
+   * @param itemId - The ID of the checklist item
+   * @returns The status of the checklist item
+   */
   private getItemStatus(itemId: string): ChecklistItemStatus {
     // Return default status if item not found
     return (
@@ -337,6 +376,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
     );
   }
 
+  /**
+   * Updates the status of a checklist item
+   * @param itemId - The ID of the checklist item
+   * @param status - The new status of the checklist item
+   */
   private updateItemStatus(itemId: string, status: Partial<ChecklistItemStatus>) {
     const currentStatus = this.getItemStatus(itemId);
     this.itemStatus.set(itemId, {
@@ -345,17 +389,34 @@ export class Checklist extends BaseContent<ChecklistStore> {
     });
   }
 
+  /**
+   * Checks if the checklist is active
+   * @returns True if the checklist is active, false otherwise
+   */
   isActiveChecklist() {
     return this.getActiveChecklist() === this;
   }
 
+  /**
+   * Closes the checklist
+   * @param reason - The reason for closing the checklist
+   */
   async close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
+    // Set the checklist as dismissed
     this.setDismissed(true);
+    // Set the checklist as not started
+    this.setStarted(false);
+    // Hide the checklist
     this.hide();
+    // Report the dismiss event
     await this.reportDismissEvent(reason);
+    // Destroy the checklist
     this.destroy();
   }
 
+  /**
+   * Handles the dismiss event of the checklist
+   */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
   }

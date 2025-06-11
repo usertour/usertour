@@ -94,8 +94,11 @@ export const findLatestActivatedTour = (tours: Tour[]): Tour | undefined => {
  */
 export const findLatestActivatedTourAndCvid = (
   tours: Tour[],
+  contentId?: string,
 ): { latestActivatedTour: Tour; cvid: string } | undefined => {
-  const latestActivatedTour = findLatestActivatedTour(tours);
+  const latestActivatedTour = contentId
+    ? tours.find((tour) => tour.getContent().contentId === contentId)
+    : findLatestActivatedTour(tours);
   // if the tour is dismissed, return null
   if (!latestActivatedTour || flowIsDismissed(latestActivatedTour.getContent())) {
     return undefined;
@@ -201,4 +204,33 @@ export const findLatestValidActivatedChecklist = (
     }
   }
   return undefined;
+};
+
+/**
+ * Checks if two tours are the same
+ * @param tour1 - The first tour
+ * @param tour2 - The second tour
+ * @returns True if the tours are the same, false otherwise
+ */
+export const isSameTour = (tour1: Tour | undefined, tour2: Tour | undefined): boolean => {
+  if (!tour1 || !tour2) {
+    return false;
+  }
+  return tour1.getContent().contentId === tour2.getContent().contentId;
+};
+
+/**
+ * Checks if two checklists are the same
+ * @param checklist1 - The first checklist
+ * @param checklist2 - The second checklist
+ * @returns True if the checklists are the same, false otherwise
+ */
+export const isSameChecklist = (
+  checklist1: Checklist | undefined,
+  checklist2: Checklist | undefined,
+): boolean => {
+  if (!checklist1 || !checklist2) {
+    return false;
+  }
+  return checklist1.getContent().contentId === checklist2.getContent().contentId;
 };

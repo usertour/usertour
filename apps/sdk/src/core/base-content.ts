@@ -50,7 +50,7 @@ export abstract class BaseContent<T = any> extends Evented {
     if (!this.canAutoStart()) {
       return;
     }
-    if (this.isStarted) {
+    if (this.hasStarted()) {
       return;
     }
     this.reset();
@@ -82,7 +82,7 @@ export abstract class BaseContent<T = any> extends Evented {
       throw new Error('Failed to create user session.');
     }
     this.sessionId = sessionId;
-    this.isStarted = true;
+    this.setStarted(true);
     this.trigger(AppEvents.CONTENT_AUTO_START_ACTIVATED, { reason });
     this.show(cvid);
   }
@@ -109,6 +109,14 @@ export abstract class BaseContent<T = any> extends Evented {
    */
   setDismissed(value: boolean) {
     this.isDismissed = value;
+  }
+
+  /**
+   * Sets the started state
+   * @param value - The value to set the started state to
+   */
+  setStarted(value: boolean) {
+    this.isStarted = value;
   }
 
   /**
@@ -142,6 +150,15 @@ export abstract class BaseContent<T = any> extends Evented {
   setContent(content: SDKContent) {
     this.content = structuredClone(content);
     this.config.setConfig(content.config);
+  }
+
+  /**
+   * Removes the latest session from the content
+   */
+  removeContentLatestSession() {
+    if (this.content?.latestSession) {
+      this.content.latestSession = undefined;
+    }
   }
 
   /**
@@ -408,7 +425,7 @@ export abstract class BaseContent<T = any> extends Evented {
     event: Partial<ReportEventParams>,
     options: ReportEventOptions = {},
   ) {
-    const sessionId = this.getSessionId();
+    const sessionId = event.sessionId || this.getSessionId();
     if (!sessionId) {
       return;
     }
