@@ -1,8 +1,52 @@
 import { SDKSettingsMode, UserTourTypes } from '@usertour-ui/types';
 import { App } from './core/app';
 import { logger } from './utils/logger';
+import { window } from './utils/globals';
 
 const w: UserTourTypes.WindowWithUsertour = typeof window === 'undefined' ? ({} as any) : window;
+
+interface Deferred {
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+}
+
+type QueueItem = [string, Deferred | null, unknown[]];
+
+/**
+ * Process the queue of method calls that were collected before SDK initialization
+ */
+function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueItem[]): void {
+  if (!stubQueue?.length) {
+    return;
+  }
+
+  logger.info(`Processing ${stubQueue.length} items in the queue`);
+
+  // Clear the queue immediately to prevent double processing
+  (window as any).USERTOURJS_QUEUE = undefined;
+
+  for (const [method, deferred, args] of stubQueue) {
+    try {
+      const methodName = method as keyof typeof usertour;
+
+      if (typeof usertour[methodName] !== 'function') {
+        logger.error(`usertour.js: Invalid method '${methodName}' in queue`);
+        continue;
+      }
+
+      const result = (usertour[methodName] as (...args: unknown[]) => unknown)(...args);
+
+      if (deferred && result && typeof (result as Promise<unknown>).then === 'function') {
+        (result as Promise<unknown>).then(deferred.resolve, deferred.reject);
+      }
+    } catch (error) {
+      logger.error(`Error processing queue item for method '${method}':`, error);
+      deferred?.reject?.(error);
+    }
+  }
+
+  logger.info('Queue processed successfully');
+}
 
 if (w.usertour === undefined || w.usertour?._stubbed) {
   const app = new App();
@@ -68,17 +112,30 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
           // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           opts?: UserTourTypes.TrackOptions,
         ) => {},
+        /**
+         * Checks if a user is identified
+         * @returns True if user info exists, false otherwise
+         */
         isIdentified: () => {
           return app.isIdentified();
         },
-        start: async (
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          contentId: string,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          opts?: UserTourTypes.StartOptions,
-        ) => {},
+        /**
+         * Checks if a content has been started
+         * @param contentId - The content ID to check
+         * @returns True if the content has been started, false otherwise
+         */
+        isStarted: (contentId: string) => {
+          return app.isStarted(contentId);
+        },
+        /**
+         * Starts a content
+         * @param contentId - The content ID to start
+         * @param opts - The options for starting the content
+         * @returns A promise that resolves when the content is started
+         */
+        start: async (contentId: string, opts?: UserTourTypes.StartOptions) => {
+          return app.startContent(contentId, opts);
+        },
         endAll: async () => {
           return await app.endAll();
         },
@@ -88,6 +145,12 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
         remount: () => {},
         setBaseZIndex: (baseZIndex: number) => {
           app.setBaseZIndex(baseZIndex);
+        },
+        setSessionTimeout: (hours: number) => {
+          app.setSessionTimeout(hours);
+        },
+        setTargetMissingSeconds: (seconds: number) => {
+          app.setTargetMissingSeconds(seconds);
         },
         // eslint-disable-next-line es5/no-rest-parameters
         on: (
@@ -114,27 +177,8 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
   w.usertour = usertour;
 
   (() => {
-    const ut = w.usertour;
-    const stubQueue = w.USERTOURJS_QUEUE;
-    if (!stubQueue || stubQueue.length === 0) {
-      return;
-    }
-    // @ts-ignore
-    logger.info(`processing ${stubQueue.length} items in the queue`);
-    w.USERTOURJS_QUEUE = undefined;
-    for (const [method, deferred, args] of stubQueue) {
-      const m = method as keyof typeof ut;
-      if (typeof ut[m] !== 'function') {
-        console.error(`usertour.js: Invalid method '${m}' in queue`);
-        continue;
-      }
-      // @ts-ignore
-      const t = ut[m](...args) as any;
-      if (deferred && typeof t.then === 'function') {
-        t.then(deferred.resolve, deferred.reject);
-      }
-    }
-    logger.info('queue processed');
+    processStubQueue(w.usertour, w.USERTOURJS_QUEUE);
   })();
 }
+
 // export default usertour;

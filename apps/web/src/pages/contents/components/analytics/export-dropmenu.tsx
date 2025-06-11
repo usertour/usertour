@@ -14,8 +14,8 @@ import type {
   BizSession,
   BizEvent,
   ContentVersion,
-  flowStartReason,
-  flowEndReason,
+  contentStartReason,
+  contentEndReason,
 } from '@usertour-ui/types';
 import {
   AttributeBizTypes,
@@ -33,6 +33,7 @@ import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useAppContext } from '@/contexts/app-context';
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
   if (!date) return '';
@@ -122,10 +123,10 @@ const getFlowReasons = (events: BizEvent[]) => {
   return {
     startReason:
       flowReasonTitleMap[
-        startEvent?.data?.[EventAttributes.FLOW_START_REASON] as flowStartReason
+        startEvent?.data?.[EventAttributes.FLOW_START_REASON] as contentStartReason
       ] || '',
     endReason:
-      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as flowEndReason] || '',
+      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason],
   };
 };
 
@@ -142,12 +143,14 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { eventList } = useEventListContext();
   const { content } = useContentDetailContext();
   const { attributeList } = useAttributeListContext();
+  const { environment } = useAppContext();
   const { data } = useQuery(getContentVersion, {
     variables: { versionId: content?.publishedVersionId || content?.editedVersionId },
   });
   const version = data?.getContentVersion as ContentVersion;
 
   const query = {
+    environmentId: environment?.id ?? '',
     contentId,
     startDate: dateRange?.from?.toISOString(),
     endDate: dateRange?.to?.toISOString(),

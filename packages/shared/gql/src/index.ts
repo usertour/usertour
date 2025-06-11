@@ -12,3 +12,5 @@ export * from './gql/utilities';
 export * from './gql/localizations';
 export * from './gql/team';
 export * from './gql/subscription';
+export * from './gql/api';
+export * from './gql/project';

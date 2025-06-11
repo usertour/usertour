@@ -103,11 +103,7 @@ const LauncherContainer = forwardRef<HTMLDivElement, LauncherContainerProps>(
         el.style.cssText = globalStyle;
       }
     });
-    return (
-      <div id="usertour-widget" ref={composedRefs}>
-        {children}
-      </div>
-    );
+    return <div ref={composedRefs}>{children}</div>;
   },
 );
 

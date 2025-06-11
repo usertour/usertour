@@ -103,6 +103,7 @@ export enum BizEvents {
   FLOW_COMPLETED = 'flow_completed',
   FLOW_STARTED = 'flow_started',
   FLOW_ENDED = 'flow_ended',
+  TOOLTIP_TARGET_MISSING = 'tooltip_target_missing',
   FLOW_STEP_COMPLETED = 'flow_step_completed',
   LAUNCHER_ACTIVATED = 'launcher_activated',
   LAUNCHER_DISMISSED = 'launcher_dismissed',

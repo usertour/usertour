@@ -466,7 +466,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
         {enabledBackdrop && (
           <div
             className="usertour-widget-backdrop"
-            style={{ position: 'fixed', visibility: 'visible' }}
+            style={{ position: 'fixed', visibility: 'visible', zIndex: context.zIndex + 1 }}
           />
         )}
         <div

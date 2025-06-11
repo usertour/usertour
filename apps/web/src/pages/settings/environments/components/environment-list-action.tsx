@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
-import { CloseIcon, EditIcon } from '@usertour-ui/icons';
+import { Delete2Icon, EditIcon } from '@usertour-ui/icons';
 import { useState } from 'react';
 import { EnvironmentDeleteForm } from './environment-delete-form';
 import { EnvironmentEditForm } from './environment-edit-form';
@@ -55,8 +55,11 @@ export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
             Rename environment
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleDeleteOpen}>
-            <CloseIcon className="w-6" width={16} height={16} />
+          <DropdownMenuItem
+            onClick={handleDeleteOpen}
+            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+          >
+            <Delete2Icon className="w-4 h-4 mr-2" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

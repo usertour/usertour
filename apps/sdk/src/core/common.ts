@@ -5,6 +5,9 @@ import { ChecklistStore, LauncherStore, TourStore } from '../types/store';
 import { getUserTourCss } from '../utils/env';
 
 const DEFAULT_Z_INDEX = 11111;
+export const SESSION_TIMEOUT_HOURS = 24 * 2; // 2 days
+export const DEFAULT_TARGET_MISSING_SECONDS = 6;
+
 const DEFAULT_STORE_VALUES = {
   openState: false,
   globalStyle: '',

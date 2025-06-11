@@ -1,45 +1,39 @@
 import {
-  BarChart2,
-  Bot,
-  GitFork,
   MessageSquare,
   Paintbrush,
-  Languages,
-  Palette,
-  Layers,
-  Home,
-  Key,
-  Activity,
   Headphones,
-  Shield,
-  Webhook,
   Package,
   Send,
   Lock,
   Check,
   Mails,
   Newspaper,
-  Zap,
   Users2,
   Calendar,
   BarChart4,
-  AlertCircle,
+  Waypoints,
 } from 'lucide-react';
-import { FlowIcon, ChecklistIcon, LauncherIcon } from '@usertour-ui/icons';
+import { ChatIcon, BoxIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
 import { Switch } from '@usertour-ui/switch';
 import { Fragment, useState, useEffect } from 'react';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   useCreateCheckoutSessionMutation,
-  useGetSubscriptionByProjectIdQuery,
   useCreatePortalSessionMutation,
-  useGetSubscriptionUsageQuery,
 } from '@usertour-ui/shared-hooks';
 import { Separator } from '@usertour-ui/separator';
-import { PlanType, type Subscription } from '@usertour-ui/types';
+import { PlanType } from '@usertour-ui/types';
 import { Progress } from '@usertour-ui/progress';
 import { Skeleton } from '@usertour-ui/skeleton';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
+import {
+  HobbySessionLimit,
+  ProSessionLimit,
+  GrowthSessionLimit,
+  BusinessSessionLimit,
+} from '@usertour-ui/constants';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 // Define plan type
 interface Plan {
@@ -75,8 +69,6 @@ interface SessionValue {
   price: string | null;
 }
 
-const HobbySessionLimit = 10000;
-
 // const primaryButtonClassName =
 //   'border border-transparent bg-zinc-950/90 text-white/90 hover:bg-zinc-950/80 dark:bg-white dark:text-zinc-950 dark:hover:bg-white/90';
 const secondaryButtonClassName =
@@ -87,7 +79,7 @@ const plans: Plan[] = [
     name: 'Hobby',
     price: '$0',
     yearlyPrice: '$0',
-    description: 'Ideal for indie hackers and small teams to get started with Usertour.',
+    description: 'For individual hobbyists',
     buttonText: 'Get started',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
@@ -95,78 +87,73 @@ const plans: Plan[] = [
     isCurrentPlan: true,
     disabled: false,
     features: [
+      { icon: Newspaper, text: 'Unlimited content' },
       { icon: BarChart4, text: `${HobbySessionLimit} sessions/month` },
-      { icon: FlowIcon, text: 'Unlimited flows' },
-      { icon: ChecklistIcon, text: 'Unlimited checklists' },
-      { icon: LauncherIcon, text: 'Unlimited launchers' },
-      { icon: BarChart2, text: 'Analytics' },
-      { icon: Bot, text: 'Custom theming' },
-      { icon: GitFork, text: 'Version history' },
+      { icon: Users2, text: '1 team members' },
+      { icon: Calendar, text: '1 years data retention' },
+      { icon: BoxIcon, text: '1 environments' },
+      { icon: Waypoints, text: '100 API requests/min' },
       { icon: MessageSquare, text: 'Community support' },
     ],
   },
   {
-    name: 'Pro',
-    price: '$150',
-    yearlyPrice: '$120',
-    description: 'For small teams and startups who need extra features.',
+    name: 'Starter',
+    price: '$59',
+    yearlyPrice: '$49',
+    description: 'For small teams and startups',
     buttonText: 'Upgrade',
-    buttonVariant: 'default',
-    buttonClassName: '',
-    showSpacing: true,
+    buttonVariant: 'secondary',
+    buttonClassName: secondaryButtonClassName,
+    showSpacing: false,
     disabled: false,
     features: [
       { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: 'Unlimited sessions' },
-      { icon: Newspaper, text: 'Unlimited surveys/NPS' },
-      { icon: Zap, text: 'Unlimited Event Tracking' },
+      { icon: BarChart4, text: `${ProSessionLimit} sessions/month` },
       { icon: Users2, text: '3 team members' },
       { icon: Calendar, text: '3 years data retention' },
-      { icon: Palette, text: 'Remove Usertour branding' },
+      { icon: BoxIcon, text: '2 environments' },
+      { icon: Waypoints, text: '500 API requests/min' },
       { icon: Mails, text: 'Email support' },
     ],
   },
   {
     name: 'Growth',
-    price: '$550',
-    yearlyPrice: '$440',
-    description: 'For growing startups who need all major features.',
+    price: '$119',
+    yearlyPrice: '$99',
+    description: 'For growing companies',
     buttonText: 'Upgrade',
     buttonVariant: 'default',
-    buttonClassName: secondaryButtonClassName,
-    showSpacing: true,
-    disabled: true,
+    buttonClassName: '',
+    showSpacing: false,
+    disabled: false,
     features: [
-      { icon: Check, text: 'Everything in Pro, plus' },
-      { icon: AlertCircle, text: 'Alerting' },
-      { icon: Languages, text: 'Localization' },
-      { icon: Lock, text: 'Password-protection' },
-      { icon: Users2, text: 'Unlimited team members' },
-      { icon: Calendar, text: '7 years data retention' },
-      { icon: Layers, text: 'Advanced integrations' },
-      { icon: Headphones, text: 'Priority support' },
+      { icon: Check, text: 'Everything in Starter, plus' },
+      { icon: BarChart4, text: `${GrowthSessionLimit} sessions/month` },
+      { icon: Users2, text: '10 team members' },
+      { icon: Calendar, text: '5 years data retention' },
+      { icon: BoxIcon, text: '3 environments' },
+      { icon: Waypoints, text: '1000 API requests/min' },
+      { icon: ChatIcon, text: 'Live chat support' },
     ],
   },
   {
-    name: 'Enterprise',
-    price: 'Custom Pricing',
-    yearlyPrice: 'Custom Pricing',
-    description: 'Custom built packages based on your needs',
-    buttonText: 'Contact us',
-    buttonLink: 'mailto:support@usertour.io',
+    name: 'Business',
+    price: '$249',
+    yearlyPrice: '$207',
+    description: 'For large companies',
+    buttonText: 'Upgrade',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
-    showSpacing: true,
+    showSpacing: false,
     disabled: false,
     features: [
       { icon: Check, text: 'Everything in Growth, plus' },
-      { icon: Home, text: 'Security questionnaire' },
-      { icon: Key, text: 'Single sign-on (SSO)' },
-      { icon: Activity, text: '99.9% uptime SLA' },
-      { icon: Shield, text: 'Security review' },
-      { icon: Webhook, text: 'Custom integrations' },
-      { icon: Paintbrush, text: 'Custom contracts' },
-      { icon: Headphones, text: 'Concierge support' },
+      { icon: BarChart4, text: `${BusinessSessionLimit} sessions/month` },
+      { icon: Users2, text: 'Unlimited team members' },
+      { icon: Calendar, text: '7 years data retention' },
+      { icon: BoxIcon, text: 'Unlimited environments' },
+      { icon: Waypoints, text: '3000 API requests/min' },
+      { icon: Headphones, text: 'Priority support' },
     ],
   },
 ];
@@ -188,7 +175,7 @@ const PlanCard = (props: PlanCardProps) => {
 
   // Add logic to determine if this plan is higher or lower than current plan
   const getPlanLevel = (planName: string) => {
-    const planLevels = ['hobby', 'pro', 'growth', 'enterprise'];
+    const planLevels = ['hobby', 'starter', 'growth', 'business'];
     return planLevels.indexOf(planName.toLowerCase());
   };
 
@@ -311,7 +298,7 @@ const PlanCard = (props: PlanCardProps) => {
 };
 
 // Comparison Table Component
-const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
+const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[] }) => {
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
@@ -320,12 +307,7 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
       features: [
         {
           name: 'Price (monthly billing)',
-          values: [
-            isYearly ? '$0/month' : '$0/month',
-            isYearly ? '$120/month' : '$150/month',
-            isYearly ? '$440/month' : '$550/month',
-            'Chat with us',
-          ],
+          values: plans.map((plan) => `${isYearly ? plan.yearlyPrice : plan.price}/month`),
         },
         {
           name: 'End users',
@@ -335,17 +317,25 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
           name: 'Sessions (Monthly)',
           values: [
             { count: `${HobbySessionLimit}`, price: null },
-            { count: 'Unlimited', price: null },
-            { count: 'Unlimited', price: null },
-            { count: 'Unlimited', price: null },
+            { count: `${ProSessionLimit}`, price: null },
+            { count: `${GrowthSessionLimit}`, price: null },
+            { count: `${BusinessSessionLimit}`, price: null },
           ],
         },
         {
           name: 'Data Retention',
-          values: ['1 Year', '3 Years', '7 Years', 'Custom'],
+          values: ['1 Year', '3 Years', '5 Years', '7 Years'],
         },
         {
-          name: 'Usage limits can be upgraded',
+          name: 'Environments',
+          values: ['1', '2', '3', 'Unlimited'],
+        },
+        {
+          name: 'API rate limit (requests/min)',
+          values: ['100', '500', '1000', '3000'],
+        },
+        {
+          name: 'All usage limits can be upgraded',
           values: [true, true, true, true],
         },
       ],
@@ -367,16 +357,16 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Banners(coming soon)',
-          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
+          name: 'Surveys/NPS',
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Surveys/NPS',
-          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
+          name: 'Banners(coming soon)',
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'Event Trackers(coming soon)',
-          values: ['1', 'Unlimited', 'Unlimited', 'Unlimited'],
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
           name: 'No Usertour-branding',
@@ -390,7 +380,7 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
       features: [
         {
           name: 'Team members',
-          values: ['1', '3', 'Unlimited', 'Unlimited'],
+          values: ['1', '3', '10', 'Unlimited'],
         },
       ],
     },
@@ -398,10 +388,6 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
       icon: Send,
       title: 'Features',
       features: [
-        {
-          name: 'Environments',
-          values: [true, true, true, true],
-        },
         {
           name: 'Custom theming',
           values: [true, true, true, true],
@@ -423,12 +409,16 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
           values: [true, true, true, true],
         },
         {
-          name: 'Localization',
-          values: [false, false, true, true],
+          name: 'Localization(coming soon)',
+          values: [true, true, true, true],
         },
         {
-          name: 'Advanced integrations',
-          values: [false, false, true, true],
+          name: 'Integrations(coming soon)',
+          values: [true, true, true, true],
+        },
+        {
+          name: 'Alerting(coming soon)',
+          values: [true, true, true, true],
         },
       ],
     },
@@ -518,18 +508,17 @@ const ComparisonTable = ({ isYearly }: { isYearly: boolean }) => {
 
 const Pricing = ({ projectId }: { projectId: string }) => {
   const [isYearly, setIsYearly] = useState(false);
-  const { subscription, loading: subscriptionLoading } = useGetSubscriptionByProjectIdQuery(
-    projectId,
-  ) as {
-    subscription: Subscription | null;
-    loading: boolean;
-  };
+  const {
+    subscription,
+    currentUsage,
+    totalLimit,
+    planType,
+    loading: subscriptionLoading,
+  } = useSubscriptionContext();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
-  const { usage } = useGetSubscriptionUsageQuery(projectId);
-  const currentUsage = usage ?? 0;
-  const totalLimit = HobbySessionLimit;
-  const planType = subscription?.planType ?? PlanType.HOBBY;
+
+  const percent = (currentUsage / totalLimit) * 100;
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -544,7 +533,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
       if (!subscription?.planType || subscription?.planType === PlanType.HOBBY) {
         const url = await createCheckout({
           projectId,
-          planType: PlanType.PRO,
+          planType: PlanType.STARTER,
           interval: isYearly ? 'yearly' : 'monthly',
         });
         window.location.href = url;
@@ -571,8 +560,8 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               View and manage your billing plan
             </h2>
           </div>
-          <div className="col-span-5">
-            <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center p-4 pt-1 xl:p-4 rounded-xl xl:justify-between bg-zinc-950/5 dark:bg-white/5">
+          <div className="flex flex-col col-span-5 space-y-2 p-4 pt-1 xl:p-4 rounded-xl bg-zinc-950/5 dark:bg-white/5">
+            <div className="flex max-xl:flex-col max-xl:gap-y-3 justify-center xl:items-center xl:justify-between">
               <div className="flex items-center gap-2 grow">
                 <div className="flex flex-col w-full">
                   <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
@@ -610,13 +599,10 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                         <Skeleton className="h-3 w-24 bg-background" />
                       </div>
                     </div>
-                  ) : planType === PlanType.HOBBY ? (
+                  ) : (
                     <div className="flex flex-col gap-1 text-xs mt-2">
                       <div className="flex items-center gap-4 w-full">
-                        <Progress
-                          value={((currentUsage / totalLimit) * 100) as number}
-                          className="h-1 grow max-w-60"
-                        />
+                        <Progress value={Math.min(percent, 100)} className="h-1 grow max-w-60" />
                         <span className="text-zinc-950/60 dark:text-white/50 flex-none">
                           {currentUsage} / {totalLimit}
                         </span>
@@ -624,7 +610,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                       <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
                         <span>Monthly sessions</span>
                         <span>•</span>
-                        <span>{Math.round((currentUsage / totalLimit) * 100)}% used</span>
+                        <span>{percent.toFixed(2)}% used</span>
                         <span>•</span>
                         <span>
                           {currentUsage < totalLimit * 0.8
@@ -633,7 +619,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                         </span>
                       </div>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               </div>
               <Button
@@ -668,6 +654,16 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 </div>
               </Button>
             </div>
+            {percent >= 100 && (
+              <div className="flex items-center gap-1 text-red-500 text-sm font-medium">
+                <span>
+                  Usage exceeded limit. Please upgrade your plan to continue using all features.{' '}
+                </span>
+                <QuestionTooltip>
+                  All content will be hidden after exceeding the limit.
+                </QuestionTooltip>
+              </div>
+            )}
           </div>
         </div>
         <Separator />
@@ -705,11 +701,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 plan={plan}
                 isYearly={isYearly}
                 projectId={projectId}
-                currentPlanType={subscription?.planType ?? PlanType.HOBBY}
+                currentPlanType={planType}
               />
             ))}
           </div>
-          <ComparisonTable isYearly={isYearly} />
+          <ComparisonTable isYearly={isYearly} plans={plans} />
         </div>
       </div>
     </>

@@ -32,14 +32,15 @@ export const AdminEnvSwitcher = () => {
     (env: Environment) => {
       if (env.id) {
         if (environment?.id) {
-          const newPath = location.pathname.replace(environment?.id, env.id);
+          const currentPath = location.pathname;
+          const newPath = currentPath.replace(environment.id, env.id);
           navigate(newPath);
         }
         setEnvironment(env);
       }
       setOpen(false);
     },
-    [environment],
+    [environment, location.pathname, navigate],
   );
   const handleCreate = () => {
     setShowNewEnvDialog(true);

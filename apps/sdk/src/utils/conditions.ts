@@ -333,21 +333,28 @@ export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
   return true;
 };
 
-const getLatestEvent = (contentId: string, contents: SDKContent[], eventCodeName: string) => {
+const getLatestEvent = (
+  currentContent: SDKContent,
+  contents: SDKContent[],
+  eventCodeName: string,
+) => {
   const bizEvents: BizEvent[] = [];
+  const contentId = currentContent.id;
+  const contentType = currentContent.type;
   for (let index = 0; index < contents.length; index++) {
     const content = contents[index];
-    if (content.id === contentId) {
+    if (content.id === contentId || content.type !== contentType) {
       continue;
     }
-    if (content.events && content.events.length > 0) {
-      bizEvents.push(...content.events.filter((e) => e?.event?.codeName === eventCodeName));
+    const sessionBizEvents = content.latestSession?.bizEvent;
+    if (sessionBizEvents && sessionBizEvents.length > 0) {
+      bizEvents.push(...sessionBizEvents.filter((e) => e?.event?.codeName === eventCodeName));
     }
   }
   return findLatestEvent(bizEvents);
 };
 
-const findLatestEvent = (bizEvents: BizEvent[]) => {
+export const findLatestEvent = (bizEvents: BizEvent[]) => {
   const initialValue = bizEvents[0];
   const lastEvent = bizEvents.reduce(
     (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
@@ -361,15 +368,21 @@ const findLatestEvent = (bizEvents: BizEvent[]) => {
   return lastEvent;
 };
 
-const completeEventMapping = {
-  flow: BizEvents.FLOW_COMPLETED,
-  launcher: BizEvents.LAUNCHER_ACTIVATED,
-  checklist: BizEvents.CHECKLIST_COMPLETED,
+export const completeEventMapping = {
+  [ContentDataType.FLOW]: BizEvents.FLOW_COMPLETED,
+  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_ACTIVATED,
+  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_COMPLETED,
 };
 const showEventMapping = {
-  flow: BizEvents.FLOW_STEP_SEEN,
-  launcher: BizEvents.LAUNCHER_SEEN,
-  checklist: BizEvents.CHECKLIST_SEEN,
+  [ContentDataType.FLOW]: BizEvents.FLOW_STEP_SEEN,
+  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_SEEN,
+  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_SEEN,
+};
+
+export const isDismissedEventMapping = {
+  [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
+  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
+  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
 };
 
 const isGreaterThenDuration = (
@@ -406,31 +419,69 @@ const isGreaterThenDuration = (
 };
 
 export const checklistIsDimissed = (content: SDKContent) => {
-  return content.events.find((event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
+  return content?.latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
+  );
+};
+
+export const flowIsDismissed = (content: SDKContent) => {
+  return content?.latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.FLOW_ENDED,
+  );
+};
+
+export const flowIsSeen = (content: SDKContent) => {
+  return content?.latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+  );
+};
+
+export const checklistIsSeen = (content: SDKContent) => {
+  return content?.latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
+  );
 };
 
 export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const now = new Date();
   if (content.type === ContentDataType.FLOW) {
+    // if the content is a flow, it must have a steps
     if (!content.steps || content.steps.length === 0) {
       return false;
     }
   } else {
+    // if the content is not a flow, it must have a data
     if (!content.data) {
       return false;
     }
   }
+  // if the autoStartRulesSetting is not set, the content will be shown
   if (!content.config.autoStartRulesSetting) {
     return true;
   }
-  const completeEventName = completeEventMapping[content.type as keyof typeof completeEventMapping];
-  const lastEventName = showEventMapping[content.type as keyof typeof showEventMapping];
+
   const { frequency, startIfNotComplete } = content.config.autoStartRulesSetting;
-  const isComplete = content.events.find((e) => e?.event?.codeName === completeEventName);
-  if (startIfNotComplete && isComplete) {
+  const completedSessions = content.completedSessions;
+  const dismissedSessions = content.dismissedSessions;
+
+  // if the content is completed, it will not be shown again when startIfNotComplete is true
+  if (startIfNotComplete && completedSessions > 0) {
     return false;
   }
-  const lastEvent = getLatestEvent(content.id, contents, lastEventName);
+
+  // if the frequency is not set, the content will be shown
+  if (!frequency) {
+    return true;
+  }
+
+  const contentType = content.type as
+    | ContentDataType.FLOW
+    | ContentDataType.LAUNCHER
+    | ContentDataType.CHECKLIST;
+
+  const lastEventName = showEventMapping[contentType];
+  const lastEvent = getLatestEvent(content, contents, lastEventName);
+  const contentEvents = content.latestSession?.bizEvent;
 
   if (
     lastEvent &&
@@ -446,22 +497,29 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
     return false;
   }
 
-  const showEventName = showEventMapping[content.type as keyof typeof showEventMapping];
-  const showEvents = content.events.filter(
-    (e) =>
-      e?.event?.codeName === showEventName &&
-      (content.type === ContentDataType.FLOW ? e?.data?.flow_step_number === 0 : true),
-  );
-  if (!showEvents || showEvents.length === 0 || !frequency) {
+  if (frequency.frequency === Frequency.ONCE) {
+    //if the content is dismissed, it will not be shown again when the frequency is once
+    if (dismissedSessions > 0) {
+      return false;
+    }
     return true;
   }
-  if (frequency.frequency === Frequency.ONCE && content.totalSessions > 0) {
-    return false;
+
+  const showEventName = showEventMapping[contentType];
+  const showEvents = contentEvents?.filter(
+    (e) =>
+      e?.event?.codeName === showEventName &&
+      (contentType === ContentDataType.FLOW ? e?.data?.flow_step_number === 0 : true),
+  );
+  if (!showEvents || showEvents.length === 0) {
+    return true;
   }
+
   const lastShowEvent = findLatestEvent(showEvents);
   const lastShowEventDate = new Date(lastShowEvent.createdAt);
+
   if (frequency.frequency === Frequency.MULTIPLE) {
-    if (frequency.every.times && content.totalSessions >= frequency.every.times) {
+    if (frequency.every.times && dismissedSessions >= frequency.every.times) {
       return false;
     }
   }
@@ -473,4 +531,59 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
     }
   }
   return true;
+};
+
+export const parseUrlParams = (url: string, paramName: string): string | null => {
+  if (!url || !paramName) {
+    return null;
+  }
+
+  try {
+    const urlObj = new URL(url);
+
+    // 1. Check traditional query string
+    const searchParams = new URLSearchParams(urlObj.search);
+    if (searchParams.has(paramName)) {
+      return searchParams.get(paramName);
+    }
+
+    // 2. Check hash part
+    if (urlObj.hash) {
+      // Handle both #/path?param=value and #?param=value formats
+      const hashSearch = urlObj.hash.split('?')[1];
+      if (hashSearch) {
+        const hashParams = new URLSearchParams(hashSearch);
+        if (hashParams.has(paramName)) {
+          return hashParams.get(paramName);
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error parsing URL:', error);
+    return null;
+  }
+};
+
+export const wait = (seconds: number): Promise<void> => {
+  if (typeof seconds !== 'number' || Number.isNaN(seconds)) {
+    return Promise.reject(new Error('Invalid wait time: must be a number'));
+  }
+
+  if (seconds < 0) {
+    return Promise.reject(new Error('Invalid wait time: cannot be negative'));
+  }
+
+  if (seconds === 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    try {
+      setTimeout(resolve, seconds * 1000);
+    } catch (error) {
+      reject(error);
+    }
+  });
 };

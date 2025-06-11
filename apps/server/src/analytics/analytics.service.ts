@@ -1,6 +1,6 @@
 import { BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { ContentType } from '@/contents/models/content.model';
+import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
@@ -20,8 +20,10 @@ import {
 } from '@/utils/content';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
+import { PaginationConnection } from '@/common/openapi/pagination';
 
 type AnalyticsConditions = {
+  environmentId: string;
   contentId: string;
   eventId: string;
   startDateStr: string;
@@ -151,6 +153,7 @@ export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
 
   async queryContentAnalytics(
+    environmentId: string,
     contentId: string,
     startDate: string,
     endDate: string,
@@ -192,6 +195,7 @@ export class AnalyticsService {
       return false;
     }
     const condition = {
+      environmentId,
       contentId,
       eventId: startEvent.id,
       startDateStr,
@@ -240,20 +244,41 @@ export class AnalyticsService {
    * Query analytics data for questions in content
    */
   async queryContentQuestionAnalytics(
+    environmentId: string,
     contentId: string,
     startDate: string,
     endDate: string,
     timezone: string,
   ) {
-    const content = await this.getContentWithVersion(contentId);
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      include: {
+        contentOnEnvironments: true,
+      },
+    });
     if (!content) {
-      return;
+      return false;
+    }
+
+    const publishedVersionId =
+      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+        ?.publishedVersionId ||
+      content.publishedVersionId ||
+      content.editedVersionId;
+
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+      include: { steps: true },
+    });
+
+    if (!version) {
+      return false;
     }
 
     const rollWindowConfig: RollWindowConfig =
       (content.config as any)?.rollWindowConfig ?? defaultRollWindowConfig;
 
-    const version = content.publishedVersion || content.editedVersion;
+    // const version = content.publishedVersion || content.editedVersion;
     const startDateStr = startDate;
     const endDateStr = endDate;
 
@@ -271,6 +296,7 @@ export class AnalyticsService {
       }
 
       const response = await this.processQuestionAnalytics(
+        environmentId,
         questionData,
         contentId,
         startDateStr,
@@ -314,6 +340,7 @@ export class AnalyticsService {
    * Process analytics data for a single question
    */
   private async processQuestionAnalytics(
+    environmentId: string,
     question: QuestionElement,
     contentId: string,
     startDateStr: string,
@@ -326,6 +353,7 @@ export class AnalyticsService {
 
     // Get basic answer statistics
     const answer = await this.aggregationQuestionAnswer(
+      environmentId,
       contentId,
       questionCvid,
       startDateStr,
@@ -344,6 +372,7 @@ export class AnalyticsService {
 
     if (question.type === ContentEditorElementType.NPS) {
       const npsAnalysisByDay = await this.aggregationQuestionMetricsByDay(
+        environmentId,
         contentId,
         questionCvid,
         startDateStr,
@@ -356,6 +385,7 @@ export class AnalyticsService {
       response.npsAnalysisByDay = npsAnalysisByDay;
     } else {
       const averageByDay = await this.aggregationQuestionMetricsByDay(
+        environmentId,
         contentId,
         questionCvid,
         startDateStr,
@@ -603,7 +633,7 @@ export class AnalyticsService {
   }
 
   async aggregationByEvent(condition: AnalyticsConditions) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -611,7 +641,7 @@ export class AnalyticsService {
       const data = await this.prisma.$queryRaw`
       SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
       `;
       return Number.parseInt(data[0].count.toString());
@@ -620,14 +650,14 @@ export class AnalyticsService {
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         `;
     return Number.parseInt(data[0].count.toString());
   }
 
   async aggregationByDay(condition: AnalyticsConditions, timezone: string) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -637,7 +667,7 @@ export class AnalyticsService {
         SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
           Count("BizEvent"."bizUserId") from "BizEvent" 
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-          "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+          "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
           GROUP BY DAY
         `;
@@ -646,7 +676,7 @@ export class AnalyticsService {
         SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
           Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent" 
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-          "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+          "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
           GROUP BY DAY
         `;
@@ -655,7 +685,8 @@ export class AnalyticsService {
   }
 
   async aggregationByStep(condition: AnalyticsConditions) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct, stepIndex } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, stepIndex, environmentId } =
+      condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
     const stepIndexStr = String(stepIndex);
@@ -664,7 +695,7 @@ export class AnalyticsService {
       const data = await this.prisma.$queryRaw`
       SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> 'flow_step_number' = ${stepIndexStr}
       `;
@@ -674,7 +705,7 @@ export class AnalyticsService {
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> 'flow_step_number' = ${stepIndexStr}
         `;
@@ -682,7 +713,8 @@ export class AnalyticsService {
   }
 
   async aggregationByItem(condition: ItemAnalyticsConditions) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct, key, value } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, key, value, environmentId } =
+      condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -690,7 +722,7 @@ export class AnalyticsService {
       const data = await this.prisma.$queryRaw`
       SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
       `;
@@ -700,7 +732,7 @@ export class AnalyticsService {
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
-        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId}
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
         `;
@@ -713,7 +745,7 @@ export class AnalyticsService {
     orderBy: AnalyticsOrder,
   ) {
     const { first, last, before, after } = pagination;
-    const { contentId, startDate, endDate } = query;
+    const { contentId, startDate, endDate, environmentId } = query;
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
     try {
@@ -732,6 +764,7 @@ export class AnalyticsService {
                 gte: startDateObj,
                 lte: endDateObj,
               },
+              environmentId,
               bizEvent: {
                 some: {},
               },
@@ -744,6 +777,7 @@ export class AnalyticsService {
           this.prisma.bizSession.count({
             where: {
               contentId,
+              environmentId,
               createdAt: {
                 gte: startDateObj,
                 lte: endDateObj,
@@ -842,8 +876,12 @@ export class AnalyticsService {
       where: { bizSessionId: sessionId, eventId: seenEvent.id },
       orderBy: { createdAt: 'desc' },
     });
+    const endBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId, eventId: endEvent.id },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    if (!endEvent || !seenEvent || !bizSession) {
+    if (!endEvent || !seenEvent || !bizSession || endBizEvent) {
       return false;
     }
 
@@ -904,6 +942,7 @@ export class AnalyticsService {
   }
 
   async aggregationQuestionAnswer(
+    environmentId: string,
     contentId: string,
     questionCvid: string,
     startDateStr: string,
@@ -922,6 +961,7 @@ export class AnalyticsService {
           AND "BizAnswer"."cvid" = ${questionCvid}
           AND "BizAnswer"."createdAt" >= ${startDate} 
           AND "BizAnswer"."createdAt" <= ${endDate}
+          AND "BizAnswer"."environmentId" = ${environmentId}
           AND "BizAnswer"."listAnswer" IS NOT NULL
           AND array_length("listAnswer", 1) > 0
         GROUP BY unnest("listAnswer")
@@ -941,6 +981,7 @@ export class AnalyticsService {
       WHERE
         "BizAnswer"."contentId" = ${contentId} 
         AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."environmentId" = ${environmentId}
         AND "BizAnswer"."createdAt" >= ${startDate} 
         AND "BizAnswer"."createdAt" <= ${endDate}
         AND "BizAnswer".${Prisma.raw(`"${field}"`)} IS NOT NULL
@@ -961,6 +1002,7 @@ export class AnalyticsService {
    * @returns Array of daily analysis with metrics and distribution
    */
   private async aggregationQuestionMetricsByDay(
+    environmentId: string,
     contentId: string,
     questionCvid: string,
     startDateStr: string,
@@ -985,6 +1027,7 @@ export class AnalyticsService {
 
       // Get answers within the rolling window period
       const distribution = await this.aggregationQuestionAnswer(
+        environmentId,
         contentId,
         questionCvid,
         windowStartDate.toISOString(),
@@ -1075,5 +1118,86 @@ export class AnalyticsService {
       total,
       npsScore,
     };
+  }
+
+  async getContentSessionWithRelations(
+    id: string,
+    environmentId: string,
+    include?: {
+      content?: boolean;
+      bizCompany?: boolean;
+      bizUser?: boolean;
+      version?: boolean;
+    },
+  ) {
+    return await this.prisma.bizSession.findUnique({
+      where: { id, environmentId },
+      include,
+    });
+  }
+
+  async listContentSessionsWithRelations(
+    environmentId: string,
+    contentId: string,
+    paginationArgs: {
+      first?: number;
+      last?: number;
+      after?: string;
+      before?: string;
+    },
+    userId?: string,
+    include?: Prisma.BizSessionInclude,
+    orderBy?: Prisma.BizSessionOrderByWithRelationInput[],
+  ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
+    const where: Prisma.BizSessionWhereInput = {
+      contentId,
+      environmentId,
+      bizUser: userId ? { externalId: userId } : undefined,
+    };
+
+    return findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where,
+          include,
+          orderBy,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where,
+        }),
+      paginationArgs,
+    );
+  }
+
+  async deleteContentSessionWithRelations(id: string, environmentId: string) {
+    const session = await this.prisma.bizSession.findUnique({
+      where: { id, environmentId },
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bizAnswer.deleteMany({
+        where: { bizSessionId: id },
+      });
+      await tx.bizEvent.deleteMany({
+        where: { bizSessionId: id },
+      });
+      await tx.bizSession.delete({
+        where: { id },
+      });
+    });
+
+    return session;
+  }
+
+  async getSessionAnswers(sessionId: string) {
+    return await this.prisma.bizAnswer.findMany({
+      where: { bizSessionId: sessionId },
+    });
   }
 }

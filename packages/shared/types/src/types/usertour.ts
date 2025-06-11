@@ -21,6 +21,8 @@ export interface Usertour {
 
   start: (contentId: string, opts?: StartOptions) => Promise<void>;
 
+  isStarted: (contentId: string) => boolean;
+
   endAll: () => Promise<void>;
 
   reset: () => void;
@@ -116,6 +118,7 @@ export interface TrackOptions {
 
 export interface StartOptions {
   once?: boolean;
+  continue?: boolean; // If true, continue the content if it's in progress. Default is false (restart)
 }
 
 export interface ResourceCenterState {

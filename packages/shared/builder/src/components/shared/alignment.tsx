@@ -38,43 +38,43 @@ const positionMapping: Record<string, PositionConfig> = {
   },
   'bottom-end': {
     className: 'border-b-slate-400 right-[12px]  bottom-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from bottom-end',
   },
   'right-start': {
     className: 'border-r-slate-400 top-[12px]  right-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from right-start',
   },
   'right-center': {
     className: 'border-r-slate-400 top-[calc(50%_-_6px)]  right-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from right-center',
   },
   'right-end': {
     className: 'border-r-slate-400 bottom-[12px]  right-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from right-end',
   },
   'left-start': {
     className: 'border-l-slate-400 top-[12px]  left-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from left-start',
   },
   'left-center': {
     className: 'border-l-slate-400 top-[calc(50%_-_6px)]  left-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from left-center',
   },
   'left-end': {
     className: 'border-l-slate-400 bottom-[12px]  left-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from left-end',
   },
   'top-start': {
     className: 'border-t-slate-400 left-[12px]  top-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from top-start',
   },
   'top-center': {
     className: 'border-t-slate-400 left-[calc(50%_-_6px)]  top-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from top-center',
   },
   'top-end': {
     className: 'border-t-slate-400 right-[12px]  top-full',
-    text: 'Always show from bottom-right',
+    text: 'Always show from top-end',
   },
 };
 

@@ -610,26 +610,26 @@ export class AuthService {
         users: {
           create: [{ userId, role: RolesScopeEnum.OWNER, actived: true }],
         },
+        segments: {
+          create: [
+            {
+              name: 'All Users',
+              bizType: SegmentBizType.USER,
+              dataType: SegmentDataType.ALL,
+              data: [],
+            },
+            {
+              name: 'All Companies',
+              bizType: SegmentBizType.COMPANY,
+              dataType: SegmentDataType.ALL,
+              data: [],
+            },
+          ],
+        },
         environments: {
           create: [
             {
               name: 'Production',
-              segments: {
-                create: [
-                  {
-                    name: 'All Users',
-                    bizType: SegmentBizType.USER,
-                    dataType: SegmentDataType.ALL,
-                    data: [],
-                  },
-                  {
-                    name: 'All Companies',
-                    bizType: SegmentBizType.COMPANY,
-                    dataType: SegmentDataType.ALL,
-                    data: [],
-                  },
-                ],
-              },
             },
           ],
         },

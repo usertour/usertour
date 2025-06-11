@@ -2,6 +2,19 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AccessToken {
+  accessToken: String!
+  createdAt: DateTime!
+  description: String
+  expiresAt: DateTime
+  id: ID!
+  isActive: Boolean!
+  lastUsedAt: DateTime
+  name: String!
+  prefix: String!
+  updatedAt: DateTime!
+}
+
 input ActiveUserProjectInput {
   projectId: String!
   userId: String!
@@ -32,6 +45,7 @@ enum AnalyticsOrderField {
 input AnalyticsQuery {
   contentId: String!
   endDate: String!
+  environmentId: String!
   startDate: String!
   timezone: String!
 }
@@ -245,6 +259,7 @@ type Common {
 type Content {
   buildUrl: String
   config: JSON
+  contentOnEnvironments: [ContentOnEnvironment!]
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -255,6 +270,7 @@ type Content {
   name: String
   published: Boolean!
   publishedAt: DateTime!
+  publishedVersion: Version
   publishedVersionId: String
   steps: [Step!]
   type: String
@@ -282,6 +298,7 @@ type ContentEdge {
 
 input ContentIdInput {
   contentId: String!
+  environmentId: String
 }
 
 input ContentInput {
@@ -293,6 +310,23 @@ input ContentInput {
   steps: [StepInput!]
   themeId: String
   type: String!
+}
+
+type ContentOnEnvironment {
+  contentId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  environment: Environment!
+  environmentId: String!
+  id: ID!
+  published: Boolean!
+  publishedAt: DateTime!
+  publishedVersion: Version!
+  publishedVersionId: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
 }
 
 input ContentOrder {
@@ -349,8 +383,14 @@ input CreatSegment {
   columns: JSON
   data: JSON
   dataType: SegmentDataType!
-  environmentId: String!
+  environmentId: String
   name: String
+  projectId: String
+}
+
+input CreateAccessTokenInput {
+  description: String
+  name: String!
 }
 
 input CreateAttributeInput {
@@ -362,23 +402,8 @@ input CreateAttributeInput {
   projectId: String!
 }
 
-input CreateBizCompanyInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON
-  userId: String!
-}
-
 input CreateBizCompanyOnSegment {
   companyOnSegment: [BizCompanyOnSegmentInput!]!
-}
-
-input CreateBizInput {
-  data: JSON
-  environmentId: String!
-  externalId: String!
-  membership: JSON
 }
 
 input CreateBizUserOnSegment {
@@ -505,6 +530,7 @@ type Events {
 
 type GlobalConfig {
   enabledBilling: Boolean!
+  isSelfHostedMode: Boolean!
 }
 
 type Invite {
@@ -577,10 +603,9 @@ type Mutation {
   changePassword(data: ChangePasswordInput!): User!
   changeTeamMemberRole(data: ChangeTeamMemberRoleInput!): Boolean!
   copyTheme(data: CopyThemeInput!): Theme!
+  createAccessToken(environmentId: String!, input: CreateAccessTokenInput!): AccessToken!
   createAttribute(data: CreateAttributeInput!): Attribute!
-  createBizCompany(data: CreateBizCompanyInput!): Common!
   createBizCompanyOnSegment(data: CreateBizCompanyOnSegment!): Common!
-  createBizUser(data: CreateBizInput!): Common!
   createBizUserOnSegment(data: CreateBizUserOnSegment!): Common!
   createCheckoutSession(data: CreateCheckoutSessionRequest!): String!
   createContent(data: ContentInput!): Content!
@@ -593,6 +618,7 @@ type Mutation {
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
+  deleteAccessToken(accessTokenId: String!, environmentId: String!): Boolean!
   deleteAttribute(data: DeleteAttributeInput!): Attribute!
   deleteBizCompany(data: BizUserOrCompanyIdsInput!): Common!
   deleteBizCompanyOnSegment(data: DeleteBizCompanyOnSegment!): Common!
@@ -627,6 +653,7 @@ type Mutation {
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
+  updateProjectName(name: String!, projectId: String!): Project!
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
@@ -670,6 +697,7 @@ type Project {
 
 type Query {
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
+  getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
@@ -683,21 +711,22 @@ type Query {
   globalConfig: GlobalConfig!
   hello(name: String!): String!
   helloWorld: String!
+  listAccessTokens(environmentId: String!): [AccessToken!]!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
   listContentVersions(contentId: String!): [Version!]!
   listEvents(projectId: String!): [Events!]!
   listLocalizations(projectId: String!): [Localization!]!
-  listSegment(environmentId: String!): [Segment!]!
+  listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
-  queryContentAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): Analytics!
-  queryContentQuestionAnalytics(contentId: String!, endDate: String!, startDate: String!, timezone: String!): JSON!
-  queryContents(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
+  queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
+  queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
   userEnvironments(projectId: String!): [Environment!]!
@@ -747,9 +776,10 @@ type Segment {
   createdAt: DateTime!
   data: JSON
   dataType: SegmentDataType!
-  environmentId: String!
+  environmentId: String
   id: ID!
   name: String
+  projectId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -976,6 +1006,7 @@ type Version {
 }
 
 input VersionIdInput {
+  environmentId: String
   versionId: String
 }
 

@@ -2,12 +2,14 @@ import { gql } from '@apollo/client';
 
 export const queryContentAnalytics = gql`
   query queryContentAnalytics(
+    $environmentId: String!
     $contentId: String!
     $startDate: String!
     $endDate: String!
     $timezone: String!
   ) {
     queryContentAnalytics(
+      environmentId: $environmentId
       contentId: $contentId
       startDate: $startDate
       endDate: $endDate
@@ -78,12 +80,14 @@ export const queryBizSession = gql`
 
 export const queryContentQuestionAnalytics = gql`
   query queryContentQuestionAnalytics(
+    $environmentId: String!
     $contentId: String!
     $startDate: String!
     $endDate: String!
     $timezone: String!
   ) {
     queryContentQuestionAnalytics(
+      environmentId: $environmentId
       contentId: $contentId
       startDate: $startDate
       endDate: $endDate

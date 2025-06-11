@@ -24,7 +24,7 @@ export class EnvironmentsGuard implements CanActivate {
     const { req } = ctx.getContext();
     const args = ctx.getArgs();
 
-    const environmentId = args.data?.id;
+    const environmentId = args.environmentId || args.data?.id;
     let projectId = args.projectId || args.data?.projectId;
 
     const user = req.user;

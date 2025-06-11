@@ -2,46 +2,138 @@ import { getComputedStyle } from '@usertour-ui/dom';
 
 import type { Rect, SideObject } from '@floating-ui/dom';
 
-function getBodyZoom() {
-  const styles: any = getComputedStyle(window.document.body);
-  if (styles.zoom && '1' !== styles.zoom) {
-    const z = Number.parseFloat(styles.zoom);
-    if (!Number.isNaN(z)) {
-      return z;
-    }
-  }
-  return 1;
+/**
+ * Get the zoom factor of the body element
+ * @returns The zoom factor of the body element (defaults to 1 if zoom is not set or invalid)
+ */
+function getBodyZoom(): number {
+  const zoom = getComputedStyle(window.document.body).getPropertyValue('zoom');
+  return zoom && zoom !== '1' ? Number(zoom) || 1 : 1;
 }
 
 // function parseCssPropertyToFloat(str: string) {
 //   return str ? parseFloat(str.replace(/px$/, '')) : 0;
 // }
 
-function parseOpeningPadding(openingPadding: any) {
-  const isHasKeys = openingPadding && Object.keys(openingPadding).length > 0;
-  const singlePadding = isHasKeys ? 0 : openingPadding;
-  const padding = {
-    paddingLeft: singlePadding,
-    paddingRight: singlePadding,
-    paddingTop: singlePadding,
-    paddingBottom: singlePadding,
-  };
-  if (isHasKeys) {
-    return { ...padding, ...openingPadding };
-  }
-  return padding;
+interface PaddingObject {
+  paddingLeft: number;
+  paddingRight: number;
+  paddingTop: number;
+  paddingBottom: number;
 }
 
+/**
+ * Parse opening padding value into a padding object
+ * @param openingPadding - Can be either a number for uniform padding or an object with specific padding values
+ * @returns A padding object with all sides specified
+ */
+function parseOpeningPadding(openingPadding?: number | Partial<PaddingObject>): PaddingObject {
+  const defaultPadding = {
+    paddingLeft: 0,
+    paddingRight: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+  };
+
+  // If openingPadding is undefined or null, return default padding
+  if (openingPadding == null) {
+    return defaultPadding;
+  }
+
+  // If openingPadding is a number, apply it uniformly
+  if (typeof openingPadding === 'number') {
+    return {
+      ...defaultPadding,
+      paddingLeft: openingPadding,
+      paddingRight: openingPadding,
+      paddingTop: openingPadding,
+      paddingBottom: openingPadding,
+    };
+  }
+
+  // If openingPadding is an object, merge with default values
+  return {
+    ...defaultPadding,
+    ...openingPadding,
+  };
+}
+
+/**
+ * Get the viewport rectangle dimensions
+ * @returns A Rect object containing viewport width, height and position
+ */
 export const getViewportRect = (): Rect => {
-  const width =
-    ('BackCompat' === document.compatMode ? document.body : document.documentElement).clientWidth ||
-    window.innerWidth;
-  const height =
-    ('BackCompat' === document.compatMode ? document.body : document.documentElement)
-      .clientHeight || window.innerHeight;
-  return { width, height, x: 0, y: 0 };
+  const isQuirksMode = document.compatMode === 'BackCompat';
+  const rootElement = isQuirksMode ? document.body : document.documentElement;
+
+  const width = rootElement.clientWidth || window.innerWidth;
+  const height = rootElement.clientHeight || window.innerHeight;
+
+  return {
+    width,
+    height,
+    x: 0,
+    y: 0,
+  };
 };
 
+interface ModalPosition {
+  box: {
+    zIndex: number;
+    inset: string;
+    borderTopLeftRadius: string;
+    borderTopRightRadius: string;
+    borderBottomRightRadius: string;
+    borderBottomLeftRadius: string;
+  };
+  top: {
+    zIndex: number;
+    width: string;
+    height: string;
+  };
+  right: {
+    zIndex: number;
+    left: string;
+    height: string;
+  };
+  bottom: {
+    zIndex: number;
+    left: string;
+    top: string;
+  };
+  left: {
+    zIndex: number;
+    width: string;
+    top: string;
+  };
+  default: {
+    zIndex: number;
+  };
+}
+
+/**
+ * Get border radius styles from an element
+ */
+function getBorderRadius(element: Element) {
+  const style = getComputedStyle(element);
+  return {
+    borderTopLeftRadius: style.borderTopLeftRadius,
+    borderTopRightRadius: style.borderTopRightRadius,
+    borderBottomRightRadius: style.borderBottomRightRadius,
+    borderBottomLeftRadius: style.borderBottomLeftRadius,
+  };
+}
+
+/**
+ * Calculate modal position and dimensions
+ * @param reference - The reference element
+ * @param rect - The reference element's rectangle
+ * @param zIndex - The z-index value
+ * @param viewportRect - The viewport rectangle
+ * @param modalOverlayOpeningPadding - Optional padding around the opening
+ * @param modalOverlayOpeningRadius - Optional border radius for the opening
+ * @returns Object containing positioning information for all modal parts
+ */
 export function positionModal(
   reference: Element,
   rect: Rect,
@@ -49,103 +141,117 @@ export function positionModal(
   viewportRect: Rect,
   modalOverlayOpeningPadding?: number,
   modalOverlayOpeningRadius?: any,
-) {
-  // const { y, height } = _getVisibleHeight(targetElement, scrollParent);
-  // const { x, width, left } = targetElement.getBoundingClientRect();
-  const defaultIndex = zIndex;
-  // const { rects, elements } = state;
-  // const referenceRect = elements.reference.getBoundingClientRect();
-  const referenceRect = rect;
-  const targetStyle = getComputedStyle(reference);
-  const targetBorderRadius = {
-    borderTopLeftRadius: targetStyle.borderTopLeftRadius,
-    borderTopRightRadius: targetStyle.borderTopRightRadius,
-    borderBottomRightRadius: targetStyle.borderBottomRightRadius,
-    borderBottomLeftRadius: targetStyle.borderBottomLeftRadius,
-  };
+): ModalPosition {
+  const targetBorderRadius = getBorderRadius(reference);
   const borderRadius = modalOverlayOpeningRadius || targetBorderRadius;
   const openingPadding = parseOpeningPadding(modalOverlayOpeningPadding);
+
+  // Calculate padding dimensions
   const horizontalPadding = openingPadding.paddingLeft + openingPadding.paddingRight;
   const verticalPadding = openingPadding.paddingTop + openingPadding.paddingBottom;
 
-  // getBoundingClientRect is not consistent. Some browsers use x and y, while others use left and top
-  const rrect = {
-    width: referenceRect.width + horizontalPadding,
-    height: referenceRect.height + verticalPadding,
-    x: referenceRect.x - openingPadding.paddingLeft,
-    y: referenceRect.y - openingPadding.paddingTop,
+  // Calculate adjusted rectangle
+  const adjustedRect = {
+    width: rect.width + horizontalPadding,
+    height: rect.height + verticalPadding,
+    x: rect.x - openingPadding.paddingLeft,
+    y: rect.y - openingPadding.paddingTop,
   };
-  const { width, height } = rrect;
-  const viewWidth = viewportRect.width;
-  const viewHeight = viewportRect.height;
 
-  const x = Math.max(rrect.x - viewportRect.x, 0);
-  const y = Math.max(rrect.y - viewportRect.y, 0);
-  //支持目标网页缩放时的选择框计算
-  const z = getBodyZoom();
-  const inset_top = y;
-  const inset_right = (viewWidth - x * z - width * z) / z;
-  const inset_bottom = (viewHeight - y * z - height * z) / z;
-  const inset_left = x;
-  const top_width = inset_left + width;
-  const top_height = inset_top;
-  const right_left = top_width;
-  const right_height = viewHeight - inset_bottom;
-  const bottom_left = inset_left;
-  const bottom_top = inset_top + height;
-  const left_width = inset_left;
-  const left_top = inset_top;
-  // let borderRadiusStyle = `border-top-left-radius:${borderRadius.borderTopLeftRadius};`;
-  // borderRadiusStyle += `border-top-right-radius:${borderRadius.borderTopRightRadius};`;
-  // borderRadiusStyle += `border-bottom-right-radius:${borderRadius.borderBottomRightRadius};`;
-  // borderRadiusStyle += `border-bottom-left-radius:${borderRadius.borderBottomLeftRadius};`;
+  // Calculate viewport-relative position
+  const x = Math.max(adjustedRect.x - viewportRect.x, 0);
+  const y = Math.max(adjustedRect.y - viewportRect.y, 0);
+  const zoom = getBodyZoom();
+
+  // Calculate inset values
+  const inset = {
+    top: y,
+    right: (viewportRect.width - x * zoom - adjustedRect.width * zoom) / zoom,
+    bottom: (viewportRect.height - y * zoom - adjustedRect.height * zoom) / zoom,
+    left: x,
+  };
+
+  // Calculate dimensions for each side
+  const dimensions = {
+    top: {
+      width: inset.left + adjustedRect.width,
+      height: inset.top,
+    },
+    right: {
+      left: inset.left + adjustedRect.width,
+      height: viewportRect.height - inset.bottom,
+    },
+    bottom: {
+      left: inset.left,
+      top: inset.top + adjustedRect.height,
+    },
+    left: {
+      width: inset.left,
+      top: inset.top,
+    },
+  };
 
   return {
     box: {
-      zIndex: defaultIndex,
-      inset: `${inset_top}px ${inset_right}px ${inset_bottom}px ${inset_left}px`,
+      zIndex,
+      inset: `${inset.top}px ${inset.right}px ${inset.bottom}px ${inset.left}px`,
       ...borderRadius,
     },
     top: {
-      zIndex: defaultIndex,
-      width: `${top_width}px`,
-      height: `${top_height}px`,
+      zIndex,
+      width: `${dimensions.top.width}px`,
+      height: `${dimensions.top.height}px`,
     },
     right: {
-      zIndex: defaultIndex,
-      left: `${right_left}px`,
-      height: `${right_height}px`,
+      zIndex,
+      left: `${dimensions.right.left}px`,
+      height: `${dimensions.right.height}px`,
     },
     bottom: {
-      zIndex: defaultIndex,
-      left: `${bottom_left}px`,
-      top: `${bottom_top}px`,
+      zIndex,
+      left: `${dimensions.bottom.left}px`,
+      top: `${dimensions.bottom.top}px`,
     },
     left: {
-      zIndex: defaultIndex,
-      width: `${left_width}px`,
-      top: `${left_top}px`,
+      zIndex,
+      width: `${dimensions.left.width}px`,
+      top: `${dimensions.left.top}px`,
     },
-    default: { zIndex: defaultIndex },
+    default: { zIndex },
   };
 }
 
-export const getReClippingRect = (rect: Rect, overflow: SideObject) => {
+/**
+ * Adjust rectangle dimensions based on overflow values
+ * @param rect - The original rectangle to adjust
+ * @param overflow - Object containing overflow values for each side
+ * @returns A new rectangle with adjusted dimensions
+ */
+export const getReClippingRect = (rect: Rect, overflow: SideObject): Rect => {
   const { top, bottom, left, right } = overflow;
-  const __rect = { ...rect };
-  if (overflow.top > 0) {
-    __rect.height -= top;
-    __rect.y += top;
+  const adjustedRect = { ...rect };
+
+  // Adjust top overflow
+  if (top > 0) {
+    adjustedRect.height -= top;
+    adjustedRect.y += top;
   }
-  if (overflow.bottom > 0) {
-    __rect.height -= bottom;
+
+  // Adjust bottom overflow
+  if (bottom > 0) {
+    adjustedRect.height -= bottom;
   }
-  if (overflow.left > 0) {
-    __rect.width -= left;
-    __rect.x += left;
+
+  // Adjust left overflow
+  if (left > 0) {
+    adjustedRect.width -= left;
+    adjustedRect.x += left;
   }
-  if (overflow.right > 0) {
-    __rect.width -= right;
+
+  // Adjust right overflow
+  if (right > 0) {
+    adjustedRect.width -= right;
   }
-  return __rect;
+
+  return adjustedRect;
 };

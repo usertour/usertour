@@ -7,9 +7,9 @@
   <a href="https://www.usertour.io">Usertour</a>: An alternative to: Appcues, Userpilot, Userflow, Userguiding, Chameleon , Etc...<br /><br />
   <p>Usertour is an Open-source user onboarding platform. It allows you to create in-app product tours, checklists, and surveys in minutes—effortlessly and with full control.</p>
 </div>
-<p align="center">
+<!-- <p align="center">
 <a href="https://www.producthunt.com/posts/usertour?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-usertour" target="_blank">Support with Upvote ❤️<br/><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=839855&theme=light&t=1738576180129" alt="Usertour - open source user onboarding platform | Product Hunt" style="width: 250px; height: 60px;" width="250" height="60" /></a>
-</p>
+</p> -->
 <p align="center">
   <a target="_blank" href="https://www.usertour.io">Website</a> | <a target="_blank" href="https://docs.usertour.io">Documentation</a> | <a target="_blank" href="https://www.usertour.io/blog/">Blog</a> | <a target="_blank" href="https://x.com/usertourio">Twitter</a> | <a target="_blank" href="https://discord.gg/WPVJPX8fJh">Discord</a>
 </p>

@@ -86,6 +86,8 @@ Table Project {
   events Event [not null]
   localizations Localization [not null]
   invites Invite [not null]
+  contents Content [not null]
+  segments Segment [not null]
 }
 
 Table UserOnProject {
@@ -117,6 +119,24 @@ Table Environment {
   bizUsers BizUser [not null]
   bizCompanies BizCompany [not null]
   segments Segment [not null]
+  accessTokens AccessToken [not null]
+  contentOnEnvironments ContentOnEnvironment [not null]
+  bizSessions BizSession [not null]
+}
+
+Table AccessToken {
+  id String [pk]
+  prefix String [not null, default: 'ak_']
+  accessToken String [unique, not null]
+  name String [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  expiresAt DateTime
+  lastUsedAt DateTime
+  description String
 }
 
 Table Theme {
@@ -144,8 +164,10 @@ Table Content {
   type String [not null, default: 'flow']
   published Boolean [not null, default: false]
   deleted Boolean [not null, default: false]
-  environment Environment [not null]
-  environmentId String [not null]
+  environment Environment
+  environmentId String
+  project Project
+  projectId String
   config Json
   versions Version [not null]
   editedVersion Version
@@ -153,6 +175,25 @@ Table Content {
   publishedVersionId String [unique]
   editedVersionId String [unique]
   bizSession BizSession [not null]
+  contentOnEnvironments ContentOnEnvironment [not null]
+}
+
+Table ContentOnEnvironment {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  content Content [not null]
+  contentId String [not null]
+  published Boolean [not null, default: false]
+  publishedAt DateTime [default: `now()`, not null]
+  publishedVersion Version [not null]
+  publishedVersionId String [not null]
+
+  indexes {
+    (environmentId, contentId) [unique]
+  }
 }
 
 Table Version {
@@ -173,6 +214,7 @@ Table Version {
   publishByContent Content
   bizSession BizSession [not null]
   versionOnLocalization VersionOnLocalization [not null]
+  contentOnEnvironment ContentOnEnvironment [not null]
 
   indexes {
     (contentId, sequence) [unique]
@@ -306,6 +348,7 @@ Table BizCompany {
   bizUsersOnCompany BizUserOnCompany [not null]
   bizUsers BizUser [not null]
   bizCompaniesOnSegment BizCompanyOnSegment [not null]
+  BizSession BizSession [not null]
 
   indexes {
     (environmentId, externalId) [unique]
@@ -319,8 +362,10 @@ Table Segment {
   name String [not null, default: '']
   bizType Int [not null, default: 1]
   dataType Int [not null, default: 1]
-  environment Environment [not null]
-  environmentId String [not null]
+  environment Environment
+  environmentId String
+  project Project
+  projectId String
   columns Json
   data Json
   deleted Boolean [not null, default: false]
@@ -400,8 +445,12 @@ Table BizSession {
   data Json
   progress Int [not null, default: 0]
   projectId String [not null, default: '']
+  environment Environment
+  environmentId String
   bizUser BizUser [not null]
   bizUserId String [not null]
+  bizCompany BizCompany
+  bizCompanyId String
   content Content [not null]
   contentId String [not null]
   version Version [not null]
@@ -432,6 +481,7 @@ Table BizAnswer {
   versionId String [not null]
   bizUserId String [not null]
   cvid String [not null]
+  environmentId String
   numberAnswer Int
   textAnswer String
   listAnswer String[] [not null]
@@ -474,7 +524,7 @@ Table Subscription {
   id String [pk, note: 'Primary key']
   subscriptionId String [unique, not null, note: 'Stripe subscription ID']
   lookupKey String [not null, note: 'Stripe price lookup key']
-  planType String [not null, note: 'Plan type (free, pro, max, etc.)']
+  planType String [not null, note: 'Plan type (hobby, starter, growth, business)']
   interval String [not null, note: 'Billing interval (monthly, yearly, etc.)']
   projectId String [not null, note: 'Project ID']
   status String [not null, note: 'Stripe subscription status']
@@ -521,13 +571,23 @@ Ref: UserOnProject.userId > User.id [delete: Cascade]
 
 Ref: Environment.projectId > Project.id
 
+Ref: AccessToken.environmentId > Environment.id
+
 Ref: Theme.projectId > Project.id
 
 Ref: Content.environmentId > Environment.id
 
+Ref: Content.projectId > Project.id
+
 Ref: Content.editedVersionId - Version.id
 
 Ref: Content.publishedVersionId - Version.id
+
+Ref: ContentOnEnvironment.environmentId > Environment.id
+
+Ref: ContentOnEnvironment.contentId > Content.id
+
+Ref: ContentOnEnvironment.publishedVersionId > Version.id
 
 Ref: Version.themeId > Theme.id
 
@@ -557,6 +617,8 @@ Ref: BizCompany.environmentId > Environment.id
 
 Ref: Segment.environmentId > Environment.id
 
+Ref: Segment.projectId > Project.id
+
 Ref: BizUserOnSegment.segmentId > Segment.id
 
 Ref: BizUserOnSegment.bizUserId > BizUser.id
@@ -571,7 +633,11 @@ Ref: AttributeOnEvent.eventId > Event.id
 
 Ref: AttributeOnEvent.attributeId > Attribute.id
 
+Ref: BizSession.environmentId > Environment.id
+
 Ref: BizSession.bizUserId > BizUser.id
+
+Ref: BizSession.bizCompanyId > BizCompany.id
 
 Ref: BizSession.contentId > Content.id
 

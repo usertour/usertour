@@ -3,16 +3,19 @@ import { ContentEditorRoot } from '@usertour-ui/shared-editor';
 import { Theme } from '@usertour-ui/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { WebElementListener } from '../../../components/element-listener';
 import { useBuilderContext, useLauncherContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { LauncherContentMain } from './launcher-content';
+import { PlusIcon } from '@usertour-ui/icons';
+import { cn } from '@usertour-ui/ui-utils';
+
+const centerClasses =
+  'w-auto h-6 left-[50%] top-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%]';
 
 export const LauncherBuilderEmbed = () => {
   const triggerRef = useRef<any>();
-  const [isMounted, setIsMounted] = useState<boolean>(false);
   const [theme, setTheme] = useState<Theme | undefined>();
-  const { zIndex, isWebBuilder, currentVersion } = useBuilderContext();
+  const { zIndex, currentVersion } = useBuilderContext();
   const { themeList } = useThemeListContext();
   const { localData, updateLocalDataTooltip, launcherTarget, launcherTooltip } =
     useLauncherContext();
@@ -52,21 +55,19 @@ export const LauncherBuilderEmbed = () => {
     };
   }, [localData, launcherTarget, launcherTooltip]);
 
-  if (!mergedData) return null;
+  if (!mergedData || !theme || !currentVersion) return null;
 
   return (
     <>
-      {isWebBuilder && <WebElementListener ref={triggerRef} onMounted={() => setIsMounted(true)} />}
-      {isMounted && theme && currentVersion && (
-        <LauncherContentMain
-          theme={theme}
-          triggerRef={triggerRef}
-          zIndex={zIndex}
-          onCustomUploadRequest={handleCustomUploadRequest}
-          data={mergedData}
-          onValueChange={handleUpdateTooltipContent}
-        />
-      )}
+      <PlusIcon width={24} height={24} ref={triggerRef} className={cn('fixed', centerClasses)} />
+      <LauncherContentMain
+        theme={theme}
+        triggerRef={triggerRef}
+        zIndex={zIndex}
+        onCustomUploadRequest={handleCustomUploadRequest}
+        data={mergedData}
+        onValueChange={handleUpdateTooltipContent}
+      />
     </>
   );
 };

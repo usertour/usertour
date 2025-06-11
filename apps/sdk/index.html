@@ -152,10 +152,13 @@
     <script>
       window.onload = async function () {
         if (window.usertour) {
-          usertour.init("cm9e922o50004mjao21fb64ap");
-          await usertour.identify(new Date().getTime().toString(), {
+          usertour.init("cmbhks2pw00049m8ggrf0gock");
+
+          usertour.setTargetMissingSeconds(1);
+
+          await usertour.identify("user-1746698710465", {
             name: "Iric L",
-            email: "iric@usertour.com",
+            email: "iric-" + new Date().getTime().toString() + "@usertour.com",
             male: true,
             sdsdd: 13,
             registerAt: "2024-03-29T10:05:45-06:00",
@@ -166,11 +169,12 @@
             like: ["123", "456"],
           });
           await usertour.group(
-            "group-999999",
+            "group-" + new Date().getTime().toString(),
             {
               name: "Iric L",
+              isGirl: true,
             },
-            { membership: { isBook: true, Content: "ccccjjjjj" } }
+            { membership: { isBook: true, Content: "ccccjjjjj", isMan: true } }
           );
           // usertour.identifyAnonymous({
           //   website_lead: true,

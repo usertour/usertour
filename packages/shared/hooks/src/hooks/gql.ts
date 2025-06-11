@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@apollo/client';
+import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
@@ -15,7 +15,7 @@ import {
   listSegment,
   login,
   queryContentQuestionAnalytics,
-  queryContents,
+  queryContent,
   querySessionDetail,
   removeTeamMember,
   signUp,
@@ -26,6 +26,10 @@ import {
   getSubscriptionByProjectId,
   getSubscriptionUsage,
   globalConfig,
+  ListAccessTokens,
+  DeleteAccessToken,
+  GetAccessToken,
+  updateProjectName,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -39,6 +43,7 @@ import type {
   AttributeBizTypes,
   Attribute,
   Subscription,
+  GlobalConfig,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -58,7 +63,7 @@ export const useContentListQuery = ({
   orderBy = { field: 'createdAt', direction: 'desc' },
   pagination = { first: 1000 },
 }: UseContentListQueryProps) => {
-  const { data, refetch, error } = useQuery(queryContents, {
+  const { data, refetch, error } = useQuery(queryContent, {
     variables: {
       ...pagination,
       query,
@@ -66,7 +71,7 @@ export const useContentListQuery = ({
     },
   });
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const contentList = data?.queryContents?.edges.map((e: any) => e.node);
+  const contentList = data?.queryContent?.edges.map((e: any) => e.node);
 
   const contents = contentList ? (contentList as Content[]) : [];
 
@@ -255,13 +260,14 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
 };
 
 export const useQueryContentQuestionAnalyticsQuery = (
+  environmentId: string,
   contentId: string,
   startDate: string,
   endDate: string,
   timezone: string,
 ) => {
   const { data, loading, error, refetch } = useQuery(queryContentQuestionAnalytics, {
-    variables: { contentId, startDate, endDate, timezone },
+    variables: { contentId, startDate, endDate, timezone, environmentId },
   });
   const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
   return { questionAnalytics, loading, error, refetch };
@@ -351,5 +357,52 @@ export const useGetSubscriptionUsageQuery = (projectId: string) => {
 
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useQuery(globalConfig);
-  return { data: data?.globalConfig, loading, error };
+  return { data: data?.globalConfig as GlobalConfig | undefined, loading, error };
+};
+
+export interface AccessToken {
+  id: string;
+  name: string;
+  accessToken: string;
+  createdAt: string;
+}
+
+export const useListAccessTokensQuery = (environmentId: string | undefined) => {
+  const { data, loading, error, refetch } = useQuery(ListAccessTokens, {
+    variables: { environmentId },
+    skip: !environmentId,
+  });
+
+  const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
+  return { accessTokens, loading, error, refetch };
+};
+
+export const useDeleteAccessTokenMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteAccessToken);
+  const invoke = async (environmentId: string, accessTokenId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { environmentId, accessTokenId } });
+    return !!response.data?.deleteAccessToken;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetAccessTokenQuery = (
+  environmentId: string,
+  accessTokenId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error } = useQuery(GetAccessToken, {
+    variables: { environmentId, accessTokenId },
+    ...options,
+  });
+  return { data: data?.getAccessToken, loading, error };
+};
+
+export const useUpdateProjectNameMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectName);
+  const invoke = async (projectId: string, name: string): Promise<boolean> => {
+    const response = await mutation({ variables: { projectId, name } });
+    return !!response.data?.updateProjectName;
+  };
+  return { invoke, loading, error };
 };

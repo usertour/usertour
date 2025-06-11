@@ -27,9 +27,8 @@ export class BizGuard implements CanActivate {
     const { req } = ctx.getContext();
     const args = ctx.getArgs();
 
-    let environmentId = args.environmentId || args.data?.environmentId || args.query?.environmentId;
-
     let segmentId = args.data?.id || args.data?.segmentId;
+    let projectId = args.data?.projectId || args.query?.projectId;
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
@@ -42,17 +41,9 @@ export class BizGuard implements CanActivate {
     if (segmentId) {
       const segment = await this.bizservice.getSegment(segmentId);
       if (segment) {
-        environmentId = segment.environmentId;
+        projectId = segment.projectId;
       }
     }
-    if (!environmentId) {
-      throw new NoPermissionError();
-    }
-    const environment = await this.environmentsService.get(environmentId);
-    if (!environment) {
-      throw new NoPermissionError();
-    }
-    const projectId = environment.projectId;
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roles.includes(userProject.role)) {

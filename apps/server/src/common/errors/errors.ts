@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common';
 import { BaseError } from './base';
 
 export class UnknownError extends BaseError {
@@ -128,6 +129,168 @@ export class ContentNotPublishedError extends BaseError {
   };
 }
 
+export class TeamMemberLimitError extends BaseError {
+  code = 'E0015';
+  messageDict = {
+    en: 'You have reached your team member limit. Please upgrade your Usertour account under Settings → Billing.',
+    'zh-CN': '您已经达到了团队成员的限制，请在设置 → 账单中升级您的 Usertour 账户。',
+  };
+}
+
+export abstract class OpenAPIError extends BaseError {
+  statusCode: HttpStatus;
+}
+
+export class InvalidApiKeyError extends OpenAPIError {
+  code = 'E1000';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'Invalid API key provided',
+    'zh-CN': '提供的 API 密钥无效',
+  };
+}
+
+export class MissingApiKeyError extends OpenAPIError {
+  code = 'E1010';
+  statusCode = HttpStatus.UNAUTHORIZED;
+  messageDict = {
+    en: 'Missing API key',
+    'zh-CN': '缺少 API 密钥',
+  };
+}
+
+export class UserNotFoundError extends OpenAPIError {
+  code = 'E1001';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'User not found',
+    'zh-CN': '用户未找到',
+  };
+}
+
+export class CompanyNotFoundError extends OpenAPIError {
+  code = 'E1002';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Company not found',
+    'zh-CN': '公司未找到',
+  };
+}
+
+export class CompanyMembershipNotFoundError extends OpenAPIError {
+  code = 'E1003';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Company membership not found',
+    'zh-CN': '公司成员关系未找到',
+  };
+}
+
+export class ContentNotFoundError extends OpenAPIError {
+  code = 'E1004';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Content not found',
+    'zh-CN': '内容未找到',
+  };
+}
+
+export class ContentSessionNotFoundError extends OpenAPIError {
+  code = 'E1005';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Content session not found',
+    'zh-CN': '内容会话未找到',
+  };
+}
+
+export class InvalidLimitError extends OpenAPIError {
+  code = 'E1006';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid limit parameter',
+    'zh-CN': '无效的限制参数',
+  };
+}
+
+export class InvalidCursorError extends OpenAPIError {
+  code = 'E1007';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid cursor parameter',
+    'zh-CN': '无效的游标参数',
+  };
+}
+
+export class InvalidCursorPreviousError extends OpenAPIError {
+  code = 'E1008';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid previous cursor parameter',
+    'zh-CN': '无效的上一个游标参数',
+  };
+}
+
+export class InvalidRequestError extends OpenAPIError {
+  code = 'E1009';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid request',
+    'zh-CN': '无效的请求',
+  };
+}
+
+export class RateLimitExceededError extends OpenAPIError {
+  code = 'E1013';
+  statusCode = HttpStatus.TOO_MANY_REQUESTS;
+  messageDict = {
+    en: 'Too many requests',
+    'zh-CN': '请求过于频繁',
+  };
+}
+
+export class ServiceUnavailableError extends OpenAPIError {
+  code = 'E1014';
+  statusCode = HttpStatus.SERVICE_UNAVAILABLE;
+  messageDict = {
+    en: 'Service unavailable',
+    'zh-CN': '服务不可用',
+  };
+}
+
+export class InvalidScopeError extends OpenAPIError {
+  code = 'E1015';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid scope parameter',
+    'zh-CN': '无效的范围参数',
+  };
+}
+
+export class InvalidOrderByError extends OpenAPIError {
+  code = 'E1016';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Invalid orderBy parameter.',
+    'zh-CN': '无效的排序参数。',
+  };
+}
+
+export class ValidationError extends OpenAPIError {
+  code = 'E1017';
+  statusCode = HttpStatus.BAD_REQUEST;
+  messageDict = {
+    en: 'Validation error',
+    'zh-CN': '验证错误',
+  };
+
+  constructor(message: string) {
+    super();
+    this.messageDict.en = message;
+    this.messageDict['zh-CN'] = message;
+  }
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -143,6 +306,23 @@ const errorMap = {
   E0011: AuthenticationExpiredError,
   E0012: UnsupportedFileTypeError,
   E0013: NoPermissionError,
+  E0014: ContentNotPublishedError,
+  E1000: InvalidApiKeyError,
+  E1001: UserNotFoundError,
+  E1002: CompanyNotFoundError,
+  E1003: CompanyMembershipNotFoundError,
+  E1004: ContentNotFoundError,
+  E1005: ContentSessionNotFoundError,
+  E1006: InvalidLimitError,
+  E1007: InvalidCursorError,
+  E1008: InvalidCursorPreviousError,
+  E1009: InvalidRequestError,
+  E1010: MissingApiKeyError,
+  E1013: RateLimitExceededError,
+  E1014: ServiceUnavailableError,
+  E1015: InvalidScopeError,
+  E1016: InvalidOrderByError,
+  E1017: ValidationError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

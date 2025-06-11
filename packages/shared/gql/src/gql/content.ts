@@ -16,6 +16,10 @@ export const getContent = gql`
       createdAt
       updatedAt
       type
+      publishedVersion {
+        id
+        sequence
+      }
       steps {
         id
         name
@@ -29,6 +33,21 @@ export const getContent = gql`
         sequence
         target
         setting
+      }
+      contentOnEnvironments {
+        id
+        published
+        publishedAt
+        publishedVersionId
+        environmentId
+        environment {
+          id
+          name
+        }
+        publishedVersion {
+          id
+          sequence
+        }
       }
     }
   }
@@ -112,8 +131,8 @@ export const updateContentStep = gql`
   }
 `;
 
-export const queryContents = gql`
-  query queryContents(
+export const queryContent = gql`
+  query queryContent(
     $first: Int
     $last: Int
     $after: String
@@ -121,7 +140,7 @@ export const queryContents = gql`
     $query: ContentQuery!
     $orderBy: ContentOrder!
   ) {
-    queryContents(
+    queryContent(
       first: $first
       last: $last
       after: $after
@@ -150,6 +169,17 @@ export const queryContents = gql`
             name
             cvid
             sequence
+          }
+          contentOnEnvironments {
+            id
+            published
+            publishedAt
+            publishedVersionId
+            environmentId
+            environment {
+              id
+              name
+            }
           }
         }
       }
@@ -195,8 +225,8 @@ export const duplicateContent = gql`
 `;
 
 export const publishedContentVersion = gql`
-  mutation publishedContentVersion($versionId: String!) {
-    publishedContentVersion(data: { versionId: $versionId }) {
+  mutation publishedContentVersion($versionId: String!, $environmentId: String!) {
+    publishedContentVersion(data: { versionId: $versionId, environmentId: $environmentId }) {
       id
     }
   }
@@ -211,8 +241,8 @@ export const restoreContentVersion = gql`
 `;
 
 export const unpublishedContentVersion = gql`
-  mutation unpublishedContentVersion($contentId: String!) {
-    unpublishedContentVersion(data: { contentId: $contentId }) {
+  mutation unpublishedContentVersion($contentId: String!, $environmentId: String!) {
+    unpublishedContentVersion(data: { contentId: $contentId, environmentId: $environmentId }) {
       success
     }
   }

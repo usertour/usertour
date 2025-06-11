@@ -37,7 +37,7 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
     <>
       <GoogleFontCss settings={settings} />
       <div
-        className="h-52 min-w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
+        className="h-52 w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
         ref={containerRef}
         onClick={handleOnClick}
       >

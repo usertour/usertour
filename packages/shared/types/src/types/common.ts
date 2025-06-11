@@ -30,3 +30,8 @@ export enum SDKSettingsMode {
 export type SDKSettings = {
   mode: SDKSettingsMode;
 };
+
+export type GlobalConfig = {
+  enabledBilling: boolean;
+  isSelfHostedMode: boolean;
+};

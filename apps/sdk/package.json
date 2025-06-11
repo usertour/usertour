@@ -1,6 +1,6 @@
 {
   "name": "@usertour/sdk",
-  "version": "0.1.12",
+  "version": "0.1.24",
   "type": "module",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc.",
@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:iife": "tsc && vite build -- --iife",
-    "build:dev": "tsc && vite build --mode development ",
+    "build:dev": "tsc && vite build --mode development",
     "build:dev:iife": "tsc && vite build --mode development -- --iife",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

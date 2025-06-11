@@ -5,7 +5,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { AuthModule } from '@/auth/auth.module';
 import { BizModule } from '@/biz/biz.module';
 import config from '@/common/configs/config';
-import { ContentsModule } from '@/contents/contents.module';
+import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
@@ -28,7 +28,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 import api from '@opentelemetry/api';
-import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
+import { OpenAPIModule } from './openapi/openapi.module';
 
 @Module({
   imports: [
@@ -62,13 +62,8 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
           env: process.env.NODE_ENV,
           uid: (req as any).user?.id || 'anonymous',
         }),
-        transport: {
-          target: process.env.NODE_ENV !== 'production' ? 'pino-pretty' : 'pino/file',
-          options: {
-            destination: 1, // stdout
-            sync: false,
-          },
-        },
+        level: 'debug',
+        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
       },
     }),
     BullModule.forRootAsync({
@@ -104,7 +99,7 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
     WebSocketModule,
     AuthModule,
     UsersModule,
-    ContentsModule,
+    ContentModule,
     EnvironmentsModule,
     ProjectsModule,
     UtilitiesModule,
@@ -116,7 +111,7 @@ import { DbMonitorModule } from './common/db-monitor/db-monitor.module';
     LocalizationsModule,
     TeamModule,
     SubscriptionModule,
-    DbMonitorModule,
+    OpenAPIModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

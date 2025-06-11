@@ -9,7 +9,7 @@ import { Button } from '@usertour-ui/button';
 import { Input } from '@usertour-ui/input';
 import { Rules } from '@usertour-ui/shared-components';
 import { conditionsIsSame } from '@usertour-ui/shared-utils';
-import { RulesCondition, Segment } from '@usertour-ui/types';
+import { AttributeBizTypes, RulesCondition, Segment } from '@usertour-ui/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddUserManualSegment } from './add-manual-segment';
 import { UserSegmentCreateForm } from './create-form';
@@ -98,7 +98,9 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
           key={currentSegment.id}
           filterItems={['group', 'user-attr']}
           addButtonText={'Add filter'}
-          attributes={attributeList}
+          attributes={
+            attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || []
+          }
           disabled={isViewOnly}
         />
       </div>

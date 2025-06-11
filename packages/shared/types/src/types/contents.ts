@@ -15,6 +15,7 @@ export type StepTrigger = {
   id?: string;
   actions: RulesCondition[];
   conditions: RulesCondition[];
+  wait?: number;
 };
 
 export type StepSettings = {
@@ -49,6 +50,25 @@ export type Step = {
   data?: any;
 };
 
+export type ContentOnEnvironment = {
+  environment: {
+    id: string;
+    name: string;
+  };
+
+  environmentId: string;
+
+  contentId: string;
+
+  published: boolean;
+
+  publishedAt: Date;
+
+  publishedVersionId: string;
+
+  publishedVersion: ContentVersion;
+};
+
 export type Content = {
   id: string;
   name?: string;
@@ -60,6 +80,7 @@ export type Content = {
       scale: number;
     };
   };
+  publishedVersion?: ContentVersion;
   buildUrl?: string;
   published?: boolean;
   createdAt?: string;
@@ -70,6 +91,7 @@ export type Content = {
   publishedVersionId?: string;
   deleted?: boolean;
   steps?: Step[];
+  contentOnEnvironments?: ContentOnEnvironment[];
 };
 
 export enum ContentPriority {
@@ -116,6 +138,7 @@ export enum FrequencyUnits {
 export enum StepContentType {
   TOOLTIP = 'tooltip',
   MODAL = 'modal',
+  HIDDEN = 'hidden',
 }
 export type RulesFrequencyValueEvery = {
   times?: number;
