@@ -436,6 +436,12 @@ export const flowIsSeen = (content: SDKContent) => {
   );
 };
 
+export const checklistIsSeen = (content: SDKContent) => {
+  return content?.latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
+  );
+};
+
 export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const now = new Date();
   if (content.type === ContentDataType.FLOW) {

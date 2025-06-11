@@ -112,9 +112,27 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
           // biome-ignore lint/correctness/noUnusedVariables: <explanation>
           opts?: UserTourTypes.TrackOptions,
         ) => {},
+        /**
+         * Checks if a user is identified
+         * @returns True if user info exists, false otherwise
+         */
         isIdentified: () => {
           return app.isIdentified();
         },
+        /**
+         * Checks if a content has been started
+         * @param contentId - The content ID to check
+         * @returns True if the content has been started, false otherwise
+         */
+        isStarted: (contentId: string) => {
+          return app.isStarted(contentId);
+        },
+        /**
+         * Starts a content
+         * @param contentId - The content ID to start
+         * @param opts - The options for starting the content
+         * @returns A promise that resolves when the content is started
+         */
         start: async (contentId: string, opts?: UserTourTypes.StartOptions) => {
           return app.startContent(contentId, opts);
         },
