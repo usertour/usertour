@@ -26,6 +26,7 @@ import {
   findChecklistFromUrl,
   findLatestActivatedTourAndCvid,
   findLatestValidActivatedChecklist,
+  isSameTour,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { AppEvents } from '../utils/event';
@@ -42,7 +43,8 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { flowIsSeen } from '../utils/conditions';
+import { checklistIsSeen, flowIsSeen } from '../utils/conditions';
+import { isSameChecklist } from '../utils/content-utils';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -220,12 +222,9 @@ export class App extends Evented {
       return;
     }
     if (content.type === ContentDataType.FLOW) {
-      if (opts?.once && flowIsSeen(content)) {
-        return;
-      }
-      await this.startTour(contentId, contentStartReason.START_FROM_PROGRAM);
+      await this.startTour(contentId, contentStartReason.START_FROM_PROGRAM, opts);
     } else if (content.type === ContentDataType.CHECKLIST) {
-      await this.startChecklist(contentId, contentStartReason.START_FROM_PROGRAM);
+      await this.startChecklist(contentId, contentStartReason.START_FROM_PROGRAM, opts);
     }
   }
 
@@ -317,6 +316,21 @@ export class App extends Evented {
    */
   isIdentified() {
     return !!this.userInfo;
+  }
+
+  /**
+   * Checks if a content has been started
+   * @param contentId - The content ID to check
+   * @returns True if the content has been started, false otherwise
+   */
+  isStarted(contentId: string) {
+    if (this.activeTour?.getContent().contentId === contentId) {
+      return this.activeTour.hasStarted();
+    }
+    if (this.activeChecklist?.getContent().contentId === contentId) {
+      return this.activeChecklist.hasStarted();
+    }
+    return false;
   }
 
   /**
@@ -642,54 +656,136 @@ export class App extends Evented {
   }
 
   /**
-   * Starts all registered checklists
+   * Starts a checklist with given content ID and reason
+   * @param contentId - Optional content ID to start specific checklist
+   * @param reason - Reason for starting the checklist
+   * @param opts - Optional start options
    */
-  async startChecklist(contentId?: string, reason?: string) {
-    // if the active checklist is not dismissed, close it
-    if (contentId && this.activeChecklist) {
-      await this.activeChecklist?.close(contentEndReason.SYSTEM_CLOSED);
-    }
-
-    // if the user is not identified, do nothing
-    if (this.activeChecklist || !this.userInfo?.externalId) {
-      return;
-    }
-
-    const checklistFromUrl = findChecklistFromUrl(this.checklists);
-    if (checklistFromUrl && !checklistFromUrl.hasDismissed()) {
-      this.activeChecklist = checklistFromUrl;
-      await this.activeChecklist.start(contentStartReason.START_FROM_URL);
-      return;
-    }
-
-    if (contentId) {
-      const activeChecklist = this.checklists.find(
-        (checklist) => checklist.getContent().contentId === contentId,
-      );
-      if (!activeChecklist) {
+  async startChecklist(
+    contentId?: string,
+    reason: string = contentStartReason.START_CONDITION,
+    opts?: UserTourTypes.StartOptions,
+  ) {
+    try {
+      // if the user is not identified, do nothing
+      if (!this.userInfo?.externalId) {
         return;
       }
-      this.activeChecklist = activeChecklist;
-      await this.activeChecklist.start(reason);
+
+      // Start URL-based checklist first
+      const checklistFromUrl = findChecklistFromUrl(this.checklists);
+      if (await this.startUrlChecklist(checklistFromUrl)) {
+        return;
+      }
+
+      // Start specific checklist by contentId
+      if (contentId) {
+        await this.startSpecificChecklist(contentId, reason, opts);
+        return;
+      }
+
+      // Start latest activated checklist
+      if (await this.startLatestActivatedChecklist()) {
+        return;
+      }
+
+      // Start highest priority checklist
+      await this.startHighestPriorityChecklist(reason);
+    } catch (error) {
+      logger.error('Failed to start checklist:', error);
+    }
+  }
+
+  /**
+   * Starts URL-based checklist
+   * @returns true if checklist was started, false otherwise
+   */
+  private async startUrlChecklist(checklistFromUrl: Checklist | undefined): Promise<boolean> {
+    if (
+      !checklistFromUrl ||
+      checklistFromUrl.hasDismissed() ||
+      isSameChecklist(checklistFromUrl, this.activeChecklist)
+    ) {
+      return false;
+    }
+
+    if (this.activeChecklist) {
+      await this.activeChecklist.close(contentEndReason.SYSTEM_CLOSED);
+    }
+
+    this.activeChecklist = checklistFromUrl;
+    await this.activeChecklist.start(contentStartReason.START_FROM_URL);
+    return true;
+  }
+
+  /**
+   * Starts a specific checklist by contentId
+   */
+  private async startSpecificChecklist(
+    contentId: string,
+    reason: string,
+    opts?: UserTourTypes.StartOptions,
+  ): Promise<void> {
+    const activeChecklist = this.checklists.find(
+      (checklist) => checklist.getContent().contentId === contentId,
+    );
+    if (!activeChecklist || isSameChecklist(activeChecklist, this.activeChecklist)) {
       return;
     }
 
-    // find the latest valid activated checklist
+    if (opts?.once && checklistIsSeen(activeChecklist.getContent())) {
+      return;
+    }
+
+    if (this.activeChecklist) {
+      await this.activeChecklist.close(contentEndReason.SYSTEM_CLOSED);
+    }
+
+    this.activeChecklist = activeChecklist;
+    if (!opts?.continue) {
+      await this.activeChecklist.endLatestSession(contentEndReason.SYSTEM_CLOSED);
+    }
+    await this.activeChecklist.start(reason);
+  }
+
+  /**
+   * Starts latest activated checklist
+   * @returns true if checklist was started, false otherwise
+   */
+  private async startLatestActivatedChecklist(): Promise<boolean> {
+    if (this.activeChecklist) {
+      return false;
+    }
+
     const latestActivatedChecklist = findLatestValidActivatedChecklist(this.checklists);
     if (latestActivatedChecklist && !latestActivatedChecklist.hasDismissed()) {
       this.activeChecklist = latestActivatedChecklist;
       await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Starts the highest priority checklist
+   */
+  private async startHighestPriorityChecklist(reason: string): Promise<void> {
+    if (this.activeChecklist) {
       return;
     }
 
-    const sortedChecklists = this.checklists
+    const autoStartChecklists = this.checklists
       .filter((checklist) => checklist.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
 
-    if (sortedChecklists.length > 0) {
-      this.activeChecklist = sortedChecklists[0];
-      await this.activeChecklist.autoStart(reason);
+    const activeChecklist = autoStartChecklists[0];
+    if (!activeChecklist) {
+      return;
     }
+
+    this.activeChecklist = activeChecklist;
+    await this.activeChecklist.autoStart(reason);
   }
 
   /**
@@ -709,58 +805,140 @@ export class App extends Evented {
    * Starts a tour with given content ID and reason
    * @param contentId - Optional content ID to start specific tour
    * @param reason - Reason for starting the tour
+   * @param opts - Optional start options
    */
-  async startTour(contentId: string | undefined, reason: string) {
-    // if the active tour is not dismissed, close it
-    if (contentId && this.activeTour) {
+  async startTour(
+    contentId: string | undefined,
+    reason: string,
+    opts?: UserTourTypes.StartOptions,
+  ) {
+    try {
+      // Start URL-based tour
+      const urlTour = findTourFromUrl(this.tours);
+      if (await this.startUrlTour(urlTour)) {
+        return;
+      }
+
+      // Start specific tour by contentId
+      if (contentId) {
+        await this.startSpecificTour(contentId, reason, opts);
+        return;
+      }
+
+      // Start latest activated tour
+      if (await this.startLatestActivatedTour()) {
+        return;
+      }
+
+      // Start highest priority tour
+      await this.startHighestPriorityTour(reason);
+    } catch (error) {
+      logger.error('Failed to start tour:', error);
+    }
+  }
+
+  /**
+   * Starts URL-based tour
+   * @returns true if tour was started, false otherwise
+   */
+  private async startUrlTour(urlTour: Tour | undefined): Promise<boolean> {
+    if (!urlTour || urlTour.hasDismissed() || isSameTour(urlTour, this.activeTour)) {
+      return false;
+    }
+
+    if (this.activeTour) {
+      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
+    }
+    const contentId = urlTour.getContent().contentId;
+
+    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours, contentId);
+    const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
+    const cvid = latestActivatedTourAndCvid?.cvid;
+
+    if (isSameTour(urlTour, latestActivatedTour)) {
+      this.activeTour = latestActivatedTour;
+      await this.activeTour?.start(contentStartReason.START_FROM_SESSION, cvid);
+    } else {
+      this.activeTour = urlTour;
+      await this.activeTour.start(contentStartReason.START_FROM_URL);
+    }
+
+    return true;
+  }
+
+  /**
+   * Starts a specific tour by contentId
+   * @param contentId - The content ID of the tour to start
+   * @param reason - Reason for starting the tour
+   * @param opts - Optional start options
+   */
+  private async startSpecificTour(
+    contentId: string,
+    reason: string,
+    opts?: UserTourTypes.StartOptions,
+  ): Promise<void> {
+    const activeTour = this.tours.find((tour) => tour.getContent().contentId === contentId);
+    if (!activeTour || isSameTour(activeTour, this.activeTour)) {
+      return;
+    }
+
+    if (opts?.once && flowIsSeen(activeTour.getContent())) {
+      return;
+    }
+
+    if (this.activeTour) {
       await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
     }
 
-    if (this.activeTour || !this.userInfo?.externalId) {
-      return;
+    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours, contentId);
+    const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
+    const cvid = latestActivatedTourAndCvid?.cvid;
+
+    if (isSameTour(activeTour, latestActivatedTour)) {
+      if (opts?.continue) {
+        this.activeTour = latestActivatedTour;
+        await this.activeTour?.start(contentStartReason.START_FROM_SESSION, cvid);
+      } else {
+        this.activeTour = latestActivatedTour;
+        await this.activeTour?.endLatestSession(contentEndReason.SYSTEM_CLOSED);
+        await this.activeTour?.start(reason);
+      }
+    } else {
+      this.activeTour = activeTour;
+      await this.activeTour.start(reason);
+    }
+  }
+
+  /**
+   * Starts latest activated tour
+   * @returns true if tour was started, false otherwise
+   */
+  private async startLatestActivatedTour(): Promise<boolean> {
+    if (this.activeTour) {
+      return false;
     }
 
     const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours);
     const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
     const cvid = latestActivatedTourAndCvid?.cvid;
 
-    const tourFromUrl = findTourFromUrl(this.tours);
-    // If the tour from url is not dismissed, start it
-    if (tourFromUrl && !tourFromUrl.hasDismissed()) {
-      if (latestActivatedTour?.getContent().contentId === tourFromUrl.getContent().contentId) {
-        this.activeTour = latestActivatedTour;
-        await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
-        return;
-      }
-      this.activeTour = tourFromUrl;
-      await this.activeTour.start(contentStartReason.START_FROM_URL);
-      return;
-    }
-
-    // If contentId is provided, start that specific tour
-    if (contentId) {
-      const activeTour = this.tours.find((tour) => tour.getContent().contentId === contentId);
-      if (!activeTour) {
-        return;
-      }
-      if (latestActivatedTour?.getContent().contentId === activeTour.getContent().contentId) {
-        this.activeTour = latestActivatedTour;
-        await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
-        return;
-      }
-      this.activeTour = activeTour;
-      await this.activeTour.start(reason);
-      return;
-    }
-
-    // If the latest activated tour is not dismissed, start it
     if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
       this.activeTour = latestActivatedTour;
       await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Starts the highest priority tour
+   */
+  private async startHighestPriorityTour(reason: string): Promise<void> {
+    if (this.activeTour) {
       return;
     }
 
-    // If no unfinished content found, start the highest priority tour
     const autoStartTours = this.tours
       .filter((tour) => tour.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));

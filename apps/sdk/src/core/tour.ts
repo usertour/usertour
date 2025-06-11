@@ -165,6 +165,31 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   /**
+   * Ends the latest session
+   */
+  async endLatestSession(reason: contentEndReason) {
+    const eventData: Record<string, any> = {
+      flow_end_reason: reason,
+    };
+    const sessionId = this.getReusedSessionId();
+    if (!sessionId) {
+      return;
+    }
+
+    await this.reportEventWithSession(
+      {
+        sessionId,
+        eventName: BizEvents.FLOW_ENDED,
+        eventData,
+      },
+      { isDeleteSession: true },
+    );
+
+    // Remove the latest session from the content
+    this.removeContentLatestSession();
+  }
+
+  /**
    * Builds the store data for the tour
    * This method combines the base store info with the current step data
    * and sets default values for required fields
@@ -442,6 +467,8 @@ export class Tour extends BaseContent<TourStore> {
     await this.reportCloseEvent(reason);
     // Set the tour as dismissed
     this.setDismissed(true);
+    // Set the tour as not started
+    this.setStarted(false);
     // Destroy the tour
     this.destroy();
   }
