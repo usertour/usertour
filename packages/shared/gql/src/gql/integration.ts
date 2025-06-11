@@ -29,3 +29,9 @@ export const UpdateIntegration = gql`
     }
   }
 `;
+
+export const GetSalesforceAuthUrl = gql`
+  query GetSalesforceAuthUrl($environmentId: String!, $code: String!) {
+    getSalesforceAuthUrl(environmentId: $environmentId, code: $code)
+  }
+`;

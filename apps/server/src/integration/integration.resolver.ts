@@ -12,9 +12,9 @@ export class IntegrationResolver {
   constructor(private integrationService: IntegrationService) {}
 
   /**
-   * List all integrations for a given environment
+   * List all integration for a given environment
    * @param environmentId - The ID of the environment
-   * @returns List of integrations
+   * @returns List of integration
    */
   @Query(() => [Integration])
   @Roles([RolesScopeEnum.OWNER])
@@ -37,5 +37,15 @@ export class IntegrationResolver {
     @Args('input') input: UpdateIntegrationInput,
   ) {
     return this.integrationService.updateIntegration(environmentId, code, input);
+  }
+
+  @Query(() => String)
+  @Roles([RolesScopeEnum.OWNER])
+  async getSalesforceAuthUrl(
+    @Args('environmentId') environmentId: string,
+    @Args('code') code: string,
+  ) {
+    const { url } = await this.integrationService.getSalesforceAuthUrl(environmentId, code);
+    return url;
   }
 }

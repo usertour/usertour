@@ -93,3 +93,44 @@ export class MixpanelWebhookDto {
   @Type(() => MixpanelParametersDto)
   parameters: MixpanelParametersDto;
 }
+
+export class IntegrationOAuthDto {
+  /// Provider (e.g., "salesforce", "hubspot")
+  provider: string;
+  /// Provider account ID
+  providerAccountId: string;
+  /// Access token
+  accessToken: string;
+  /// Refresh token
+  refreshToken: string;
+  /// Expires at
+  expiresAt: Date;
+  /// Scope
+  scope: string;
+}
+
+export class CreateIntegrationOAuthInput {
+  /// Provider (e.g., "salesforce", "hubspot")
+  provider: string;
+  /// Provider account ID
+  providerAccountId: string;
+  /// Access token
+  accessToken: string;
+  /// Refresh token
+  refreshToken: string;
+  /// Expires at
+  expiresAt: Date;
+  /// Scope
+  scope: string;
+}
+
+export class UpdateIntegrationOAuthInput {
+  /// Access token
+  accessToken?: string;
+  /// Refresh token
+  refreshToken?: string;
+  /// Expires at
+  expiresAt?: Date;
+  /// Scope
+  scope?: string;
+}

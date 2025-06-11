@@ -57,7 +57,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -128,7 +128,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON
+  membership: JSON!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -199,7 +199,7 @@ type BizUser {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON
+  membership: JSON!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -252,7 +252,7 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int
+  count: Int!
   success: Boolean!
 }
 
@@ -375,7 +375,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String
+  name: String!
 }
 
 input CreatSegment {
@@ -397,7 +397,7 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   projectId: String!
 }
@@ -721,6 +721,7 @@ type Query {
   getContentVersion(versionId: String!): Version!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getSalesforceAuthUrl(code: String!, environmentId: String!): String!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
   getSubscriptionPlans: [SubscriptionPlanModel!]!
   getSubscriptionUsage(projectId: String!): Int!
@@ -994,7 +995,7 @@ type User {
   email: String!
   id: ID!
   name: String
-  projects: [UserOnProject!]
+  projects: [UserOnProject!]!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

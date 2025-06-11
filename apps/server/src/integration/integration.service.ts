@@ -30,6 +30,9 @@ import { TrackEventData } from '@/common/types/track';
 import { BizService } from '@/biz/biz.service';
 import { IntegrationSource } from '@/common/types/integration';
 import { Segment } from '@prisma/client';
+import { CreateIntegrationOAuthInput, UpdateIntegrationOAuthInput } from './integration.dto';
+import * as jsforce from 'jsforce';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class IntegrationService {
@@ -45,6 +48,7 @@ export class IntegrationService {
     private prisma: PrismaService,
     private httpService: HttpService,
     private bizService: BizService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -84,9 +88,9 @@ export class IntegrationService {
   }
 
   /**
-   * Find all integrations for a given environment
+   * Find all integration for a given environment
    * @param environmentId - The ID of the environment
-   * @returns List of integrations
+   * @returns List of integration
    */
   async findAllIntegrations(environmentId: string) {
     return this.prisma.integration.findMany({
@@ -616,6 +620,248 @@ export class IntegrationService {
           code: error instanceof ParamsError ? 400 : 500,
         },
       };
+    }
+  }
+
+  /**
+   * Create or update OAuth configuration for an integration
+   * @param integrationId - The ID of the integration
+   * @param input - The OAuth configuration data
+   * @returns The created/updated OAuth configuration
+   */
+  async upsertIntegrationOAuth(integrationId: string, input: CreateIntegrationOAuthInput) {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    return this.prisma.integrationOAuth.upsert({
+      where: { integrationId },
+      create: {
+        integrationId,
+        ...input,
+      },
+      update: input,
+    });
+  }
+
+  /**
+   * Get OAuth configuration for an integration
+   * @param integrationId - The ID of the integration
+   * @returns The OAuth configuration if found
+   */
+  async getIntegrationOAuth(integrationId: string) {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    return this.prisma.integrationOAuth.findUnique({
+      where: { integrationId },
+    });
+  }
+
+  /**
+   * Update OAuth configuration for an integration
+   * @param integrationId - The ID of the integration
+   * @param input - The update data
+   * @returns The updated OAuth configuration
+   */
+  async updateIntegrationOAuth(integrationId: string, input: UpdateIntegrationOAuthInput) {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    return this.prisma.integrationOAuth.update({
+      where: { integrationId },
+      data: input,
+    });
+  }
+
+  /**
+   * Delete OAuth configuration for an integration
+   * @param integrationId - The ID of the integration
+   */
+  async deleteIntegrationOAuth(integrationId: string) {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    await this.prisma.integrationOAuth.delete({
+      where: { integrationId },
+    });
+  }
+
+  /**
+   * Get Salesforce OAuth authorization URL
+   * @param environmentId - The ID of the environment
+   * @param code - The integration code ('salesforce' or 'salesforce-sandbox')
+   * @returns The authorization URL
+   */
+  async getSalesforceAuthUrl(environmentId: string, code: string) {
+    const clientId = this.configService.get('integration.salesforce.clientId');
+    const callbackUrl = this.configService.get('integration.salesforce.callbackUrl');
+    const clientSecret = this.configService.get('integration.salesforce.clientSecret');
+    const sandboxLoginUrl = this.configService.get('integration.salesforce.sandboxLoginUrl');
+    const loginUrl = this.configService.get('integration.salesforce.loginUrl');
+
+    if (!clientId || !callbackUrl || !clientSecret) {
+      throw new ParamsError('Salesforce OAuth configuration not found');
+    }
+
+    if (code !== 'salesforce' && code !== 'salesforce-sandbox') {
+      throw new ParamsError('Invalid integration code');
+    }
+
+    const isSandbox = code === 'salesforce-sandbox';
+
+    // Create or get integration record
+    const integration = await this.prisma.integration.upsert({
+      where: {
+        environmentId_code: {
+          environmentId,
+          code,
+        },
+      },
+      create: {
+        environmentId,
+        code,
+        enabled: false,
+        key: '',
+        config: {},
+      },
+      update: {
+        enabled: false,
+        key: '',
+      },
+    });
+
+    const oauth2Config = {
+      clientId,
+      clientSecret,
+      redirectUri: callbackUrl,
+      loginUrl: isSandbox ? sandboxLoginUrl : loginUrl || undefined,
+    };
+
+    const oauth2 = new jsforce.OAuth2(oauth2Config);
+
+    try {
+      const authUrl = oauth2.getAuthorizationUrl({
+        scope: 'api refresh_token',
+        state: integration.id,
+      });
+
+      this.logger.debug('Generated Salesforce Auth URL:', {
+        authUrl,
+        isSandbox,
+        loginUrl: oauth2Config.loginUrl,
+      });
+
+      return { url: authUrl };
+    } catch (error) {
+      this.logger.error('Failed to generate Salesforce auth URL:', {
+        error: error.message,
+        isSandbox,
+        loginUrl: oauth2Config.loginUrl,
+      });
+      throw new ParamsError(
+        `Failed to generate Salesforce auth URL. Please check your callback URL configuration: ${callbackUrl}. Error: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Handle Salesforce OAuth callback
+   * @param code - The authorization code
+   * @param state - The integration ID
+   * @returns The OAuth configuration
+   */
+  async handleSalesforceCallback(code: string, state: string) {
+    const clientId = this.configService.get('integration.salesforce.clientId');
+    const clientSecret = this.configService.get('integration.salesforce.clientSecret');
+    const callbackUrl = this.configService.get('integration.salesforce.callbackUrl');
+    const sandboxLoginUrl = this.configService.get('integration.salesforce.sandboxLoginUrl');
+    const loginUrl = this.configService.get('integration.salesforce.loginUrl');
+
+    if (!clientId || !clientSecret || !callbackUrl) {
+      throw new ParamsError('Salesforce OAuth configuration not found');
+    }
+
+    // Get integration by ID
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: state },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    const isSandbox = integration.code === 'salesforce-sandbox';
+
+    const oauth2Config = {
+      clientId,
+      clientSecret,
+      redirectUri: callbackUrl,
+      loginUrl: isSandbox ? sandboxLoginUrl : loginUrl || undefined,
+    };
+
+    const oauth2 = new jsforce.OAuth2(oauth2Config);
+    const conn = new jsforce.Connection({ oauth2 });
+
+    try {
+      const userInfo = await conn.authorize(code);
+      const { accessToken, refreshToken } = conn;
+
+      // Update integration
+      await this.prisma.integration.update({
+        where: { id: integration.id },
+        data: {
+          enabled: true,
+        },
+      });
+
+      // Create or update OAuth configuration
+      const oauth = await this.prisma.integrationOAuth.upsert({
+        where: { integrationId: integration.id },
+        create: {
+          integrationId: integration.id,
+          provider: integration.code,
+          providerAccountId: userInfo.id,
+          accessToken,
+          refreshToken,
+          expiresAt: new Date(Date.now() + 7200 * 1000), // 2 hours from now
+          scope: 'api refresh_token',
+        },
+        update: {
+          accessToken,
+          refreshToken,
+          expiresAt: new Date(Date.now() + 7200 * 1000),
+          scope: 'api refresh_token',
+        },
+      });
+
+      return oauth;
+    } catch (error) {
+      this.logger.error('Error in Salesforce OAuth callback:', {
+        error: error.message,
+        isSandbox,
+        loginUrl: oauth2Config.loginUrl,
+      });
+      throw new ParamsError('Failed to authorize with Salesforce');
     }
   }
 }

@@ -19,7 +19,11 @@ import {
 } from '@usertour-ui/alert-dialog';
 import { Input } from '@usertour-ui/input';
 import { useState } from 'react';
-import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-ui/shared-hooks';
+import {
+  useListIntegrationsQuery,
+  useUpdateIntegrationMutation,
+  useGetSalesforceAuthUrlQuery,
+} from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { IntegrationModel } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
@@ -228,6 +232,10 @@ interface HubspotIntegrationConfig extends BaseIntegrationConfig {
 
 interface HeapIntegrationConfig extends BaseIntegrationConfig {
   // Add Heap specific config
+}
+
+interface SalesforceIntegrationConfig extends BaseIntegrationConfig {
+  // Add Salesforce specific config
 }
 
 interface IntegrationConfigProps<T extends BaseIntegrationConfig = BaseIntegrationConfig> {
@@ -776,6 +784,151 @@ const SegmentConfig = ({
   );
 };
 
+const SalesforceConfig = ({
+  integration,
+  onClose,
+  onSubmit,
+  loading,
+  integrationsData,
+}: IntegrationConfigProps<SalesforceIntegrationConfig>) => {
+  const { environment } = useAppContext();
+  const { toast } = useToast();
+  const { data: authUrl, loading: loadingAuthUrl } = useGetSalesforceAuthUrlQuery(
+    environment?.id || '',
+    integration.code,
+  );
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const isConnected = currentIntegration?.enabled;
+
+  const handleConnect = async () => {
+    if (!authUrl) {
+      toast({
+        title: 'Error',
+        description: 'Failed to get Salesforce auth URL',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Redirect to Salesforce auth page
+    window.location.href = authUrl;
+  };
+
+  const handleSubmit = async () => {
+    if (!currentIntegration) return;
+
+    try {
+      await onSubmit({
+        key: currentIntegration.key,
+        enabled: true,
+        config: currentIntegration.config,
+      });
+      toast({
+        title: 'Success',
+        description: 'Salesforce integration updated successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to update Salesforce integration',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex flex-col gap-2 pt-4">
+            <div className="flex items-center justify-center gap-x-4">
+              <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+                <img src="/images/logo.png" className="w-full h-full" />
+              </div>
+              <ArrowRightIcon className="w-6 h-6" />
+              <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+                <img
+                  src={integration.imagePath}
+                  alt={`${integration.name} logo`}
+                  className="w-8 h-8"
+                />
+              </div>
+            </div>
+            <div className="mt-4 text-center text-lg/6 font-semibold">
+              Connect {integration.name}
+            </div>
+          </DialogTitle>
+          <DialogDescription className="mt-2 text-center">
+            {integration.description}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 mt-2">
+          <div className="text-sm text-muted-foreground">
+            Click the button below to connect your Salesforce account. You will be redirected to
+            Salesforce to authorize the connection.
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleConnect} disabled={loadingAuthUrl}>
+            {loadingAuthUrl ? 'Loading...' : 'Connect to Salesforce'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    );
+  }
+
+  return (
+    <DialogContent className="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle className="flex flex-col gap-2 pt-4">
+          <div className="flex items-center justify-center gap-x-4">
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img src="/images/logo.png" className="w-full h-full" />
+            </div>
+            <ArrowRightIcon className="w-6 h-6" />
+            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
+              <img
+                src={integration.imagePath}
+                alt={`${integration.name} logo`}
+                className="w-8 h-8"
+              />
+            </div>
+          </div>
+          <div className="mt-4 text-center text-lg/6 font-semibold">
+            Edit {integration.name} Connection
+          </div>
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-center">
+          {integration.description}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col gap-4 mt-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <CircleIcon className="w-3 h-3 text-success" />
+            <span className="text-sm text-muted-foreground">Connected</span>
+          </div>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Your Salesforce account is connected. You can disconnect or reconnect at any time.
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={loading}>
+          {loading ? 'Saving...' : 'Save'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
 // Configuration mapping for different integration types
 const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
   amplitude: AmplitudeConfig,
@@ -784,6 +937,8 @@ const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigPr
   posthog: PosthogConfig,
   mixpanel: MixpanelConfig,
   segment: SegmentConfig,
+  salesforce: SalesforceConfig,
+  'salesforce-sandbox': SalesforceConfig,
   // Add more integration configs here
 };
 

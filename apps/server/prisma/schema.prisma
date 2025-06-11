@@ -619,29 +619,57 @@ model CheckoutSession {
 }
 
 model Integration {
-  id              String           @id @default(cuid())
-  /// code of integration (e.g., "ga", "mixpanel", "posthog")
-  code            String
+  id               String            @id @default(cuid())
+  /// code of rntegration (e.g., "ga", "mixpanel", "posthog")
+  code             String
   /// api key or  of integration 
-  key             String           @default("")
+  key              String            @default("")
   /// access token of integration
-  accessToken     String           @unique @default(cuid())
+  accessToken      String            @unique @default(cuid())
   /// JSON schema for configuration (optional)
-  config          Json?            @db.JsonB
+  config           Json?             @db.JsonB
   /// Whether the integration is enabled
-  enabled         Boolean          @default(false)
+  enabled          Boolean           @default(false)
   /// environment of integration
-  environment     Environment      @relation(fields: [environmentId], references: [id])
+  environment      Environment       @relation(fields: [environmentId], references: [id])
   /// environment id
-  environmentId   String
+  environmentId    String
   /// Create timestamp
-  createdAt       DateTime         @default(now()) @db.Timestamptz()
+  createdAt        DateTime          @default(now()) @db.Timestamptz()
   /// Update timestamp
-  updatedAt       DateTime         @default(now()) @updatedAt @db.Timestamptz()
+  updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamptz()
   /// integration logs
-  integrationLogs IntegrationLog[]
+  integrationLogs  IntegrationLog[]
+  integrationOAuth IntegrationOAuth?
 
   @@unique([environmentId, code])
+}
+
+model IntegrationOAuth {
+  /// primary key
+  id                String      @id @default(cuid())
+  /// create timestamp
+  createdAt         DateTime    @default(now()) @db.Timestamptz(6)
+  /// update timestamp
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(6)
+  /// access token
+  accessToken       String
+  /// refresh token
+  refreshToken      String
+  /// expires at
+  expiresAt         DateTime    @db.Timestamptz(6)
+  /// scope
+  scope             String // Space-separated OAuth scopes (e.g., "api refresh_token web")
+  /// provider (e.g., "salesforce", "hubspot")
+  provider          String
+  /// provider account id
+  providerAccountId String
+  /// integration
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  /// integration id
+  integrationId     String      @unique // One integration can only have one OAuth configuration
+
+  @@index([integrationId])
 }
 
 model IntegrationLog {

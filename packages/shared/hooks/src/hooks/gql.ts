@@ -32,6 +32,7 @@ import {
   updateProjectName,
   ListIntegrations,
   UpdateIntegration,
+  GetSalesforceAuthUrl,
 } from '@usertour-ui/gql';
 
 import type {
@@ -426,4 +427,16 @@ export const useUpdateIntegrationMutation = () => {
     return response.data?.updateIntegration;
   };
   return { invoke, loading, error };
+};
+
+export const useGetSalesforceAuthUrlQuery = (
+  environmentId: string,
+  code: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error } = useQuery(GetSalesforceAuthUrl, {
+    variables: { environmentId, code },
+    ...options,
+  });
+  return { data: data?.getSalesforceAuthUrl, loading, error };
 };

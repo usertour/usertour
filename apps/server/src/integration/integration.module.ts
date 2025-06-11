@@ -23,6 +23,7 @@ import { EnvironmentsModule } from '@/environments/environments.module';
 import { IntegrationResolver } from './integration.resolver';
 import { BizModule } from '@/biz/biz.module';
 import { IntegrationController } from './integration.controller';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { IntegrationController } from './integration.controller';
     ProjectsModule,
     BizModule,
     EnvironmentsModule,
+    ConfigModule,
   ],
   providers: [
     IntegrationService,
