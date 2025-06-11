@@ -793,12 +793,15 @@ const SalesforceConfig = ({
 }: IntegrationConfigProps<SalesforceIntegrationConfig>) => {
   const { environment } = useAppContext();
   const { toast } = useToast();
+  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const isConnected = currentIntegration?.enabled;
   const { data: authUrl, loading: loadingAuthUrl } = useGetSalesforceAuthUrlQuery(
     environment?.id || '',
     integration.code,
+    {
+      skip: !environment?.id || isConnected,
+    },
   );
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const isConnected = currentIntegration?.enabled;
 
   const handleConnect = async () => {
     if (!authUrl) {

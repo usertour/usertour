@@ -729,6 +729,20 @@ export class IntegrationService {
 
     const isSandbox = code === 'salesforce-sandbox';
 
+    // Check if integration already exists and is enabled
+    const existingIntegration = await this.prisma.integration.findUnique({
+      where: {
+        environmentId_code: {
+          environmentId,
+          code,
+        },
+      },
+    });
+
+    if (existingIntegration?.enabled) {
+      throw new ParamsError('Integration is already connected');
+    }
+
     // Create or get integration record
     const integration = await this.prisma.integration.upsert({
       where: {
