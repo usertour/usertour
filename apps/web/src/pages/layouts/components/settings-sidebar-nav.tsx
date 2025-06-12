@@ -83,7 +83,7 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
         <NavItem
           key={item.href}
           item={item}
-          isActive={currentPath === item.href}
+          isActive={currentPath.startsWith(item.href)}
           onClick={() => onNavigate(item.href)}
         />
       ))}

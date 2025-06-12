@@ -16,6 +16,7 @@ import {
   AuthLayout,
 } from '@/pages/layouts';
 import { AdminSettings, SettingsThemeDetail } from '@/pages/settings';
+import { AdminSettingsDetail } from '@/pages/settings/admin-setting-detail';
 import { UserDetail, UserList } from '@/pages/users';
 import { SessionDetail } from '@/pages/users/session-detail';
 
@@ -211,6 +212,16 @@ const config: CustomRouteConfig[] = [
     path: '/project/:projectId/settings/:settingType',
     layout: AdminSettingsLayout,
     component: AdminSettings,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'Settings',
+  },
+  /* Settings Detail */
+  {
+    id: 'settings-detail',
+    path: '/project/:projectId/settings/:settingType/:settingSubType',
+    layout: AdminSettingsLayout,
+    component: AdminSettingsDetail,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'Settings',
