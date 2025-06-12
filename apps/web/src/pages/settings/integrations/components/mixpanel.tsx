@@ -22,28 +22,135 @@ interface MixpanelIntegrationConfig {
   exportEvents?: boolean;
   syncCohorts?: boolean;
   mixpanelUserIdProperty?: string;
+  key?: string;
 }
 
-export const MixpanelIntegration = () => {
-  const { toast } = useToast();
-  const { environment } = useAppContext();
+interface IntegrationFormProps {
+  integration: IntegrationModel | undefined;
+  currentIntegration: IntegrationModel | undefined;
+  onSave: (updates: Partial<MixpanelIntegrationConfig>) => Promise<void>;
+  onUpdate: (updates: Partial<IntegrationModel>) => void;
+}
 
-  const environmentId = environment?.id || '';
-  const { data: integrationsData, refetch } = useListIntegrationsQuery(environmentId);
+const INTEGRATION_CODE = 'mixpanel' as const;
 
-  const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === 'mixpanel');
-  const [integration, setIntegration] = useState(currentIntegration);
+const ExportEventsForm = ({
+  integration,
+  currentIntegration,
+  onSave,
+  onUpdate,
+}: IntegrationFormProps) => {
+  const config = (integration?.config as MixpanelIntegrationConfig) || {};
 
-  useEffect(() => {
-    setIntegration(currentIntegration);
-  }, [currentIntegration]);
+  const hasChanges = useCallback(() => {
+    if (!integration) return false;
+    return (
+      integration.config?.exportEvents !== currentIntegration?.config?.exportEvents ||
+      integration.key !== currentIntegration?.key ||
+      integration.config?.region !== currentIntegration?.config?.region
+    );
+  }, [integration, currentIntegration]);
 
-  const { invoke: updateIntegration } = useUpdateIntegrationMutation();
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!integration) return;
+      onUpdate({
+        key: e.target.value,
+      });
+    },
+    [integration, onUpdate],
+  );
+
+  const handleRegionChange = useCallback(
+    (value: string) => {
+      if (!integration) return;
+      onUpdate({
+        config: { ...integration.config, region: value },
+      });
+    },
+    [integration, onUpdate],
+  );
+
+  const handleSwitchChange = useCallback(
+    (checked: boolean) => {
+      if (!integration) return;
+      // Update local state
+      onUpdate({
+        config: { ...integration.config, exportEvents: checked },
+      });
+      // Auto save when switch is turned off
+      if (!checked) {
+        onSave({ exportEvents: false });
+      }
+    },
+    [integration, onUpdate, onSave],
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
+          <Switch
+            checked={config.exportEvents}
+            onCheckedChange={handleSwitchChange}
+            className="data-[state=unchecked]:bg-input"
+          />
+          <Label className="text-sm">Stream events from Usertour to Mixpanel</Label>
+          <QuestionTooltip>
+            When enabled, Usertour-generated events will be continuously streamed into your Mixpanel
+            project.
+          </QuestionTooltip>
+        </CardTitle>
+        <CardDescription>Configure event streaming settings</CardDescription>
+      </CardHeader>
+      {config.exportEvents && (
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">Project Token :</p>
+            <Input
+              type="text"
+              placeholder="Type Project Token here"
+              value={integration?.key || ''}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">Region:</p>
+            <Select value={config.region || 'US'} onValueChange={handleRegionChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Default(US)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="US">Default(US)</SelectItem>
+                <SelectItem value="EU">EU</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            disabled={!integration?.key || !hasChanges()}
+            className="w-24"
+            onClick={() => onSave({})}
+          >
+            Save
+          </Button>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
+const SyncCohortsForm = ({
+  integration,
+  currentIntegration,
+  onSave,
+  onUpdate,
+}: IntegrationFormProps) => {
   const { globalConfig } = useAppContext();
+  const { toast } = useToast();
+  const [_, copyToClipboard] = useCopyToClipboard();
+  const config = (integration?.config as MixpanelIntegrationConfig) || {};
 
   const webhookUrl = `${globalConfig?.apiUrl}/api/mixpanel_webhook/${integration?.accessToken}`;
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const integrationInfo = integrations.find((i) => i.code === 'mixpanel');
 
   const handleCopy = useCallback(() => {
     copyToClipboard(webhookUrl);
@@ -52,10 +159,115 @@ export const MixpanelIntegration = () => {
     });
   }, [webhookUrl, copyToClipboard, toast]);
 
+  const hasChanges = useCallback(() => {
+    if (!integration) return false;
+    return (
+      integration.config?.syncCohorts !== currentIntegration?.config?.syncCohorts ||
+      integration.config?.mixpanelUserIdProperty !==
+        currentIntegration?.config?.mixpanelUserIdProperty
+    );
+  }, [integration, currentIntegration]);
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!integration) return;
+      onUpdate({
+        config: { ...integration.config, mixpanelUserIdProperty: e.target.value },
+      });
+    },
+    [integration, onUpdate],
+  );
+
+  const handleSwitchChange = useCallback(
+    (checked: boolean) => {
+      if (!integration) return;
+      // Update local state
+      onUpdate({
+        config: { ...integration.config, syncCohorts: checked },
+      });
+      // Auto save when switch is turned off
+      if (!checked) {
+        onSave({ syncCohorts: false });
+      }
+    },
+    [integration, onUpdate, onSave],
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
+          <Switch
+            checked={config.syncCohorts}
+            onCheckedChange={handleSwitchChange}
+            className="data-[state=unchecked]:bg-input"
+          />
+          <Label className="text-sm">Cohort sync from Mixpanel</Label>
+        </CardTitle>
+        <CardDescription>Configure cohort synchronization settings</CardDescription>
+      </CardHeader>
+      {config.syncCohorts && (
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="link">Webhook URL</Label>
+            <div className="relative flex-1">
+              <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
+              <Button
+                type="submit"
+                size="icon"
+                variant="ghost"
+                className="absolute top-0.5 right-0.5 size-7"
+                onClick={handleCopy}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
+            <Input
+              type="text"
+              placeholder="Type Mixpanel User ID Property here"
+              value={config.mixpanelUserIdProperty || ''}
+              onChange={handleInputChange}
+            />
+          </div>
+          <Button
+            disabled={!config.mixpanelUserIdProperty || !hasChanges()}
+            className="w-24"
+            onClick={() => onSave({})}
+          >
+            Save
+          </Button>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
+export const MixpanelIntegration = () => {
+  const { environment } = useAppContext();
+  const { toast } = useToast();
+
+  const environmentId = environment?.id || '';
+  const { data: integrationsData, refetch } = useListIntegrationsQuery(environmentId);
+
+  const currentIntegration = integrationsData?.find(
+    (i: IntegrationModel) => i.code === INTEGRATION_CODE,
+  );
+  const [integration, setIntegration] = useState(currentIntegration);
+
+  useEffect(() => {
+    setIntegration(currentIntegration);
+  }, [currentIntegration]);
+
+  const { invoke: updateIntegration } = useUpdateIntegrationMutation();
+  const integrationInfo = integrations.find((i) => i.code === INTEGRATION_CODE);
+
   const handleSave = useCallback(
     async (updates: Partial<MixpanelIntegrationConfig>) => {
       try {
-        await updateIntegration(environmentId, 'mixpanel', {
+        await updateIntegration(environmentId, INTEGRATION_CODE, {
           enabled: true,
           key: integration?.key,
           config: {
@@ -77,25 +289,15 @@ export const MixpanelIntegration = () => {
     [environmentId, integration, updateIntegration, toast, refetch],
   );
 
-  const hasExportEventsChanges = useCallback(() => {
-    if (!integration) return false;
-    return (
-      integration.config?.exportEvents !== currentIntegration?.config?.exportEvents ||
-      integration.key !== currentIntegration?.key ||
-      integration.config?.region !== currentIntegration?.config?.region
-    );
-  }, [integration, currentIntegration]);
-
-  const hasSyncCohortsChanges = useCallback(() => {
-    if (!integration) return false;
-    return (
-      integration.config?.syncCohorts !== currentIntegration?.config?.syncCohorts ||
-      integration.config?.mixpanelUserIdProperty !==
-        currentIntegration?.config?.mixpanelUserIdProperty
-    );
-  }, [integration, currentIntegration]);
-
-  const config = (integration?.config as MixpanelIntegrationConfig) || {};
+  const handleUpdate = useCallback((updates: Partial<IntegrationModel>) => {
+    setIntegration((prev: IntegrationModel | undefined) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ...updates,
+      };
+    });
+  }, []);
 
   return (
     <>
@@ -113,7 +315,7 @@ export const MixpanelIntegration = () => {
                 {integrationInfo?.description}{' '}
                 <a
                   href="https://docs.usertour.io/how-to-guides/environments/"
-                  className="text-primary  "
+                  className="text-primary"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -125,138 +327,20 @@ export const MixpanelIntegration = () => {
           </CardTitle>
         </CardHeader>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
-            <Switch
-              checked={config.exportEvents}
-              onCheckedChange={(checked) => {
-                setIntegration((prev: IntegrationModel | undefined) => ({
-                  ...prev,
-                  config: { ...prev?.config, exportEvents: checked },
-                }));
-                if (!checked) {
-                  handleSave({ exportEvents: false });
-                }
-              }}
-              className="data-[state=unchecked]:bg-input"
-            />
-            <Label className="text-sm">Stream events from Usertour to Mixpanel</Label>
-            <QuestionTooltip>
-              When enabled, Usertour-generated events will be continuously streamed into your
-              Mixpanel project.
-            </QuestionTooltip>
-          </CardTitle>
-          <CardDescription>{integrationInfo?.description}</CardDescription>
-        </CardHeader>
-        {config.exportEvents && (
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Project Token :</p>
-              <Input
-                type="text"
-                placeholder="Type Project Token here"
-                value={integration?.key || ''}
-                onChange={(e) => {
-                  setIntegration((prev: IntegrationModel | undefined) => ({
-                    ...prev,
-                    key: e.target.value,
-                  }));
-                }}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Region:</p>
-              <Select
-                value={config.region || 'US'}
-                onValueChange={(value) => {
-                  setIntegration((prev: IntegrationModel | undefined) => ({
-                    ...prev,
-                    config: { ...prev?.config, region: value },
-                  }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Default(US)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="US">Default(US)</SelectItem>
-                  <SelectItem value="EU">EU</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              disabled={!integration?.key || !hasExportEventsChanges()}
-              className="w-24"
-              onClick={() => handleSave({})}
-            >
-              Save
-            </Button>
-          </CardContent>
-        )}
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
-            <Switch
-              checked={config.syncCohorts}
-              onCheckedChange={(checked) => {
-                setIntegration((prev: IntegrationModel | undefined) => ({
-                  ...prev,
-                  config: { ...prev?.config, syncCohorts: checked },
-                }));
-                if (!checked) {
-                  handleSave({ syncCohorts: false });
-                }
-              }}
-              className="data-[state=unchecked]:bg-input"
-            />
-            <Label className="text-sm">Cohort sync from Mixpanel</Label>
-          </CardTitle>
-          <CardDescription>{integrationInfo?.description}</CardDescription>
-        </CardHeader>
-        {config.syncCohorts && (
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="link">Webhook URL</Label>
-              <div className="relative flex-1">
-                <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
-                <Button
-                  type="submit"
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-0.5 right-0.5 size-7"
-                  onClick={handleCopy}
-                >
-                  <Copy className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
-              <Input
-                type="text"
-                placeholder="Type Mixpanel User ID Property here"
-                value={config.mixpanelUserIdProperty || ''}
-                onChange={(e) => {
-                  setIntegration((prev: IntegrationModel | undefined) => ({
-                    ...prev,
-                    config: { ...prev?.config, mixpanelUserIdProperty: e.target.value },
-                  }));
-                }}
-              />
-            </div>
-            <Button
-              disabled={!config.mixpanelUserIdProperty || !hasSyncCohortsChanges()}
-              className="w-24 "
-              onClick={() => handleSave({})}
-            >
-              Save
-            </Button>
-          </CardContent>
-        )}
-      </Card>
+      <ExportEventsForm
+        integration={integration}
+        currentIntegration={currentIntegration}
+        onSave={handleSave}
+        onUpdate={handleUpdate}
+      />
+
+      <SyncCohortsForm
+        integration={integration}
+        currentIntegration={currentIntegration}
+        onSave={handleSave}
+        onUpdate={handleUpdate}
+      />
     </>
   );
 };
