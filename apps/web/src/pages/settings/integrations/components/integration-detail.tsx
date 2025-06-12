@@ -5,7 +5,7 @@ export const IntegrationDetail = () => {
   const { settingSubType } = useParams();
 
   return (
-    <div className="flex flex-col grow space-y-8 py-8">
+    <div className="max-w-3xl mx-auto flex flex-col grow space-y-8 py-8">
       {settingSubType === 'mixpanel' && <MixpanelIntegration />}
     </div>
   );

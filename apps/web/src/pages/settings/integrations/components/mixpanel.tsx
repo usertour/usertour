@@ -15,6 +15,7 @@ import { IntegrationModel } from '@usertour-ui/types';
 import { Card, CardDescription } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 
 interface MixpanelIntegrationConfig {
   region?: string;
@@ -79,6 +80,7 @@ export const MixpanelIntegration = () => {
   const hasExportEventsChanges = useCallback(() => {
     if (!integration) return false;
     return (
+      integration.config?.exportEvents !== currentIntegration?.config?.exportEvents ||
       integration.key !== currentIntegration?.key ||
       integration.config?.region !== currentIntegration?.config?.region
     );
@@ -87,8 +89,9 @@ export const MixpanelIntegration = () => {
   const hasSyncCohortsChanges = useCallback(() => {
     if (!integration) return false;
     return (
+      integration.config?.syncCohorts !== currentIntegration?.config?.syncCohorts ||
       integration.config?.mixpanelUserIdProperty !==
-      currentIntegration?.config?.mixpanelUserIdProperty
+        currentIntegration?.config?.mixpanelUserIdProperty
     );
   }, [integration, currentIntegration]);
 
@@ -96,6 +99,32 @@ export const MixpanelIntegration = () => {
 
   return (
     <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="space-between flex items-center gap-4 flex-row items-center">
+            <img
+              src={integrationInfo?.imagePath}
+              alt={`${integrationInfo?.name} logo`}
+              className="w-12 h-12"
+            />
+            <div className="flex flex-col gap-1">
+              <div className="text-lg font-semibold">{integrationInfo?.name}</div>
+              <div className="text-sm text-muted-foreground font-normal">
+                {integrationInfo?.description}{' '}
+                <a
+                  href="https://docs.usertour.io/how-to-guides/environments/"
+                  className="text-primary  "
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>Read the Mixpanel guide</span>
+                  <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
+                </a>
+              </div>
+            </div>
+          </CardTitle>
+        </CardHeader>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
@@ -121,40 +150,44 @@ export const MixpanelIntegration = () => {
           <CardDescription>{integrationInfo?.description}</CardDescription>
         </CardHeader>
         {config.exportEvents && (
-          <CardContent className="flex flex-col gap-1">
-            <p className="text-sm">Project Token :</p>
-            <Input
-              type="text"
-              placeholder="Type Project Token here"
-              value={integration?.key || ''}
-              onChange={(e) => {
-                setIntegration((prev: IntegrationModel | undefined) => ({
-                  ...prev,
-                  key: e.target.value,
-                }));
-              }}
-            />
-            <p className="text-sm">Region:</p>
-            <Select
-              value={config.region || 'US'}
-              onValueChange={(value) => {
-                setIntegration((prev: IntegrationModel | undefined) => ({
-                  ...prev,
-                  config: { ...prev?.config, region: value },
-                }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Default(US)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="US">Default(US)</SelectItem>
-                <SelectItem value="EU">EU</SelectItem>
-              </SelectContent>
-            </Select>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">Project Token :</p>
+              <Input
+                type="text"
+                placeholder="Type Project Token here"
+                value={integration?.key || ''}
+                onChange={(e) => {
+                  setIntegration((prev: IntegrationModel | undefined) => ({
+                    ...prev,
+                    key: e.target.value,
+                  }));
+                }}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">Region:</p>
+              <Select
+                value={config.region || 'US'}
+                onValueChange={(value) => {
+                  setIntegration((prev: IntegrationModel | undefined) => ({
+                    ...prev,
+                    config: { ...prev?.config, region: value },
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Default(US)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="US">Default(US)</SelectItem>
+                  <SelectItem value="EU">EU</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               disabled={!integration?.key || !hasExportEventsChanges()}
-              className="w-24 mt-4"
+              className="w-24"
               onClick={() => handleSave({})}
             >
               Save
@@ -184,35 +217,39 @@ export const MixpanelIntegration = () => {
           <CardDescription>{integrationInfo?.description}</CardDescription>
         </CardHeader>
         {config.syncCohorts && (
-          <CardContent className="flex flex-col gap-1">
-            <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
-            <Input
-              type="text"
-              placeholder="Type Mixpanel User ID Property here"
-              value={config.mixpanelUserIdProperty || ''}
-              onChange={(e) => {
-                setIntegration((prev: IntegrationModel | undefined) => ({
-                  ...prev,
-                  config: { ...prev?.config, mixpanelUserIdProperty: e.target.value },
-                }));
-              }}
-            />
-            <Label htmlFor="link">Webhook URL</Label>
-            <div className="relative flex-1">
-              <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute top-0.5 right-0.5 size-7"
-                onClick={handleCopy}
-              >
-                <Copy className="size-3.5" />
-              </Button>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="link">Webhook URL</Label>
+              <div className="relative flex-1">
+                <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-0.5 right-0.5 size-7"
+                  onClick={handleCopy}
+                >
+                  <Copy className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
+              <Input
+                type="text"
+                placeholder="Type Mixpanel User ID Property here"
+                value={config.mixpanelUserIdProperty || ''}
+                onChange={(e) => {
+                  setIntegration((prev: IntegrationModel | undefined) => ({
+                    ...prev,
+                    config: { ...prev?.config, mixpanelUserIdProperty: e.target.value },
+                  }));
+                }}
+              />
             </div>
             <Button
               disabled={!config.mixpanelUserIdProperty || !hasSyncCohortsChanges()}
-              className="w-24 mt-4"
+              className="w-24 "
               onClick={() => handleSave({})}
             >
               Save
