@@ -38,7 +38,7 @@ import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { Copy } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { Integration, integrations } from '@/utils/integration';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface IntegrationCardProps {
   integration: Integration;
@@ -947,6 +947,7 @@ export const IntegrationsListContent = () => {
     loading: loadingIntegrations,
   } = useListIntegrationsQuery(environmentId);
   const { invoke: updateIntegration, loading: updating } = useUpdateIntegrationMutation();
+  const navigate = useNavigate();
 
   const handleConnect = async (code: string) => {
     // const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
@@ -957,7 +958,7 @@ export const IntegrationsListContent = () => {
     // });
     // await refetch();
     // setSelectedCode(code);
-    window.location.href = `${location.pathname}/${code}`;
+    navigate(`${location.pathname}/${code}`);
   };
 
   const handleDisconnect = async (code: string) => {
