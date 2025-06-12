@@ -16,6 +16,8 @@ import { Card, CardDescription } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { Skeleton } from '@usertour-ui/skeleton';
+import { SpinnerIcon } from '@usertour-ui/icons';
 
 interface MixpanelIntegrationConfig {
   region?: string;
@@ -30,6 +32,7 @@ interface IntegrationFormProps {
   currentIntegration: IntegrationModel | undefined;
   onSave: (updates: Partial<MixpanelIntegrationConfig>) => Promise<void>;
   onUpdate: (updates: Partial<IntegrationModel>) => void;
+  isLoading?: boolean;
 }
 
 const INTEGRATION_CODE = 'mixpanel' as const;
@@ -39,6 +42,7 @@ const ExportEventsForm = ({
   currentIntegration,
   onSave,
   onUpdate,
+  isLoading,
 }: IntegrationFormProps) => {
   const config = (integration?.config as MixpanelIntegrationConfig) || {};
 
@@ -94,6 +98,7 @@ const ExportEventsForm = ({
             checked={config.exportEvents}
             onCheckedChange={handleSwitchChange}
             className="data-[state=unchecked]:bg-input"
+            disabled={isLoading}
           />
           <Label className="text-sm">Stream events from Usertour to Mixpanel</Label>
           <QuestionTooltip>
@@ -112,11 +117,16 @@ const ExportEventsForm = ({
               placeholder="Type Project Token here"
               value={integration?.key || ''}
               onChange={handleInputChange}
+              disabled={isLoading}
             />
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-sm">Region:</p>
-            <Select value={config.region || 'US'} onValueChange={handleRegionChange}>
+            <Select
+              value={config.region || 'US'}
+              onValueChange={handleRegionChange}
+              disabled={isLoading}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Default(US)" />
               </SelectTrigger>
@@ -127,10 +137,11 @@ const ExportEventsForm = ({
             </Select>
           </div>
           <Button
-            disabled={!integration?.key || !hasChanges()}
+            disabled={!integration?.key || !hasChanges() || isLoading}
             className="w-24"
             onClick={() => onSave({})}
           >
+            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </CardContent>
@@ -144,6 +155,7 @@ const SyncCohortsForm = ({
   currentIntegration,
   onSave,
   onUpdate,
+  isLoading,
 }: IntegrationFormProps) => {
   const { globalConfig } = useAppContext();
   const { toast } = useToast();
@@ -201,6 +213,7 @@ const SyncCohortsForm = ({
             checked={config.syncCohorts}
             onCheckedChange={handleSwitchChange}
             className="data-[state=unchecked]:bg-input"
+            disabled={isLoading}
           />
           <Label className="text-sm">Cohort sync from Mixpanel</Label>
         </CardTitle>
@@ -218,6 +231,7 @@ const SyncCohortsForm = ({
                 variant="ghost"
                 className="absolute top-0.5 right-0.5 size-7"
                 onClick={handleCopy}
+                disabled={isLoading}
               >
                 <Copy className="size-3.5" />
               </Button>
@@ -230,13 +244,15 @@ const SyncCohortsForm = ({
               placeholder="Type Mixpanel User ID Property here"
               value={config.mixpanelUserIdProperty || ''}
               onChange={handleInputChange}
+              disabled={isLoading}
             />
           </div>
           <Button
-            disabled={!config.mixpanelUserIdProperty || !hasChanges()}
+            disabled={!config.mixpanelUserIdProperty || !hasChanges() || isLoading}
             className="w-24"
             onClick={() => onSave({})}
           >
+            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </CardContent>
@@ -245,12 +261,68 @@ const SyncCohortsForm = ({
   );
 };
 
+const ExportEventsFormSkeleton = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
+        <Skeleton className="h-6 w-10" />
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-6 w-6" />
+      </CardTitle>
+      <CardDescription>
+        <Skeleton className="h-4 w-48" />
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <Skeleton className="h-10 w-24" />
+    </CardContent>
+  </Card>
+);
+
+const SyncCohortsFormSkeleton = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
+        <Skeleton className="h-6 w-10" />
+        <Skeleton className="h-6 w-48" />
+      </CardTitle>
+      <CardDescription>
+        <Skeleton className="h-4 w-56" />
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-4 w-64" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <Skeleton className="h-10 w-24" />
+    </CardContent>
+  </Card>
+);
+
 export const MixpanelIntegration = () => {
   const { environment } = useAppContext();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const environmentId = environment?.id || '';
-  const { data: integrationsData, refetch } = useListIntegrationsQuery(environmentId);
+  const {
+    data: integrationsData,
+    refetch,
+    loading: isDataLoading,
+  } = useListIntegrationsQuery(environmentId);
 
   const currentIntegration = integrationsData?.find(
     (i: IntegrationModel) => i.code === INTEGRATION_CODE,
@@ -267,6 +339,7 @@ export const MixpanelIntegration = () => {
   const handleSave = useCallback(
     async (updates: Partial<MixpanelIntegrationConfig>) => {
       try {
+        setIsLoading(true);
         await updateIntegration(environmentId, INTEGRATION_CODE, {
           enabled: true,
           key: integration?.key,
@@ -284,6 +357,8 @@ export const MixpanelIntegration = () => {
           title: 'Failed to save settings',
           variant: 'destructive',
         });
+      } finally {
+        setIsLoading(false);
       }
     },
     [environmentId, integration, updateIntegration, toast, refetch],
@@ -298,6 +373,26 @@ export const MixpanelIntegration = () => {
       };
     });
   }, []);
+
+  if (isDataLoading) {
+    return (
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="space-between flex items-center gap-4 flex-row items-center">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="flex flex-col gap-1">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <ExportEventsFormSkeleton />
+        <SyncCohortsFormSkeleton />
+      </>
+    );
+  }
 
   return (
     <>
@@ -333,6 +428,7 @@ export const MixpanelIntegration = () => {
         currentIntegration={currentIntegration}
         onSave={handleSave}
         onUpdate={handleUpdate}
+        isLoading={isLoading}
       />
 
       <SyncCohortsForm
@@ -340,6 +436,7 @@ export const MixpanelIntegration = () => {
         currentIntegration={currentIntegration}
         onSave={handleSave}
         onUpdate={handleUpdate}
+        isLoading={isLoading}
       />
     </>
   );
