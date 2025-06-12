@@ -199,7 +199,7 @@ const IntegrationCard = ({
         {enabled && (
           <div className="flex items-center gap-1 ml-2">
             <CircleIcon className="w-3 h-3 text-success" />
-            <span className="text-xs text-muted-foreground">Connected</span>
+            <span className="text-xs text-muted-foreground">Syncing</span>
           </div>
         )}
       </div>
@@ -913,7 +913,7 @@ const SalesforceConfig = ({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <CircleIcon className="w-3 h-3 text-success" />
-            <span className="text-sm text-muted-foreground">Connected</span>
+            <span className="text-sm text-muted-foreground">Syncing</span>
           </div>
         </div>
         <div className="text-sm text-muted-foreground">
