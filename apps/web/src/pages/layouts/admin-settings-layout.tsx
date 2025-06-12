@@ -9,12 +9,14 @@ interface SettingsLayoutProps {
 }
 
 export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
-  const { settingType } = useParams();
+  const { settingType, settingSubType } = useParams();
+  const bgClassName =
+    settingType === 'account' || settingType === 'companies' || settingSubType ? 'bg-slate-50' : '';
   return (
     <>
       <AdminNewLayout>
         <AdminMainNewNav />
-        <AdminLayoutNewContent className={settingType === 'account' ? 'bg-slate-50' : ''}>
+        <AdminLayoutNewContent className={bgClassName}>
           <SettingsSidebarNav />
           <ScrollArea className="h-full w-full ">
             <div className="mx-auto max-w-6xl">{children}</div>

@@ -38,6 +38,7 @@ import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { Copy } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { Integration, integrations } from '@/utils/integration';
+import { useLocation } from 'react-router-dom';
 
 interface IntegrationCardProps {
   integration: Integration;
@@ -937,6 +938,7 @@ export const IntegrationsListContent = () => {
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const { toast } = useToast();
   const { environment } = useAppContext();
+  const location = useLocation();
 
   const environmentId = environment?.id || '';
   const {
@@ -947,14 +949,15 @@ export const IntegrationsListContent = () => {
   const { invoke: updateIntegration, loading: updating } = useUpdateIntegrationMutation();
 
   const handleConnect = async (code: string) => {
-    const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
+    // const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
     //initial integration when connect first time
-    await updateIntegration(environmentId, code, {
-      enabled: currentIntegration?.enabled ?? false,
-      key: currentIntegration?.key || '',
-    });
-    await refetch();
-    setSelectedCode(code);
+    // await updateIntegration(environmentId, code, {
+    //   enabled: currentIntegration?.enabled ?? false,
+    //   key: currentIntegration?.key || '',
+    // });
+    // await refetch();
+    // setSelectedCode(code);
+    window.location.href = `${location.pathname}/${code}`;
   };
 
   const handleDisconnect = async (code: string) => {
@@ -1014,9 +1017,9 @@ export const IntegrationsListContent = () => {
     <>
       <ul className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {integrations.map((integration) => {
-          const isEnabled =
-            integrationsData?.find((i: IntegrationModel) => i.code === integration.code)?.enabled ??
-            false;
+          // const isEnabled =
+          //   integrationsData?.find((i: IntegrationModel) => i.code === integration.code)?.enabled ??
+          //   false;
           const isLoading = updating && selectedCode === integration.code;
           const isDisabled = integration.disabled;
           if (isDisabled) return null;
@@ -1025,7 +1028,7 @@ export const IntegrationsListContent = () => {
             <IntegrationCard
               key={integration.name}
               integration={integration}
-              enabled={isEnabled}
+              enabled={false}
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
               loading={isLoading || loadingIntegrations}

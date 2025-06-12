@@ -4,11 +4,11 @@ import { MixpanelIntegration } from './mixpanel';
 export const IntegrationDetail = () => {
   const { settingSubType } = useParams();
 
-  if (settingSubType === 'mixpanel') {
-    return <MixpanelIntegration />;
-  }
-
-  return <> </>;
+  return (
+    <div className="flex flex-col grow space-y-8 py-8">
+      {settingSubType === 'mixpanel' && <MixpanelIntegration />}
+    </div>
+  );
 };
 
 IntegrationDetail.displayName = 'IntegrationDetail';
