@@ -25,19 +25,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 interface IntegrationCardProps {
   integration: Integration;
-  enabled?: boolean;
   isSyncing?: boolean;
   onConnect: (code: string) => void;
   loading?: boolean;
 }
 
-const IntegrationCard = ({
-  integration,
-  enabled,
-  isSyncing,
-  onConnect,
-  loading,
-}: IntegrationCardProps) => {
+const IntegrationCard = ({ integration, isSyncing, onConnect, loading }: IntegrationCardProps) => {
   return (
     <li className="cursor-default rounded-lg border border-input px-4 py-6 text-sm">
       <div className="flex items-center justify-between">
@@ -52,13 +45,7 @@ const IntegrationCard = ({
           onClick={() => onConnect(integration.code)}
           disabled={loading}
         >
-          {loading ? (
-            <SpinnerIcon className="h-4 w-4 animate-spin mr-2" />
-          ) : enabled ? (
-            'Manage'
-          ) : (
-            'Enable'
-          )}
+          {loading ? <SpinnerIcon className="h-4 w-4 animate-spin mr-2" /> : 'Manage'}
         </Button>
       </div>
       <div className="mt-2 font-medium flex items-center">
@@ -382,7 +369,6 @@ export const IntegrationsListContent = () => {
           const currentIntegration = integrationsData?.find(
             (i: IntegrationModel) => i.code === integration.code,
           );
-          const isEnabled = currentIntegration?.enabled ?? false;
           const isSyncing =
             currentIntegration?.config?.exportEvents ||
             currentIntegration?.config?.syncCohorts ||
@@ -395,7 +381,6 @@ export const IntegrationsListContent = () => {
             <IntegrationCard
               key={integration.name}
               integration={integration}
-              enabled={isEnabled}
               isSyncing={isSyncing}
               onConnect={handleConnect}
               loading={isLoading || loadingIntegrations || connectingCode === integration.code}
