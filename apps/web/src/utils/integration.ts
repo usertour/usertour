@@ -4,6 +4,7 @@ export interface Integration {
   description: string;
   imagePath: string;
   disabled?: boolean;
+  needsConnect?: boolean;
 }
 
 export const integrations: Integration[] = [
@@ -46,6 +47,7 @@ export const integrations: Integration[] = [
     description:
       'Connect Usertour to Salesforce to enrich accounts and sync data between platforms.',
     imagePath: '/images/integrations/salesforce.png',
+    needsConnect: true,
   },
   {
     name: 'Salesforce Sandbox',
@@ -53,6 +55,7 @@ export const integrations: Integration[] = [
     description:
       'Connect Usertour to Salesforce Sandbox to test Usertour Flows with Salesforce data.',
     imagePath: '/images/integrations/salesforce.png',
+    needsConnect: true,
   },
   {
     name: 'Segment',

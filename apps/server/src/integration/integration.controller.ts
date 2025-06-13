@@ -29,12 +29,12 @@ export class IntegrationController {
   async handleSalesforceCallback(@Query('code') code: string, @Query('state') state: string) {
     const baseUrl = this.configService.get('app.homepageUrl');
     try {
-      await this.integrationService.handleSalesforceCallback(code, state);
-      return { url: `${baseUrl}/project/1/settings/integrations` };
+      const integration = await this.integrationService.handleSalesforceCallback(code, state);
+      return { url: `${baseUrl}/project/1/settings/integrations/${integration.code}` };
     } catch (error) {
       this.logger.error('Salesforce callback error:', error);
       return {
-        url: `${baseUrl}/project/1/settings/integrations?failed=true`,
+        url: `${baseUrl}/project/1/settings/integrations/?failed=true`,
       };
     }
   }

@@ -6,10 +6,9 @@ import {
   DialogHeader,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from '@usertour-ui/dialog';
-
-import { Input } from '@usertour-ui/input';
-import { useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   useListIntegrationsQuery,
   useUpdateIntegrationMutation,
@@ -23,14 +22,34 @@ import { ArrowRightIcon } from '@radix-ui/react-icons';
 import { Integration, integrations } from '@/utils/integration';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+// Types
 interface IntegrationCardProps {
   integration: Integration;
   isSyncing?: boolean;
-  onConnect: (code: string) => void;
+  onClick: (code: string) => void;
   loading?: boolean;
+  isEnabled?: boolean;
 }
 
-const IntegrationCard = ({ integration, isSyncing, onConnect, loading }: IntegrationCardProps) => {
+interface IntegrationConfigProps {
+  integration: Integration;
+  integrationsData?: IntegrationModel[];
+}
+
+// Extracted components
+const IntegrationCard = ({
+  integration,
+  isSyncing,
+  onClick,
+  loading,
+  isEnabled,
+}: IntegrationCardProps) => {
+  const buttonText = useMemo(() => {
+    if (loading) return '';
+    if (integration.needsConnect && !isEnabled) return 'Connect';
+    return 'Manage';
+  }, [integration.needsConnect, isEnabled, loading]);
+
   return (
     <li className="cursor-default rounded-lg border border-input px-4 py-6 text-sm">
       <div className="flex items-center justify-between">
@@ -42,10 +61,10 @@ const IntegrationCard = ({ integration, isSyncing, onConnect, loading }: Integra
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => onConnect(integration.code)}
+          onClick={() => onClick(integration.code)}
           disabled={loading}
         >
-          {loading ? <SpinnerIcon className="h-4 w-4 animate-spin mr-2" /> : 'Manage'}
+          {loading ? <SpinnerIcon className="h-4 w-4 animate-spin mr-2" /> : buttonText}
         </Button>
       </div>
       <div className="mt-2 font-medium flex items-center">
@@ -62,37 +81,15 @@ const IntegrationCard = ({ integration, isSyncing, onConnect, loading }: Integra
   );
 };
 
-interface BaseIntegrationConfig {
-  region?: string;
-}
-
-interface SalesforceIntegrationConfig extends BaseIntegrationConfig {
-  // Add Salesforce specific config
-}
-
-interface IntegrationConfigProps<T extends BaseIntegrationConfig = BaseIntegrationConfig> {
-  integration: Integration;
-  onClose: () => void;
-  onSubmit: (config: {
-    key: string;
-    enabled: boolean;
-    config?: T;
-  }) => Promise<void>;
-  loading: boolean;
-  integrationsData?: IntegrationModel[];
-}
-
-const SalesforceConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<SalesforceIntegrationConfig>) => {
+const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigProps) => {
   const { environment } = useAppContext();
   const { toast } = useToast();
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
+  const currentIntegration = useMemo(
+    () => integrationsData?.find((i: IntegrationModel) => i.code === integration.code),
+    [integrationsData, integration.code],
+  );
   const isConnected = currentIntegration?.enabled;
+
   const { data: authUrl, loading: loadingAuthUrl } = useGetSalesforceAuthUrlQuery(
     environment?.id || '',
     integration.code,
@@ -101,7 +98,7 @@ const SalesforceConfig = ({
     },
   );
 
-  const handleConnect = async () => {
+  const handleConnect = useCallback(async () => {
     if (!authUrl) {
       toast({
         title: 'Error',
@@ -111,76 +108,8 @@ const SalesforceConfig = ({
       return;
     }
 
-    // Redirect to Salesforce auth page
     window.location.href = authUrl;
-  };
-
-  const handleSubmit = async () => {
-    if (!currentIntegration) return;
-
-    try {
-      await onSubmit({
-        key: currentIntegration.key,
-        enabled: true,
-        config: currentIntegration.config,
-      });
-      toast({
-        title: 'Success',
-        description: 'Salesforce integration updated successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Failed to update Salesforce integration',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  if (!isConnected) {
-    return (
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex flex-col gap-2 pt-4">
-            <div className="flex items-center justify-center gap-x-4">
-              <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-                <img src="/images/logo.png" className="w-full h-full" />
-              </div>
-              <ArrowRightIcon className="w-6 h-6" />
-              <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-                <img
-                  src={integration.imagePath}
-                  alt={`${integration.name} logo`}
-                  className="w-8 h-8"
-                />
-              </div>
-            </div>
-            <div className="mt-4 text-center text-lg/6 font-semibold">
-              Connect {integration.name}
-            </div>
-          </DialogTitle>
-          <DialogDescription className="mt-2 text-center">
-            {integration.description}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4 mt-2">
-          <div className="text-sm text-muted-foreground">
-            Click the button below to connect your Salesforce account. You will be redirected to
-            Salesforce to authorize the connection.
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleConnect} disabled={loadingAuthUrl}>
-            {loadingAuthUrl ? 'Loading...' : 'Connect to Salesforce'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    );
-  }
+  }, [authUrl, toast]);
 
   return (
     <DialogContent className="max-w-2xl">
@@ -188,73 +117,7 @@ const SalesforceConfig = ({
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <ArrowRightIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">
-            Edit {integration.name} Connection
-          </div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-4 mt-2">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <CircleIcon className="w-3 h-3 text-success" />
-            <span className="text-sm text-muted-foreground">Syncing</span>
-          </div>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Your Salesforce account is connected. You can disconnect or reconnect at any time.
-        </div>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={loading}>
-          {loading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
-
-// Configuration mapping for different integration types
-const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
-  salesforce: SalesforceConfig,
-  'salesforce-sandbox': SalesforceConfig,
-  // Add more integration configs here
-};
-
-// Default config for integrations without specific config
-const DefaultConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
+              <img src="/images/logo.png" className="w-full h-full" alt="Logo" />
             </div>
             <ArrowRightIcon className="w-6 h-6" />
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
@@ -271,36 +134,37 @@ const DefaultConfig = ({
           {integration.description}
         </DialogDescription>
       </DialogHeader>
-      <div className="flex flex-col gap-2 mt-2">
-        <p className="text-sm text-muted-foreground">API Key:</p>
-        <Input
-          type="text"
-          placeholder="Enter API key"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-        />
+      <div className="flex flex-col gap-4 mt-2">
+        <div className="text-sm text-muted-foreground">
+          Click the button below to connect your Salesforce account. You will be redirected to
+          Salesforce to authorize the connection.
+        </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => onSubmit({ key: apiKey, enabled: true })}
-          disabled={!apiKey || loading}
-        >
-          {loading ? 'Saving...' : 'Save'}
+        <DialogClose>
+          <Button variant="outline">Cancel</Button>
+        </DialogClose>
+        <Button onClick={handleConnect} disabled={loadingAuthUrl}>
+          {loadingAuthUrl ? 'Loading...' : 'Connect to Salesforce'}
         </Button>
       </DialogFooter>
     </DialogContent>
   );
 };
 
+// Configuration mapping for different integration types
+const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
+  salesforce: SalesforceConfig,
+  'salesforce-sandbox': SalesforceConfig,
+};
+
 export const IntegrationsListContent = () => {
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [connectingCode, setConnectingCode] = useState<string | null>(null);
-  const { toast } = useToast();
   const { environment } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const environmentId = environment?.id || '';
   const {
@@ -309,63 +173,79 @@ export const IntegrationsListContent = () => {
     loading: loadingIntegrations,
   } = useListIntegrationsQuery(environmentId);
   const { invoke: updateIntegration, loading: updating } = useUpdateIntegrationMutation();
-  const navigate = useNavigate();
 
-  const handleConnect = async (code: string) => {
-    setConnectingCode(code);
-    try {
-      const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
-      if (!currentIntegration || !currentIntegration.enabled) {
+  const handleIntegrationUpdate = useCallback(
+    async (code: string, enabled: boolean) => {
+      try {
         await updateIntegration(environmentId, code, {
-          enabled: true,
+          enabled,
           key: code,
-          config: {},
         });
         await refetch();
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: `Failed to ${enabled ? 'enable' : 'disable'} integration`,
+          variant: 'destructive',
+        });
+        throw error;
       }
-      navigate(`${location.pathname}/${code}`);
-    } finally {
-      setConnectingCode(null);
-    }
-  };
+    },
+    [environmentId, updateIntegration, refetch, toast],
+  );
 
-  const handleSubmit = async (config: {
-    key: string;
-    enabled: boolean;
-    config?: {
-      region?: string;
-      streamEvents?: boolean;
-    };
-  }) => {
-    if (!selectedCode) return;
+  const handleOnClick = useCallback(
+    async (code: string) => {
+      setConnectingCode(code);
+      try {
+        const integration = integrations.find((i) => i.code === code);
+        const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
 
-    try {
-      await updateIntegration(environmentId, selectedCode, config);
-      toast({
-        title: 'Success',
-        description: 'Integration connected successfully',
-      });
-      setSelectedCode(null);
-      refetch();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to connect integration',
-        variant: 'destructive',
-      });
-    }
-  };
+        if (integration?.needsConnect) {
+          if (!currentIntegration) {
+            await handleIntegrationUpdate(code, false);
+          }
 
-  const selectedIntegration = selectedCode
-    ? integrations.find((i) => i.code === selectedCode)
-    : null;
-  const ConfigComponent =
-    selectedIntegration && selectedCode ? integrationConfigs[selectedCode] || DefaultConfig : null;
+          if (currentIntegration?.enabled) {
+            navigate(`${location.pathname}/${code}`);
+          } else {
+            setSelectedCode(code);
+          }
+          return;
+        }
+
+        if (!currentIntegration || !currentIntegration.enabled) {
+          await handleIntegrationUpdate(code, true);
+        }
+        navigate(`${location.pathname}/${code}`);
+      } catch (error) {
+        console.error('Failed to handle integration click:', error);
+      } finally {
+        setConnectingCode(null);
+      }
+    },
+    [integrationsData, handleIntegrationUpdate, navigate, location.pathname],
+  );
+
+  const selectedIntegration = useMemo(
+    () => (selectedCode ? integrations.find((i) => i.code === selectedCode) : null),
+    [selectedCode],
+  );
+
+  const ConfigComponent = useMemo(
+    () => (selectedIntegration && selectedCode ? integrationConfigs[selectedCode] : null),
+    [selectedIntegration, selectedCode],
+  );
+
+  const filteredIntegrations = useMemo(
+    () => integrations.filter((integration) => !integration.disabled),
+    [],
+  );
 
   return (
     <>
       <ul className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {integrations.map((integration) => {
+        {filteredIntegrations.map((integration) => {
           const currentIntegration = integrationsData?.find(
             (i: IntegrationModel) => i.code === integration.code,
           );
@@ -374,16 +254,16 @@ export const IntegrationsListContent = () => {
             currentIntegration?.config?.syncCohorts ||
             false;
           const isLoading = updating && selectedCode === integration.code;
-          const isDisabled = integration.disabled;
-          if (isDisabled) return null;
+          const isEnabled = currentIntegration?.enabled;
 
           return (
             <IntegrationCard
               key={integration.name}
               integration={integration}
               isSyncing={isSyncing}
-              onConnect={handleConnect}
+              onClick={handleOnClick}
               loading={isLoading || loadingIntegrations || connectingCode === integration.code}
+              isEnabled={isEnabled}
             />
           );
         })}
@@ -391,13 +271,7 @@ export const IntegrationsListContent = () => {
 
       <Dialog open={!!selectedCode} onOpenChange={() => setSelectedCode(null)}>
         {selectedIntegration && ConfigComponent && (
-          <ConfigComponent
-            integration={selectedIntegration}
-            onClose={() => setSelectedCode(null)}
-            onSubmit={handleSubmit}
-            loading={updating}
-            integrationsData={integrationsData}
-          />
+          <ConfigComponent integration={selectedIntegration} integrationsData={integrationsData} />
         )}
       </Dialog>
     </>

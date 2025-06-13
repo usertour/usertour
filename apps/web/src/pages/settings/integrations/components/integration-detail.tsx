@@ -5,6 +5,7 @@ import { AmplitudeIntegration } from './amplitude';
 import { HeapIntegration } from './heap';
 import { HubSpotIntegration } from './hubspot';
 import { SegmentIntegration } from './segment';
+import { SalesforceIntegration } from './salesforce';
 
 export const IntegrationDetail = () => {
   const { settingSubType } = useParams();
@@ -17,6 +18,8 @@ export const IntegrationDetail = () => {
       {settingSubType === 'heap' && <HeapIntegration />}
       {settingSubType === 'hubspot' && <HubSpotIntegration />}
       {settingSubType === 'segment' && <SegmentIntegration />}
+      {settingSubType === 'salesforce' && <SalesforceIntegration />}
+      {settingSubType === 'salesforce-sandbox' && <SalesforceIntegration />}
     </div>
   );
 };

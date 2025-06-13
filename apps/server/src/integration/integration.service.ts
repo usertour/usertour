@@ -849,7 +849,7 @@ export class IntegrationService {
       });
 
       // Create or update OAuth configuration
-      const oauth = await this.prisma.integrationOAuth.upsert({
+      await this.prisma.integrationOAuth.upsert({
         where: { integrationId: integration.id },
         create: {
           integrationId: integration.id,
@@ -868,7 +868,7 @@ export class IntegrationService {
         },
       });
 
-      return oauth;
+      return integration;
     } catch (error) {
       this.logger.error('Error in Salesforce OAuth callback:', {
         error: error.message,
