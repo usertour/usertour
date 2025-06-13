@@ -69,6 +69,7 @@ const navigations = [
       'settings-attributes',
       'settings-localizations',
       'settings-events',
+      'settings-detail',
     ],
     icon: SettingsIcon,
   },
