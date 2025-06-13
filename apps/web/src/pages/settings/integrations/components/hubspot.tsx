@@ -4,12 +4,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@usertour-ui/select';
 import { Switch } from '@usertour-ui/switch';
 import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { Copy } from 'lucide-react';
-import { useCopyToClipboard } from 'react-use';
 import { integrations } from '@/utils/integration';
 import { IntegrationModel } from '@usertour-ui/types';
 import { Card, CardDescription } from '@usertour-ui/card';
@@ -19,23 +16,19 @@ import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Skeleton } from '@usertour-ui/skeleton';
 import { SpinnerIcon } from '@usertour-ui/icons';
 
-interface MixpanelIntegrationConfig {
-  region?: string;
+interface HubSpotIntegrationConfig {
   exportEvents?: boolean;
-  syncCohorts?: boolean;
-  mixpanelUserIdProperty?: string;
-  key?: string;
 }
 
 interface IntegrationFormProps {
   integration: IntegrationModel | undefined;
   currentIntegration: IntegrationModel | undefined;
-  onSave: (updates: Partial<MixpanelIntegrationConfig>) => Promise<void>;
+  onSave: (updates: Partial<HubSpotIntegrationConfig>) => Promise<void>;
   onUpdate: (updates: Partial<IntegrationModel>) => void;
   isLoading?: boolean;
 }
 
-const INTEGRATION_CODE = 'mixpanel' as const;
+const INTEGRATION_CODE = 'hubspot' as const;
 
 const ExportEventsForm = ({
   integration,
@@ -44,14 +37,13 @@ const ExportEventsForm = ({
   onUpdate,
   isLoading,
 }: IntegrationFormProps) => {
-  const config = (integration?.config as MixpanelIntegrationConfig) || {};
+  const config = (integration?.config as HubSpotIntegrationConfig) || {};
 
   const hasChanges = useCallback(() => {
     if (!integration) return false;
     return (
-      integration.config?.exportEvents !== currentIntegration?.config?.exportEvents ||
       integration.key !== currentIntegration?.key ||
-      integration.config?.region !== currentIntegration?.config?.region
+      integration.config?.exportEvents !== currentIntegration?.config?.exportEvents
     );
   }, [integration, currentIntegration]);
 
@@ -60,16 +52,6 @@ const ExportEventsForm = ({
       if (!integration) return;
       onUpdate({
         key: e.target.value,
-      });
-    },
-    [integration, onUpdate],
-  );
-
-  const handleRegionChange = useCallback(
-    (value: string) => {
-      if (!integration) return;
-      onUpdate({
-        config: { ...integration.config, region: value },
       });
     },
     [integration, onUpdate],
@@ -100,9 +82,9 @@ const ExportEventsForm = ({
             className="data-[state=unchecked]:bg-input"
             disabled={isLoading}
           />
-          <Label className="text-sm">Stream events from Usertour to Mixpanel</Label>
+          <Label className="text-sm">Stream events from Usertour to HubSpot</Label>
           <QuestionTooltip>
-            When enabled, Usertour-generated events will be continuously streamed into your Mixpanel
+            When enabled, Usertour-generated events will be continuously streamed into your HubSpot
             project.
           </QuestionTooltip>
         </CardTitle>
@@ -111,144 +93,17 @@ const ExportEventsForm = ({
       {config.exportEvents && (
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <p className="text-sm">Project Token :</p>
+            <p className="text-sm">Private App Token :</p>
             <Input
               type="text"
-              placeholder="Type Project Token here"
+              placeholder="Type Private App Token here"
               value={integration?.key || ''}
               onChange={handleInputChange}
               disabled={isLoading}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">Region:</p>
-            <Select
-              value={config.region || 'US'}
-              onValueChange={handleRegionChange}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Default(US)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="US">Default(US)</SelectItem>
-                <SelectItem value="EU">EU</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <Button
             disabled={!integration?.key || !hasChanges() || isLoading}
-            className="w-24"
-            onClick={() => onSave({})}
-          >
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </CardContent>
-      )}
-    </Card>
-  );
-};
-
-const SyncCohortsForm = ({
-  integration,
-  currentIntegration,
-  onSave,
-  onUpdate,
-  isLoading,
-}: IntegrationFormProps) => {
-  const { globalConfig } = useAppContext();
-  const { toast } = useToast();
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const config = (integration?.config as MixpanelIntegrationConfig) || {};
-
-  const webhookUrl = `${globalConfig?.apiUrl}/api/mixpanel_webhook/${integration?.accessToken}`;
-
-  const handleCopy = useCallback(() => {
-    copyToClipboard(webhookUrl);
-    toast({
-      title: 'Webhook URL copied to clipboard',
-    });
-  }, [webhookUrl, copyToClipboard, toast]);
-
-  const hasChanges = useCallback(() => {
-    if (!integration) return false;
-    return (
-      integration.config?.syncCohorts !== currentIntegration?.config?.syncCohorts ||
-      integration.config?.mixpanelUserIdProperty !==
-        currentIntegration?.config?.mixpanelUserIdProperty
-    );
-  }, [integration, currentIntegration]);
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!integration) return;
-      onUpdate({
-        config: { ...integration.config, mixpanelUserIdProperty: e.target.value },
-      });
-    },
-    [integration, onUpdate],
-  );
-
-  const handleSwitchChange = useCallback(
-    (checked: boolean) => {
-      if (!integration) return;
-      // Update local state
-      onUpdate({
-        config: { ...integration.config, syncCohorts: checked },
-      });
-      // Auto save when switch is turned off
-      if (!checked) {
-        onSave({ syncCohorts: false });
-      }
-    },
-    [integration, onUpdate, onSave],
-  );
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
-          <Switch
-            checked={config.syncCohorts}
-            onCheckedChange={handleSwitchChange}
-            className="data-[state=unchecked]:bg-input"
-            disabled={isLoading}
-          />
-          <Label className="text-sm">Cohort sync from Mixpanel</Label>
-        </CardTitle>
-        <CardDescription>Configure cohort synchronization settings</CardDescription>
-      </CardHeader>
-      {config.syncCohorts && (
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="link">Webhook URL</Label>
-            <div className="relative flex-1">
-              <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute top-0.5 right-0.5 size-7"
-                onClick={handleCopy}
-                disabled={isLoading}
-              >
-                <Copy className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
-            <Input
-              type="text"
-              placeholder="Type Mixpanel User ID Property here"
-              value={config.mixpanelUserIdProperty || ''}
-              onChange={handleInputChange}
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            disabled={!config.mixpanelUserIdProperty || !hasChanges() || isLoading}
             className="w-24"
             onClick={() => onSave({})}
           >
@@ -280,47 +135,12 @@ const ExportEventsFormSkeleton = () => (
         </div>
         <Skeleton className="h-10 w-full" />
       </div>
-      <div className="flex flex-col gap-1">
-        <div className="text-sm">
-          <Skeleton className="h-4 w-16" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-      </div>
       <Skeleton className="h-10 w-24" />
     </CardContent>
   </Card>
 );
 
-const SyncCohortsFormSkeleton = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="space-between flex items-center gap-2 flex-row items-center">
-        <Skeleton className="h-6 w-10" />
-        <Skeleton className="h-6 w-48" />
-      </CardTitle>
-      <div className="text-sm text-muted-foreground">
-        <Skeleton className="h-4 w-56" />
-      </div>
-    </CardHeader>
-    <CardContent className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <div className="text-sm">
-          <Skeleton className="h-4 w-24" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <div className="text-sm">
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <Skeleton className="h-10 w-24" />
-    </CardContent>
-  </Card>
-);
-
-export const MixpanelIntegration = () => {
+export const HubSpotIntegration = () => {
   const { environment } = useAppContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -345,7 +165,7 @@ export const MixpanelIntegration = () => {
   const integrationInfo = integrations.find((i) => i.code === INTEGRATION_CODE);
 
   const handleSave = useCallback(
-    async (updates: Partial<MixpanelIntegrationConfig>) => {
+    async (updates: Partial<HubSpotIntegrationConfig>) => {
       try {
         setIsLoading(true);
         await updateIntegration(environmentId, INTEGRATION_CODE, {
@@ -397,7 +217,6 @@ export const MixpanelIntegration = () => {
           </CardHeader>
         </Card>
         <ExportEventsFormSkeleton />
-        <SyncCohortsFormSkeleton />
       </>
     );
   }
@@ -422,7 +241,7 @@ export const MixpanelIntegration = () => {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <span>Read the Mixpanel guide</span>
+                  <span>Read the HubSpot guide</span>
                   <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
                 </a>
               </div>
@@ -438,16 +257,8 @@ export const MixpanelIntegration = () => {
         onUpdate={handleUpdate}
         isLoading={isLoading}
       />
-
-      <SyncCohortsForm
-        integration={integration}
-        currentIntegration={currentIntegration}
-        onSave={handleSave}
-        onUpdate={handleUpdate}
-        isLoading={isLoading}
-      />
     </>
   );
 };
 
-MixpanelIntegration.displayName = 'MixpanelIntegration';
+HubSpotIntegration.displayName = 'HubSpotIntegration';

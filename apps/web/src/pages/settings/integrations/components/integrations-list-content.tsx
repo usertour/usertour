@@ -28,15 +28,9 @@ import { useToast } from '@usertour-ui/use-toast';
 import { IntegrationModel } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
 import { CircleIcon, DisconnectIcon, EditIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { ArrowRightIcon, DotsHorizontalIcon, DotsVerticalIcon } from '@radix-ui/react-icons';
+import { ArrowRightIcon, DotsVerticalIcon } from '@radix-ui/react-icons';
 import { DropdownMenuItem } from '@usertour-ui/dropdown-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@usertour-ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@usertour-ui/select';
-import { Switch } from '@usertour-ui/switch';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { Copy } from 'lucide-react';
-import { useCopyToClipboard } from 'react-use';
 import { Integration, integrations } from '@/utils/integration';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -143,28 +137,6 @@ interface BaseIntegrationConfig {
   region?: string;
 }
 
-interface MixpanelIntegrationConfig extends BaseIntegrationConfig {
-  exportEvents?: boolean;
-  syncCohorts?: boolean;
-  mixpanelUserIdProperty?: string;
-}
-
-interface SegmentIntegrationConfig extends BaseIntegrationConfig {
-  exportEvents?: boolean;
-}
-
-interface AmplitudeIntegrationConfig extends BaseIntegrationConfig {}
-
-interface PosthogIntegrationConfig extends BaseIntegrationConfig {}
-
-interface HubspotIntegrationConfig extends BaseIntegrationConfig {
-  // Add Hubspot specific config
-}
-
-interface HeapIntegrationConfig extends BaseIntegrationConfig {
-  // Add Heap specific config
-}
-
 interface SalesforceIntegrationConfig extends BaseIntegrationConfig {
   // Add Salesforce specific config
 }
@@ -180,540 +152,6 @@ interface IntegrationConfigProps<T extends BaseIntegrationConfig = BaseIntegrati
   loading: boolean;
   integrationsData?: IntegrationModel[];
 }
-
-const AmplitudeConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<AmplitudeIntegrationConfig>) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-  const [region, setRegion] = useState(
-    (currentIntegration?.config as AmplitudeIntegrationConfig)?.region || 'US',
-  );
-
-  const handleSubmit = () => {
-    onSubmit({ key: apiKey, enabled: true, config: { region: region || 'US' } });
-  };
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <ArrowRightIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-2 mt-2">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">API Key:</p>
-          <Input
-            type="text"
-            placeholder="Type Amplitude API key here"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">Region:</p>
-          <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Default(US)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="US">Default(US)</SelectItem>
-              <SelectItem value="EU">EU</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={!apiKey || loading}>
-          {loading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
-
-const HubSpotConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<HubspotIntegrationConfig>) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <ArrowRightIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-2 mt-2">
-        <p className="text-sm text-muted-foreground">Private App Token:</p>
-        <Input
-          type="text"
-          placeholder="Type Private App Token here"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-        />
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => onSubmit({ key: apiKey, enabled: true })}
-          disabled={!apiKey || loading}
-        >
-          {loading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
-
-const HeapConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<HeapIntegrationConfig>) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-
-  const handleSubmit = () => {
-    onSubmit({ key: apiKey, enabled: true });
-  };
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <ArrowRightIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-2 mt-2">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">Heap App ID:</p>
-          <Input
-            type="text"
-            placeholder="Type Heap App ID here"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-        </div>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={!apiKey || loading}>
-          {loading ? 'Connecting...' : 'Connect'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
-
-const PosthogConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<PosthogIntegrationConfig>) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-  const [region, setRegion] = useState(
-    (currentIntegration?.config as PosthogIntegrationConfig)?.region || 'US',
-  );
-
-  const handleSubmit = () => {
-    onSubmit({ key: apiKey, enabled: true, config: { region: region || 'US' } });
-  };
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <ArrowRightIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-2 mt-2">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">Personal API key :</p>
-          <Input
-            type="text"
-            placeholder="Type Personal API key here"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">Region:</p>
-          <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Default(US)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="US">Default(US)</SelectItem>
-              <SelectItem value="EU">EU</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={!apiKey || loading}>
-          {loading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
-
-const MixpanelConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<MixpanelIntegrationConfig>) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-  const [region, setRegion] = useState(
-    (currentIntegration?.config as MixpanelIntegrationConfig)?.region || 'US',
-  );
-  const [exportEvents, setExportEvents] = useState(
-    (currentIntegration?.config as MixpanelIntegrationConfig)?.exportEvents ?? false,
-  );
-  const [syncCohorts, setSyncCohorts] = useState(
-    (currentIntegration?.config as MixpanelIntegrationConfig)?.syncCohorts ?? false,
-  );
-  const [mixpanelUserIdProperty, setMixpanelUserIdProperty] = useState(
-    (currentIntegration?.config as MixpanelIntegrationConfig)?.mixpanelUserIdProperty || '',
-  );
-  const { globalConfig } = useAppContext();
-
-  const webhookUrl = `${globalConfig?.apiUrl}/api/mixpanel_webhook/${currentIntegration?.accessToken}`;
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const { toast } = useToast();
-
-  const handleCopy = () => {
-    copyToClipboard(webhookUrl);
-    toast({
-      title: 'Webhook URL copied to clipboard',
-    });
-  };
-
-  const handleSubmit = () => {
-    onSubmit({
-      key: apiKey,
-      enabled: true,
-      config: {
-        region: region || 'US',
-        exportEvents,
-        syncCohorts,
-        mixpanelUserIdProperty,
-      },
-    });
-  };
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <DotsHorizontalIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-4 mt-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={exportEvents}
-            onCheckedChange={setExportEvents}
-            className="data-[state=unchecked]:bg-input"
-          />
-          <Label className="text-sm">Stream events from Usertour to Mixpanel</Label>
-          <QuestionTooltip>
-            When enabled, Usertour-generated events will be continuously streamed into your Mixpanel
-            project.
-          </QuestionTooltip>
-        </div>
-
-        {exportEvents && (
-          <>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Project Token :</p>
-              <Input
-                type="text"
-                placeholder="Type Project Token here"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Region:</p>
-              <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Default(US)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="US">Default(US)</SelectItem>
-                  <SelectItem value="EU">EU</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={syncCohorts}
-            onCheckedChange={setSyncCohorts}
-            className="data-[state=unchecked]:bg-input"
-          />
-          <Label className="text-sm">Cohort sync from Mixpanel</Label>
-        </div>
-
-        {syncCohorts && (
-          <>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
-              <Input
-                type="text"
-                placeholder="Type Mixpanel User ID Property here"
-                value={mixpanelUserIdProperty}
-                onChange={(e) => setMixpanelUserIdProperty(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1 ">
-              <Label htmlFor="link">Webhook URL</Label>
-              <div className="relative flex-1">
-                <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
-                <Button
-                  type="submit"
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-0.5 right-0.5 size-7"
-                  onClick={handleCopy}
-                >
-                  <Copy className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={
-            (exportEvents && !apiKey) || (syncCohorts && !mixpanelUserIdProperty) || loading
-          }
-        >
-          {loading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
-
-const SegmentConfig = ({
-  integration,
-  onClose,
-  onSubmit,
-  loading,
-  integrationsData,
-}: IntegrationConfigProps<SegmentIntegrationConfig>) => {
-  const currentIntegration = integrationsData?.find((i) => i.code === integration.code);
-  const [apiKey, setApiKey] = useState(currentIntegration?.key || '');
-  const [region, setRegion] = useState(
-    (currentIntegration?.config as SegmentIntegrationConfig)?.region || 'US',
-  );
-  const [exportEvents, setExportEvents] = useState(
-    (currentIntegration?.config as SegmentIntegrationConfig)?.exportEvents ?? false,
-  );
-
-  const handleSubmit = () => {
-    onSubmit({
-      key: apiKey,
-      enabled: true,
-      config: {
-        region: region || 'US',
-        exportEvents,
-      },
-    });
-  };
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-col gap-2 pt-4">
-          <div className="flex items-center justify-center gap-x-4">
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" />
-            </div>
-            <DotsHorizontalIcon className="w-6 h-6" />
-            <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img
-                src={integration.imagePath}
-                alt={`${integration.name} logo`}
-                className="w-8 h-8"
-              />
-            </div>
-          </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
-        </DialogTitle>
-        <DialogDescription className="mt-2 text-center">
-          {integration.description}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col gap-4 mt-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={exportEvents}
-            onCheckedChange={setExportEvents}
-            className="data-[state=unchecked]:bg-input"
-          />
-          <Label className="text-sm">Stream events from Usertour to Segment</Label>
-          <QuestionTooltip>
-            When enabled, Usertour-generated events will be continuously streamed into your Segment
-            project.
-          </QuestionTooltip>
-        </div>
-
-        {exportEvents && (
-          <>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Segment Write Key :</p>
-              <Input
-                type="text"
-                placeholder="Type Write Key here"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm">Region:</p>
-              <Select value={region || 'US'} onValueChange={(value) => setRegion(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Default(US)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="US">Default(US)</SelectItem>
-                  <SelectItem value="EU">EU</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </>
-        )}
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={(exportEvents && !apiKey) || loading}>
-          {loading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-};
 
 const SalesforceConfig = ({
   integration,
@@ -865,12 +303,6 @@ const SalesforceConfig = ({
 
 // Configuration mapping for different integration types
 const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigProps>> = {
-  amplitude: AmplitudeConfig,
-  hubspot: HubSpotConfig,
-  heap: HeapConfig,
-  posthog: PosthogConfig,
-  mixpanel: MixpanelConfig,
-  segment: SegmentConfig,
   salesforce: SalesforceConfig,
   'salesforce-sandbox': SalesforceConfig,
   // Add more integration configs here
@@ -936,6 +368,7 @@ const DefaultConfig = ({
 
 export const IntegrationsListContent = () => {
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [connectingCode, setConnectingCode] = useState<string | null>(null);
   const { toast } = useToast();
   const { environment } = useAppContext();
   const location = useLocation();
@@ -950,15 +383,21 @@ export const IntegrationsListContent = () => {
   const navigate = useNavigate();
 
   const handleConnect = async (code: string) => {
-    // const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
-    //initial integration when connect first time
-    // await updateIntegration(environmentId, code, {
-    //   enabled: currentIntegration?.enabled ?? false,
-    //   key: currentIntegration?.key || '',
-    // });
-    // await refetch();
-    // setSelectedCode(code);
-    navigate(`${location.pathname}/${code}`);
+    setConnectingCode(code);
+    try {
+      const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
+      if (!currentIntegration) {
+        await updateIntegration(environmentId, code, {
+          enabled: true,
+          key: code,
+          config: {},
+        });
+        await refetch();
+      }
+      navigate(`${location.pathname}/${code}`);
+    } finally {
+      setConnectingCode(null);
+    }
   };
 
   const handleDisconnect = async (code: string) => {
@@ -1032,7 +471,7 @@ export const IntegrationsListContent = () => {
               enabled={false}
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
-              loading={isLoading || loadingIntegrations}
+              loading={isLoading || loadingIntegrations || connectingCode === integration.code}
             />
           );
         })}
