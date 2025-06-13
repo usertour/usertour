@@ -7,16 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@usertour-ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
+
 import { Input } from '@usertour-ui/input';
 import { useState } from 'react';
 import {
@@ -27,30 +18,26 @@ import {
 import { useToast } from '@usertour-ui/use-toast';
 import { IntegrationModel } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
-import { CircleIcon, DisconnectIcon, EditIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { ArrowRightIcon, DotsVerticalIcon } from '@radix-ui/react-icons';
-import { DropdownMenuItem } from '@usertour-ui/dropdown-menu';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@usertour-ui/dropdown-menu';
+import { CircleIcon, SpinnerIcon } from '@usertour-ui/icons';
+import { ArrowRightIcon } from '@radix-ui/react-icons';
 import { Integration, integrations } from '@/utils/integration';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface IntegrationCardProps {
   integration: Integration;
   enabled?: boolean;
+  isSyncing?: boolean;
   onConnect: (code: string) => void;
-  onDisconnect: (code: string) => void;
   loading?: boolean;
 }
 
 const IntegrationCard = ({
   integration,
   enabled,
+  isSyncing,
   onConnect,
-  onDisconnect,
   loading,
 }: IntegrationCardProps) => {
-  const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
-
   return (
     <li className="cursor-default rounded-lg border border-input px-4 py-6 text-sm">
       <div className="flex items-center justify-between">
@@ -59,69 +46,24 @@ const IntegrationCard = ({
           src={integration.imagePath}
           alt={`${integration.name} logo`}
         />
-        {enabled ? (
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <DotsVerticalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-[101]">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => onConnect(integration.code)}
-                >
-                  <EditIcon className="mr-1 w-4 h-4" />
-                  Edit connection
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-red-600 cursor-pointer"
-                  onClick={() => setShowDisconnectAlert(true)}
-                >
-                  <DisconnectIcon className="mr-1 w-4 h-4" />
-                  Disconnect
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <AlertDialog open={showDisconnectAlert} onOpenChange={setShowDisconnectAlert}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Disconnect Integration</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to disconnect {integration.name}?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700"
-                    onClick={() => {
-                      onDisconnect(integration.code);
-                      setShowDisconnectAlert(false);
-                    }}
-                  >
-                    Disconnect
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </>
-        ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => onConnect(integration.code)}
-            disabled={loading}
-          >
-            {loading ? <SpinnerIcon className="h-4 w-4 animate-spin mr-2" /> : 'Connect'}
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => onConnect(integration.code)}
+          disabled={loading}
+        >
+          {loading ? (
+            <SpinnerIcon className="h-4 w-4 animate-spin mr-2" />
+          ) : enabled ? (
+            'Manage'
+          ) : (
+            'Enable'
+          )}
+        </Button>
       </div>
       <div className="mt-2 font-medium flex items-center">
         <span>{integration.name}</span>
-        {enabled && (
+        {isSyncing && (
           <div className="flex items-center gap-1 ml-2">
             <CircleIcon className="w-3 h-3 text-success" />
             <span className="text-xs text-muted-foreground">Syncing</span>
@@ -386,7 +328,7 @@ export const IntegrationsListContent = () => {
     setConnectingCode(code);
     try {
       const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
-      if (!currentIntegration) {
+      if (!currentIntegration || !currentIntegration.enabled) {
         await updateIntegration(environmentId, code, {
           enabled: true,
           key: code,
@@ -397,26 +339,6 @@ export const IntegrationsListContent = () => {
       navigate(`${location.pathname}/${code}`);
     } finally {
       setConnectingCode(null);
-    }
-  };
-
-  const handleDisconnect = async (code: string) => {
-    try {
-      await updateIntegration(environmentId, code, {
-        enabled: false,
-        key: '',
-      });
-      toast({
-        title: 'Success',
-        description: 'Integration disconnected successfully',
-      });
-      refetch();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to disconnect integration',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -457,9 +379,14 @@ export const IntegrationsListContent = () => {
     <>
       <ul className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {integrations.map((integration) => {
-          // const isEnabled =
-          //   integrationsData?.find((i: IntegrationModel) => i.code === integration.code)?.enabled ??
-          //   false;
+          const currentIntegration = integrationsData?.find(
+            (i: IntegrationModel) => i.code === integration.code,
+          );
+          const isEnabled = currentIntegration?.enabled ?? false;
+          const isSyncing =
+            currentIntegration?.config?.exportEvents ||
+            currentIntegration?.config?.syncCohorts ||
+            false;
           const isLoading = updating && selectedCode === integration.code;
           const isDisabled = integration.disabled;
           if (isDisabled) return null;
@@ -468,9 +395,9 @@ export const IntegrationsListContent = () => {
             <IntegrationCard
               key={integration.name}
               integration={integration}
-              enabled={false}
+              enabled={isEnabled}
+              isSyncing={isSyncing}
               onConnect={handleConnect}
-              onDisconnect={handleDisconnect}
               loading={isLoading || loadingIntegrations || connectingCode === integration.code}
             />
           );
