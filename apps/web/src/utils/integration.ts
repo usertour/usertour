@@ -11,28 +11,25 @@ export const integrations: Integration[] = [
   {
     name: 'Amplitude',
     code: 'amplitude',
-    description:
-      'Write Usertour event data directly to Amplitude to power analytics, user targeting, and more.',
+    description: 'Send Usertour events to Amplitude and receive Amplitude Cohorts.',
     imagePath: '/images/integrations/amplitude.png',
   },
   {
     name: 'Heap',
     code: 'heap',
-    description:
-      'Read and write data directly to Heap to power analytics, user targeting, and more.',
+    description: 'Send Usertour events to Heap and sync Heap segments into Usertour.',
     imagePath: '/images/integrations/heap.png',
   },
   {
     name: 'HubSpot',
     code: 'hubspot',
-    description:
-      'Sync Usertour directly with your Hubspot to write Usertour activities to Hubspot.',
+    description: 'Send Usertour events to HubSpot and sync properties back into Usertour.',
     imagePath: '/images/integrations/hubspot.png',
   },
   {
     name: 'Mixpanel',
     code: 'mixpanel',
-    description: 'Read data from Mixpanel to power analytics, user targeting, and more.',
+    description: 'Send Usertour events to Mixpanel and receive Mixpanel Cohorts.',
     imagePath: '/images/integrations/mixpanel.png',
   },
   {
@@ -44,24 +41,21 @@ export const integrations: Integration[] = [
   {
     name: 'Salesforce',
     code: 'salesforce',
-    description:
-      'Connect Usertour to Salesforce to enrich accounts and sync data between platforms.',
+    description: 'Send Usertour events to Salesforce and sync properties back into Usertour.',
     imagePath: '/images/integrations/salesforce.png',
     needsConnect: true,
   },
   {
     name: 'Salesforce Sandbox',
     code: 'salesforce-sandbox',
-    description:
-      'Connect Usertour to Salesforce Sandbox to test Usertour Flows with Salesforce data.',
+    description: 'Test your Salesforce integration in a safe environment.',
     imagePath: '/images/integrations/salesforce.png',
     needsConnect: true,
   },
   {
     name: 'Segment',
     code: 'segment',
-    description:
-      'Read and write data directly to Segment to power analytics, user targeting, and more.',
+    description: 'Send Usertour events to Segment and sync properties back into Usertour.',
     imagePath: '/images/integrations/segment.png',
   },
   {
