@@ -179,7 +179,6 @@ export const IntegrationsListContent = () => {
       try {
         await updateIntegration(environmentId, provider, {
           enabled,
-          key: provider,
         });
         await refetch();
       } catch (error) {
@@ -254,7 +253,8 @@ export const IntegrationsListContent = () => {
           const isSyncing =
             currentIntegration?.config?.exportEvents ||
             currentIntegration?.config?.syncCohorts ||
-            false;
+            (currentIntegration?.provider === 'salesforce-sandbox' && currentIntegration.enabled) ||
+            (currentIntegration?.provider === 'salesforce' && currentIntegration.enabled);
           const isLoading = updating && selectedProvider === integration.provider;
           const isEnabled = currentIntegration?.enabled;
 

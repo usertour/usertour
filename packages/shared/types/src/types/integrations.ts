@@ -1,6 +1,5 @@
 export type UpdateIntegrationInput = {
   enabled: boolean;
-  key: string;
   config?: any;
 };
 

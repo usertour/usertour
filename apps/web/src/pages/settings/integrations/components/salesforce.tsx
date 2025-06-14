@@ -344,7 +344,6 @@ export const SalesforceIntegration = () => {
         setIsLoading(true);
         await updateIntegration(environmentId, INTEGRATION_PROVIDER, {
           enabled: true,
-          key: integration?.key || '',
           config: {
             ...integration?.config,
             ...updates,
@@ -409,7 +408,7 @@ export const SalesforceIntegration = () => {
               className="w-12 h-12"
             />
             <div className="flex flex-col gap-1">
-              <span className="text-lg font-semibold">{integrationInfo?.name}</span>
+              <span className="text-lg font-semibold">{integrationInfo?.name} connection</span>
               <div className="text-sm text-muted-foreground font-normal">
                 Connected as{' '}
                 <span className="font-bold text-foreground ">
