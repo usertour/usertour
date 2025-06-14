@@ -11,9 +11,15 @@ import { IntegrationModel } from '@usertour-ui/types';
 import { Card, CardDescription } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
-import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { DotsVerticalIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Skeleton } from '@usertour-ui/skeleton';
-import { SpinnerIcon } from '@usertour-ui/icons';
+import { ConnectIcon, DisconnectIcon, SpinnerIcon } from '@usertour-ui/icons';
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour-ui/dropdown-menu';
+import { DropdownMenu } from '@usertour-ui/dropdown-menu';
 
 interface SalesforceIntegrationConfig {
   syncAccounts?: boolean;
@@ -370,14 +376,14 @@ export const SalesforceIntegration = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="space-between flex items-center gap-4 flex-row items-center">
+          <CardTitle className="space-between flex items-center gap-4 flex-row items-center relative">
             <img
               src={integrationInfo?.imagePath}
               alt={`${integrationInfo?.name} logo`}
               className="w-12 h-12"
             />
             <div className="flex flex-col gap-1">
-              <div className="text-lg font-semibold">{integrationInfo?.name}</div>
+              <span className="text-lg font-semibold">{integrationInfo?.name}</span>
               <div className="text-sm text-muted-foreground font-normal">
                 {integrationInfo?.description}{' '}
                 <a
@@ -391,6 +397,24 @@ export const SalesforceIntegration = () => {
                 </a>
               </div>
             </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 absolute right-0 top-0">
+                  <DotsVerticalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem className="cursor-pointer">
+                  <ConnectIcon className="mr-1 w-4 h-4" />
+                  Reconnect
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600 cursor-pointer">
+                  <DisconnectIcon className="mr-1 w-4 h-4" />
+                  Disconnect
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardTitle>
         </CardHeader>
       </Card>
