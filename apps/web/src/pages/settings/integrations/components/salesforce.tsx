@@ -1,6 +1,10 @@
 import { Button } from '@usertour-ui/button';
 import { useState, useCallback, useEffect } from 'react';
-import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-ui/shared-hooks';
+import {
+  useGetIntegrationQuery,
+  useGetSalesforceAuthUrlQuery,
+  useUpdateIntegrationMutation,
+} from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { Switch } from '@usertour-ui/switch';
@@ -36,7 +40,7 @@ interface IntegrationFormProps {
   isLoading?: boolean;
 }
 
-const INTEGRATION_CODE = 'salesforce' as const;
+const INTEGRATION_PROVIDER = 'salesforce' as const;
 
 const SyncAccountsForm = ({
   integration,
@@ -294,31 +298,53 @@ export const SalesforceIntegration = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const environmentId = environment?.id || '';
+
   const {
-    data: integrationsData,
+    data: currentIntegration,
     refetch,
     loading: isDataLoading,
-  } = useListIntegrationsQuery(environmentId);
+  } = useGetIntegrationQuery(environment?.id || '', INTEGRATION_PROVIDER, {
+    skip: !environment?.id,
+  });
 
-  const currentIntegration = integrationsData?.find(
-    (i: IntegrationModel) => i.code === INTEGRATION_CODE,
-  );
-  const [integration, setIntegration] = useState(currentIntegration);
+  const [integration, setIntegration] = useState<IntegrationModel | undefined>(currentIntegration);
 
   useEffect(() => {
     setIntegration(currentIntegration);
   }, [currentIntegration]);
 
   const { invoke: updateIntegration } = useUpdateIntegrationMutation();
-  const integrationInfo = integrations.find((i) => i.code === INTEGRATION_CODE);
+
+  const integrationInfo = integrations.find((i) => i.provider === INTEGRATION_PROVIDER);
+
+  const { data: authUrl, loading: loadingAuthUrl } = useGetSalesforceAuthUrlQuery(
+    environment?.id || '',
+    INTEGRATION_PROVIDER,
+    {
+      skip: !environment?.id,
+    },
+  );
+
+  const handleConnect = useCallback(async () => {
+    if (!authUrl) {
+      toast({
+        title: 'Error',
+        description: 'Failed to get Salesforce auth URL',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    window.location.href = authUrl;
+  }, [authUrl, toast]);
 
   const handleSave = useCallback(
     async (updates: Partial<SalesforceIntegrationConfig>) => {
       try {
         setIsLoading(true);
-        await updateIntegration(environmentId, INTEGRATION_CODE, {
+        await updateIntegration(environmentId, INTEGRATION_PROVIDER, {
           enabled: true,
-          key: integration?.key,
+          key: integration?.key || '',
           config: {
             ...integration?.config,
             ...updates,
@@ -400,12 +426,16 @@ export const SalesforceIntegration = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0 absolute right-0 top-0">
+                <Button
+                  variant="ghost"
+                  className="h-8 w-8 p-0 absolute right-0 top-0"
+                  disabled={loadingAuthUrl}
+                >
                   <DotsVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer" onClick={handleConnect}>
                   <ConnectIcon className="mr-1 w-4 h-4" />
                   Reconnect
                 </DropdownMenuItem>

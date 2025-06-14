@@ -4,9 +4,33 @@ import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 @ObjectType()
+export class IntegrationOAuth extends BaseModel {
+  @Field()
+  accessToken: string;
+
+  @Field()
+  refreshToken: string;
+
+  @Field()
+  expiresAt: Date;
+
+  @Field()
+  scope: string;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  data?: JsonValue;
+
+  @Field()
+  provider: string;
+
+  @Field()
+  providerAccountId: string;
+}
+
+@ObjectType()
 export class Integration extends BaseModel {
   @Field()
-  code: string;
+  provider: string;
 
   @Field()
   key: string;
@@ -22,4 +46,7 @@ export class Integration extends BaseModel {
 
   @Field()
   environmentId: string;
+
+  @Field(() => IntegrationOAuth, { nullable: true })
+  integrationOAuth?: IntegrationOAuth;
 }

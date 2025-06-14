@@ -33,6 +33,7 @@ import {
   ListIntegrations,
   UpdateIntegration,
   GetSalesforceAuthUrl,
+  GetIntegration,
 } from '@usertour-ui/gql';
 
 import type {
@@ -422,8 +423,8 @@ export const useListIntegrationsQuery = (environmentId: string, options?: QueryH
 
 export const useUpdateIntegrationMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateIntegration);
-  const invoke = async (environmentId: string, code: string, input: UpdateIntegrationInput) => {
-    const response = await mutation({ variables: { environmentId, code, input } });
+  const invoke = async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
+    const response = await mutation({ variables: { environmentId, provider, input } });
     return response.data?.updateIntegration;
   };
   return { invoke, loading, error };
@@ -431,12 +432,24 @@ export const useUpdateIntegrationMutation = () => {
 
 export const useGetSalesforceAuthUrlQuery = (
   environmentId: string,
-  code: string,
+  provider: string,
   options?: QueryHookOptions,
 ) => {
   const { data, loading, error } = useQuery(GetSalesforceAuthUrl, {
-    variables: { environmentId, code },
+    variables: { environmentId, provider },
     ...options,
   });
   return { data: data?.getSalesforceAuthUrl, loading, error };
+};
+
+export const useGetIntegrationQuery = (
+  environmentId: string,
+  provider: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegration, {
+    variables: { environmentId, provider },
+    ...options,
+  });
+  return { data: data?.getIntegration, loading, error, refetch };
 };

@@ -66,23 +66,23 @@ export class IntegrationService {
         enabled: true,
       },
     });
-    if (integration.find((i) => i.code === 'amplitude')) {
+    if (integration.find((i) => i.provider === 'amplitude')) {
       await this.amplitudeQueue.add('trackEvent', data);
     }
-    if (integration.find((i) => i.code === 'heap')) {
+    if (integration.find((i) => i.provider === 'heap')) {
       await this.heapQueue.add('trackEvent', data);
     }
     // Only track HubSpot event if user has an email
-    if (integration.find((i) => i.code === 'hubspot' && userProperties?.email)) {
+    if (integration.find((i) => i.provider === 'hubspot' && userProperties?.email)) {
       // await this.hubspotQueue.add('trackEvent', data);
     }
-    if (integration.find((i) => i.code === 'posthog')) {
+    if (integration.find((i) => i.provider === 'posthog')) {
       await this.posthogQueue.add('trackEvent', data);
     }
-    if (integration.find((i) => i.code === 'mixpanel')) {
+    if (integration.find((i) => i.provider === 'mixpanel')) {
       await this.mixpanelQueue.add('trackEvent', data);
     }
-    if (integration.find((i) => i.code === 'segment')) {
+    if (integration.find((i) => i.provider === 'segment')) {
       await this.segmentQueue.add('trackEvent', data);
     }
   }
@@ -106,15 +106,22 @@ export class IntegrationService {
   /**
    * Find a specific integration by ID and environment ID
    * @param environmentId - The ID of the environment
-   * @param id - The ID of the integration
+   * @param provider - The provider of the integration
    * @returns The integration if found
    * @throws ParamsError if integration not found
    */
-  async findOneIntegration(environmentId: string, id: string) {
+  async findOneIntegration(environmentId: string, provider: string) {
     const integration = await this.prisma.integration.findFirst({
       where: {
-        id,
+        provider,
         environmentId,
+      },
+      include: {
+        integrationOAuth: {
+          select: {
+            data: true,
+          },
+        },
       },
     });
 
@@ -128,22 +135,22 @@ export class IntegrationService {
   /**
    * Update an integration's configuration
    * @param environmentId - The ID of the environment
-   * @param code - The code of the integration
+   * @param provider - The provider of the integration
    * @param input - The update data
    * @returns The updated integration
    */
-  async updateIntegration(environmentId: string, code: string, input: UpdateIntegrationInput) {
+  async updateIntegration(environmentId: string, provider: string, input: UpdateIntegrationInput) {
     const updateData: any = {};
     if (input.enabled !== undefined) updateData.enabled = input.enabled;
     if (input.key !== undefined) updateData.key = input.key;
     if (input.config !== undefined) updateData.config = input.config;
 
     return this.prisma.integration.upsert({
-      where: { environmentId_code: { environmentId, code } },
+      where: { environmentId_provider: { environmentId, provider } },
       update: updateData,
       create: {
         environmentId,
-        code,
+        provider,
         ...updateData,
       },
     });
@@ -161,7 +168,7 @@ export class IntegrationService {
     const integration = await this.prisma.integration.findFirst({
       where: {
         environmentId,
-        code: 'amplitude',
+        provider: 'amplitude',
         enabled: true,
       },
     });
@@ -208,7 +215,7 @@ export class IntegrationService {
     const integration = await this.prisma.integration.findFirst({
       where: {
         environmentId,
-        code: 'heap',
+        provider: 'heap',
         enabled: true,
       },
     });
@@ -249,7 +256,7 @@ export class IntegrationService {
     const integration = await this.prisma.integration.findFirst({
       where: {
         environmentId,
-        code: 'hubspot',
+        provider: 'hubspot',
         enabled: true,
       },
     });
@@ -358,7 +365,7 @@ export class IntegrationService {
     const integration = await this.prisma.integration.findFirst({
       where: {
         environmentId,
-        code: 'posthog',
+        provider: 'posthog',
         enabled: true,
       },
     });
@@ -395,7 +402,7 @@ export class IntegrationService {
     const integration = await this.prisma.integration.findFirst({
       where: {
         environmentId,
-        code: 'mixpanel',
+        provider: 'mixpanel',
         enabled: true,
       },
     });
@@ -441,7 +448,7 @@ export class IntegrationService {
     const integration = await this.prisma.integration.findFirst({
       where: {
         environmentId,
-        code: 'segment',
+        provider: 'segment',
         enabled: true,
       },
     });
@@ -524,7 +531,7 @@ export class IntegrationService {
   async syncCohort(
     accessToken: string,
     data: MixpanelWebhookDto,
-  ): Promise<{ action: string; status: string; error?: { message: string; code: number } }> {
+  ): Promise<{ action: string; status: string; error?: { message: string; provider: number } }> {
     console.log('syncCohort', data);
     const { action, parameters } = data;
     const { mixpanel_cohort_name, members, mixpanel_cohort_id } = parameters;
@@ -534,7 +541,7 @@ export class IntegrationService {
       const integration = await this.prisma.integration.findFirst({
         where: {
           accessToken,
-          code: 'mixpanel',
+          provider: 'mixpanel',
           enabled: true,
         },
         include: {
@@ -617,7 +624,7 @@ export class IntegrationService {
         status: 'failure',
         error: {
           message: error.message,
-          code: error instanceof ParamsError ? 400 : 500,
+          provider: error instanceof ParamsError ? 400 : 500,
         },
       };
     }
@@ -709,10 +716,10 @@ export class IntegrationService {
   /**
    * Get Salesforce OAuth authorization URL
    * @param environmentId - The ID of the environment
-   * @param code - The integration code ('salesforce' or 'salesforce-sandbox')
+   * @param provider - The integration provider ('salesforce' or 'salesforce-sandbox')
    * @returns The authorization URL
    */
-  async getSalesforceAuthUrl(environmentId: string, code: string) {
+  async getSalesforceAuthUrl(environmentId: string, provider: string) {
     const clientId = this.configService.get('integration.salesforce.clientId');
     const callbackUrl = this.configService.get('integration.salesforce.callbackUrl');
     const clientSecret = this.configService.get('integration.salesforce.clientSecret');
@@ -723,45 +730,28 @@ export class IntegrationService {
       throw new ParamsError('Salesforce OAuth configuration not found');
     }
 
-    if (code !== 'salesforce' && code !== 'salesforce-sandbox') {
-      throw new ParamsError('Invalid integration code');
+    if (provider !== 'salesforce' && provider !== 'salesforce-sandbox') {
+      throw new ParamsError('Invalid integration provider');
     }
 
-    const isSandbox = code === 'salesforce-sandbox';
-
-    // Check if integration already exists and is enabled
-    const existingIntegration = await this.prisma.integration.findUnique({
-      where: {
-        environmentId_code: {
-          environmentId,
-          code,
-        },
-      },
-    });
-
-    if (existingIntegration?.enabled) {
-      throw new ParamsError('Integration is already connected');
-    }
+    const isSandbox = provider === 'salesforce-sandbox';
 
     // Create or get integration record
     const integration = await this.prisma.integration.upsert({
       where: {
-        environmentId_code: {
+        environmentId_provider: {
           environmentId,
-          code,
+          provider,
         },
       },
       create: {
         environmentId,
-        code,
+        provider,
         enabled: false,
         key: '',
         config: {},
       },
-      update: {
-        enabled: false,
-        key: '',
-      },
+      update: {},
     });
 
     const oauth2Config = {
@@ -787,7 +777,8 @@ export class IntegrationService {
 
       return { url: authUrl };
     } catch (error) {
-      this.logger.error('Failed to generate Salesforce auth URL:', {
+      this.logger.error({
+        msg: 'Error in Salesforce OAuth callback',
         error: error.message,
         isSandbox,
         loginUrl: oauth2Config.loginUrl,
@@ -800,11 +791,11 @@ export class IntegrationService {
 
   /**
    * Handle Salesforce OAuth callback
-   * @param code - The authorization code
+   * @param provider - The authorization provider
    * @param state - The integration ID
    * @returns The OAuth configuration
    */
-  async handleSalesforceCallback(code: string, state: string) {
+  async handleSalesforceCallback(provider: string, state: string) {
     const clientId = this.configService.get('integration.salesforce.clientId');
     const clientSecret = this.configService.get('integration.salesforce.clientSecret');
     const callbackUrl = this.configService.get('integration.salesforce.callbackUrl');
@@ -824,7 +815,7 @@ export class IntegrationService {
       throw new ParamsError('Integration not found');
     }
 
-    const isSandbox = integration.code === 'salesforce-sandbox';
+    const isSandbox = integration.provider === 'salesforce-sandbox';
 
     const oauth2Config = {
       clientId,
@@ -837,8 +828,16 @@ export class IntegrationService {
     const conn = new jsforce.Connection({ oauth2 });
 
     try {
-      const userInfo = await conn.authorize(code);
+      const userInfo = await conn.authorize(provider);
       const { accessToken, refreshToken } = conn;
+
+      // Fetch user details from Salesforce
+      const userDetails = await conn.identity();
+      const { email, username } = userDetails;
+
+      // Fetch organization details
+      const orgDetails = await conn.query<{ Name: string }>('SELECT Name FROM Organization');
+      const organizationName = orgDetails.records[0]?.Name;
 
       // Update integration
       await this.prisma.integration.update({
@@ -848,29 +847,38 @@ export class IntegrationService {
         },
       });
 
+      const data = {
+        userEmail: email,
+        username,
+        organizationName,
+      };
+
       // Create or update OAuth configuration
       await this.prisma.integrationOAuth.upsert({
         where: { integrationId: integration.id },
         create: {
           integrationId: integration.id,
-          provider: integration.code,
+          provider: integration.provider,
           providerAccountId: userInfo.id,
           accessToken,
           refreshToken,
           expiresAt: new Date(Date.now() + 7200 * 1000), // 2 hours from now
           scope: 'api refresh_token',
+          data,
         },
         update: {
           accessToken,
           refreshToken,
           expiresAt: new Date(Date.now() + 7200 * 1000),
           scope: 'api refresh_token',
+          data,
         },
       });
 
       return integration;
     } catch (error) {
-      this.logger.error('Error in Salesforce OAuth callback:', {
+      this.logger.error({
+        msg: 'Error in Salesforce OAuth callback',
         error: error.message,
         isSandbox,
         loginUrl: oauth2Config.loginUrl,

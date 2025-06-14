@@ -23,9 +23,24 @@ export class IntegrationResolver {
   }
 
   /**
+   * Get an integration for a given environment and provider
+   * @param environmentId - The ID of the environment
+   * @param provider - The provider of the integration
+   * @returns The integration
+   */
+  @Query(() => Integration)
+  @Roles([RolesScopeEnum.OWNER])
+  async getIntegration(
+    @Args('environmentId') environmentId: string,
+    @Args('provider') provider: string,
+  ) {
+    return this.integrationService.findOneIntegration(environmentId, provider);
+  }
+
+  /**
    * Update an integration's configuration
    * @param environmentId - The ID of the environment
-   * @param code - The code of the integration
+   * @param provider - The provider of the integration
    * @param input - The update data
    * @returns The updated integration
    */
@@ -33,19 +48,19 @@ export class IntegrationResolver {
   @Roles([RolesScopeEnum.OWNER])
   async updateIntegration(
     @Args('environmentId') environmentId: string,
-    @Args('code') code: string,
+    @Args('provider') provider: string,
     @Args('input') input: UpdateIntegrationInput,
   ) {
-    return this.integrationService.updateIntegration(environmentId, code, input);
+    return this.integrationService.updateIntegration(environmentId, provider, input);
   }
 
   @Query(() => String)
   @Roles([RolesScopeEnum.OWNER])
   async getSalesforceAuthUrl(
     @Args('environmentId') environmentId: string,
-    @Args('code') code: string,
+    @Args('provider') provider: string,
   ) {
-    const { url } = await this.integrationService.getSalesforceAuthUrl(environmentId, code);
+    const { url } = await this.integrationService.getSalesforceAuthUrl(environmentId, provider);
     return url;
   }
 }

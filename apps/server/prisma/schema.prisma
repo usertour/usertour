@@ -621,7 +621,7 @@ model CheckoutSession {
 model Integration {
   id               String            @id @default(cuid())
   /// code of rntegration (e.g., "ga", "mixpanel", "posthog")
-  code             String
+  provider         String
   /// api key or  of integration 
   key              String            @default("")
   /// access token of integration
@@ -642,7 +642,7 @@ model Integration {
   integrationLogs  IntegrationLog[]
   integrationOAuth IntegrationOAuth?
 
-  @@unique([environmentId, code])
+  @@unique([environmentId, provider])
 }
 
 model IntegrationOAuth {
@@ -658,6 +658,8 @@ model IntegrationOAuth {
   refreshToken      String
   /// expires at
   expiresAt         DateTime    @db.Timestamptz(6)
+  /// data
+  data              Json?       @db.JsonB
   /// scope
   scope             String // Space-separated OAuth scopes (e.g., "api refresh_token web")
   /// provider (e.g., "salesforce", "hubspot")

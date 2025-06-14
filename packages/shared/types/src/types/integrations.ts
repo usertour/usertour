@@ -6,11 +6,14 @@ export type UpdateIntegrationInput = {
 
 export type IntegrationModel = {
   id: string;
-  code: string;
+  provider: string;
   key: string;
   accessToken: string;
   config?: any;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
+  integrationOAuth?: {
+    data?: any;
+  };
 };

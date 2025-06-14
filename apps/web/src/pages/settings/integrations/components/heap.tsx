@@ -28,7 +28,7 @@ interface IntegrationFormProps {
   isLoading?: boolean;
 }
 
-const INTEGRATION_CODE = 'heap' as const;
+const INTEGRATION_PROVIDER = 'heap' as const;
 
 const ExportEventsForm = ({
   integration,
@@ -153,7 +153,7 @@ export const HeapIntegration = () => {
   } = useListIntegrationsQuery(environmentId);
 
   const currentIntegration = integrationsData?.find(
-    (i: IntegrationModel) => i.code === INTEGRATION_CODE,
+    (i: IntegrationModel) => i.provider === INTEGRATION_PROVIDER,
   );
   const [integration, setIntegration] = useState(currentIntegration);
 
@@ -162,13 +162,13 @@ export const HeapIntegration = () => {
   }, [currentIntegration]);
 
   const { invoke: updateIntegration } = useUpdateIntegrationMutation();
-  const integrationInfo = integrations.find((i) => i.code === INTEGRATION_CODE);
+  const integrationInfo = integrations.find((i) => i.provider === INTEGRATION_PROVIDER);
 
   const handleSave = useCallback(
     async (updates: Partial<HeapIntegrationConfig>) => {
       try {
         setIsLoading(true);
-        await updateIntegration(environmentId, INTEGRATION_CODE, {
+        await updateIntegration(environmentId, INTEGRATION_PROVIDER, {
           enabled: true,
           key: integration?.key,
           config: {

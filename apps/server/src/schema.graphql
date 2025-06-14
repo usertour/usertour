@@ -536,7 +536,6 @@ type GlobalConfig {
 
 type Integration {
   accessToken: String!
-  code: String!
   config: JSON
 
   """Identifies the date and time when the object was created."""
@@ -544,7 +543,26 @@ type Integration {
   enabled: Boolean!
   environmentId: String!
   id: ID!
+  integrationOAuth: IntegrationOAuth
   key: String!
+  provider: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
+type IntegrationOAuth {
+  accessToken: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  data: JSON
+  expiresAt: DateTime!
+  id: ID!
+  provider: String!
+  providerAccountId: String!
+  refreshToken: String!
+  scope: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -669,7 +687,7 @@ type Mutation {
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
-  updateIntegration(code: String!, environmentId: String!, input: UpdateIntegrationInput!): Integration!
+  updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProjectName(name: String!, projectId: String!): Project!
   updateSegment(data: UpdateSegment!): Segment!
@@ -719,9 +737,10 @@ type Query {
   getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
+  getIntegration(environmentId: String!, provider: String!): Integration!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
-  getSalesforceAuthUrl(code: String!, environmentId: String!): String!
+  getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
   getSubscriptionPlans: [SubscriptionPlanModel!]!
   getSubscriptionUsage(projectId: String!): Int!

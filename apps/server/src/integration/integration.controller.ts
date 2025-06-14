@@ -26,11 +26,14 @@ export class IntegrationController {
   @Get('integration/salesforce/callback')
   @Public()
   @Redirect()
-  async handleSalesforceCallback(@Query('code') code: string, @Query('state') state: string) {
+  async handleSalesforceCallback(
+    @Query('provider') provider: string,
+    @Query('state') state: string,
+  ) {
     const baseUrl = this.configService.get('app.homepageUrl');
     try {
-      const integration = await this.integrationService.handleSalesforceCallback(code, state);
-      return { url: `${baseUrl}/project/1/settings/integrations/${integration.code}` };
+      const integration = await this.integrationService.handleSalesforceCallback(provider, state);
+      return { url: `${baseUrl}/project/1/settings/integrations/${integration.provider}` };
     } catch (error) {
       this.logger.error('Salesforce callback error:', error);
       return {

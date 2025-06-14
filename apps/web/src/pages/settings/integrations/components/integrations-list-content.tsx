@@ -26,7 +26,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 interface IntegrationCardProps {
   integration: Integration;
   isSyncing?: boolean;
-  onClick: (code: string) => void;
+  onClick: (provider: string) => void;
   loading?: boolean;
   isEnabled?: boolean;
 }
@@ -61,7 +61,7 @@ const IntegrationCard = ({
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => onClick(integration.code)}
+          onClick={() => onClick(integration.provider)}
           disabled={loading}
         >
           {loading ? <SpinnerIcon className="h-4 w-4 animate-spin mr-2" /> : buttonText}
@@ -72,7 +72,7 @@ const IntegrationCard = ({
         {isSyncing && (
           <div className="flex items-center gap-1 ml-2">
             <CircleIcon className="w-3 h-3 text-success" />
-            <span className="text-xs text-muted-foreground">Syncing</span>
+            <span className="text-xs text-muted-foreground">Connected</span>
           </div>
         )}
       </div>
@@ -85,14 +85,14 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
   const { environment } = useAppContext();
   const { toast } = useToast();
   const currentIntegration = useMemo(
-    () => integrationsData?.find((i: IntegrationModel) => i.code === integration.code),
-    [integrationsData, integration.code],
+    () => integrationsData?.find((i: IntegrationModel) => i.provider === integration.provider),
+    [integrationsData, integration.provider],
   );
   const isConnected = currentIntegration?.enabled;
 
   const { data: authUrl, loading: loadingAuthUrl } = useGetSalesforceAuthUrlQuery(
     environment?.id || '',
-    integration.code,
+    integration.provider,
     {
       skip: !environment?.id || isConnected,
     },
@@ -159,8 +159,8 @@ const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigPr
 };
 
 export const IntegrationsListContent = () => {
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const [connectingCode, setConnectingCode] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   const { environment } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -175,11 +175,11 @@ export const IntegrationsListContent = () => {
   const { invoke: updateIntegration, loading: updating } = useUpdateIntegrationMutation();
 
   const handleIntegrationUpdate = useCallback(
-    async (code: string, enabled: boolean) => {
+    async (provider: string, enabled: boolean) => {
       try {
-        await updateIntegration(environmentId, code, {
+        await updateIntegration(environmentId, provider, {
           enabled,
-          key: code,
+          key: provider,
         });
         await refetch();
       } catch (error) {
@@ -195,46 +195,48 @@ export const IntegrationsListContent = () => {
   );
 
   const handleOnClick = useCallback(
-    async (code: string) => {
-      setConnectingCode(code);
+    async (provider: string) => {
+      setConnectingProvider(provider);
       try {
-        const integration = integrations.find((i) => i.code === code);
-        const currentIntegration = integrationsData?.find((i: IntegrationModel) => i.code === code);
+        const integration = integrations.find((i) => i.provider === provider);
+        const currentIntegration = integrationsData?.find(
+          (i: IntegrationModel) => i.provider === provider,
+        );
 
         if (integration?.needsConnect) {
           if (!currentIntegration) {
-            await handleIntegrationUpdate(code, false);
+            await handleIntegrationUpdate(provider, false);
           }
 
           if (currentIntegration?.enabled) {
-            navigate(`${location.pathname}/${code}`);
+            navigate(`${location.pathname}/${provider}`);
           } else {
-            setSelectedCode(code);
+            setSelectedProvider(provider);
           }
           return;
         }
 
         if (!currentIntegration || !currentIntegration.enabled) {
-          await handleIntegrationUpdate(code, true);
+          await handleIntegrationUpdate(provider, true);
         }
-        navigate(`${location.pathname}/${code}`);
+        navigate(`${location.pathname}/${provider}`);
       } catch (error) {
         console.error('Failed to handle integration click:', error);
       } finally {
-        setConnectingCode(null);
+        setConnectingProvider(null);
       }
     },
     [integrationsData, handleIntegrationUpdate, navigate, location.pathname],
   );
 
   const selectedIntegration = useMemo(
-    () => (selectedCode ? integrations.find((i) => i.code === selectedCode) : null),
-    [selectedCode],
+    () => (selectedProvider ? integrations.find((i) => i.provider === selectedProvider) : null),
+    [selectedProvider],
   );
 
   const ConfigComponent = useMemo(
-    () => (selectedIntegration && selectedCode ? integrationConfigs[selectedCode] : null),
-    [selectedIntegration, selectedCode],
+    () => (selectedIntegration && selectedProvider ? integrationConfigs[selectedProvider] : null),
+    [selectedIntegration, selectedProvider],
   );
 
   const filteredIntegrations = useMemo(
@@ -247,13 +249,13 @@ export const IntegrationsListContent = () => {
       <ul className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {filteredIntegrations.map((integration) => {
           const currentIntegration = integrationsData?.find(
-            (i: IntegrationModel) => i.code === integration.code,
+            (i: IntegrationModel) => i.provider === integration.provider,
           );
           const isSyncing =
             currentIntegration?.config?.exportEvents ||
             currentIntegration?.config?.syncCohorts ||
             false;
-          const isLoading = updating && selectedCode === integration.code;
+          const isLoading = updating && selectedProvider === integration.provider;
           const isEnabled = currentIntegration?.enabled;
 
           return (
@@ -262,14 +264,16 @@ export const IntegrationsListContent = () => {
               integration={integration}
               isSyncing={isSyncing}
               onClick={handleOnClick}
-              loading={isLoading || loadingIntegrations || connectingCode === integration.code}
+              loading={
+                isLoading || loadingIntegrations || connectingProvider === integration.provider
+              }
               isEnabled={isEnabled}
             />
           );
         })}
       </ul>
 
-      <Dialog open={!!selectedCode} onOpenChange={() => setSelectedCode(null)}>
+      <Dialog open={!!selectedProvider} onOpenChange={() => setSelectedProvider(null)}>
         {selectedIntegration && ConfigComponent && (
           <ConfigComponent integration={selectedIntegration} integrationsData={integrationsData} />
         )}

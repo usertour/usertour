@@ -30,7 +30,7 @@ interface IntegrationFormProps {
   isLoading?: boolean;
 }
 
-const INTEGRATION_CODE = 'posthog' as const;
+const INTEGRATION_PROVIDER = 'posthog' as const;
 
 const ExportEventsForm = ({
   integration,
@@ -182,7 +182,7 @@ export const PosthogIntegration = () => {
   } = useListIntegrationsQuery(environmentId);
 
   const currentIntegration = integrationsData?.find(
-    (i: IntegrationModel) => i.code === INTEGRATION_CODE,
+    (i: IntegrationModel) => i.provider === INTEGRATION_PROVIDER,
   );
   const [integration, setIntegration] = useState(currentIntegration);
 
@@ -191,13 +191,13 @@ export const PosthogIntegration = () => {
   }, [currentIntegration]);
 
   const { invoke: updateIntegration } = useUpdateIntegrationMutation();
-  const integrationInfo = integrations.find((i) => i.code === INTEGRATION_CODE);
+  const integrationInfo = integrations.find((i) => i.provider === INTEGRATION_PROVIDER);
 
   const handleSave = useCallback(
     async (updates: Partial<PosthogIntegrationConfig>) => {
       try {
         setIsLoading(true);
-        await updateIntegration(environmentId, INTEGRATION_CODE, {
+        await updateIntegration(environmentId, INTEGRATION_PROVIDER, {
           enabled: true,
           key: integration?.key,
           config: {
