@@ -50,6 +50,7 @@ import type {
   Subscription,
   GlobalConfig,
   UpdateIntegrationInput,
+  IntegrationModel,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -451,5 +452,5 @@ export const useGetIntegrationQuery = (
     variables: { environmentId, provider },
     ...options,
   });
-  return { data: data?.getIntegration, loading, error, refetch };
+  return { data: data?.getIntegration as IntegrationModel, loading, error, refetch };
 };

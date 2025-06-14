@@ -15,7 +15,7 @@ import { IntegrationModel } from '@usertour-ui/types';
 import { Card, CardDescription } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
-import { DotsVerticalIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Skeleton } from '@usertour-ui/skeleton';
 import { ConnectIcon, DisconnectIcon, SpinnerIcon } from '@usertour-ui/icons';
 import {
@@ -411,16 +411,14 @@ export const SalesforceIntegration = () => {
             <div className="flex flex-col gap-1">
               <span className="text-lg font-semibold">{integrationInfo?.name}</span>
               <div className="text-sm text-muted-foreground font-normal">
-                {integrationInfo?.description}{' '}
-                <a
-                  href="https://docs.usertour.io/how-to-guides/environments/"
-                  className="text-primary"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span>Read the Salesforce guide</span>
-                  <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
-                </a>
+                Connected as{' '}
+                <span className="font-bold text-foreground ">
+                  {integration?.integrationOAuth?.data?.email}
+                </span>{' '}
+                at{' '}
+                <span className="font-bold text-foreground">
+                  {integration?.integrationOAuth?.data?.organizationName}
+                </span>
               </div>
             </div>
 
