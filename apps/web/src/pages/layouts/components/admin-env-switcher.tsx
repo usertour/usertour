@@ -90,7 +90,7 @@ export const AdminEnvSwitcher = () => {
                         className="grayscale"
                       /> */}
                       <AvatarFallback className="bg-blue-800 text-white text-xs">
-                        {environment?.name?.slice(0, 2)}
+                        {env?.name?.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                     {env.name}
