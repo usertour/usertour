@@ -791,11 +791,11 @@ export class IntegrationService {
 
   /**
    * Handle Salesforce OAuth callback
-   * @param provider - The authorization provider
+   * @param code - The authorization code
    * @param state - The integration ID
    * @returns The OAuth configuration
    */
-  async handleSalesforceCallback(provider: string, state: string) {
+  async handleSalesforceCallback(code: string, state: string) {
     const clientId = this.configService.get('integration.salesforce.clientId');
     const clientSecret = this.configService.get('integration.salesforce.clientSecret');
     const callbackUrl = this.configService.get('integration.salesforce.callbackUrl');
@@ -828,7 +828,9 @@ export class IntegrationService {
     const conn = new jsforce.Connection({ oauth2 });
 
     try {
-      const userInfo = await conn.authorize(provider);
+      const userInfo = await conn.authorize(code, {
+        grant_type: 'authorization_code',
+      });
       const { accessToken, refreshToken } = conn;
 
       // Fetch user details from Salesforce
@@ -848,7 +850,7 @@ export class IntegrationService {
       });
 
       const data = {
-        userEmail: email,
+        email,
         username,
         organizationName,
       };
