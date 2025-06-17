@@ -29,6 +29,15 @@ interface SegmentDataItem {
   operators: 'and' | 'or';
 }
 
+interface ConfigResponse {
+  removeBranding: boolean;
+  planType: string;
+}
+
+interface ConfigRequest {
+  token: string;
+}
+
 @Injectable()
 export class WebSocketService {
   private readonly logger = new Logger(WebSocketService.name);
@@ -37,33 +46,59 @@ export class WebSocketService {
     private bizService: BizService,
   ) {}
 
-  async getConfig(body: any): Promise<any> {
-    const { token } = body;
-    const environment = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    const config = {
-      removeBranding: false,
-      planType: 'hobby',
-    };
-    if (!environment) {
-      return config;
+  /**
+   * Get configuration settings based on environment token
+   * @param body - Request body containing environment token
+   * @returns Configuration object with plan type and branding settings
+   */
+  async getConfig(body: ConfigRequest): Promise<ConfigResponse> {
+    try {
+      const { token } = body;
+
+      // Default configuration
+      const defaultConfig: ConfigResponse = {
+        removeBranding: false,
+        planType: 'hobby',
+      };
+
+      // Find environment by token
+      const environment = await this.prisma.environment.findFirst({
+        where: { token },
+      });
+
+      if (!environment) {
+        return defaultConfig;
+      }
+
+      // Get project details
+      const project = await this.prisma.project.findUnique({
+        where: { id: environment.projectId },
+      });
+
+      if (!project?.subscriptionId) {
+        return defaultConfig;
+      }
+
+      // Get subscription details
+      const subscription = await this.prisma.subscription.findFirst({
+        where: { subscriptionId: project.subscriptionId },
+      });
+
+      if (!subscription) {
+        return defaultConfig;
+      }
+
+      return {
+        removeBranding: subscription.planType !== 'hobby',
+        planType: subscription.planType,
+      };
+    } catch (error) {
+      this.logger.error(`Error getting config: ${error.message}`, error.stack);
+      return {
+        removeBranding: false,
+        planType: 'hobby',
+      };
     }
-    const projectId = environment.projectId;
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-    });
-    if (!project || !project.subscriptionId) {
-      return config;
-    }
-    const subscription = await this.prisma.subscription.findFirst({
-      where: { subscriptionId: project.subscriptionId },
-    });
-    if (subscription) {
-      config.planType = subscription.planType;
-      config.removeBranding = subscription.planType !== 'hobby';
-    }
-    return config;
   }
 
   async listContent(body: any): Promise<any> {
