@@ -52,7 +52,9 @@ export const getUserAttrError = (
 
 export const getUrlPatternError = (data: any) => {
   const ret = { showError: false, errorInfo: '' };
-  if (data.excludes && data.includes && data.excludes.length === 0 && data.includes.length === 0) {
+  const hasExcludes = data.excludes && data.excludes.length > 0;
+  const hasIncludes = data.includes && data.includes.length > 0;
+  if (!hasExcludes && !hasIncludes) {
     ret.showError = true;
     ret.errorInfo = 'Enter at least one URL pattern';
   }
