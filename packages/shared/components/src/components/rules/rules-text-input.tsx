@@ -16,6 +16,7 @@ import {
   Dispatch,
   SetStateAction,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -135,19 +136,50 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
 
   useEffect(() => {
-    if (open) {
-      return;
-    }
     const updates = {
       logic: conditionValue,
       elementData,
       value: inputValue,
     };
     const { showError, errorInfo } = getTextInputError(updates);
-    setOpenError(showError);
-    setErrorInfo(errorInfo);
-    updateConditionData(index, updates);
-  }, [conditionValue, elementData, inputValue, open]);
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+    }
+  }, [conditionValue, elementData, inputValue, open, setErrorInfo, setOpenError]);
+
+  const handleOnOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+      const updates = {
+        logic: conditionValue,
+        elementData,
+        value: inputValue,
+      };
+      const { showError, errorInfo } = getTextInputError(updates);
+      if (showError) {
+        setErrorInfo(errorInfo);
+        setOpenError(true);
+        return;
+      }
+      updateConditionData(index, updates);
+    },
+    [
+      conditionValue,
+      elementData,
+      inputValue,
+      open,
+      setErrorInfo,
+      setOpenError,
+      index,
+      updateConditionData,
+    ],
+  );
 
   const value = {
     conditionValue,
@@ -168,7 +200,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
               <RulesConditionIcon>
                 <TextInputIcon width={16} height={16} />
               </RulesConditionIcon>
-              <RulesPopover onOpenChange={setOpen} open={open}>
+              <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
                 <RulesPopoverTrigger className="space-y-1">
                   <div className="grow pr-6 text-sm text-wrap break-all">
                     The value of this input{' '}

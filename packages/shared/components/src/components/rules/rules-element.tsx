@@ -1,7 +1,15 @@
 import { Label } from '@usertour-ui//label';
 import { ElementIcon } from '@usertour-ui/icons';
 import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
-import { Dispatch, SetStateAction, createContext, useContext, useEffect, useState } from 'react';
+import {
+  Dispatch,
+  SetStateAction,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { getElementError } from '@usertour-ui/shared-utils';
 import { ElementSelectorPropsData } from '@usertour-ui/types';
 import { useRulesContext } from './rules-context';
@@ -94,18 +102,39 @@ export const RulesElement = (props: RulesElementProps) => {
   };
 
   useEffect(() => {
-    if (open) {
-      return;
-    }
     const updates = {
       logic: conditionValue,
       elementData,
     };
     const { showError, errorInfo } = getElementError(updates);
-    setOpenError(showError);
-    setErrorInfo(errorInfo);
-    updateConditionData(index, updates);
-  }, [conditionValue, elementData, open]);
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+    }
+  }, [conditionValue, elementData, open, setErrorInfo, setOpenError]);
+
+  const handleOnOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+      const updates = {
+        logic: conditionValue,
+        elementData,
+      };
+      const { showError, errorInfo } = getElementError(updates);
+      if (showError) {
+        setErrorInfo(errorInfo);
+        setOpenError(true);
+        return;
+      }
+      updateConditionData(index, updates);
+    },
+    [conditionValue, elementData, index, updateConditionData],
+  );
 
   return (
     <RulesElementContext.Provider value={value}>
@@ -117,7 +146,7 @@ export const RulesElement = (props: RulesElementProps) => {
               <RulesConditionIcon>
                 <ElementIcon width={16} height={16} />
               </RulesConditionIcon>
-              <RulesPopover onOpenChange={setOpen} open={open}>
+              <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
                 <RulesPopoverTrigger className="space-y-1">
                   <div className="grow pr-6 text-sm text-wrap break-all space-y-1">
                     If this element{' '}

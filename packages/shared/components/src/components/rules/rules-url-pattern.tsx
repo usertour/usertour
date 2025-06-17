@@ -3,7 +3,7 @@ import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
 import { getUrlPatternError } from '@usertour-ui/shared-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
@@ -67,18 +67,40 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   }, [includesValues, excludesValues]);
 
   useEffect(() => {
-    if (open) {
-      return;
-    }
     const updates = {
       excludes: filterExcludesValues,
       includes: filterIncludesValues,
     };
     const { showError, errorInfo } = getUrlPatternError(updates);
-    setOpenError(showError);
-    setErrorInfo(errorInfo);
-    updateConditionData(index, updates);
-  }, [filterExcludesValues, filterIncludesValues, open, index, updateConditionData]);
+    if (showError && !open) {
+      setOpenError(showError);
+      setErrorInfo(errorInfo);
+      return;
+    }
+  }, [filterExcludesValues, filterIncludesValues, open]);
+
+  const handleOnOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+      const updates = {
+        excludes: filterExcludesValues,
+        includes: filterIncludesValues,
+      };
+      const { showError, errorInfo } = getUrlPatternError(updates);
+      if (showError) {
+        setOpenError(showError);
+        setErrorInfo(errorInfo);
+        return;
+      }
+      updateConditionData(index, updates);
+    },
+    [filterExcludesValues, filterIncludesValues, index, updateConditionData],
+  );
 
   return (
     <RulesError open={openError}>
@@ -89,7 +111,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
             <RulesConditionIcon>
               <PagesIcon width={16} height={16} />
             </RulesConditionIcon>
-            <RulesPopover onOpenChange={setOpen} open={open}>
+            <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
               <RulesPopoverTrigger>
                 Current page matches <span className="font-bold">{includesValues.join(',')}</span>{' '}
                 and does not match <span className="font-bold">{excludesValues.join(',')}</span>
