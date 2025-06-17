@@ -205,6 +205,11 @@ export class WebSocketService {
     };
   }
 
+  /**
+   * List content for a user
+   * @param body - The body containing the token, user ID, and company ID
+   * @returns Array of content
+   */
   async listContent(body: any): Promise<any> {
     try {
       const { token, userId: externalUserId, companyId: externalCompanyId } = body;
@@ -280,6 +285,15 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Process checklist conditions and return updated items
+   * @param data - Checklist data containing items and conditions
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Updated checklist data with processed conditions
+   */
   async activedChecklistConditions(
     data: ChecklistData,
     environment: Environment,
@@ -328,6 +342,15 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Process step triggers and return updated steps
+   * @param steps - Array of steps to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Updated steps with processed conditions
+   */
   async activedStepTriggers(
     steps: Step[],
     environment: Environment,
@@ -368,6 +391,15 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Process rules conditions and return updated conditions
+   * @param rulesConditions - Array of rules conditions to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Updated rules conditions with processed conditions
+   */
   async activedRulesConditions(
     rulesConditions: RulesCondition[],
     environment: Environment,
@@ -415,6 +447,15 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Process a single rule condition and return if it is activated
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns boolean indicating if the condition is activated
+   */
   async activedRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -469,6 +510,15 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Process user attribute rules condition
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns boolean indicating if the condition is activated
+   */
   async activedUserAttributeRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -523,6 +573,13 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Filter conditions by business type
+   * @param segmentData - Segment data containing conditions
+   * @param attributes - Available attributes
+   * @param bizType - Business type to filter by
+   * @returns Filtered segment data
+   */
   private filterConditionsByBizType(
     segmentData: SegmentDataItem[],
     attributes: Attribute[],
@@ -533,6 +590,14 @@ export class WebSocketService {
     );
   }
 
+  /**
+   * Find company by segment conditions
+   * @param segment - Segment data containing conditions
+   * @param attributes - Available attributes
+   * @param bizCompany - Business company
+   * @param environment - Environment context
+   * @returns boolean indicating if the condition is activated
+   */
   private async findCompanyBySegmentConditions(
     segment: any,
     attributes: Attribute[],
@@ -587,6 +652,15 @@ export class WebSocketService {
     return !!segmentItem;
   }
 
+  /**
+   * Process company segment rules condition
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns boolean indicating if the condition is activated
+   */
   async activedCompanySegmentRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -635,6 +709,14 @@ export class WebSocketService {
     return logic === 'is' ? found : !found;
   }
 
+  /**
+   * Process user segment rules condition
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @returns boolean indicating if the condition is activated
+   */
   async activedUserSegmentRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -722,6 +804,11 @@ export class WebSocketService {
     return session ? expectResult : !expectResult;
   }
 
+  /**
+   * List events for a session
+   * @param sessionId - The ID of the session to list events for
+   * @returns Array of events
+   */
   async listEvents(sessionId: string): Promise<any> {
     return await this.prisma.bizEvent.findMany({
       where: { bizSessionId: sessionId },
@@ -729,6 +816,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the latest session for a content and user
+   * @param contentId - The ID of the content
+   * @param bizUserId - The ID of the business user
+   * @returns The latest session
+   */
   async getLatestSession(contentId: string, bizUserId: string): Promise<any> {
     return await this.prisma.bizSession.findFirst({
       where: { contentId, bizUserId, deleted: false },
@@ -737,6 +830,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the number of dismissed sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of dismissed sessions
+   */
   async getDismissedSessions(content: Content, bizUserId: string): Promise<any> {
     let codeName = '';
     if (content.type === ContentType.FLOW) {
@@ -762,6 +861,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the number of completed sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of completed sessions
+   */
   async getCompletedSessions(content: Content, bizUserId: string): Promise<any> {
     let codeName = '';
     if (content.type === ContentType.FLOW) {
@@ -787,18 +892,35 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the total number of sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The total number of sessions
+   */
   async getTotalSessions(content: Content, bizUserId: string): Promise<any> {
     return await this.prisma.bizSession.count({
       where: { contentId: content.id, bizUserId, deleted: false },
     });
   }
 
+  /**
+   * Get the number of active sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of active sessions
+   */
   async getActiveSessions(content: Content, bizUserId: string): Promise<any> {
     return await this.prisma.bizSession.count({
       where: { contentId: content.id, bizUserId, deleted: false, state: 0 },
     });
   }
 
+  /**
+   * List themes for an environment
+   * @param token - The token of the environment
+   * @returns Array of themes
+   */
   async listThemes({ token }: any): Promise<any> {
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
@@ -811,6 +933,11 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Upsert business users
+   * @param data - The data to upsert
+   * @returns The upserted business users
+   */
   async upsertBizUsers(data: any): Promise<any> {
     const { userId, attributes, token } = data;
     const environmenet = await this.prisma.environment.findFirst({
@@ -822,6 +949,11 @@ export class WebSocketService {
     return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environmenet.id);
   }
 
+  /**
+   * Upsert business companies
+   * @param data - The data to upsert
+   * @returns The upserted business companies
+   */
   async upsertBizCompanies(data: any): Promise<any> {
     const {
       companyId: externalCompanyId,
@@ -846,6 +978,11 @@ export class WebSocketService {
     );
   }
 
+  /**
+   * Create a session
+   * @param data - The data to create a session
+   * @returns The created session
+   */
   async createSession(data: any): Promise<any> {
     const { userId: externalUserId, token, contentId, companyId: externalCompanyId } = data;
     const environment = await this.prisma.environment.findFirst({
@@ -892,6 +1029,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get filtered event data
+   * @param eventId - The ID of the event
+   * @param data - The data to get filtered event data
+   * @returns The filtered event data
+   */
   async getFilterdEventData(eventId: string, data: any): Promise<any> {
     const attributes = await this.prisma.attributeOnEvent.findMany({
       where: { eventId },
@@ -911,6 +1054,11 @@ export class WebSocketService {
     return attrs;
   }
 
+  /**
+   * Track an event
+   * @param data - The data to track an event
+   * @returns The tracked event
+   */
   async trackEvent(data: any): Promise<any> {
     const { userId, token, eventName, sessionId, eventData } = data;
     const environmenet = await this.prisma.environment.findFirst({
