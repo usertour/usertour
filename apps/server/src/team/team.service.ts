@@ -97,6 +97,10 @@ export class TeamService {
   }
 
   private async validateTeamMemberLimit(projectId: string, subscriptionId: string | undefined) {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (isSelfHostedMode) {
+      return;
+    }
     if (!subscriptionId) {
       throw new TeamMemberLimitError();
     }
