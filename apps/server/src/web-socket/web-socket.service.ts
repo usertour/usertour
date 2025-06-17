@@ -93,7 +93,11 @@ export class WebSocketService {
         planType: subscription.planType,
       };
     } catch (error) {
-      this.logger.error(`Error getting config: ${error.message}`, error.stack);
+      this.logger.error({
+        message: `Error getting config: ${error.message}`,
+        stack: error.stack,
+        body,
+      });
       return {
         removeBranding: false,
         planType: 'hobby',
@@ -201,7 +205,10 @@ export class WebSocketService {
         completedSessions,
       };
     } catch (error) {
-      this.logger.error(`Error processing content ${content.id}: ${error.message}`, error.stack);
+      this.logger.error({
+        message: `Error processing content ${content.id}: ${error.message}`,
+        stack: error.stack,
+      });
       return null;
     }
   }
