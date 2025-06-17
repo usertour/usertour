@@ -127,7 +127,7 @@ export const inertGroupBlock = (editor: CustomEditor, options?: NodeInsertNodesO
           children: [
             {
               type: 'paragraph',
-              children: [{ text: 'this is a text' }],
+              children: [{ text: 'Write text here' }],
             },
           ],
         },
