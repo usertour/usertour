@@ -121,96 +121,88 @@ export class WebSocketService {
     attributes: Attribute[],
     externalCompanyId?: string,
   ): Promise<any> {
-    try {
-      const publishedVersionId =
-        content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
-          ?.publishedVersionId || content.publishedVersionId;
+    const publishedVersionId =
+      content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
+        ?.publishedVersionId || content.publishedVersionId;
 
-      const version = await this.prisma.version.findUnique({
-        where: { id: publishedVersionId },
-        include: { steps: { orderBy: { sequence: 'asc' } } },
-      });
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
+    });
 
-      if (!version) {
-        return null;
-      }
-
-      const latestSession = await this.getLatestSession(content.id, bizUser.id);
-      const events = latestSession ? await this.listEvents(latestSession.id) : [];
-      const totalSessions = await this.getTotalSessions(content, bizUser.id);
-      const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
-      const completedSessions = await this.getCompletedSessions(content, bizUser.id);
-
-      const config = version.config
-        ? (version.config as ContentConfigObject)
-        : {
-            enabledAutoStartRules: false,
-            enabledHideRules: false,
-            autoStartRules: [],
-            hideRules: [],
-          };
-
-      const autoStartRules =
-        config.enabledAutoStartRules && config.autoStartRules.length > 0
-          ? await this.activedRulesConditions(
-              config.autoStartRules,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-
-      const hideRules =
-        config.enabledHideRules && config.hideRules.length > 0
-          ? await this.activedRulesConditions(
-              config.hideRules,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-
-      const data =
-        content.type === ContentType.CHECKLIST
-          ? await this.activedChecklistConditions(
-              version.data as unknown as ChecklistData,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : version.data;
-
-      const steps = await this.activedStepTriggers(
-        version.steps,
-        environment,
-        attributes,
-        bizUser,
-        externalCompanyId,
-      );
-
-      return {
-        ...version,
-        data,
-        steps,
-        config: { ...config, autoStartRules, hideRules },
-        type: content.type,
-        name: content.name,
-        latestSession,
-        events,
-        totalSessions,
-        dismissedSessions,
-        completedSessions,
-      };
-    } catch (error) {
-      this.logger.error({
-        message: `Error processing content ${content.id}: ${error.message}`,
-        stack: error.stack,
-      });
+    if (!version) {
       return null;
     }
+
+    const latestSession = await this.getLatestSession(content.id, bizUser.id);
+    const events = latestSession ? await this.listEvents(latestSession.id) : [];
+    const totalSessions = await this.getTotalSessions(content, bizUser.id);
+    const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
+    const completedSessions = await this.getCompletedSessions(content, bizUser.id);
+
+    const config = version.config
+      ? (version.config as ContentConfigObject)
+      : {
+          enabledAutoStartRules: false,
+          enabledHideRules: false,
+          autoStartRules: [],
+          hideRules: [],
+        };
+
+    const autoStartRules =
+      config.enabledAutoStartRules && config.autoStartRules.length > 0
+        ? await this.activedRulesConditions(
+            config.autoStartRules,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
+        : [];
+
+    const hideRules =
+      config.enabledHideRules && config.hideRules.length > 0
+        ? await this.activedRulesConditions(
+            config.hideRules,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
+        : [];
+
+    const data =
+      content.type === ContentType.CHECKLIST
+        ? await this.activedChecklistConditions(
+            version.data as unknown as ChecklistData,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
+        : version.data;
+
+    const steps = await this.activedStepTriggers(
+      version.steps,
+      environment,
+      attributes,
+      bizUser,
+      externalCompanyId,
+    );
+
+    return {
+      ...version,
+      data,
+      steps,
+      config: { ...config, autoStartRules, hideRules },
+      type: content.type,
+      name: content.name,
+      latestSession,
+      events,
+      totalSessions,
+      dismissedSessions,
+      completedSessions,
+    };
   }
 
   async listContent(body: any): Promise<any> {
@@ -295,34 +287,45 @@ export class WebSocketService {
     bizUser: BizUser,
     externalCompanyId?: string,
   ) {
-    const items = await Promise.all(
-      data.items.map(async (item) => {
-        const completeConditions = item.completeConditions
-          ? await this.activedRulesConditions(
-              item.completeConditions,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-        const onlyShowTaskConditions = item.onlyShowTaskConditions
-          ? await this.activedRulesConditions(
-              item.onlyShowTaskConditions,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-        return {
-          ...item,
-          completeConditions,
-          onlyShowTaskConditions,
-        };
-      }),
-    );
-    return { ...data, items };
+    try {
+      const items = await Promise.all(
+        data.items.map(async (item) => {
+          const completeConditions = item.completeConditions
+            ? await this.activedRulesConditions(
+                item.completeConditions,
+                environment,
+                attributes,
+                bizUser,
+                externalCompanyId,
+              )
+            : [];
+          const onlyShowTaskConditions = item.onlyShowTaskConditions
+            ? await this.activedRulesConditions(
+                item.onlyShowTaskConditions,
+                environment,
+                attributes,
+                bizUser,
+                externalCompanyId,
+              )
+            : [];
+          return {
+            ...item,
+            completeConditions,
+            onlyShowTaskConditions,
+          };
+        }),
+      );
+      return { ...data, items };
+    } catch (error) {
+      this.logger.error({
+        message: `Error in activedChecklistConditions: ${error.message}`,
+        stack: error.stack,
+        data,
+        environment,
+        attributes,
+      });
+      return data;
+    }
   }
 
   async activedStepTriggers(
@@ -332,26 +335,37 @@ export class WebSocketService {
     bizUser: BizUser,
     externalCompanyId?: string,
   ): Promise<Step[]> {
-    const stepsData = [...steps];
-    for (let index = 0; index < stepsData.length; index++) {
-      const step = stepsData[index];
-      if (step.trigger && Array.isArray(step.trigger)) {
-        for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
-          const trigger = step.trigger[subIndex] as any;
-          if (trigger?.conditions) {
-            const triggerData = await this.activedRulesConditions(
-              trigger.conditions,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            );
-            stepsData[index].trigger[subIndex].conditions = triggerData;
+    try {
+      const stepsData = [...steps];
+      for (let index = 0; index < stepsData.length; index++) {
+        const step = stepsData[index];
+        if (step.trigger && Array.isArray(step.trigger)) {
+          for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
+            const trigger = step.trigger[subIndex] as any;
+            if (trigger?.conditions) {
+              const triggerData = await this.activedRulesConditions(
+                trigger.conditions,
+                environment,
+                attributes,
+                bizUser,
+                externalCompanyId,
+              );
+              stepsData[index].trigger[subIndex].conditions = triggerData;
+            }
           }
         }
       }
+      return stepsData;
+    } catch (error) {
+      this.logger.error({
+        message: `Error in activedStepTriggers: ${error.message}`,
+        stack: error.stack,
+        steps,
+        environment,
+        attributes,
+      });
+      return steps;
     }
-    return stepsData;
   }
 
   async activedRulesConditions(
@@ -361,33 +375,44 @@ export class WebSocketService {
     bizUser: BizUser,
     externalCompanyId?: string,
   ): Promise<RulesCondition[]> {
-    const conditions = [...rulesConditions];
-    for (let index = 0; index < conditions.length; index++) {
-      const rules = conditions[index];
-      if (rules.type === 'group') {
-        for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
-          const subRules = rules.conditions[subIndex];
+    try {
+      const conditions = [...rulesConditions];
+      for (let index = 0; index < conditions.length; index++) {
+        const rules = conditions[index];
+        if (rules.type === 'group') {
+          for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
+            const subRules = rules.conditions[subIndex];
+            const isAcvited = await this.activedRulesCondition(
+              subRules,
+              environment,
+              attributes,
+              bizUser,
+              externalCompanyId,
+            );
+            conditions[index].conditions[subIndex].actived = isAcvited;
+          }
+        } else {
           const isAcvited = await this.activedRulesCondition(
-            subRules,
+            rules,
             environment,
             attributes,
             bizUser,
             externalCompanyId,
           );
-          conditions[index].conditions[subIndex].actived = isAcvited;
+          conditions[index] = { ...rules, actived: isAcvited };
         }
-      } else {
-        const isAcvited = await this.activedRulesCondition(
-          rules,
-          environment,
-          attributes,
-          bizUser,
-          externalCompanyId,
-        );
-        conditions[index] = { ...rules, actived: isAcvited };
       }
+      return conditions;
+    } catch (error) {
+      this.logger.error({
+        message: `Error in activedRulesConditions: ${error.message}`,
+        stack: error.stack,
+        rulesConditions,
+        environment,
+        attributes,
+      });
+      return rulesConditions;
     }
-    return conditions;
   }
 
   async activedRulesCondition(
