@@ -67,7 +67,7 @@ export class WebSocketService {
   }
 
   async listContent(body: any): Promise<any> {
-    const { token, versionId, userId: externalUserId, companyId: externalCompanyId } = body;
+    const { token, userId: externalUserId, companyId: externalCompanyId } = body;
     const environment = await this.prisma.environment.findFirst({
       where: { token },
     });
@@ -75,23 +75,6 @@ export class WebSocketService {
       return;
     }
     const environmentId = environment.id;
-    if (versionId) {
-      const resp = await this.prisma.version.findUnique({
-        where: { id: versionId },
-        include: { steps: { orderBy: { sequence: 'asc' } }, content: true },
-      });
-      return resp
-        ? [
-            {
-              ...resp,
-              config: {},
-              events: [],
-              totalSessions: [],
-              type: resp.content.type,
-            },
-          ]
-        : [];
-    }
     const contentList = await this.prisma.content.findMany({
       where: {
         OR: [
@@ -120,6 +103,9 @@ export class WebSocketService {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
+    if (!bizUser) {
+      return;
+    }
     const response: any[] = [];
     const attributes = await this.prisma.attribute.findMany({
       where: {
@@ -566,16 +552,40 @@ export class WebSocketService {
     return false;
   }
 
+  /**
+   * Check if the content rules condition is activated
+   * @param rules - The rules condition to check
+   * @param bizUser - The business user to check against
+   * @returns boolean indicating if the condition is activated
+   */
   async activedContentRulesCondition(rules: RulesCondition, bizUser: BizUser): Promise<boolean> {
     const { contentId, logic } = rules.data;
 
-    const { eventCodeName, expectResult } = EVENT_CODE_MAP[logic];
-
-    if (!eventCodeName) {
+    if (!contentId || !logic) {
       return false;
     }
 
-    // Check session with specific event
+    const eventCodeMap = EVENT_CODE_MAP[logic];
+    if (!eventCodeMap) {
+      return false;
+    }
+
+    const { eventCodeName, expectResult } = eventCodeMap;
+
+    // Special handling for actived/unactived logic
+    if (logic === 'actived' || logic === 'unactived') {
+      const latestSession = await this.getLatestSession(contentId, bizUser.id);
+      if (!latestSession) {
+        return logic === 'unactived';
+      }
+      const hasEndedEvent = latestSession.bizEvent.find(
+        (event) => event.event.codeName === BizEvents.FLOW_ENDED,
+      );
+      const isActived = !hasEndedEvent;
+      return logic === 'actived' ? isActived : !isActived;
+    }
+
+    // Handle other logic types
     const session = await this.prisma.bizSession.findFirst({
       where: {
         bizUserId: bizUser.id,
