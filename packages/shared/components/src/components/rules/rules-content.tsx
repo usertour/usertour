@@ -162,14 +162,13 @@ export const RulesContent = (props: RulesContentProps) => {
   const { index, data } = props;
   const { updateConditionData } = useRulesGroupContext();
   const { contents, disabled } = useRulesContext();
-  const item = contents.find((item) => item.id === data?.contentId);
-  const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(
-    item ? { id: item.id, name: item.name || '' } : null,
-  );
+
+  const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(null);
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
   const [open, setOpen] = useState(false);
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'seen');
+
   const value = {
     selectedPreset,
     setSelectedPreset,
@@ -178,25 +177,52 @@ export const RulesContent = (props: RulesContentProps) => {
   };
 
   useEffect(() => {
-    if (!selectedPreset && item) {
-      setSelectedPreset({ id: item?.id || '', name: item?.name || '' });
+    if (data?.contentId && contents.length > 0) {
+      const newItem = contents.find((item) => item.id === data.contentId);
+      if (newItem) {
+        setSelectedPreset({ id: newItem.id, name: newItem.name || '' });
+        return;
+      }
     }
-  }, [item]);
 
-  useEffect(() => {
-    if (open || !selectedPreset) {
-      return;
-    }
-    const updates = {
-      contentId: selectedPreset?.id || '',
+    const { showError, errorInfo } = getContentError({
+      contentId: data?.contentId || '',
       type: 'flow',
       logic: conditionValue,
-    };
-    const { showError, errorInfo } = getContentError(updates);
-    setOpenError(showError);
-    setErrorInfo(errorInfo);
-    updateConditionData(index, updates);
-  }, [selectedPreset, conditionValue, open]);
+    });
+
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+    }
+  }, [data?.contentId, contents, conditionValue, open]);
+
+  const handleOnOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+
+      const updates = {
+        contentId: selectedPreset?.id || '',
+        type: 'flow',
+        logic: conditionValue,
+      };
+
+      const { showError, errorInfo } = getContentError(updates);
+      if (showError) {
+        setErrorInfo(errorInfo);
+        setOpenError(true);
+        return;
+      }
+
+      updateConditionData(index, updates);
+    },
+    [selectedPreset, conditionValue, index, updateConditionData],
+  );
 
   return (
     <RulesContentContext.Provider value={value}>
@@ -208,13 +234,13 @@ export const RulesContent = (props: RulesContentProps) => {
               <RulesConditionIcon>
                 <ContentIcon width={16} height={16} />
               </RulesConditionIcon>
-              <RulesPopover onOpenChange={setOpen} open={open}>
+              <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
                 <RulesPopoverTrigger>
                   Flow <span className="font-bold">{selectedPreset?.name} </span>
                   {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
                 </RulesPopoverTrigger>
                 <RulesPopoverContent>
-                  <div className=" flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-2">
                     <div>Flow</div>
                     <RulesContentName />
                     <RulesContentRadios />
