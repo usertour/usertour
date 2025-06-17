@@ -101,71 +101,42 @@ export class WebSocketService {
     }
   }
 
-  async listContent(body: any): Promise<any> {
-    const { token, userId: externalUserId, companyId: externalCompanyId } = body;
-    const environment = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environment) {
-      return;
-    }
-    const environmentId = environment.id;
-    const contentList = await this.prisma.content.findMany({
-      where: {
-        OR: [
-          {
-            environmentId,
-            published: true,
-            contentOnEnvironments: { none: {} },
-          },
-          {
-            contentOnEnvironments: {
-              some: {
-                environmentId,
-                published: true,
-              },
-            },
-          },
-        ],
-      },
-      include: {
-        contentOnEnvironments: true,
-      },
-    });
-    if (contentList.length === 0) {
-      return;
-    }
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
-    });
-    if (!bizUser) {
-      return;
-    }
-    const response: any[] = [];
-    const attributes = await this.prisma.attribute.findMany({
-      where: {
-        projectId: environment.projectId,
-        bizType: {
-          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
-        },
-      },
-    });
-    for (let index = 0; index < contentList.length; index++) {
-      const content = contentList[index];
+  /**
+   * Process a single content item and return its configuration
+   * @param content - The content item to process
+   * @param environment - The environment context
+   * @param bizUser - The business user
+   * @param attributes - Available attributes
+   * @param externalCompanyId - Optional company ID
+   * @returns Processed content configuration or null if processing fails
+   */
+  private async processContent(
+    content: Content & { contentOnEnvironments: any[] },
+    environment: Environment,
+    bizUser: BizUser,
+    attributes: Attribute[],
+    externalCompanyId?: string,
+  ): Promise<any> {
+    try {
       const publishedVersionId =
-        content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+        content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
           ?.publishedVersionId || content.publishedVersionId;
 
       const version = await this.prisma.version.findUnique({
         where: { id: publishedVersionId },
         include: { steps: { orderBy: { sequence: 'asc' } } },
       });
+
+      if (!version) {
+        return null;
+      }
+
       const latestSession = await this.getLatestSession(content.id, bizUser.id);
-      // TODO: remove the code after the sdk is updated
       const events = latestSession ? await this.listEvents(latestSession.id) : [];
       const totalSessions = await this.getTotalSessions(content, bizUser.id);
       const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
       const completedSessions = await this.getCompletedSessions(content, bizUser.id);
+
       const config = version.config
         ? (version.config as ContentConfigObject)
         : {
@@ -174,6 +145,7 @@ export class WebSocketService {
             autoStartRules: [],
             hideRules: [],
           };
+
       const autoStartRules =
         config.enabledAutoStartRules && config.autoStartRules.length > 0
           ? await this.activedRulesConditions(
@@ -184,6 +156,7 @@ export class WebSocketService {
               externalCompanyId,
             )
           : [];
+
       const hideRules =
         config.enabledHideRules && config.hideRules.length > 0
           ? await this.activedRulesConditions(
@@ -194,6 +167,7 @@ export class WebSocketService {
               externalCompanyId,
             )
           : [];
+
       const data =
         content.type === ContentType.CHECKLIST
           ? await this.activedChecklistConditions(
@@ -204,6 +178,7 @@ export class WebSocketService {
               externalCompanyId,
             )
           : version.data;
+
       const steps = await this.activedStepTriggers(
         version.steps,
         environment,
@@ -211,7 +186,8 @@ export class WebSocketService {
         bizUser,
         externalCompanyId,
       );
-      const resp = {
+
+      return {
         ...version,
         data,
         steps,
@@ -224,9 +200,85 @@ export class WebSocketService {
         dismissedSessions,
         completedSessions,
       };
-      response.push(resp);
+    } catch (error) {
+      this.logger.error(`Error processing content ${content.id}: ${error.message}`, error.stack);
+      return null;
     }
-    return response;
+  }
+
+  async listContent(body: any): Promise<any> {
+    try {
+      const { token, userId: externalUserId, companyId: externalCompanyId } = body;
+      const environment = await this.prisma.environment.findFirst({
+        where: { token },
+      });
+      if (!environment) {
+        return;
+      }
+      const environmentId = environment.id;
+      const contentList = await this.prisma.content.findMany({
+        where: {
+          OR: [
+            {
+              environmentId,
+              published: true,
+              contentOnEnvironments: { none: {} },
+            },
+            {
+              contentOnEnvironments: {
+                some: {
+                  environmentId,
+                  published: true,
+                },
+              },
+            },
+          ],
+        },
+        include: {
+          contentOnEnvironments: true,
+        },
+      });
+      if (contentList.length === 0) {
+        return;
+      }
+      const bizUser = await this.prisma.bizUser.findFirst({
+        where: { externalId: String(externalUserId), environmentId },
+      });
+      if (!bizUser) {
+        return;
+      }
+      const attributes = await this.prisma.attribute.findMany({
+        where: {
+          projectId: environment.projectId,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
+        },
+      });
+
+      const response: any[] = [];
+      for (let index = 0; index < contentList.length; index++) {
+        const content = contentList[index];
+        const processedContent = await this.processContent(
+          content,
+          environment,
+          bizUser,
+          attributes,
+          String(externalCompanyId),
+        );
+        if (processedContent) {
+          response.push(processedContent);
+        }
+      }
+      return response;
+    } catch (error) {
+      this.logger.error({
+        message: `Error in listContent: ${error.message}`,
+        stack: error.stack,
+        body,
+      });
+      return [];
+    }
   }
 
   async activedChecklistConditions(
