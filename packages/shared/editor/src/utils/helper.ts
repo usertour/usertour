@@ -47,7 +47,7 @@ export const EmptyEmbed = {
 export const EmptyText = {
   element: {
     type: 'text',
-    data: [{ type: 'paragraph', children: [{ text: 'this is a text' }] }],
+    data: [{ type: 'paragraph', children: [{ text: 'Write text here' }] }],
   },
 } as ContentEditorRootElement;
 
@@ -133,7 +133,7 @@ export const groupData = [
         children: [
           {
             type: 'paragraph',
-            children: [{ text: 'this is a text' }],
+            children: [{ text: 'Write text here' }],
           },
         ],
       },
@@ -145,7 +145,7 @@ export const groupData = [
         children: [
           {
             type: 'paragraph',
-            children: [{ text: 'this is second text' }],
+            children: [{ text: 'Write text here' }],
           },
         ],
       },
@@ -212,7 +212,7 @@ export const createValue1 = [
                   type: 'paragraph',
                   children: [
                     {
-                      text: 'this is a content',
+                      text: 'Write text here',
                     },
                   ],
                 },
@@ -257,7 +257,7 @@ export const createValue2 = [
                   type: 'paragraph',
                   children: [
                     {
-                      text: 'this is a text',
+                      text: 'Write text here',
                     },
                   ],
                   align: 'left',
@@ -790,7 +790,7 @@ export const createValue6 = [
                   type: 'paragraph',
                   children: [
                     {
-                      text: 'Enter text here',
+                      text: 'Write text here',
                     },
                   ],
                 },

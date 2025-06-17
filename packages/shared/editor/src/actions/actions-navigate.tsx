@@ -32,7 +32,7 @@ export interface ContentActionsNavigateProps {
 const initialValue: Descendant[] = [
   {
     type: 'paragraph',
-    children: [{ text: 'this is a text' }],
+    children: [{ text: 'https://' }],
   },
 ];
 
