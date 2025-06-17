@@ -29,6 +29,15 @@ interface SegmentDataItem {
   operators: 'and' | 'or';
 }
 
+interface ConfigResponse {
+  removeBranding: boolean;
+  planType: string;
+}
+
+interface ConfigRequest {
+  token: string;
+}
+
 @Injectable()
 export class WebSocketService {
   private readonly logger = new Logger(WebSocketService.name);
@@ -37,177 +46,254 @@ export class WebSocketService {
     private bizService: BizService,
   ) {}
 
-  async getConfig(body: any): Promise<any> {
-    const { token } = body;
-    const environment = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    const config = {
-      removeBranding: false,
-      planType: 'hobby',
-    };
-    if (!environment) {
-      return config;
+  /**
+   * Get configuration settings based on environment token
+   * @param body - Request body containing environment token
+   * @returns Configuration object with plan type and branding settings
+   */
+  async getConfig(body: ConfigRequest): Promise<ConfigResponse> {
+    try {
+      const { token } = body;
+
+      // Default configuration
+      const defaultConfig: ConfigResponse = {
+        removeBranding: false,
+        planType: 'hobby',
+      };
+
+      // Find environment by token
+      const environment = await this.prisma.environment.findFirst({
+        where: { token },
+      });
+
+      if (!environment) {
+        return defaultConfig;
+      }
+
+      // Get project details
+      const project = await this.prisma.project.findUnique({
+        where: { id: environment.projectId },
+      });
+
+      if (!project?.subscriptionId) {
+        return defaultConfig;
+      }
+
+      // Get subscription details
+      const subscription = await this.prisma.subscription.findFirst({
+        where: { subscriptionId: project.subscriptionId },
+      });
+
+      if (!subscription) {
+        return defaultConfig;
+      }
+
+      return {
+        removeBranding: subscription.planType !== 'hobby',
+        planType: subscription.planType,
+      };
+    } catch (error) {
+      this.logger.error({
+        message: `Error getting config: ${error.message}`,
+        stack: error.stack,
+        body,
+      });
+      return {
+        removeBranding: false,
+        planType: 'hobby',
+      };
     }
-    const projectId = environment.projectId;
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-    });
-    if (!project || !project.subscriptionId) {
-      return config;
-    }
-    const subscription = await this.prisma.subscription.findFirst({
-      where: { subscriptionId: project.subscriptionId },
-    });
-    if (subscription) {
-      config.planType = subscription.planType;
-      config.removeBranding = subscription.planType !== 'hobby';
-    }
-    return config;
   }
 
-  async listContent(body: any): Promise<any> {
-    const { token, versionId, userId: externalUserId, companyId: externalCompanyId } = body;
-    const environment = await this.prisma.environment.findFirst({
-      where: { token },
+  /**
+   * Process a single content item and return its configuration
+   * @param content - The content item to process
+   * @param environment - The environment context
+   * @param bizUser - The business user
+   * @param attributes - Available attributes
+   * @param externalCompanyId - Optional company ID
+   * @returns Processed content configuration or null if processing fails
+   */
+  private async processContent(
+    content: Content & { contentOnEnvironments: any[] },
+    environment: Environment,
+    bizUser: BizUser,
+    attributes: Attribute[],
+    externalCompanyId?: string,
+  ): Promise<any> {
+    const publishedVersionId =
+      content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
+        ?.publishedVersionId || content.publishedVersionId;
+
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
-    if (!environment) {
-      return;
+
+    if (!version) {
+      return null;
     }
-    const environmentId = environment.id;
-    if (versionId) {
-      const resp = await this.prisma.version.findUnique({
-        where: { id: versionId },
-        include: { steps: { orderBy: { sequence: 'asc' } }, content: true },
-      });
-      return resp
-        ? [
-            {
-              ...resp,
-              config: {},
-              events: [],
-              totalSessions: [],
-              type: resp.content.type,
-            },
-          ]
+
+    const latestSession = await this.getLatestSession(content.id, bizUser.id);
+    const events = latestSession ? await this.listEvents(latestSession.id) : [];
+    const totalSessions = await this.getTotalSessions(content, bizUser.id);
+    const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
+    const completedSessions = await this.getCompletedSessions(content, bizUser.id);
+
+    const config = version.config
+      ? (version.config as ContentConfigObject)
+      : {
+          enabledAutoStartRules: false,
+          enabledHideRules: false,
+          autoStartRules: [],
+          hideRules: [],
+        };
+
+    const autoStartRules =
+      config.enabledAutoStartRules && config.autoStartRules.length > 0
+        ? await this.activedRulesConditions(
+            config.autoStartRules,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
         : [];
-    }
-    const contentList = await this.prisma.content.findMany({
-      where: {
-        OR: [
-          {
-            environmentId,
-            published: true,
-            contentOnEnvironments: { none: {} },
-          },
-          {
-            contentOnEnvironments: {
-              some: {
-                environmentId,
-                published: true,
+
+    const hideRules =
+      config.enabledHideRules && config.hideRules.length > 0
+        ? await this.activedRulesConditions(
+            config.hideRules,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
+        : [];
+
+    const data =
+      content.type === ContentType.CHECKLIST
+        ? await this.activedChecklistConditions(
+            version.data as unknown as ChecklistData,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
+        : version.data;
+
+    const steps = await this.activedStepTriggers(
+      version.steps,
+      environment,
+      attributes,
+      bizUser,
+      externalCompanyId,
+    );
+
+    return {
+      ...version,
+      data,
+      steps,
+      config: { ...config, autoStartRules, hideRules },
+      type: content.type,
+      name: content.name,
+      latestSession,
+      events,
+      totalSessions,
+      dismissedSessions,
+      completedSessions,
+    };
+  }
+
+  /**
+   * List content for a user
+   * @param body - The body containing the token, user ID, and company ID
+   * @returns Array of content
+   */
+  async listContent(body: any): Promise<any> {
+    try {
+      const { token, userId: externalUserId, companyId: externalCompanyId } = body;
+      const environment = await this.prisma.environment.findFirst({
+        where: { token },
+      });
+      if (!environment) {
+        return;
+      }
+      const environmentId = environment.id;
+      const contentList = await this.prisma.content.findMany({
+        where: {
+          OR: [
+            {
+              environmentId,
+              published: true,
+              contentOnEnvironments: { none: {} },
+            },
+            {
+              contentOnEnvironments: {
+                some: {
+                  environmentId,
+                  published: true,
+                },
               },
             },
-          },
-        ],
-      },
-      include: {
-        contentOnEnvironments: true,
-      },
-    });
-    if (contentList.length === 0) {
-      return;
-    }
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
-    });
-    const response: any[] = [];
-    const attributes = await this.prisma.attribute.findMany({
-      where: {
-        projectId: environment.projectId,
-        bizType: {
-          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          ],
         },
-      },
-    });
-    for (let index = 0; index < contentList.length; index++) {
-      const content = contentList[index];
-      const publishedVersionId =
-        content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-          ?.publishedVersionId || content.publishedVersionId;
-
-      const version = await this.prisma.version.findUnique({
-        where: { id: publishedVersionId },
-        include: { steps: { orderBy: { sequence: 'asc' } } },
+        include: {
+          contentOnEnvironments: true,
+        },
       });
-      const latestSession = await this.getLatestSession(content.id, bizUser.id);
-      // TODO: remove the code after the sdk is updated
-      const events = latestSession ? await this.listEvents(latestSession.id) : [];
-      const totalSessions = await this.getTotalSessions(content, bizUser.id);
-      const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
-      const completedSessions = await this.getCompletedSessions(content, bizUser.id);
-      const config = version.config
-        ? (version.config as ContentConfigObject)
-        : {
-            enabledAutoStartRules: false,
-            enabledHideRules: false,
-            autoStartRules: [],
-            hideRules: [],
-          };
-      const autoStartRules =
-        config.enabledAutoStartRules && config.autoStartRules.length > 0
-          ? await this.activedRulesConditions(
-              config.autoStartRules,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-      const hideRules =
-        config.enabledHideRules && config.hideRules.length > 0
-          ? await this.activedRulesConditions(
-              config.hideRules,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-      const data =
-        content.type === ContentType.CHECKLIST
-          ? await this.activedChecklistConditions(
-              version.data as unknown as ChecklistData,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : version.data;
-      const steps = await this.activedStepTriggers(
-        version.steps,
-        environment,
-        attributes,
-        bizUser,
-        externalCompanyId,
-      );
-      const resp = {
-        ...version,
-        data,
-        steps,
-        config: { ...config, autoStartRules, hideRules },
-        type: content.type,
-        name: content.name,
-        latestSession,
-        events,
-        totalSessions,
-        dismissedSessions,
-        completedSessions,
-      };
-      response.push(resp);
+      if (contentList.length === 0) {
+        return;
+      }
+      const bizUser = await this.prisma.bizUser.findFirst({
+        where: { externalId: String(externalUserId), environmentId },
+      });
+      if (!bizUser) {
+        return;
+      }
+      const attributes = await this.prisma.attribute.findMany({
+        where: {
+          projectId: environment.projectId,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
+        },
+      });
+
+      const response: any[] = [];
+      for (let index = 0; index < contentList.length; index++) {
+        const content = contentList[index];
+        const processedContent = await this.processContent(
+          content,
+          environment,
+          bizUser,
+          attributes,
+          String(externalCompanyId),
+        );
+        if (processedContent) {
+          response.push(processedContent);
+        }
+      }
+      return response;
+    } catch (error) {
+      this.logger.error({
+        message: `Error in listContent: ${error.message}`,
+        stack: error.stack,
+        body,
+      });
+      return [];
     }
-    return response;
   }
 
+  /**
+   * Process checklist conditions and return updated items
+   * @param data - Checklist data containing items and conditions
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Updated checklist data with processed conditions
+   */
   async activedChecklistConditions(
     data: ChecklistData,
     environment: Environment,
@@ -215,36 +301,56 @@ export class WebSocketService {
     bizUser: BizUser,
     externalCompanyId?: string,
   ) {
-    const items = await Promise.all(
-      data.items.map(async (item) => {
-        const completeConditions = item.completeConditions
-          ? await this.activedRulesConditions(
-              item.completeConditions,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-        const onlyShowTaskConditions = item.onlyShowTaskConditions
-          ? await this.activedRulesConditions(
-              item.onlyShowTaskConditions,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            )
-          : [];
-        return {
-          ...item,
-          completeConditions,
-          onlyShowTaskConditions,
-        };
-      }),
-    );
-    return { ...data, items };
+    try {
+      const items = await Promise.all(
+        data.items.map(async (item) => {
+          const completeConditions = item.completeConditions
+            ? await this.activedRulesConditions(
+                item.completeConditions,
+                environment,
+                attributes,
+                bizUser,
+                externalCompanyId,
+              )
+            : [];
+          const onlyShowTaskConditions = item.onlyShowTaskConditions
+            ? await this.activedRulesConditions(
+                item.onlyShowTaskConditions,
+                environment,
+                attributes,
+                bizUser,
+                externalCompanyId,
+              )
+            : [];
+          return {
+            ...item,
+            completeConditions,
+            onlyShowTaskConditions,
+          };
+        }),
+      );
+      return { ...data, items };
+    } catch (error) {
+      this.logger.error({
+        message: `Error in activedChecklistConditions: ${error.message}`,
+        stack: error.stack,
+        data,
+        environment,
+        attributes,
+      });
+      return data;
+    }
   }
 
+  /**
+   * Process step triggers and return updated steps
+   * @param steps - Array of steps to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Updated steps with processed conditions
+   */
   async activedStepTriggers(
     steps: Step[],
     environment: Environment,
@@ -252,28 +358,48 @@ export class WebSocketService {
     bizUser: BizUser,
     externalCompanyId?: string,
   ): Promise<Step[]> {
-    const stepsData = [...steps];
-    for (let index = 0; index < stepsData.length; index++) {
-      const step = stepsData[index];
-      if (step.trigger && Array.isArray(step.trigger)) {
-        for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
-          const trigger = step.trigger[subIndex] as any;
-          if (trigger?.conditions) {
-            const triggerData = await this.activedRulesConditions(
-              trigger.conditions,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            );
-            stepsData[index].trigger[subIndex].conditions = triggerData;
+    try {
+      const stepsData = [...steps];
+      for (let index = 0; index < stepsData.length; index++) {
+        const step = stepsData[index];
+        if (step.trigger && Array.isArray(step.trigger)) {
+          for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
+            const trigger = step.trigger[subIndex] as any;
+            if (trigger?.conditions) {
+              const triggerData = await this.activedRulesConditions(
+                trigger.conditions,
+                environment,
+                attributes,
+                bizUser,
+                externalCompanyId,
+              );
+              stepsData[index].trigger[subIndex].conditions = triggerData;
+            }
           }
         }
       }
+      return stepsData;
+    } catch (error) {
+      this.logger.error({
+        message: `Error in activedStepTriggers: ${error.message}`,
+        stack: error.stack,
+        steps,
+        environment,
+        attributes,
+      });
+      return steps;
     }
-    return stepsData;
   }
 
+  /**
+   * Process rules conditions and return updated conditions
+   * @param rulesConditions - Array of rules conditions to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Updated rules conditions with processed conditions
+   */
   async activedRulesConditions(
     rulesConditions: RulesCondition[],
     environment: Environment,
@@ -281,35 +407,55 @@ export class WebSocketService {
     bizUser: BizUser,
     externalCompanyId?: string,
   ): Promise<RulesCondition[]> {
-    const conditions = [...rulesConditions];
-    for (let index = 0; index < conditions.length; index++) {
-      const rules = conditions[index];
-      if (rules.type === 'group') {
-        for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
-          const subRules = rules.conditions[subIndex];
+    try {
+      const conditions = [...rulesConditions];
+      for (let index = 0; index < conditions.length; index++) {
+        const rules = conditions[index];
+        if (rules.type === 'group') {
+          for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
+            const subRules = rules.conditions[subIndex];
+            const isAcvited = await this.activedRulesCondition(
+              subRules,
+              environment,
+              attributes,
+              bizUser,
+              externalCompanyId,
+            );
+            conditions[index].conditions[subIndex].actived = isAcvited;
+          }
+        } else {
           const isAcvited = await this.activedRulesCondition(
-            subRules,
+            rules,
             environment,
             attributes,
             bizUser,
             externalCompanyId,
           );
-          conditions[index].conditions[subIndex].actived = isAcvited;
+          conditions[index] = { ...rules, actived: isAcvited };
         }
-      } else {
-        const isAcvited = await this.activedRulesCondition(
-          rules,
-          environment,
-          attributes,
-          bizUser,
-          externalCompanyId,
-        );
-        conditions[index] = { ...rules, actived: isAcvited };
       }
+      return conditions;
+    } catch (error) {
+      this.logger.error({
+        message: `Error in activedRulesConditions: ${error.message}`,
+        stack: error.stack,
+        rulesConditions,
+        environment,
+        attributes,
+      });
+      return rulesConditions;
     }
-    return conditions;
   }
 
+  /**
+   * Process a single rule condition and return if it is activated
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns boolean indicating if the condition is activated
+   */
   async activedRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -364,6 +510,15 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Process user attribute rules condition
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns boolean indicating if the condition is activated
+   */
   async activedUserAttributeRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -418,6 +573,13 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Filter conditions by business type
+   * @param segmentData - Segment data containing conditions
+   * @param attributes - Available attributes
+   * @param bizType - Business type to filter by
+   * @returns Filtered segment data
+   */
   private filterConditionsByBizType(
     segmentData: SegmentDataItem[],
     attributes: Attribute[],
@@ -428,6 +590,14 @@ export class WebSocketService {
     );
   }
 
+  /**
+   * Find company by segment conditions
+   * @param segment - Segment data containing conditions
+   * @param attributes - Available attributes
+   * @param bizCompany - Business company
+   * @param environment - Environment context
+   * @returns boolean indicating if the condition is activated
+   */
   private async findCompanyBySegmentConditions(
     segment: any,
     attributes: Attribute[],
@@ -482,6 +652,15 @@ export class WebSocketService {
     return !!segmentItem;
   }
 
+  /**
+   * Process company segment rules condition
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns boolean indicating if the condition is activated
+   */
   async activedCompanySegmentRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -530,6 +709,14 @@ export class WebSocketService {
     return logic === 'is' ? found : !found;
   }
 
+  /**
+   * Process user segment rules condition
+   * @param rules - The rule condition to process
+   * @param environment - Environment context
+   * @param attributes - Available attributes
+   * @param bizUser - Business user
+   * @returns boolean indicating if the condition is activated
+   */
   async activedUserSegmentRulesCondition(
     rules: RulesCondition,
     environment: Environment,
@@ -566,16 +753,40 @@ export class WebSocketService {
     return false;
   }
 
+  /**
+   * Check if the content rules condition is activated
+   * @param rules - The rules condition to check
+   * @param bizUser - The business user to check against
+   * @returns boolean indicating if the condition is activated
+   */
   async activedContentRulesCondition(rules: RulesCondition, bizUser: BizUser): Promise<boolean> {
     const { contentId, logic } = rules.data;
 
-    const { eventCodeName, expectResult } = EVENT_CODE_MAP[logic];
-
-    if (!eventCodeName) {
+    if (!contentId || !logic) {
       return false;
     }
 
-    // Check session with specific event
+    const eventCodeMap = EVENT_CODE_MAP[logic];
+    if (!eventCodeMap) {
+      return false;
+    }
+
+    const { eventCodeName, expectResult } = eventCodeMap;
+
+    // Special handling for actived/unactived logic
+    if (logic === 'actived' || logic === 'unactived') {
+      const latestSession = await this.getLatestSession(contentId, bizUser.id);
+      if (!latestSession) {
+        return logic === 'unactived';
+      }
+      const hasEndedEvent = latestSession.bizEvent.find(
+        (event) => event.event.codeName === BizEvents.FLOW_ENDED,
+      );
+      const isActived = !hasEndedEvent;
+      return logic === 'actived' ? isActived : !isActived;
+    }
+
+    // Handle other logic types
     const session = await this.prisma.bizSession.findFirst({
       where: {
         bizUserId: bizUser.id,
@@ -593,6 +804,11 @@ export class WebSocketService {
     return session ? expectResult : !expectResult;
   }
 
+  /**
+   * List events for a session
+   * @param sessionId - The ID of the session to list events for
+   * @returns Array of events
+   */
   async listEvents(sessionId: string): Promise<any> {
     return await this.prisma.bizEvent.findMany({
       where: { bizSessionId: sessionId },
@@ -600,6 +816,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the latest session for a content and user
+   * @param contentId - The ID of the content
+   * @param bizUserId - The ID of the business user
+   * @returns The latest session
+   */
   async getLatestSession(contentId: string, bizUserId: string): Promise<any> {
     return await this.prisma.bizSession.findFirst({
       where: { contentId, bizUserId, deleted: false },
@@ -608,6 +830,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the number of dismissed sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of dismissed sessions
+   */
   async getDismissedSessions(content: Content, bizUserId: string): Promise<any> {
     let codeName = '';
     if (content.type === ContentType.FLOW) {
@@ -633,6 +861,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the number of completed sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of completed sessions
+   */
   async getCompletedSessions(content: Content, bizUserId: string): Promise<any> {
     let codeName = '';
     if (content.type === ContentType.FLOW) {
@@ -658,18 +892,35 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get the total number of sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The total number of sessions
+   */
   async getTotalSessions(content: Content, bizUserId: string): Promise<any> {
     return await this.prisma.bizSession.count({
       where: { contentId: content.id, bizUserId, deleted: false },
     });
   }
 
+  /**
+   * Get the number of active sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of active sessions
+   */
   async getActiveSessions(content: Content, bizUserId: string): Promise<any> {
     return await this.prisma.bizSession.count({
       where: { contentId: content.id, bizUserId, deleted: false, state: 0 },
     });
   }
 
+  /**
+   * List themes for an environment
+   * @param token - The token of the environment
+   * @returns Array of themes
+   */
   async listThemes({ token }: any): Promise<any> {
     const environmenet = await this.prisma.environment.findFirst({
       where: { token },
@@ -682,6 +933,11 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Upsert business users
+   * @param data - The data to upsert
+   * @returns The upserted business users
+   */
   async upsertBizUsers(data: any): Promise<any> {
     const { userId, attributes, token } = data;
     const environmenet = await this.prisma.environment.findFirst({
@@ -693,6 +949,11 @@ export class WebSocketService {
     return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environmenet.id);
   }
 
+  /**
+   * Upsert business companies
+   * @param data - The data to upsert
+   * @returns The upserted business companies
+   */
   async upsertBizCompanies(data: any): Promise<any> {
     const {
       companyId: externalCompanyId,
@@ -717,6 +978,11 @@ export class WebSocketService {
     );
   }
 
+  /**
+   * Create a session
+   * @param data - The data to create a session
+   * @returns The created session
+   */
   async createSession(data: any): Promise<any> {
     const { userId: externalUserId, token, contentId, companyId: externalCompanyId } = data;
     const environment = await this.prisma.environment.findFirst({
@@ -763,6 +1029,12 @@ export class WebSocketService {
     });
   }
 
+  /**
+   * Get filtered event data
+   * @param eventId - The ID of the event
+   * @param data - The data to get filtered event data
+   * @returns The filtered event data
+   */
   async getFilterdEventData(eventId: string, data: any): Promise<any> {
     const attributes = await this.prisma.attributeOnEvent.findMany({
       where: { eventId },
@@ -782,6 +1054,11 @@ export class WebSocketService {
     return attrs;
   }
 
+  /**
+   * Track an event
+   * @param data - The data to track an event
+   * @returns The tracked event
+   */
   async trackEvent(data: any): Promise<any> {
     const { userId, token, eventName, sessionId, eventData } = data;
     const environmenet = await this.prisma.environment.findFirst({
