@@ -218,18 +218,39 @@ export const RulesSegment = (props: RulesSegmentProps) => {
   };
 
   useEffect(() => {
-    if (!conditionValue || open) {
-      return;
-    }
     const updates = {
       segmentId: segmentId,
       logic: conditionValue,
     };
     const { showError, errorInfo } = getSegmentError(updates);
-    setOpenError(showError);
-    setErrorInfo(errorInfo);
-    updateConditionData(index, updates);
-  }, [conditionValue, open, segmentId]);
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+    }
+  }, [conditionValue, open, segmentId, setErrorInfo, setOpenError]);
+
+  const handleOnOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+      const updates = {
+        segmentId: segmentId,
+        logic: conditionValue,
+      };
+      const { showError, errorInfo } = getSegmentError(updates);
+      if (showError) {
+        setErrorInfo(errorInfo);
+        setOpenError(true);
+        return;
+      }
+      updateConditionData(index, updates);
+    },
+    [conditionValue, segmentId, index, updateConditionData],
+  );
 
   return (
     <RulesSegmentContext.Provider value={value}>
@@ -241,7 +262,7 @@ export const RulesSegment = (props: RulesSegmentProps) => {
               <RulesConditionIcon>
                 <SegmentIcon width={16} height={16} />
               </RulesConditionIcon>
-              <RulesPopover onOpenChange={setOpen} open={open} defaultOpen={false}>
+              <RulesPopover onOpenChange={handleOnOpenChange} open={open} defaultOpen={false}>
                 <RulesPopoverTrigger>
                   {selectedPreset === undefined && 'User'}
                   {selectedPreset?.bizType === 'USER' && 'User'}
