@@ -521,17 +521,10 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
     }
   }, [attributes]);
 
-  const handleDataUpdate = useCallback(() => {
-    if (localData) {
-      updateConditionData(index, { ...localData });
-    }
-  }, [index, localData, updateConditionData]);
-
   const updateLocalData = useCallback(
     (updates: RulesUserAttributeData) => {
       const data = localData ? { ...localData, ...updates } : { ...updates };
       setLocalData(data);
-      handleDataUpdate();
     },
     [localData],
   );
@@ -576,21 +569,32 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
     setDisplayValue(localData?.value || '');
   }, [localData, selectedPreset]);
 
-  const handleOpenChange = (open: boolean) => {
-    setOpen(open);
-    if (open) {
-      setErrorInfo('');
-      setOpenError(false);
-    } else {
+  useEffect(() => {
+    const { showError, errorInfo } = getUserAttrError(localData, attributes || []);
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+    }
+  }, [localData, attributes, setErrorInfo, setOpenError, open]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
       const { showError, errorInfo } = getUserAttrError(localData, attributes || []);
       if (showError) {
         setErrorInfo(errorInfo);
         setOpenError(true);
-      } else {
-        handleDataUpdate();
+        return;
       }
-    }
-  };
+      updateConditionData(index, { ...localData });
+    },
+    [localData, attributes, setErrorInfo, setOpenError, index, updateConditionData],
+  );
 
   const value = {
     selectedPreset,
