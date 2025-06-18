@@ -63,4 +63,19 @@ export class IntegrationResolver {
     const { url } = await this.integrationService.getSalesforceAuthUrl(environmentId, provider);
     return url;
   }
+
+  /**
+   * Disconnect an integration
+   * @param environmentId - The ID of the environment
+   * @param provider - The provider of the integration
+   * @returns The disconnected integration
+   */
+  @Mutation(() => Integration)
+  @Roles([RolesScopeEnum.OWNER])
+  async disconnectIntegration(
+    @Args('environmentId') environmentId: string,
+    @Args('provider') provider: string,
+  ) {
+    return this.integrationService.disconnectIntegration(environmentId, provider);
+  }
 }

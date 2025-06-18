@@ -4,6 +4,7 @@ import {
   useGetIntegrationQuery,
   useGetSalesforceAuthUrlQuery,
   useUpdateIntegrationMutation,
+  useDisconnectIntegrationMutation,
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
@@ -24,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
 import { DropdownMenu } from '@usertour-ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
 
 interface SalesforceIntegrationConfig {
   syncAccounts?: boolean;
@@ -295,7 +297,9 @@ const SyncAccountsFormSkeleton = () => (
 export const SalesforceIntegration = () => {
   const { environment } = useAppContext();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   const environmentId = environment?.id || '';
 
@@ -314,6 +318,7 @@ export const SalesforceIntegration = () => {
   }, [currentIntegration]);
 
   const { invoke: updateIntegration } = useUpdateIntegrationMutation();
+  const { invoke: disconnectIntegration } = useDisconnectIntegrationMutation();
 
   const integrationInfo = integrations.find((i) => i.provider === INTEGRATION_PROVIDER);
 
@@ -337,6 +342,26 @@ export const SalesforceIntegration = () => {
 
     window.location.href = authUrl;
   }, [authUrl, toast]);
+
+  const handleDisconnect = useCallback(async () => {
+    try {
+      setIsDisconnecting(true);
+      await disconnectIntegration(environmentId, INTEGRATION_PROVIDER);
+      toast({
+        title: 'Success',
+        description: 'Successfully disconnected from Salesforce',
+      });
+      navigate('/project/1/settings/integrations');
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to disconnect from Salesforce',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDisconnecting(false);
+    }
+  }, [environmentId, disconnectIntegration, toast, navigate]);
 
   const handleSave = useCallback(
     async (updates: Partial<SalesforceIntegrationConfig>) => {
@@ -426,7 +451,7 @@ export const SalesforceIntegration = () => {
                 <Button
                   variant="ghost"
                   className="h-8 w-8 p-0 absolute right-0 top-0"
-                  disabled={loadingAuthUrl}
+                  disabled={loadingAuthUrl || isDisconnecting}
                 >
                   <DotsVerticalIcon className="h-4 w-4" />
                 </Button>
@@ -436,8 +461,16 @@ export const SalesforceIntegration = () => {
                   <ConnectIcon className="mr-1 w-4 h-4" />
                   Reconnect
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600 cursor-pointer">
-                  <DisconnectIcon className="mr-1 w-4 h-4" />
+                <DropdownMenuItem
+                  className="text-red-600 cursor-pointer"
+                  onClick={handleDisconnect}
+                  disabled={isDisconnecting}
+                >
+                  {isDisconnecting ? (
+                    <SpinnerIcon className="mr-1 w-4 h-4 animate-spin" />
+                  ) : (
+                    <DisconnectIcon className="mr-1 w-4 h-4" />
+                  )}
                   Disconnect
                 </DropdownMenuItem>
               </DropdownMenuContent>

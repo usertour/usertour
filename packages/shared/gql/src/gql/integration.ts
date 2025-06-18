@@ -53,3 +53,11 @@ export const GetIntegration = gql`
     }
   }
 `;
+
+export const DisconnectIntegration = gql`
+  mutation DisconnectIntegration($environmentId: String!, $provider: String!) {
+    disconnectIntegration(environmentId: $environmentId, provider: $provider) {
+      id
+    }
+  }
+`;

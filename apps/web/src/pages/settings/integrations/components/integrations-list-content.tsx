@@ -18,7 +18,7 @@ import { useToast } from '@usertour-ui/use-toast';
 import { IntegrationModel } from '@usertour-ui/types';
 import { useAppContext } from '@/contexts/app-context';
 import { CircleIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { ArrowRightIcon } from '@radix-ui/react-icons';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Integration, integrations } from '@/utils/integration';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -112,14 +112,14 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
   }, [authUrl, toast]);
 
   return (
-    <DialogContent className="max-w-2xl">
+    <DialogContent className="max-w-xl">
       <DialogHeader>
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
               <img src="/images/logo.png" className="w-full h-full" alt="Logo" />
             </div>
-            <ArrowRightIcon className="w-6 h-6" />
+            <DotsHorizontalIcon className="w-6 h-6" />
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
               <img
                 src={integration.imagePath}
@@ -134,11 +134,10 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
           {integration.description}
         </DialogDescription>
       </DialogHeader>
-      <div className="flex flex-col gap-4 mt-2">
-        <div className="text-sm text-muted-foreground">
-          Click the button below to connect your Salesforce account. You will be redirected to
-          Salesforce to authorize the connection.
-        </div>
+      <div className="text-sm text-muted-foreground">
+        Connect your Salesforce account to Usertour to enable real-time synchronization. Once
+        connected, you can sync Salesforce fields with Usertour, stream Usertour events into
+        Salesforce as Timeline Events, and use these events to trigger automated workflows.
       </div>
       <DialogFooter>
         <DialogClose>

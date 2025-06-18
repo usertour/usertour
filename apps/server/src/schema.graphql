@@ -666,6 +666,7 @@ type Mutation {
   deleteSegment(data: DeleteSegment!): Common!
   deleteSession(sessionId: String!): Boolean!
   deleteTheme(data: DeleteThemeInput!): Theme!
+  disconnectIntegration(environmentId: String!, provider: String!): Integration!
   duplicateContent(data: ContentDuplicateInput!): Content!
   endSession(sessionId: String!): Boolean!
   inviteTeamMember(data: InviteTeamMemberInput!): Boolean!

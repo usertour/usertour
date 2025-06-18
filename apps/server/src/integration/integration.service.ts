@@ -888,4 +888,46 @@ export class IntegrationService {
       throw new ParamsError('Failed to authorize with Salesforce');
     }
   }
+
+  /**
+   * Disconnect an integration
+   * @param environmentId - The ID of the environment
+   * @param provider - The provider of the integration
+   * @returns The disconnected integration
+   */
+  async disconnectIntegration(environmentId: string, provider: string) {
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        provider,
+        environmentId,
+      },
+      include: {
+        integrationOAuth: true,
+      },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    // Use transaction to ensure atomicity
+    return this.prisma.$transaction(async (tx) => {
+      // Delete OAuth configuration if exists
+      if (integration.integrationOAuth) {
+        await tx.integrationOAuth.delete({
+          where: { integrationId: integration.id },
+        });
+      }
+
+      // Update integration to disabled state
+      return tx.integration.update({
+        where: { id: integration.id },
+        data: {
+          enabled: false,
+          key: '',
+          config: {},
+        },
+      });
+    });
+  }
 }

@@ -34,6 +34,7 @@ import {
   UpdateIntegration,
   GetSalesforceAuthUrl,
   GetIntegration,
+  DisconnectIntegration,
 } from '@usertour-ui/gql';
 
 import type {
@@ -453,4 +454,13 @@ export const useGetIntegrationQuery = (
     ...options,
   });
   return { data: data?.getIntegration as IntegrationModel, loading, error, refetch };
+};
+
+export const useDisconnectIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DisconnectIntegration);
+  const invoke = async (environmentId: string, provider: string) => {
+    const response = await mutation({ variables: { environmentId, provider } });
+    return response.data?.disconnectIntegration;
+  };
+  return { invoke, loading, error };
 };
