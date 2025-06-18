@@ -4,6 +4,60 @@ import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 @ObjectType()
+class SalesforcePicklistValue {
+  @Field()
+  label: string;
+
+  @Field()
+  value: string;
+}
+
+@ObjectType()
+class SalesforceField {
+  @Field()
+  name: string;
+
+  @Field()
+  label: string;
+
+  @Field()
+  type: string;
+
+  @Field()
+  required: boolean;
+
+  @Field()
+  unique: boolean;
+
+  @Field(() => [String], { nullable: true })
+  referenceTo?: string[];
+
+  @Field(() => [SalesforcePicklistValue], { nullable: true })
+  picklistValues?: SalesforcePicklistValue[];
+}
+
+@ObjectType()
+class SalesforceObject {
+  @Field()
+  name: string;
+
+  @Field()
+  label: string;
+
+  @Field(() => [SalesforceField])
+  fields: SalesforceField[];
+}
+
+@ObjectType()
+export class SalesforceObjectFields {
+  @Field(() => [SalesforceObject])
+  standardObjects: SalesforceObject[];
+
+  @Field(() => [SalesforceObject])
+  customObjects: SalesforceObject[];
+}
+
+@ObjectType()
 export class IntegrationOAuth extends BaseModel {
   @Field()
   accessToken: string;

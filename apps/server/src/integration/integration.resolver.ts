@@ -1,6 +1,6 @@
 import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Integration } from './integration.model';
+import { Integration, SalesforceObjectFields } from './integration.model';
 import { UpdateIntegrationInput } from './integration.dto';
 import { IntegrationService } from './integration.service';
 import { UseGuards } from '@nestjs/common';
@@ -62,6 +62,17 @@ export class IntegrationResolver {
   ) {
     const { url } = await this.integrationService.getSalesforceAuthUrl(environmentId, provider);
     return url;
+  }
+
+  /**
+   * Get Salesforce object fields
+   * @param integrationId - The ID of the integration
+   * @returns List of Salesforce objects with their fields
+   */
+  @Query(() => SalesforceObjectFields)
+  @Roles([RolesScopeEnum.OWNER])
+  async getSalesforceObjectFields(@Args('integrationId') integrationId: string) {
+    return this.integrationService.getSalesforceObjectFields(integrationId);
   }
 
   /**

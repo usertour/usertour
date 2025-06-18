@@ -853,6 +853,7 @@ export class IntegrationService {
         email,
         username,
         organizationName,
+        instanceUrl: conn.instanceUrl,
       };
 
       // Create or update OAuth configuration
@@ -929,5 +930,114 @@ export class IntegrationService {
         },
       });
     });
+  }
+
+  /**
+   * Get Salesforce object field lists
+   * @param integrationId - The ID of the integration
+   * @returns List of Salesforce object fields
+   */
+  async getSalesforceObjectFields(integrationId: string) {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+      include: {
+        integrationOAuth: true,
+      },
+    });
+
+    if (!integration || !integration.integrationOAuth) {
+      throw new ParamsError('Integration or OAuth configuration not found');
+    }
+
+    const { accessToken, refreshToken, data } = integration.integrationOAuth;
+    const instanceUrl = data && typeof data === 'object' ? (data as any).instanceUrl : undefined;
+
+    if (!instanceUrl) {
+      throw new ParamsError(
+        'Salesforce instance URL not found. Please reconnect your Salesforce integration.',
+      );
+    }
+
+    const clientId = this.configService.get('integration.salesforce.clientId');
+    const callbackUrl = this.configService.get('integration.salesforce.callbackUrl');
+    const clientSecret = this.configService.get('integration.salesforce.clientSecret');
+
+    const isSandbox = integration.provider === 'salesforce-sandbox';
+    const loginUrl = isSandbox
+      ? this.configService.get('integration.salesforce.sandboxLoginUrl')
+      : this.configService.get('integration.salesforce.loginUrl');
+
+    if (!clientId || !callbackUrl || !clientSecret || !loginUrl) {
+      throw new ParamsError('Salesforce OAuth configuration is incomplete');
+    }
+
+    const oauth2 = new jsforce.OAuth2({
+      clientId,
+      clientSecret,
+      redirectUri: callbackUrl,
+      loginUrl,
+    });
+
+    const conn = new jsforce.Connection({
+      oauth2,
+      accessToken,
+      refreshToken,
+      instanceUrl,
+    });
+
+    // Get standard objects
+    const standardObjects = ['Contact', 'Lead', 'Account', 'Opportunity'];
+    const standardObjectsFields = await Promise.all(
+      standardObjects.map(async (objectName) => {
+        const describe = await conn.describe(objectName);
+        return {
+          name: objectName,
+          label: describe.label,
+          fields: describe.fields.map((field) => ({
+            name: field.name,
+            label: field.label,
+            type: field.type,
+            required: field.nillable === false,
+            unique: field.unique,
+            referenceTo: field.referenceTo,
+            picklistValues: field.picklistValues?.map((value) => ({
+              label: value.label,
+              value: value.value,
+            })),
+          })),
+        };
+      }),
+    );
+
+    // Get custom objects
+    const customObjects = await conn.describeGlobal();
+    const customObjectsFields = await Promise.all(
+      customObjects.sobjects
+        .filter((obj) => obj.custom)
+        .map(async (obj) => {
+          const describe = await conn.describe(obj.name);
+          return {
+            name: obj.name,
+            label: obj.label,
+            fields: describe.fields.map((field) => ({
+              name: field.name,
+              label: field.label,
+              type: field.type,
+              required: field.nillable === false,
+              unique: field.unique,
+              referenceTo: field.referenceTo,
+              picklistValues: field.picklistValues?.map((value) => ({
+                label: value.label,
+                value: value.value,
+              })),
+            })),
+          };
+        }),
+    );
+
+    return {
+      standardObjects: standardObjectsFields,
+      customObjects: customObjectsFields.filter(Boolean), // Remove null entries
+    };
   }
 }

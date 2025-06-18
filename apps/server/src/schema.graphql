@@ -742,6 +742,7 @@ type Query {
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
+  getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
   getSubscriptionPlans: [SubscriptionPlanModel!]!
   getSubscriptionUsage(projectId: String!): Int!
@@ -806,6 +807,32 @@ enum Role {
   OWNER
   USER
   VIEWER
+}
+
+type SalesforceField {
+  label: String!
+  name: String!
+  picklistValues: [SalesforcePicklistValue!]
+  referenceTo: [String!]
+  required: Boolean!
+  type: String!
+  unique: Boolean!
+}
+
+type SalesforceObject {
+  fields: [SalesforceField!]!
+  label: String!
+  name: String!
+}
+
+type SalesforceObjectFields {
+  customObjects: [SalesforceObject!]!
+  standardObjects: [SalesforceObject!]!
+}
+
+type SalesforcePicklistValue {
+  label: String!
+  value: String!
 }
 
 type Segment {
