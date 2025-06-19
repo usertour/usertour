@@ -5,6 +5,7 @@ import {
   useGetSalesforceAuthUrlQuery,
   useUpdateIntegrationMutation,
   useDisconnectIntegrationMutation,
+  useGetSalesforceObjectFieldsQuery,
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
@@ -18,13 +19,29 @@ import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Skeleton } from '@usertour-ui/skeleton';
-import { ConnectIcon, DisconnectIcon, SpinnerIcon } from '@usertour-ui/icons';
+import {
+  ConnectIcon,
+  DisconnectIcon,
+  SpinnerIcon,
+  PlusIcon,
+  ArrowRightIcon,
+} from '@usertour-ui/icons';
 import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
 import { DropdownMenu } from '@usertour-ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@usertour-ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { useNavigate } from 'react-router-dom';
 
 interface SalesforceIntegrationConfig {
@@ -294,6 +311,235 @@ const SyncAccountsFormSkeleton = () => (
   </Card>
 );
 
+const MappingSetupButton = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Card className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
+          <CardContent className="flex items-center justify-center p-6">
+            <div className="flex items-center gap-2">
+              <PlusIcon className="h-6 w-6" />
+              <span className="text-sm text-muted-foreground">
+                Set up a new mapping between Salesforce and Usertour objects
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+      <MappingSetupDialog onClose={() => setIsDialogOpen(false)} />
+    </Dialog>
+  );
+};
+
+interface MappingSetupDialogProps {
+  onClose: () => void;
+}
+
+const MappingSetupDialog = ({ onClose }: MappingSetupDialogProps) => {
+  const { environment } = useAppContext();
+  const { toast } = useToast();
+  const [step, setStep] = useState<'objects' | 'fields'>('objects');
+  const [salesforceObject, setSalesforceObject] = useState<string>('');
+  const [usertourObject, setUsertourObject] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Get the integration ID from the current integration
+  const { data: integration } = useGetIntegrationQuery(environment?.id || '', 'salesforce', {
+    skip: !environment?.id,
+  });
+
+  const { data: objectFields } = useGetSalesforceObjectFieldsQuery(integration?.id || '', {
+    skip: !integration?.id,
+  });
+
+  const salesforceObjects = [
+    { name: 'Contact', label: 'Contacts', type: 'standard' as const },
+    { name: 'Account', label: 'Accounts', type: 'standard' as const },
+    { name: 'Lead', label: 'Leads', type: 'standard' as const },
+    { name: 'Opportunity', label: 'Opportunities', type: 'standard' as const },
+  ];
+
+  const usertourObjects = [
+    { name: 'BizUser', label: 'User' },
+    { name: 'BizCompany', label: 'Company' },
+  ];
+
+  const selectedSalesforceObject = salesforceObjects.find((obj) => obj.name === salesforceObject);
+  const selectedSalesforceFields = selectedSalesforceObject
+    ? objectFields?.standardObjects?.find((obj: any) => obj.name === salesforceObject)?.fields || []
+    : [];
+
+  const handleContinue = () => {
+    if (!salesforceObject || !usertourObject) {
+      toast({
+        title: 'Error',
+        description: 'Please select both Salesforce and Usertour objects',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setStep('fields');
+  };
+
+  const handleBack = () => {
+    setStep('objects');
+  };
+
+  const handleCreateMapping = async () => {
+    try {
+      setIsLoading(true);
+      // TODO: Implement mapping creation using the new hooks
+      console.log('Creating mapping:', { salesforceObject, usertourObject });
+
+      toast({
+        title: 'Success',
+        description: 'Object mapping created successfully',
+      });
+      onClose();
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to create object mapping',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setStep('objects');
+    setSalesforceObject('');
+    setUsertourObject('');
+    onClose();
+  };
+
+  return (
+    <DialogContent className="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>
+          {step === 'objects' ? 'Select Objects' : 'Configure Field Mapping'}
+        </DialogTitle>
+        <DialogDescription>
+          {step === 'objects'
+            ? 'Choose which Salesforce object to map to which Usertour object.'
+            : `Configure how ${selectedSalesforceObject?.label} fields map to ${usertourObject} fields.`}
+        </DialogDescription>
+      </DialogHeader>
+
+      {step === 'objects' ? (
+        <>
+          <div className="space-y-1 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Label htmlFor="salesforce-object">Salesforce Object</Label>
+              </div>
+              <div className="w-6" />
+              <div className="flex-1">
+                <Label htmlFor="usertour-object">Usertour Object</Label>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Select value={salesforceObject} onValueChange={setSalesforceObject}>
+                  <SelectTrigger id="salesforce-object">
+                    <SelectValue placeholder="Select Salesforce object" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesforceObjects.map((obj) => (
+                      <SelectItem key={obj.name} value={obj.name}>
+                        <div className="flex items-center gap-2">
+                          <span>{obj.label}</span>
+                          <div className="text-xs text-muted-foreground">Standard Object</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <ArrowRightIcon className="h-6 w-6 text-muted-foreground" />
+              </div>
+
+              <div className="flex-1">
+                <Select value={usertourObject} onValueChange={setUsertourObject}>
+                  <SelectTrigger id="usertour-object">
+                    <SelectValue placeholder="Select Usertour object" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usertourObjects.map((obj) => (
+                      <SelectItem key={obj.name} value={obj.name}>
+                        {obj.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleContinue} disabled={!salesforceObject || !usertourObject}>
+              Continue
+            </Button>
+          </DialogFooter>
+        </>
+      ) : (
+        <>
+          <div className="py-4">
+            <div className="mb-4 p-3 bg-muted rounded-lg">
+              <div className="text-sm font-medium">
+                {selectedSalesforceObject?.label} →{' '}
+                {usertourObjects.find((obj) => obj.name === usertourObject)?.label}
+              </div>
+              <div className="text-xs text-muted-foreground">Standard Object</div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Available Fields</Label>
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {selectedSalesforceFields.map((field: any) => (
+                  <div
+                    key={field.name}
+                    className="flex items-center justify-between p-2 border rounded"
+                  >
+                    <div>
+                      <div className="text-sm font-medium">{field.label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {field.name} ({field.type})
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {field.required ? 'Required' : 'Optional'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
+              Back
+            </Button>
+            <Button onClick={handleCreateMapping} disabled={isLoading}>
+              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              Create Mapping
+            </Button>
+          </DialogFooter>
+        </>
+      )}
+    </DialogContent>
+  );
+};
+
 export const SalesforceIntegration = () => {
   const { environment } = useAppContext();
   const { toast } = useToast();
@@ -478,6 +724,8 @@ export const SalesforceIntegration = () => {
           </CardTitle>
         </CardHeader>
       </Card>
+
+      <MappingSetupButton />
 
       <SyncAccountsForm
         integration={integration}

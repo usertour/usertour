@@ -35,6 +35,12 @@ import {
   GetSalesforceAuthUrl,
   GetIntegration,
   DisconnectIntegration,
+  GetIntegrationObjectMappings,
+  GetIntegrationObjectMapping,
+  UpsertIntegrationObjectMapping,
+  UpdateIntegrationObjectMapping,
+  DeleteIntegrationObjectMapping,
+  GetSalesforceObjectFields,
 } from '@usertour-ui/gql';
 
 import type {
@@ -463,4 +469,75 @@ export const useDisconnectIntegrationMutation = () => {
     return response.data?.disconnectIntegration;
   };
   return { invoke, loading, error };
+};
+
+export const useGetIntegrationObjectMappingsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMappings, {
+    variables: { integrationId },
+    ...options,
+  });
+  return { data: data?.getIntegrationObjectMappings, loading, error, refetch };
+};
+
+export const useGetIntegrationObjectMappingQuery = (id: string, options?: QueryHookOptions) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMapping, {
+    variables: { id },
+    ...options,
+  });
+  return { data: data?.getIntegrationObjectMapping, loading, error, refetch };
+};
+
+export const useUpsertIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping);
+  const invoke = async (
+    integrationId: string,
+    input: {
+      sourceObjectType: string;
+      destinationObjectType: string;
+      settings?: any;
+      enabled?: boolean;
+    },
+  ) => {
+    const response = await mutation({ variables: { integrationId, input } });
+    return response.data?.upsertIntegrationObjectMapping;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationObjectMapping);
+  const invoke = async (
+    id: string,
+    input: {
+      settings?: any;
+      enabled?: boolean;
+    },
+  ) => {
+    const response = await mutation({ variables: { id, input } });
+    return response.data?.updateIntegrationObjectMapping;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteIntegrationObjectMapping;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetSalesforceObjectFieldsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetSalesforceObjectFields, {
+    variables: { integrationId },
+    ...options,
+  });
+  return { data: data?.getSalesforceObjectFields, loading, error, refetch };
 };
