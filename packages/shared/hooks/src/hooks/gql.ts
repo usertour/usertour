@@ -58,6 +58,7 @@ import type {
   GlobalConfig,
   UpdateIntegrationInput,
   IntegrationModel,
+  SalesforceObjectFields,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -539,5 +540,10 @@ export const useGetSalesforceObjectFieldsQuery = (
     variables: { integrationId },
     ...options,
   });
-  return { data: data?.getSalesforceObjectFields, loading, error, refetch };
+  return {
+    data: data?.getSalesforceObjectFields as SalesforceObjectFields | undefined,
+    loading,
+    error,
+    refetch,
+  };
 };

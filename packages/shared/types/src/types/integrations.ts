@@ -16,3 +16,30 @@ export type IntegrationModel = {
     data?: any;
   };
 };
+
+// Salesforce Object Fields Type Definitions
+export interface SalesforcePicklistValue {
+  label: string;
+  value: string;
+}
+
+export interface SalesforceField {
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+  unique: boolean;
+  referenceTo?: string[];
+  picklistValues?: SalesforcePicklistValue[];
+}
+
+export interface SalesforceObject {
+  name: string;
+  label: string;
+  fields: SalesforceField[];
+}
+
+export interface SalesforceObjectFields {
+  standardObjects: SalesforceObject[];
+  customObjects: SalesforceObject[];
+}

@@ -47,11 +47,6 @@ const SalesforceMappingIcon = () => <SalesforceIcon className="w-4 h-4" />;
 const UsertourMappingIcon = () => <UsertourIcon2 className="w-4 h-4 text-primary" />;
 
 // Example field options (replace with your real data)
-const salesforceFields = [
-  { value: 'email', label: 'Email', icon: <SalesforceMappingIcon /> },
-  { value: 'title', label: 'Title', icon: <SalesforceMappingIcon /> },
-  { value: 'industry', label: 'Industry', icon: <SalesforceMappingIcon /> },
-];
 const usertourFields = [
   { value: 'email', label: 'Email', icon: <UsertourMappingIcon /> },
   { value: 'title', label: 'Title', icon: <UsertourMappingIcon /> },
@@ -91,6 +86,14 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const selectedSalesforceFields = selectedSalesforceObject
     ? objectFields?.standardObjects?.find((obj: any) => obj.name === salesforceObject)?.fields || []
     : [];
+
+  // Convert API field data to UI format
+  const dynamicSalesforceFields = selectedSalesforceFields.map((field: any) => ({
+    value: field.name,
+    label: field.label || field.name,
+    icon: <SalesforceMappingIcon />,
+  }));
+
   console.log(selectedSalesforceFields);
 
   const handleContinue = () => {
@@ -283,7 +286,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                     <SelectValue placeholder="Select field" />
                   </SelectTrigger>
                   <SelectContent>
-                    {salesforceFields.map((opt) => (
+                    {dynamicSalesforceFields.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex flex-row items-center gap-2">
                           {opt.icon} <span>{opt.label}</span>
@@ -330,7 +333,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                       <SelectValue placeholder="Select field" />
                     </SelectTrigger>
                     <SelectContent>
-                      {salesforceFields.map((opt) => (
+                      {dynamicSalesforceFields.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           <div className="flex flex-row items-center gap-2">
                             {opt.icon} <span>{opt.label}</span>
@@ -382,7 +385,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                     <SelectValue placeholder="Select a field to sync" />
                   </SelectTrigger>
                   <SelectContent>
-                    {salesforceFields.map((opt) => (
+                    {dynamicSalesforceFields.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex flex-row items-center gap-2">
                           {opt.icon} <span>{opt.label}</span>
@@ -460,7 +463,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                       <SelectValue placeholder="Select field" />
                     </SelectTrigger>
                     <SelectContent>
-                      {salesforceFields.map((opt) => (
+                      {dynamicSalesforceFields.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           <div className="flex flex-row items-center gap-2">
                             {opt.icon} <span>{opt.label}</span>
@@ -505,7 +508,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                     <SelectValue placeholder="..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {salesforceFields.map((opt) => (
+                    {dynamicSalesforceFields.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex flex-row items-center gap-2">
                           {opt.icon} <span>{opt.label}</span>
