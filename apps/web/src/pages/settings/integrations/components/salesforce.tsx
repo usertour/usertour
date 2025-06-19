@@ -12,7 +12,7 @@ import { integrations } from '@/utils/integration';
 import { Card } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
-import { DotsVerticalIcon } from '@radix-ui/react-icons';
+import { DotsVerticalIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { Skeleton } from '@usertour-ui/skeleton';
 import {
   ConnectIcon,
@@ -37,11 +37,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@usertour-ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@usertour-ui/switch';
 import { XIcon, InfoIcon, ArrowRightIcon } from 'lucide-react';
 import { Label } from '@usertour-ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@usertour-ui/command';
+import { ScrollArea } from '@usertour-ui/scroll-area';
+import { cn } from '@usertour-ui/ui-utils';
 
 const SalesforceMappingIcon = () => <SalesforceIcon className="w-4 h-4" />;
 const UsertourMappingIcon = () => <UsertourIcon2 className="w-4 h-4 text-primary" />;
@@ -52,6 +61,150 @@ const usertourFields = [
   { value: 'title', label: 'Title', icon: <UsertourMappingIcon /> },
   { value: 'industry', label: 'Industry', icon: <UsertourMappingIcon /> },
 ];
+
+interface CustomSelectProps {
+  items: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  className?: string;
+}
+
+interface CustomObjectSelectProps {
+  items: Array<{ name: string; label: string; type?: string }>;
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  className?: string;
+}
+
+function CustomSelect({ items, value, onValueChange, placeholder, className }: CustomSelectProps) {
+  const [open, setOpen] = useState(false);
+  const selectedItem = items.find((item) => item.value === value);
+
+  const handleSelect = (selectedValue: string) => {
+    onValueChange(selectedValue);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          aria-expanded={open}
+          className={cn('w-72 justify-between', className)}
+        >
+          {selectedItem ? (
+            <div className="flex items-center gap-2">
+              {selectedItem.icon}
+              <span>{selectedItem.label}</span>
+            </div>
+          ) : (
+            placeholder
+          )}
+          <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0 z-50" withoutPortal>
+        <Command>
+          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+          <CommandEmpty>No items found.</CommandEmpty>
+          <CommandGroup>
+            <ScrollArea className="h-64">
+              {items.map((item) => (
+                <CommandItem
+                  key={item.value}
+                  value={item.value}
+                  onSelect={() => handleSelect(item.value)}
+                >
+                  <div className="flex items-center gap-2">
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  <CheckIcon
+                    className={cn(
+                      'ml-auto h-4 w-4',
+                      value === item.value ? 'opacity-100' : 'opacity-0',
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </ScrollArea>
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function CustomObjectSelect({
+  items,
+  value,
+  onValueChange,
+  placeholder,
+  className,
+}: CustomObjectSelectProps) {
+  const [open, setOpen] = useState(false);
+  const selectedItem = items.find((item) => item.name === value);
+
+  const handleSelect = (selectedValue: string) => {
+    onValueChange(selectedValue);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          aria-expanded={open}
+          className={cn('w-72 justify-between', className)}
+        >
+          {selectedItem ? (
+            <div className="flex items-center gap-2">
+              <span>{selectedItem.label}</span>
+              {selectedItem.type && (
+                <div className="text-xs text-muted-foreground">{selectedItem.type}</div>
+              )}
+            </div>
+          ) : (
+            placeholder
+          )}
+          <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0 z-50" withoutPortal>
+        <Command>
+          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+          <CommandEmpty>No items found.</CommandEmpty>
+          <CommandGroup>
+            <ScrollArea className="h-64">
+              {items.map((item) => (
+                <CommandItem
+                  key={item.name}
+                  value={item.name}
+                  onSelect={() => handleSelect(item.name)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>{item.label}</span>
+                    {item.type && <div className="text-xs text-muted-foreground">{item.type}</div>}
+                  </div>
+                  <CheckIcon
+                    className={cn(
+                      'ml-auto h-4 w-4',
+                      value === item.name ? 'opacity-100' : 'opacity-0',
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </ScrollArea>
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const { environment } = useAppContext();
@@ -188,7 +341,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <DialogContent className="max-w-3xl">
+    <DialogContent className={cn('max-w-2xl', step === 'objects' ? 'max-w-2xl' : 'max-w-4xl')}>
       <DialogHeader>
         <DialogTitle>
           {step === 'objects' ? 'Select Objects' : 'Configure Field Mapping'}
@@ -203,53 +356,34 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
       {step === 'objects' ? (
         <>
           <div className="space-y-1 py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <Label htmlFor="salesforce-object">Salesforce Object</Label>
-              </div>
+            <div className="flex items-center gap-4 justify-between">
+              <Label htmlFor="salesforce-object" className="w-72">
+                Salesforce Object
+              </Label>
               <div className="w-6" />
-              <div className="flex-1">
-                <Label htmlFor="usertour-object">Usertour Object</Label>
-              </div>
+              <Label htmlFor="usertour-object" className="w-72">
+                Usertour Object
+              </Label>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <Select value={salesforceObject} onValueChange={setSalesforceObject}>
-                  <SelectTrigger id="salesforce-object">
-                    <SelectValue placeholder="Select Salesforce object" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {salesforceObjects.map((obj) => (
-                      <SelectItem key={obj.name} value={obj.name}>
-                        <div className="flex items-center gap-2">
-                          <span>{obj.label}</span>
-                          <div className="text-xs text-muted-foreground">Standard Object</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex items-center gap-4 justify-between">
+              <CustomObjectSelect
+                items={salesforceObjects}
+                value={salesforceObject}
+                onValueChange={setSalesforceObject}
+                placeholder="Select Salesforce object"
+              />
 
               <div className="flex items-center justify-center">
                 <ArrowRightIcon className="h-6 w-6 text-muted-foreground" />
               </div>
 
-              <div className="flex-1">
-                <Select value={usertourObject} onValueChange={setUsertourObject}>
-                  <SelectTrigger id="usertour-object">
-                    <SelectValue placeholder="Select Usertour object" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usertourObjects.map((obj) => (
-                      <SelectItem key={obj.name} value={obj.name}>
-                        {obj.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <CustomObjectSelect
+                items={usertourObjects}
+                value={usertourObject}
+                onValueChange={setUsertourObject}
+                placeholder="Select Usertour object"
+              />
             </div>
           </div>
 
@@ -281,35 +415,19 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 <InfoIcon className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex items-center gap-2">
-                <Select value={matchLeft} onValueChange={setMatchLeft}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select field" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dynamicSalesforceFields.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-row items-center gap-2">
-                          {opt.icon} <span>{opt.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomSelect
+                  items={dynamicSalesforceFields}
+                  value={matchLeft}
+                  onValueChange={setMatchLeft}
+                  placeholder="Select field"
+                />
                 <span className="mx-2 text-lg">=</span>
-                <Select value={matchRight} onValueChange={setMatchRight}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select field" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usertourFields.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-row items-center gap-2">
-                          {opt.icon} <span>{opt.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomSelect
+                  items={usertourFields}
+                  value={matchRight}
+                  onValueChange={setMatchRight}
+                  placeholder="Select field"
+                />
               </div>
             </div>
 
@@ -321,49 +439,27 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
               </div>
               {sfToUsertour.map((m, idx) => (
                 <div key={idx} className="flex items-center gap-2 py-1">
-                  <Select
+                  <CustomSelect
+                    items={dynamicSalesforceFields}
                     value={m.left}
                     onValueChange={(v) => {
                       const arr = [...sfToUsertour];
                       arr[idx].left = v;
                       setSfToUsertour(arr);
                     }}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dynamicSalesforceFields.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div className="flex flex-row items-center gap-2">
-                            {opt.icon} <span>{opt.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select field"
+                  />
                   <span className="mx-2 text-xl text-muted-foreground">→</span>
-                  <Select
+                  <CustomSelect
+                    items={usertourFields}
                     value={m.right}
                     onValueChange={(v) => {
                       const arr = [...sfToUsertour];
                       arr[idx].right = v;
                       setSfToUsertour(arr);
                     }}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {usertourFields.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div className="flex flex-row items-center gap-2">
-                            {opt.icon} <span>{opt.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select field"
+                  />
                   {m.isNew && (
                     <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
                       New
@@ -380,35 +476,19 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
               ))}
               {/* Add new mapping row */}
               <div className="flex items-center gap-2 py-1">
-                <Select value={addLeft} onValueChange={setAddLeft}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select a field to sync" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dynamicSalesforceFields.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-row items-center gap-2">
-                          {opt.icon} <span>{opt.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomSelect
+                  items={dynamicSalesforceFields}
+                  value={addLeft}
+                  onValueChange={setAddLeft}
+                  placeholder="Select a field to sync"
+                />
                 <span className="mx-2 text-xl text-muted-foreground">→</span>
-                <Select value={addRight} onValueChange={setAddRight}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usertourFields.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-row items-center gap-2">
-                          {opt.icon} <span>{opt.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomSelect
+                  items={usertourFields}
+                  value={addRight}
+                  onValueChange={setAddRight}
+                  placeholder="..."
+                />
                 <Button
                   variant="outline"
                   size="sm"
@@ -429,49 +509,27 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
               </div>
               {usertourToSf.map((m, idx) => (
                 <div key={idx} className="flex items-center gap-2 py-1">
-                  <Select
+                  <CustomSelect
+                    items={usertourFields}
                     value={m.left}
                     onValueChange={(v) => {
                       const arr = [...usertourToSf];
                       arr[idx].left = v;
                       setUsertourToSf(arr);
                     }}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {usertourFields.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div className="flex flex-row items-center gap-2">
-                            {opt.icon} <span>{opt.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select field"
+                  />
                   <span className="mx-2 text-xl text-muted-foreground">→</span>
-                  <Select
+                  <CustomSelect
+                    items={dynamicSalesforceFields}
                     value={m.right}
                     onValueChange={(v) => {
                       const arr = [...usertourToSf];
                       arr[idx].right = v;
                       setUsertourToSf(arr);
                     }}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dynamicSalesforceFields.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div className="flex flex-row items-center gap-2">
-                            {opt.icon} <span>{opt.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select field"
+                  />
                   {m.isNew && (
                     <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
                       New
@@ -488,35 +546,19 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
               ))}
               {/* Add new mapping row */}
               <div className="flex items-center gap-2 py-1">
-                <Select value={addLeft2} onValueChange={setAddLeft2}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select a field to sync" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usertourFields.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-row items-center gap-2">
-                          {opt.icon} <span>{opt.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomSelect
+                  items={usertourFields}
+                  value={addLeft2}
+                  onValueChange={setAddLeft2}
+                  placeholder="Select a field to sync"
+                />
                 <span className="mx-2 text-xl text-muted-foreground">→</span>
-                <Select value={addRight2} onValueChange={setAddRight2}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dynamicSalesforceFields.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-row items-center gap-2">
-                          {opt.icon} <span>{opt.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomSelect
+                  items={dynamicSalesforceFields}
+                  value={addRight2}
+                  onValueChange={setAddRight2}
+                  placeholder="..."
+                />
                 <Button
                   variant="outline"
                   size="sm"
