@@ -292,6 +292,7 @@ Table Attribute {
   description String [not null, default: '']
   dataType Int [not null, default: 1]
   randomMax Int [not null, default: 1]
+  source String [not null, default: 'internal']
   predefined Boolean [not null, default: false]
   deleted Boolean [not null, default: false]
   attributeOnEvent AttributeOnEvent [not null]
@@ -566,6 +567,7 @@ Table Integration {
   updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
   integrationLogs IntegrationLog [not null, note: 'integration logs']
   integrationOAuth IntegrationOAuth
+  integrationObjectMappings IntegrationObjectMapping [not null]
 
   indexes {
     (environmentId, provider) [unique]
@@ -585,6 +587,23 @@ Table IntegrationOAuth {
   providerAccountId String [not null, note: 'provider account id']
   integration Integration [not null, note: 'integration']
   integrationId String [unique, not null, note: 'integration id']
+}
+
+Table IntegrationObjectMapping {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+  sourceObjectType String [not null, note: 'source object type (e.g., "account", "contact", "lead")']
+  destinationObjectType String [not null, note: 'destination object type (e.g., "user", "company")']
+  settings Json [note: 'settings']
+  isSyncing Boolean [not null, default: false, note: 'is syncing']
+  lastSyncedAt DateTime [note: 'last synced at']
+  integration Integration [not null, note: 'integration']
+  integrationId String [not null, note: 'integration id']
+
+  indexes {
+    (integrationId, sourceObjectType, destinationObjectType) [unique]
+  }
 }
 
 Table IntegrationLog {
@@ -701,5 +720,7 @@ Ref: RefreshToken.userId > User.id
 Ref: Integration.environmentId > Environment.id
 
 Ref: IntegrationOAuth.integrationId - Integration.id
+
+Ref: IntegrationObjectMapping.integrationId > Integration.id
 
 Ref: IntegrationLog.integrationId > Integration.id

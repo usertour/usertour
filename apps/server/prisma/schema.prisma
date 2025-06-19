@@ -316,6 +316,7 @@ model Attribute {
   description      String             @default("")
   dataType         Int                @default(1)
   randomMax        Int                @default(1)
+  source           String             @default("internal")
   predefined       Boolean            @default(false)
   deleted          Boolean            @default(false)
   attributeOnEvent AttributeOnEvent[]
@@ -619,28 +620,29 @@ model CheckoutSession {
 }
 
 model Integration {
-  id               String            @id @default(cuid())
+  id                        String                     @id @default(cuid())
   /// code of rntegration (e.g., "ga", "mixpanel", "posthog")
-  provider         String
+  provider                  String
   /// api key or  of integration 
-  key              String            @default("")
+  key                       String                     @default("")
   /// access token of integration
-  accessToken      String            @unique @default(cuid())
+  accessToken               String                     @unique @default(cuid())
   /// JSON schema for configuration (optional)
-  config           Json?             @db.JsonB
+  config                    Json?                      @db.JsonB
   /// Whether the integration is enabled
-  enabled          Boolean           @default(false)
+  enabled                   Boolean                    @default(false)
   /// environment of integration
-  environment      Environment       @relation(fields: [environmentId], references: [id])
+  environment               Environment                @relation(fields: [environmentId], references: [id])
   /// environment id
-  environmentId    String
+  environmentId             String
   /// Create timestamp
-  createdAt        DateTime          @default(now()) @db.Timestamptz()
+  createdAt                 DateTime                   @default(now()) @db.Timestamptz()
   /// Update timestamp
-  updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamptz()
+  updatedAt                 DateTime                   @default(now()) @updatedAt @db.Timestamptz()
   /// integration logs
-  integrationLogs  IntegrationLog[]
-  integrationOAuth IntegrationOAuth?
+  integrationLogs           IntegrationLog[]
+  integrationOAuth          IntegrationOAuth?
+  integrationObjectMappings IntegrationObjectMapping[]
 
   @@unique([environmentId, provider])
 }
@@ -672,6 +674,30 @@ model IntegrationOAuth {
   integrationId     String      @unique // One integration can only have one OAuth configuration
 
   @@index([integrationId])
+}
+
+model IntegrationObjectMapping {
+  id                    String      @id @default(cuid())
+  /// Create timestamp
+  createdAt             DateTime    @default(now()) @db.Timestamptz()
+  /// Update timestamp
+  updatedAt             DateTime    @default(now()) @updatedAt @db.Timestamptz()
+  /// source object type (e.g., "account", "contact", "lead")
+  sourceObjectType      String
+  /// destination object type (e.g., "user", "company")
+  destinationObjectType String
+  /// settings
+  settings              Json?       @db.JsonB
+  /// is syncing
+  isSyncing             Boolean     @default(false)
+  /// last synced at
+  lastSyncedAt          DateTime?   @db.Timestamptz()
+  /// integration
+  integration           Integration @relation(fields: [integrationId], references: [id])
+  /// integration id
+  integrationId         String
+
+  @@unique([integrationId, sourceObjectType, destinationObjectType])
 }
 
 model IntegrationLog {
