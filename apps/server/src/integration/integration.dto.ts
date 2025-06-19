@@ -134,3 +134,29 @@ export class UpdateIntegrationOAuthInput {
   /// Scope
   scope?: string;
 }
+
+@InputType()
+export class UpdateIntegrationObjectMappingInput {
+  /// Mapping settings
+  @Field(() => GraphQLJSON, { nullable: true })
+  settings?: JsonValue;
+  /// Whether the mapping is enabled
+  @Field(() => Boolean, { nullable: true })
+  enabled?: boolean;
+}
+
+@InputType()
+export class CreateIntegrationObjectMappingInput {
+  /// Source object type (e.g., "Contact", "Account")
+  @Field(() => String)
+  sourceObjectType: string;
+  /// Destination object type (e.g., "BizUser", "BizCompany")
+  @Field(() => String)
+  destinationObjectType: string;
+  /// Mapping settings
+  @Field(() => GraphQLJSON, { nullable: true })
+  settings?: JsonValue;
+  /// Whether the mapping is enabled
+  @Field(() => Boolean, { nullable: true })
+  enabled?: boolean;
+}

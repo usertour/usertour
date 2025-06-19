@@ -1,7 +1,11 @@
 import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Integration, SalesforceObjectFields } from './integration.model';
-import { UpdateIntegrationInput } from './integration.dto';
+import { Integration, SalesforceObjectFields, IntegrationObjectMapping } from './integration.model';
+import {
+  UpdateIntegrationInput,
+  UpdateIntegrationObjectMappingInput,
+  CreateIntegrationObjectMappingInput,
+} from './integration.dto';
 import { IntegrationService } from './integration.service';
 import { UseGuards } from '@nestjs/common';
 import { IntegrationGuard } from './integration.guard';
@@ -73,6 +77,80 @@ export class IntegrationResolver {
   @Roles([RolesScopeEnum.OWNER])
   async getSalesforceObjectFields(@Args('integrationId') integrationId: string) {
     return this.integrationService.getSalesforceObjectFields(integrationId);
+  }
+
+  /**
+   * Get all object mappings for an integration
+   * @param integrationId - The ID of the integration
+   * @returns List of object mappings
+   */
+  @Query(() => [IntegrationObjectMapping])
+  @Roles([RolesScopeEnum.OWNER])
+  async getIntegrationObjectMappings(@Args('integrationId') integrationId: string) {
+    return this.integrationService.getIntegrationObjectMappings(integrationId);
+  }
+
+  /**
+   * Get a specific object mapping by ID
+   * @param id - The ID of the object mapping
+   * @returns The object mapping
+   */
+  @Query(() => IntegrationObjectMapping)
+  @Roles([RolesScopeEnum.OWNER])
+  async getIntegrationObjectMapping(@Args('id') id: string) {
+    return this.integrationService.getIntegrationObjectMapping(id);
+  }
+
+  /**
+   * Create or update an object mapping
+   * @param integrationId - The ID of the integration
+   * @param input - The mapping data
+   * @returns The created/updated object mapping
+   */
+  @Mutation(() => IntegrationObjectMapping)
+  @Roles([RolesScopeEnum.OWNER])
+  async upsertIntegrationObjectMapping(
+    @Args('integrationId') integrationId: string,
+    @Args('input') input: CreateIntegrationObjectMappingInput,
+  ) {
+    return this.integrationService.upsertIntegrationObjectMapping(
+      integrationId,
+      input.sourceObjectType,
+      input.destinationObjectType,
+      input.settings,
+      input.enabled,
+    );
+  }
+
+  /**
+   * Update an object mapping
+   * @param id - The ID of the object mapping
+   * @param input - The update data
+   * @returns The updated object mapping
+   */
+  @Mutation(() => IntegrationObjectMapping)
+  @Roles([RolesScopeEnum.OWNER])
+  async updateIntegrationObjectMapping(
+    @Args('id') id: string,
+    @Args('input') input: UpdateIntegrationObjectMappingInput,
+  ) {
+    return this.integrationService.updateIntegrationObjectMapping(
+      id,
+      input.settings,
+      input.enabled,
+    );
+  }
+
+  /**
+   * Delete an object mapping
+   * @param id - The ID of the object mapping
+   * @returns Success status
+   */
+  @Mutation(() => Boolean)
+  @Roles([RolesScopeEnum.OWNER])
+  async deleteIntegrationObjectMapping(@Args('id') id: string) {
+    await this.integrationService.deleteIntegrationObjectMapping(id);
+    return true;
   }
 
   /**

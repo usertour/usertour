@@ -431,6 +431,13 @@ input CreateEventInput {
   projectId: String!
 }
 
+input CreateIntegrationObjectMappingInput {
+  destinationObjectType: String!
+  enabled: Boolean
+  settings: JSON
+  sourceObjectType: String!
+}
+
 input CreateLocalizationInput {
   code: String!
   locale: String!
@@ -568,6 +575,23 @@ type IntegrationOAuth {
   updatedAt: DateTime!
 }
 
+type IntegrationObjectMapping {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  destinationObjectType: String!
+  enabled: Boolean!
+  id: ID!
+  integration: Integration
+  integrationId: String!
+  isSyncing: Boolean!
+  lastSyncedAt: DateTime
+  settings: JSON
+  sourceObjectType: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
 type Invite {
   code: String!
 
@@ -662,6 +686,7 @@ type Mutation {
   deleteContent(data: ContentIdInput!): Common!
   deleteEnvironments(data: DeleteEnvironmentInput!): Environment!
   deleteEvent(data: DeleteEventInput!): Events!
+  deleteIntegrationObjectMapping(id: String!): Boolean!
   deleteLocalization(data: DeleteLocalizationInput!): Localization!
   deleteSegment(data: DeleteSegment!): Common!
   deleteSession(sessionId: String!): Boolean!
@@ -689,12 +714,14 @@ type Mutation {
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
+  updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProjectName(name: String!, projectId: String!): Project!
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
+  upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
 }
 
 type OEmbed {
@@ -739,6 +766,8 @@ type Query {
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
   getIntegration(environmentId: String!, provider: String!): Integration!
+  getIntegrationObjectMapping(id: String!): IntegrationObjectMapping!
+  getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
@@ -992,6 +1021,11 @@ input UpdateIntegrationInput {
   config: JSON
   enabled: Boolean
   key: String
+}
+
+input UpdateIntegrationObjectMappingInput {
+  enabled: Boolean
+  settings: JSON
 }
 
 input UpdateLocalizationInput {

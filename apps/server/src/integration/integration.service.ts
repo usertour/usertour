@@ -1040,4 +1040,131 @@ export class IntegrationService {
       customObjects: customObjectsFields.filter(Boolean), // Remove null entries
     };
   }
+
+  /**
+   * Get all object mappings for an integration
+   * @param integrationId - The ID of the integration
+   * @returns List of object mappings
+   */
+  async getIntegrationObjectMappings(integrationId: string) {
+    return this.prisma.integrationObjectMapping.findMany({
+      where: {
+        integrationId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Get a specific object mapping by ID
+   * @param id - The ID of the object mapping
+   * @returns The object mapping if found
+   */
+  async getIntegrationObjectMapping(id: string) {
+    const mapping = await this.prisma.integrationObjectMapping.findUnique({
+      where: { id },
+      include: {
+        integration: true,
+      },
+    });
+
+    if (!mapping) {
+      throw new ParamsError('Object mapping not found');
+    }
+
+    return mapping;
+  }
+
+  /**
+   * Create or update an object mapping
+   * @param integrationId - The ID of the integration
+   * @param sourceObjectType - The source object type
+   * @param destinationObjectType - The destination object type
+   * @param settings - The mapping settings
+   * @param enabled - Whether the mapping is enabled
+   * @returns The created/updated object mapping
+   */
+  async upsertIntegrationObjectMapping(
+    integrationId: string,
+    sourceObjectType: string,
+    destinationObjectType: string,
+    settings: any,
+    enabled = false,
+  ) {
+    // Verify integration exists
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+    });
+
+    if (!integration) {
+      throw new ParamsError('Integration not found');
+    }
+
+    return this.prisma.integrationObjectMapping.upsert({
+      where: {
+        integrationId_sourceObjectType_destinationObjectType: {
+          integrationId,
+          sourceObjectType,
+          destinationObjectType,
+        },
+      },
+      create: {
+        integrationId,
+        sourceObjectType,
+        destinationObjectType,
+        settings,
+        enabled,
+      },
+      update: {
+        settings,
+        enabled,
+      },
+    });
+  }
+
+  /**
+   * Update an object mapping
+   * @param id - The ID of the object mapping
+   * @param settings - The mapping settings
+   * @param enabled - Whether the mapping is enabled
+   * @returns The updated object mapping
+   */
+  async updateIntegrationObjectMapping(id: string, settings?: any, enabled?: boolean) {
+    const mapping = await this.prisma.integrationObjectMapping.findUnique({
+      where: { id },
+    });
+
+    if (!mapping) {
+      throw new ParamsError('Object mapping not found');
+    }
+
+    const updateData: any = {};
+    if (settings !== undefined) updateData.settings = settings;
+    if (enabled !== undefined) updateData.enabled = enabled;
+
+    return this.prisma.integrationObjectMapping.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  /**
+   * Delete an object mapping
+   * @param id - The ID of the object mapping
+   */
+  async deleteIntegrationObjectMapping(id: string) {
+    const mapping = await this.prisma.integrationObjectMapping.findUnique({
+      where: { id },
+    });
+
+    if (!mapping) {
+      throw new ParamsError('Object mapping not found');
+    }
+
+    await this.prisma.integrationObjectMapping.delete({
+      where: { id },
+    });
+  }
 }

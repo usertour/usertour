@@ -688,6 +688,8 @@ model IntegrationObjectMapping {
   destinationObjectType String
   /// settings
   settings              Json?       @db.JsonB
+  /// enabled
+  enabled               Boolean     @default(false)
   /// is syncing
   isSyncing             Boolean     @default(false)
   /// last synced at

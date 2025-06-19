@@ -596,6 +596,7 @@ Table IntegrationObjectMapping {
   sourceObjectType String [not null, note: 'source object type (e.g., "account", "contact", "lead")']
   destinationObjectType String [not null, note: 'destination object type (e.g., "user", "company")']
   settings Json [note: 'settings']
+  enabled Boolean [not null, default: false, note: 'enabled']
   isSyncing Boolean [not null, default: false, note: 'is syncing']
   lastSyncedAt DateTime [note: 'last synced at']
   integration Integration [not null, note: 'integration']

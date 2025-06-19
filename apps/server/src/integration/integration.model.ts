@@ -104,3 +104,30 @@ export class Integration extends BaseModel {
   @Field(() => IntegrationOAuth, { nullable: true })
   integrationOAuth?: IntegrationOAuth;
 }
+
+@ObjectType()
+export class IntegrationObjectMapping extends BaseModel {
+  @Field()
+  sourceObjectType: string;
+
+  @Field()
+  destinationObjectType: string;
+
+  @Field()
+  enabled: boolean;
+
+  @Field()
+  isSyncing: boolean;
+
+  @Field(() => Date, { nullable: true })
+  lastSyncedAt?: Date;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  settings?: JsonValue;
+
+  @Field()
+  integrationId: string;
+
+  @Field(() => Integration, { nullable: true })
+  integration?: Integration;
+}
