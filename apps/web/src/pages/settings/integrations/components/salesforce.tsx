@@ -8,7 +8,6 @@ import {
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import { Label } from '@usertour-ui/label';
 import { integrations } from '@/utils/integration';
 import { Card } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
@@ -20,7 +19,8 @@ import {
   DisconnectIcon,
   SpinnerIcon,
   PlusIcon,
-  ArrowRightIcon,
+  SalesforceIcon,
+  UsertourIcon2,
 } from '@usertour-ui/icons';
 import {
   DropdownMenuContent,
@@ -39,36 +39,26 @@ import {
 } from '@usertour-ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { useNavigate } from 'react-router-dom';
+import { Switch } from '@usertour-ui/switch';
+import { XIcon, InfoIcon, ArrowRightIcon } from 'lucide-react';
+import { Label } from '@usertour-ui/label';
 
-const INTEGRATION_PROVIDER = 'salesforce' as const;
+const SalesforceMappingIcon = () => <SalesforceIcon className="w-4 h-4" />;
+const UsertourMappingIcon = () => <UsertourIcon2 className="w-4 h-4 text-primary" />;
 
-const MappingSetupButton = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+// Example field options (replace with your real data)
+const salesforceFields = [
+  { value: 'email', label: 'Email', icon: <SalesforceMappingIcon /> },
+  { value: 'title', label: 'Title', icon: <SalesforceMappingIcon /> },
+  { value: 'industry', label: 'Industry', icon: <SalesforceMappingIcon /> },
+];
+const usertourFields = [
+  { value: 'email', label: 'Email', icon: <UsertourMappingIcon /> },
+  { value: 'title', label: 'Title', icon: <UsertourMappingIcon /> },
+  { value: 'industry', label: 'Industry', icon: <UsertourMappingIcon /> },
+];
 
-  return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Card className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
-          <CardContent className="flex items-center justify-center p-6">
-            <div className="flex items-center gap-2">
-              <PlusIcon className="h-6 w-6" />
-              <span className="text-sm text-muted-foreground">
-                Set up a new mapping between Salesforce and Usertour objects
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </DialogTrigger>
-      <MappingSetupDialog onClose={() => setIsDialogOpen(false)} />
-    </Dialog>
-  );
-};
-
-interface MappingSetupDialogProps {
-  onClose: () => void;
-}
-
-const MappingSetupDialog = ({ onClose }: MappingSetupDialogProps) => {
+export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const { environment } = useAppContext();
   const { toast } = useToast();
   const [step, setStep] = useState<'objects' | 'fields'>('objects');
@@ -101,6 +91,7 @@ const MappingSetupDialog = ({ onClose }: MappingSetupDialogProps) => {
   const selectedSalesforceFields = selectedSalesforceObject
     ? objectFields?.standardObjects?.find((obj: any) => obj.name === salesforceObject)?.fields || []
     : [];
+  console.log(selectedSalesforceFields);
 
   const handleContinue = () => {
     if (!salesforceObject || !usertourObject) {
@@ -146,9 +137,55 @@ const MappingSetupDialog = ({ onClose }: MappingSetupDialogProps) => {
     setUsertourObject('');
     onClose();
   };
+  // Object match fields
+  const [matchLeft, setMatchLeft] = useState('email');
+  const [matchRight, setMatchRight] = useState('email');
+
+  // Field mappings state
+  const [sfToUsertour, setSfToUsertour] = useState([
+    { left: 'title', right: 'title', isNew: true },
+    { left: 'industry', right: 'industry', isNew: true },
+  ]);
+  const [usertourToSf, setUsertourToSf] = useState([{ left: 'nps', right: 'nps', isNew: true }]);
+
+  // Add row state
+  const [addLeft, setAddLeft] = useState('');
+  const [addRight, setAddRight] = useState('');
+  const [addLeft2, setAddLeft2] = useState('');
+  const [addRight2, setAddRight2] = useState('');
+
+  // Stream events switch
+  const [stream, setStream] = useState(false);
+
+  // Add mapping from Salesforce to Usertour
+  const addMapping = () => {
+    if (addLeft && addRight) {
+      setSfToUsertour([...sfToUsertour, { left: addLeft, right: addRight, isNew: true }]);
+      setAddLeft('');
+      setAddRight('');
+    }
+  };
+
+  // Add mapping from Usertour to Salesforce
+  const addMapping2 = () => {
+    if (addLeft2 && addRight2) {
+      setUsertourToSf([...usertourToSf, { left: addLeft2, right: addRight2, isNew: true }]);
+      setAddLeft2('');
+      setAddRight2('');
+    }
+  };
+
+  // Remove mapping row
+  const removeMapping = (idx: number, direction: string) => {
+    if (direction === 'sfToUsertour') {
+      setSfToUsertour(sfToUsertour.filter((_, i) => i !== idx));
+    } else {
+      setUsertourToSf(usertourToSf.filter((_, i) => i !== idx));
+    }
+  };
 
   return (
-    <DialogContent className="max-w-2xl">
+    <DialogContent className="max-w-3xl">
       <DialogHeader>
         <DialogTitle>
           {step === 'objects' ? 'Select Objects' : 'Configure Field Mapping'}
@@ -224,50 +261,324 @@ const MappingSetupDialog = ({ onClose }: MappingSetupDialogProps) => {
         </>
       ) : (
         <>
-          <div className="py-4">
-            <div className="mb-4 p-3 bg-muted rounded-lg">
-              <div className="text-sm font-medium">
-                {selectedSalesforceObject?.label} →{' '}
-                {usertourObjects.find((obj) => obj.name === usertourObject)?.label}
+          <div>
+            {/* Object match row */}
+            <div className="flex items-center gap-2 mb-6">
+              <span className="font-semibold flex items-center gap-1">
+                <SalesforceMappingIcon /> Contact
+              </span>
+              <span className="mx-2 text-xl">↔</span>
+              <span className="font-semibold flex items-center gap-1">
+                <UsertourMappingIcon /> User
+              </span>
+            </div>
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-medium">Match objects by</span>
+                <InfoIcon className="w-4 h-4 text-muted-foreground" />
               </div>
-              <div className="text-xs text-muted-foreground">Standard Object</div>
+              <div className="flex items-center gap-2">
+                <Select value={matchLeft} onValueChange={setMatchLeft}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select field" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesforceFields.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-row items-center gap-2">
+                          {opt.icon} <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="mx-2 text-lg">=</span>
+                <Select value={matchRight} onValueChange={setMatchRight}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select field" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usertourFields.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-row items-center gap-2">
+                          {opt.icon} <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Available Fields</Label>
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {selectedSalesforceFields.map((field: any) => (
-                  <div
-                    key={field.name}
-                    className="flex items-center justify-between p-2 border rounded"
+            {/* Fields to sync from Salesforce to Usertour */}
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-medium">Fields to sync from Salesforce to Usertour</span>
+                <InfoIcon className="w-4 h-4 text-muted-foreground" />
+              </div>
+              {sfToUsertour.map((m, idx) => (
+                <div key={idx} className="flex items-center gap-2 py-1">
+                  <Select
+                    value={m.left}
+                    onValueChange={(v) => {
+                      const arr = [...sfToUsertour];
+                      arr[idx].left = v;
+                      setSfToUsertour(arr);
+                    }}
                   >
-                    <div>
-                      <div className="text-sm font-medium">{field.label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {field.name} ({field.type})
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {field.required ? 'Required' : 'Optional'}
-                    </div>
-                  </div>
-                ))}
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salesforceFields.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex flex-row items-center gap-2">
+                            {opt.icon} <span>{opt.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="mx-2 text-xl text-muted-foreground">→</span>
+                  <Select
+                    value={m.right}
+                    onValueChange={(v) => {
+                      const arr = [...sfToUsertour];
+                      arr[idx].right = v;
+                      setSfToUsertour(arr);
+                    }}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {usertourFields.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex flex-row items-center gap-2">
+                            {opt.icon} <span>{opt.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {m.isNew && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
+                      New
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeMapping(idx, 'sfToUsertour')}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              {/* Add new mapping row */}
+              <div className="flex items-center gap-2 py-1">
+                <Select value={addLeft} onValueChange={setAddLeft}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select a field to sync" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesforceFields.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-row items-center gap-2">
+                          {opt.icon} <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="mx-2 text-xl text-muted-foreground">→</span>
+                <Select value={addRight} onValueChange={setAddRight}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usertourFields.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-row items-center gap-2">
+                          {opt.icon} <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-2"
+                  disabled={!addLeft || !addRight}
+                  onClick={addMapping}
+                >
+                  Add
+                </Button>
               </div>
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
-              Back
-            </Button>
-            <Button onClick={handleCreateMapping} disabled={isLoading}>
-              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              Create Mapping
-            </Button>
-          </DialogFooter>
+            {/* Fields to sync from Usertour to Salesforce */}
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-medium">Fields to sync from Usertour to Salesforce</span>
+                <InfoIcon className="w-4 h-4 text-muted-foreground" />
+              </div>
+              {usertourToSf.map((m, idx) => (
+                <div key={idx} className="flex items-center gap-2 py-1">
+                  <Select
+                    value={m.left}
+                    onValueChange={(v) => {
+                      const arr = [...usertourToSf];
+                      arr[idx].left = v;
+                      setUsertourToSf(arr);
+                    }}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {usertourFields.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex flex-row items-center gap-2">
+                            {opt.icon} <span>{opt.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="mx-2 text-xl text-muted-foreground">→</span>
+                  <Select
+                    value={m.right}
+                    onValueChange={(v) => {
+                      const arr = [...usertourToSf];
+                      arr[idx].right = v;
+                      setUsertourToSf(arr);
+                    }}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salesforceFields.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex flex-row items-center gap-2">
+                            {opt.icon} <span>{opt.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {m.isNew && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
+                      New
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeMapping(idx, 'usertourToSf')}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              {/* Add new mapping row */}
+              <div className="flex items-center gap-2 py-1">
+                <Select value={addLeft2} onValueChange={setAddLeft2}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select a field to sync" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usertourFields.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-row items-center gap-2">
+                          {opt.icon} <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="mx-2 text-xl text-muted-foreground">→</span>
+                <Select value={addRight2} onValueChange={setAddRight2}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesforceFields.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-row items-center gap-2">
+                          {opt.icon} <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-2"
+                  disabled={!addLeft2 || !addRight2}
+                  onClick={addMapping2}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Stream events switch */}
+            <div className="flex items-center gap-3 mb-4">
+              <Switch checked={stream} onCheckedChange={setStream} />
+              <span>
+                Stream <span className="font-semibold text-primary">User events</span>
+                <span className="mx-1">→</span>
+                <span className="font-semibold text-blue-500">Contact activity</span>
+              </span>
+              <InfoIcon className="w-4 h-4 text-muted-foreground" />
+            </div>
+
+            {/* Info and actions */}
+            {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <InfoIcon className="w-4 h-4" />
+          Changes will take effect and start syncing immediately after saving.
+        </div> */}
+            <DialogFooter>
+              <Button variant="outline" onClick={handleBack} disabled={isLoading}>
+                Back
+              </Button>
+              <Button onClick={handleCreateMapping} disabled={isLoading}>
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+                Save mapping
+              </Button>
+            </DialogFooter>
+          </div>
         </>
       )}
     </DialogContent>
+  );
+}
+
+const INTEGRATION_PROVIDER = 'salesforce' as const;
+
+const MappingSetupButton = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Card className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
+          <CardContent className="flex items-center justify-center p-6">
+            <div className="flex items-center gap-2">
+              <PlusIcon className="h-6 w-6" />
+              <span className="text-sm text-muted-foreground">
+                Set up a new mapping between Salesforce and Usertour objects
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+      <MappingSetupDialog onClose={() => setIsDialogOpen(false)} />
+    </Dialog>
   );
 };
 
