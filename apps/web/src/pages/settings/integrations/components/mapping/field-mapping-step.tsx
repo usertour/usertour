@@ -1,112 +1,157 @@
 import { Button } from '@usertour-ui/button';
 import { InfoIcon } from 'lucide-react';
-import { SpinnerIcon, EqualIcon, ArrowRightIcon } from '@usertour-ui/icons';
+import { SpinnerIcon, EqualIcon, ArrowRightIcon, UsertourIcon2 } from '@usertour-ui/icons';
 import { Switch } from '@usertour-ui/switch';
 import { DialogFooter } from '@usertour-ui/dialog';
 import { CustomSelect } from './custom-select';
 import { MappingRow } from './mapping-row';
 import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 import { Attribute, BizAttributeTypes } from '@usertour-ui/types';
+import { useState } from 'react';
+import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
+import { cn } from '@usertour-ui/ui-utils';
 
 interface FieldMappingStepProps {
   selectedBizType: number;
   projectId: string;
-  // Match fields
-  matchLeft: string;
-  matchRight: string;
-  onMatchLeftChange: (value: string) => void;
-  onMatchRightChange: (value: string) => void;
-  // Mappings
-  sfToUsertour: Array<{ left: string; right: string; isNew?: boolean }>;
-  usertourToSf: Array<{ left: string; right: string; isNew?: boolean }>;
-  onSfToUsertourChange: (mappings: Array<{ left: string; right: string; isNew?: boolean }>) => void;
-  onUsertourToSfChange: (mappings: Array<{ left: string; right: string; isNew?: boolean }>) => void;
-  // Add mappings
-  addLeft: string;
-  addRight: string;
-  addLeft2: string;
-  addRight2: string;
-  onAddLeftChange: (value: string) => void;
-  onAddRightChange: (value: string) => void;
-  onAddLeft2Change: (value: string) => void;
-  onAddRight2Change: (value: string) => void;
-  onAddMapping: () => void;
-  onAddMapping2: () => void;
-  // Stream events
-  stream: boolean;
-  onStreamChange: (value: boolean) => void;
+  // Fields
+  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   // Actions
   onBack: () => void;
-  onSave: () => void;
+  onSave: (mappingData: MappingData) => void;
   isLoading: boolean;
-  // Fields
-  dynamicSalesforceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  usertourFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  // Attribute creation
-  showCreateAttributeForm: boolean;
-  onShowCreateAttributeFormChange: (show: boolean) => void;
-  onAfterCreate: (attribute: Partial<Attribute>) => void;
 }
+
+interface MappingData {
+  matchFields: { left: string; right: string };
+  sourceToTarget: Array<{ left: string; right: string; isNew?: boolean }>;
+  targetToSource: Array<{ left: string; right: string; isNew?: boolean }>;
+  stream: boolean;
+}
+
+const UsertourMappingIcon = ({ className }: { className?: string }) => (
+  <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
+);
 
 export const FieldMappingStep = ({
   selectedBizType,
   projectId,
-  matchLeft,
-  matchRight,
-  onMatchLeftChange,
-  onMatchRightChange,
-  sfToUsertour,
-  usertourToSf,
-  onSfToUsertourChange,
-  onUsertourToSfChange,
-  addLeft,
-  addRight,
-  addLeft2,
-  addRight2,
-  onAddLeftChange,
-  onAddRightChange,
-  onAddLeft2Change,
-  onAddRight2Change,
-  onAddMapping,
-  onAddMapping2,
-  stream,
-  onStreamChange,
+  sourceFields,
   onBack,
   onSave,
   isLoading,
-  dynamicSalesforceFields,
-  usertourFields,
-  showCreateAttributeForm,
-  onShowCreateAttributeFormChange,
-  onAfterCreate,
 }: FieldMappingStepProps) => {
+  // Internal state management
+  const [matchLeft, setMatchLeft] = useState('email');
+  const [matchRight, setMatchRight] = useState('email');
+  const { attributes, refetch } = useListAttributesQuery(projectId, selectedBizType);
+
+  // Dynamic usertour fields based on selected object type and available attributes
+  const usertourFields = [
+    ...(attributes
+      ?.filter((attr) => !attr.predefined)
+      .map((attr) => ({
+        value: attr.codeName,
+        label: attr.displayName,
+        icon: <UsertourMappingIcon />,
+      })) || []),
+  ];
+
+  const [sourceToTarget, setSourceToTarget] = useState<
+    Array<{ left: string; right: string; isNew?: boolean }>
+  >([
+    { left: 'title', right: 'title', isNew: true },
+    { left: 'industry', right: 'industry', isNew: true },
+  ]);
+
+  const [targetToSource, setTargetToSource] = useState<
+    Array<{ left: string; right: string; isNew?: boolean }>
+  >([{ left: 'nps', right: 'nps', isNew: true }]);
+
+  // Add row state
+  const [addLeft, setAddLeft] = useState('');
+  const [addRight, setAddRight] = useState('');
+  const [addLeft2, setAddLeft2] = useState('');
+  const [addRight2, setAddRight2] = useState('');
+
+  // Stream events switch
+  const [stream, setStream] = useState(false);
+
+  // Attribute creation
+  const [showCreateAttributeForm, setShowCreateAttributeForm] = useState(false);
+
   const handleCreateAttribute = () => {
-    onShowCreateAttributeFormChange(true);
+    setShowCreateAttributeForm(true);
   };
 
-  const removeMapping = (idx: number, direction: 'sfToUsertour' | 'usertourToSf') => {
-    if (direction === 'sfToUsertour') {
-      onSfToUsertourChange(sfToUsertour.filter((_, i) => i !== idx));
+  const handleAfterCreate = async (attribute: Partial<Attribute>) => {
+    setShowCreateAttributeForm(false);
+    await refetch();
+    if (attribute.codeName) {
+      // Set the newly created attribute as selected in the match field
+      if (matchRight === '') {
+        setMatchRight(attribute.codeName);
+      } else {
+        // Add to the appropriate mapping array
+        setSourceToTarget([
+          ...sourceToTarget,
+          { left: '', right: attribute.codeName, isNew: true },
+        ]);
+      }
+    }
+  };
+
+  const removeMapping = (idx: number, direction: 'sourceToTarget' | 'targetToSource') => {
+    if (direction === 'sourceToTarget') {
+      setSourceToTarget(sourceToTarget.filter((_, i) => i !== idx));
     } else {
-      onUsertourToSfChange(usertourToSf.filter((_, i) => i !== idx));
+      setTargetToSource(targetToSource.filter((_, i) => i !== idx));
     }
   };
 
   const updateMapping = (
     idx: number,
-    direction: 'sfToUsertour' | 'usertourToSf',
+    direction: 'sourceToTarget' | 'targetToSource',
     left: string,
     right: string,
   ) => {
-    if (direction === 'sfToUsertour') {
-      const arr = [...sfToUsertour];
+    if (direction === 'sourceToTarget') {
+      const arr = [...sourceToTarget];
       arr[idx] = { ...arr[idx], left, right };
-      onSfToUsertourChange(arr);
+      setSourceToTarget(arr);
     } else {
-      const arr = [...usertourToSf];
+      const arr = [...targetToSource];
       arr[idx] = { ...arr[idx], left, right };
-      onUsertourToSfChange(arr);
+      setTargetToSource(arr);
     }
+  };
+
+  // Add mapping from source to target
+  const addMapping = () => {
+    if (addLeft && addRight) {
+      setSourceToTarget([...sourceToTarget, { left: addLeft, right: addRight, isNew: true }]);
+      setAddLeft('');
+      setAddRight('');
+    }
+  };
+
+  // Add mapping from target to source
+  const addMapping2 = () => {
+    if (addLeft2 && addRight2) {
+      setTargetToSource([...targetToSource, { left: addLeft2, right: addRight2, isNew: true }]);
+      setAddLeft2('');
+      setAddRight2('');
+    }
+  };
+
+  const handleSave = () => {
+    const mappingData: MappingData = {
+      matchFields: { left: matchLeft, right: matchRight },
+      sourceToTarget,
+      targetToSource,
+      stream,
+    };
+    onSave(mappingData);
   };
 
   return (
@@ -119,16 +164,16 @@ export const FieldMappingStep = ({
         </div>
         <div className="flex items-center gap-2">
           <CustomSelect
-            items={dynamicSalesforceFields}
+            items={sourceFields}
             value={matchLeft}
-            onValueChange={onMatchLeftChange}
+            onValueChange={setMatchLeft}
             placeholder="Select field"
           />
           <EqualIcon className="w-4 h-4" />
           <CustomSelect
             items={usertourFields}
             value={matchRight}
-            onValueChange={onMatchRightChange}
+            onValueChange={setMatchRight}
             placeholder="Select field"
             showCreateAttribute={true}
             onCreateAttribute={handleCreateAttribute}
@@ -136,20 +181,20 @@ export const FieldMappingStep = ({
         </div>
       </div>
 
-      {/* Fields to sync from Salesforce to Usertour */}
+      {/* Fields to sync from source to target */}
       <div className="bg-muted/50 rounded-lg p-4 mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-medium">Fields to sync from Salesforce to Usertour</span>
+          <span className="font-medium">Fields to sync from source to target</span>
           <InfoIcon className="w-4 h-4 text-muted-foreground" />
         </div>
-        {sfToUsertour.map((mapping, idx) => (
+        {sourceToTarget.map((mapping, idx) => (
           <MappingRow
             key={idx}
             mapping={mapping}
-            onMappingChange={(left, right) => updateMapping(idx, 'sfToUsertour', left, right)}
-            onRemove={() => removeMapping(idx, 'sfToUsertour')}
-            salesforceFields={dynamicSalesforceFields}
-            usertourFields={usertourFields}
+            onMappingChange={(left, right) => updateMapping(idx, 'sourceToTarget', left, right)}
+            onRemove={() => removeMapping(idx, 'sourceToTarget')}
+            sourceFields={sourceFields}
+            targetFields={usertourFields}
             showCreateAttribute={true}
             onCreateAttribute={handleCreateAttribute}
           />
@@ -157,16 +202,16 @@ export const FieldMappingStep = ({
         {/* Add new mapping row */}
         <div className="flex items-center gap-2 py-1">
           <CustomSelect
-            items={dynamicSalesforceFields}
+            items={sourceFields}
             value={addLeft}
-            onValueChange={onAddLeftChange}
+            onValueChange={setAddLeft}
             placeholder="Select a field to sync"
           />
           <ArrowRightIcon className="w-4 h-4" />
           <CustomSelect
             items={usertourFields}
             value={addRight}
-            onValueChange={onAddRightChange}
+            onValueChange={setAddRight}
             placeholder="..."
             showCreateAttribute={true}
             onCreateAttribute={handleCreateAttribute}
@@ -176,27 +221,27 @@ export const FieldMappingStep = ({
             size="sm"
             className="ml-2"
             disabled={!addLeft || !addRight}
-            onClick={onAddMapping}
+            onClick={addMapping}
           >
             Add
           </Button>
         </div>
       </div>
 
-      {/* Fields to sync from Usertour to Salesforce */}
+      {/* Fields to sync from target to source */}
       <div className="bg-muted/50 rounded-lg p-4 mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-medium">Fields to sync from Usertour to Salesforce</span>
+          <span className="font-medium">Fields to sync from target to source</span>
           <InfoIcon className="w-4 h-4 text-muted-foreground" />
         </div>
-        {usertourToSf.map((mapping, idx) => (
+        {targetToSource.map((mapping, idx) => (
           <MappingRow
             key={idx}
             mapping={mapping}
-            onMappingChange={(left, right) => updateMapping(idx, 'usertourToSf', left, right)}
-            onRemove={() => removeMapping(idx, 'usertourToSf')}
-            salesforceFields={dynamicSalesforceFields}
-            usertourFields={usertourFields}
+            onMappingChange={(left, right) => updateMapping(idx, 'targetToSource', left, right)}
+            onRemove={() => removeMapping(idx, 'targetToSource')}
+            sourceFields={sourceFields}
+            targetFields={usertourFields}
             showCreateAttribute={true}
             onCreateAttribute={handleCreateAttribute}
           />
@@ -206,16 +251,16 @@ export const FieldMappingStep = ({
           <CustomSelect
             items={usertourFields}
             value={addLeft2}
-            onValueChange={onAddLeft2Change}
+            onValueChange={setAddLeft2}
             placeholder="Select a field to sync"
             showCreateAttribute={true}
             onCreateAttribute={handleCreateAttribute}
           />
           <ArrowRightIcon className="w-4 h-4" />
           <CustomSelect
-            items={dynamicSalesforceFields}
+            items={sourceFields}
             value={addRight2}
-            onValueChange={onAddRight2Change}
+            onValueChange={setAddRight2}
             placeholder="..."
           />
           <Button
@@ -223,7 +268,7 @@ export const FieldMappingStep = ({
             size="sm"
             className="ml-2"
             disabled={!addLeft2 || !addRight2}
-            onClick={onAddMapping2}
+            onClick={addMapping2}
           >
             Add
           </Button>
@@ -232,7 +277,7 @@ export const FieldMappingStep = ({
 
       {/* Stream events switch */}
       <div className="flex items-center gap-3 mb-4">
-        <Switch checked={stream} onCheckedChange={onStreamChange} />
+        <Switch checked={stream} onCheckedChange={setStream} />
         <span>
           Stream <span className="font-semibold text-primary">User events</span>
           <span className="mx-1">→</span>
@@ -245,7 +290,7 @@ export const FieldMappingStep = ({
         <Button variant="outline" onClick={onBack} disabled={isLoading}>
           Back
         </Button>
-        <Button onClick={onSave} disabled={isLoading}>
+        <Button onClick={handleSave} disabled={isLoading}>
           {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
           Save mapping
         </Button>
@@ -253,8 +298,8 @@ export const FieldMappingStep = ({
 
       {/* Attribute Create Form */}
       <AttributeCreateForm
-        onOpenChange={onShowCreateAttributeFormChange}
-        onSuccess={onAfterCreate}
+        onOpenChange={setShowCreateAttributeForm}
+        onSuccess={handleAfterCreate}
         isOpen={showCreateAttributeForm}
         projectId={projectId}
         zIndex={1000}

@@ -11,8 +11,8 @@ interface MappingRowProps {
   };
   onMappingChange: (left: string, right: string) => void;
   onRemove: () => void;
-  salesforceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  usertourFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   showCreateAttribute?: boolean;
   onCreateAttribute?: () => void;
 }
@@ -21,22 +21,22 @@ export const MappingRow = ({
   mapping,
   onMappingChange,
   onRemove,
-  salesforceFields,
-  usertourFields,
+  sourceFields,
+  targetFields,
   showCreateAttribute = false,
   onCreateAttribute,
 }: MappingRowProps) => {
   return (
     <div className="flex items-center gap-2 py-1">
       <CustomSelect
-        items={salesforceFields}
+        items={sourceFields}
         value={mapping.left}
         onValueChange={(value) => onMappingChange(value, mapping.right)}
         placeholder="Select field"
       />
       <ArrowRightIcon className="w-4 h-4" />
       <CustomSelect
-        items={usertourFields}
+        items={targetFields}
         value={mapping.right}
         onValueChange={(value) => onMappingChange(mapping.left, value)}
         placeholder="Select field"

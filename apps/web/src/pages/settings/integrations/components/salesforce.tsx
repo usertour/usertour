@@ -5,7 +5,6 @@ import {
   useGetSalesforceAuthUrlQuery,
   useDisconnectIntegrationMutation,
   useGetSalesforceObjectFieldsQuery,
-  useListAttributesQuery,
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
@@ -40,7 +39,7 @@ import {
 } from '@usertour-ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
-import { Attribute, AttributeBizTypes } from '@usertour-ui/types';
+import { AttributeBizTypes } from '@usertour-ui/types';
 import { ObjectSelectionStep } from './mapping/object-selection-step';
 import { FieldMappingStep } from './mapping/field-mapping-step';
 
@@ -59,31 +58,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const [salesforceObject, setSalesforceObject] = useState<string>('');
   const [usertourObject, setUsertourObject] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showCreateAttributeForm, setShowCreateAttributeForm] = useState(false);
-
-  // Object match fields
-  const [matchLeft, setMatchLeft] = useState('email');
-  const [matchRight, setMatchRight] = useState('email');
-
-  // Field mappings state
-  const [sfToUsertour, setSfToUsertour] = useState<
-    Array<{ left: string; right: string; isNew?: boolean }>
-  >([
-    { left: 'title', right: 'title', isNew: true },
-    { left: 'industry', right: 'industry', isNew: true },
-  ]);
-  const [usertourToSf, setUsertourToSf] = useState<
-    Array<{ left: string; right: string; isNew?: boolean }>
-  >([{ left: 'nps', right: 'nps', isNew: true }]);
-
-  // Add row state
-  const [addLeft, setAddLeft] = useState('');
-  const [addRight, setAddRight] = useState('');
-  const [addLeft2, setAddLeft2] = useState('');
-  const [addRight2, setAddRight2] = useState('');
-
-  // Stream events switch
-  const [stream, setStream] = useState(false);
 
   // Get the integration ID from the current integration
   const { data: integration } = useGetIntegrationQuery(environment?.id || '', 'salesforce', {
@@ -101,18 +75,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
       : usertourObject === 'Company'
         ? AttributeBizTypes.Company
         : AttributeBizTypes.User; // Default to User when no object selected
-  const { attributes, refetch } = useListAttributesQuery(project?.id || '', selectedBizType);
-
-  // Dynamic usertour fields based on selected object type and available attributes
-  const usertourFields = [
-    ...(attributes
-      ?.filter((attr) => !attr.predefined)
-      .map((attr) => ({
-        value: attr.codeName,
-        label: attr.displayName,
-        icon: <UsertourMappingIcon />,
-      })) || []),
-  ];
 
   const selectedSalesforceObject = salesforceObject ? { name: salesforceObject } : null;
   const selectedSalesforceFields = selectedSalesforceObject
@@ -125,30 +87,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     label: field.label || field.name,
     icon: <SalesforceMappingIcon />,
   }));
-
-  // Handle after attribute creation
-  const handleAfterCreate = useCallback(
-    async (attribute: Partial<Attribute>) => {
-      setShowCreateAttributeForm(false);
-      await refetch();
-      if (attribute.codeName) {
-        // Set the newly created attribute as selected
-        if (step === 'fields') {
-          // Update the appropriate field mapping
-          if (matchRight === '') {
-            setMatchRight(attribute.codeName);
-          } else {
-            // Add to the appropriate mapping array
-            setSfToUsertour([
-              ...sfToUsertour,
-              { left: '', right: attribute.codeName, isNew: true },
-            ]);
-          }
-        }
-      }
-    },
-    [refetch, step, matchRight, sfToUsertour],
-  );
 
   const handleContinue = () => {
     if (!salesforceObject || !usertourObject) {
@@ -166,11 +104,15 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     setStep('objects');
   };
 
-  const handleCreateMapping = async () => {
+  const handleCreateMapping = async (mappingData: any) => {
     try {
       setIsLoading(true);
       // TODO: Implement mapping creation using the new hooks
-      console.log('Creating mapping:', { salesforceObject, usertourObject });
+      console.log('Creating mapping:', {
+        salesforceObject,
+        usertourObject,
+        mappingData,
+      });
 
       toast({
         title: 'Success',
@@ -193,24 +135,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     setSalesforceObject('');
     setUsertourObject('');
     onClose();
-  };
-
-  // Add mapping from Salesforce to Usertour
-  const addMapping = () => {
-    if (addLeft && addRight) {
-      setSfToUsertour([...sfToUsertour, { left: addLeft, right: addRight, isNew: true }]);
-      setAddLeft('');
-      setAddRight('');
-    }
-  };
-
-  // Add mapping from Usertour to Salesforce
-  const addMapping2 = () => {
-    if (addLeft2 && addRight2) {
-      setUsertourToSf([...usertourToSf, { left: addLeft2, right: addRight2, isNew: true }]);
-      setAddLeft2('');
-      setAddRight2('');
-    }
   };
 
   return (
@@ -250,34 +174,10 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
         <FieldMappingStep
           selectedBizType={selectedBizType}
           projectId={project?.id || ''}
-          matchLeft={matchLeft}
-          matchRight={matchRight}
-          onMatchLeftChange={setMatchLeft}
-          onMatchRightChange={setMatchRight}
-          sfToUsertour={sfToUsertour}
-          usertourToSf={usertourToSf}
-          onSfToUsertourChange={setSfToUsertour}
-          onUsertourToSfChange={setUsertourToSf}
-          addLeft={addLeft}
-          addRight={addRight}
-          addLeft2={addLeft2}
-          addRight2={addRight2}
-          onAddLeftChange={setAddLeft}
-          onAddRightChange={setAddRight}
-          onAddLeft2Change={setAddLeft2}
-          onAddRight2Change={setAddRight2}
-          onAddMapping={addMapping}
-          onAddMapping2={addMapping2}
-          stream={stream}
-          onStreamChange={setStream}
           onBack={handleBack}
           onSave={handleCreateMapping}
           isLoading={isLoading}
-          dynamicSalesforceFields={dynamicSalesforceFields}
-          usertourFields={usertourFields}
-          showCreateAttributeForm={showCreateAttributeForm}
-          onShowCreateAttributeFormChange={setShowCreateAttributeForm}
-          onAfterCreate={handleAfterCreate}
+          sourceFields={dynamicSalesforceFields}
         />
       )}
     </DialogContent>
