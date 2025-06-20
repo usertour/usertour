@@ -134,7 +134,7 @@ export function ObjectMappingDialog({
 }: ObjectMappingDialogProps) {
   const { project } = useAppContext();
   const { toast } = useToast();
-  const [step, setStep] = useState<'objects' | 'fields'>('objects');
+  const [step, setStep] = useState<'objects' | 'fields'>(mode === 'edit' ? 'fields' : 'objects');
   const [salesforceObject, setSalesforceObject] = useState<string>(
     initialMapping?.sourceObjectType || '',
   );
@@ -245,7 +245,7 @@ export function ObjectMappingDialog({
   ]);
 
   const handleClose = () => {
-    setStep('objects');
+    setStep(mode === 'edit' ? 'fields' : 'objects');
     setSalesforceObject(initialMapping?.sourceObjectType || '');
     setUsertourObject(initialMapping?.destinationObjectType || '');
     setMappingData(initialMapping?.settings || undefined);
@@ -278,6 +278,7 @@ export function ObjectMappingDialog({
               (mode === 'edit'
                 ? 'Modify the mapping between Salesforce and Usertour objects.'
                 : 'Choose which Salesforce object to map to which Usertour object.')}
+            {step !== 'objects' && mode === 'edit' && 'Modify the field mappings and settings.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -315,9 +316,11 @@ export function ObjectMappingDialog({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={handleBack} disabled={isSaving}>
-                Back
-              </Button>
+              {mode === 'create' && (
+                <Button variant="outline" onClick={handleBack} disabled={isSaving}>
+                  Back
+                </Button>
+              )}
               <Button onClick={handleSaveMapping} disabled={isSaving || !mappingData}>
                 {isSaving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === 'edit' ? 'Update mapping' : 'Save mapping'}
