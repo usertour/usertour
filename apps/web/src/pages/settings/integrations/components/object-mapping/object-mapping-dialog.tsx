@@ -306,7 +306,11 @@ export function ObjectMappingDialog({
 
             {/* Stream events switch - business specific */}
             <div className="flex items-center gap-3 mb-4">
-              <Switch checked={isSyncStream} onCheckedChange={setIsSyncStream} />
+              <Switch
+                className="data-[state=unchecked]:bg-input"
+                checked={isSyncStream}
+                onCheckedChange={setIsSyncStream}
+              />
               <span>
                 Stream <span className="font-semibold text-primary">User events</span>
                 <span className="mx-1">→</span>
