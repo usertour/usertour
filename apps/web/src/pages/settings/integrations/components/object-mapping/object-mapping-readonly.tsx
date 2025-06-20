@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 import { Badge } from '@usertour-ui/badge';
-import { InfoIcon } from 'lucide-react';
 import {
   ArrowRightIcon,
   EqualIcon,
@@ -201,7 +200,6 @@ export const ObjectMappingReadonly = ({
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-medium">Match objects by</span>
-                <InfoIcon className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex items-center gap-2">
                 <ObjectMappingReadonlyButton
@@ -222,7 +220,6 @@ export const ObjectMappingReadonly = ({
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-medium">Fields to sync from source to target</span>
-                <InfoIcon className="w-4 h-4 text-muted-foreground" />
               </div>
               {sourceToTarget.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1">
@@ -245,7 +242,6 @@ export const ObjectMappingReadonly = ({
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-medium">Fields to sync from target to source</span>
-                <InfoIcon className="w-4 h-4 text-muted-foreground" />
               </div>
               {targetToSource.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1">
