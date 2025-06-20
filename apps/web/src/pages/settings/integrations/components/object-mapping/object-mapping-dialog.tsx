@@ -141,7 +141,7 @@ export function ObjectMappingDialog({
   const [usertourObject, setUsertourObject] = useState<string>(
     initialMapping?.destinationObjectType || '',
   );
-  const [stream, setStream] = useState(initialMapping?.settings?.isSyncStream || false);
+  const [isSyncStream, setIsSyncStream] = useState(initialMapping?.settings?.isSyncStream || false);
   const [mappingData, setMappingData] = useState<IntegrationObjectMappingSettings | undefined>(
     initialMapping?.settings || undefined,
   );
@@ -211,7 +211,7 @@ export function ObjectMappingDialog({
         destinationObjectType: usertourObject,
         settings: {
           ...mappingData,
-          stream,
+          isSyncStream,
         },
         enabled: true,
       });
@@ -237,7 +237,7 @@ export function ObjectMappingDialog({
     mappingData,
     salesforceObject,
     usertourObject,
-    stream,
+    isSyncStream,
     upsertMapping,
     toast,
     onSuccess,
@@ -249,7 +249,7 @@ export function ObjectMappingDialog({
     setSalesforceObject(initialMapping?.sourceObjectType || '');
     setUsertourObject(initialMapping?.destinationObjectType || '');
     setMappingData(initialMapping?.settings || undefined);
-    setStream(initialMapping?.settings?.isSyncStream || false);
+    setIsSyncStream(initialMapping?.settings?.isSyncStream || false);
     onOpenChange(false);
     onClose?.();
   };
@@ -305,7 +305,7 @@ export function ObjectMappingDialog({
 
             {/* Stream events switch - business specific */}
             <div className="flex items-center gap-3 mb-4">
-              <Switch checked={stream} onCheckedChange={setStream} />
+              <Switch checked={isSyncStream} onCheckedChange={setIsSyncStream} />
               <span>
                 Stream <span className="font-semibold text-primary">User events</span>
                 <span className="mx-1">→</span>

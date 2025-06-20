@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import { Badge } from '@usertour-ui/badge';
 import {
   ArrowRightIcon,
   EqualIcon,
@@ -38,6 +37,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
 import { ObjectMappingDialog } from './object-mapping-dialog';
+import { Switch } from '@usertour-ui/switch';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
@@ -86,7 +86,7 @@ export const ObjectMappingReadonly = ({
   const matchObjects = settings?.matchObjects;
   const sourceToTarget = settings?.sourceToTarget || [];
   const targetToSource = settings?.targetToSource || [];
-  const stream = settings?.isSyncStream || false;
+  const isSyncStream = settings?.isSyncStream || false;
 
   const handleDelete = async () => {
     try {
@@ -258,16 +258,14 @@ export const ObjectMappingReadonly = ({
               ))}
             </div>
           )}
-
-          {/* Stream events */}
-          {stream && (
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-green-600">
-                Stream enabled
-              </Badge>
-              <span className="text-sm text-muted-foreground">User events → Contact activity</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3 mb-4">
+            <Switch checked={isSyncStream} disabled />
+            <span>
+              Stream <span className="font-semibold text-primary">User events</span>
+              <span className="mx-1">→</span>
+              <span className="font-semibold text-blue-500">Contact activity</span>
+            </span>
+          </div>
         </CardContent>
       </Card>
 
