@@ -5,6 +5,7 @@ import {
   useGetSalesforceAuthUrlQuery,
   useDisconnectIntegrationMutation,
   useGetSalesforceObjectFieldsQuery,
+  useListAttributesQuery,
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
@@ -54,6 +55,8 @@ import {
 } from '@usertour-ui/command';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { cn } from '@usertour-ui/ui-utils';
+import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
+import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (
   <SalesforceIcon className={cn('w-4 h-4', className)} />
@@ -63,19 +66,14 @@ const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
 );
 
-// Example field options (replace with your real data)
-const usertourFields = [
-  { value: 'email', label: 'Email', icon: <UsertourMappingIcon /> },
-  { value: 'title', label: 'Title', icon: <UsertourMappingIcon /> },
-  { value: 'industry', label: 'Industry', icon: <UsertourMappingIcon /> },
-];
-
 interface CustomSelectProps {
   items: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   value: string;
   onValueChange: (value: string) => void;
   placeholder: string;
   className?: string;
+  showCreateAttribute?: boolean;
+  onCreateAttribute?: () => void;
 }
 
 interface CustomObjectSelectProps {
@@ -86,12 +84,25 @@ interface CustomObjectSelectProps {
   className?: string;
 }
 
-function CustomSelect({ items, value, onValueChange, placeholder, className }: CustomSelectProps) {
+function CustomSelect({
+  items,
+  value,
+  onValueChange,
+  placeholder,
+  className,
+  showCreateAttribute = false,
+  onCreateAttribute,
+}: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const selectedItem = items.find((item) => item.value === value);
 
   const handleSelect = (selectedValue: string) => {
     onValueChange(selectedValue);
+    setOpen(false);
+  };
+
+  const handleCreateAttribute = () => {
+    onCreateAttribute?.();
     setOpen(false);
   };
 
@@ -138,6 +149,14 @@ function CustomSelect({ items, value, onValueChange, placeholder, className }: C
                   />
                 </CommandItem>
               ))}
+              {showCreateAttribute && (
+                <CommandItem onSelect={handleCreateAttribute}>
+                  <div className="flex items-center gap-2">
+                    <PlusIcon className="w-4 h-4" />
+                    <span>Create new attribute</span>
+                  </div>
+                </CommandItem>
+              )}
             </ScrollArea>
           </CommandGroup>
         </Command>
@@ -215,12 +234,33 @@ function CustomObjectSelect({
 }
 
 export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
-  const { environment } = useAppContext();
+  const { environment, project } = useAppContext();
   const { toast } = useToast();
   const [step, setStep] = useState<'objects' | 'fields'>('objects');
   const [salesforceObject, setSalesforceObject] = useState<string>('');
   const [usertourObject, setUsertourObject] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showCreateAttributeForm, setShowCreateAttributeForm] = useState(false);
+
+  // Object match fields
+  const [matchLeft, setMatchLeft] = useState('email');
+  const [matchRight, setMatchRight] = useState('email');
+
+  // Field mappings state
+  const [sfToUsertour, setSfToUsertour] = useState([
+    { left: 'title', right: 'title', isNew: true },
+    { left: 'industry', right: 'industry', isNew: true },
+  ]);
+  const [usertourToSf, setUsertourToSf] = useState([{ left: 'nps', right: 'nps', isNew: true }]);
+
+  // Add row state
+  const [addLeft, setAddLeft] = useState('');
+  const [addRight, setAddRight] = useState('');
+  const [addLeft2, setAddLeft2] = useState('');
+  const [addRight2, setAddRight2] = useState('');
+
+  // Stream events switch
+  const [stream, setStream] = useState(false);
 
   // Get the integration ID from the current integration
   const { data: integration } = useGetIntegrationQuery(environment?.id || '', 'salesforce', {
@@ -231,6 +271,17 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     skip: !integration?.id,
   });
 
+  // Get attributes based on selected usertour object type
+  const selectedBizType =
+    usertourObject === 'User'
+      ? AttributeBizTypes.User
+      : usertourObject === 'Company'
+        ? AttributeBizTypes.Company
+        : AttributeBizTypes.User; // Default to User when no object selected
+  const { attributes, refetch } = useListAttributesQuery(project?.id || '', selectedBizType);
+
+  console.log('selectedBizType:', selectedBizType, 'usertourObject:', usertourObject);
+
   const salesforceObjects = [
     { name: 'Contact', label: 'Contacts', type: 'standard' as const },
     { name: 'Account', label: 'Accounts', type: 'standard' as const },
@@ -239,8 +290,19 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   ];
 
   const usertourObjects = [
-    { name: 'BizUser', label: 'User' },
-    { name: 'BizCompany', label: 'Company' },
+    { name: 'User', label: 'User' },
+    { name: 'Company', label: 'Company' },
+  ];
+
+  // Dynamic usertour fields based on selected object type and available attributes
+  const usertourFields = [
+    ...(attributes
+      ?.filter((attr) => !attr.predefined)
+      .map((attr) => ({
+        value: attr.codeName,
+        label: attr.displayName,
+        icon: <UsertourMappingIcon />,
+      })) || []),
   ];
 
   const selectedSalesforceObject = salesforceObjects.find((obj) => obj.name === salesforceObject);
@@ -255,7 +317,33 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     icon: <SalesforceMappingIcon />,
   }));
 
-  console.log(selectedSalesforceFields);
+  // Handle after attribute creation
+  const handleAfterCreate = useCallback(
+    async (attribute: Partial<Attribute>) => {
+      setShowCreateAttributeForm(false);
+      await refetch();
+      if (attribute.codeName) {
+        // Set the newly created attribute as selected
+        if (step === 'fields') {
+          // Update the appropriate field mapping
+          if (matchRight === '') {
+            setMatchRight(attribute.codeName);
+          } else {
+            // Add to the appropriate mapping array
+            setSfToUsertour([
+              ...sfToUsertour,
+              { left: '', right: attribute.codeName, isNew: true },
+            ]);
+          }
+        }
+      }
+    },
+    [refetch, step, matchRight, sfToUsertour],
+  );
+
+  const handleCreateAttribute = () => {
+    setShowCreateAttributeForm(true);
+  };
 
   const handleContinue = () => {
     if (!salesforceObject || !usertourObject) {
@@ -301,25 +389,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     setUsertourObject('');
     onClose();
   };
-  // Object match fields
-  const [matchLeft, setMatchLeft] = useState('email');
-  const [matchRight, setMatchRight] = useState('email');
-
-  // Field mappings state
-  const [sfToUsertour, setSfToUsertour] = useState([
-    { left: 'title', right: 'title', isNew: true },
-    { left: 'industry', right: 'industry', isNew: true },
-  ]);
-  const [usertourToSf, setUsertourToSf] = useState([{ left: 'nps', right: 'nps', isNew: true }]);
-
-  // Add row state
-  const [addLeft, setAddLeft] = useState('');
-  const [addRight, setAddRight] = useState('');
-  const [addLeft2, setAddLeft2] = useState('');
-  const [addRight2, setAddRight2] = useState('');
-
-  // Stream events switch
-  const [stream, setStream] = useState(false);
 
   // Add mapping from Salesforce to Usertour
   const addMapping = () => {
@@ -435,6 +504,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 value={matchRight}
                 onValueChange={setMatchRight}
                 placeholder="Select field"
+                showCreateAttribute={true}
+                onCreateAttribute={handleCreateAttribute}
               />
             </div>
           </div>
@@ -467,6 +538,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                     setSfToUsertour(arr);
                   }}
                   placeholder="Select field"
+                  showCreateAttribute={true}
+                  onCreateAttribute={handleCreateAttribute}
                 />
                 {m.isNew && (
                   <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
@@ -496,6 +569,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 value={addRight}
                 onValueChange={setAddRight}
                 placeholder="..."
+                showCreateAttribute={true}
+                onCreateAttribute={handleCreateAttribute}
               />
               <Button
                 variant="outline"
@@ -526,6 +601,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                     setUsertourToSf(arr);
                   }}
                   placeholder="Select field"
+                  showCreateAttribute={true}
+                  onCreateAttribute={handleCreateAttribute}
                 />
                 <ArrowRightIcon className="w-4 h-4" />
                 <CustomSelect
@@ -537,6 +614,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                     setUsertourToSf(arr);
                   }}
                   placeholder="Select field"
+                  showCreateAttribute={true}
+                  onCreateAttribute={handleCreateAttribute}
                 />
                 {m.isNew && (
                   <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
@@ -559,6 +638,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 value={addLeft2}
                 onValueChange={setAddLeft2}
                 placeholder="Select a field to sync"
+                showCreateAttribute={true}
+                onCreateAttribute={handleCreateAttribute}
               />
               <ArrowRightIcon className="w-4 h-4" />
               <CustomSelect
@@ -604,6 +685,20 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
               Save mapping
             </Button>
           </DialogFooter>
+
+          {/* Attribute Create Form */}
+          <AttributeCreateForm
+            onOpenChange={setShowCreateAttributeForm}
+            onSuccess={handleAfterCreate}
+            isOpen={showCreateAttributeForm}
+            projectId={project?.id || ''}
+            zIndex={1000}
+            defaultValues={{
+              dataType: String(BizAttributeTypes.String),
+              bizType: String(selectedBizType),
+            }}
+            disabledFields={['bizType']}
+          />
         </>
       )}
     </DialogContent>
