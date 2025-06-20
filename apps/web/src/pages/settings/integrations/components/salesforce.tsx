@@ -21,6 +21,7 @@ import {
   PlusIcon,
   SalesforceIcon,
   UsertourIcon2,
+  ArrowRightLeftIcon,
 } from '@usertour-ui/icons';
 import {
   DropdownMenuContent,
@@ -52,8 +53,13 @@ import {
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { cn } from '@usertour-ui/ui-utils';
 
-const SalesforceMappingIcon = () => <SalesforceIcon className="w-4 h-4" />;
-const UsertourMappingIcon = () => <UsertourIcon2 className="w-4 h-4 text-primary" />;
+const SalesforceMappingIcon = ({ className }: { className?: string }) => (
+  <SalesforceIcon className={cn('w-4 h-4', className)} />
+);
+
+const UsertourMappingIcon = ({ className }: { className?: string }) => (
+  <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
+);
 
 // Example field options (replace with your real data)
 const usertourFields = [
@@ -344,12 +350,22 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     <DialogContent className={cn('max-w-2xl', step === 'objects' ? 'max-w-2xl' : 'max-w-4xl')}>
       <DialogHeader>
         <DialogTitle>
-          {step === 'objects' ? 'Select Objects' : 'Configure Field Mapping'}
+          {step === 'objects' && 'Select Objects'}
+
+          {step !== 'objects' && (
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <SalesforceMappingIcon className="w-6 h-6" /> Contact
+              </span>
+              <ArrowRightLeftIcon className="w-6 h-6" />
+              <span className="flex items-center gap-1">
+                <UsertourMappingIcon className="w-6 h-6" /> User
+              </span>
+            </div>
+          )}
         </DialogTitle>
         <DialogDescription>
-          {step === 'objects'
-            ? 'Choose which Salesforce object to map to which Usertour object.'
-            : `Configure how ${selectedSalesforceObject?.label} fields map to ${usertourObject} fields.`}
+          {step === 'objects' && 'Choose which Salesforce object to map to which Usertour object.'}
         </DialogDescription>
       </DialogHeader>
 
@@ -398,205 +414,194 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
         </>
       ) : (
         <>
-          <div>
-            {/* Object match row */}
-            <div className="flex items-center gap-2 mb-6">
-              <span className="font-semibold flex items-center gap-1">
-                <SalesforceMappingIcon /> Contact
-              </span>
-              <span className="mx-2 text-xl">↔</span>
-              <span className="font-semibold flex items-center gap-1">
-                <UsertourMappingIcon /> User
-              </span>
-            </div>
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Match objects by</span>
-                <InfoIcon className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="flex items-center gap-2">
-                <CustomSelect
-                  items={dynamicSalesforceFields}
-                  value={matchLeft}
-                  onValueChange={setMatchLeft}
-                  placeholder="Select field"
-                />
-                <span className="mx-2 text-lg">=</span>
-                <CustomSelect
-                  items={usertourFields}
-                  value={matchRight}
-                  onValueChange={setMatchRight}
-                  placeholder="Select field"
-                />
-              </div>
-            </div>
-
-            {/* Fields to sync from Salesforce to Usertour */}
-            <div className="bg-muted/50 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Fields to sync from Salesforce to Usertour</span>
-                <InfoIcon className="w-4 h-4 text-muted-foreground" />
-              </div>
-              {sfToUsertour.map((m, idx) => (
-                <div key={idx} className="flex items-center gap-2 py-1">
-                  <CustomSelect
-                    items={dynamicSalesforceFields}
-                    value={m.left}
-                    onValueChange={(v) => {
-                      const arr = [...sfToUsertour];
-                      arr[idx].left = v;
-                      setSfToUsertour(arr);
-                    }}
-                    placeholder="Select field"
-                  />
-                  <span className="mx-2 text-xl text-muted-foreground">→</span>
-                  <CustomSelect
-                    items={usertourFields}
-                    value={m.right}
-                    onValueChange={(v) => {
-                      const arr = [...sfToUsertour];
-                      arr[idx].right = v;
-                      setSfToUsertour(arr);
-                    }}
-                    placeholder="Select field"
-                  />
-                  {m.isNew && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
-                      New
-                    </span>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeMapping(idx, 'sfToUsertour')}
-                  >
-                    <XIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-              {/* Add new mapping row */}
-              <div className="flex items-center gap-2 py-1">
-                <CustomSelect
-                  items={dynamicSalesforceFields}
-                  value={addLeft}
-                  onValueChange={setAddLeft}
-                  placeholder="Select a field to sync"
-                />
-                <span className="mx-2 text-xl text-muted-foreground">→</span>
-                <CustomSelect
-                  items={usertourFields}
-                  value={addRight}
-                  onValueChange={setAddRight}
-                  placeholder="..."
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-2"
-                  disabled={!addLeft || !addRight}
-                  onClick={addMapping}
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            {/* Fields to sync from Usertour to Salesforce */}
-            <div className="bg-muted/50 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Fields to sync from Usertour to Salesforce</span>
-                <InfoIcon className="w-4 h-4 text-muted-foreground" />
-              </div>
-              {usertourToSf.map((m, idx) => (
-                <div key={idx} className="flex items-center gap-2 py-1">
-                  <CustomSelect
-                    items={usertourFields}
-                    value={m.left}
-                    onValueChange={(v) => {
-                      const arr = [...usertourToSf];
-                      arr[idx].left = v;
-                      setUsertourToSf(arr);
-                    }}
-                    placeholder="Select field"
-                  />
-                  <span className="mx-2 text-xl text-muted-foreground">→</span>
-                  <CustomSelect
-                    items={dynamicSalesforceFields}
-                    value={m.right}
-                    onValueChange={(v) => {
-                      const arr = [...usertourToSf];
-                      arr[idx].right = v;
-                      setUsertourToSf(arr);
-                    }}
-                    placeholder="Select field"
-                  />
-                  {m.isNew && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
-                      New
-                    </span>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeMapping(idx, 'usertourToSf')}
-                  >
-                    <XIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-              {/* Add new mapping row */}
-              <div className="flex items-center gap-2 py-1">
-                <CustomSelect
-                  items={usertourFields}
-                  value={addLeft2}
-                  onValueChange={setAddLeft2}
-                  placeholder="Select a field to sync"
-                />
-                <span className="mx-2 text-xl text-muted-foreground">→</span>
-                <CustomSelect
-                  items={dynamicSalesforceFields}
-                  value={addRight2}
-                  onValueChange={setAddRight2}
-                  placeholder="..."
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-2"
-                  disabled={!addLeft2 || !addRight2}
-                  onClick={addMapping2}
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            {/* Stream events switch */}
-            <div className="flex items-center gap-3 mb-4">
-              <Switch checked={stream} onCheckedChange={setStream} />
-              <span>
-                Stream <span className="font-semibold text-primary">User events</span>
-                <span className="mx-1">→</span>
-                <span className="font-semibold text-blue-500">Contact activity</span>
-              </span>
+          {/* Object match row */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium">Match objects by</span>
               <InfoIcon className="w-4 h-4 text-muted-foreground" />
             </div>
+            <div className="flex items-center gap-2">
+              <CustomSelect
+                items={dynamicSalesforceFields}
+                value={matchLeft}
+                onValueChange={setMatchLeft}
+                placeholder="Select field"
+              />
+              <span className="mx-2 text-lg">=</span>
+              <CustomSelect
+                items={usertourFields}
+                value={matchRight}
+                onValueChange={setMatchRight}
+                placeholder="Select field"
+              />
+            </div>
+          </div>
 
-            {/* Info and actions */}
-            {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {/* Fields to sync from Salesforce to Usertour */}
+          <div className="bg-muted/50 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium">Fields to sync from Salesforce to Usertour</span>
+              <InfoIcon className="w-4 h-4 text-muted-foreground" />
+            </div>
+            {sfToUsertour.map((m, idx) => (
+              <div key={idx} className="flex items-center gap-2 py-1">
+                <CustomSelect
+                  items={dynamicSalesforceFields}
+                  value={m.left}
+                  onValueChange={(v) => {
+                    const arr = [...sfToUsertour];
+                    arr[idx].left = v;
+                    setSfToUsertour(arr);
+                  }}
+                  placeholder="Select field"
+                />
+                <span className="mx-2 text-xl text-muted-foreground">→</span>
+                <CustomSelect
+                  items={usertourFields}
+                  value={m.right}
+                  onValueChange={(v) => {
+                    const arr = [...sfToUsertour];
+                    arr[idx].right = v;
+                    setSfToUsertour(arr);
+                  }}
+                  placeholder="Select field"
+                />
+                {m.isNew && (
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
+                    New
+                  </span>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeMapping(idx, 'sfToUsertour')}
+                >
+                  <XIcon className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+            {/* Add new mapping row */}
+            <div className="flex items-center gap-2 py-1">
+              <CustomSelect
+                items={dynamicSalesforceFields}
+                value={addLeft}
+                onValueChange={setAddLeft}
+                placeholder="Select a field to sync"
+              />
+              <span className="mx-2 text-xl text-muted-foreground">→</span>
+              <CustomSelect
+                items={usertourFields}
+                value={addRight}
+                onValueChange={setAddRight}
+                placeholder="..."
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-2"
+                disabled={!addLeft || !addRight}
+                onClick={addMapping}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Fields to sync from Usertour to Salesforce */}
+          <div className="bg-muted/50 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium">Fields to sync from Usertour to Salesforce</span>
+              <InfoIcon className="w-4 h-4 text-muted-foreground" />
+            </div>
+            {usertourToSf.map((m, idx) => (
+              <div key={idx} className="flex items-center gap-2 py-1">
+                <CustomSelect
+                  items={usertourFields}
+                  value={m.left}
+                  onValueChange={(v) => {
+                    const arr = [...usertourToSf];
+                    arr[idx].left = v;
+                    setUsertourToSf(arr);
+                  }}
+                  placeholder="Select field"
+                />
+                <span className="mx-2 text-xl text-muted-foreground">→</span>
+                <CustomSelect
+                  items={dynamicSalesforceFields}
+                  value={m.right}
+                  onValueChange={(v) => {
+                    const arr = [...usertourToSf];
+                    arr[idx].right = v;
+                    setUsertourToSf(arr);
+                  }}
+                  placeholder="Select field"
+                />
+                {m.isNew && (
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
+                    New
+                  </span>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeMapping(idx, 'usertourToSf')}
+                >
+                  <XIcon className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+            {/* Add new mapping row */}
+            <div className="flex items-center gap-2 py-1">
+              <CustomSelect
+                items={usertourFields}
+                value={addLeft2}
+                onValueChange={setAddLeft2}
+                placeholder="Select a field to sync"
+              />
+              <span className="mx-2 text-xl text-muted-foreground">→</span>
+              <CustomSelect
+                items={dynamicSalesforceFields}
+                value={addRight2}
+                onValueChange={setAddRight2}
+                placeholder="..."
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-2"
+                disabled={!addLeft2 || !addRight2}
+                onClick={addMapping2}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Stream events switch */}
+          <div className="flex items-center gap-3 mb-4">
+            <Switch checked={stream} onCheckedChange={setStream} />
+            <span>
+              Stream <span className="font-semibold text-primary">User events</span>
+              <span className="mx-1">→</span>
+              <span className="font-semibold text-blue-500">Contact activity</span>
+            </span>
+            <InfoIcon className="w-4 h-4 text-muted-foreground" />
+          </div>
+
+          {/* Info and actions */}
+          {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <InfoIcon className="w-4 h-4" />
           Changes will take effect and start syncing immediately after saving.
         </div> */}
-            <DialogFooter>
-              <Button variant="outline" onClick={handleBack} disabled={isLoading}>
-                Back
-              </Button>
-              <Button onClick={handleCreateMapping} disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Save mapping
-              </Button>
-            </DialogFooter>
-          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
+              Back
+            </Button>
+            <Button onClick={handleCreateMapping} disabled={isLoading}>
+              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              Save mapping
+            </Button>
+          </DialogFooter>
         </>
       )}
     </DialogContent>
