@@ -3,8 +3,13 @@ import { InfoIcon, XIcon } from 'lucide-react';
 import { ArrowRightIcon, EqualIcon, UsertourIcon2 } from '@usertour-ui/icons';
 import { ObjectMappingFieldSelect } from './object-mapping-select';
 import { AttributeCreateForm } from '@usertour-ui/shared-editor';
-import { Attribute, BizAttributeTypes } from '@usertour-ui/types';
-import { useState } from 'react';
+import {
+  Attribute,
+  BizAttributeTypes,
+  IntegrationObjectMappingConfig,
+  IntegrationObjectMappingItem,
+} from '@usertour-ui/types';
+import { useState, useEffect } from 'react';
 import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 import { cn } from '@usertour-ui/ui-utils';
 
@@ -16,19 +21,25 @@ interface ObjectMappingPanelProps {
   selectedBizType: number;
   projectId: string;
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  sourceObjectType: string;
+  targetObjectType: string;
+  initialMapping?: IntegrationObjectMappingConfig;
+  onMappingChange?: (mapping: IntegrationObjectMappingConfig) => void;
 }
 
 interface ObjectMappingSectionProps {
   title: string;
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  mappings: MappingItem[];
-  onMappingsChange: (mappings: MappingItem[]) => void;
+  mappings: IntegrationObjectMappingItem[];
+  onMappingsChange: (mappings: IntegrationObjectMappingItem[]) => void;
   showCreateAttributeLeft: boolean;
   showCreateAttributeRight: boolean;
   projectId: string;
   selectedBizType: number;
   refetch: () => Promise<any>;
+  sourceObjectType: string;
+  targetObjectType: string;
 }
 
 interface ObjectMappingFieldPairProps {
@@ -46,8 +57,6 @@ interface ObjectMappingFieldPairProps {
   disabled?: boolean;
   centerIcon?: React.ReactNode;
 }
-
-type MappingItem = { left: string; right: string; isNew?: boolean };
 
 // Core object mapping field pair selector component
 const ObjectMappingFieldPair = ({
@@ -132,6 +141,8 @@ const ObjectMappingSection = ({
   projectId,
   selectedBizType,
   refetch,
+  sourceObjectType,
+  targetObjectType,
 }: ObjectMappingSectionProps) => {
   // Internal state for adding new mappings
   const [newSourceValue, setNewSourceValue] = useState('');
@@ -139,26 +150,37 @@ const ObjectMappingSection = ({
 
   // Filter out already selected fields from dropdown options
   const getAvailableSourceFields = () => {
-    const selectedSourceFields = mappings.map((m) => m.left).filter(Boolean);
+    const selectedSourceFields = mappings.map((m) => m.sourceFieldName).filter(Boolean);
     return sourceFields.filter((field) => !selectedSourceFields.includes(field.value));
   };
 
   const getAvailableTargetFields = () => {
-    const selectedTargetFields = mappings.map((m) => m.right).filter(Boolean);
+    const selectedTargetFields = mappings.map((m) => m.targetFieldName).filter(Boolean);
     return targetFields.filter((field) => !selectedTargetFields.includes(field.value));
   };
 
   const handleAddMapping = () => {
     if (newSourceValue && newTargetValue) {
-      onMappingsChange([...mappings, { left: newSourceValue, right: newTargetValue, isNew: true }]);
+      const newMapping: IntegrationObjectMappingItem = {
+        sourceFieldName: newSourceValue,
+        sourceObjectType,
+        targetFieldName: newTargetValue,
+        targetObjectType,
+        isNew: true, // New mappings are always marked as new
+      };
+      onMappingsChange([...mappings, newMapping]);
       setNewSourceValue('');
       setNewTargetValue('');
     }
   };
 
-  const handleUpdateMapping = (idx: number, left: string, right: string) => {
+  const handleUpdateMapping = (idx: number, sourceFieldName: string, targetFieldName: string) => {
     const newMappings = [...mappings];
-    newMappings[idx] = { ...newMappings[idx], left, right };
+    newMappings[idx] = {
+      ...newMappings[idx],
+      sourceFieldName,
+      targetFieldName,
+    };
     onMappingsChange(newMappings);
   };
 
@@ -177,10 +199,10 @@ const ObjectMappingSection = ({
           <ObjectMappingFieldPair
             sourceFields={sourceFields}
             targetFields={targetFields}
-            sourceValue={mapping.left}
-            targetValue={mapping.right}
-            onSourceChange={(value) => handleUpdateMapping(idx, value, mapping.right)}
-            onTargetChange={(value) => handleUpdateMapping(idx, mapping.left, value)}
+            sourceValue={mapping.sourceFieldName}
+            targetValue={mapping.targetFieldName}
+            onSourceChange={(value) => handleUpdateMapping(idx, value, mapping.targetFieldName)}
+            onTargetChange={(value) => handleUpdateMapping(idx, mapping.sourceFieldName, value)}
             showCreateAttributeLeft={showCreateAttributeLeft}
             showCreateAttributeRight={showCreateAttributeRight}
             projectId={projectId}
@@ -232,10 +254,11 @@ export const ObjectMappingPanel = ({
   selectedBizType,
   projectId,
   sourceFields,
+  sourceObjectType,
+  targetObjectType,
+  initialMapping,
+  onMappingChange,
 }: ObjectMappingPanelProps) => {
-  // Internal state management
-  const [matchLeft, setMatchLeft] = useState('email');
-  const [matchRight, setMatchRight] = useState('email');
   const { attributes, refetch } = useListAttributesQuery(projectId, selectedBizType);
 
   // Dynamic usertour fields based on selected object type and available attributes
@@ -249,15 +272,46 @@ export const ObjectMappingPanel = ({
       })) || []),
   ];
 
-  // Mapping state
-  const [sourceToTarget, setSourceToTarget] = useState<MappingItem[]>([
-    { left: 'title', right: 'title', isNew: true },
-    { left: 'industry', right: 'industry', isNew: true },
-  ]);
+  // Initialize mapping state with initial data or defaults
+  const [matchObjects, setMatchObjects] = useState<IntegrationObjectMappingItem>(
+    initialMapping?.matchObjects || {
+      sourceFieldName: '',
+      sourceObjectType,
+      targetFieldName: '',
+      targetObjectType,
+      isNew: false,
+    },
+  );
 
-  const [targetToSource, setTargetToSource] = useState<MappingItem[]>([
-    { left: 'nps', right: 'nps', isNew: true },
-  ]);
+  const [sourceToTarget, setSourceToTarget] = useState<IntegrationObjectMappingItem[]>(
+    initialMapping?.sourceToTarget || [],
+  );
+
+  const [targetToSource, setTargetToSource] = useState<IntegrationObjectMappingItem[]>(
+    initialMapping?.targetToSource || [],
+  );
+
+  // Update parent component when mapping changes
+  useEffect(() => {
+    if (onMappingChange) {
+      onMappingChange({
+        matchObjects,
+        sourceToTarget,
+        targetToSource,
+      });
+    }
+  }, [matchObjects, sourceToTarget, targetToSource, onMappingChange]);
+
+  // Update match objects
+  const handleMatchObjectsChange = (sourceFieldName: string, targetFieldName: string) => {
+    setMatchObjects({
+      sourceFieldName,
+      sourceObjectType,
+      targetFieldName,
+      targetObjectType,
+      isNew: false, // Match objects are typically not new
+    });
+  };
 
   return (
     <>
@@ -271,10 +325,14 @@ export const ObjectMappingPanel = ({
           <ObjectMappingFieldPair
             sourceFields={sourceFields}
             targetFields={usertourFields}
-            sourceValue={matchLeft}
-            targetValue={matchRight}
-            onSourceChange={setMatchLeft}
-            onTargetChange={setMatchRight}
+            sourceValue={matchObjects.sourceFieldName}
+            targetValue={matchObjects.targetFieldName}
+            onSourceChange={(value) =>
+              handleMatchObjectsChange(value, matchObjects.targetFieldName)
+            }
+            onTargetChange={(value) =>
+              handleMatchObjectsChange(matchObjects.sourceFieldName, value)
+            }
             showCreateAttributeLeft={false}
             showCreateAttributeRight={true}
             projectId={projectId}
@@ -297,6 +355,8 @@ export const ObjectMappingPanel = ({
         projectId={projectId}
         selectedBizType={selectedBizType}
         refetch={refetch}
+        sourceObjectType={sourceObjectType}
+        targetObjectType={targetObjectType}
       />
 
       {/* Fields to sync from target to source */}
@@ -311,6 +371,8 @@ export const ObjectMappingPanel = ({
         projectId={projectId}
         selectedBizType={selectedBizType}
         refetch={refetch}
+        sourceObjectType={targetObjectType}
+        targetObjectType={sourceObjectType}
       />
     </>
   );

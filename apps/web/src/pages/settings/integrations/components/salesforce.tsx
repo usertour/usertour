@@ -260,6 +260,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
             selectedBizType={selectedBizType}
             projectId={project?.id || ''}
             sourceFields={dynamicSalesforceFields}
+            sourceObjectType={salesforceObject}
+            targetObjectType={usertourObject}
           />
 
           {/* Stream events switch - business specific */}

@@ -43,3 +43,19 @@ export interface SalesforceObjectFields {
   standardObjects: SalesforceObject[];
   customObjects: SalesforceObject[];
 }
+
+// Data structure for object mapping
+export interface IntegrationObjectMappingItem {
+  sourceFieldName: string;
+  sourceObjectType: string;
+  targetFieldName: string;
+  targetObjectType: string;
+  isNew?: boolean;
+}
+
+// Complete object mapping configuration
+export interface IntegrationObjectMappingConfig {
+  matchObjects: IntegrationObjectMappingItem;
+  sourceToTarget: IntegrationObjectMappingItem[];
+  targetToSource: IntegrationObjectMappingItem[];
+}
