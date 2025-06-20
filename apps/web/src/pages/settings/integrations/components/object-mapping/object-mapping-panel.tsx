@@ -8,13 +8,17 @@ import { useState } from 'react';
 import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 import { cn } from '@usertour-ui/ui-utils';
 
-interface ObjectMappingFieldStepProps {
+const UsertourMappingIcon = ({ className }: { className?: string }) => (
+  <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
+);
+
+interface ObjectMappingPanelProps {
   selectedBizType: number;
   projectId: string;
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
 }
 
-interface MappingSectionProps {
+interface ObjectMappingSectionProps {
   title: string;
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
@@ -29,8 +33,8 @@ interface MappingSectionProps {
 
 type MappingItem = { left: string; right: string; isNew?: boolean };
 
-// Core field mapping component (only handles field selection)
-const FieldMappingSelectors = ({
+// Core object mapping field pair selector component
+const ObjectMappingFieldPair = ({
   sourceFields,
   targetFields,
   sourceValue,
@@ -114,8 +118,8 @@ const FieldMappingSelectors = ({
   );
 };
 
-// Mapping section component
-const MappingSection = ({
+// Object mapping section component
+const ObjectMappingSection = ({
   title,
   sourceFields,
   targetFields,
@@ -126,7 +130,7 @@ const MappingSection = ({
   projectId,
   selectedBizType,
   refetch,
-}: MappingSectionProps) => {
+}: ObjectMappingSectionProps) => {
   // Internal state for adding new mappings
   const [newSourceValue, setNewSourceValue] = useState('');
   const [newTargetValue, setNewTargetValue] = useState('');
@@ -168,7 +172,7 @@ const MappingSection = ({
       </div>
       {mappings.map((mapping, idx) => (
         <div key={idx} className="flex items-center gap-2 py-1">
-          <FieldMappingSelectors
+          <ObjectMappingFieldPair
             sourceFields={sourceFields}
             targetFields={targetFields}
             sourceValue={mapping.left}
@@ -195,7 +199,7 @@ const MappingSection = ({
       ))}
       {/* Add new mapping row */}
       <div className="flex items-center gap-2">
-        <FieldMappingSelectors
+        <ObjectMappingFieldPair
           sourceFields={getAvailableSourceFields()}
           targetFields={getAvailableTargetFields()}
           sourceValue={newSourceValue}
@@ -222,11 +226,11 @@ const MappingSection = ({
   );
 };
 
-export const ObjectMappingFieldStep = ({
+export const ObjectMappingPanel = ({
   selectedBizType,
   projectId,
   sourceFields,
-}: ObjectMappingFieldStepProps) => {
+}: ObjectMappingPanelProps) => {
   // Internal state management
   const [matchLeft, setMatchLeft] = useState('email');
   const [matchRight, setMatchRight] = useState('email');
@@ -262,7 +266,7 @@ export const ObjectMappingFieldStep = ({
           <InfoIcon className="w-4 h-4 text-muted-foreground" />
         </div>
         <div className="flex items-center gap-2">
-          <FieldMappingSelectors
+          <ObjectMappingFieldPair
             sourceFields={sourceFields}
             targetFields={usertourFields}
             sourceValue={matchLeft}
@@ -280,7 +284,7 @@ export const ObjectMappingFieldStep = ({
       </div>
 
       {/* Fields to sync from source to target */}
-      <MappingSection
+      <ObjectMappingSection
         title="Fields to sync from source to target"
         sourceFields={sourceFields}
         targetFields={usertourFields}
@@ -294,7 +298,7 @@ export const ObjectMappingFieldStep = ({
       />
 
       {/* Fields to sync from target to source */}
-      <MappingSection
+      <ObjectMappingSection
         title="Fields to sync from target to source"
         sourceFields={usertourFields}
         targetFields={sourceFields}
@@ -309,7 +313,3 @@ export const ObjectMappingFieldStep = ({
     </>
   );
 };
-
-const UsertourMappingIcon = ({ className }: { className?: string }) => (
-  <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
-);

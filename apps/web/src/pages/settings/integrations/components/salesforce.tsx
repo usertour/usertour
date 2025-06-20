@@ -42,7 +42,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
 import { AttributeBizTypes } from '@usertour-ui/types';
-import { ObjectMappingFieldStep } from './object-mapping/object-mapping-field-step';
+import { ObjectMappingPanel } from './object-mapping/object-mapping-panel';
 import { ObjectMappingObjectSelect } from './object-mapping/object-mapping-select';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
@@ -254,7 +254,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
         />
       ) : (
         <>
-          <ObjectMappingFieldStep
+          <ObjectMappingPanel
             selectedBizType={selectedBizType}
             projectId={project?.id || ''}
             sourceFields={dynamicSalesforceFields}
