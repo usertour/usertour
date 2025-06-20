@@ -1,8 +1,7 @@
 import { Button } from '@usertour-ui/button';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, XIcon } from 'lucide-react';
 import { EqualIcon, ArrowRightIcon, UsertourIcon2 } from '@usertour-ui/icons';
 import { ObjectMappingFieldSelect } from './object-mapping-select';
-import { ObjectMappingRow } from './object-mapping-row';
 import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 import { Attribute, BizAttributeTypes } from '@usertour-ui/types';
 import { useState } from 'react';
@@ -21,6 +20,104 @@ const UsertourMappingIcon = ({ className }: { className?: string }) => (
 
 type MappingDirection = 'sourceToTarget' | 'targetToSource';
 type MappingItem = { left: string; right: string; isNew?: boolean };
+
+// Mapping section component
+const MappingSection = ({
+  direction,
+  title,
+  sourceFields,
+  targetFields,
+  sourceValue,
+  targetValue,
+  onSourceChange,
+  onTargetChange,
+  mappings,
+  onMappingChange,
+  onRemove,
+  onAdd,
+  showCreateAttribute,
+  onCreateAttribute,
+}: {
+  direction: MappingDirection;
+  title: string;
+  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  sourceValue: string;
+  targetValue: string;
+  onSourceChange: (value: string) => void;
+  onTargetChange: (value: string) => void;
+  mappings: MappingItem[];
+  onMappingChange: (idx: number, direction: MappingDirection, left: string, right: string) => void;
+  onRemove: (idx: number, direction: MappingDirection) => void;
+  onAdd: (direction: MappingDirection) => void;
+  showCreateAttribute: boolean;
+  onCreateAttribute: () => void;
+}) => {
+  return (
+    <div className="bg-muted/50 rounded-lg p-4 mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="font-medium">{title}</span>
+        <InfoIcon className="w-4 h-4 text-muted-foreground" />
+      </div>
+      {mappings.map((mapping, idx) => (
+        <div key={idx} className="flex items-center gap-2 py-1">
+          <ObjectMappingFieldSelect
+            items={sourceFields}
+            value={mapping.left}
+            onValueChange={(value) => onMappingChange(idx, direction, value, mapping.right)}
+            placeholder="Select field"
+          />
+          <ArrowRightIcon className="w-4 h-4" />
+          <ObjectMappingFieldSelect
+            items={targetFields}
+            value={mapping.right}
+            onValueChange={(value) => onMappingChange(idx, direction, mapping.left, value)}
+            placeholder="Select field"
+            showCreateAttribute={showCreateAttribute}
+            onCreateAttribute={onCreateAttribute}
+          />
+          {mapping.isNew && (
+            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
+              New
+            </span>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => onRemove(idx, direction)}>
+            <XIcon className="w-4 h-4" />
+          </Button>
+        </div>
+      ))}
+      {/* Add new mapping row */}
+      <div className="flex items-center gap-2 py-1">
+        <ObjectMappingFieldSelect
+          items={sourceFields}
+          value={sourceValue}
+          onValueChange={onSourceChange}
+          placeholder="Select a field to sync"
+          showCreateAttribute={showCreateAttribute}
+          onCreateAttribute={onCreateAttribute}
+        />
+        <ArrowRightIcon className="w-4 h-4" />
+        <ObjectMappingFieldSelect
+          items={targetFields}
+          value={targetValue}
+          onValueChange={onTargetChange}
+          placeholder="..."
+          showCreateAttribute={showCreateAttribute}
+          onCreateAttribute={onCreateAttribute}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-2"
+          disabled={!sourceValue || !targetValue}
+          onClick={() => onAdd(direction)}
+        >
+          Add
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export const ObjectMappingFieldStep = ({
   selectedBizType,
@@ -137,71 +234,6 @@ export const ObjectMappingFieldStep = ({
     }
   };
 
-  // Render mapping section
-  const renderMappingSection = (
-    direction: MappingDirection,
-    title: string,
-    sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>,
-    targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>,
-    sourceValue: string,
-    targetValue: string,
-    onSourceChange: (value: string) => void,
-    onTargetChange: (value: string) => void,
-  ) => {
-    const mappings = getMappingArray(direction);
-    const isSourceToTarget = direction === 'sourceToTarget';
-
-    return (
-      <div className="bg-muted/50 rounded-lg p-4 mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-medium">{title}</span>
-          <InfoIcon className="w-4 h-4 text-muted-foreground" />
-        </div>
-        {mappings.map((mapping, idx) => (
-          <ObjectMappingRow
-            key={idx}
-            mapping={mapping}
-            onMappingChange={(left, right) => updateMapping(idx, direction, left, right)}
-            onRemove={() => removeMapping(idx, direction)}
-            sourceFields={sourceFields}
-            targetFields={targetFields}
-            showCreateAttribute={isSourceToTarget}
-            onCreateAttribute={handleCreateAttribute}
-          />
-        ))}
-        {/* Add new mapping row */}
-        <div className="flex items-center gap-2 py-1">
-          <ObjectMappingFieldSelect
-            items={sourceFields}
-            value={sourceValue}
-            onValueChange={onSourceChange}
-            placeholder="Select a field to sync"
-            showCreateAttribute={isSourceToTarget}
-            onCreateAttribute={handleCreateAttribute}
-          />
-          <ArrowRightIcon className="w-4 h-4" />
-          <ObjectMappingFieldSelect
-            items={targetFields}
-            value={targetValue}
-            onValueChange={onTargetChange}
-            placeholder="..."
-            showCreateAttribute={isSourceToTarget}
-            onCreateAttribute={handleCreateAttribute}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="ml-2"
-            disabled={!sourceValue || !targetValue}
-            onClick={() => addMapping(direction)}
-          >
-            Add
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       {/* Object match row */}
@@ -230,28 +262,40 @@ export const ObjectMappingFieldStep = ({
       </div>
 
       {/* Fields to sync from source to target */}
-      {renderMappingSection(
-        'sourceToTarget',
-        'Fields to sync from source to target',
-        sourceFields,
-        usertourFields,
-        newSourceToTargetSource,
-        newSourceToTargetTarget,
-        setNewSourceToTargetSource,
-        setNewSourceToTargetTarget,
-      )}
+      <MappingSection
+        direction="sourceToTarget"
+        title="Fields to sync from source to target"
+        sourceFields={sourceFields}
+        targetFields={usertourFields}
+        sourceValue={newSourceToTargetSource}
+        targetValue={newSourceToTargetTarget}
+        onSourceChange={setNewSourceToTargetSource}
+        onTargetChange={setNewSourceToTargetTarget}
+        mappings={sourceToTarget}
+        onMappingChange={updateMapping}
+        onRemove={removeMapping}
+        onAdd={addMapping}
+        showCreateAttribute={true}
+        onCreateAttribute={handleCreateAttribute}
+      />
 
       {/* Fields to sync from target to source */}
-      {renderMappingSection(
-        'targetToSource',
-        'Fields to sync from target to source',
-        usertourFields,
-        sourceFields,
-        newTargetToSourceSource,
-        newTargetToSourceTarget,
-        setNewTargetToSourceSource,
-        setNewTargetToSourceTarget,
-      )}
+      <MappingSection
+        direction="targetToSource"
+        title="Fields to sync from target to source"
+        sourceFields={usertourFields}
+        targetFields={sourceFields}
+        sourceValue={newTargetToSourceSource}
+        targetValue={newTargetToSourceTarget}
+        onSourceChange={setNewTargetToSourceSource}
+        onTargetChange={setNewTargetToSourceTarget}
+        mappings={targetToSource}
+        onMappingChange={updateMapping}
+        onRemove={removeMapping}
+        onAdd={addMapping}
+        showCreateAttribute={false}
+        onCreateAttribute={handleCreateAttribute}
+      />
 
       {/* Attribute Create Form */}
       <AttributeCreateForm
