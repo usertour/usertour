@@ -21,7 +21,6 @@ import {
   PlusIcon,
   SalesforceIcon,
   UsertourIcon2,
-  ArrowRightIcon,
   ArrowRightLeftIcon,
 } from '@usertour-ui/icons';
 import {
@@ -107,7 +106,7 @@ const ObjectMappingSelectionStep = ({
           />
 
           <div className="flex items-center justify-center">
-            <ArrowRightIcon className="h-6 w-6 text-muted-foreground" />
+            <ArrowRightLeftIcon className="h-6 w-6 " />
           </div>
 
           <ObjectMappingObjectSelect
