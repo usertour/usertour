@@ -13,7 +13,7 @@ import { integrations } from '@/utils/integration';
 import { Card } from '@usertour-ui/card';
 import { CardHeader, CardTitle } from '@usertour-ui/card';
 import { CardContent } from '@usertour-ui/card';
-import { DotsVerticalIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Skeleton } from '@usertour-ui/skeleton';
 import {
   ConnectIcon,
@@ -23,8 +23,6 @@ import {
   SalesforceIcon,
   UsertourIcon2,
   ArrowRightLeftIcon,
-  EqualIcon,
-  ArrowRightIcon,
 } from '@usertour-ui/icons';
 import {
   DropdownMenuContent,
@@ -36,27 +34,15 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@usertour-ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { Switch } from '@usertour-ui/switch';
-import { XIcon, InfoIcon } from 'lucide-react';
-import { Label } from '@usertour-ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@usertour-ui/command';
-import { ScrollArea } from '@usertour-ui/scroll-area';
 import { cn } from '@usertour-ui/ui-utils';
-import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
-import { AttributeCreateForm } from '@usertour-ui/shared-editor';
+import { Attribute, AttributeBizTypes } from '@usertour-ui/types';
+import { ObjectSelectionStep } from './mapping/object-selection-step';
+import { FieldMappingStep } from './mapping/field-mapping-step';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (
   <SalesforceIcon className={cn('w-4 h-4', className)} />
@@ -65,173 +51,6 @@ const SalesforceMappingIcon = ({ className }: { className?: string }) => (
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
 );
-
-interface CustomSelectProps {
-  items: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  className?: string;
-  showCreateAttribute?: boolean;
-  onCreateAttribute?: () => void;
-}
-
-interface CustomObjectSelectProps {
-  items: Array<{ name: string; label: string; type?: string }>;
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  className?: string;
-}
-
-function CustomSelect({
-  items,
-  value,
-  onValueChange,
-  placeholder,
-  className,
-  showCreateAttribute = false,
-  onCreateAttribute,
-}: CustomSelectProps) {
-  const [open, setOpen] = useState(false);
-  const selectedItem = items.find((item) => item.value === value);
-
-  const handleSelect = (selectedValue: string) => {
-    onValueChange(selectedValue);
-    setOpen(false);
-  };
-
-  const handleCreateAttribute = () => {
-    onCreateAttribute?.();
-    setOpen(false);
-  };
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          aria-expanded={open}
-          className={cn('w-72 justify-between', className)}
-        >
-          {selectedItem ? (
-            <div className="flex items-center gap-2">
-              {selectedItem.icon}
-              <span>{selectedItem.label}</span>
-            </div>
-          ) : (
-            placeholder
-          )}
-          <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0 z-50" withoutPortal>
-        <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
-          <CommandEmpty>No items found.</CommandEmpty>
-          <CommandGroup>
-            <ScrollArea className="h-64">
-              {items.map((item) => (
-                <CommandItem
-                  key={item.value}
-                  value={item.value}
-                  onSelect={() => handleSelect(item.value)}
-                >
-                  <div className="flex items-center gap-2">
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                  <CheckIcon
-                    className={cn(
-                      'ml-auto h-4 w-4',
-                      value === item.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CommandItem>
-              ))}
-              {showCreateAttribute && (
-                <CommandItem onSelect={handleCreateAttribute}>
-                  <div className="flex items-center gap-2">
-                    <PlusIcon className="w-4 h-4" />
-                    <span>Create new attribute</span>
-                  </div>
-                </CommandItem>
-              )}
-            </ScrollArea>
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function CustomObjectSelect({
-  items,
-  value,
-  onValueChange,
-  placeholder,
-  className,
-}: CustomObjectSelectProps) {
-  const [open, setOpen] = useState(false);
-  const selectedItem = items.find((item) => item.name === value);
-
-  const handleSelect = (selectedValue: string) => {
-    onValueChange(selectedValue);
-    setOpen(false);
-  };
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          aria-expanded={open}
-          className={cn('w-72 justify-between', className)}
-        >
-          {selectedItem ? (
-            <div className="flex items-center gap-2">
-              <span>{selectedItem.label}</span>
-              {selectedItem.type && (
-                <div className="text-xs text-muted-foreground">{selectedItem.type}</div>
-              )}
-            </div>
-          ) : (
-            placeholder
-          )}
-          <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0 z-50" withoutPortal>
-        <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
-          <CommandEmpty>No items found.</CommandEmpty>
-          <CommandGroup>
-            <ScrollArea className="h-64">
-              {items.map((item) => (
-                <CommandItem
-                  key={item.name}
-                  value={item.name}
-                  onSelect={() => handleSelect(item.name)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{item.label}</span>
-                    {item.type && <div className="text-xs text-muted-foreground">{item.type}</div>}
-                  </div>
-                  <CheckIcon
-                    className={cn(
-                      'ml-auto h-4 w-4',
-                      value === item.name ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </ScrollArea>
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const { environment, project } = useAppContext();
@@ -247,11 +66,15 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const [matchRight, setMatchRight] = useState('email');
 
   // Field mappings state
-  const [sfToUsertour, setSfToUsertour] = useState([
+  const [sfToUsertour, setSfToUsertour] = useState<
+    Array<{ left: string; right: string; isNew?: boolean }>
+  >([
     { left: 'title', right: 'title', isNew: true },
     { left: 'industry', right: 'industry', isNew: true },
   ]);
-  const [usertourToSf, setUsertourToSf] = useState([{ left: 'nps', right: 'nps', isNew: true }]);
+  const [usertourToSf, setUsertourToSf] = useState<
+    Array<{ left: string; right: string; isNew?: boolean }>
+  >([{ left: 'nps', right: 'nps', isNew: true }]);
 
   // Add row state
   const [addLeft, setAddLeft] = useState('');
@@ -282,18 +105,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
 
   console.log('selectedBizType:', selectedBizType, 'usertourObject:', usertourObject);
 
-  const salesforceObjects = [
-    { name: 'Contact', label: 'Contacts', type: 'standard' as const },
-    { name: 'Account', label: 'Accounts', type: 'standard' as const },
-    { name: 'Lead', label: 'Leads', type: 'standard' as const },
-    { name: 'Opportunity', label: 'Opportunities', type: 'standard' as const },
-  ];
-
-  const usertourObjects = [
-    { name: 'User', label: 'User' },
-    { name: 'Company', label: 'Company' },
-  ];
-
   // Dynamic usertour fields based on selected object type and available attributes
   const usertourFields = [
     ...(attributes
@@ -305,7 +116,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
       })) || []),
   ];
 
-  const selectedSalesforceObject = salesforceObjects.find((obj) => obj.name === salesforceObject);
+  const selectedSalesforceObject = salesforceObject ? { name: salesforceObject } : null;
   const selectedSalesforceFields = selectedSalesforceObject
     ? objectFields?.standardObjects?.find((obj: any) => obj.name === salesforceObject)?.fields || []
     : [];
@@ -340,10 +151,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     },
     [refetch, step, matchRight, sfToUsertour],
   );
-
-  const handleCreateAttribute = () => {
-    setShowCreateAttributeForm(true);
-  };
 
   const handleContinue = () => {
     if (!salesforceObject || !usertourObject) {
@@ -408,15 +215,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Remove mapping row
-  const removeMapping = (idx: number, direction: string) => {
-    if (direction === 'sfToUsertour') {
-      setSfToUsertour(sfToUsertour.filter((_, i) => i !== idx));
-    } else {
-      setUsertourToSf(usertourToSf.filter((_, i) => i !== idx));
-    }
-  };
-
   return (
     <DialogContent className={cn('max-w-2xl', step === 'objects' ? 'max-w-2xl' : 'max-w-4xl')}>
       <DialogHeader>
@@ -441,265 +239,48 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
       </DialogHeader>
 
       {step === 'objects' ? (
-        <>
-          <div className="space-y-1 py-4">
-            <div className="flex items-center gap-4 justify-between">
-              <Label htmlFor="salesforce-object" className="w-72">
-                Salesforce Object
-              </Label>
-              <div className="w-6" />
-              <Label htmlFor="usertour-object" className="w-72">
-                Usertour Object
-              </Label>
-            </div>
-
-            <div className="flex items-center gap-4 justify-between">
-              <CustomObjectSelect
-                items={salesforceObjects}
-                value={salesforceObject}
-                onValueChange={setSalesforceObject}
-                placeholder="Select Salesforce object"
-              />
-
-              <div className="flex items-center justify-center">
-                <ArrowRightIcon className="h-6 w-6 text-muted-foreground" />
-              </div>
-
-              <CustomObjectSelect
-                items={usertourObjects}
-                value={usertourObject}
-                onValueChange={setUsertourObject}
-                placeholder="Select Usertour object"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button onClick={handleContinue} disabled={!salesforceObject || !usertourObject}>
-              Continue
-            </Button>
-          </DialogFooter>
-        </>
+        <ObjectSelectionStep
+          salesforceObject={salesforceObject}
+          usertourObject={usertourObject}
+          onSalesforceObjectChange={setSalesforceObject}
+          onUsertourObjectChange={setUsertourObject}
+          onContinue={handleContinue}
+          onCancel={handleClose}
+          isLoading={isLoading}
+        />
       ) : (
-        <>
-          {/* Object match row */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">Match objects by</span>
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div className="flex items-center gap-2">
-              <CustomSelect
-                items={dynamicSalesforceFields}
-                value={matchLeft}
-                onValueChange={setMatchLeft}
-                placeholder="Select field"
-              />
-              <EqualIcon className="w-4 h-4" />
-              <CustomSelect
-                items={usertourFields}
-                value={matchRight}
-                onValueChange={setMatchRight}
-                placeholder="Select field"
-                showCreateAttribute={true}
-                onCreateAttribute={handleCreateAttribute}
-              />
-            </div>
-          </div>
-
-          {/* Fields to sync from Salesforce to Usertour */}
-          <div className="bg-muted/50 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">Fields to sync from Salesforce to Usertour</span>
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
-            </div>
-            {sfToUsertour.map((m, idx) => (
-              <div key={idx} className="flex items-center gap-2 py-1">
-                <CustomSelect
-                  items={dynamicSalesforceFields}
-                  value={m.left}
-                  onValueChange={(v) => {
-                    const arr = [...sfToUsertour];
-                    arr[idx].left = v;
-                    setSfToUsertour(arr);
-                  }}
-                  placeholder="Select field"
-                />
-                <ArrowRightIcon className="w-4 h-4" />
-                <CustomSelect
-                  items={usertourFields}
-                  value={m.right}
-                  onValueChange={(v) => {
-                    const arr = [...sfToUsertour];
-                    arr[idx].right = v;
-                    setSfToUsertour(arr);
-                  }}
-                  placeholder="Select field"
-                  showCreateAttribute={true}
-                  onCreateAttribute={handleCreateAttribute}
-                />
-                {m.isNew && (
-                  <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
-                    New
-                  </span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeMapping(idx, 'sfToUsertour')}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-            {/* Add new mapping row */}
-            <div className="flex items-center gap-2 py-1">
-              <CustomSelect
-                items={dynamicSalesforceFields}
-                value={addLeft}
-                onValueChange={setAddLeft}
-                placeholder="Select a field to sync"
-              />
-              <ArrowRightIcon className="w-4 h-4" />
-              <CustomSelect
-                items={usertourFields}
-                value={addRight}
-                onValueChange={setAddRight}
-                placeholder="..."
-                showCreateAttribute={true}
-                onCreateAttribute={handleCreateAttribute}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-2"
-                disabled={!addLeft || !addRight}
-                onClick={addMapping}
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-
-          {/* Fields to sync from Usertour to Salesforce */}
-          <div className="bg-muted/50 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">Fields to sync from Usertour to Salesforce</span>
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
-            </div>
-            {usertourToSf.map((m, idx) => (
-              <div key={idx} className="flex items-center gap-2 py-1">
-                <CustomSelect
-                  items={usertourFields}
-                  value={m.left}
-                  onValueChange={(v) => {
-                    const arr = [...usertourToSf];
-                    arr[idx].left = v;
-                    setUsertourToSf(arr);
-                  }}
-                  placeholder="Select field"
-                  showCreateAttribute={true}
-                  onCreateAttribute={handleCreateAttribute}
-                />
-                <ArrowRightIcon className="w-4 h-4" />
-                <CustomSelect
-                  items={dynamicSalesforceFields}
-                  value={m.right}
-                  onValueChange={(v) => {
-                    const arr = [...usertourToSf];
-                    arr[idx].right = v;
-                    setUsertourToSf(arr);
-                  }}
-                  placeholder="Select field"
-                  showCreateAttribute={true}
-                  onCreateAttribute={handleCreateAttribute}
-                />
-                {m.isNew && (
-                  <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
-                    New
-                  </span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeMapping(idx, 'usertourToSf')}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-            {/* Add new mapping row */}
-            <div className="flex items-center gap-2 py-1">
-              <CustomSelect
-                items={usertourFields}
-                value={addLeft2}
-                onValueChange={setAddLeft2}
-                placeholder="Select a field to sync"
-                showCreateAttribute={true}
-                onCreateAttribute={handleCreateAttribute}
-              />
-              <ArrowRightIcon className="w-4 h-4" />
-              <CustomSelect
-                items={dynamicSalesforceFields}
-                value={addRight2}
-                onValueChange={setAddRight2}
-                placeholder="..."
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-2"
-                disabled={!addLeft2 || !addRight2}
-                onClick={addMapping2}
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-
-          {/* Stream events switch */}
-          <div className="flex items-center gap-3 mb-4">
-            <Switch checked={stream} onCheckedChange={setStream} />
-            <span>
-              Stream <span className="font-semibold text-primary">User events</span>
-              <span className="mx-1">→</span>
-              <span className="font-semibold text-blue-500">Contact activity</span>
-            </span>
-            <InfoIcon className="w-4 h-4 text-muted-foreground" />
-          </div>
-
-          {/* Info and actions */}
-          {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <InfoIcon className="w-4 h-4" />
-          Changes will take effect and start syncing immediately after saving.
-        </div> */}
-          <DialogFooter>
-            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
-              Back
-            </Button>
-            <Button onClick={handleCreateMapping} disabled={isLoading}>
-              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              Save mapping
-            </Button>
-          </DialogFooter>
-
-          {/* Attribute Create Form */}
-          <AttributeCreateForm
-            onOpenChange={setShowCreateAttributeForm}
-            onSuccess={handleAfterCreate}
-            isOpen={showCreateAttributeForm}
-            projectId={project?.id || ''}
-            zIndex={1000}
-            defaultValues={{
-              dataType: String(BizAttributeTypes.String),
-              bizType: String(selectedBizType),
-            }}
-            disabledFields={['bizType']}
-          />
-        </>
+        <FieldMappingStep
+          selectedBizType={selectedBizType}
+          projectId={project?.id || ''}
+          matchLeft={matchLeft}
+          matchRight={matchRight}
+          onMatchLeftChange={setMatchLeft}
+          onMatchRightChange={setMatchRight}
+          sfToUsertour={sfToUsertour}
+          usertourToSf={usertourToSf}
+          onSfToUsertourChange={setSfToUsertour}
+          onUsertourToSfChange={setUsertourToSf}
+          addLeft={addLeft}
+          addRight={addRight}
+          addLeft2={addLeft2}
+          addRight2={addRight2}
+          onAddLeftChange={setAddLeft}
+          onAddRightChange={setAddRight}
+          onAddLeft2Change={setAddLeft2}
+          onAddRight2Change={setAddRight2}
+          onAddMapping={addMapping}
+          onAddMapping2={addMapping2}
+          stream={stream}
+          onStreamChange={setStream}
+          onBack={handleBack}
+          onSave={handleCreateMapping}
+          isLoading={isLoading}
+          dynamicSalesforceFields={dynamicSalesforceFields}
+          usertourFields={usertourFields}
+          showCreateAttributeForm={showCreateAttributeForm}
+          onShowCreateAttributeFormChange={setShowCreateAttributeForm}
+          onAfterCreate={handleAfterCreate}
+        />
       )}
     </DialogContent>
   );
