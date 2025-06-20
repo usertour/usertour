@@ -3,15 +3,15 @@ import { InfoIcon } from 'lucide-react';
 import { SpinnerIcon, EqualIcon, ArrowRightIcon, UsertourIcon2 } from '@usertour-ui/icons';
 import { Switch } from '@usertour-ui/switch';
 import { DialogFooter } from '@usertour-ui/dialog';
-import { CustomSelect } from './custom-select';
-import { MappingRow } from './mapping-row';
+import { ObjectMappingFieldSelect } from './object-mapping-select';
+import { ObjectMappingRow } from './object-mapping-row';
 import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 import { Attribute, BizAttributeTypes } from '@usertour-ui/types';
 import { useState } from 'react';
 import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 import { cn } from '@usertour-ui/ui-utils';
 
-interface FieldMappingStepProps {
+interface ObjectMappingFieldStepProps {
   selectedBizType: number;
   projectId: string;
   // Fields
@@ -33,14 +33,14 @@ const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
 );
 
-export const FieldMappingStep = ({
+export const ObjectMappingFieldStep = ({
   selectedBizType,
   projectId,
   sourceFields,
   onBack,
   onSave,
   isLoading,
-}: FieldMappingStepProps) => {
+}: ObjectMappingFieldStepProps) => {
   // Internal state management
   const [matchLeft, setMatchLeft] = useState('email');
   const [matchRight, setMatchRight] = useState('email');
@@ -163,14 +163,14 @@ export const FieldMappingStep = ({
           <InfoIcon className="w-4 h-4 text-muted-foreground" />
         </div>
         <div className="flex items-center gap-2">
-          <CustomSelect
+          <ObjectMappingFieldSelect
             items={sourceFields}
             value={matchLeft}
             onValueChange={setMatchLeft}
             placeholder="Select field"
           />
           <EqualIcon className="w-4 h-4" />
-          <CustomSelect
+          <ObjectMappingFieldSelect
             items={usertourFields}
             value={matchRight}
             onValueChange={setMatchRight}
@@ -188,7 +188,7 @@ export const FieldMappingStep = ({
           <InfoIcon className="w-4 h-4 text-muted-foreground" />
         </div>
         {sourceToTarget.map((mapping, idx) => (
-          <MappingRow
+          <ObjectMappingRow
             key={idx}
             mapping={mapping}
             onMappingChange={(left, right) => updateMapping(idx, 'sourceToTarget', left, right)}
@@ -201,14 +201,14 @@ export const FieldMappingStep = ({
         ))}
         {/* Add new mapping row */}
         <div className="flex items-center gap-2 py-1">
-          <CustomSelect
+          <ObjectMappingFieldSelect
             items={sourceFields}
             value={addLeft}
             onValueChange={setAddLeft}
             placeholder="Select a field to sync"
           />
           <ArrowRightIcon className="w-4 h-4" />
-          <CustomSelect
+          <ObjectMappingFieldSelect
             items={usertourFields}
             value={addRight}
             onValueChange={setAddRight}
@@ -235,7 +235,7 @@ export const FieldMappingStep = ({
           <InfoIcon className="w-4 h-4 text-muted-foreground" />
         </div>
         {targetToSource.map((mapping, idx) => (
-          <MappingRow
+          <ObjectMappingRow
             key={idx}
             mapping={mapping}
             onMappingChange={(left, right) => updateMapping(idx, 'targetToSource', left, right)}
@@ -248,7 +248,7 @@ export const FieldMappingStep = ({
         ))}
         {/* Add new mapping row */}
         <div className="flex items-center gap-2 py-1">
-          <CustomSelect
+          <ObjectMappingFieldSelect
             items={usertourFields}
             value={addLeft2}
             onValueChange={setAddLeft2}
@@ -257,7 +257,7 @@ export const FieldMappingStep = ({
             onCreateAttribute={handleCreateAttribute}
           />
           <ArrowRightIcon className="w-4 h-4" />
-          <CustomSelect
+          <ObjectMappingFieldSelect
             items={sourceFields}
             value={addRight2}
             onValueChange={setAddRight2}

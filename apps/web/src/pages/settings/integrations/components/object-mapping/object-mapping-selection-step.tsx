@@ -2,9 +2,9 @@ import { Button } from '@usertour-ui/button';
 import { Label } from '@usertour-ui/label';
 import { ArrowRightIcon } from '@usertour-ui/icons';
 import { DialogFooter } from '@usertour-ui/dialog';
-import { CustomObjectSelect } from './custom-select';
+import { ObjectMappingObjectSelect } from './object-mapping-select';
 
-interface ObjectSelectionStepProps {
+interface ObjectMappingSelectionStepProps {
   salesforceObject: string;
   usertourObject: string;
   onSalesforceObjectChange: (value: string) => void;
@@ -26,7 +26,7 @@ const usertourObjects = [
   { name: 'Company', label: 'Company' },
 ];
 
-export const ObjectSelectionStep = ({
+export const ObjectMappingSelectionStep = ({
   salesforceObject,
   usertourObject,
   onSalesforceObjectChange,
@@ -34,7 +34,7 @@ export const ObjectSelectionStep = ({
   onContinue,
   onCancel,
   isLoading,
-}: ObjectSelectionStepProps) => {
+}: ObjectMappingSelectionStepProps) => {
   return (
     <>
       <div className="space-y-1 py-4">
@@ -49,7 +49,7 @@ export const ObjectSelectionStep = ({
         </div>
 
         <div className="flex items-center gap-4 justify-between">
-          <CustomObjectSelect
+          <ObjectMappingObjectSelect
             items={salesforceObjects}
             value={salesforceObject}
             onValueChange={onSalesforceObjectChange}
@@ -60,7 +60,7 @@ export const ObjectSelectionStep = ({
             <ArrowRightIcon className="h-6 w-6 text-muted-foreground" />
           </div>
 
-          <CustomObjectSelect
+          <ObjectMappingObjectSelect
             items={usertourObjects}
             value={usertourObject}
             onValueChange={onUsertourObjectChange}

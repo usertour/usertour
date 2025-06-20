@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { cn } from '@usertour-ui/ui-utils';
 
-interface CustomSelectProps {
+interface ObjectMappingFieldSelectProps {
   items: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   value: string;
   onValueChange: (value: string) => void;
@@ -23,7 +23,7 @@ interface CustomSelectProps {
   onCreateAttribute?: () => void;
 }
 
-interface CustomObjectSelectProps {
+interface ObjectMappingObjectSelectProps {
   items: Array<{ name: string; label: string; type?: string }>;
   value: string;
   onValueChange: (value: string) => void;
@@ -31,7 +31,7 @@ interface CustomObjectSelectProps {
   className?: string;
 }
 
-export function CustomSelect({
+export function ObjectMappingFieldSelect({
   items,
   value,
   onValueChange,
@@ -39,7 +39,7 @@ export function CustomSelect({
   className,
   showCreateAttribute = false,
   onCreateAttribute,
-}: CustomSelectProps) {
+}: ObjectMappingFieldSelectProps) {
   const [open, setOpen] = useState(false);
   const selectedItem = items.find((item) => item.value === value);
 
@@ -112,13 +112,13 @@ export function CustomSelect({
   );
 }
 
-export function CustomObjectSelect({
+export function ObjectMappingObjectSelect({
   items,
   value,
   onValueChange,
   placeholder,
   className,
-}: CustomObjectSelectProps) {
+}: ObjectMappingObjectSelectProps) {
   const [open, setOpen] = useState(false);
   const selectedItem = items.find((item) => item.name === value);
 

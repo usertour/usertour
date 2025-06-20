@@ -40,8 +40,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
 import { AttributeBizTypes } from '@usertour-ui/types';
-import { ObjectSelectionStep } from './object-mapping/object-selection-step';
-import { FieldMappingStep } from './object-mapping/field-mapping-step';
+import { ObjectMappingSelectionStep } from './object-mapping/object-mapping-selection-step';
+import { ObjectMappingFieldStep } from './object-mapping/object-mapping-field-step';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (
   <SalesforceIcon className={cn('w-4 h-4', className)} />
@@ -161,7 +161,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
       </DialogHeader>
 
       {step === 'objects' ? (
-        <ObjectSelectionStep
+        <ObjectMappingSelectionStep
           salesforceObject={salesforceObject}
           usertourObject={usertourObject}
           onSalesforceObjectChange={setSalesforceObject}
@@ -171,7 +171,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
           isLoading={isLoading}
         />
       ) : (
-        <FieldMappingStep
+        <ObjectMappingFieldStep
           selectedBizType={selectedBizType}
           projectId={project?.id || ''}
           onBack={handleBack}

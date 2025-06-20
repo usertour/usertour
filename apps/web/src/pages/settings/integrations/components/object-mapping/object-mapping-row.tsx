@@ -1,9 +1,9 @@
 import { Button } from '@usertour-ui/button';
 import { XIcon } from 'lucide-react';
 import { ArrowRightIcon } from '@usertour-ui/icons';
-import { CustomSelect } from './custom-select';
+import { ObjectMappingFieldSelect } from './object-mapping-select';
 
-interface MappingRowProps {
+interface ObjectMappingRowProps {
   mapping: {
     left: string;
     right: string;
@@ -17,7 +17,7 @@ interface MappingRowProps {
   onCreateAttribute?: () => void;
 }
 
-export const MappingRow = ({
+export const ObjectMappingRow = ({
   mapping,
   onMappingChange,
   onRemove,
@@ -25,17 +25,17 @@ export const MappingRow = ({
   targetFields,
   showCreateAttribute = false,
   onCreateAttribute,
-}: MappingRowProps) => {
+}: ObjectMappingRowProps) => {
   return (
     <div className="flex items-center gap-2 py-1">
-      <CustomSelect
+      <ObjectMappingFieldSelect
         items={sourceFields}
         value={mapping.left}
         onValueChange={(value) => onMappingChange(value, mapping.right)}
         placeholder="Select field"
       />
       <ArrowRightIcon className="w-4 h-4" />
-      <CustomSelect
+      <ObjectMappingFieldSelect
         items={targetFields}
         value={mapping.right}
         onValueChange={(value) => onMappingChange(mapping.left, value)}
