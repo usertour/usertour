@@ -27,7 +27,8 @@ interface MappingSectionProps {
   onMappingChange: (idx: number, direction: MappingDirection, left: string, right: string) => void;
   onRemove: (idx: number, direction: MappingDirection) => void;
   onAdd: (direction: MappingDirection) => void;
-  showCreateAttribute: boolean;
+  showCreateAttributeLeft: boolean;
+  showCreateAttributeRight: boolean;
   onCreateAttribute: () => void;
 }
 
@@ -52,7 +53,8 @@ const MappingSection = ({
   onMappingChange,
   onRemove,
   onAdd,
-  showCreateAttribute,
+  showCreateAttributeLeft,
+  showCreateAttributeRight,
   onCreateAttribute,
 }: MappingSectionProps) => {
   return (
@@ -68,6 +70,8 @@ const MappingSection = ({
             value={mapping.left}
             onValueChange={(value) => onMappingChange(idx, direction, value, mapping.right)}
             placeholder="Select field"
+            showCreateAttribute={showCreateAttributeLeft}
+            onCreateAttribute={onCreateAttribute}
           />
           <ArrowRightIcon className="w-4 h-4" />
           <ObjectMappingFieldSelect
@@ -75,7 +79,7 @@ const MappingSection = ({
             value={mapping.right}
             onValueChange={(value) => onMappingChange(idx, direction, mapping.left, value)}
             placeholder="Select field"
-            showCreateAttribute={showCreateAttribute}
+            showCreateAttribute={showCreateAttributeRight}
             onCreateAttribute={onCreateAttribute}
           />
           {mapping.isNew && (
@@ -95,7 +99,7 @@ const MappingSection = ({
           value={sourceValue}
           onValueChange={onSourceChange}
           placeholder="Select a field to sync"
-          showCreateAttribute={showCreateAttribute}
+          showCreateAttribute={showCreateAttributeLeft}
           onCreateAttribute={onCreateAttribute}
         />
         <ArrowRightIcon className="w-4 h-4" />
@@ -104,7 +108,7 @@ const MappingSection = ({
           value={targetValue}
           onValueChange={onTargetChange}
           placeholder="..."
-          showCreateAttribute={showCreateAttribute}
+          showCreateAttribute={showCreateAttributeRight}
           onCreateAttribute={onCreateAttribute}
         />
         <Button
@@ -277,7 +281,8 @@ export const ObjectMappingFieldStep = ({
         onMappingChange={updateMapping}
         onRemove={removeMapping}
         onAdd={addMapping}
-        showCreateAttribute={true}
+        showCreateAttributeLeft={false}
+        showCreateAttributeRight={true}
         onCreateAttribute={handleCreateAttribute}
       />
 
@@ -295,7 +300,8 @@ export const ObjectMappingFieldStep = ({
         onMappingChange={updateMapping}
         onRemove={removeMapping}
         onAdd={addMapping}
-        showCreateAttribute={false}
+        showCreateAttributeLeft={true}
+        showCreateAttributeRight={false}
         onCreateAttribute={handleCreateAttribute}
       />
 
