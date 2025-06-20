@@ -57,6 +57,17 @@ const MappingSection = ({
   showCreateAttributeRight,
   onCreateAttribute,
 }: MappingSectionProps) => {
+  // Filter out already selected fields from dropdown options
+  const getAvailableSourceFields = () => {
+    const selectedSourceFields = mappings.map((m) => m.left).filter(Boolean);
+    return sourceFields.filter((field) => !selectedSourceFields.includes(field.value));
+  };
+
+  const getAvailableTargetFields = () => {
+    const selectedTargetFields = mappings.map((m) => m.right).filter(Boolean);
+    return targetFields.filter((field) => !selectedTargetFields.includes(field.value));
+  };
+
   return (
     <div className="bg-muted/50 rounded-lg p-4 mb-4">
       <div className="flex items-center gap-2 mb-2">
@@ -72,6 +83,7 @@ const MappingSection = ({
             placeholder="Select field"
             showCreateAttribute={showCreateAttributeLeft}
             onCreateAttribute={onCreateAttribute}
+            disabled={true}
           />
           <ArrowRightIcon className="w-4 h-4" />
           <ObjectMappingFieldSelect
@@ -81,6 +93,7 @@ const MappingSection = ({
             placeholder="Select field"
             showCreateAttribute={showCreateAttributeRight}
             onCreateAttribute={onCreateAttribute}
+            disabled={true}
           />
           {mapping.isNew && (
             <span className="ml-2 px-2 py-0.5 text-xs rounded bg-primary/10 text-primary font-medium">
@@ -95,7 +108,7 @@ const MappingSection = ({
       {/* Add new mapping row */}
       <div className="flex items-center gap-2 py-1">
         <ObjectMappingFieldSelect
-          items={sourceFields}
+          items={getAvailableSourceFields()}
           value={sourceValue}
           onValueChange={onSourceChange}
           placeholder="Select a field to sync"
@@ -104,7 +117,7 @@ const MappingSection = ({
         />
         <ArrowRightIcon className="w-4 h-4" />
         <ObjectMappingFieldSelect
-          items={targetFields}
+          items={getAvailableTargetFields()}
           value={targetValue}
           onValueChange={onTargetChange}
           placeholder="..."

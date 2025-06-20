@@ -21,6 +21,7 @@ interface ObjectMappingFieldSelectProps {
   className?: string;
   showCreateAttribute?: boolean;
   onCreateAttribute?: () => void;
+  disabled?: boolean;
 }
 
 interface ObjectMappingObjectSelectProps {
@@ -39,27 +40,31 @@ export function ObjectMappingFieldSelect({
   className,
   showCreateAttribute = false,
   onCreateAttribute,
+  disabled = false,
 }: ObjectMappingFieldSelectProps) {
   const [open, setOpen] = useState(false);
   const selectedItem = items.find((item) => item.value === value);
 
   const handleSelect = (selectedValue: string) => {
+    if (disabled) return;
     onValueChange(selectedValue);
     setOpen(false);
   };
 
   const handleCreateAttribute = () => {
+    if (disabled) return;
     onCreateAttribute?.();
     setOpen(false);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           aria-expanded={open}
-          className={cn('w-72 justify-between', className)}
+          className={cn('w-72 justify-between', className, disabled && 'disabled:opacity-70')}
+          disabled={disabled}
         >
           {selectedItem ? (
             <div className="flex items-center gap-2">
