@@ -14,6 +14,23 @@ interface ObjectMappingFieldStepProps {
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
 }
 
+interface MappingSectionProps {
+  direction: MappingDirection;
+  title: string;
+  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  sourceValue: string;
+  targetValue: string;
+  onSourceChange: (value: string) => void;
+  onTargetChange: (value: string) => void;
+  mappings: MappingItem[];
+  onMappingChange: (idx: number, direction: MappingDirection, left: string, right: string) => void;
+  onRemove: (idx: number, direction: MappingDirection) => void;
+  onAdd: (direction: MappingDirection) => void;
+  showCreateAttribute: boolean;
+  onCreateAttribute: () => void;
+}
+
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
 );
@@ -37,22 +54,7 @@ const MappingSection = ({
   onAdd,
   showCreateAttribute,
   onCreateAttribute,
-}: {
-  direction: MappingDirection;
-  title: string;
-  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  sourceValue: string;
-  targetValue: string;
-  onSourceChange: (value: string) => void;
-  onTargetChange: (value: string) => void;
-  mappings: MappingItem[];
-  onMappingChange: (idx: number, direction: MappingDirection, left: string, right: string) => void;
-  onRemove: (idx: number, direction: MappingDirection) => void;
-  onAdd: (direction: MappingDirection) => void;
-  showCreateAttribute: boolean;
-  onCreateAttribute: () => void;
-}) => {
+}: MappingSectionProps) => {
   return (
     <div className="bg-muted/50 rounded-lg p-4 mb-4">
       <div className="flex items-center gap-2 mb-2">
