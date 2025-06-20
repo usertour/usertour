@@ -210,8 +210,8 @@ export const ObjectMappingFieldStep = ({
             mapping={mapping}
             onMappingChange={(left, right) => updateMapping(idx, 'targetToSource', left, right)}
             onRemove={() => removeMapping(idx, 'targetToSource')}
-            sourceFields={sourceFields}
-            targetFields={usertourFields}
+            sourceFields={usertourFields}
+            targetFields={sourceFields}
             showCreateAttribute={true}
             onCreateAttribute={handleCreateAttribute}
           />
