@@ -21,6 +21,7 @@ import {
   PlusIcon,
   SalesforceIcon,
   UsertourIcon2,
+  ArrowRightIcon,
   ArrowRightLeftIcon,
 } from '@usertour-ui/icons';
 import {
@@ -41,8 +42,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
 import { AttributeBizTypes } from '@usertour-ui/types';
-import { ObjectMappingSelectionStep } from './object-mapping/object-mapping-selection-step';
 import { ObjectMappingFieldStep } from './object-mapping/object-mapping-field-step';
+import { ObjectMappingObjectSelect } from './object-mapping/object-mapping-select';
+import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
 import { InfoIcon } from 'lucide-react';
 
@@ -53,6 +55,81 @@ const SalesforceMappingIcon = ({ className }: { className?: string }) => (
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
 );
+
+const salesforceObjects = [
+  { name: 'Contact', label: 'Contacts', type: 'standard' as const },
+  { name: 'Account', label: 'Accounts', type: 'standard' as const },
+  { name: 'Lead', label: 'Leads', type: 'standard' as const },
+  { name: 'Opportunity', label: 'Opportunities', type: 'standard' as const },
+];
+
+const usertourObjects = [
+  { name: 'User', label: 'User' },
+  { name: 'Company', label: 'Company' },
+];
+
+const ObjectMappingSelectionStep = ({
+  salesforceObject,
+  usertourObject,
+  onSalesforceObjectChange,
+  onUsertourObjectChange,
+  onContinue,
+  onCancel,
+  isLoading,
+}: {
+  salesforceObject: string;
+  usertourObject: string;
+  onSalesforceObjectChange: (value: string) => void;
+  onUsertourObjectChange: (value: string) => void;
+  onContinue: () => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}) => {
+  return (
+    <>
+      <div className="space-y-1 py-4">
+        <div className="flex items-center gap-4 justify-between">
+          <Label htmlFor="salesforce-object" className="w-72">
+            Salesforce Object
+          </Label>
+          <div className="w-6" />
+          <Label htmlFor="usertour-object" className="w-72">
+            Usertour Object
+          </Label>
+        </div>
+
+        <div className="flex items-center gap-4 justify-between">
+          <ObjectMappingObjectSelect
+            items={salesforceObjects}
+            value={salesforceObject}
+            onValueChange={onSalesforceObjectChange}
+            placeholder="Select Salesforce object"
+          />
+
+          <div className="flex items-center justify-center">
+            <ArrowRightIcon className="h-6 w-6 text-muted-foreground" />
+          </div>
+
+          <ObjectMappingObjectSelect
+            items={usertourObjects}
+            value={usertourObject}
+            onValueChange={onUsertourObjectChange}
+            placeholder="Select Usertour object"
+          />
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button onClick={onContinue} disabled={!salesforceObject || !usertourObject}>
+          Continue
+        </Button>
+      </DialogFooter>
+    </>
+  );
+};
 
 export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const { environment, project } = useAppContext();
