@@ -22,6 +22,8 @@ import {
   SalesforceIcon,
   UsertourIcon2,
   ArrowRightLeftIcon,
+  EqualIcon,
+  ArrowRightIcon,
 } from '@usertour-ui/icons';
 import {
   DropdownMenuContent,
@@ -40,7 +42,7 @@ import {
 } from '@usertour-ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@usertour-ui/switch';
-import { XIcon, InfoIcon, ArrowRightIcon } from 'lucide-react';
+import { XIcon, InfoIcon } from 'lucide-react';
 import { Label } from '@usertour-ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
 import {
@@ -427,7 +429,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 onValueChange={setMatchLeft}
                 placeholder="Select field"
               />
-              <span className="mx-2 text-lg">=</span>
+              <EqualIcon className="w-4 h-4" />
               <CustomSelect
                 items={usertourFields}
                 value={matchRight}
@@ -455,7 +457,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                   }}
                   placeholder="Select field"
                 />
-                <span className="mx-2 text-xl text-muted-foreground">→</span>
+                <ArrowRightIcon className="w-4 h-4" />
                 <CustomSelect
                   items={usertourFields}
                   value={m.right}
@@ -488,7 +490,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 onValueChange={setAddLeft}
                 placeholder="Select a field to sync"
               />
-              <span className="mx-2 text-xl text-muted-foreground">→</span>
+              <ArrowRightIcon className="w-4 h-4" />
               <CustomSelect
                 items={usertourFields}
                 value={addRight}
@@ -525,7 +527,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                   }}
                   placeholder="Select field"
                 />
-                <span className="mx-2 text-xl text-muted-foreground">→</span>
+                <ArrowRightIcon className="w-4 h-4" />
                 <CustomSelect
                   items={dynamicSalesforceFields}
                   value={m.right}
@@ -558,7 +560,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
                 onValueChange={setAddLeft2}
                 placeholder="Select a field to sync"
               />
-              <span className="mx-2 text-xl text-muted-foreground">→</span>
+              <ArrowRightIcon className="w-4 h-4" />
               <CustomSelect
                 items={dynamicSalesforceFields}
                 value={addRight2}
