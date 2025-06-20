@@ -1,8 +1,6 @@
 import { Button } from '@usertour-ui/button';
 import { InfoIcon } from 'lucide-react';
-import { SpinnerIcon, EqualIcon, ArrowRightIcon, UsertourIcon2 } from '@usertour-ui/icons';
-import { Switch } from '@usertour-ui/switch';
-import { DialogFooter } from '@usertour-ui/dialog';
+import { EqualIcon, ArrowRightIcon, UsertourIcon2 } from '@usertour-ui/icons';
 import { ObjectMappingFieldSelect } from './object-mapping-select';
 import { ObjectMappingRow } from './object-mapping-row';
 import { AttributeCreateForm } from '@usertour-ui/shared-editor';
@@ -14,19 +12,7 @@ import { cn } from '@usertour-ui/ui-utils';
 interface ObjectMappingFieldStepProps {
   selectedBizType: number;
   projectId: string;
-  // Fields
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  // Actions
-  onBack: () => void;
-  onSave: (mappingData: MappingData) => void;
-  isLoading: boolean;
-}
-
-interface MappingData {
-  matchFields: { left: string; right: string };
-  sourceToTarget: Array<{ left: string; right: string; isNew?: boolean }>;
-  targetToSource: Array<{ left: string; right: string; isNew?: boolean }>;
-  stream: boolean;
 }
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
@@ -37,9 +23,6 @@ export const ObjectMappingFieldStep = ({
   selectedBizType,
   projectId,
   sourceFields,
-  onBack,
-  onSave,
-  isLoading,
 }: ObjectMappingFieldStepProps) => {
   // Internal state management
   const [matchLeft, setMatchLeft] = useState('email');
@@ -73,9 +56,6 @@ export const ObjectMappingFieldStep = ({
   const [addRight, setAddRight] = useState('');
   const [addLeft2, setAddLeft2] = useState('');
   const [addRight2, setAddRight2] = useState('');
-
-  // Stream events switch
-  const [stream, setStream] = useState(false);
 
   // Attribute creation
   const [showCreateAttributeForm, setShowCreateAttributeForm] = useState(false);
@@ -142,16 +122,6 @@ export const ObjectMappingFieldStep = ({
       setAddLeft2('');
       setAddRight2('');
     }
-  };
-
-  const handleSave = () => {
-    const mappingData: MappingData = {
-      matchFields: { left: matchLeft, right: matchRight },
-      sourceToTarget,
-      targetToSource,
-      stream,
-    };
-    onSave(mappingData);
   };
 
   return (
@@ -274,27 +244,6 @@ export const ObjectMappingFieldStep = ({
           </Button>
         </div>
       </div>
-
-      {/* Stream events switch */}
-      <div className="flex items-center gap-3 mb-4">
-        <Switch checked={stream} onCheckedChange={setStream} />
-        <span>
-          Stream <span className="font-semibold text-primary">User events</span>
-          <span className="mx-1">→</span>
-          <span className="font-semibold text-blue-500">Contact activity</span>
-        </span>
-        <InfoIcon className="w-4 h-4 text-muted-foreground" />
-      </div>
-
-      <DialogFooter>
-        <Button variant="outline" onClick={onBack} disabled={isLoading}>
-          Back
-        </Button>
-        <Button onClick={handleSave} disabled={isLoading}>
-          {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-          Save mapping
-        </Button>
-      </DialogFooter>
 
       {/* Attribute Create Form */}
       <AttributeCreateForm

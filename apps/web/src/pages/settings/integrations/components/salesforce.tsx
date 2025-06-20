@@ -36,12 +36,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@usertour-ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
 import { AttributeBizTypes } from '@usertour-ui/types';
 import { ObjectMappingSelectionStep } from './object-mapping/object-mapping-selection-step';
 import { ObjectMappingFieldStep } from './object-mapping/object-mapping-field-step';
+import { Switch } from '@usertour-ui/switch';
+import { InfoIcon } from 'lucide-react';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (
   <SalesforceIcon className={cn('w-4 h-4', className)} />
@@ -58,6 +61,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const [salesforceObject, setSalesforceObject] = useState<string>('');
   const [usertourObject, setUsertourObject] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [stream, setStream] = useState(false);
 
   // Get the integration ID from the current integration
   const { data: integration } = useGetIntegrationQuery(environment?.id || '', 'salesforce', {
@@ -112,6 +116,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
         salesforceObject,
         usertourObject,
         mappingData,
+        stream,
       });
 
       toast({
@@ -171,14 +176,34 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
           isLoading={isLoading}
         />
       ) : (
-        <ObjectMappingFieldStep
-          selectedBizType={selectedBizType}
-          projectId={project?.id || ''}
-          onBack={handleBack}
-          onSave={handleCreateMapping}
-          isLoading={isLoading}
-          sourceFields={dynamicSalesforceFields}
-        />
+        <>
+          <ObjectMappingFieldStep
+            selectedBizType={selectedBizType}
+            projectId={project?.id || ''}
+            sourceFields={dynamicSalesforceFields}
+          />
+
+          {/* Stream events switch - business specific */}
+          <div className="flex items-center gap-3 mb-4">
+            <Switch checked={stream} onCheckedChange={setStream} />
+            <span>
+              Stream <span className="font-semibold text-primary">User events</span>
+              <span className="mx-1">→</span>
+              <span className="font-semibold text-blue-500">Contact activity</span>
+            </span>
+            <InfoIcon className="w-4 h-4 text-muted-foreground" />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
+              Back
+            </Button>
+            <Button onClick={handleCreateMapping} disabled={isLoading}>
+              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              Save mapping
+            </Button>
+          </DialogFooter>
+        </>
       )}
     </DialogContent>
   );
