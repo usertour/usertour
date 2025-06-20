@@ -291,7 +291,6 @@ export const ObjectMappingPanel = ({
   const updateMappingConfig = (updates: Partial<IntegrationObjectMappingSettings>) => {
     setMappingConfig((prevConfig) => {
       const newConfig = { ...prevConfig, ...updates };
-      console.log('newConfig', newConfig);
       onMappingChange?.(newConfig);
       return newConfig;
     });

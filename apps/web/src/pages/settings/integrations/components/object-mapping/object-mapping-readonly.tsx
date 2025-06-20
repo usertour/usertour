@@ -10,6 +10,26 @@ import {
 import { cn } from '@usertour-ui/ui-utils';
 import { format } from 'date-fns';
 import { Button } from '@usertour-ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@usertour-ui/dropdown-menu';
+import { DotsVerticalIcon } from '@radix-ui/react-icons';
+import { useDeleteIntegrationObjectMappingMutation } from '@usertour-ui/shared-hooks';
+import { useToast } from '@usertour-ui/use-toast';
+import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@usertour-ui/alert-dialog';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
@@ -21,6 +41,7 @@ const SalesforceMappingIcon = ({ className }: { className?: string }) => (
 
 interface ObjectMappingReadonlyProps {
   mapping: IntegrationObjectMappingModel;
+  onDelete?: (mappingId: string) => void;
 }
 
 export const ObjectMappingReadonlyButton = ({
@@ -41,18 +62,53 @@ export const ObjectMappingReadonlyButton = ({
   );
 };
 
-export const ObjectMappingReadonly = ({ mapping }: ObjectMappingReadonlyProps) => {
-  console.log('mapping', mapping);
+export const ObjectMappingReadonly = ({ mapping, onDelete }: ObjectMappingReadonlyProps) => {
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { invoke: deleteMapping } = useDeleteIntegrationObjectMappingMutation();
+
   const settings = mapping.settings as IntegrationObjectMappingSettings;
   const matchObjects = settings?.matchObjects;
   const sourceToTarget = settings?.sourceToTarget || [];
   const targetToSource = settings?.targetToSource || [];
   const stream = settings?.isSyncStream || false;
 
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      const success = await deleteMapping(mapping.id);
+
+      if (success) {
+        toast({
+          title: 'Success',
+          description: 'Object mapping deleted successfully',
+        });
+        onDelete?.(mapping.id);
+        setShowDeleteDialog(false);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete object mapping',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete mapping:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete object mapping',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between relative">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
               <SalesforceMappingIcon className="w-5 h-5" />
@@ -64,16 +120,46 @@ export const ObjectMappingReadonly = ({ mapping }: ObjectMappingReadonlyProps) =
               {mapping.destinationObjectType}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={mapping.enabled ? 'default' : 'secondary'}>
-              {mapping.enabled ? 'Enabled' : 'Disabled'}
-            </Badge>
-            {mapping.isSyncing && (
-              <Badge variant="outline" className="text-blue-600">
-                Syncing
-              </Badge>
-            )}
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0 absolute right-0 top-0">
+                <DotsVerticalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                className="text-red-600 cursor-pointer"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Object Mapping</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the mapping between{' '}
+                  <strong>{mapping.sourceObjectType}</strong> and{' '}
+                  <strong>{mapping.destinationObjectType}</strong>? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardTitle>
         {mapping.lastSyncedAt && (
           <p className="text-sm text-muted-foreground">

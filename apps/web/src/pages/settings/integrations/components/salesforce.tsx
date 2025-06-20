@@ -330,33 +330,12 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
 
 const INTEGRATION_PROVIDER = 'salesforce' as const;
 
-const MappingSetupButton = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Card className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
-          <CardContent className="flex items-center justify-center p-6">
-            <div className="flex items-center gap-2">
-              <PlusIcon className="h-6 w-6" />
-              <span className="text-sm text-muted-foreground">
-                Set up a new mapping between Salesforce and Usertour objects
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </DialogTrigger>
-      <MappingSetupDialog onClose={() => setIsDialogOpen(false)} />
-    </Dialog>
-  );
-};
-
 export const SalesforceIntegration = () => {
   const { environment } = useAppContext();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const environmentId = environment?.id || '';
 
@@ -369,10 +348,13 @@ export const SalesforceIntegration = () => {
   );
 
   // Query existing object mappings
-  const { data: existingMappings, loading: isMappingsLoading } =
-    useGetIntegrationObjectMappingsQuery(currentIntegration?.id || '', {
-      skip: !currentIntegration?.id,
-    });
+  const {
+    data: existingMappings,
+    loading: isMappingsLoading,
+    refetch: refetchMappings,
+  } = useGetIntegrationObjectMappingsQuery(currentIntegration?.id || '', {
+    skip: !currentIntegration?.id,
+  });
 
   const { invoke: disconnectIntegration } = useDisconnectIntegrationMutation();
 
@@ -418,6 +400,11 @@ export const SalesforceIntegration = () => {
       setIsDisconnecting(false);
     }
   }, [environmentId, disconnectIntegration, toast, navigate]);
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    refetchMappings();
+  };
 
   if (isDataLoading || isMappingsLoading) {
     return (
@@ -501,12 +488,30 @@ export const SalesforceIntegration = () => {
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-4">Existing Object Mappings</h3>
           {existingMappings.map((mapping: IntegrationObjectMappingModel) => (
-            <ObjectMappingReadonly key={mapping.id} mapping={mapping} />
+            <ObjectMappingReadonly
+              key={mapping.id}
+              mapping={mapping}
+              onDelete={() => refetchMappings()}
+            />
           ))}
         </div>
       )}
 
-      <MappingSetupButton />
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Card className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
+            <CardContent className="flex items-center justify-center p-6">
+              <div className="flex items-center gap-2">
+                <PlusIcon className="h-6 w-6" />
+                <span className="text-sm text-muted-foreground">
+                  Set up a new mapping between Salesforce and Usertour objects
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </DialogTrigger>
+        <MappingSetupDialog onClose={handleCloseDialog} />
+      </Dialog>
     </>
   );
 };
