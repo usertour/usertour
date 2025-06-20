@@ -1052,7 +1052,7 @@ export class IntegrationService {
         integrationId,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'asc',
       },
     });
   }

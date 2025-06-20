@@ -1,7 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 import { Badge } from '@usertour-ui/badge';
 import { InfoIcon } from 'lucide-react';
-import { ArrowRightIcon, EqualIcon, UsertourIcon2, SalesforceIcon } from '@usertour-ui/icons';
+import {
+  ArrowRightIcon,
+  EqualIcon,
+  UsertourIcon2,
+  SalesforceIcon,
+  Delete2Icon,
+  SpinnerIcon,
+  EditIcon,
+} from '@usertour-ui/icons';
 import {
   IntegrationObjectMappingModel,
   IntegrationObjectMappingItem,
@@ -30,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
+import { ObjectMappingDialog } from './object-mapping-dialog';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
@@ -42,6 +51,7 @@ const SalesforceMappingIcon = ({ className }: { className?: string }) => (
 interface ObjectMappingReadonlyProps {
   mapping: IntegrationObjectMappingModel;
   onDelete?: (mappingId: string) => void;
+  onUpdate?: () => void;
 }
 
 export const ObjectMappingReadonlyButton = ({
@@ -62,10 +72,15 @@ export const ObjectMappingReadonlyButton = ({
   );
 };
 
-export const ObjectMappingReadonly = ({ mapping, onDelete }: ObjectMappingReadonlyProps) => {
+export const ObjectMappingReadonly = ({
+  mapping,
+  onDelete,
+  onUpdate,
+}: ObjectMappingReadonlyProps) => {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { invoke: deleteMapping } = useDeleteIntegrationObjectMappingMutation();
 
   const settings = mapping.settings as IntegrationObjectMappingSettings;
@@ -106,145 +121,168 @@ export const ObjectMappingReadonly = ({ mapping, onDelete }: ObjectMappingReadon
   };
 
   return (
-    <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between relative">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <SalesforceMappingIcon className="w-5 h-5" />
-              {mapping.sourceObjectType}
-            </span>
-            <ArrowRightIcon className="w-5 h-5" />
-            <span className="flex items-center gap-1">
-              <UsertourMappingIcon className="w-5 h-5" />
-              {mapping.destinationObjectType}
-            </span>
-          </div>
+    <>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between relative">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <SalesforceMappingIcon className="w-5 h-5" />
+                {mapping.sourceObjectType}
+              </span>
+              <ArrowRightIcon className="w-5 h-5" />
+              <span className="flex items-center gap-1">
+                <UsertourMappingIcon className="w-5 h-5" />
+                {mapping.destinationObjectType}
+              </span>
+            </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0 absolute right-0 top-0">
-                <DotsVerticalIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                className="text-red-600 cursor-pointer"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Object Mapping</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete the mapping between{' '}
-                  <strong>{mapping.sourceObjectType}</strong> and{' '}
-                  <strong>{mapping.destinationObjectType}</strong>? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 absolute right-0 top-0">
+                  <DotsVerticalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => setIsEditDialogOpen(true)}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardTitle>
-        {mapping.lastSyncedAt && (
-          <p className="text-sm text-muted-foreground">
-            Last synced: {format(new Date(mapping.lastSyncedAt), 'MMM dd, yyyy HH:mm')}
-          </p>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Match objects */}
-        {matchObjects && (
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">Match objects by</span>
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div className="flex items-center gap-2">
-              <ObjectMappingReadonlyButton
-                icon={<SalesforceMappingIcon />}
-                label={matchObjects.sourceFieldName}
-              />
-              <EqualIcon className="w-4 h-4" />
-              <ObjectMappingReadonlyButton
-                icon={<UsertourMappingIcon />}
-                label={matchObjects.targetFieldName}
-              />
-            </div>
-          </div>
-        )}
+                  <EditIcon className="w-4 h-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <SpinnerIcon className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Delete2Icon className="w-4 h-4 mr-2" />
+                  )}
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-        {/* Source to target mappings */}
-        {sourceToTarget.length > 0 && (
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">Fields to sync from source to target</span>
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
-            </div>
-            {sourceToTarget.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
-              <div key={idx} className="flex items-center gap-2 py-1">
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Object Mapping</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete the mapping between{' '}
+                    <strong>{mapping.sourceObjectType}</strong> and{' '}
+                    <strong>{mapping.destinationObjectType}</strong>? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardTitle>
+          {mapping.lastSyncedAt && (
+            <p className="text-sm text-muted-foreground">
+              Last synced: {format(new Date(mapping.lastSyncedAt), 'MMM dd, yyyy HH:mm')}
+            </p>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Match objects */}
+          {matchObjects && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-medium">Match objects by</span>
+                <InfoIcon className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-2">
                 <ObjectMappingReadonlyButton
                   icon={<SalesforceMappingIcon />}
-                  label={mappingItem.sourceFieldName}
+                  label={matchObjects.sourceFieldName}
                 />
-                <ArrowRightIcon className="w-4 h-4" />
+                <EqualIcon className="w-4 h-4" />
                 <ObjectMappingReadonlyButton
                   icon={<UsertourMappingIcon />}
-                  label={mappingItem.targetFieldName}
+                  label={matchObjects.targetFieldName}
                 />
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Target to source mappings */}
-        {targetToSource.length > 0 && (
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">Fields to sync from target to source</span>
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
             </div>
-            {targetToSource.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
-              <div key={idx} className="flex items-center gap-2 py-1">
-                <ObjectMappingReadonlyButton
-                  icon={<UsertourMappingIcon />}
-                  label={mappingItem.targetFieldName}
-                />
-                <ArrowRightIcon className="w-4 h-4" />
-                <ObjectMappingReadonlyButton
-                  icon={<SalesforceMappingIcon />}
-                  label={mappingItem.sourceFieldName}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+          )}
 
-        {/* Stream events */}
-        {stream && (
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="text-green-600">
-              Stream enabled
-            </Badge>
-            <span className="text-sm text-muted-foreground">User events → Contact activity</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {/* Source to target mappings */}
+          {sourceToTarget.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-medium">Fields to sync from source to target</span>
+                <InfoIcon className="w-4 h-4 text-muted-foreground" />
+              </div>
+              {sourceToTarget.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 py-1">
+                  <ObjectMappingReadonlyButton
+                    icon={<SalesforceMappingIcon />}
+                    label={mappingItem.sourceFieldName}
+                  />
+                  <ArrowRightIcon className="w-4 h-4" />
+                  <ObjectMappingReadonlyButton
+                    icon={<UsertourMappingIcon />}
+                    label={mappingItem.targetFieldName}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Target to source mappings */}
+          {targetToSource.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-medium">Fields to sync from target to source</span>
+                <InfoIcon className="w-4 h-4 text-muted-foreground" />
+              </div>
+              {targetToSource.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 py-1">
+                  <ObjectMappingReadonlyButton
+                    icon={<UsertourMappingIcon />}
+                    label={mappingItem.targetFieldName}
+                  />
+                  <ArrowRightIcon className="w-4 h-4" />
+                  <ObjectMappingReadonlyButton
+                    icon={<SalesforceIcon />}
+                    label={mappingItem.sourceFieldName}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Stream events */}
+          {stream && (
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="text-green-600">
+                Stream enabled
+              </Badge>
+              <span className="text-sm text-muted-foreground">User events → Contact activity</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <ObjectMappingDialog
+        integrationId={mapping.integrationId}
+        initialMapping={mapping}
+        onSuccess={onUpdate}
+        mode="edit"
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
+    </>
   );
 };
