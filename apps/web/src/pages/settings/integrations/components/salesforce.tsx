@@ -67,15 +67,7 @@ const usertourObjects = [
   { name: 'Company', label: 'Company' },
 ];
 
-const ObjectMappingSelectionStep = ({
-  salesforceObject,
-  usertourObject,
-  onSalesforceObjectChange,
-  onUsertourObjectChange,
-  onContinue,
-  onCancel,
-  isLoading,
-}: {
+interface ObjectSelectionPanelProps {
   salesforceObject: string;
   usertourObject: string;
   onSalesforceObjectChange: (value: string) => void;
@@ -83,7 +75,18 @@ const ObjectMappingSelectionStep = ({
   onContinue: () => void;
   onCancel: () => void;
   isLoading: boolean;
-}) => {
+}
+
+const ObjectSelectionPanel = (props: ObjectSelectionPanelProps) => {
+  const {
+    salesforceObject,
+    usertourObject,
+    onSalesforceObjectChange,
+    onUsertourObjectChange,
+    onContinue,
+    onCancel,
+    isLoading,
+  } = props;
   return (
     <>
       <div className="space-y-1 py-4">
@@ -242,7 +245,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
       </DialogHeader>
 
       {step === 'objects' ? (
-        <ObjectMappingSelectionStep
+        <ObjectSelectionPanel
           salesforceObject={salesforceObject}
           usertourObject={usertourObject}
           onSalesforceObjectChange={setSalesforceObject}
