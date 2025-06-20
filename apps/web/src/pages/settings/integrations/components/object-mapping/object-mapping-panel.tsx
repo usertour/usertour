@@ -31,6 +31,22 @@ interface ObjectMappingSectionProps {
   refetch: () => Promise<any>;
 }
 
+interface ObjectMappingFieldPairProps {
+  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
+  sourceValue: string;
+  targetValue: string;
+  onSourceChange: (value: string) => void;
+  onTargetChange: (value: string) => void;
+  showCreateAttributeLeft: boolean;
+  showCreateAttributeRight: boolean;
+  projectId: string;
+  selectedBizType: number;
+  refetch: () => Promise<any>;
+  disabled?: boolean;
+  centerIcon?: React.ReactNode;
+}
+
 type MappingItem = { left: string; right: string; isNew?: boolean };
 
 // Core object mapping field pair selector component
@@ -48,21 +64,7 @@ const ObjectMappingFieldPair = ({
   refetch,
   disabled = false,
   centerIcon,
-}: {
-  sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  targetFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
-  sourceValue: string;
-  targetValue: string;
-  onSourceChange: (value: string) => void;
-  onTargetChange: (value: string) => void;
-  showCreateAttributeLeft: boolean;
-  showCreateAttributeRight: boolean;
-  projectId: string;
-  selectedBizType: number;
-  refetch: () => Promise<any>;
-  disabled?: boolean;
-  centerIcon?: React.ReactNode;
-}) => {
+}: ObjectMappingFieldPairProps) => {
   // Attribute creation state
   const [showCreateAttributeForm, setShowCreateAttributeForm] = useState(false);
 
