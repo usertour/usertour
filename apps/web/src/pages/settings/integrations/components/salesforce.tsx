@@ -40,8 +40,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
 import { AttributeBizTypes } from '@usertour-ui/types';
-import { ObjectSelectionStep } from './mapping/object-selection-step';
-import { FieldMappingStep } from './mapping/field-mapping-step';
+import { ObjectSelectionStep } from './object-mapping/object-selection-step';
+import { FieldMappingStep } from './object-mapping/field-mapping-step';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (
   <SalesforceIcon className={cn('w-4 h-4', className)} />
