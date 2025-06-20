@@ -103,8 +103,6 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
         : AttributeBizTypes.User; // Default to User when no object selected
   const { attributes, refetch } = useListAttributesQuery(project?.id || '', selectedBizType);
 
-  console.log('selectedBizType:', selectedBizType, 'usertourObject:', usertourObject);
-
   // Dynamic usertour fields based on selected object type and available attributes
   const usertourFields = [
     ...(attributes
