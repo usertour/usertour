@@ -1,10 +1,12 @@
 import { Button } from '@usertour-ui/button';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   useGetIntegrationQuery,
   useGetSalesforceAuthUrlQuery,
   useDisconnectIntegrationMutation,
   useGetSalesforceObjectFieldsQuery,
+  useUpsertIntegrationObjectMappingMutation,
+  useGetIntegrationObjectMappingsQuery,
 } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
 import { useAppContext } from '@/contexts/app-context';
@@ -40,9 +42,14 @@ import {
 } from '@usertour-ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@usertour-ui/ui-utils';
-import { AttributeBizTypes } from '@usertour-ui/types';
+import {
+  AttributeBizTypes,
+  IntegrationObjectMappingSettings,
+  IntegrationObjectMappingModel,
+} from '@usertour-ui/types';
 import { ObjectMappingPanel } from './object-mapping/object-mapping-panel';
 import { ObjectMappingObjectSelect } from './object-mapping/object-mapping-select';
+import { ObjectMappingReadonly } from './object-mapping/object-mapping-readonly';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
 import { InfoIcon } from 'lucide-react';
@@ -139,8 +146,8 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<'objects' | 'fields'>('objects');
   const [salesforceObject, setSalesforceObject] = useState<string>('');
   const [usertourObject, setUsertourObject] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
   const [stream, setStream] = useState(false);
+  const [mappingData, setMappingData] = useState<IntegrationObjectMappingSettings | null>(null);
 
   // Get the integration ID from the current integration
   const { data: integration } = useGetIntegrationQuery(environment?.id || '', 'salesforce', {
@@ -150,6 +157,9 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
   const { data: objectFields } = useGetSalesforceObjectFieldsQuery(integration?.id || '', {
     skip: !integration?.id,
   });
+
+  // Mutation hook for saving mapping
+  const { invoke: upsertMapping, loading: isSaving } = useUpsertIntegrationObjectMappingMutation();
 
   // Get attributes based on selected usertour object type
   const selectedBizType =
@@ -187,37 +197,64 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
     setStep('objects');
   };
 
-  const handleCreateMapping = async (mappingData: any) => {
+  const handleMappingChange = (mapping: IntegrationObjectMappingSettings) => {
+    setMappingData(mapping);
+  };
+
+  const handleCreateMapping = useCallback(async () => {
+    if (!integration?.id || !mappingData) {
+      toast({
+        title: 'Error',
+        description: 'Missing integration or mapping data',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      setIsLoading(true);
-      // TODO: Implement mapping creation using the new hooks
-      console.log('Creating mapping:', {
-        salesforceObject,
-        usertourObject,
-        mappingData,
-        stream,
+      // Save the object mapping using the mutation
+      const result = await upsertMapping(integration.id, {
+        sourceObjectType: salesforceObject,
+        destinationObjectType: usertourObject,
+        settings: {
+          ...mappingData,
+          stream,
+        },
+        enabled: true,
       });
 
-      toast({
-        title: 'Success',
-        description: 'Object mapping created successfully',
-      });
-      onClose();
-    } catch {
+      if (result) {
+        toast({
+          title: 'Success',
+          description: 'Object mapping created successfully',
+        });
+        onClose();
+      }
+    } catch (error) {
+      console.error('Failed to create mapping:', error);
       toast({
         title: 'Error',
         description: 'Failed to create object mapping',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [
+    integration?.id,
+    mappingData,
+    salesforceObject,
+    usertourObject,
+    stream,
+    upsertMapping,
+    toast,
+    onClose,
+  ]);
 
   const handleClose = () => {
     setStep('objects');
     setSalesforceObject('');
     setUsertourObject('');
+    setMappingData(null);
+    setStream(false);
     onClose();
   };
 
@@ -252,7 +289,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
           onUsertourObjectChange={setUsertourObject}
           onContinue={handleContinue}
           onCancel={handleClose}
-          isLoading={isLoading}
+          isLoading={isSaving}
         />
       ) : (
         <>
@@ -262,6 +299,7 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
             sourceFields={dynamicSalesforceFields}
             sourceObjectType={salesforceObject}
             targetObjectType={usertourObject}
+            onMappingChange={handleMappingChange}
           />
 
           {/* Stream events switch - business specific */}
@@ -276,11 +314,11 @@ export function MappingSetupDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
+            <Button variant="outline" onClick={handleBack} disabled={isSaving}>
               Back
             </Button>
-            <Button onClick={handleCreateMapping} disabled={isLoading}>
-              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleCreateMapping} disabled={isSaving || !mappingData}>
+              {isSaving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
               Save mapping
             </Button>
           </DialogFooter>
@@ -330,6 +368,12 @@ export const SalesforceIntegration = () => {
     },
   );
 
+  // Query existing object mappings
+  const { data: existingMappings, loading: isMappingsLoading } =
+    useGetIntegrationObjectMappingsQuery(currentIntegration?.id || '', {
+      skip: !currentIntegration?.id,
+    });
+
   const { invoke: disconnectIntegration } = useDisconnectIntegrationMutation();
 
   const integrationInfo = integrations.find((i) => i.provider === INTEGRATION_PROVIDER);
@@ -375,7 +419,7 @@ export const SalesforceIntegration = () => {
     }
   }, [environmentId, disconnectIntegration, toast, navigate]);
 
-  if (isDataLoading) {
+  if (isDataLoading || isMappingsLoading) {
     return (
       <>
         <Card>
@@ -389,7 +433,8 @@ export const SalesforceIntegration = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <MappingSetupButton />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       </>
     );
   }
@@ -450,6 +495,16 @@ export const SalesforceIntegration = () => {
           </CardTitle>
         </CardHeader>
       </Card>
+
+      {/* Existing Object Mappings */}
+      {existingMappings && existingMappings.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">Existing Object Mappings</h3>
+          {existingMappings.map((mapping: IntegrationObjectMappingModel) => (
+            <ObjectMappingReadonly key={mapping.id} mapping={mapping} />
+          ))}
+        </div>
+      )}
 
       <MappingSetupButton />
     </>

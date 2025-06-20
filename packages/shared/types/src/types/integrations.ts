@@ -17,13 +17,27 @@ export type IntegrationModel = {
   };
 };
 
+export type IntegrationObjectMappingModel = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  sourceObjectType: string;
+  destinationObjectType: string;
+  enabled: boolean;
+  isSyncing: boolean;
+  lastSyncedAt?: Date;
+  settings?: IntegrationObjectMappingSettings;
+  integrationId: string;
+  integration?: IntegrationModel;
+};
+
 // Salesforce Object Fields Type Definitions
-export interface SalesforcePicklistValue {
+export type SalesforcePicklistValue = {
   label: string;
   value: string;
-}
+};
 
-export interface SalesforceField {
+export type SalesforceField = {
   name: string;
   label: string;
   type: string;
@@ -31,31 +45,32 @@ export interface SalesforceField {
   unique: boolean;
   referenceTo?: string[];
   picklistValues?: SalesforcePicklistValue[];
-}
+};
 
-export interface SalesforceObject {
+export type SalesforceObject = {
   name: string;
   label: string;
   fields: SalesforceField[];
-}
+};
 
-export interface SalesforceObjectFields {
+export type SalesforceObjectFields = {
   standardObjects: SalesforceObject[];
   customObjects: SalesforceObject[];
-}
+};
 
 // Data structure for object mapping
-export interface IntegrationObjectMappingItem {
+export type IntegrationObjectMappingItem = {
   sourceFieldName: string;
   sourceObjectType: string;
   targetFieldName: string;
   targetObjectType: string;
   isNew?: boolean;
-}
+};
 
 // Complete object mapping configuration
-export interface IntegrationObjectMappingConfig {
+export type IntegrationObjectMappingSettings = {
+  isSyncStream?: boolean;
   matchObjects: IntegrationObjectMappingItem;
   sourceToTarget: IntegrationObjectMappingItem[];
   targetToSource: IntegrationObjectMappingItem[];
-}
+};

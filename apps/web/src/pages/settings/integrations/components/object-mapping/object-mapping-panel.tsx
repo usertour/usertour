@@ -6,10 +6,10 @@ import { AttributeCreateForm } from '@usertour-ui/shared-editor';
 import {
   Attribute,
   BizAttributeTypes,
-  IntegrationObjectMappingConfig,
+  IntegrationObjectMappingSettings,
   IntegrationObjectMappingItem,
 } from '@usertour-ui/types';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
 import { cn } from '@usertour-ui/ui-utils';
 
@@ -23,8 +23,8 @@ interface ObjectMappingPanelProps {
   sourceFields: Array<{ value: string; label: string; icon?: React.ReactNode }>;
   sourceObjectType: string;
   targetObjectType: string;
-  initialMapping?: IntegrationObjectMappingConfig;
-  onMappingChange?: (mapping: IntegrationObjectMappingConfig) => void;
+  initialMapping?: IntegrationObjectMappingSettings;
+  onMappingChange?: (mapping: IntegrationObjectMappingSettings) => void;
 }
 
 interface ObjectMappingSectionProps {
@@ -272,45 +272,52 @@ export const ObjectMappingPanel = ({
       })) || []),
   ];
 
-  // Initialize mapping state with initial data or defaults
-  const [matchObjects, setMatchObjects] = useState<IntegrationObjectMappingItem>(
-    initialMapping?.matchObjects || {
-      sourceFieldName: '',
-      sourceObjectType,
-      targetFieldName: '',
-      targetObjectType,
-      isNew: false,
+  // Single state for all mapping data
+  const [mappingConfig, setMappingConfig] = useState<IntegrationObjectMappingSettings>(
+    initialMapping || {
+      matchObjects: {
+        sourceFieldName: 'email',
+        sourceObjectType,
+        targetFieldName: 'email',
+        targetObjectType,
+        isNew: false,
+      },
+      sourceToTarget: [],
+      targetToSource: [],
     },
   );
 
-  const [sourceToTarget, setSourceToTarget] = useState<IntegrationObjectMappingItem[]>(
-    initialMapping?.sourceToTarget || [],
-  );
-
-  const [targetToSource, setTargetToSource] = useState<IntegrationObjectMappingItem[]>(
-    initialMapping?.targetToSource || [],
-  );
-
-  // Update parent component when mapping changes
-  useEffect(() => {
-    if (onMappingChange) {
-      onMappingChange({
-        matchObjects,
-        sourceToTarget,
-        targetToSource,
-      });
-    }
-  }, [matchObjects, sourceToTarget, targetToSource, onMappingChange]);
+  // Update mapping config and notify parent
+  const updateMappingConfig = (updates: Partial<IntegrationObjectMappingSettings>) => {
+    setMappingConfig((prevConfig) => {
+      const newConfig = { ...prevConfig, ...updates };
+      console.log('newConfig', newConfig);
+      onMappingChange?.(newConfig);
+      return newConfig;
+    });
+  };
 
   // Update match objects
   const handleMatchObjectsChange = (sourceFieldName: string, targetFieldName: string) => {
-    setMatchObjects({
-      sourceFieldName,
-      sourceObjectType,
-      targetFieldName,
-      targetObjectType,
-      isNew: false, // Match objects are typically not new
+    updateMappingConfig({
+      matchObjects: {
+        sourceFieldName,
+        sourceObjectType,
+        targetFieldName,
+        targetObjectType,
+        isNew: false,
+      },
     });
+  };
+
+  // Update source to target mappings
+  const handleSourceToTargetChange = (newMappings: IntegrationObjectMappingItem[]) => {
+    updateMappingConfig({ sourceToTarget: newMappings });
+  };
+
+  // Update target to source mappings
+  const handleTargetToSourceChange = (newMappings: IntegrationObjectMappingItem[]) => {
+    updateMappingConfig({ targetToSource: newMappings });
   };
 
   return (
@@ -325,13 +332,13 @@ export const ObjectMappingPanel = ({
           <ObjectMappingFieldPair
             sourceFields={sourceFields}
             targetFields={usertourFields}
-            sourceValue={matchObjects.sourceFieldName}
-            targetValue={matchObjects.targetFieldName}
+            sourceValue={mappingConfig.matchObjects.sourceFieldName}
+            targetValue={mappingConfig.matchObjects.targetFieldName}
             onSourceChange={(value) =>
-              handleMatchObjectsChange(value, matchObjects.targetFieldName)
+              handleMatchObjectsChange(value, mappingConfig.matchObjects.targetFieldName)
             }
             onTargetChange={(value) =>
-              handleMatchObjectsChange(matchObjects.sourceFieldName, value)
+              handleMatchObjectsChange(mappingConfig.matchObjects.sourceFieldName, value)
             }
             showCreateAttributeLeft={false}
             showCreateAttributeRight={true}
@@ -348,8 +355,8 @@ export const ObjectMappingPanel = ({
         title="Fields to sync from source to target"
         sourceFields={sourceFields}
         targetFields={usertourFields}
-        mappings={sourceToTarget}
-        onMappingsChange={setSourceToTarget}
+        mappings={mappingConfig.sourceToTarget}
+        onMappingsChange={handleSourceToTargetChange}
         showCreateAttributeLeft={false}
         showCreateAttributeRight={true}
         projectId={projectId}
@@ -364,8 +371,8 @@ export const ObjectMappingPanel = ({
         title="Fields to sync from target to source"
         sourceFields={usertourFields}
         targetFields={sourceFields}
-        mappings={targetToSource}
-        onMappingsChange={setTargetToSource}
+        mappings={mappingConfig.targetToSource}
+        onMappingsChange={handleTargetToSourceChange}
         showCreateAttributeLeft={true}
         showCreateAttributeRight={false}
         projectId={projectId}
