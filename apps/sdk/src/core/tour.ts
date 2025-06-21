@@ -334,14 +334,14 @@ export class Tour extends BaseContent<TourStore> {
     this.watcher.setTargetMissingSeconds(this.getTargetMissingSeconds());
 
     // Handle element found
-    this.watcher.once('element-found', (el) => {
+    this.watcher.once(AppEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
         this.handleElementFound(el, step, store);
       }
     });
 
     // Handle element not found
-    this.watcher.once('element-found-timeout', async () => {
+    this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, async () => {
       await this.handleElementNotFound(step);
     });
 
