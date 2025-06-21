@@ -48,7 +48,10 @@ export class Tour extends BaseContent<TourStore> {
     try {
       // Handle active tour monitoring
       if (this.isActiveTour()) {
-        await this.monitorActiveTour();
+        // Check if the current step is visible
+        await this.checkStepVisible();
+        // Activate any trigger conditions
+        await this.activeTriggerConditions();
       }
 
       // Always activate content conditions
@@ -58,18 +61,6 @@ export class Tour extends BaseContent<TourStore> {
       // Optionally handle the error or rethrow
       throw error;
     }
-  }
-
-  /**
-   * Monitors an active tour by checking visibility and trigger conditions
-   * @private
-   */
-  private async monitorActiveTour(): Promise<void> {
-    // Check if the current step is visible
-    await this.checkStepVisible();
-
-    // Activate any trigger conditions
-    await this.activeTriggerConditions();
   }
 
   /**
