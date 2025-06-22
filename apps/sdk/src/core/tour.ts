@@ -191,6 +191,7 @@ export class Tour extends BaseContent<TourStore> {
     // Get base store information
     const baseInfo = this.getStoreBaseInfo();
     const currentStep = this.getCurrentStep();
+    const zIndex = this.getBaseZIndex();
 
     // Combine all store data with proper defaults
     return {
@@ -199,6 +200,7 @@ export class Tour extends BaseContent<TourStore> {
       ...baseInfo, // Add base information
       currentStep, // Add current step
       openState: true, // Set initial open state
+      zIndex: zIndex + 200,
     } as TourStore;
   }
 
