@@ -46,7 +46,7 @@ const contentActionsItem = [
   },
   {
     type: ContentActionsItemType.FLOW_START,
-    text: 'Start new flow',
+    text: 'Start new flow/checklist',
     IconElement: OpenInNewWindowIcon,
     RulesElement: ContentActionsContents,
   },

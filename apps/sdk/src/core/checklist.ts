@@ -247,7 +247,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Execute non-PAGE_NAVIGATE actions first
     for (const action of otherActions) {
       if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.startNewTour(action.data.contentId);
+        await this.startNewContent(action.data.contentId);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       } else if (action.type === ContentActionsItemType.CHECKLIST_DISMIS) {
