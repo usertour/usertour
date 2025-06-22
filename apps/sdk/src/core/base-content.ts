@@ -486,7 +486,16 @@ export abstract class BaseContent<T = any> extends Evented {
   handleNavigate(data: any) {
     const userInfo = this.getUserInfo();
     const url = buildNavigateUrl(data.value, userInfo);
-    window?.top?.open(url, data.openType === 'same' ? '_self' : '_blank');
+
+    // Check if custom navigation function is set
+    const customNavigate = this.getInstance().getCustomNavigate();
+    if (customNavigate) {
+      // Use custom navigation function
+      customNavigate(url);
+    } else {
+      // Use default behavior
+      window?.top?.open(url, data.openType === 'same' ? '_self' : '_blank');
+    }
   }
 
   /**

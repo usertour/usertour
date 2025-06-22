@@ -345,6 +345,12 @@ export class Tour extends BaseContent<TourStore> {
       await this.handleElementNotFound(step);
     });
 
+    // Handle element changed
+    this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
+      if (el instanceof Element) {
+        this.handleElementChanged(el, step, store);
+      }
+    });
     // Start watching
     this.watcher.findElement();
   }
@@ -378,6 +384,19 @@ export class Tour extends BaseContent<TourStore> {
     if (isComplete) {
       this.reportStepEvents(step, BizEvents.FLOW_COMPLETED);
     }
+  }
+
+  private handleElementChanged(el: Element, step: Step, store: TourStore): void {
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
+
+    // Update store
+    this.setStore({
+      ...store,
+      triggerRef: el,
+    });
   }
 
   /**
