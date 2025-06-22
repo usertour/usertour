@@ -331,8 +331,6 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
         fn(state) {
           const { rects } = state;
           const { width, height, x, y } = rects.reference;
-          console.log('rects', rects);
-
           // Check if reference element is valid (has size and is in viewport)
           const isInvalid =
             width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
