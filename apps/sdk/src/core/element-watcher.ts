@@ -135,11 +135,7 @@ export class ElementWatcher extends Evented {
    * Cleans up resources and resets the watcher state
    */
   destroy() {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-    this.element = null;
+    this.reset();
   }
 
   /**
