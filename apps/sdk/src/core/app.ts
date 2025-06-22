@@ -90,6 +90,7 @@ export class App extends Evented {
   private lastCheck = 0;
   private sessionTimeoutHours = SESSION_TIMEOUT_HOURS;
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS;
+  private customNavigate: ((url: string) => void) | null = null;
 
   constructor() {
     super();
@@ -151,6 +152,22 @@ export class App extends Evented {
    */
   getTargetMissingSeconds() {
     return this.targetMissingSeconds;
+  }
+
+  /**
+   * Sets a custom navigation function to override default window.location.href behavior
+   * @param customNavigate - Function taking a single string url parameter, or null to use default behavior
+   */
+  setCustomNavigate(customNavigate: ((url: string) => void) | null) {
+    this.customNavigate = customNavigate;
+  }
+
+  /**
+   * Gets the current custom navigation function
+   * @returns The current custom navigation function or null if using default behavior
+   */
+  getCustomNavigate(): ((url: string) => void) | null {
+    return this.customNavigate;
   }
 
   /**

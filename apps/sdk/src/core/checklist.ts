@@ -170,6 +170,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private buildStoreData() {
     // Get base information and content
     const baseInfo = this.getStoreBaseInfo();
+    const zIndex = this.getBaseZIndex();
     const content = this.getContent();
     const checklistData = content.data as ChecklistData;
     const isDismissed = checklistIsDimissed(content);
@@ -193,6 +194,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       },
       openState: false,
       ...baseInfo,
+      zIndex: zIndex + 100,
     };
   }
 
@@ -245,7 +247,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Execute non-PAGE_NAVIGATE actions first
     for (const action of otherActions) {
       if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.startNewTour(action.data.contentId);
+        await this.startNewContent(action.data.contentId);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(action.data.value);
       } else if (action.type === ContentActionsItemType.CHECKLIST_DISMIS) {

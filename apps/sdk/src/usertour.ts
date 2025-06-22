@@ -152,6 +152,9 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
         setTargetMissingSeconds: (seconds: number) => {
           app.setTargetMissingSeconds(seconds);
         },
+        setCustomNavigate: (customNavigate: ((url: string) => void) | null) => {
+          app.setCustomNavigate(customNavigate);
+        },
         // eslint-disable-next-line es5/no-rest-parameters
         on: (
           //@ts-ignore

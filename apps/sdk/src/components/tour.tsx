@@ -1,7 +1,7 @@
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import { Align, RulesCondition, Side, StepContentType } from '@usertour-ui/types';
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
 import { TourStore } from '../types/store';
 import { off, on } from '../utils/listener';
@@ -44,28 +44,37 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
 
 // Hooks
 const useTargetActions = (
-  ref: React.RefObject<HTMLElement>,
+  ref: React.RefObject<HTMLElement> | Element | null | undefined,
   currentStep: TourStore['currentStep'],
   handleActions: TourSharedProps['handleActions'],
 ) => {
   useEffect(() => {
-    if (!ref.current || !currentStep?.target?.actions) return;
+    const element = ref instanceof Element ? ref : ref?.current;
+    if (!element || !currentStep?.target?.actions) return;
 
     const actions = currentStep.target.actions as RulesCondition[];
     const handler = () => handleActions(actions);
 
-    on(ref.current, 'click', handler);
-    return () => off(ref.current, 'click', handler);
-  }, [ref.current, currentStep?.target?.actions, handleActions]);
+    on(element, 'click', handler);
+    return () => off(element, 'click', handler);
+  }, [ref, currentStep?.target?.actions, handleActions]);
 };
 
 // Components
 const TourPopper = ({ store, ...props }: TourSharedProps) => {
   const { openState, zIndex, globalStyle, currentStep, theme, triggerRef, assets } = store;
-  const ref = useRef(triggerRef);
   const themeSetting = theme?.settings;
 
-  useTargetActions(ref, currentStep, props.handleActions);
+  // Create a responsive React.RefObject that updates when triggerRef changes
+  const responsiveRef = useMemo(() => {
+    const ref = { current: null as HTMLElement | null };
+    if (triggerRef instanceof Element) {
+      ref.current = triggerRef as HTMLElement;
+    }
+    return ref;
+  }, [triggerRef]);
+
+  useTargetActions(responsiveRef, currentStep, props.handleActions);
 
   if (!currentStep) return null;
 
@@ -81,7 +90,7 @@ const TourPopper = ({ store, ...props }: TourSharedProps) => {
 
   return (
     <SharedPopper.Popper
-      triggerRef={ref}
+      triggerRef={responsiveRef}
       open={openState}
       zIndex={zIndex}
       globalStyle={globalStyle}
