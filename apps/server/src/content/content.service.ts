@@ -7,7 +7,6 @@ import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { ParamsError, UnknownError } from '@/common/errors';
-import { processStepData } from '@/utils/content';
 import { ConfigService } from '@nestjs/config';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
@@ -422,11 +421,8 @@ export class ContentService {
         //   },
         // );
         const steps = editedVersion.steps.map(
-          ({ id, createdAt, updatedAt, versionId, cvid, ...step }) => {
-            return {
-              ...step,
-              data: processStepData(step.data),
-            };
+          ({ id, createdAt, updatedAt, versionId, ...step }) => {
+            return step;
           },
         );
 
