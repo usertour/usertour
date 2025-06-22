@@ -475,7 +475,7 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
     return (
       <div ref={ref} {...props} className="flex flex-col space-y-2">
         <div className="text-sdk-base">Dismiss checklist?</div>
-        <div className="flex flex-row space-x-2 items-center justify-center">
+        <div className="flex flex-row space-x-2 items-center justify-center pb-2">
           <Button forSdk onClick={onDismiss}>
             Yes, dismiss
           </Button>
