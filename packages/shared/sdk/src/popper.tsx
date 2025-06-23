@@ -29,6 +29,7 @@ import { computePositionStyle } from './position';
 import { cn } from '@usertour-ui/ui-utils';
 import { Align, Side } from '@usertour-ui/types';
 import { hiddenStyle } from './utils';
+import { usePopperAnimation } from './hooks';
 
 const POPPER_NAME = 'Popover';
 
@@ -356,10 +357,6 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
       avoidCollisions && flip({ ...detectOverflowOptions }),
       size({
         ...detectOverflowOptions,
-        // apply: ({ elements, rects, availableWidth, availableHeight }) => {
-        //   // const { width: anchorWidth, height: anchorHeight } = rects.reference;
-        //   // const contentStyle = elements.floating.style;
-        // },
       }),
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
@@ -370,6 +367,13 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
           boundary: detectOverflowOptions.boundary,
         }),
     ],
+  });
+
+  // Use the animation hook
+  const { finalStyles } = usePopperAnimation(floatingStyles, placement, {
+    stableThreshold: 250,
+    offset: 20,
+    animationDuration: 500,
   });
 
   const [placedSide] = getSideAndAlignFromPlacement(placement);
@@ -388,10 +392,9 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
   );
 
   const inlineStyle: React.CSSProperties = {
-    ...floatingStyles,
+    ...finalStyles,
     width: width,
     zIndex: zIndex + 1,
-    transition: 'opacity 200ms ease-out',
     ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : { opacity: 1 }),
   };
 
@@ -430,7 +433,9 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
               bottom: 'rotate(180deg)',
               left: 'translateY(50%) rotate(-90deg) translateX(50%)',
             }[placedSide],
-            visibility: cannotCenterArrow ? 'hidden' : undefined,
+            ...(cannotCenterArrow || middlewareData.customHide?.referenceHidden
+              ? hiddenStyle
+              : { opacity: 1 }),
           }}
         >
           <ArrowPrimitive.Root
