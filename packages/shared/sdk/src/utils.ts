@@ -26,3 +26,9 @@ export const canCompleteChecklistItem = (
 
   return false;
 };
+
+export const hiddenStyle: React.CSSProperties = {
+  visibility: 'hidden',
+  pointerEvents: 'none',
+  opacity: 0,
+};
