@@ -28,6 +28,8 @@ import { positionModal, getReClippingRect, getViewportRect } from './backdrop';
 import { computePositionStyle } from './position';
 import { cn } from '@usertour-ui/ui-utils';
 import { Align, Side } from '@usertour-ui/types';
+import { hiddenStyle } from './utils';
+import { usePopperAnimation } from './hooks';
 
 const POPPER_NAME = 'Popover';
 
@@ -85,6 +87,8 @@ type PopperContextProps = {
   globalStyle?: string;
   triggerRef?: React.RefObject<any>;
   viewportRef?: React.RefObject<any>;
+  referenceHidden?: boolean;
+  setReferenceHidden?: (hidden: boolean) => void;
 };
 
 function isNotNull<T>(value: T | null): value is T {
@@ -95,6 +99,7 @@ const [PopperProvider, usePopperContext] = createContext<PopperContextProps>(POP
 
 const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
   const { triggerRef, open = false, children, zIndex, assets, globalStyle } = props;
+  const [referenceHidden, setReferenceHidden] = useState(false);
 
   //todo optimzed
   const [, setOpenState] = useState(open);
@@ -113,6 +118,8 @@ const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
         zIndex={zIndex}
         assets={assets}
         globalStyle={globalStyle}
+        referenceHidden={referenceHidden}
+        setReferenceHidden={setReferenceHidden}
       >
         {open && <PopperContainer>{children}</PopperContainer>}
       </PopperProvider>
@@ -153,14 +160,14 @@ const PopperContentFrame = forwardRef<HTMLDivElement, PopperContentProps>(({ chi
 
 type PopperOverlayProps = { blockTarget?: boolean; viewportRect?: Rect };
 const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) => {
-  const context = usePopperContext(POPPER_NAME);
+  const { triggerRef, zIndex, referenceHidden } = usePopperContext(POPPER_NAME);
   const { blockTarget = false, viewportRect } = props;
   const [backdrop, setBackdrop] = useState<BackdropRect | null>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const [overflow, setOverflow] = useState<SideObject>();
   const [rect, setRect] = useState<Rect>();
   const updatePosition = () => {
-    const referenceEl = context.triggerRef?.current as ReferenceElement;
+    const referenceEl = triggerRef?.current as ReferenceElement;
     const floatingEl = backdropRef.current as HTMLElement;
     computePosition(referenceEl, floatingEl, {
       strategy: 'fixed',
@@ -189,17 +196,17 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
     });
   };
   useEffect(() => {
-    const referenceEl = context.triggerRef?.current as Element;
-    if (rect && context.triggerRef && overflow) {
+    const referenceEl = triggerRef?.current as Element;
+    if (rect && triggerRef && overflow) {
       const clippingRect = getReClippingRect(rect, overflow);
       const viewRect = viewportRect ? viewportRect : getViewportRect();
-      const b = positionModal(referenceEl, clippingRect, context.zIndex, viewRect, 0);
+      const b = positionModal(referenceEl, clippingRect, zIndex, viewRect, 0);
       setBackdrop(b);
     }
   }, [overflow, rect, viewportRect]);
 
   useEffect(() => {
-    const referenceEl = context.triggerRef?.current as ReferenceElement;
+    const referenceEl = triggerRef?.current as ReferenceElement;
     const floatingEl = backdropRef.current as HTMLElement;
     if (referenceEl && floatingEl) {
       const cleanup = autoUpdate(referenceEl, floatingEl, updatePosition, {
@@ -207,16 +214,20 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
       });
       return cleanup;
     }
-  }, [backdropRef, context.triggerRef]);
+  }, [backdropRef, triggerRef]);
+
+  const backdropStyle = {
+    ...backdrop?.box,
+    ...(referenceHidden
+      ? hiddenStyle
+      : { opacity: 1, pointerEvents: blockTarget ? undefined : ('none' as const) }),
+  };
 
   return (
     <>
       <div
         className="usertour-widget-popper-backdrop usertour-widget-popper-backdrop--visible"
-        style={{
-          ...backdrop?.box,
-          pointerEvents: blockTarget ? undefined : 'none',
-        }}
+        style={backdropStyle}
         ref={backdropRef}
       />
       <div
@@ -265,7 +276,7 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     width = 'auto',
     updatePositionStrategy = 'optimized',
   } = props;
-  const { triggerRef, zIndex } = usePopperContext(POPPER_NAME);
+  const { triggerRef, zIndex, setReferenceHidden } = usePopperContext(POPPER_NAME);
   const arrowRef = useRef(null);
   const referenceEl = triggerRef?.current as ReferenceElement;
   const arrowRectSize = useSize(arrowRef.current);
@@ -288,6 +299,35 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
     altBoundary: hasExplicitBoundaries,
   };
+
+  // Custom middleware that extends the original hide logic
+  const customHideMiddleware = (options: {
+    strategy?: 'referenceHidden' | 'escaped';
+    padding?: number | Partial<Record<Side, number>>;
+    boundary?: Boundary | Boundary[];
+  }): Middleware => ({
+    name: 'customHide',
+    options,
+    async fn(state) {
+      const { rects } = state;
+      const originalHide = hide({ strategy: 'referenceHidden', ...detectOverflowOptions });
+      const originalResult = await originalHide.fn(state);
+      const { width, height, x, y } = rects.reference;
+      // Check if reference element is valid (has size and is in viewport)
+      const isInvalid =
+        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
+      // Combine original hide logic with custom logic
+      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
+      const escaped = originalResult.data?.escaped || false;
+
+      return {
+        data: {
+          referenceHidden,
+          escaped,
+        },
+      };
+    },
+  });
 
   const { refs, floatingStyles, placement, middlewareData } = useFloating({
     // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
@@ -317,38 +357,29 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
       avoidCollisions && flip({ ...detectOverflowOptions }),
       size({
         ...detectOverflowOptions,
-        // apply: ({ elements, rects, availableWidth, availableHeight }) => {
-        //   // const { width: anchorWidth, height: anchorHeight } = rects.reference;
-        //   // const contentStyle = elements.floating.style;
-        // },
       }),
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
-      hideWhenDetached && hide({ strategy: 'referenceHidden', ...detectOverflowOptions }),
-      // Add custom middleware to detect invalid reference element
-      {
-        name: 'referenceValidity',
-        fn(state) {
-          const { rects } = state;
-          const { width, height, x, y } = rects.reference;
-          // Check if reference element is valid (has size and is in viewport)
-          const isInvalid =
-            width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
-
-          return {
-            data: {
-              isReferenceValid: !isInvalid,
-            },
-          };
-        },
-      },
+      hideWhenDetached &&
+        customHideMiddleware({
+          strategy: 'referenceHidden',
+          padding: detectOverflowOptions.padding,
+          boundary: detectOverflowOptions.boundary,
+        }),
     ],
   });
 
-  // Check if reference element is valid
-  const isReferenceValid = middlewareData.referenceValidity?.isReferenceValid !== false;
+  // Use the animation hook
+  const { finalStyles } = usePopperAnimation(floatingStyles, placement, {
+    stableThreshold: 250,
+    offset: 20,
+    animationDuration: 500,
+  });
 
   const [placedSide] = getSideAndAlignFromPlacement(placement);
+  useEffect(() => {
+    setReferenceHidden?.(middlewareData.customHide?.referenceHidden ?? false);
+  }, [middlewareData.customHide?.referenceHidden]);
 
   const arrowX = middlewareData.arrow?.x;
   const arrowY = middlewareData.arrow?.y;
@@ -360,6 +391,13 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     refs.setFloating(node),
   );
 
+  const inlineStyle: React.CSSProperties = {
+    ...finalStyles,
+    width: width,
+    zIndex: zIndex + 1,
+    ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : { opacity: 1 }),
+  };
+
   return (
     <>
       <div
@@ -367,19 +405,7 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
         ref={composedRefs}
         data-usertour-popper-content-wrapper=""
         data-usertour-popper-data-placement={placedSide}
-        style={{
-          ...floatingStyles,
-          width: width,
-          zIndex: zIndex + 1,
-          transition: 'opacity 200ms ease-out',
-          ...(middlewareData.hide?.referenceHidden || !isReferenceValid
-            ? {
-                visibility: 'hidden',
-                pointerEvents: 'none',
-                opacity: 0,
-              }
-            : { opacity: 1 }),
-        }}
+        style={inlineStyle}
         // Floating UI interally calculates logical alignment based the `dir` attribute on
         // the reference/floating node, we must add this attribute here to ensure
         // this is calculated when portalled as well as inline.
@@ -407,7 +433,9 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
               bottom: 'rotate(180deg)',
               left: 'translateY(50%) rotate(-90deg) translateX(50%)',
             }[placedSide],
-            visibility: cannotCenterArrow ? 'hidden' : undefined,
+            ...(cannotCenterArrow || middlewareData.customHide?.referenceHidden
+              ? hiddenStyle
+              : { opacity: 1 }),
           }}
         >
           <ArrowPrimitive.Root
