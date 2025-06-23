@@ -71,7 +71,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
           <DropdownMenuItem
             className="text-red-600 cursor-pointer"
             onClick={handleOnClick}
-            disabled={content.published || disabled}
+            disabled={isPublishedAtLeastOneEnvironment(content) || disabled}
           >
             <Delete2Icon className="mr-1" />
             Delete {content.type}
