@@ -83,7 +83,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
         open={openDuplicate}
         onOpenChange={setOpenDuplicate}
         onSuccess={handleDuplicateSuccess}
-        name="flow"
+        name={content.type}
       />
       <ContentDeleteForm
         name="flow"
