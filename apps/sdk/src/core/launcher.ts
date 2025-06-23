@@ -171,7 +171,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       const { type, data } = actionRule;
 
       if (type === ContentActionsItemType.FLOW_START) {
-        await this.startNewTour(data.contentId);
+        await this.startNewContent(data.contentId);
       } else if (type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(data.value);
       } else if (type === ContentActionsItemType.LAUNCHER_DISMIS) {

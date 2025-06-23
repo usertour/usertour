@@ -113,6 +113,9 @@ const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
       }
       const c1 = item1.conditions as RulesCondition[];
       const c2 = item2.conditions as RulesCondition[];
+      if (item1.operators !== item2.operators) {
+        return false;
+      }
       if (!conditionsIsSame(c1, c2)) {
         return false;
       }

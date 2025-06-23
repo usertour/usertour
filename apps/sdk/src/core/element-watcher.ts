@@ -62,7 +62,7 @@ export class ElementWatcher extends Evented {
       return;
     }
 
-    const el = finderV2(this.target, document.body);
+    const el = this.findElementBySelector();
     if (!el) {
       this.scheduleRetry(retryTimes);
       return;
@@ -79,6 +79,18 @@ export class ElementWatcher extends Evented {
   async checkVisibility(): Promise<{ isHidden: boolean; isTimeout: boolean }> {
     if (!this.element) {
       return { isHidden: true, isTimeout: false };
+    }
+
+    // Check if the element is still in the current DOM tree and is the correct target
+    // This handles SPA page changes where the element might have been removed or changed
+    if (!this.isElementValid()) {
+      // Try to find the element again with the same selector
+      const el = this.findElementBySelector();
+      if (el) {
+        // Found a new element that matches our selector
+        this.element = el;
+        this.trigger(AppEvents.ELEMENT_CHANGED, el);
+      }
     }
 
     const isHidden =
@@ -110,14 +122,20 @@ export class ElementWatcher extends Evented {
   }
 
   /**
+   * Resets the element watcher state
+   * Useful when SPA navigation occurs and we want to start fresh
+   */
+  reset(): void {
+    this.clearTimer();
+    this.element = null;
+    this.checker = null;
+  }
+
+  /**
    * Cleans up resources and resets the watcher state
    */
   destroy() {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-    this.element = null;
+    this.reset();
   }
 
   /**
@@ -158,5 +176,54 @@ export class ElementWatcher extends Evented {
         isTimeout: now - this.checker.startHiddenTs > this.targetMissingSeconds * 1000,
       };
     }
+  }
+
+  /**
+   * Checks if the element is still valid (present in DOM and matches target selector)
+   * This handles cases where SPA navigation keeps old elements in DOM
+   * but they're no longer the intended target
+   * @returns boolean indicating if element is valid and matches target
+   */
+  private isElementValid(): boolean {
+    if (!this.element || !document?.body) {
+      return false;
+    }
+
+    // Check if element is still in DOM
+    if (!document.body.contains(this.element)) {
+      return false;
+    }
+
+    // Additional check: verify this element still matches our target selector
+    // This handles cases where SPA navigation keeps old elements in DOM
+    // but they're no longer the intended target
+    try {
+      const currentElement = this.findElementBySelector();
+      if (!currentElement) {
+        return false;
+      }
+
+      // If the found element is different from our stored element,
+      // it means the page has changed and we should update our reference
+      if (currentElement !== this.element) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      // If selector evaluation fails, assume element is no longer valid
+      return false;
+    }
+  }
+
+  /**
+   * Finds the target element using finderV2
+   * @returns Found element or null if not found
+   */
+  private findElementBySelector(): Element | null {
+    if (!document?.body) {
+      return null;
+    }
+    return finderV2(this.target, document.body);
   }
 }

@@ -3,7 +3,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-ui/button';
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour-ui/constants';
 import { PopperPreview } from '@usertour-ui/shared-components';
-import { createValue1, createValue2, createValue4 } from '@usertour-ui/shared-editor';
+import { getDefaultDataForType } from '@usertour-ui/shared-editor';
 import { defaultStep } from '@usertour-ui/shared-utils';
 import { useCallback } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
@@ -11,7 +11,7 @@ import { BuilderMode, useBuilderContext } from '../../contexts';
 const contentList: any[] = [
   {
     // data: '[{"type":"paragraph","children":[{"text":"Hello, I an Lucky"}]}]',
-    data: createValue1,
+    data: getDefaultDataForType('tooltip'),
     type: 'tooltip',
     text: 'Tooltip',
     width: '240px',
@@ -20,7 +20,7 @@ const contentList: any[] = [
   },
   {
     // data: '[{"type":"image","url":"https://assets.usertour.io/2918eea0-7daf-45c0-bc27-74a5ac2aca86/icon-theme-default-img (2).png","width":{"type":"percent","value":100},"children":[{"text":""}]},{"type":"paragraph","children":[{"text":"Track your favorites"}]}]',
-    data: createValue4,
+    data: getDefaultDataForType('modal'),
     type: 'modal',
     text: 'Modal',
     width: '240px',
@@ -29,7 +29,7 @@ const contentList: any[] = [
   },
   {
     // data: '[{"type":"image","url":"https://assets.usertour.io/2918eea0-7daf-45c0-bc27-74a5ac2aca86/icon-theme-default-img (2).png","width":{"type":"percent","value":100},"children":[{"text":""}]},{"type":"paragraph","children":[{"text":"Track your favorites"}]}]',
-    data: createValue2,
+    data: getDefaultDataForType('hidden'),
     type: 'hidden',
     text: 'Hidden',
     width: '240px',

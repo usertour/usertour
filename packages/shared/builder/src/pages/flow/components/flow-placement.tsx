@@ -1,10 +1,9 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { useAttributeListContext, useContentListContext } from '@usertour-ui/contexts';
-import { createValue1 } from '@usertour-ui/shared-editor';
-import { defaultStep, getAuthToken } from '@usertour-ui/shared-utils';
+import { getAuthToken } from '@usertour-ui/shared-utils';
 import { window } from '@usertour-ui/shared-utils';
-import { ContentVersion, ElementSelectorPropsData, Step, StepScreenshot } from '@usertour-ui/types';
+import { ElementSelectorPropsData, StepScreenshot } from '@usertour-ui/types';
 import {
   ContentPlacementActions,
   ContentPlacementProvider,
@@ -21,7 +20,7 @@ export const FlowPlacement = () => {
     isWebBuilder,
     updateCurrentStep,
     setCurrentMode,
-    createStep,
+    createNewStep,
     currentVersion,
   } = useBuilderContext();
 
@@ -47,17 +46,6 @@ export const FlowPlacement = () => {
       mode: BuilderMode.ELEMENT_SELECTOR,
       backMode: BuilderMode.FLOW_STEP_DETAIL,
     });
-  };
-
-  const createNewStep = (currentVersion: ContentVersion, sequence: number) => {
-    const step: Step = {
-      ...defaultStep,
-      type: 'tooltip',
-      name: 'Untitled',
-      data: createValue1,
-      sequence,
-    };
-    return createStep(currentVersion, step);
   };
 
   const handleAboutPlacement = () => {

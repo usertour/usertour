@@ -48,7 +48,10 @@ export class Tour extends BaseContent<TourStore> {
     try {
       // Handle active tour monitoring
       if (this.isActiveTour()) {
-        await this.monitorActiveTour();
+        // Check if the current step is visible
+        await this.checkStepVisible();
+        // Activate any trigger conditions
+        await this.activeTriggerConditions();
       }
 
       // Always activate content conditions
@@ -58,18 +61,6 @@ export class Tour extends BaseContent<TourStore> {
       // Optionally handle the error or rethrow
       throw error;
     }
-  }
-
-  /**
-   * Monitors an active tour by checking visibility and trigger conditions
-   * @private
-   */
-  private async monitorActiveTour(): Promise<void> {
-    // Check if the current step is visible
-    await this.checkStepVisible();
-
-    // Activate any trigger conditions
-    await this.activeTriggerConditions();
   }
 
   /**
@@ -200,6 +191,7 @@ export class Tour extends BaseContent<TourStore> {
     // Get base store information
     const baseInfo = this.getStoreBaseInfo();
     const currentStep = this.getCurrentStep();
+    const zIndex = this.getBaseZIndex();
 
     // Combine all store data with proper defaults
     return {
@@ -208,6 +200,7 @@ export class Tour extends BaseContent<TourStore> {
       ...baseInfo, // Add base information
       currentStep, // Add current step
       openState: true, // Set initial open state
+      zIndex: zIndex + 200,
     } as TourStore;
   }
 
@@ -343,17 +336,23 @@ export class Tour extends BaseContent<TourStore> {
     this.watcher.setTargetMissingSeconds(this.getTargetMissingSeconds());
 
     // Handle element found
-    this.watcher.once('element-found', (el) => {
+    this.watcher.once(AppEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
         this.handleElementFound(el, step, store);
       }
     });
 
     // Handle element not found
-    this.watcher.once('element-found-timeout', async () => {
+    this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, async () => {
       await this.handleElementNotFound(step);
     });
 
+    // Handle element changed
+    this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
+      if (el instanceof Element) {
+        this.handleElementChanged(el, step, store);
+      }
+    });
     // Start watching
     this.watcher.findElement();
   }
@@ -387,6 +386,19 @@ export class Tour extends BaseContent<TourStore> {
     if (isComplete) {
       this.reportStepEvents(step, BizEvents.FLOW_COMPLETED);
     }
+  }
+
+  private handleElementChanged(el: Element, step: Step, store: TourStore): void {
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
+
+    // Update store
+    this.setStore({
+      ...store,
+      triggerRef: el,
+    });
   }
 
   /**
@@ -497,7 +509,7 @@ export class Tour extends BaseContent<TourStore> {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.startNewTour(action.data.contentId);
+        await this.startNewContent(action.data.contentId);
       } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
         await this.handleClose(contentEndReason.USER_CLOSED);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {

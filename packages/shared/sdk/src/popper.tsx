@@ -289,19 +289,7 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     altBoundary: hasExplicitBoundaries,
   };
 
-  // const referenceIsVisible = {
-  //   name: "referenceIsVisible",
-  //   fn({ elements }: MiddlewareState) {
-  //     const isVisible = isVisibleNode(elements.reference);
-  //     return {
-  //       data: {
-  //         isVisible,
-  //       },
-  //     };
-  //   },
-  // };
-
-  const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
+  const { refs, floatingStyles, placement, middlewareData } = useFloating({
     // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
     strategy: 'fixed',
     placement: desiredPlacement,
@@ -337,8 +325,28 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
       hideWhenDetached && hide({ strategy: 'referenceHidden', ...detectOverflowOptions }),
+      // Add custom middleware to detect invalid reference element
+      {
+        name: 'referenceValidity',
+        fn(state) {
+          const { rects } = state;
+          const { width, height, x, y } = rects.reference;
+          // Check if reference element is valid (has size and is in viewport)
+          const isInvalid =
+            width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
+
+          return {
+            data: {
+              isReferenceValid: !isInvalid,
+            },
+          };
+        },
+      },
     ],
   });
+
+  // Check if reference element is valid
+  const isReferenceValid = middlewareData.referenceValidity?.isReferenceValid !== false;
 
   const [placedSide] = getSideAndAlignFromPlacement(placement);
 
@@ -352,24 +360,6 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     refs.setFloating(node),
   );
 
-  useEffect(() => {
-    if (!popperRef.current) {
-      return;
-    }
-    const el = popperRef.current;
-    if (isPositioned) {
-      el.style.transition = 'opacity 250ms linear';
-      const t = setTimeout(() => {
-        el.style.opacity = '1';
-        el.style.transition =
-          'opacity 250ms linear, transform 500ms cubic-bezier(0.25, 0.8, 0.5, 1)';
-      }, 100);
-      return () => {
-        clearTimeout(t);
-      };
-    }
-  }, [isPositioned, popperRef]);
-
   return (
     <>
       <div
@@ -378,17 +368,17 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
         data-usertour-popper-content-wrapper=""
         data-usertour-popper-data-placement={placedSide}
         style={{
-          // opacity: "0",
           ...floatingStyles,
           width: width,
           zIndex: zIndex + 1,
-          // opacity: isShow ? 1 : 0,
-          transform: isPositioned ? floatingStyles.transform : 'translate(0, -200%)', // keep off the page when measuring
-          // transformOrigin: `${x}px ${y}px`,
-          transition: 'opacity 250ms linear',
-          // transition:
-          //   "opacity 250ms linear, transform 500ms cubic-bezier(0.25, 0.8, 0.5, 1)",
-          opacity: isPositioned ? '1' : '0',
+          transition: 'opacity 200ms ease-out',
+          ...(middlewareData.hide?.referenceHidden || !isReferenceValid
+            ? {
+                visibility: 'hidden',
+                pointerEvents: 'none',
+                opacity: 0,
+              }
+            : { opacity: 1 }),
         }}
         // Floating UI interally calculates logical alignment based the `dir` attribute on
         // the reference/floating node, we must add this attribute here to ensure

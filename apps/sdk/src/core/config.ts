@@ -91,7 +91,7 @@ export class Config extends Evented {
       return false;
     }
     if (!hideRules || hideRules.length === 0) {
-      return true;
+      return false;
     }
     return isActive(hideRules);
   }
