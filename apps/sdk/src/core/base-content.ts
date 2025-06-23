@@ -1,6 +1,7 @@
 import { convertSettings } from '@usertour-ui/shared-utils';
 import { convertToCssVars } from '@usertour-ui/shared-utils';
 import {
+  ContentDataType,
   EventAttributes,
   SDKContent,
   Step,
@@ -21,6 +22,7 @@ import { Config } from './config';
 import { Evented } from './evented';
 import { ExternalStore } from './store';
 import { differenceInHours } from 'date-fns';
+import { logger } from '../utils/logger';
 
 export abstract class BaseContent<T = any> extends Evented {
   private readonly instance: App;
@@ -318,6 +320,16 @@ export abstract class BaseContent<T = any> extends Evented {
   }
 
   /**
+   * Starts a checklist
+   * @param contentId - The ID of the content to start
+   * @param reason - The reason for starting the checklist
+   * @returns {Promise<void>} A promise that resolves when the checklist is started
+   */
+  startChecklist(contentId: string | undefined, reason: string) {
+    return this.getInstance().startChecklist(contentId, reason);
+  }
+
+  /**
    * Get the active tour
    * @returns {Object} The active tour
    */
@@ -480,13 +492,46 @@ export abstract class BaseContent<T = any> extends Evented {
   }
 
   /**
+   * Starts a new content
+   * @param contentId - The ID of the content to start
+   * @returns {Promise<void>} A promise that resolves when the new content is started
+   */
+  async startNewContent(contentId: string) {
+    const content = this.getOriginContents()?.find((item) => item.contentId === contentId);
+    if (content?.type === ContentDataType.CHECKLIST) {
+      await this.startNewChecklist(contentId);
+    } else if (content?.type === ContentDataType.FLOW) {
+      await this.startNewTour(contentId);
+    } else {
+      logger.error(`Unsupported content type: ${content?.type}`);
+    }
+  }
+
+  /**
+   * Starts a new checklist
+   * @param contentId - The ID of the content to start
+   * @returns {Promise<void>} A promise that resolves when the new checklist is started
+   */
+  async startNewChecklist(contentId: string) {
+    await this.startChecklist(contentId, contentStartReason.ACTION);
+  }
+  /**
    * Handles the navigation
    * @param data - The data to navigate
    */
   handleNavigate(data: any) {
     const userInfo = this.getUserInfo();
     const url = buildNavigateUrl(data.value, userInfo);
-    window?.top?.open(url, data.openType === 'same' ? '_self' : '_blank');
+
+    // Check if custom navigation function is set
+    const customNavigate = this.getInstance().getCustomNavigate();
+    if (customNavigate) {
+      // Use custom navigation function
+      customNavigate(url);
+    } else {
+      // Use default behavior
+      window?.top?.open(url, data.openType === 'same' ? '_self' : '_blank');
+    }
   }
 
   /**

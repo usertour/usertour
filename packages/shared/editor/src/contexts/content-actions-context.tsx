@@ -26,7 +26,12 @@ export interface ContentActionsProviderProps {
   token?: string;
   children?: ReactNode;
   zIndex: number;
-  createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  createStep?: (
+    currentVersion: ContentVersion,
+    sequence: number,
+    stepType?: string,
+    duplicateStep?: Step,
+  ) => Promise<Step | undefined>;
 }
 
 // export interface ContentActionsContextValue {

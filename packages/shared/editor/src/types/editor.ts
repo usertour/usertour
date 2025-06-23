@@ -274,7 +274,12 @@ export interface ContentEditorProps {
   currentVersion?: ContentVersion;
   currentStep?: Step;
   actionItems?: string[] | undefined;
-  createStep?: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  createStep?: (
+    currentVersion: ContentVersion,
+    sequence: number,
+    stepType?: string,
+    duplicateStep?: Step,
+  ) => Promise<Step | undefined>;
   enabledElementTypes?: ContentEditorElementType[];
 }
 

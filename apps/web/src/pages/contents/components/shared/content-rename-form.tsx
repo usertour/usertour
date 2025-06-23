@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@usertour-ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour-ui/form';
 import { updateContent } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
@@ -92,7 +92,7 @@ export const ContentRenameForm = (props: RenameFormProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Rename Flow </DialogTitle>
+              <DialogTitle>Rename {data.type} </DialogTitle>
             </DialogHeader>
             <div>
               <div className="space-y-4 py-2 pb-4 pt-4">
@@ -102,9 +102,8 @@ export const ContentRenameForm = (props: RenameFormProps) => {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Flow name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter flow name" {...field} />
+                          <Input placeholder={`Enter ${data.type} name`} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

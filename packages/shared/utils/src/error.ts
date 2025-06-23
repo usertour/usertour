@@ -129,7 +129,7 @@ export const getContentError = (data: any) => {
 
 export const getStepError = (data: any) => {
   const ret = { showError: false, errorInfo: '' };
-  if (data.stepCvid === undefined) {
+  if (!data.stepCvid) {
     ret.showError = true;
     ret.errorInfo = 'Please select a step';
   }

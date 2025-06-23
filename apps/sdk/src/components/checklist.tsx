@@ -35,6 +35,7 @@ type ChecklistWidgetCoreProps = {
   handleDismiss: () => Promise<void>;
   handleOpenChange: (open: boolean) => void;
   removeBranding: boolean;
+  zIndex: number;
 };
 
 // Components
@@ -62,6 +63,7 @@ const ChecklistWidgetCore = ({
   handleDismiss,
   handleOpenChange,
   removeBranding,
+  zIndex,
 }: ChecklistWidgetCoreProps) => (
   <ChecklistRoot
     data={data}
@@ -70,7 +72,7 @@ const ChecklistWidgetCore = ({
     onDismiss={handleDismiss}
     onOpenChange={handleOpenChange}
   >
-    <ChecklistPopperUseIframe zIndex={1111} assets={assets}>
+    <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
       <ChecklistDropdown />
       <ChecklistPopperContentBody>
         <ChecklistContent
@@ -91,7 +93,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     checklist.getStore().getSnapshot,
   );
 
-  const { content, theme, userInfo, openState, assets, sdkConfig } = store;
+  const { content, theme, userInfo, openState, assets, sdkConfig, zIndex } = store;
   const data = content?.data as ChecklistData;
 
   if (!theme || !data || !openState || !userInfo) {
@@ -109,6 +111,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
       handleDismiss={checklist.handleDismiss}
       handleOpenChange={checklist.handleOpenChange}
       removeBranding={sdkConfig.removeBranding}
+      zIndex={zIndex}
     />
   );
 };

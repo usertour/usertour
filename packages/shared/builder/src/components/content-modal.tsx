@@ -37,7 +37,12 @@ export interface ContentModalProps {
   onChange: (value: ContentEditorRoot[]) => void;
   contents: Content[];
   currentContent: Content | undefined;
-  createStep: (currentVersion: ContentVersion, sequence: number) => Promise<Step | undefined>;
+  createStep: (
+    currentVersion: ContentVersion,
+    sequence: number,
+    stepType?: string,
+    duplicateStep?: Step,
+  ) => Promise<Step | undefined>;
   projectId: string;
 }
 

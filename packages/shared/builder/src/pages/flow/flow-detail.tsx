@@ -11,9 +11,7 @@ import {
   Align,
   ContentAlignmentData,
   ContentModalPlacementData,
-  ContentVersion,
   Side,
-  Step,
   Theme,
 } from '@usertour-ui/types';
 import { cn } from '@usertour-ui/ui-utils';
@@ -33,12 +31,8 @@ import {
   useThemeListContext,
 } from '@usertour-ui/contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
-import {
-  ContentEditorRoot,
-  createValue1,
-  hasMissingRequiredData,
-} from '@usertour-ui/shared-editor';
-import { defaultStep, getErrorMessage } from '@usertour-ui/shared-utils';
+import { ContentEditorRoot, hasMissingRequiredData } from '@usertour-ui/shared-editor';
+import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { PlusIcon, SpinnerIcon } from '@usertour-ui/icons';
 import { useMutation } from '@apollo/client';
 import { addContentStep, updateContentStep } from '@usertour-ui/gql';
@@ -323,26 +317,16 @@ const FlowBuilderDetailEmbed = () => {
     currentVersion,
     contentRef,
     currentIndex,
-    createStep,
     selectorOutput,
     currentContent,
     projectId,
+    createNewStep,
   } = useBuilderContext();
   const { themeList } = useThemeListContext();
   const { contents } = useContentListContext();
   const { attributeList } = useAttributeListContext();
   const [theme, setTheme] = useState<Theme>();
   const triggerRef = useRef<SVGSVGElement>(null);
-  const createNewStep = (currentVersion: ContentVersion, sequence: number) => {
-    const step: Step = {
-      ...defaultStep,
-      type: 'tooltip',
-      name: 'Untitled',
-      data: createValue1,
-      sequence,
-    };
-    return createStep(currentVersion, step);
-  };
 
   useEffect(() => {
     if (!themeList) {

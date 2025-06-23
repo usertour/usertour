@@ -9,6 +9,7 @@ import {
   ContentEditorRootElement,
 } from '../types/editor';
 import { isEmptyString } from '@usertour-ui/shared-utils';
+import { Step } from '@usertour-ui/types';
 
 export const EmptyGroup = {
   element: { type: 'group' },
@@ -1023,4 +1024,26 @@ export const extractQuestionData = (data: ContentEditorRoot[]): ContentEditorQue
   }
 
   return result;
+};
+
+// Create base step data based on type
+export const getDefaultDataForType = (type: string) => {
+  switch (type) {
+    case 'modal':
+      return createValue4; // Use createValue4 for modal (has image and buttons)
+    case 'hidden':
+      return createValue2; // Use createValue2 for hidden (has buttons)
+    default:
+      return createValue1; // Use createValue1 for tooltip (simple text)
+  }
+};
+
+// Helper function to create a copy of a step
+export const createStepCopy = (originalStep: Step, sequence: number): Step => {
+  const { id, cvid, updatedAt, createdAt, ...rest } = originalStep;
+  return {
+    ...rest,
+    name: `${originalStep.name} (copy)`,
+    sequence,
+  };
 };

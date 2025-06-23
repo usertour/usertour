@@ -106,10 +106,10 @@ const ContentActionsContentsName = () => {
           style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 1 }}
         >
           <Command filter={handleFilter}>
-            <CommandInput placeholder="Search flow..." />
+            <CommandInput placeholder="Search flow/checklist..." />
             <CommandEmpty>No items found.</CommandEmpty>
-            <CommandGroup heading="Flow">
-              <ScrollArea className="h-72">
+            <ScrollArea className="h-72">
+              <CommandGroup heading="Flow">
                 {contents &&
                   contents.length > 0 &&
                   contents
@@ -135,8 +135,35 @@ const ContentActionsContentsName = () => {
                         />
                       </CommandItem>
                     ))}
-              </ScrollArea>
-            </CommandGroup>
+              </CommandGroup>
+              <CommandGroup heading="Checklist">
+                {contents &&
+                  contents.length > 0 &&
+                  contents
+                    .filter((c) => c.type === ContentDataType.CHECKLIST)
+                    .map((item) => (
+                      <CommandItem
+                        key={item.id}
+                        value={item.id}
+                        className="cursor-pointer"
+                        onSelect={() => {
+                          handleOnSelected({
+                            id: item.id,
+                            name: item.name || '',
+                          });
+                        }}
+                      >
+                        {item.name}
+                        <CheckIcon
+                          className={cn(
+                            'ml-auto h-4 w-4',
+                            selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+              </CommandGroup>
+            </ScrollArea>
           </Command>
         </Popover.PopoverContent>
       </Popover.Popover>
@@ -162,6 +189,8 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
     selectedPreset,
     setSelectedPreset,
   };
+
+  const selectedContent = contents?.find((c) => c.id === selectedPreset?.id);
 
   useEffect(() => {
     if (open) {
@@ -189,13 +218,16 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
                   <ContentActionsConditionIcon>
                     <OpenInNewWindowIcon width={16} height={16} />
                   </ContentActionsConditionIcon>
-                  Start flow: <span className="font-bold">{selectedPreset?.name} </span>
+                  Start {selectedContent?.type === ContentDataType.FLOW ? 'flow' : 'checklist'}:{' '}
+                  <span className="font-bold">{selectedPreset?.name} </span>
                 </ContentActionsPopoverTrigger>
                 <ContentActionsPopoverContent
                   style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}
                 >
                   <div className=" flex flex-col space-y-2">
-                    <div>Flow</div>
+                    <div>
+                      {selectedContent?.type === ContentDataType.FLOW ? 'Flow' : 'Checklist'}
+                    </div>
                     <ContentActionsContentsName />
                   </div>
                 </ContentActionsPopoverContent>

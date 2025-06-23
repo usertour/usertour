@@ -1,6 +1,6 @@
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { addContentStep, addContentSteps, getContent, getContentVersion } from '@usertour-ui/gql';
-import { getErrorMessage, isEqual } from '@usertour-ui/shared-utils';
+import { defaultStep, getErrorMessage, isEqual } from '@usertour-ui/shared-utils';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-ui/types';
 import {
   ReactNode,
@@ -15,6 +15,8 @@ import {
 import { useToast } from '@usertour-ui/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
+import { getDefaultDataForType } from '@usertour-ui/shared-editor';
+import { createStepCopy } from '@usertour-ui/shared-editor';
 
 export enum BuilderMode {
   ELEMENT_SELECTOR = 'element-selector',
@@ -99,6 +101,12 @@ interface BuilderContextProps {
   contentRef: React.MutableRefObject<HTMLDivElement | undefined>;
   fetchContentAndVersion: (contentId: string, versionId: string) => Promise<boolean | Content>;
   createStep: (currentVersion: ContentVersion, step: Step) => Promise<Step | undefined>;
+  createNewStep: (
+    currentVersion: ContentVersion,
+    sequence: number,
+    stepType?: string,
+    duplicateStep?: Step,
+  ) => Promise<Step | undefined>;
 }
 
 export const BuilderContext = createContext<BuilderContextProps | null>(null);
@@ -269,6 +277,30 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     }
   };
 
+  const createNewStep = async (
+    currentVersion: ContentVersion,
+    sequence: number,
+    stepType?: string,
+    duplicateStep?: Step,
+  ) => {
+    const finalStepType = stepType || duplicateStep?.type || 'tooltip';
+    const step: Step = duplicateStep
+      ? createStepCopy(duplicateStep, sequence)
+      : {
+          ...defaultStep,
+          type: finalStepType,
+          name: 'Untitled',
+          data: getDefaultDataForType(finalStepType),
+          sequence,
+          setting: {
+            ...defaultStep.setting,
+            width: finalStepType === 'modal' ? 550 : defaultStep.setting.width,
+          },
+        };
+
+    return await createStep(currentVersion, step);
+  };
+
   useEffect(() => {
     if (currentVersion && backupVersion && !isEqual(currentVersion, backupVersion)) {
       saveContent();
@@ -313,6 +345,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     contentRef,
     fetchContentAndVersion,
     createStep,
+    createNewStep,
     envToken,
   };
   return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;

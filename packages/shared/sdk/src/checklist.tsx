@@ -282,7 +282,7 @@ ChecklistPopper.displayName = 'ChecklistPopper';
 
 const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
-    const { children, assets } = props;
+    const { children, assets, zIndex } = props;
     const { globalStyle, isOpen, themeSetting } = useChecklistRootContext();
     return (
       <>
@@ -307,9 +307,7 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
             </PopperModalContentPotal>
           </Popper>
         )}
-        {!isOpen && (
-          <ChecklistLauncherFrame assets={assets} zIndex={themeSetting?.checklist.zIndex ?? 1111} />
-        )}
+        {!isOpen && <ChecklistLauncherFrame assets={assets} zIndex={zIndex} />}
       </>
     );
   },
@@ -321,7 +319,7 @@ interface ChecklistLauncherFrameProps {
 }
 const ChecklistLauncherFrame = forwardRef<HTMLIFrameElement, ChecklistLauncherFrameProps>(
   (props, ref) => {
-    const { assets } = props;
+    const { assets, zIndex } = props;
     const { globalStyle, themeSetting } = useChecklistRootContext();
 
     const style = computePositionStyle(
@@ -337,7 +335,7 @@ const ChecklistLauncherFrame = forwardRef<HTMLIFrameElement, ChecklistLauncherFr
           ref={ref}
           className="usertour-widget-checklist-launcher usertour-widget-checklist-launcher--position-fixed"
           defaultStyle={{
-            zIndex: themeSetting?.checklist.zIndex,
+            zIndex,
             ...style,
             height: themeSetting?.checklistLauncher.height,
             borderRadius: themeSetting?.checklistLauncher.borderRadius,
@@ -477,7 +475,7 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
     return (
       <div ref={ref} {...props} className="flex flex-col space-y-2">
         <div className="text-sdk-base">Dismiss checklist?</div>
-        <div className="flex flex-row space-x-2 items-center justify-center">
+        <div className="flex flex-row space-x-2 items-center justify-center pb-2">
           <Button forSdk onClick={onDismiss}>
             Yes, dismiss
           </Button>

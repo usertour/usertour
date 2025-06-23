@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { duplicateContent } from '@usertour-ui/gql';
 import { Input } from '@usertour-ui/input';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Content } from '@usertour-ui/types';
+import { Content, ContentDataType } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -98,8 +98,10 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
             <DialogHeader>
               <DialogTitle>Duplicate {name}</DialogTitle>
               <DialogDescription>
-                This will create a new {name} with a copy of the original {name}
-                's steps.
+                {name === ContentDataType.FLOW &&
+                  `This will create a new ${name} with a copy of the original ${name}'s steps.`}
+                {name !== ContentDataType.FLOW &&
+                  `This will create a new ${name} with a copy of the original ${name}.`}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2 pb-4 pt-4">
