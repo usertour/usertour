@@ -12,6 +12,11 @@ const placementItems = [
   { name: 'Center', value: ModalPosition.Center },
 ];
 
+const textDecorationItems = [
+  { name: 'None (no line-through)', value: 'none' },
+  { name: 'Line-through', value: 'line-through' },
+];
+
 export const ThemeSettingsChecklist = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
 
@@ -83,10 +88,12 @@ export const ThemeSettingsChecklist = () => {
           text="Z-index"
           name="checklist-z-index"
           disableUnit={true}
+          placeholder="Auto"
           tooltip="How high on the web page's z axis the checklist should appear. Leave empty to use Usertour's default behavior."
-          defaultValue={String(settings.checklist.zIndex)}
+          defaultValue={settings.checklist.zIndex ? String(settings.checklist.zIndex) : ''}
           onChange={(value: string) => {
-            update({ zIndex: Number(value) });
+            const numValue = value === '' ? undefined : Number(value);
+            update({ zIndex: numValue });
           }}
         />
         <ThemeSelectColor
@@ -98,6 +105,19 @@ export const ThemeSettingsChecklist = () => {
           autoColor={finalSettings?.checklist.checkmarkColor}
           onChange={(value: string) => {
             update({ checkmarkColor: value });
+          }}
+        />
+        <ThemeSettingSelect
+          text="Completed task text decoration"
+          name="checklist-completed-task-text-decoration"
+          items={textDecorationItems}
+          tooltip="Controls the text decoration of the completed task."
+          defaultValue={settings.checklist.completedTaskTextDecoration ?? 'none'}
+          vertical={true}
+          onValueChange={(value: string) => {
+            update({
+              completedTaskTextDecoration: value,
+            });
           }}
         />
       </div>

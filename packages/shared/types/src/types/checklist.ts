@@ -24,6 +24,7 @@ export interface ChecklistItemType {
   name: string;
   description?: string;
   isCompleted: boolean;
+  isShowAnimation?: boolean;
   isVisible?: boolean;
   clickedActions: RulesCondition[];
   completeConditions: RulesCondition[];

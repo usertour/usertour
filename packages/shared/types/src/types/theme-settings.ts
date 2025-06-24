@@ -60,7 +60,8 @@ export type ThemeTypesSetting = {
     checkmarkColor: string;
     width: number;
     placement: ContentModalPlacementData;
-    zIndex: number;
+    zIndex?: number;
+    completedTaskTextDecoration?: string;
   };
   checklistLauncher: {
     borderRadius: number;
@@ -167,7 +168,6 @@ export const defaultSettings: ThemeTypesSetting = {
       positionOffsetX: 100,
       positionOffsetY: 20,
     },
-    zIndex: 1000,
   },
   checklistLauncher: {
     borderRadius: 24,

@@ -88,13 +88,13 @@ export const initializationThemes: InitThemeInput[] = [
       },
       checklist: {
         width: 360,
-        zIndex: 1000,
         placement: {
           position: 'rightBottom',
           positionOffsetX: 100,
           positionOffsetY: 20,
         },
-        checkmarkColor: '#1d4ed8',
+        checkmarkColor: '#4ade80',
+        completedTaskTextDecoration: 'line-through',
       },
       checklistLauncher: {
         color: {
@@ -231,13 +231,13 @@ export const initializationThemes: InitThemeInput[] = [
       },
       checklist: {
         width: 360,
-        zIndex: 1000,
         placement: {
           position: 'rightBottom',
           positionOffsetX: 100,
           positionOffsetY: 20,
         },
-        checkmarkColor: '#1d4ed8',
+        checkmarkColor: '#4ade80',
+        completedTaskTextDecoration: 'line-through',
       },
       checklistLauncher: {
         color: {
