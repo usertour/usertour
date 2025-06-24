@@ -47,6 +47,7 @@ interface ChecklistRootContextValue {
   // Animation state tracking
   pendingAnimationItems: Set<string>;
   removePendingAnimation: (itemId: string) => void;
+  zIndex: number;
 }
 
 const ChecklistRootContext = createContext<ChecklistRootContextValue | null>(null);
@@ -66,10 +67,19 @@ interface ChecklistRootProps {
   defaultOpen?: boolean;
   onDismiss?: () => Promise<void>;
   onOpenChange?: (open: boolean) => void;
+  zIndex: number;
 }
 
 const ChecklistRoot = (props: ChecklistRootProps) => {
-  const { children, theme, data: initialData, defaultOpen = true, onDismiss, onOpenChange } = props;
+  const {
+    children,
+    theme,
+    data: initialData,
+    defaultOpen = true,
+    onDismiss,
+    onOpenChange,
+    zIndex,
+  } = props;
   const { globalStyle, themeSetting } = useThemeStyles(theme);
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [data, setData] = useState(initialData);
@@ -129,6 +139,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         onOpenChange,
         pendingAnimationItems,
         removePendingAnimation,
+        zIndex,
       }}
     >
       {children}
@@ -227,7 +238,7 @@ ChecklistLauncherContent.displayName = 'ChecklistLauncherContent';
 
 const ChecklistLauncher = forwardRef<HTMLDivElement, { onClick?: () => void }>((props, ref) => {
   const { onClick } = props;
-  const { themeSetting, data } = useChecklistRootContext();
+  const { themeSetting, data, zIndex } = useChecklistRootContext();
   const style = computePositionStyle(
     themeSetting?.checklistLauncher.placement.position as ModalPosition,
     themeSetting?.checklistLauncher.placement.positionOffsetX ?? 0,
@@ -241,7 +252,7 @@ const ChecklistLauncher = forwardRef<HTMLDivElement, { onClick?: () => void }>((
       ref={ref}
       className="usertour-widget-checklist-launcher usertour-widget-checklist-launcher--position-fixed"
       style={{
-        zIndex: themeSetting?.checklist.zIndex,
+        zIndex,
         ...style,
         height: themeSetting?.checklistLauncher.height,
         borderRadius: themeSetting?.checklistLauncher.borderRadius,
@@ -322,7 +333,7 @@ ChecklistPopper.displayName = 'ChecklistPopper';
 
 const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
-    const { children, assets, zIndex } = props;
+    const { children, assets } = props;
     const { globalStyle, isOpen, themeSetting } = useChecklistRootContext();
     return (
       <>
@@ -347,7 +358,7 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
             </PopperModalContentPotal>
           </Popper>
         )}
-        {!isOpen && <ChecklistLauncherFrame assets={assets} zIndex={zIndex} />}
+        {!isOpen && <ChecklistLauncherFrame assets={assets} />}
       </>
     );
   },
@@ -355,12 +366,11 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
 
 interface ChecklistLauncherFrameProps {
   assets: AssetAttributes[] | undefined;
-  zIndex: number;
 }
 const ChecklistLauncherFrame = forwardRef<HTMLIFrameElement, ChecklistLauncherFrameProps>(
   (props, ref) => {
-    const { assets, zIndex } = props;
-    const { globalStyle, themeSetting } = useChecklistRootContext();
+    const { assets } = props;
+    const { globalStyle, themeSetting, zIndex } = useChecklistRootContext();
 
     const style = computePositionStyle(
       themeSetting?.checklistLauncher.placement.position as ModalPosition,
@@ -424,7 +434,7 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
 const ChecklistStaticPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
     const { children } = props;
-    const { globalStyle } = useChecklistRootContext();
+    const { globalStyle, zIndex } = useChecklistRootContext();
     return (
       <>
         <Popper
@@ -432,7 +442,7 @@ const ChecklistStaticPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'glob
           open={true}
           ref={ref}
           globalStyle={globalStyle}
-          zIndex={1111}
+          zIndex={zIndex}
         >
           <PopperStaticContent
             ref={ref}
@@ -478,7 +488,9 @@ interface ChecklistItemsProps {
 }
 const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
   ({ onClick, disabledUpdate }, ref) => {
-    const { data, updateItemStatus } = useChecklistRootContext();
+    const { data, updateItemStatus, themeSetting } = useChecklistRootContext();
+
+    const textDecoration = themeSetting?.checklist.completedTaskTextDecoration;
 
     const handleItemClick = useCallback(
       (item: ChecklistItemType, index: number) => {
@@ -501,7 +513,13 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
         {data.items.map(
           (item, index) =>
             item.isVisible !== false && (
-              <ChecklistItem key={item.id} item={item} index={index} onClick={handleItemClick} />
+              <ChecklistItem
+                key={item.id}
+                item={item}
+                index={index}
+                onClick={handleItemClick}
+                textDecoration={textDecoration}
+              />
             ),
         )}
       </div>
@@ -579,9 +597,11 @@ interface ChecklistItemProps {
   item: ChecklistItemType;
   index: number;
   onClick: (item: ChecklistItemType, index: number) => void;
+  textDecoration?: string;
 }
 
-const ChecklistItem = ({ item, index, onClick }: ChecklistItemProps) => {
+const ChecklistItem = (props: ChecklistItemProps) => {
+  const { item, index, onClick, textDecoration = 'line-through' } = props;
   const { isOpen, pendingAnimationItems, removePendingAnimation } = useChecklistRootContext();
   const [prevIsCompleted, setPrevIsCompleted] = useState(item.isCompleted);
   const [shouldShowAnimation, setShouldShowAnimation] = useState(false);
@@ -634,7 +654,7 @@ const ChecklistItem = ({ item, index, onClick }: ChecklistItemProps) => {
       <div
         className={cn(
           'grow flex flex-col items-start',
-          isCompleted && 'line-through text-sdk-foreground/60',
+          isCompleted && `${textDecoration} text-sdk-foreground/60`,
         )}
       >
         <span className="text-sdk-base">{item.name}</span>

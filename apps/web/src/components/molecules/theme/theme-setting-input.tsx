@@ -23,12 +23,11 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
     tooltip,
   } = props;
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value) {
-      if (onChange) {
-        onChange(e.target.value);
-      }
+    if (onChange) {
+      onChange(e.target.value);
     }
   };
+
   return (
     <div className="flex flex-row">
       <div className="text-sm grow flex items-center space-x-1">

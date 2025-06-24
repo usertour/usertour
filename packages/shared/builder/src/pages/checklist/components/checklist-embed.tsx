@@ -71,9 +71,10 @@ export const ChecklistEmbed = () => {
         data={{ ...localData, items }}
         theme={theme}
         defaultOpen={localData.initialDisplay === ChecklistInitialDisplay.EXPANDED}
+        zIndex={10000}
       >
         <ChecklistContainer>
-          <ChecklistPopper zIndex={1111}>
+          <ChecklistPopper zIndex={10000}>
             <ChecklistPopperContent>
               <ChecklistDropdown />
               <ChecklistPopperContentBody>
