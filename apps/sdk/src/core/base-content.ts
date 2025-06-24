@@ -23,8 +23,9 @@ import { Evented } from './evented';
 import { ExternalStore } from './store';
 import { differenceInHours } from 'date-fns';
 import { logger } from '../utils/logger';
+import { BaseStore } from '../types/store';
 
-export abstract class BaseContent<T = any> extends Evented {
+export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private readonly instance: App;
   private content: SDKContent;
   private readonly store: ExternalStore<T>;
@@ -208,17 +209,25 @@ export abstract class BaseContent<T = any> extends Evented {
   }
 
   /**
+   * Check if the content is open
+   * @returns {boolean} True if the content is open, false otherwise
+   */
+  isOpen(): boolean {
+    return this.getStore().getSnapshot().openState === true;
+  }
+
+  /**
    * Open the store
    */
   open() {
-    this.updateStore({ openState: true } as unknown as Partial<T>);
+    this.updateStore({ openState: true } as Partial<T>);
   }
 
   /**
    * Hide the store
    */
   hide() {
-    this.updateStore({ openState: false } as unknown as Partial<T>);
+    this.updateStore({ openState: false } as Partial<T>);
   }
 
   /**

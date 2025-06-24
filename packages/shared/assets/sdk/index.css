@@ -39,11 +39,11 @@
   font-style: italic;
 }
 .usertour-widget-root a {
-  color: var(--usertour-link-color);
+  color: hsl(var(--usertour-link-color));
   text-decoration: underline;
 }
 .usertour-widget-root a:hover {
-  color: var(--usertour-link-color);
+  color: hsl(var(--usertour-link-color));
   text-decoration: none;
 }
 .usertour-widget-root h1 {

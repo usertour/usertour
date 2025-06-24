@@ -153,7 +153,7 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-font-weight-bold': settings.font.fontWeightBold,
     '--usertour-h1-font-size': `${settings.font.h1FontSize}px`,
     '--usertour-h2-font-size': `${settings.font.h2FontSize}px`,
-    '--usertour-link-color': settings.font.linkColor,
+    '--usertour-link-color': hexToHSL(settings.font.linkColor).join(' '),
     '--usertour-widget-popper-border-width': settings.border.borderWidthEnabled
       ? `${settings.border.borderWidth}px`
       : '0px',
