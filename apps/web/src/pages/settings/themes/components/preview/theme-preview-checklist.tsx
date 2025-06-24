@@ -69,9 +69,9 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   return (
     <div className="h-full w-full">
       <div className="flex flex-row items-center justify-center h-full scale-100	 ">
-        <ChecklistRoot data={data} theme={{ ...theme, settings }}>
+        <ChecklistRoot data={data} theme={{ ...theme, settings }} zIndex={10000}>
           <ChecklistContainer>
-            <ChecklistPopper zIndex={1111}>
+            <ChecklistPopper zIndex={10000}>
               <ChecklistPopperContent>
                 <ChecklistDropdown />
                 <ChecklistProgress width={45} />
