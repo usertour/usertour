@@ -19,7 +19,7 @@ import { AppEvents } from '../utils/event';
 import { App } from './app';
 import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
-import { getChecklistInitialDisplay } from '../utils/content-utils';
+import { checklistIsShowAnimation, getChecklistInitialDisplay } from '../utils/content-utils';
 
 // Add interface for item status
 interface ChecklistItemStatus {
@@ -181,6 +181,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       ...item,
       isCompleted: isDismissed ? false : this.itemIsCompleted(item),
       isVisible: true,
+      isShowAnimation: checklistIsShowAnimation(this, item),
     }));
 
     // Get initial display from content

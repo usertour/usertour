@@ -678,6 +678,15 @@ const ChecklistItem = (props: ChecklistItemProps) => {
       return () => clearTimeout(timer);
     }
 
+    // Case 3: External animation control via item.isShowAnimation
+    if (isOpen && isCompleted && item.isShowAnimation) {
+      setShouldShowAnimation(true);
+      const timer = setTimeout(() => {
+        setShouldShowAnimation(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
     setPrevIsCompleted(isCompleted);
   }, [
     isCompleted,
@@ -686,6 +695,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
     pendingAnimationItems,
     item.id,
     removePendingAnimation,
+    item.isShowAnimation,
   ]);
 
   // Reset animation state when item becomes uncompleted
