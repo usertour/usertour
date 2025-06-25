@@ -1,4 +1,10 @@
-import { BizEvents, ContentDataType, contentEndReason, SDKContent } from '@usertour-ui/types';
+import {
+  BizEvents,
+  ChecklistInitialDisplay,
+  ContentDataType,
+  contentEndReason,
+  SDKContent,
+} from '@usertour-ui/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
@@ -204,6 +210,39 @@ export const findLatestValidActivatedChecklist = (
     }
   }
   return undefined;
+};
+
+/**
+ * Gets the initial display of a checklist
+ * @param checklist - The checklist to get the initial display of
+ * @returns The initial display of the checklist
+ */
+export const getChecklistInitialDisplay = (checklist: Checklist): ChecklistInitialDisplay => {
+  const content = checklist.getContent();
+  const latestSession = content.latestSession;
+  if (!latestSession || checklistIsDimissed(content)) {
+    return content?.data?.initialDisplay;
+  }
+  // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
+  const hiddenOrSeenEvents = latestSession.bizEvent?.filter(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_HIDDEN ||
+      event.event?.codeName === BizEvents.CHECKLIST_SEEN,
+  );
+
+  if (!hiddenOrSeenEvents || hiddenOrSeenEvents.length === 0) {
+    return ChecklistInitialDisplay.BUTTON;
+  }
+
+  // Get the latest hidden or seen event
+  const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
+    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+  });
+  if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_SEEN) {
+    return ChecklistInitialDisplay.EXPANDED;
+  }
+
+  return ChecklistInitialDisplay.BUTTON;
 };
 
 /**

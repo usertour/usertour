@@ -19,6 +19,7 @@ import { AppEvents } from '../utils/event';
 import { App } from './app';
 import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
+import { getChecklistInitialDisplay } from '../utils/content-utils';
 
 // Add interface for item status
 interface ChecklistItemStatus {
@@ -182,6 +183,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
       isVisible: true,
     }));
 
+    // Get initial display from content
+    const initialDisplay = getChecklistInitialDisplay(this);
+
     // Return complete store data
     return {
       ...defaultChecklistStore,
@@ -190,6 +194,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
         data: {
           ...checklistData,
           items: processedItems,
+          initialDisplay,
         },
       },
       openState: false,
