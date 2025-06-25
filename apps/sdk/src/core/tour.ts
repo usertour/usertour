@@ -30,6 +30,7 @@ import { logger } from '../utils/logger';
 export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
   private triggerTimeouts: NodeJS.Timeout[] = []; // Store timeout IDs
+  private flowCompletedReported = false; // Track if FLOW_COMPLETED has been reported
 
   constructor(instance: App, content: SDKContent) {
     super(instance, content, defaultTourStore);
@@ -167,14 +168,11 @@ export class Tour extends BaseContent<TourStore> {
       return;
     }
 
-    await this.reportEventWithSession(
-      {
-        sessionId,
-        eventName: BizEvents.FLOW_ENDED,
-        eventData,
-      },
-      { isDeleteSession: true },
-    );
+    await this.reportEventWithSession({
+      sessionId,
+      eventName: BizEvents.FLOW_ENDED,
+      eventData,
+    });
 
     // Remove the latest session from the content
     this.removeContentLatestSession();
@@ -806,7 +804,7 @@ export class Tour extends BaseContent<TourStore> {
    * Initializes event listeners
    */
   initializeEventListeners() {
-    this.once(AppEvents.CONTENT_AUTO_START_ACTIVATED, async (args: any) => {
+    this.once(AppEvents.CONTENT_STARTED, async (args: any) => {
       await this.reportAutoStartEvent(args.reason);
     });
   }
@@ -825,7 +823,8 @@ export class Tour extends BaseContent<TourStore> {
     const total = content.steps?.length ?? 0;
     const index = content.steps?.findIndex((step) => step.cvid === currentStep.cvid) ?? 0;
     const progress = Math.round(((index + 1) / total) * 100);
-    const isComplete = index + 1 === total;
+    const isExplicitCompletionStep = currentStep.setting.explicitCompletionStep;
+    const isComplete = isExplicitCompletionStep ? isExplicitCompletionStep : index + 1 === total;
 
     return { total, index, progress, isComplete };
   }
@@ -835,15 +834,12 @@ export class Tour extends BaseContent<TourStore> {
    * @param reason - The reason for the auto start
    */
   async reportAutoStartEvent(reason?: string) {
-    await this.reportEventWithSession(
-      {
-        eventName: BizEvents.FLOW_STARTED,
-        eventData: {
-          flow_start_reason: reason ?? 'auto_start',
-        },
+    await this.reportEventWithSession({
+      eventName: BizEvents.FLOW_STARTED,
+      eventData: {
+        flow_start_reason: reason ?? 'auto_start',
       },
-      { isCreateSession: true },
-    );
+    });
   }
 
   /**
@@ -866,13 +862,10 @@ export class Tour extends BaseContent<TourStore> {
       });
     }
 
-    await this.reportEventWithSession(
-      {
-        eventName: BizEvents.FLOW_ENDED,
-        eventData,
-      },
-      { isDeleteSession: true },
-    );
+    await this.reportEventWithSession({
+      eventName: BizEvents.FLOW_ENDED,
+      eventData,
+    });
   }
 
   /**
@@ -901,6 +894,11 @@ export class Tour extends BaseContent<TourStore> {
    * @param isComplete - Whether the current step is complete
    */
   private async reportStepEvents(currentStep: Step, eventName: BizEvents) {
+    // Check if this is a FLOW_COMPLETED event and if it has already been reported
+    if (eventName === BizEvents.FLOW_COMPLETED && this.flowCompletedReported) {
+      return;
+    }
+
     const { index, progress } = this.getCurrentStepInfo(currentStep);
 
     const eventData = {
@@ -909,14 +907,15 @@ export class Tour extends BaseContent<TourStore> {
       flow_step_name: currentStep.name,
       flow_step_progress: Math.round(progress),
     };
-    const isDeleteSession = eventName === BizEvents.FLOW_COMPLETED;
 
-    await this.reportEventWithSession(
-      {
-        eventData,
-        eventName,
-      },
-      { isDeleteSession },
-    );
+    await this.reportEventWithSession({
+      eventData,
+      eventName,
+    });
+
+    // Mark FLOW_COMPLETED as reported if this was a completion event
+    if (eventName === BizEvents.FLOW_COMPLETED) {
+      this.flowCompletedReported = true;
+    }
   }
 }

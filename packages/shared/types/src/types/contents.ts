@@ -24,6 +24,7 @@ export type StepSettings = {
   skippable: boolean;
   enabledBackdrop: boolean;
   enabledBlockTarget: boolean;
+  explicitCompletionStep?: boolean;
   align: string;
   side: string;
   alignType: string;

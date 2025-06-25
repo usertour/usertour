@@ -25,6 +25,7 @@ import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ChecklistContents } from './components/checklist-contents';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
 
 // Common styles
 const flexBetween = 'flex items-center justify-between space-x-2';
@@ -84,6 +85,10 @@ const ChecklistCoreBody = () => {
           {/* Initial Display Select */}
           <div className={labelStyles}>
             <Label htmlFor="initial-display">Initially show as</Label>
+            <QuestionTooltip>
+              Whether to show the whole checklist (including its tasks) or just the launcher button
+              when the checklist starts.
+            </QuestionTooltip>
           </div>
           <Select
             onValueChange={(value) =>

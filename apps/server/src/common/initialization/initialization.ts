@@ -292,7 +292,7 @@ export const initializationThemes: InitThemeInput[] = [
   },
 ];
 
-const defaultEvents = [
+export const defaultEvents = [
   {
     displayName: 'Page Viewed',
     codeName: BizEvents.PAGE_VIEWED,

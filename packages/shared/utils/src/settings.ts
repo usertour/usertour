@@ -10,6 +10,7 @@ export const defaultStep: Step = {
     skippable: true,
     enabledBackdrop: false,
     enabledBlockTarget: false,
+    explicitCompletionStep: false,
     align: 'center',
     side: 'bottom',
     sideOffset: 0,

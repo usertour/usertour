@@ -7,9 +7,9 @@ export const canCompleteChecklistItem = (
   currentItem: ChecklistItemType,
 ): boolean => {
   // If already completed, item cannot be clicked
-  if (currentItem.isCompleted) {
-    return false;
-  }
+  // if (currentItem.isCompleted) {
+  //   return false;
+  // }
 
   const currentIndex = items.findIndex((item) => item.id === currentItem.id);
 

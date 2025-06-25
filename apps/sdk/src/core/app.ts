@@ -17,7 +17,7 @@ import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';
-import { ReportEventOptions, ReportEventParams } from '../types/content';
+import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { compareContentPriorities } from '../utils/content';
 import {
@@ -503,7 +503,7 @@ export class App extends Evented {
    * @param event - Event parameters to report
    * @param options - Optional reporting options
    */
-  async reportEvent(event: ReportEventParams, options: ReportEventOptions = {}) {
+  async reportEvent(event: ReportEventParams) {
     if (this.isPreview()) {
       return;
     }
@@ -511,7 +511,7 @@ export class App extends Evented {
     const { token } = this.startOptions;
 
     try {
-      const sessionId = event.sessionId || (await this.handleSession(event, options));
+      const sessionId = event.sessionId;
       if (!sessionId) {
         return;
       }
@@ -530,38 +530,10 @@ export class App extends Evented {
   }
 
   /**
-   * Handles session management for event reporting
-   * @param event - Event parameters
-   * @param options - Session options
-   * @returns Session ID if successful
+   * Creates a session for a content
+   * @param contentId - The content ID to create a session for
+   * @returns The session ID if successful
    */
-  private async handleSession(
-    event: ReportEventParams,
-    options: ReportEventOptions,
-  ): Promise<string | undefined> {
-    const { contentId } = event;
-    const { isCreateSession = false, isDeleteSession = false } = options;
-
-    let sessionId = this.sessions.get(contentId)?.sessionId;
-
-    if (isCreateSession) {
-      const session = await this.createSession(contentId);
-      if (!session) {
-        logger.error('Failed to create user session.');
-        return;
-      }
-
-      this.sessions.set(contentId, { sessionId: session.id, state: 0 });
-      sessionId = session.id;
-    }
-
-    if (isDeleteSession) {
-      this.sessions.delete(contentId);
-    }
-
-    return sessionId;
-  }
-
   async createSession(contentId: string) {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;

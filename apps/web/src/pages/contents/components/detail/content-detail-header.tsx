@@ -137,8 +137,12 @@ export const ContentDetailHeader = () => {
                 <ContentEditDropdownMenu
                   content={content}
                   disabled={isViewOnly}
-                  onSubmit={() => {
-                    refetch();
+                  onSubmit={(action: string) => {
+                    if (action === 'delete') {
+                      navigator(`/env/${environment?.id}/${contentType}`);
+                    } else {
+                      refetch();
+                    }
                   }}
                 >
                   <Button variant="secondary">

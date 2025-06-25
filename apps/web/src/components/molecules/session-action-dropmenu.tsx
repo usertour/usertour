@@ -197,7 +197,7 @@ const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFor
   const descriptions = {
     delete:
       'This will delete all traces of this session from your account. Including in analytics.\nYou should probably only do this for testing reasons.',
-    end: 'This will close the flow for the user.',
+    end: 'This will close the content for the user.',
   };
 
   return (
