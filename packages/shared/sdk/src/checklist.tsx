@@ -32,6 +32,7 @@ import { computePositionStyle } from './position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { cn } from '@usertour-ui/ui-utils';
 import { Button } from '@usertour-ui/button';
+import { useSize } from '@usertour-ui/react-use-size';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -208,26 +209,50 @@ interface ChecklistLauncherContentProps {
   onClick?: () => void;
   number?: number;
   isCompleted?: boolean;
+  onSizeChange?: (rect: { width: number; height: number }) => void;
 }
 const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherContentProps>(
   (props, ref) => {
-    const { buttonText, height, onClick, number = 1, isCompleted } = props;
+    const { buttonText, height, onClick, number = 1, isCompleted, onSizeChange } = props;
+    const paddingLeft = height ? `${Number(height) / 2}px` : undefined;
+    const paddingRight = height ? `${Number(height) / 2}px` : undefined;
+
+    const [contentRef, setContentRef] = useState<HTMLDivElement | null>(null);
+    const rect = useSize(contentRef);
+
+    useEffect(() => {
+      if (rect) {
+        onSizeChange?.(rect);
+      }
+    }, [rect]);
+
     return (
       <div
         ref={ref}
-        style={{ height }}
+        style={{
+          height,
+        }}
         className="rounded-sdk-checklist-trigger h-full w-full flex bg-sdk-checklist-trigger-background cursor-pointer items-center justify-center hover:bg-sdk-checklist-trigger-hover-background"
         onClick={onClick}
       >
-        <div className="max-w-24 overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base flex items-center justify-center">
-          {buttonText}
-        </div>
-        <div className="rounded-full w-6 h-6 text-sdk-base bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">
-          {isCompleted ? (
-            <CheckmarkIcon className="w-5 h-5 stroke-sdk-checklist-trigger-counter-font" />
-          ) : (
-            number
-          )}
+        <div
+          ref={setContentRef}
+          className="flex whitespace-nowrap	"
+          style={{
+            paddingLeft,
+            paddingRight,
+          }}
+        >
+          <div className="overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base flex items-center justify-center">
+            {buttonText}
+          </div>
+          <div className="rounded-full w-6 h-6 text-sdk-base bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">
+            {isCompleted ? (
+              <CheckmarkIcon className="w-5 h-5 stroke-sdk-checklist-trigger-counter-font" />
+            ) : (
+              number
+            )}
+          </div>
         </div>
       </div>
     );
@@ -256,7 +281,6 @@ const ChecklistLauncher = forwardRef<HTMLDivElement, { onClick?: () => void }>((
         ...style,
         height: themeSetting?.checklistLauncher.height,
         borderRadius: themeSetting?.checklistLauncher.borderRadius,
-        width: '174px',
       }}
     >
       <ChecklistLauncherContent
@@ -371,12 +395,17 @@ const ChecklistLauncherFrame = forwardRef<HTMLIFrameElement, ChecklistLauncherFr
   (props, ref) => {
     const { assets } = props;
     const { globalStyle, themeSetting, zIndex } = useChecklistRootContext();
+    const [launcherRect, setLauncherRect] = useState<{ width: number; height: number } | null>(
+      null,
+    );
 
     const style = computePositionStyle(
       themeSetting?.checklistLauncher.placement.position as ModalPosition,
       themeSetting?.checklistLauncher.placement.positionOffsetX ?? 0,
       themeSetting?.checklistLauncher.placement.positionOffsetY ?? 0,
     );
+
+    const width = launcherRect?.width ? `${launcherRect?.width}px` : undefined;
 
     return (
       <>
@@ -389,10 +418,10 @@ const ChecklistLauncherFrame = forwardRef<HTMLIFrameElement, ChecklistLauncherFr
             ...style,
             height: themeSetting?.checklistLauncher.height,
             borderRadius: themeSetting?.checklistLauncher.borderRadius,
-            width: '174px',
+            width,
           }}
         >
-          <ChecklistLauncherInFrame globalStyle={globalStyle} />
+          <ChecklistLauncherInFrame globalStyle={globalStyle} onSizeChange={setLauncherRect} />
         </Frame>
       </>
     );
@@ -402,9 +431,9 @@ const ChecklistLauncherFrame = forwardRef<HTMLIFrameElement, ChecklistLauncherFr
 ChecklistLauncherFrame.displayName = 'ChecklistLauncherFrame';
 
 const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>((props, _) => {
-  const { globalStyle } = props;
-  const { document } = useFrame();
+  const { globalStyle, onSizeChange } = props;
   const { data, setIsOpen, themeSetting, onOpenChange } = useChecklistRootContext();
+  const { document } = useFrame();
 
   useEffect(() => {
     if (globalStyle) {
@@ -427,6 +456,7 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
       number={data.items.filter((item) => !item.isCompleted).length}
       isCompleted={isAllCompleted}
       onClick={handleOnOpenChange}
+      onSizeChange={onSizeChange}
     />
   );
 });
