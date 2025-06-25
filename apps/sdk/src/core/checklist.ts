@@ -3,6 +3,7 @@ import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ChecklistData,
+  ChecklistInitialDisplay,
   ChecklistItemType,
   ContentActionsItemType,
   contentEndReason,
@@ -11,13 +12,13 @@ import {
   SDKContent,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
-import { ReportEventOptions } from '../types/content';
 import { ChecklistStore } from '../types/store';
 import { activedRulesConditions, checklistIsDimissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { App } from './app';
 import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
+import { checklistIsShowAnimation, getChecklistInitialDisplay } from '../utils/content-utils';
 
 // Add interface for item status
 interface ChecklistItemStatus {
@@ -98,16 +99,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
       [EventAttributes.CHECKLIST_END_REASON]: reason,
     };
 
-    await this.reportEventWithSession(
-      {
-        sessionId,
-        eventName: BizEvents.CHECKLIST_DISMISSED,
-        eventData: {
-          ...baseEventData,
-        },
+    await this.reportEventWithSession({
+      sessionId,
+      eventName: BizEvents.CHECKLIST_DISMISSED,
+      eventData: {
+        ...baseEventData,
       },
-      { isDeleteSession: true },
-    );
+    });
   }
 
   /**
@@ -136,7 +134,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Show checklist if it's not already open
     if (!openState) {
       this.open();
-      this.trigger(AppEvents.CHECKLIST_FIRST_SEEN);
     }
   }
 
@@ -180,7 +177,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
       ...item,
       isCompleted: isDismissed ? false : this.itemIsCompleted(item),
       isVisible: true,
+      isShowAnimation: checklistIsShowAnimation(this, item),
     }));
+
+    // Get initial display from content
+    const initialDisplay = getChecklistInitialDisplay(this);
 
     // Return complete store data
     return {
@@ -190,6 +191,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
         data: {
           ...checklistData,
           items: processedItems,
+          initialDisplay,
         },
       },
       openState: false,
@@ -449,20 +451,29 @@ export class Checklist extends BaseContent<ChecklistStore> {
   reset() {}
 
   /**
+   * Checks if the checklist is default expanded
+   * @returns True if the checklist is default expanded, false otherwise
+   */
+  defaultIsExpanded() {
+    const content = this.getContent();
+    return content?.data?.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+  }
+
+  /**
    * Initializes event listeners for checklist lifecycle and item events.
    */
   initializeEventListeners() {
-    this.once(AppEvents.CHECKLIST_FIRST_SEEN, () => {
-      this.reportSeenEvent();
-    });
     this.on(BizEvents.CHECKLIST_SEEN, () => {
       this.reportSeenEvent();
     });
     this.on(BizEvents.CHECKLIST_HIDDEN, () => {
       this.reportHiddenEvent();
     });
-    this.once(AppEvents.CONTENT_AUTO_START_ACTIVATED, () => {
-      this.reportStartEvent();
+    this.once(AppEvents.CONTENT_STARTED, async () => {
+      await this.reportStartEvent();
+      if (this.defaultIsExpanded()) {
+        await this.reportSeenEvent();
+      }
     });
 
     this.on(BizEvents.CHECKLIST_TASK_CLICKED, ({ item }: any) => {
@@ -487,7 +498,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private async reportChecklistEvent(
     eventName: BizEvents,
     additionalData: Partial<Record<EventAttributes, any>> = {},
-    options: ReportEventOptions = {},
   ) {
     const content = this.getContent();
     const baseEventData = {
@@ -497,16 +507,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
       [EventAttributes.CHECKLIST_NAME]: content.name,
     };
 
-    await this.reportEventWithSession(
-      {
-        eventName,
-        eventData: {
-          ...baseEventData,
-          ...additionalData,
-        },
+    await this.reportEventWithSession({
+      eventName,
+      eventData: {
+        ...baseEventData,
+        ...additionalData,
       },
-      options,
-    );
+    });
   }
 
   /**
@@ -536,7 +543,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Reports the checklist start event and creates a new session.
    */
   private async reportStartEvent() {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {}, { isCreateSession: true });
+    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {});
   }
 
   /**
