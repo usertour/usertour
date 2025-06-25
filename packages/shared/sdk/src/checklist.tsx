@@ -33,6 +33,7 @@ import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { cn } from '@usertour-ui/ui-utils';
 import { Button } from '@usertour-ui/button';
 import { useSize } from '@usertour-ui/react-use-size';
+import { canCompleteChecklistItem } from './utils';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -649,7 +650,7 @@ interface ChecklistItemProps {
 
 const ChecklistItem = (props: ChecklistItemProps) => {
   const { item, index, onClick, textDecoration = 'line-through' } = props;
-  const { isOpen, pendingAnimationItems, removePendingAnimation } = useChecklistRootContext();
+  const { isOpen, pendingAnimationItems, removePendingAnimation, data } = useChecklistRootContext();
   const [prevIsCompleted, setPrevIsCompleted] = useState(item.isCompleted);
   const [shouldShowAnimation, setShouldShowAnimation] = useState(false);
 
@@ -698,6 +699,11 @@ const ChecklistItem = (props: ChecklistItemProps) => {
     item.isShowAnimation,
   ]);
 
+  // Check if this item can be clicked based on completion order
+  const isClickable = useMemo(() => {
+    return canCompleteChecklistItem(data.completionOrder, data.items, item);
+  }, [data.completionOrder, data.items, item]);
+
   // Reset animation state when item becomes uncompleted
   useEffect(() => {
     if (!isCompleted) {
@@ -706,7 +712,13 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   }, [isCompleted]);
 
   return (
-    <div className={cn('flex items-center cursor-pointer')} onClick={() => onClick(item, index)}>
+    <div
+      className={cn(
+        'flex items-center cursor-pointer',
+        isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+      )}
+      onClick={() => (isClickable ? onClick(item, index) : undefined)}
+    >
       <ChecklistChecked isChecked={isCompleted} isShowAnimation={shouldShowAnimation} />
       <div
         className={cn(
