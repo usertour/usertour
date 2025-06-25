@@ -3,6 +3,7 @@ import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
   ChecklistData,
+  ChecklistInitialDisplay,
   ChecklistItemType,
   ContentActionsItemType,
   contentEndReason,
@@ -136,7 +137,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Show checklist if it's not already open
     if (!openState) {
       this.open();
-      this.trigger(AppEvents.CHECKLIST_FIRST_SEEN);
     }
   }
 
@@ -449,20 +449,29 @@ export class Checklist extends BaseContent<ChecklistStore> {
   reset() {}
 
   /**
+   * Checks if the checklist is default expanded
+   * @returns True if the checklist is default expanded, false otherwise
+   */
+  defaultIsExpanded() {
+    const content = this.getContent();
+    return content?.data?.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+  }
+
+  /**
    * Initializes event listeners for checklist lifecycle and item events.
    */
   initializeEventListeners() {
-    this.once(AppEvents.CHECKLIST_FIRST_SEEN, () => {
-      this.reportSeenEvent();
-    });
     this.on(BizEvents.CHECKLIST_SEEN, () => {
       this.reportSeenEvent();
     });
     this.on(BizEvents.CHECKLIST_HIDDEN, () => {
       this.reportHiddenEvent();
     });
-    this.once(AppEvents.CONTENT_AUTO_START_ACTIVATED, () => {
-      this.reportStartEvent();
+    this.once(AppEvents.CONTENT_STARTED, async () => {
+      await this.reportStartEvent();
+      if (this.defaultIsExpanded()) {
+        await this.reportSeenEvent();
+      }
     });
 
     this.on(BizEvents.CHECKLIST_TASK_CLICKED, ({ item }: any) => {

@@ -806,7 +806,7 @@ export class Tour extends BaseContent<TourStore> {
    * Initializes event listeners
    */
   initializeEventListeners() {
-    this.once(AppEvents.CONTENT_AUTO_START_ACTIVATED, async (args: any) => {
+    this.once(AppEvents.CONTENT_STARTED, async (args: any) => {
       await this.reportAutoStartEvent(args.reason);
     });
   }

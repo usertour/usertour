@@ -86,7 +86,10 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
     }
     this.sessionId = sessionId;
     this.setStarted(true);
-    this.trigger(AppEvents.CONTENT_AUTO_START_ACTIVATED, { reason });
+    // If the session is not reused, trigger the content started event
+    if (!reusedSessionId) {
+      this.trigger(AppEvents.CONTENT_STARTED, { reason });
+    }
     this.show(cvid);
   }
 
