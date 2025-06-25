@@ -583,7 +583,7 @@ ChecklistDismissConfirm.displayName = 'ChecklistDismissConfirm';
 
 const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { setShowDismissConfirm, data } = useChecklistRootContext();
+    const { data, onDismiss } = useChecklistRootContext();
 
     const isAllCompleted =
       data.items.filter((item) => item.isCompleted).length === data.items.length;
@@ -601,7 +601,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
         ref={ref}
         {...props}
         className={baseClassName}
-        onClick={data.preventDismissChecklist ? undefined : () => setShowDismissConfirm(true)}
+        onClick={data.preventDismissChecklist ? undefined : onDismiss}
       >
         {!data.preventDismissChecklist && 'Dismiss checklist'}
       </div>
