@@ -170,7 +170,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private buildStoreData() {
     // Get base information and content
     const baseInfo = this.getStoreBaseInfo();
-    const zIndex = this.getBaseZIndex();
+    const zIndex = baseInfo.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
     const content = this.getContent();
     const checklistData = content.data as ChecklistData;
     const isDismissed = checklistIsDimissed(content);

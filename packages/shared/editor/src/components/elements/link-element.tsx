@@ -68,7 +68,7 @@ export const LinkElement = (props: RenderElementProps) => {
         <span
           {...props.attributes}
           className="underline"
-          style={{ color: 'var(--usertour-link-color)' }}
+          style={{ color: 'hsl(var(--usertour-link-color))' }}
         >
           {props.children}
         </span>

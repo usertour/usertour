@@ -71,6 +71,7 @@ const ChecklistWidgetCore = ({
     defaultOpen={data.initialDisplay === ChecklistInitialDisplay.EXPANDED}
     onDismiss={handleDismiss}
     onOpenChange={handleOpenChange}
+    zIndex={zIndex}
   >
     <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
       <ChecklistDropdown />
