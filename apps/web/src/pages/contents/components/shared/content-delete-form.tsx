@@ -11,7 +11,7 @@ import {
 } from '@usertour-ui/alert-dialog';
 import { deleteContent } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Content } from '@usertour-ui/types';
+import { Content, ContentDataType } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 
 export const ContentDeleteForm = (props: {
@@ -24,6 +24,7 @@ export const ContentDeleteForm = (props: {
   const { content, open, onOpenChange, onSubmit, name } = props;
   const [mutation] = useMutation(deleteContent);
   const { toast } = useToast();
+  const contentType = content.type || ContentDataType.FLOW;
 
   const handleDeleteSubmit = async () => {
     try {
@@ -35,7 +36,7 @@ export const ContentDeleteForm = (props: {
       if (ret.data?.deleteContent?.success) {
         toast({
           variant: 'success',
-          title: `The flow ${name} has been successfully deleted`,
+          title: `The ${contentType} ${name} has been successfully deleted`,
         });
         onSubmit(true);
         return;
@@ -55,12 +56,15 @@ export const ContentDeleteForm = (props: {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone!The flow and all data associated with it will be deleted.
+            This action cannot be undone!The {contentType} and all data associated with it will be
+            deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>Delete flow</AlertDialogAction>
+          <AlertDialogAction variant="destructive" onClick={handleDeleteSubmit}>
+            Delete {contentType}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

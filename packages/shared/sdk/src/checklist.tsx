@@ -182,7 +182,10 @@ const ChecklistProgress = memo(
     const { data } = useChecklistRootContext();
     const progress = useMemo(() => {
       const completedCount = data.items.filter((item) => item.isCompleted).length;
-      return width ?? Math.round((completedCount / data.items.length) * 100);
+      if (data.items.length === 0) {
+        return width ?? 0;
+      }
+      return width ?? Math.round((completedCount / data.items.length) * 100) ?? 0;
     }, [data.items, width]);
 
     return (
@@ -518,22 +521,30 @@ interface ChecklistItemsProps {
 }
 const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
   ({ onClick, disabledUpdate }, ref) => {
-    const { data, updateItemStatus, themeSetting } = useChecklistRootContext();
+    const { data, updateItemStatus, themeSetting, setIsOpen, onOpenChange } =
+      useChecklistRootContext();
 
     const textDecoration = themeSetting?.checklist.completedTaskTextDecoration;
+
+    const closeChecklist = () => {
+      setIsOpen(false);
+      onOpenChange?.(false);
+    };
 
     const handleItemClick = useCallback(
       (item: ChecklistItemType, index: number) => {
         if (disabledUpdate) {
           if (onClick) {
+            closeChecklist();
             onClick(item, index);
           }
           return;
         }
         if (!item.isCompleted) {
           updateItemStatus(item.id, !item.isCompleted);
-          onClick?.(item, index);
         }
+        closeChecklist();
+        onClick?.(item, index);
       },
       [onClick, updateItemStatus],
     );

@@ -505,7 +505,7 @@ export class ContentService {
 
   async getContent(id: string) {
     return await this.prisma.content.findUnique({
-      where: { id },
+      where: { id, deleted: false },
       include: {
         publishedVersion: true,
         contentOnEnvironments: { include: { environment: true, publishedVersion: true } },
@@ -515,20 +515,20 @@ export class ContentService {
 
   async getContentVersion(id: string) {
     return await this.prisma.version.findUnique({
-      where: { id },
+      where: { id, deleted: false },
       include: { content: true },
     });
   }
 
   async contentVersionIsEditable(versionId: string) {
     const version = await this.prisma.version.findUnique({
-      where: { id: versionId },
+      where: { id: versionId, deleted: false },
     });
     if (!version) {
       throw new ParamsError();
     }
     const contentItem = await this.prisma.content.findUnique({
-      where: { id: version.contentId },
+      where: { id: version.contentId, deleted: false },
     });
     if (
       contentItem.editedVersionId !== versionId ||
