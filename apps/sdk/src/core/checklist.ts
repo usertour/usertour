@@ -12,7 +12,6 @@ import {
   SDKContent,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
-import { ReportEventOptions } from '../types/content';
 import { ChecklistStore } from '../types/store';
 import { activedRulesConditions, checklistIsDimissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
@@ -100,16 +99,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
       [EventAttributes.CHECKLIST_END_REASON]: reason,
     };
 
-    await this.reportEventWithSession(
-      {
-        sessionId,
-        eventName: BizEvents.CHECKLIST_DISMISSED,
-        eventData: {
-          ...baseEventData,
-        },
+    await this.reportEventWithSession({
+      sessionId,
+      eventName: BizEvents.CHECKLIST_DISMISSED,
+      eventData: {
+        ...baseEventData,
       },
-      { isDeleteSession: true },
-    );
+    });
   }
 
   /**
@@ -502,7 +498,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private async reportChecklistEvent(
     eventName: BizEvents,
     additionalData: Partial<Record<EventAttributes, any>> = {},
-    options: ReportEventOptions = {},
   ) {
     const content = this.getContent();
     const baseEventData = {
@@ -512,16 +507,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
       [EventAttributes.CHECKLIST_NAME]: content.name,
     };
 
-    await this.reportEventWithSession(
-      {
-        eventName,
-        eventData: {
-          ...baseEventData,
-          ...additionalData,
-        },
+    await this.reportEventWithSession({
+      eventName,
+      eventData: {
+        ...baseEventData,
+        ...additionalData,
       },
-      options,
-    );
+    });
   }
 
   /**
@@ -551,7 +543,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Reports the checklist start event and creates a new session.
    */
   private async reportStartEvent() {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {}, { isCreateSession: true });
+    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {});
   }
 
   /**

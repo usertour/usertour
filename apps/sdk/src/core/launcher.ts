@@ -271,13 +271,10 @@ export class Launcher extends BaseContent<LauncherStore> {
    * Creates a new session for tracking
    */
   private async reportSeenEvent() {
-    await this.reportEventWithSession(
-      {
-        eventName: BizEvents.LAUNCHER_SEEN,
-        eventData: this.getEventData(),
-      },
-      { isCreateSession: true },
-    );
+    await this.reportEventWithSession({
+      eventName: BizEvents.LAUNCHER_SEEN,
+      eventData: this.getEventData(),
+    });
   }
 
   /**
@@ -285,13 +282,10 @@ export class Launcher extends BaseContent<LauncherStore> {
    * Deletes the current tracking session
    */
   private async reportDismissEvent() {
-    await this.reportEventWithSession(
-      {
-        eventName: BizEvents.LAUNCHER_DISMISSED,
-        eventData: this.getEventData(),
-      },
-      { isDeleteSession: true },
-    );
+    await this.reportEventWithSession({
+      eventName: BizEvents.LAUNCHER_DISMISSED,
+      eventData: this.getEventData(),
+    });
   }
 
   /**
@@ -299,12 +293,9 @@ export class Launcher extends BaseContent<LauncherStore> {
    * Deletes the current tracking session after activation
    */
   private async reportActiveEvent() {
-    await this.reportEventWithSession(
-      {
-        eventName: BizEvents.LAUNCHER_ACTIVATED,
-        eventData: this.getEventData(),
-      },
-      { isDeleteSession: true },
-    );
+    await this.reportEventWithSession({
+      eventName: BizEvents.LAUNCHER_ACTIVATED,
+      eventData: this.getEventData(),
+    });
   }
 }

@@ -10,7 +10,7 @@ import {
   contentStartReason,
 } from '@usertour-ui/types';
 import { isEqual } from 'lodash';
-import { ReportEventOptions, ReportEventParams } from '../types/content';
+import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
@@ -417,7 +417,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @param options - The options for the event
    * @returns {Promise<void>} A promise that resolves when the event is reported
    */
-  private async reportEvent(event: Partial<ReportEventParams>, options: ReportEventOptions = {}) {
+  private async reportEvent(event: Partial<ReportEventParams>) {
     const userInfo = this.getUserInfo();
     const content = this.getContent();
     const { externalId: userId } = userInfo || {};
@@ -442,24 +442,18 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
       sessionId,
     };
 
-    return await this.getInstance().reportEvent(reportEvent, options);
+    return await this.getInstance().reportEvent(reportEvent);
   }
 
-  async reportEventWithSession(
-    event: Partial<ReportEventParams>,
-    options: ReportEventOptions = {},
-  ) {
+  async reportEventWithSession(event: Partial<ReportEventParams>) {
     const sessionId = event.sessionId || this.getSessionId();
     if (!sessionId) {
       return;
     }
-    await this.reportEvent(
-      {
-        ...event,
-        sessionId,
-      },
-      options,
-    );
+    await this.reportEvent({
+      ...event,
+      sessionId,
+    });
   }
 
   /**
