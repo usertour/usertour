@@ -192,7 +192,7 @@ const ChecklistProgress = memo(
       <div className="w-full bg-sdk-foreground rounded-full my-3" ref={ref}>
         <div
           className={cn(
-            'text-sdk-background font-medium text-center p-1 leading-none rounded-full',
+            'text-sdk-background font-medium p-1 px-2 leading-none rounded-full text-left',
             progress > 0 && 'bg-sdk-progress',
           )}
           style={{ width: `${progress}%` }}
