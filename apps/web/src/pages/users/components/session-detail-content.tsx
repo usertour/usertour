@@ -62,7 +62,9 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   };
 
   const startEvent = session?.bizEvent?.find(
-    (bizEvent) => bizEvent.event?.codeName === BizEvents.FLOW_STARTED,
+    (bizEvent) =>
+      bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
+      bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
   );
 
   if (!eventList || !content || !version) {
