@@ -3,7 +3,7 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
-import { Event } from '@prisma/client';
+import { BizSession, Event } from '@prisma/client';
 import { addDays, isBefore, lightFormat, format, subDays, endOfDay, startOfDay } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
@@ -21,6 +21,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
+import { defaultEvents } from '@/common/initialization/initialization';
 
 type AnalyticsConditions = {
   environmentId: string;
@@ -865,13 +866,36 @@ export class AnalyticsService {
   }
 
   async endSession(sessionId: string) {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { content: true },
+    });
+
+    if (!bizSession || bizSession.state === 1) {
+      return false;
+    }
+    if (bizSession.content.type === ContentType.FLOW) {
+      return await this.endFlowSession(bizSession);
+    }
+    if (bizSession.content.type === ContentType.CHECKLIST) {
+      return await this.endChecklistSession(bizSession);
+    }
+    return false;
+  }
+
+  /**
+   * End a flow session
+   * @param session - The session to end
+   * @returns True if the session was ended successfully, false otherwise
+   */
+  async endFlowSession(bizSession: BizSession) {
+    const sessionId = bizSession.id;
     const endEvent = await this.prisma.event.findFirst({
       where: { codeName: BizEvents.FLOW_ENDED },
     });
     const seenEvent = await this.prisma.event.findFirst({
       where: { codeName: BizEvents.FLOW_STEP_SEEN },
     });
-    const bizSession = await this.prisma.bizSession.findUnique({ where: { id: sessionId } });
     const seenBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId, eventId: seenEvent.id },
       orderBy: { createdAt: 'desc' },
@@ -890,17 +914,67 @@ export class AnalyticsService {
       [EventAttributes.FLOW_END_REASON]: 'admin_ended',
     };
 
-    if (seenData?.flow_step_number) {
-      data[EventAttributes.FLOW_STEP_NUMBER] = seenData.flow_step_number;
+    const endedAttributes =
+      defaultEvents.find((event) => event.codeName === BizEvents.FLOW_ENDED)?.attributes || [];
+
+    for (const attribute of endedAttributes) {
+      if (seenData?.[attribute]) {
+        data[attribute] = seenData[attribute];
+      }
     }
-    if (seenData?.flow_step_cvid) {
-      data[EventAttributes.FLOW_STEP_CVID] = seenData.flow_step_cvid;
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.bizEvent.create({
+        data: {
+          bizSessionId: sessionId,
+          eventId: endEvent.id,
+          bizUserId: bizSession.bizUserId,
+          data,
+        },
+      });
+      await tx.bizSession.update({
+        where: { id: sessionId },
+        data: { state: 1 },
+      });
+      return true;
+    });
+  }
+
+  /**
+   * End a checklist session
+   * @param session - The session to end
+   * @returns True if the session was ended successfully, false otherwise
+   */
+  async endChecklistSession(bizSession: BizSession) {
+    const sessionId = bizSession.id;
+    const endEvent = await this.prisma.event.findFirst({
+      where: { codeName: BizEvents.CHECKLIST_DISMISSED },
+    });
+    const latestBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId },
+      orderBy: { createdAt: 'desc' },
+    });
+    const endBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId, eventId: endEvent.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!endEvent || endBizEvent) {
+      return false;
     }
-    if (seenData?.flow_step_name) {
-      data[EventAttributes.FLOW_STEP_NAME] = seenData.flow_step_name;
-    }
-    if (seenData?.flow_step_progress) {
-      data[EventAttributes.FLOW_STEP_PROGRESS] = seenData?.flow_step_progress;
+
+    const seenData = latestBizEvent?.data as any;
+    const data: any = {
+      [EventAttributes.CHECKLIST_END_REASON]: 'admin_ended',
+    };
+    const dismissedAttributes =
+      defaultEvents.find((event) => event.codeName === BizEvents.CHECKLIST_DISMISSED)?.attributes ||
+      [];
+
+    for (const attribute of dismissedAttributes) {
+      if (seenData?.[attribute]) {
+        data[attribute] = seenData[attribute];
+      }
     }
 
     return await this.prisma.$transaction(async (tx) => {

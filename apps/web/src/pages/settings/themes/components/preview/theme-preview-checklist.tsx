@@ -27,7 +27,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   if (!settings) return null;
 
   const data: ChecklistData = {
-    buttonText: 'Checklist',
+    buttonText: 'Get Started',
     initialDisplay: open ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
     completionOrder: ChecklistCompletionOrder.ANY,
     preventDismissChecklist: false,

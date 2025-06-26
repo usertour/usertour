@@ -203,6 +203,7 @@ const FlowBuilderDetailBody = () => {
                     enabledBackdrop: currentStep.setting.enabledBackdrop,
                     skippable: currentStep.setting.skippable,
                     enabledBlockTarget: currentStep.setting.enabledBlockTarget,
+                    explicitCompletionStep: currentStep.setting.explicitCompletionStep,
                   }}
                   onChange={handleSettingsChange}
                   type={currentStep.type}
