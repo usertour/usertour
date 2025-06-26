@@ -11,7 +11,7 @@ import {
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { getContentError } from '@usertour-ui/shared-utils';
-import { ContentDataType } from '@usertour-ui/types';
+import { Content, ContentDataType } from '@usertour-ui/types';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   Dispatch,
@@ -36,6 +36,7 @@ import {
 } from './actions-popper';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
+import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-ui/icons';
 
 export interface SelectItemType {
   id: string;
@@ -171,6 +172,96 @@ const ContentActionsContentsName = () => {
   );
 };
 
+const ContentActionsStep = (props: { content: Content }) => {
+  const { content } = props;
+  const { zIndex } = useContentActionsContext();
+  const [stepCvid, setStepCvid] = useState<string | undefined>();
+  const steps = content.steps || [];
+  const [open, setOpen] = useState(false);
+
+  // Get display text for selected step
+  const getDisplayText = useCallback(() => {
+    const selectedStep = steps?.find((step) => step.cvid === stepCvid);
+    if (selectedStep) {
+      const stepIndex = steps?.findIndex((step) => step.cvid === stepCvid) ?? 0;
+      return `${stepIndex + 1}. ${selectedStep.name}`;
+    }
+
+    return '';
+  }, [content, stepCvid]);
+
+  const handleSelectStep = (cvid: string) => {
+    setStepCvid(cvid);
+    setOpen(false);
+    // updateConditionData(index, { stepCvid: cvid });
+  };
+
+  const handleFilter = useCallback(
+    (value: string, search: string) => {
+      if (steps && steps.length > 0) {
+        const step = steps?.find((step) => step.cvid === value);
+        if (step?.name?.includes(search)) {
+          return 1;
+        }
+      }
+      return 0;
+    },
+    [steps],
+  );
+
+  return (
+    <div className="flex flex-row">
+      <Popover.Popover open={open} onOpenChange={setOpen}>
+        <Popover.PopoverTrigger asChild>
+          <Button variant="outline" className="flex-1 justify-between ">
+            <div className="max-w-[240px] truncate flex items-center ">
+              <span className="truncate">{getDisplayText()}</span>
+            </div>
+            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </Popover.PopoverTrigger>
+        <Popover.PopoverContent
+          className="w-[350px] p-0"
+          style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 1 }}
+        >
+          <Command filter={handleFilter}>
+            <CommandInput placeholder="Search steps..." />
+            <CommandEmpty>No items found.</CommandEmpty>
+            <ScrollArea className="h-72">
+              <CommandGroup heading="Steps">
+                {steps?.map((item, index) => {
+                  return (
+                    <CommandItem
+                      key={item.cvid}
+                      value={item.cvid as string}
+                      onSelect={() => handleSelectStep(item.cvid as string)}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center w-full min-w-0">
+                        {item.type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mr-1" />}
+                        {item.type === 'tooltip' && <TooltipIcon className="w-4 h-4 mt-1 mr-1" />}
+                        {item.type === 'modal' && <ModelIcon className="w-4 h-4 mt-0.5 mr-1" />}
+                        <span className="flex-shrink-0 mr-1">{index + 1}.</span>
+                        <span className="truncate min-w-0">{item.name}</span>
+                      </div>
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          stepCvid === item.cvid ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </ScrollArea>
+          </Command>
+        </Popover.PopoverContent>
+      </Popover.Popover>
+    </div>
+  );
+};
+
 export const ContentActionsContents = (props: ContentActionsContentsProps) => {
   const { index, data } = props;
   const { updateConditionData } = useActionsGroupContext();
@@ -229,6 +320,12 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
                       {selectedContent?.type === ContentDataType.FLOW ? 'Flow' : 'Checklist'}
                     </div>
                     <ContentActionsContentsName />
+                    {selectedContent?.type === ContentDataType.FLOW && (
+                      <>
+                        <span>Step to start at</span>
+                        <ContentActionsStep content={selectedContent} />
+                      </>
+                    )}
                   </div>
                 </ContentActionsPopoverContent>
               </ContentActionsPopover>
