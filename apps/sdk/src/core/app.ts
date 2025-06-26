@@ -699,7 +699,7 @@ export class App extends Evented {
     }
 
     if (this.activeChecklist) {
-      await this.activeChecklist.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeChecklist.close(contentEndReason.URL_START_CLOSED);
     }
 
     this.activeChecklist = checklistFromUrl;
@@ -727,12 +727,12 @@ export class App extends Evented {
     }
 
     if (this.activeChecklist) {
-      await this.activeChecklist.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeChecklist.close(contentEndReason.USER_STARTED_OTHER_CONTENT);
     }
 
     this.activeChecklist = activeChecklist;
     if (!opts?.continue) {
-      await this.activeChecklist.endLatestSession(contentEndReason.SYSTEM_CLOSED);
+      await this.activeChecklist.endLatestSession(contentEndReason.USER_STARTED_OTHER_CONTENT);
     }
     await this.activeChecklist.start(reason);
   }
@@ -836,7 +836,7 @@ export class App extends Evented {
     }
 
     if (this.activeTour) {
-      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeTour.close(contentEndReason.URL_START_CLOSED);
     }
     const contentId = urlTour.getContent().contentId;
 
@@ -876,7 +876,7 @@ export class App extends Evented {
     }
 
     if (this.activeTour) {
-      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeTour.close(contentEndReason.USER_STARTED_OTHER_CONTENT);
     }
 
     const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours, contentId);
@@ -889,7 +889,7 @@ export class App extends Evented {
         await this.activeTour?.start(contentStartReason.START_FROM_SESSION, cvid);
       } else {
         this.activeTour = latestActivatedTour;
-        await this.activeTour?.endLatestSession(contentEndReason.SYSTEM_CLOSED);
+        await this.activeTour?.endLatestSession(contentEndReason.USER_STARTED_OTHER_CONTENT);
         await this.activeTour?.start(reason);
       }
     } else {

@@ -52,6 +52,11 @@ export const isDark = (hex: string) => {
 };
 
 export const evalCode = (code: string) => {
-  // biome-ignore lint/security/noGlobalEval: <explanation>
-  return eval(code);
+  try {
+    // biome-ignore lint/security/noGlobalEval: <explanation>
+    return eval(code);
+  } catch (error) {
+    console.error('Usertour.js: Error evaluating code:', error);
+    return null; // Return null instead of throwing
+  }
 };

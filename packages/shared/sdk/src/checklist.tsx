@@ -45,7 +45,7 @@ interface ChecklistRootContextValue {
   showDismissConfirm: boolean;
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
   onDismiss?: () => Promise<void>;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => Promise<void>;
   // Animation state tracking
   pendingAnimationItems: Set<string>;
   removePendingAnimation: (itemId: string) => void;
@@ -68,7 +68,7 @@ interface ChecklistRootProps {
   data: ChecklistData;
   defaultOpen?: boolean;
   onDismiss?: () => Promise<void>;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => Promise<void>;
   zIndex: number;
 }
 
@@ -325,9 +325,9 @@ const ChecklistPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyl
     const { globalStyle, isOpen, setIsOpen, themeSetting, onOpenChange } =
       useChecklistRootContext();
 
-    const handleOpenChange = () => {
+    const handleOpenChange = async () => {
+      await onOpenChange?.(true);
       setIsOpen(true);
-      onOpenChange?.(true);
     };
 
     return (
@@ -446,9 +446,9 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
     }
   }, [globalStyle]);
 
-  const handleOnOpenChange = () => {
+  const handleOnOpenChange = async () => {
+    await onOpenChange?.(true);
     setIsOpen(true);
-    onOpenChange?.(true);
   };
 
   const isAllCompleted = data.items.filter((item) => item.isCompleted).length === data.items.length;
@@ -498,9 +498,9 @@ ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
     const { setIsOpen, onOpenChange } = useChecklistRootContext();
-    const handleOnOpenChange = () => {
+    const handleOnOpenChange = async () => {
+      await onOpenChange?.(false);
       setIsOpen(false);
-      onOpenChange?.(false);
     };
     return (
       <div
@@ -527,9 +527,9 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
 
     const textDecoration = themeSetting?.checklist.completedTaskTextDecoration;
 
-    const closeChecklist = () => {
+    const closeChecklist = async () => {
+      await onOpenChange?.(false);
       setIsOpen(false);
-      onOpenChange?.(false);
     };
 
     const handleItemClick = useCallback(
