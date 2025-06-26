@@ -1,3 +1,4 @@
+import { EyeNoneIcon } from '@usertour-ui/icons';
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ChecklistContainer, ChecklistDropdown } from '@usertour-ui/sdk';
 import { ChecklistProgress } from '@usertour-ui/sdk';
@@ -80,6 +81,15 @@ interface FlowPreviewProps {
   currentStep: Step;
 }
 const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
+  const isHidddenStep = currentStep.type === 'hidden';
+  if (isHidddenStep) {
+    return (
+      <div className="w-40 h-32 flex  flex-none items-center justify-center">
+        <EyeNoneIcon className="w-8 h-8" />
+      </div>
+    );
+  }
+
   return (
     <SharedPopper.Popper
       open={true}
