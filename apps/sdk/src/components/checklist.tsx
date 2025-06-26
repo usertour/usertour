@@ -33,7 +33,7 @@ type ChecklistWidgetCoreProps = {
   handleItemClick: (item: ChecklistItemType, index: number) => void;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   handleDismiss: () => Promise<void>;
-  handleOpenChange: (open: boolean) => void;
+  handleOpenChange: (open: boolean) => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
 };

@@ -13,7 +13,6 @@ import { isEqual } from 'lodash';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';
-import { AppEvents } from '../utils/event';
 import { window } from '../utils/globals';
 import { buildNavigateUrl } from '../utils/navigate-utils';
 import { App } from './app';
@@ -88,9 +87,9 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
     this.setStarted(true);
     // If the session is not reused, trigger the content started event
     if (!reusedSessionId) {
-      this.trigger(AppEvents.CONTENT_STARTED, { reason });
+      await this.reportStartEvent(reason);
     }
-    this.show(cvid);
+    await this.show(cvid);
   }
 
   /**
@@ -608,9 +607,10 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   abstract getReusedSessionId(): string | null;
   abstract monitor(): Promise<void>;
   abstract destroy(): void;
-  abstract show(cvid?: string): void;
+  abstract show(cvid?: string): Promise<void>;
   abstract close(reason?: string): Promise<void>;
   abstract reset(): void;
   abstract refresh(): void;
   abstract initializeEventListeners(): void;
+  abstract reportStartEvent(reason?: string): Promise<void>;
 }
