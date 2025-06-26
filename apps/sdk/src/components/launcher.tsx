@@ -8,7 +8,6 @@ import {
 } from '@usertour-ui/sdk/src/launcher';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
-  BizEvents,
   BizUserInfo,
   LauncherActionType,
   LauncherData,
@@ -224,9 +223,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
   return (
     <LauncherWidgetCore
       data={data}
-      handleActive={() => {
-        launcher.trigger(BizEvents.LAUNCHER_ACTIVATED);
-      }}
+      handleActive={launcher.handleActive}
       handleActions={launcher.handleActions}
       theme={theme}
       zIndex={zIndex}

@@ -18,6 +18,10 @@ export enum contentEndReason {
   SYSTEM_CLOSED = 'system_closed',
   CONTENT_NOT_FOUND = 'content_not_found',
   SESSION_TIMEOUT = 'session_timeout',
+  URL_START_CLOSED = 'url_start_closed',
+  USER_STARTED_OTHER_CONTENT = 'user_started_other_content',
+  PROGRAM_STARTED_OTHER_CONTENT = 'program_started_other_content',
+  STEP_NOT_FOUND = 'step_not_found',
 }
 
 export enum contentStartReason {
@@ -43,6 +47,10 @@ export const flowReasonTitleMap = {
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
   [contentEndReason.SESSION_TIMEOUT]: 'Session timeout',
   [contentEndReason.SYSTEM_CLOSED]: 'System closed',
+  [contentEndReason.URL_START_CLOSED]: 'Closed due to URL start',
+  [contentEndReason.USER_STARTED_OTHER_CONTENT]: 'User started other content',
+  [contentEndReason.PROGRAM_STARTED_OTHER_CONTENT]: 'Program started other content',
+  [contentEndReason.STEP_NOT_FOUND]: 'Step not found',
 };
 
 export interface SDKConfig {

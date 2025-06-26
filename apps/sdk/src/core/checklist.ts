@@ -14,7 +14,6 @@ import {
 import { evalCode } from '@usertour-ui/ui-utils';
 import { ChecklistStore } from '../types/store';
 import { activedRulesConditions, checklistIsDimissed, isActive } from '../utils/conditions';
-import { AppEvents } from '../utils/event';
 import { App } from './app';
 import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
@@ -141,7 +140,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Shows the checklist by initializing its store data with closed state.
    * This method sets up the initial state of the checklist without displaying it.
    */
-  show() {
+  async show() {
     const storeData = this.buildStoreData();
     this.setStore({ ...storeData, openState: false });
   }
@@ -353,13 +352,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
       // Trigger completion events
       for (const item of updateItems) {
         if (item.isCompleted) {
-          this.trigger(BizEvents.CHECKLIST_TASK_COMPLETED, { item });
+          await this.reportTaskCompleteEvent(item);
         }
       }
 
       // Check if all items are completed
       if (updateItems.every((item) => item.isCompleted)) {
-        this.trigger(BizEvents.CHECKLIST_COMPLETED);
+        await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
       }
     }
   }
@@ -430,8 +429,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Triggers the appropriate event based on the open state.
    * @param {boolean} open - Whether the checklist is open
    */
-  handleOpenChange(open: boolean) {
-    this.trigger(open ? BizEvents.CHECKLIST_SEEN : BizEvents.CHECKLIST_HIDDEN);
+  async handleOpenChange(open: boolean) {
+    if (open) {
+      await this.reportSeenEvent();
+    } else {
+      await this.reportHiddenEvent();
+    }
   }
 
   /**
@@ -462,32 +465,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   /**
    * Initializes event listeners for checklist lifecycle and item events.
    */
-  initializeEventListeners() {
-    this.on(BizEvents.CHECKLIST_SEEN, () => {
-      this.reportSeenEvent();
-    });
-    this.on(BizEvents.CHECKLIST_HIDDEN, () => {
-      this.reportHiddenEvent();
-    });
-    this.once(AppEvents.CONTENT_STARTED, async () => {
-      await this.reportStartEvent();
-      if (this.defaultIsExpanded()) {
-        await this.reportSeenEvent();
-      }
-    });
-
-    this.on(BizEvents.CHECKLIST_TASK_CLICKED, ({ item }: any) => {
-      this.reportTaskClickEvent(item);
-    });
-
-    this.on(BizEvents.CHECKLIST_TASK_COMPLETED, ({ item }: any) => {
-      this.reportTaskCompleteEvent(item);
-    });
-
-    this.once(BizEvents.CHECKLIST_COMPLETED, () => {
-      this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
-    });
-  }
+  initializeEventListeners() {}
 
   /**
    * Reports a checklist event with session and additional data.
@@ -542,8 +520,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
   /**
    * Reports the checklist start event and creates a new session.
    */
-  private async reportStartEvent() {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {});
+  async reportStartEvent(reason?: string) {
+    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {
+      checklist_start_reason: reason ?? 'auto_start',
+    });
+    if (this.defaultIsExpanded()) {
+      await this.reportSeenEvent();
+    }
   }
 
   /**

@@ -83,7 +83,7 @@ export class Tour extends BaseContent<TourStore> {
 
     // If no valid step found, close the tour
     if (!targetStep?.cvid) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
 
@@ -241,7 +241,7 @@ export class Tour extends BaseContent<TourStore> {
     // Find and validate target step
     const targetStep = this.getStepByCvid(stepCvid);
     if (!targetStep) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
 
@@ -304,6 +304,11 @@ export class Tour extends BaseContent<TourStore> {
     // Set up element watcher
     const store = this.buildStoreData();
     this.setupElementWatcher(currentStep, store);
+
+    const { isComplete } = this.getCurrentStepInfo(currentStep);
+    if (isComplete) {
+      await this.reportStepEvents(currentStep, BizEvents.FLOW_COMPLETED);
+    }
   }
 
   /**
@@ -327,7 +332,7 @@ export class Tour extends BaseContent<TourStore> {
 
     // Create new watcher
     if (!step.target) {
-      this.close(contentEndReason.SYSTEM_CLOSED);
+      this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
     this.watcher = new ElementWatcher(step.target);
@@ -365,7 +370,7 @@ export class Tour extends BaseContent<TourStore> {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    const { isComplete, progress } = this.getCurrentStepInfo(step);
+    const { progress } = this.getCurrentStepInfo(step);
 
     // Scroll element into view if tour is visible
     if (openState) {
@@ -379,11 +384,6 @@ export class Tour extends BaseContent<TourStore> {
       triggerRef: el,
       openState,
     });
-
-    // Report completion if this is the last step
-    if (isComplete) {
-      this.reportStepEvents(step, BizEvents.FLOW_COMPLETED);
-    }
   }
 
   private handleElementChanged(el: Element, step: Step, store: TourStore): void {
@@ -659,7 +659,7 @@ export class Tour extends BaseContent<TourStore> {
 
     // Handle timeout or hidden state
     if (isTimeout) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
     } else {
       this.hide();
     }
@@ -803,11 +803,7 @@ export class Tour extends BaseContent<TourStore> {
   /**
    * Initializes event listeners
    */
-  initializeEventListeners() {
-    this.once(AppEvents.CONTENT_STARTED, async (args: any) => {
-      await this.reportAutoStartEvent(args.reason);
-    });
-  }
+  initializeEventListeners() {}
 
   /**
    * Get detailed information about the current step
@@ -833,7 +829,7 @@ export class Tour extends BaseContent<TourStore> {
    * Reports the auto start event
    * @param reason - The reason for the auto start
    */
-  async reportAutoStartEvent(reason?: string) {
+  async reportStartEvent(reason?: string) {
     await this.reportEventWithSession({
       eventName: BizEvents.FLOW_STARTED,
       eventData: {
