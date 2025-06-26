@@ -83,7 +83,7 @@ export class Tour extends BaseContent<TourStore> {
 
     // If no valid step found, close the tour
     if (!targetStep?.cvid) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
 
@@ -241,7 +241,7 @@ export class Tour extends BaseContent<TourStore> {
     // Find and validate target step
     const targetStep = this.getStepByCvid(stepCvid);
     if (!targetStep) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
 
@@ -332,7 +332,7 @@ export class Tour extends BaseContent<TourStore> {
 
     // Create new watcher
     if (!step.target) {
-      this.close(contentEndReason.SYSTEM_CLOSED);
+      this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
     this.watcher = new ElementWatcher(step.target);
@@ -659,7 +659,7 @@ export class Tour extends BaseContent<TourStore> {
 
     // Handle timeout or hidden state
     if (isTimeout) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
     } else {
       this.hide();
     }
