@@ -33,23 +33,31 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
     projectId,
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
-  const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [openError, setOpenError] = useState<boolean>(false);
   const [localData, setLocalData] = useState(element.data);
-  const [shouldUpdate, setShouldUpdate] = useState(false);
 
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorMultiLineTextElement['data']>) => {
-      setLocalData((prevData) => {
-        const newData = { ...prevData, ...data };
-        setShouldUpdate(true);
-        return newData;
-      });
+      setLocalData((prevData) => ({ ...prevData, ...data }));
     },
     [],
   );
 
   useEffect(() => {
-    if (shouldUpdate) {
+    setOpenError(isEmptyString(localData.name) && !isOpen);
+  }, [localData.name, isOpen]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (open) {
+        setOpenError(false);
+        return;
+      }
+      if (isEmptyString(localData.name)) {
+        setOpenError(true);
+        return;
+      }
       updateElement(
         {
           ...element,
@@ -57,18 +65,14 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
         },
         id,
       );
-      setShouldUpdate(false);
-    }
-  }, [shouldUpdate, localData, updateElement, element, id]);
-
-  useEffect(() => {
-    setIsShowError(isEmptyString(localData.name));
-  }, [localData.name]);
+    },
+    [localData.name, element, id, updateElement],
+  );
 
   return (
-    <EditorError open={isShowError}>
+    <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
               <Textarea
