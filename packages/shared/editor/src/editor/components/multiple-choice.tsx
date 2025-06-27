@@ -45,24 +45,43 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
     attributes,
     projectId,
   } = useContentEditorContext();
-  const [isShowError, setIsShowError] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>();
   const [localData, setLocalData] = useState(element.data);
-  const [shouldUpdate, setShouldUpdate] = useState(false);
+  const [openError, setOpenError] = useState(false);
 
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorMultipleChoiceElement['data']>) => {
-      setLocalData((prevData) => {
-        const newData = { ...prevData, ...data };
-        setShouldUpdate(true);
-        return newData;
-      });
+      setLocalData((prevData) => ({ ...prevData, ...data }));
     },
     [],
   );
 
   useEffect(() => {
-    if (shouldUpdate) {
+    setOpenError(isEmptyString(localData.name) && !isOpen);
+  }, [localData.name, isOpen]);
+
+  const handleOptionChange = useCallback(
+    (index: number, field: keyof ContentEditorMultipleChoiceOption, value: string | boolean) => {
+      setLocalData((prevData) => {
+        const newOptions = [...prevData.options];
+        newOptions[index] = { ...newOptions[index], [field]: value };
+        return { ...prevData, options: newOptions };
+      });
+    },
+    [],
+  );
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (open) {
+        setOpenError(false);
+        return;
+      }
+      if (isEmptyString(localData.name)) {
+        setOpenError(true);
+        return;
+      }
       updateElement(
         {
           ...element,
@@ -70,30 +89,14 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
         },
         id,
       );
-      setShouldUpdate(false);
-    }
-  }, [shouldUpdate, localData, updateElement, id]);
-
-  useEffect(() => {
-    setIsShowError(isEmptyString(localData.name));
-  }, [localData.name]);
-
-  const handleOptionChange = useCallback(
-    (index: number, field: keyof ContentEditorMultipleChoiceOption, value: string | boolean) => {
-      setLocalData((prevData) => {
-        const newOptions = [...prevData.options];
-        newOptions[index] = { ...newOptions[index], [field]: value };
-        setShouldUpdate(true);
-        return { ...prevData, options: newOptions };
-      });
     },
-    [],
+    [localData.name, element, id, updateElement],
   );
 
   return (
-    <EditorError open={isShowError}>
+    <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 w-full">
               <div className="space-y-2">
