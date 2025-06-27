@@ -33,21 +33,32 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
     attributes,
     projectId,
   } = useContentEditorContext();
-  const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [openError, setOpenError] = useState(false);
   const [isOpen, setIsOpen] = useState<boolean>();
   const [localData, setLocalData] = useState(element.data);
-  const [shouldUpdate, setShouldUpdate] = useState(false);
 
   const handleDataChange = useCallback((data: Partial<ContentEditorNPSElement['data']>) => {
-    setLocalData((prevData) => {
-      const newData = { ...prevData, ...data };
-      setShouldUpdate(true);
-      return newData;
-    });
+    setLocalData((prevData) => ({ ...prevData, ...data }));
   }, []);
 
   useEffect(() => {
-    if (shouldUpdate) {
+    if (isEmptyString(localData.name) && !isOpen) {
+      setOpenError(true);
+    }
+  }, [localData.name, isOpen]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (open) {
+        setOpenError(false);
+        return;
+      }
+      if (isEmptyString(localData.name)) {
+        setOpenError(true);
+        return;
+      }
+
       updateElement(
         {
           ...element,
@@ -55,18 +66,14 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
         },
         id,
       );
-      setShouldUpdate(false);
-    }
-  }, [shouldUpdate, localData, updateElement, element, id]);
-
-  useEffect(() => {
-    setIsShowError(isEmptyString(localData.name));
-  }, [localData.name]);
+    },
+    [localData.name, element, id, updateElement],
+  );
 
   return (
-    <EditorError open={isShowError}>
+    <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="w-full">
               <div
