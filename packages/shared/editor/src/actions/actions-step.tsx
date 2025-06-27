@@ -19,7 +19,8 @@ import {
   DropdownMenuSelectItem,
 } from '@usertour-ui/dropdown-menu';
 import { getStepError } from '@usertour-ui/shared-utils';
-import { useCallback, useEffect, useState } from 'react';
+import { Step, ContentVersion } from '@usertour-ui/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
@@ -41,15 +42,28 @@ export interface ContentActionsStepProps {
   index: number;
 }
 
-export const ContentActionsStep = (props: ContentActionsStepProps) => {
-  const { index, data } = props;
-  const { updateConditionData } = useActionsGroupContext();
-  const { currentVersion, zIndex, currentStep, createStep } = useContentActionsContext();
+// Get step type icon
+const getStepTypeIcon = (type: string) => {
+  switch (type) {
+    case 'hidden':
+      return <EyeNoneIcon className="w-4 h-4 mr-1" />;
+    case 'tooltip':
+      return <TooltipIcon className="w-4 h-4 mt-1 mr-1" />;
+    case 'modal':
+      return <ModelIcon className="w-4 h-4 mt-0.5 mr-1" />;
+    default:
+      return null;
+  }
+};
+
+// Custom hook for step error handling
+const useStepErrorHandling = (
+  stepCvid: string | undefined,
+  open: boolean,
+  currentVersion: ContentVersion | undefined,
+) => {
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [stepCvid, setStepCvid] = useState<string | undefined>(data?.stepCvid);
 
   useEffect(() => {
     const updates = { stepCvid };
@@ -60,7 +74,7 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
     let finalErrorInfo = errorInfo;
 
     if (stepCvid && currentVersion?.steps) {
-      const stepExists = currentVersion.steps.some((step) => step.cvid === stepCvid);
+      const stepExists = currentVersion.steps.some((step: Step) => step.cvid === stepCvid);
       if (!stepExists) {
         finalShowError = true;
         finalErrorInfo = 'Selected step no longer exists';
@@ -71,66 +85,290 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
       setErrorInfo(finalErrorInfo);
       setOpenError(true);
     }
-  }, [open, stepCvid, currentVersion, setErrorInfo, setOpenError]);
+  }, [open, stepCvid, currentVersion]);
+
+  return { openError, setOpenError, errorInfo, setErrorInfo };
+};
+
+// Custom hook for step actions
+const useStepActions = (
+  currentVersion: ContentVersion | undefined,
+  currentStep: Step | undefined,
+  createStep:
+    | ((
+        currentVersion: ContentVersion,
+        sequence: number,
+        stepType?: string,
+        duplicateStep?: Step,
+      ) => Promise<Step | undefined>)
+    | undefined,
+) => {
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleStepAction = useCallback(
-    async (stepType?: string, stepToDuplicate?: any) => {
+    async (stepType?: string, stepToDuplicate?: Step) => {
       if (createStep && currentVersion) {
         setIsLoading(true);
         const seq = currentStep?.sequence ?? 0;
         const step = await createStep(currentVersion, seq + 1, stepType, stepToDuplicate);
         setIsLoading(false);
         if (step?.cvid) {
-          handleSelectStep(step.cvid);
+          return step.cvid;
         }
       }
+      return null;
     },
     [currentVersion, currentStep, createStep],
   );
 
   const handleCreateStep = useCallback(
     async (stepType?: string) => {
-      await handleStepAction(stepType);
+      const newStepCvid = await handleStepAction(stepType);
+      return newStepCvid;
     },
     [handleStepAction],
   );
 
   const handleDuplicateStep = useCallback(
     async (cvid: string) => {
-      const selectedStep = currentVersion?.steps?.find((step) => step.cvid === cvid);
+      const selectedStep = currentVersion?.steps?.find((step: Step) => step.cvid === cvid);
       if (selectedStep) {
-        await handleStepAction(undefined, selectedStep);
+        const newStepCvid = await handleStepAction(undefined, selectedStep);
+        return newStepCvid;
       }
+      return null;
     },
     [currentVersion, handleStepAction],
   );
 
-  // Get display text for selected step
-  const getDisplayText = useCallback(() => {
-    const selectedStep = currentVersion?.steps?.find((step) => step.cvid === stepCvid);
+  return { isLoading, handleCreateStep, handleDuplicateStep };
+};
+
+// Memoized step item component
+const StepItem = ({
+  item,
+  index,
+  onSelect,
+}: {
+  item: Step;
+  index: number;
+  onSelect: () => void;
+}) => {
+  return (
+    <DropdownMenuSelectItem
+      key={item.cvid}
+      value={item.cvid as string}
+      onSelect={onSelect}
+      className="cursor-pointer"
+    >
+      <div className="flex items-center w-full min-w-0">
+        {getStepTypeIcon(item.type)}
+        <span className="flex-shrink-0 mr-1">{index + 1}.</span>
+        <span className="truncate min-w-0">{item.name}</span>
+      </div>
+    </DropdownMenuSelectItem>
+  );
+};
+
+// Memoized duplicate step item component
+const DuplicateStepItem = ({
+  item,
+  index,
+  onSelect,
+  isCurrentStep = false,
+}: {
+  item: Step;
+  index: number;
+  onSelect: () => void;
+  isCurrentStep?: boolean;
+}) => {
+  return (
+    <DropdownMenuItem key={item.cvid} className="cursor-pointer" onSelect={onSelect}>
+      <div className="flex items-center w-full min-w-0">
+        {getStepTypeIcon(item.type)}
+        <span className="flex-shrink-0 mr-1">{index + 1}.</span>
+        <span className="truncate min-w-0">{item.name}</span>
+        {isCurrentStep && (
+          <Badge variant="secondary" className="ml-2 flex-shrink-0">
+            Current
+          </Badge>
+        )}
+      </div>
+    </DropdownMenuItem>
+  );
+};
+
+// Memoized display text component
+const StepDisplayText = ({
+  currentVersion,
+  stepCvid,
+}: { currentVersion: ContentVersion | undefined; stepCvid: string | undefined }) => {
+  const displayText = useMemo(() => {
+    const selectedStep = currentVersion?.steps?.find((step: Step) => step.cvid === stepCvid);
     if (selectedStep) {
-      const stepIndex = currentVersion?.steps?.findIndex((step) => step.cvid === stepCvid) ?? 0;
+      const stepIndex =
+        currentVersion?.steps?.findIndex((step: Step) => step.cvid === stepCvid) ?? 0;
       return `${stepIndex + 1}. ${selectedStep.name}`;
     }
-
     return '';
   }, [currentVersion, stepCvid]);
 
-  const handleSelectStep = (cvid: string) => {
-    setStepCvid(cvid);
-    updateConditionData(index, { stepCvid: cvid });
-    setErrorInfo('');
-    setOpenError(false);
-    setOpen(false);
-  };
+  return (
+    <div className="max-w-[100px] truncate flex items-center">
+      <span className="truncate">{displayText}</span>
+    </div>
+  );
+};
 
-  const handleOnOpenChange = useCallback((open: boolean) => {
-    setOpen(open);
-    if (open) {
+export const ContentActionsStep = (props: ContentActionsStepProps) => {
+  const { index, data } = props;
+  const { updateConditionData } = useActionsGroupContext();
+  const { currentVersion, zIndex, currentStep, createStep } = useContentActionsContext();
+
+  const [open, setOpen] = useState(false);
+  const [stepCvid, setStepCvid] = useState<string | undefined>(data?.stepCvid);
+
+  // Handle error state
+  const { openError, setOpenError, errorInfo, setErrorInfo } = useStepErrorHandling(
+    stepCvid,
+    open,
+    currentVersion,
+  );
+
+  // Handle step actions
+  const { isLoading, handleCreateStep, handleDuplicateStep } = useStepActions(
+    currentVersion,
+    currentStep,
+    createStep,
+  );
+
+  const handleSelectStep = useCallback(
+    (cvid: string) => {
+      setStepCvid(cvid);
+      updateConditionData(index, { stepCvid: cvid });
       setErrorInfo('');
       setOpenError(false);
-    }
-  }, []);
+      setOpen(false);
+    },
+    [updateConditionData, index, setErrorInfo, setOpenError],
+  );
+
+  const handleCreateStepWrapper = useCallback(
+    async (stepType?: string) => {
+      const newStepCvid = await handleCreateStep(stepType);
+      if (newStepCvid) {
+        handleSelectStep(newStepCvid);
+      }
+    },
+    [handleCreateStep, handleSelectStep],
+  );
+
+  const handleDuplicateStepWrapper = useCallback(
+    async (cvid: string) => {
+      const newStepCvid = await handleDuplicateStep(cvid);
+      if (newStepCvid) {
+        handleSelectStep(newStepCvid);
+      }
+    },
+    [handleDuplicateStep, handleSelectStep],
+  );
+
+  const handleOnOpenChange = useCallback(
+    (isOpen: boolean) => {
+      setOpen(isOpen);
+      if (isOpen) {
+        setErrorInfo('');
+        setOpenError(false);
+      }
+    },
+    [setErrorInfo, setOpenError],
+  );
+
+  // Memoize filtered steps (excluding current step)
+  const availableSteps = useMemo(
+    () => currentVersion?.steps?.filter((item: Step) => currentStep?.cvid !== item.cvid) || [],
+    [currentVersion?.steps, currentStep?.cvid],
+  );
+
+  // Memoize trigger content
+  const triggerContent = useMemo(
+    () => (
+      <div className="flex h-9 w-full items-center justify-between rounded-md bg-transparent py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 justify-start flex border-none focus:outline-none focus:ring-0 px-2 shadow-none">
+        <ContentActionsConditionIcon className="px-0 pr-2">
+          <ArrowRightIcon width={16} height={16} />
+        </ContentActionsConditionIcon>
+        <span className="pr-1">Go to Step</span>
+        {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+        {!isLoading && <StepDisplayText currentVersion={currentVersion} stepCvid={stepCvid} />}
+      </div>
+    ),
+    [isLoading, currentVersion, stepCvid],
+  );
+
+  // Memoize dropdown content
+  const dropdownContent = useMemo(
+    () => (
+      <DropdownMenuRadioGroup value={stepCvid}>
+        {availableSteps.map((item: Step, index: number) => (
+          <StepItem
+            key={item.cvid}
+            item={item}
+            index={index}
+            onSelect={() => handleSelectStep(item.cvid as string)}
+          />
+        ))}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">Add new step</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => handleCreateStepWrapper('hidden')}
+            >
+              <EyeNoneIcon className="w-4 h-4 mr-1 flex-none" />
+              Hidden
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => handleCreateStepWrapper('tooltip')}
+            >
+              <TooltipIcon className="w-4 h-4 mr-1 mt-1 flex-none" />
+              Tooltip
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => handleCreateStepWrapper('modal')}
+            >
+              <ModelIcon className="w-4 h-4 mr-1 mt-0.5 flex-none" />
+              Modal
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">Duplicate step</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-[240px]">
+            {currentVersion?.steps?.map((item: Step, index: number) => (
+              <DuplicateStepItem
+                key={item.cvid}
+                item={item}
+                index={index}
+                onSelect={() => item.cvid && handleDuplicateStepWrapper(item.cvid)}
+                isCurrentStep={currentStep?.cvid === item.cvid}
+              />
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+      </DropdownMenuRadioGroup>
+    ),
+    [
+      stepCvid,
+      availableSteps,
+      handleSelectStep,
+      handleCreateStepWrapper,
+      currentVersion?.steps,
+      currentStep?.cvid,
+      handleDuplicateStepWrapper,
+    ],
+  );
 
   return (
     <ContentActionsError open={openError}>
@@ -138,102 +376,14 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
         <ContentActionsErrorAnchor>
           <DropdownMenu onOpenChange={handleOnOpenChange} open={open}>
             <DropdownMenuTrigger asChild disabled={isLoading}>
-              <div className="flex h-9 w-full items-center justify-between rounded-md bg-transparent py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 justify-start flex border-none focus:outline-none focus:ring-0 px-2 shadow-none">
-                <ContentActionsConditionIcon className="px-0 pr-2">
-                  <ArrowRightIcon width={16} height={16} />
-                </ContentActionsConditionIcon>
-                <span className="pr-1">Go to Step</span>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                {!isLoading && (
-                  <div className="max-w-[100px] truncate flex items-center ">
-                    <span className="truncate">{getDisplayText()}</span>
-                  </div>
-                )}
-              </div>
+              {triggerContent}
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
               style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}
               className="w-[240px]"
             >
-              <DropdownMenuRadioGroup value={stepCvid}>
-                {currentVersion?.steps?.map((item, index) => {
-                  if (currentStep?.cvid === item.cvid) {
-                    return null;
-                  }
-                  return (
-                    <DropdownMenuSelectItem
-                      key={item.cvid}
-                      value={item.cvid as string}
-                      onSelect={() => handleSelectStep(item.cvid as string)}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex items-center w-full min-w-0">
-                        {item.type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mr-1" />}
-                        {item.type === 'tooltip' && <TooltipIcon className="w-4 h-4 mt-1 mr-1" />}
-                        {item.type === 'modal' && <ModelIcon className="w-4 h-4 mt-0.5 mr-1" />}
-                        <span className="flex-shrink-0 mr-1">{index + 1}.</span>
-                        <span className="truncate min-w-0">{item.name}</span>
-                      </div>
-                    </DropdownMenuSelectItem>
-                  );
-                })}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="cursor-pointer">
-                    Add new step
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onSelect={() => handleCreateStep('hidden')}
-                    >
-                      <EyeNoneIcon className="w-4 h-4 mr-1 flex-none" />
-                      Hidden
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onSelect={() => handleCreateStep('tooltip')}
-                    >
-                      <TooltipIcon className="w-4 h-4 mr-1 mt-1 flex-none" />
-                      Tooltip
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onSelect={() => handleCreateStep('modal')}
-                    >
-                      <ModelIcon className="w-4 h-4 mr-1 mt-0.5 flex-none" />
-                      Modal
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="cursor-pointer">
-                    Duplicate step
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[240px]">
-                    {currentVersion?.steps?.map((item, index) => (
-                      <DropdownMenuItem
-                        key={item.cvid}
-                        className="cursor-pointer"
-                        onSelect={() => item.cvid && handleDuplicateStep(item.cvid)}
-                      >
-                        <div className="flex items-center w-full min-w-0">
-                          {item.type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mr-1" />}
-                          {item.type === 'tooltip' && <TooltipIcon className="w-4 h-4 mt-1 mr-1" />}
-                          {item.type === 'modal' && <ModelIcon className="w-4 h-4 mt-0.5 mr-1" />}
-                          <span className="flex-shrink-0 mr-1">{index + 1}.</span>
-                          <span className="truncate min-w-0">{item.name}</span>
-                          {currentStep?.cvid === item.cvid && (
-                            <Badge variant="secondary" className="ml-2 flex-shrink-0">
-                              Current
-                            </Badge>
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuRadioGroup>
+              {dropdownContent}
             </DropdownMenuContent>
           </DropdownMenu>
           <ContentActionsRemove index={index} />
