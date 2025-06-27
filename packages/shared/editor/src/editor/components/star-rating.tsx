@@ -58,34 +58,16 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
   } = useContentEditorContext();
   const [isOpen, setIsOpen] = useState<boolean>();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [openError, setOpenError] = useState<boolean>(false);
   const [localData, setLocalData] = useState(element.data);
-  const [shouldUpdate, setShouldUpdate] = useState(false);
 
   const handleDataChange = useCallback((data: Partial<ContentEditorStarRatingElement['data']>) => {
-    setLocalData((prevData) => {
-      const newData = { ...prevData, ...data };
-      setShouldUpdate(true);
-      return newData;
-    });
+    setLocalData((prevData) => ({ ...prevData, ...data }));
   }, []);
 
   useEffect(() => {
-    if (shouldUpdate) {
-      updateElement(
-        {
-          ...element,
-          data: localData,
-        },
-        id,
-      );
-      setShouldUpdate(false);
-    }
-  }, [shouldUpdate, localData, updateElement, element, id]);
-
-  useEffect(() => {
-    setIsShowError(isEmptyString(localData.name));
-  }, [localData.name]);
+    setOpenError(isEmptyString(localData.name) && !isOpen);
+  }, [localData.name, isOpen]);
 
   const handleStarHover = useCallback((index: number) => {
     setHoveredIndex(index);
@@ -93,10 +75,35 @@ export const ContentEditorStarRating = (props: ContentEditorStarRatingProps) => 
 
   const scaleLength = localData.highRange - localData.lowRange + 1;
 
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+
+      if (open) {
+        setOpenError(false);
+        return;
+      }
+
+      if (isEmptyString(localData.name)) {
+        setOpenError(true);
+        return;
+      }
+
+      updateElement(
+        {
+          ...element,
+          data: localData,
+        },
+        id,
+      );
+    },
+    [localData, element, id, updateElement],
+  );
+
   return (
-    <EditorError open={isShowError}>
+    <EditorError open={openError}>
       <EditorErrorAnchor>
-        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div>
               <div
