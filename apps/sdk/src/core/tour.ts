@@ -507,7 +507,7 @@ export class Tour extends BaseContent<TourStore> {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.startNewContent(action.data.contentId);
+        await this.startNewContent(action.data.contentId, action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
         await this.handleClose(contentEndReason.USER_CLOSED);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {

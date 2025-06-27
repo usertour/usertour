@@ -326,8 +326,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @param reason - The reason for starting the tour
    * @returns {Promise<void>} A promise that resolves when the tour is started
    */
-  startTour(contentId: string | undefined, reason: string) {
-    return this.getInstance().startTour(contentId, reason);
+  startTour(contentId: string | undefined, reason: string, cvid?: string) {
+    return this.getInstance().startTour(contentId, reason, { cvid });
   }
 
   /**
@@ -492,8 +492,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @param contentId - The ID of the content to start
    * @returns {Promise<void>} A promise that resolves when the new tour is started
    */
-  async startNewTour(contentId: string) {
-    await this.startTour(contentId, contentStartReason.ACTION);
+  async startNewTour(contentId: string, cvid?: string) {
+    await this.startTour(contentId, contentStartReason.ACTION, cvid);
   }
 
   /**
@@ -501,12 +501,12 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @param contentId - The ID of the content to start
    * @returns {Promise<void>} A promise that resolves when the new content is started
    */
-  async startNewContent(contentId: string) {
+  async startNewContent(contentId: string, cvid?: string) {
     const content = this.getOriginContents()?.find((item) => item.contentId === contentId);
     if (content?.type === ContentDataType.CHECKLIST) {
       await this.startNewChecklist(contentId);
     } else if (content?.type === ContentDataType.FLOW) {
-      await this.startNewTour(contentId);
+      await this.startNewTour(contentId, cvid);
     } else {
       logger.error(`Unsupported content type: ${content?.type}`);
     }

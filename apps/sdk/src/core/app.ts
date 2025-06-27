@@ -881,20 +881,21 @@ export class App extends Evented {
 
     const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours, contentId);
     const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
-    const cvid = latestActivatedTourAndCvid?.cvid;
+    const cvid = opts?.cvid;
 
     if (isSameTour(activeTour, latestActivatedTour)) {
       if (opts?.continue) {
         this.activeTour = latestActivatedTour;
-        await this.activeTour?.start(contentStartReason.START_FROM_SESSION, cvid);
+        const continueCvid = latestActivatedTourAndCvid?.cvid;
+        await this.activeTour?.start(contentStartReason.START_FROM_SESSION, continueCvid);
       } else {
         this.activeTour = latestActivatedTour;
         await this.activeTour?.endLatestSession(contentEndReason.USER_STARTED_OTHER_CONTENT);
-        await this.activeTour?.start(reason);
+        await this.activeTour?.start(reason, cvid);
       }
     } else {
       this.activeTour = activeTour;
-      await this.activeTour.start(reason);
+      await this.activeTour.start(reason, cvid);
     }
   }
 
