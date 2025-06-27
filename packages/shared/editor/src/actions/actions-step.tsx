@@ -80,16 +80,12 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
         const seq = currentStep?.sequence ?? 0;
         const step = await createStep(currentVersion, seq + 1, stepType, stepToDuplicate);
         setIsLoading(false);
-        if (step) {
-          setStepCvid(step.cvid);
-          updateConditionData(index, { stepCvid: step.cvid });
-        } else {
-          //error
-          return;
+        if (step?.cvid) {
+          handleSelectStep(step.cvid);
         }
       }
     },
-    [currentVersion, currentStep, createStep, updateConditionData, index],
+    [currentVersion, currentStep, createStep],
   );
 
   const handleCreateStep = useCallback(
@@ -123,6 +119,9 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
   const handleSelectStep = (cvid: string) => {
     setStepCvid(cvid);
     updateConditionData(index, { stepCvid: cvid });
+    setErrorInfo('');
+    setOpenError(false);
+    setOpen(false);
   };
 
   const handleOnOpenChange = useCallback((open: boolean) => {
