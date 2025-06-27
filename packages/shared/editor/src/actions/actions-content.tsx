@@ -11,7 +11,7 @@ import {
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { getContentError } from '@usertour-ui/shared-utils';
-import { Content, ContentDataType } from '@usertour-ui/types';
+import { Content, ContentDataType, Step } from '@usertour-ui/types';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   Dispatch,
@@ -48,6 +48,7 @@ export interface ContentActionsContentsProps {
     logic: string;
     type: string;
     contentId: string;
+    stepCvid?: string;
   };
   type: string;
   index: number;
@@ -56,6 +57,8 @@ export interface ContentActionsContentsProps {
 interface ContentActionsContentsContextValue {
   selectedPreset: SelectItemType | null;
   setSelectedPreset: Dispatch<SetStateAction<SelectItemType | null>>;
+  stepCvid: string | undefined;
+  setStepCvid: Dispatch<SetStateAction<string | undefined>>;
 }
 
 const ContentActionsContentsContext = createContext<ContentActionsContentsContextValue | undefined>(
@@ -71,6 +74,17 @@ function useContentActionsContentsContext(): ContentActionsContentsContextValue 
   }
   return context;
 }
+
+// Get display text for selected step
+const getDisplayText = (steps: Step[], stepCvid: string | undefined) => {
+  const selectedStep = steps?.find((step) => step.cvid === stepCvid);
+  if (selectedStep) {
+    const stepIndex = steps?.findIndex((step) => step.cvid === stepCvid) ?? 0;
+    return `${stepIndex + 1}. ${selectedStep.name}`;
+  }
+
+  return '';
+};
 
 const ContentActionsContentsName = () => {
   const [open, setOpen] = useState(false);
@@ -175,25 +189,13 @@ const ContentActionsContentsName = () => {
 const ContentActionsStep = (props: { content: Content }) => {
   const { content } = props;
   const { zIndex } = useContentActionsContext();
-  const [stepCvid, setStepCvid] = useState<string | undefined>();
+  const { stepCvid, setStepCvid } = useContentActionsContentsContext();
   const steps = content.steps || [];
   const [open, setOpen] = useState(false);
-
-  // Get display text for selected step
-  const getDisplayText = useCallback(() => {
-    const selectedStep = steps?.find((step) => step.cvid === stepCvid);
-    if (selectedStep) {
-      const stepIndex = steps?.findIndex((step) => step.cvid === stepCvid) ?? 0;
-      return `${stepIndex + 1}. ${selectedStep.name}`;
-    }
-
-    return '';
-  }, [content, stepCvid]);
 
   const handleSelectStep = (cvid: string) => {
     setStepCvid(cvid);
     setOpen(false);
-    // updateConditionData(index, { stepCvid: cvid });
   };
 
   const handleFilter = useCallback(
@@ -215,7 +217,7 @@ const ContentActionsStep = (props: { content: Content }) => {
         <Popover.PopoverTrigger asChild>
           <Button variant="outline" className="flex-1 justify-between ">
             <div className="max-w-[240px] truncate flex items-center ">
-              <span className="truncate">{getDisplayText()}</span>
+              <span className="truncate">{getDisplayText(steps, stepCvid)}</span>
             </div>
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -273,30 +275,62 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
   const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(
     item ? { id: item?.id, name: item?.name || '' } : null,
   );
+  const [stepCvid, setStepCvid] = useState<string | undefined>(data?.stepCvid);
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
   const [open, setOpen] = useState(false);
   const value = {
     selectedPreset,
     setSelectedPreset,
+    stepCvid,
+    setStepCvid,
   };
 
   const selectedContent = contents?.find((c) => c.id === selectedPreset?.id);
 
+  const stepIndex = selectedContent?.steps?.findIndex((step) => step.cvid === stepCvid) ?? -1;
+
   useEffect(() => {
-    if (open) {
-      return;
-    }
     const updates = {
       contentId: selectedPreset?.id || '',
+      stepCvid: stepCvid || '',
       type: 'flow',
       logic: 'and',
     };
     const { showError, errorInfo } = getContentError(updates);
-    setOpenError(showError);
-    setErrorInfo(errorInfo);
-    updateConditionData(index, updates);
-  }, [selectedPreset, open]);
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+    }
+  }, [selectedPreset, open, stepCvid, setErrorInfo, setOpenError]);
+
+  const handleOnOpenChange = useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      if (open) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+
+      const updates = {
+        contentId: selectedPreset?.id || '',
+        stepCvid: stepIndex !== -1 ? stepCvid : undefined,
+        type: 'flow',
+        logic: 'and',
+      };
+      const { showError, errorInfo } = getContentError(updates);
+
+      if (showError) {
+        setErrorInfo(errorInfo);
+        setOpenError(true);
+        return;
+      }
+
+      updateConditionData(index, updates);
+    },
+    [selectedPreset, open, stepCvid, updateConditionData, index, stepIndex],
+  );
 
   return (
     <ContentActionsContentsContext.Provider value={value}>
@@ -304,13 +338,20 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
         <div className="flex flex-row space-x-3">
           <ContentActionsErrorAnchor>
             <ActionsConditionRightContent>
-              <ContentActionsPopover onOpenChange={setOpen} open={open}>
+              <ContentActionsPopover onOpenChange={handleOnOpenChange} open={open}>
                 <ContentActionsPopoverTrigger className="flex flex-row w-fit">
                   <ContentActionsConditionIcon>
                     <OpenInNewWindowIcon width={16} height={16} />
                   </ContentActionsConditionIcon>
                   Start {selectedContent?.type === ContentDataType.FLOW ? 'flow' : 'checklist'}:{' '}
                   <span className="font-bold">{selectedPreset?.name} </span>
+                  {selectedContent?.type === ContentDataType.FLOW &&
+                    stepCvid &&
+                    stepIndex !== -1 && (
+                      <span className="ml-1">
+                        , at step: <span className="font-bold">{stepIndex + 1}</span>
+                      </span>
+                    )}
                 </ContentActionsPopoverTrigger>
                 <ContentActionsPopoverContent
                   style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}
