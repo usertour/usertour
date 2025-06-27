@@ -10,6 +10,7 @@ import {
 } from '../types/editor';
 import { isEmptyString } from '@usertour-ui/shared-utils';
 import { Step } from '@usertour-ui/types';
+import { cuid } from '@usertour-ui/ui-utils';
 
 export const EmptyGroup = {
   element: { type: 'group' },
@@ -1040,9 +1041,47 @@ export const getDefaultDataForType = (type: string) => {
 
 // Helper function to create a copy of a step
 export const createStepCopy = (originalStep: Step, sequence: number): Step => {
-  const { id, cvid, updatedAt, createdAt, ...rest } = originalStep;
+  const { id, cvid, updatedAt, data, createdAt, ...rest } = originalStep;
+
+  // Process question elements to replace cvid with new cuid
+  const processQuestionElements = (contents: ContentEditorRoot[]): ContentEditorRoot[] => {
+    return contents.map((group) => ({
+      ...group,
+      children: group.children.map((column) => ({
+        ...column,
+        children: column.children.map((item) => {
+          if (isQuestionElement(item.element)) {
+            const questionElement = item.element as ContentEditorQuestionElement;
+            return {
+              ...item,
+              element: {
+                ...questionElement,
+                data: {
+                  ...questionElement.data,
+                  cvid: cuid(),
+                },
+              } as ContentEditorQuestionElement,
+            };
+          }
+          return item;
+        }),
+      })),
+    }));
+  };
+
+  // Check if data exists and is an array that can be processed
+  let processedData = data;
+  try {
+    processedData = data && Array.isArray(data) ? processQuestionElements(data) : data;
+  } catch (error) {
+    console.error('Error processing step data during copy:', error);
+    // Fallback to original data if processing fails
+    processedData = data;
+  }
+
   return {
     ...rest,
+    data: processedData,
     name: `${originalStep.name} (copy)`,
     sequence,
   };
