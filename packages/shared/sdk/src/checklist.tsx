@@ -451,13 +451,15 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
     setIsOpen(true);
   };
 
-  const isAllCompleted = data.items.filter((item) => item.isCompleted).length === data.items.length;
+  const isAllCompleted =
+    data.items.filter((item) => item.isCompleted).length >=
+    data.items.filter((item) => item.isVisible).length;
 
   return (
     <ChecklistLauncherContent
       buttonText={data.buttonText}
       height={themeSetting?.checklistLauncher.height}
-      number={data.items.filter((item) => !item.isCompleted).length}
+      number={data.items.filter((item) => !item.isCompleted && item.isVisible).length}
       isCompleted={isAllCompleted}
       onClick={handleOnOpenChange}
       onSizeChange={onSizeChange}

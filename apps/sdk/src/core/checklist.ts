@@ -17,9 +17,9 @@ import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
 import {
   checklistItemIsCompleted,
-  checklistIsCompleted,
   getChecklistInitialDisplay,
   processChecklistItems,
+  isSendChecklistCompletedEvent,
 } from '../utils/content-utils';
 import { ChecklistStore } from '../types/store';
 
@@ -136,7 +136,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
    */
   async show() {
     const storeData = await this.buildStoreData();
-    this.setStore({ ...storeData, openState: false });
+    const content = this.getContent();
+    const initialDisplay = getChecklistInitialDisplay(content);
+    this.setStore({
+      ...storeData,
+      content: {
+        ...storeData.content,
+        data: { ...storeData.content.data, initialDisplay },
+      },
+    });
   }
 
   /**
@@ -144,8 +152,16 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * This method updates the store with fresh data without changing visibility.
    */
   async refresh() {
+    const store = this.getStore().getSnapshot();
+    const initialDisplay = store.content?.data.initialDisplay;
     const { openState, ...storeData } = await this.buildStoreData();
-    this.updateStore({ ...storeData });
+    this.updateStore({
+      ...storeData,
+      content: {
+        ...storeData.content,
+        data: { ...storeData.content.data, initialDisplay },
+      },
+    });
   }
 
   /**
@@ -164,9 +180,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Process items to determine their status
     const { items } = await processChecklistItems(content);
 
-    // Get initial display from content
-    const initialDisplay = getChecklistInitialDisplay(content);
-
     // Return complete store data
     return {
       ...defaultChecklistStore,
@@ -176,7 +189,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
         data: {
           ...content.data,
           items,
-          initialDisplay,
         },
       },
       openState: false,
@@ -310,7 +322,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
 
     // Check if all items are completed
-    if (updatedItems.every((item) => item.isCompleted) && !checklistIsCompleted(content)) {
+    if (isSendChecklistCompletedEvent(updatedItems, content.latestSession)) {
       await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
     }
   }

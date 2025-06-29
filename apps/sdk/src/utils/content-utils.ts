@@ -1,5 +1,6 @@
 import {
   BizEvents,
+  BizSession,
   ChecklistData,
   ChecklistInitialDisplay,
   ChecklistItemType,
@@ -264,6 +265,33 @@ export const checklistIsCompleted = (content: SDKContent) => {
   return !!latestSession?.bizEvent?.find(
     (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
   );
+};
+
+/**
+ * Checks if a checklist is all completed
+ * @param content - The content to check
+ * @returns True if the checklist is all completed, false otherwise
+ */
+export const isSendChecklistCompletedEvent = (
+  items: ChecklistItemType[] = [],
+  latestSession?: BizSession | undefined,
+) => {
+  const isVisibleItems = items.filter((item: ChecklistItemType) => item.isVisible);
+  const isCompletedItems = items.filter((item: ChecklistItemType) => item.isCompleted);
+
+  const taskCompletedEvents = latestSession?.bizEvent?.filter(
+    (event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
+  );
+
+  if (isVisibleItems.length === taskCompletedEvents?.length) {
+    return false;
+  }
+
+  if (isVisibleItems.length === isCompletedItems.length) {
+    return true;
+  }
+
+  return true;
 };
 
 /**

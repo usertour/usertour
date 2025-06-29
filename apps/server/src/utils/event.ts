@@ -56,6 +56,36 @@ const EVENT_VALIDATION_RULES = {
           event.data?.[EventAttributes.QUESTION_CVID] === events[EventAttributes.QUESTION_CVID],
       ),
   },
+  [BizEvents.CHECKLIST_COMPLETED]: {
+    validate: (bizEvents: BizSession['bizEvent']) => {
+      // Find the latest CHECKLIST_TASK_COMPLETED event
+      const taskCompletedEvents =
+        bizEvents?.filter(
+          (event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
+        ) || [];
+
+      if (taskCompletedEvents.length === 0) {
+        return false;
+      }
+
+      const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
+        return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+      });
+
+      // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
+      const eventsAfterTaskCompleted =
+        bizEvents?.filter(
+          (event) => new Date(event.createdAt) > new Date(latestTaskCompletedEvent.createdAt),
+        ) || [];
+
+      // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
+      const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
+        (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+      );
+
+      return !hasChecklistCompletedAfter;
+    },
+  },
   [BizEvents.CHECKLIST_TASK_CLICKED]: {
     validate: (bizEvents: BizSession['bizEvent'], events: any) =>
       !bizEvents?.some(
@@ -81,7 +111,7 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.FLOW_STARTED,
   BizEvents.FLOW_COMPLETED,
   BizEvents.FLOW_ENDED,
-  BizEvents.CHECKLIST_COMPLETED,
+  // BizEvents.CHECKLIST_COMPLETED,
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.LAUNCHER_DISMISSED,
