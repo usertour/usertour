@@ -135,7 +135,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * This method sets up the initial state of the checklist without displaying it.
    */
   async show() {
-    const storeData = await this.buildStoreData();
+    const storeData = await this.buildStoreData(true);
     this.setStore({ ...storeData, openState: false });
   }
 
@@ -155,7 +155,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 2. Processes checklist items with their completion and visibility states
    * 3. Returns a complete store data object with default values
    */
-  private async buildStoreData() {
+  private async buildStoreData(isInitialDisplay = false) {
     // Get base information and content
     const baseInfo = this.getStoreBaseInfo();
     const zIndex = baseInfo.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
@@ -163,7 +163,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const checklistData = content.data as ChecklistData;
 
     // Process items to determine their status
-    const { items: processedItems } = await processChecklistItems(content);
+    const { items } = await processChecklistItems(content);
 
     // Get initial display from content
     const initialDisplay = getChecklistInitialDisplay(content);
@@ -175,8 +175,8 @@ export class Checklist extends BaseContent<ChecklistStore> {
         ...content,
         data: {
           ...checklistData,
-          items: processedItems,
-          initialDisplay,
+          items,
+          initialDisplay: isInitialDisplay ? initialDisplay : checklistData.initialDisplay,
         },
       },
       openState: false,
