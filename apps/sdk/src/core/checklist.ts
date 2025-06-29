@@ -154,8 +154,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 1. Gets base information and content data
    * 2. Processes checklist items with their completion and visibility states
    * 3. Returns a complete store data object with default values
-   *
-   * @returns {ChecklistStore} The complete store data object
    */
   private async buildStoreData() {
     // Get base information and content
