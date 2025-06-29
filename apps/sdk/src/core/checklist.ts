@@ -171,6 +171,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Return complete store data
     return {
       ...defaultChecklistStore,
+      ...baseInfo,
       content: {
         ...content,
         data: {
@@ -180,7 +181,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
         },
       },
       openState: false,
-      ...baseInfo,
       zIndex: zIndex + 100,
     };
   }
