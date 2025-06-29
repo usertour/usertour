@@ -27,4 +27,7 @@ export class User extends BaseModel {
 
   @HideField()
   password: string;
+
+  @Field(() => Boolean, { nullable: true })
+  isOAuthUser?: boolean;
 }
