@@ -291,7 +291,7 @@ export const isSendChecklistCompletedEvent = (
     return true;
   }
 
-  return true;
+  return false;
 };
 
 /**
