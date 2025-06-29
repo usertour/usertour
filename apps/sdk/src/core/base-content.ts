@@ -1,6 +1,7 @@
 import { convertSettings } from '@usertour-ui/shared-utils';
 import { convertToCssVars } from '@usertour-ui/shared-utils';
 import {
+  BizCompany,
   ContentDataType,
   EventAttributes,
   SDKContent,
@@ -457,18 +458,16 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Get the company information
-   * @returns {Object} The company information
    */
-  getCompanyInfo() {
+  getCompanyInfo(): BizCompany | undefined {
     return this.getInstance().companyInfo;
   }
 
   /**
    * Unsets the active tour
-   * @returns {Promise<void>} A promise that resolves when the active tour is unset
    */
-  unsetActiveTour() {
-    return this.getInstance().unsetActiveTour();
+  unsetActiveTour(): void {
+    this.getInstance().unsetActiveTour();
   }
 
   /**
@@ -490,7 +489,6 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Starts a new tour
    * @param contentId - The ID of the content to start
-   * @returns {Promise<void>} A promise that resolves when the new tour is started
    */
   async startNewTour(contentId: string, cvid?: string) {
     await this.startTour(contentId, contentStartReason.ACTION, cvid);
@@ -499,9 +497,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Starts a new content
    * @param contentId - The ID of the content to start
-   * @returns {Promise<void>} A promise that resolves when the new content is started
    */
-  async startNewContent(contentId: string, cvid?: string) {
+  async startNewContent(contentId: string, cvid?: string): Promise<void> {
     const content = this.getOriginContents()?.find((item) => item.contentId === contentId);
     if (content?.type === ContentDataType.CHECKLIST) {
       await this.startNewChecklist(contentId);
@@ -515,9 +512,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Starts a new checklist
    * @param contentId - The ID of the content to start
-   * @returns {Promise<void>} A promise that resolves when the new checklist is started
    */
-  async startNewChecklist(contentId: string) {
+  async startNewChecklist(contentId: string): Promise<void> {
     await this.startChecklist(contentId, contentStartReason.ACTION);
   }
   /**
@@ -541,25 +537,22 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Activates the content conditions
-   * @returns {Promise<void>} A promise that resolves when the content conditions are activated
    */
-  async activeContentConditions() {
+  async activeContentConditions(): Promise<void> {
     return await this.getConfig().activeConditions();
   }
 
   /**
    * Get the SDK configuration
-   * @returns {Object} The SDK configuration
    */
-  getSdkConfig() {
+  getSdkConfig(): Record<string, any> {
     return this.getInstance().getSdkConfig();
   }
 
   /**
    * Get the base information for the store
-   * @returns {Object} The base information for the store
    */
-  getStoreBaseInfo() {
+  getStoreBaseInfo(): Record<string, any> {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
@@ -589,18 +582,16 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Refreshes the app contents
-   * @returns {Promise<void>} A promise that resolves when the app contents are refreshed
    */
-  async refreshContents() {
+  async refreshContents(): Promise<void> {
     await this.getInstance().refresh();
   }
 
   /**
    * Checks if the content is the same as the new content
    * @param newContent - The new content to compare
-   * @returns {boolean} True if the content is the same, false otherwise
    */
-  isEqual(newContent: SDKContent) {
+  isEqual(newContent: SDKContent): boolean {
     return isEqual(this.getContent(), newContent);
   }
 
