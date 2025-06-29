@@ -204,9 +204,8 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Checks if a checklist item is completed by looking for a completion event.
    *
    * @param {ChecklistItemType} item - The checklist item to check
-   * @returns {boolean} True if the item has a completion event, false otherwise
    */
-  itemIsCompleted(item: ChecklistItemType) {
+  itemIsCompleted(item: ChecklistItemType): boolean {
     const latestSession = this.getContent().latestSession;
     return !!latestSession?.bizEvent?.find(
       (event) =>
