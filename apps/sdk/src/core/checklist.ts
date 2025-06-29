@@ -160,7 +160,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const baseInfo = this.getStoreBaseInfo();
     const zIndex = baseInfo.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
     const content = this.getContent();
-    const checklistData = content.data as ChecklistData;
 
     // Process items to determine their status
     const { items } = await processChecklistItems(content);
@@ -175,7 +174,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       content: {
         ...content,
         data: {
-          ...checklistData,
+          ...content.data,
           items,
           initialDisplay,
         },
