@@ -279,11 +279,16 @@ export const isSendChecklistCompletedEvent = (
   const isVisibleItems = items.filter((item: ChecklistItemType) => item.isVisible);
   const isCompletedItems = items.filter((item: ChecklistItemType) => item.isCompleted);
 
-  const taskCompletedEvents = latestSession?.bizEvent?.filter(
-    (event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
-  );
+  const taskCompletedEvents =
+    latestSession?.bizEvent?.filter(
+      (event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
+    ) || [];
 
-  if (isVisibleItems.length === taskCompletedEvents?.length) {
+  if (isCompletedItems.length === 0) {
+    return false;
+  }
+
+  if (taskCompletedEvents.length > 0 && isCompletedItems.length < taskCompletedEvents.length) {
     return false;
   }
 

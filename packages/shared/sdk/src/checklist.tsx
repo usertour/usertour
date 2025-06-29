@@ -33,7 +33,11 @@ import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { cn } from '@usertour-ui/ui-utils';
 import { Button } from '@usertour-ui/button';
 import { useSize } from '@usertour-ui/react-use-size';
-import { canCompleteChecklistItem } from './utils';
+import {
+  canCompleteChecklistItem,
+  checklistIsCompleted,
+  checklistUnCompletedItemsCount,
+} from './utils';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -451,16 +455,15 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
     setIsOpen(true);
   };
 
-  const isAllCompleted =
-    data.items.filter((item) => item.isCompleted).length >=
-    data.items.filter((item) => item.isVisible).length;
+  const isCompleted = checklistIsCompleted(data.items);
+  const number = checklistUnCompletedItemsCount(data.items);
 
   return (
     <ChecklistLauncherContent
       buttonText={data.buttonText}
       height={themeSetting?.checklistLauncher.height}
-      number={data.items.filter((item) => !item.isCompleted && item.isVisible).length}
-      isCompleted={isAllCompleted}
+      number={number}
+      isCompleted={isCompleted}
       onClick={handleOnOpenChange}
       onSizeChange={onSizeChange}
     />

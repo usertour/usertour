@@ -32,3 +32,23 @@ export const hiddenStyle: React.CSSProperties = {
   pointerEvents: 'none',
   opacity: 0,
 };
+
+/**
+ * Checks the number of uncompleted items
+ * @param items - The items to check
+ * @returns The number of uncompleted items
+ */
+export const checklistUnCompletedItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => !item.isCompleted && item.isVisible).length;
+};
+
+/**
+ * Checks if all items are completed
+ * @param items - The items to check
+ * @returns True if all items are completed, false otherwise
+ */
+export const checklistIsCompleted = (items: ChecklistItemType[]): boolean => {
+  return (
+    items.filter((item) => item.isCompleted).length >= items.filter((item) => item.isVisible).length
+  );
+};
