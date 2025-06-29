@@ -24,6 +24,7 @@ export interface ThemeDetailContextValue {
   setViewRect: Dispatch<SetStateAction<Rect>>;
   theme: Theme;
   refetch: any;
+  loading: boolean;
 }
 export const ThemeDetailContext = createContext<ThemeDetailContextValue | undefined>(undefined);
 
@@ -47,7 +48,7 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
   const [selectedType, setSelectedType] = useState<ThemeDetailSelectorType>(
     themeDetailSelectorTypes[0],
   );
-  const { data, refetch } = useQuery(getTheme, {
+  const { data, refetch, loading } = useQuery(getTheme, {
     variables: { themeId },
   });
   const [customStyle, setCustomStyle] = useState('');
@@ -65,11 +66,10 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
     viewRect,
     setViewRect,
     refetch,
+    loading,
   };
 
-  return (
-    <ThemeDetailContext.Provider value={value}>{theme && children}</ThemeDetailContext.Provider>
-  );
+  return <ThemeDetailContext.Provider value={value}>{children}</ThemeDetailContext.Provider>;
 }
 
 export function useThemeDetailContext(): ThemeDetailContextValue {
