@@ -227,8 +227,7 @@ export const findLatestValidActivatedChecklist = (
  * @param checklist - The checklist to get the initial display of
  * @returns The initial display of the checklist
  */
-export const getChecklistInitialDisplay = (checklist: Checklist): ChecklistInitialDisplay => {
-  const content = checklist.getContent();
+export const getChecklistInitialDisplay = (content: SDKContent): ChecklistInitialDisplay => {
   const latestSession = content.latestSession;
   if (!latestSession || checklistIsDimissed(content)) {
     return content?.data?.initialDisplay;

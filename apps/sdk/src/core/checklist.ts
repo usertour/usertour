@@ -166,7 +166,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const { items: processedItems } = await processChecklistItems(content);
 
     // Get initial display from content
-    const initialDisplay = getChecklistInitialDisplay(this);
+    const initialDisplay = getChecklistInitialDisplay(content);
 
     // Return complete store data
     return {
