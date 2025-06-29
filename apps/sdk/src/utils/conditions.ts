@@ -1,5 +1,5 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { PRIORITIES, RULES_TYPES, rulesTypes } from '@usertour-ui/constants';
+import { PRIORITIES, RulesType, rulesTypes } from '@usertour-ui/constants';
 import { finderV2 } from '@usertour-ui/finder';
 import { isMatchUrlPattern } from '@usertour-ui/shared-utils';
 import { conditionsIsSame } from '@usertour-ui/shared-utils';
@@ -177,7 +177,7 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
 };
 
 const isValidRulesType = (type: string) => {
-  return rulesTypes.includes(type);
+  return rulesTypes.includes(type as RulesType);
 };
 
 const isActiveRules = async (rules: RulesCondition) => {
@@ -185,22 +185,22 @@ const isActiveRules = async (rules: RulesCondition) => {
     return true;
   }
   switch (rules.type) {
-    case RULES_TYPES.CURRENT_PAGE:
+    case RulesType.CURRENT_PAGE:
       return isActiveRulesByCurrentPage(rules);
-    case RULES_TYPES.TIME:
+    case RulesType.TIME:
       return isActiveRulesByCurrentTime(rules);
-    case RULES_TYPES.ELEMENT:
+    case RulesType.ELEMENT:
       return await isActiveRulesByElement(rules);
-    case RULES_TYPES.TEXT_INPUT:
+    case RulesType.TEXT_INPUT:
       return await isActiveRulesByTextInput(rules);
-    case RULES_TYPES.TEXT_FILL:
+    case RulesType.TEXT_FILL:
       return await isActiveRulesByTextFill(rules);
     default:
       return rules.actived;
   }
 };
 
-type RewriteRulesCondition = Partial<Record<keyof typeof RULES_TYPES, boolean>>;
+type RewriteRulesCondition = Partial<Record<RulesType, boolean>>;
 
 export const activedRulesConditions = async (
   conditions: RulesCondition[],

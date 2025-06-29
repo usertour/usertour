@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_RULES, RULES_TYPES } from '@usertour-ui/constants';
+import { EXTENSION_CONTENT_RULES, RulesType } from '@usertour-ui/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,19 +36,19 @@ import { RulesTaskIsClicked } from './task-clicked';
 
 export const RULES_ITEMS = [
   {
-    type: RULES_TYPES.USER_ATTR,
+    type: RulesType.USER_ATTR,
     text: 'Attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: RULES_TYPES.COMPANY_ATTR,
+    type: RulesType.COMPANY_ATTR,
     text: 'Company attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: RULES_TYPES.CURRENT_PAGE,
+    type: RulesType.CURRENT_PAGE,
     text: 'Current page(Url)',
     IconElement: PagesIcon,
     RulesElement: RulesUrlPattern,
@@ -60,49 +60,49 @@ export const RULES_ITEMS = [
   //   RulesElement: null,
   // },
   {
-    type: RULES_TYPES.SEGMENT,
+    type: RulesType.SEGMENT,
     text: 'Segment',
     IconElement: SegmentIcon,
     RulesElement: RulesSegment,
   },
   {
-    type: RULES_TYPES.CONTENT,
+    type: RulesType.CONTENT,
     text: 'Flow',
     IconElement: ContentIcon,
     RulesElement: RulesContent,
   },
   {
-    type: RULES_TYPES.TASK_IS_CLICKED,
+    type: RulesType.TASK_IS_CLICKED,
     text: 'Task is clicked',
     IconElement: TaskClickedIcon,
     RulesElement: RulesTaskIsClicked,
   },
   {
-    type: RULES_TYPES.ELEMENT,
+    type: RulesType.ELEMENT,
     text: 'Element (present, clicked, disabled)',
     IconElement: ElementIcon,
     RulesElement: RulesElement,
   },
   {
-    type: RULES_TYPES.TEXT_INPUT,
+    type: RulesType.TEXT_INPUT,
     text: 'Text input value',
     IconElement: TextInputIcon,
     RulesElement: RulesTextInput,
   },
   {
-    type: RULES_TYPES.TEXT_FILL,
+    type: RulesType.TEXT_FILL,
     text: 'User fills in input',
     IconElement: TextFillIcon,
     RulesElement: RulesUserFills,
   },
   {
-    type: RULES_TYPES.TIME,
+    type: RulesType.TIME,
     text: 'Current time',
     IconElement: TimeIcon,
     RulesElement: RulesCurrentTime,
   },
   {
-    type: RULES_TYPES.GROUP,
+    type: RulesType.GROUP,
     text: 'Logic group (and, or)',
     IconElement: GroupIcon,
     RulesElement: null,
@@ -273,7 +273,9 @@ export const RulesGroup = (props: RulesGroupProps) => {
             disabled={disabled}
             items={
               isSubItems
-                ? rulesItems.filter((item) => item.type !== 'group' && item.type !== 'wait')
+                ? rulesItems.filter(
+                    (item) => item.type !== RulesType.GROUP && item.type !== RulesType.WAIT,
+                  )
                 : rulesItems
             }
           >
