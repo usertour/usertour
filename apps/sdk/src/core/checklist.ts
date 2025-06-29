@@ -18,6 +18,7 @@ import { App } from './app';
 import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
 import { checklistIsShowAnimation, getChecklistInitialDisplay } from '../utils/content-utils';
+import { RULES_TYPES } from '@usertour-ui/constants';
 
 // Add interface for item status
 interface ChecklistItemStatus {
@@ -304,7 +305,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
         // Check completion conditions
         const activeConditions = await activedRulesConditions(item.completeConditions, {
-          'task-is-clicked': currentStatus.clicked,
+          [RULES_TYPES.TASK_IS_CLICKED]: currentStatus.clicked,
         });
         const isCompleted = item.isCompleted
           ? true

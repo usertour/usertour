@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { EXTENSION_CONTENT_RULES, RULES_TYPES } from '@usertour-ui/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,19 +36,19 @@ import { RulesTaskIsClicked } from './task-clicked';
 
 export const RULES_ITEMS = [
   {
-    type: 'user-attr',
+    type: RULES_TYPES.USER_ATTR,
     text: 'Attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: 'company-attr',
+    type: RULES_TYPES.COMPANY_ATTR,
     text: 'Company attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: 'current-page',
+    type: RULES_TYPES.CURRENT_PAGE,
     text: 'Current page(Url)',
     IconElement: PagesIcon,
     RulesElement: RulesUrlPattern,
@@ -60,49 +60,49 @@ export const RULES_ITEMS = [
   //   RulesElement: null,
   // },
   {
-    type: 'segment',
+    type: RULES_TYPES.SEGMENT,
     text: 'Segment',
     IconElement: SegmentIcon,
     RulesElement: RulesSegment,
   },
   {
-    type: 'content',
+    type: RULES_TYPES.CONTENT,
     text: 'Flow',
     IconElement: ContentIcon,
     RulesElement: RulesContent,
   },
   {
-    type: 'task-is-clicked',
+    type: RULES_TYPES.TASK_IS_CLICKED,
     text: 'Task is clicked',
     IconElement: TaskClickedIcon,
     RulesElement: RulesTaskIsClicked,
   },
   {
-    type: 'element',
+    type: RULES_TYPES.ELEMENT,
     text: 'Element (present, clicked, disabled)',
     IconElement: ElementIcon,
     RulesElement: RulesElement,
   },
   {
-    type: 'text-input',
+    type: RULES_TYPES.TEXT_INPUT,
     text: 'Text input value',
     IconElement: TextInputIcon,
     RulesElement: RulesTextInput,
   },
   {
-    type: 'text-fill',
+    type: RULES_TYPES.TEXT_FILL,
     text: 'User fills in input',
     IconElement: TextFillIcon,
     RulesElement: RulesUserFills,
   },
   {
-    type: 'time',
+    type: RULES_TYPES.TIME,
     text: 'Current time',
     IconElement: TimeIcon,
     RulesElement: RulesCurrentTime,
   },
   {
-    type: 'group',
+    type: RULES_TYPES.GROUP,
     text: 'Logic group (and, or)',
     IconElement: GroupIcon,
     RulesElement: null,
