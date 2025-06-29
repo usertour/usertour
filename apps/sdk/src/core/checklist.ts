@@ -1,4 +1,3 @@
-import { canCompleteChecklistItem } from '@usertour-ui/sdk';
 import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
@@ -12,25 +11,19 @@ import {
   SDKContent,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
-import { ChecklistStore } from '../types/store';
-import { activedRulesConditions, checklistIsDimissed, isActive } from '../utils/conditions';
+import { checklistIsDimissed } from '../utils/conditions';
 import { App } from './app';
 import { BaseContent } from './base-content';
 import { defaultChecklistStore } from './common';
-import { checklistIsShowAnimation, getChecklistInitialDisplay } from '../utils/content-utils';
-import { RulesType } from '@usertour-ui/constants';
-
-// Add interface for item status
-interface ChecklistItemStatus {
-  clicked: boolean;
-  completed: boolean;
-  visible: boolean;
-}
+import {
+  checklistItemIsCompleted,
+  checklistIsCompleted,
+  getChecklistInitialDisplay,
+  processChecklistItems,
+} from '../utils/content-utils';
+import { ChecklistStore } from '../types/store';
 
 export class Checklist extends BaseContent<ChecklistStore> {
-  // Replace boolean flags with status enum
-  private itemStatus: Map<string, ChecklistItemStatus> = new Map();
-
   /**
    * Constructs a Checklist instance.
    * @param {App} instance - The app instance
@@ -142,7 +135,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * This method sets up the initial state of the checklist without displaying it.
    */
   async show() {
-    const storeData = this.buildStoreData();
+    const storeData = await this.buildStoreData();
     this.setStore({ ...storeData, openState: false });
   }
 
@@ -150,8 +143,8 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Refreshes the checklist data while maintaining its current open/closed state.
    * This method updates the store with fresh data without changing visibility.
    */
-  refresh() {
-    const { openState, ...storeData } = this.buildStoreData();
+  async refresh() {
+    const { openState, ...storeData } = await this.buildStoreData();
     this.updateStore({ ...storeData });
   }
 
@@ -164,21 +157,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
    *
    * @returns {ChecklistStore} The complete store data object
    */
-  private buildStoreData() {
+  private async buildStoreData() {
     // Get base information and content
     const baseInfo = this.getStoreBaseInfo();
     const zIndex = baseInfo.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
     const content = this.getContent();
     const checklistData = content.data as ChecklistData;
-    const isDismissed = checklistIsDimissed(content);
 
-    // Process checklist items
-    const processedItems = checklistData.items.map((item) => ({
-      ...item,
-      isCompleted: isDismissed ? false : this.itemIsCompleted(item),
-      isVisible: true,
-      isShowAnimation: checklistIsShowAnimation(this, item),
-    }));
+    // Process items to determine their status
+    const { items: processedItems } = await processChecklistItems(content);
 
     // Get initial display from content
     const initialDisplay = getChecklistInitialDisplay(this);
@@ -198,20 +185,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
       ...baseInfo,
       zIndex: zIndex + 100,
     };
-  }
-
-  /**
-   * Checks if a checklist item is completed by looking for a completion event.
-   *
-   * @param {ChecklistItemType} item - The checklist item to check
-   */
-  itemIsCompleted(item: ChecklistItemType): boolean {
-    const latestSession = this.getContent().latestSession;
-    return !!latestSession?.bizEvent?.find(
-      (event) =>
-        event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
-        event.data.checklist_task_id === item.id,
-    );
   }
 
   /**
@@ -263,14 +236,37 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
+   * Updates the clicked state of a specific checklist item in the store.
+   * @param {string} itemId - The ID of the item to update
+   */
+  private updateItemClickedState(itemId: string) {
+    const content = this.getStore().getSnapshot().content;
+    if (!content) return;
+
+    const checklistData = content.data as ChecklistData;
+    const updatedItems = checklistData.items.map((storeItem) =>
+      storeItem.id === itemId ? { ...storeItem, isClicked: true } : storeItem,
+    );
+
+    this.updateStore({
+      content: {
+        ...content,
+        data: {
+          ...checklistData,
+          items: updatedItems,
+        },
+      },
+    });
+  }
+
+  /**
    * Handles the click event of a checklist item
    * @param item - The checklist item that was clicked
    */
   handleItemClick = async (item: ChecklistItemType) => {
-    // Update item status when clicked
-    this.updateItemStatus(item.id, {
-      clicked: true,
-    });
+    // Update item clicked state in store
+    this.updateItemClickedState(item.id);
+
     //report event
     await this.reportTaskClickEvent(item);
     //handle actions
@@ -293,50 +289,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const items = checklistData.items;
     if (!items?.length) return;
 
-    // Initialize tracking variables
-    let hasChanges = false;
-    const updateItems = [...items];
+    // Process items to determine their status
+    const { items: updatedItems, hasChanges } = await processChecklistItems(content);
 
-    // Process all items in parallel
-    await Promise.all(
-      items.map(async (item) => {
-        const currentStatus = this.getItemStatus(item.id);
-
-        // Check completion conditions
-        const activeConditions = await activedRulesConditions(item.completeConditions, {
-          [RulesType.TASK_IS_CLICKED]: currentStatus.clicked,
-        });
-        const isCompleted = item.isCompleted
-          ? true
-          : canCompleteChecklistItem(checklistData.completionOrder, items, item) &&
-            isActive(activeConditions);
-
-        // Check visibility conditions
-        let isVisible = true;
-        if (item.onlyShowTask) {
-          const visibleConditions = await activedRulesConditions(item.onlyShowTaskConditions);
-          isVisible = isActive(visibleConditions);
-        }
-
-        // Update status if changed
-        if (currentStatus.completed !== isCompleted || currentStatus.visible !== isVisible) {
-          this.updateItemStatus(item.id, { completed: isCompleted, visible: isVisible });
-
-          // Update item in the array
-          const itemIndex = updateItems.findIndex((i) => i.id === item.id);
-          if (itemIndex !== -1) {
-            updateItems[itemIndex] = {
-              ...updateItems[itemIndex],
-              isCompleted,
-              isVisible,
-            };
-            hasChanges = true;
-          }
-        }
-      }),
-    );
-
-    // Update store and trigger events if changes occurred
     if (hasChanges) {
       // Update store with filtered visible items
       this.updateStore({
@@ -344,52 +299,23 @@ export class Checklist extends BaseContent<ChecklistStore> {
           ...content,
           data: {
             ...checklistData,
-            items: updateItems.filter((item) => item.isVisible !== false),
+            items: updatedItems,
           },
         },
       });
+    }
 
-      // Trigger completion events
-      for (const item of updateItems) {
-        if (item.isCompleted) {
-          await this.reportTaskCompleteEvent(item);
-        }
-      }
-
-      // Check if all items are completed
-      if (updateItems.every((item) => item.isCompleted)) {
-        await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
+    // Trigger completion events
+    for (const item of updatedItems) {
+      if (item.isCompleted && !checklistItemIsCompleted(content, item)) {
+        await this.reportTaskCompleteEvent(item);
       }
     }
-  }
 
-  /**
-   * Retrieves the status of a checklist item
-   * @param itemId - The ID of the checklist item
-   * @returns The status of the checklist item
-   */
-  private getItemStatus(itemId: string): ChecklistItemStatus {
-    // Return default status if item not found
-    return (
-      this.itemStatus.get(itemId) || {
-        clicked: false,
-        completed: false,
-        visible: true,
-      }
-    );
-  }
-
-  /**
-   * Updates the status of a checklist item
-   * @param itemId - The ID of the checklist item
-   * @param status - The new status of the checklist item
-   */
-  private updateItemStatus(itemId: string, status: Partial<ChecklistItemStatus>) {
-    const currentStatus = this.getItemStatus(itemId);
-    this.itemStatus.set(itemId, {
-      ...currentStatus,
-      ...status,
-    });
+    // Check if all items are completed
+    if (updatedItems.every((item) => item.isCompleted) && !checklistIsCompleted(content)) {
+      await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
+    }
   }
 
   /**

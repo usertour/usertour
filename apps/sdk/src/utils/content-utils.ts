@@ -1,5 +1,6 @@
 import {
   BizEvents,
+  ChecklistData,
   ChecklistInitialDisplay,
   ChecklistItemType,
   ContentDataType,
@@ -9,8 +10,16 @@ import {
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
-import { checklistIsDimissed, flowIsDismissed, parseUrlParams } from './conditions';
+import {
+  activedRulesConditions,
+  checklistIsDimissed,
+  flowIsDismissed,
+  isActive,
+  parseUrlParams,
+} from './conditions';
 import { window } from './globals';
+import { RulesType } from '@usertour-ui/constants';
+import { canCompleteChecklistItem } from '@usertour-ui/sdk';
 
 /**
  * Initialize or update content items based on the provided contents
@@ -247,16 +256,57 @@ export const getChecklistInitialDisplay = (checklist: Checklist): ChecklistIniti
 };
 
 /**
+ * Checks if a checklist is completed
+ * @param content - The content to check
+ * @returns True if the checklist is completed, false otherwise
+ */
+export const checklistIsCompleted = (content: SDKContent) => {
+  const latestSession = content.latestSession;
+  return !!latestSession?.bizEvent?.find(
+    (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+  );
+};
+
+/**
+ * Checks if a checklist item is completed
+ * @param content - The content to check
+ * @param checklistItem - The checklist item to check
+ * @returns True if the checklist item is completed, false otherwise
+ */
+export const checklistItemIsCompleted = (content: SDKContent, checklistItem: ChecklistItemType) => {
+  const latestSession = content.latestSession;
+  return !!latestSession?.bizEvent?.find(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
+      event.data.checklist_task_id === checklistItem.id,
+  );
+};
+
+/**
+ * Checks if a checklist item is clicked
+ * @param content - The content to check
+ * @param checklistItem - The checklist item to check
+ * @returns True if the checklist item is clicked, false otherwise
+ */
+export const checklistItemIsClicked = (content: SDKContent, checklistItem: ChecklistItemType) => {
+  const latestSession = content.latestSession;
+  if (!latestSession) {
+    return false;
+  }
+  const bizEvents = latestSession.bizEvent || [];
+  return !!bizEvents.find(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_TASK_CLICKED &&
+      event.data.checklist_task_id === checklistItem.id,
+  );
+};
+/**
  * Checks if a checklist item should show animation
  * @param checklist - The checklist to check
  * @param checklistItem - The checklist item to check
  * @returns True if the checklist item should show animation, false otherwise
  */
-export const checklistIsShowAnimation = (
-  checklist: Checklist,
-  checklistItem: ChecklistItemType,
-) => {
-  const content = checklist.getContent();
+export const checklistIsShowAnimation = (content: SDKContent, checklistItem: ChecklistItemType) => {
   const latestSession = content.latestSession;
   // If there is no latest session or the checklist is dismissed, don't show animation
   if (!latestSession || checklistIsDimissed(content)) {
@@ -314,6 +364,60 @@ export const checklistIsShowAnimation = (
   }
 
   return false;
+};
+
+/**
+ * Processes checklist items
+ * @param content - The content to process
+ * @returns The processed items and if any changes occurred
+ */
+export const processChecklistItems = async (content: SDKContent) => {
+  const checklistData = content.data as ChecklistData;
+  const items = checklistData.items;
+  // Process all items in parallel and return new array
+  const updatedItems = await Promise.all(
+    items.map(async (item) => {
+      const isClicked = checklistItemIsClicked(content, item) || item.isClicked || false;
+      // Check completion conditions using item's isClicked state
+      const activeConditions = await activedRulesConditions(item.completeConditions, {
+        [RulesType.TASK_IS_CLICKED]: isClicked,
+      });
+
+      const isShowAnimation = checklistIsShowAnimation(content, item);
+
+      const isCompleted =
+        item.isCompleted || checklistItemIsCompleted(content, item)
+          ? true
+          : canCompleteChecklistItem(checklistData.completionOrder, items, item) &&
+            isActive(activeConditions);
+
+      // Check visibility conditions
+      let isVisible = true;
+      if (item.onlyShowTask) {
+        const visibleConditions = await activedRulesConditions(item.onlyShowTaskConditions);
+        isVisible = isActive(visibleConditions);
+      }
+
+      // Return updated item
+      return {
+        ...item,
+        isShowAnimation,
+        isCompleted,
+        isVisible,
+      };
+    }),
+  );
+
+  // Check if any changes occurred
+  const hasChanges = items.some((item) => {
+    const updatedItem = updatedItems.find((updated) => updated.id === item.id);
+    return (
+      updatedItem &&
+      (item.isCompleted !== updatedItem.isCompleted || item.isVisible !== updatedItem.isVisible)
+    );
+  });
+
+  return { items: updatedItems, hasChanges };
 };
 
 /**
