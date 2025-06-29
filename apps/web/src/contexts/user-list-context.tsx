@@ -26,6 +26,7 @@ export interface UserListContextValue {
   setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
   pageCount: number;
   contents: any[];
+  loading: boolean;
 }
 export const UserListContext = createContext<UserListContextValue | undefined>(undefined);
 
@@ -51,7 +52,7 @@ export function UserListProvider(props: UserListProviderProps): JSX.Element {
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  const { data, refetch } = useQuery(queryBizUser, {
+  const { data, refetch, loading } = useQuery(queryBizUser, {
     variables: {
       ...requestPagination,
       query: { environmentId, ...query },
@@ -127,6 +128,7 @@ export function UserListProvider(props: UserListProviderProps): JSX.Element {
     setPagination,
     pageCount,
     contents,
+    loading,
   };
 
   return <UserListContext.Provider value={value}>{children}</UserListContext.Provider>;

@@ -18,6 +18,7 @@ import {
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
 import { useAppContext } from '@/contexts/app-context';
+import { ContentDetailSettingsSkeleton } from './content-detail-skeleton';
 
 const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
   return {
@@ -32,8 +33,13 @@ const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObje
 };
 
 export const ContentDetailSettings = () => {
-  const { version, refetch: refetchVersion, setIsSaveing } = useContentVersionContext();
-  const { content, refetch: refetchContent } = useContentDetailContext();
+  const {
+    version,
+    refetch: refetchVersion,
+    setIsSaveing,
+    loading: versionLoading,
+  } = useContentVersionContext();
+  const { content, refetch: refetchContent, loading: contentLoading } = useContentDetailContext();
   const [config, setConfig] = useState<ContentConfigObject>(buildConfig(version?.config));
   const [mutation] = useMutation(updateContentVersion);
   const [createVersion] = useMutation(createContentVersion);
@@ -151,6 +157,11 @@ export const ContentDetailSettings = () => {
     },
     [config],
   );
+
+  // Show skeleton if any of the required data is loading
+  if (versionLoading || contentLoading) {
+    return <ContentDetailSettingsSkeleton />;
+  }
 
   const contentType = content?.type;
 

@@ -14,6 +14,7 @@ import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRenameForm } from '../shared/content-rename-form';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { isPublishedInAllEnvironments } from '@usertour-ui/shared-utils';
+import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
 
 const navigations = [
   {
@@ -64,13 +65,19 @@ function MainNav({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
 
 export const ContentDetailHeader = () => {
   const navigator = useNavigate();
-  const { content, refetch, contentType } = useContentDetailContext();
+  const { content, refetch, contentType, loading } = useContentDetailContext();
   const [openPublish, setOpenPublish] = useState(false);
   const { version, isSaveing } = useContentVersionContext();
   const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
   const { environmentList } = useEnvironmentListContext();
   const [_, setSearchParams] = useSearchParams();
+
+  // Show skeleton if content is loading
+  if (loading) {
+    return <ContentDetailHeaderSkeleton />;
+  }
+
   if (!contentType || !content) return null;
 
   const isDisabled = isPublishedInAllEnvironments(content, environmentList, version);

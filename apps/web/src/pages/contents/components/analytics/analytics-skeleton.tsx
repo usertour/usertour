@@ -62,6 +62,9 @@ export const AnalyticsDaysSkeleton = () => {
 
 // AnalyticsSteps skeleton - shows table with progress bars
 export const AnalyticsStepsSkeleton = () => {
+  // Different widths for progress bars to simulate varying completion rates
+  const progressWidths = ['w-1/4', 'w-2/3', 'w-1/2', 'w-3/4', 'w-1/3'];
+
   return (
     <Card>
       <CardHeader>
@@ -98,7 +101,7 @@ export const AnalyticsStepsSkeleton = () => {
                   <Skeleton className="h-4 w-8" />
                 </TableCell>
                 <TableCell className="py-[1px] px-0">
-                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className={`h-10 ${progressWidths[index]}`} />
                 </TableCell>
               </TableRow>
             ))}
@@ -111,6 +114,9 @@ export const AnalyticsStepsSkeleton = () => {
 
 // AnalyticsTasks skeleton - similar to steps but for tasks
 export const AnalyticsTasksSkeleton = () => {
+  // Different widths for progress bars to simulate varying completion rates
+  const progressWidths = ['w-1/3', 'w-1/2', 'w-2/5', 'w-3/4', 'w-1/4'];
+
   return (
     <Card>
       <CardHeader>
@@ -147,7 +153,7 @@ export const AnalyticsTasksSkeleton = () => {
                   <Skeleton className="h-4 w-8" />
                 </TableCell>
                 <TableCell className="py-[1px] px-0">
-                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className={`h-10 ${progressWidths[index]}`} />
                 </TableCell>
               </TableRow>
             ))}

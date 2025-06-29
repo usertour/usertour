@@ -53,6 +53,48 @@ export const ContentDetailAddButtonSkeleton = () => {
   );
 };
 
+// Skeleton for settings rules section
+export const ContentDetailSettingsRuleSkeleton = () => {
+  return (
+    <div className="bg-white rounded-lg border p-6 space-y-4">
+      {/* Header */}
+      <div className="space-y-2">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+
+      {/* Toggle switch */}
+      <div className="flex items-center space-x-2">
+        <Skeleton className="h-6 w-11 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+
+      {/* Rules content */}
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+      </div>
+
+      {/* Add rule button */}
+      <Skeleton className="h-9 w-24 rounded" />
+    </div>
+  );
+};
+
+// Main skeleton for ContentDetailSettings
+export const ContentDetailSettingsSkeleton = () => {
+  return (
+    <div className="flex flex-col space-y-6 flex-none w-[420px]">
+      {/* Auto-start rules skeleton */}
+      <ContentDetailSettingsRuleSkeleton />
+
+      {/* Hide rules skeleton */}
+      <ContentDetailSettingsRuleSkeleton />
+    </div>
+  );
+};
+
 // Main skeleton for ContentDetailContent
 export const ContentDetailContentSkeleton = () => {
   return (

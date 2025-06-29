@@ -1,4 +1,4 @@
-import { CompanyListProvider } from '@/contexts/company-list-context';
+import { CompanyListProvider, useCompanyListContext } from '@/contexts/company-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
@@ -12,12 +12,13 @@ import { UserEditDropdownMenu } from './edit-dropmenu';
 import { UserSegmentEditForm } from './edit-form';
 import { UserSegmentFilterSave } from './filter-save';
 import { useAppContext } from '@/contexts/app-context';
-export function CompanyListContent(props: {
-  environmentId: string | undefined;
-}) {
-  const { environmentId } = props;
+import { CompanyListContentSkeleton } from './content-skeleton';
+
+// Inner component that uses the context
+function CompanyListContentInner({ environmentId }: { environmentId: string | undefined }) {
   const [open, setOpen] = useState(false);
-  const { currentSegment, refetch } = useSegmentListContext();
+  const { currentSegment, refetch, loading: segmentLoading } = useSegmentListContext();
+  const { loading: companyLoading } = useCompanyListContext();
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
 
@@ -26,8 +27,13 @@ export function CompanyListContent(props: {
     refetch();
   };
 
+  // Show skeleton if any data is loading
+  if (segmentLoading || companyLoading) {
+    return <CompanyListContentSkeleton />;
+  }
+
   return (
-    <CompanyListProvider environmentId={environmentId}>
+    <>
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
         <div className="flex items-center justify-between">
           <div className="space-y-1 flex flex-row items-center relative">
@@ -77,6 +83,18 @@ export function CompanyListContent(props: {
         )}
       </div>
       <UserSegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+    </>
+  );
+}
+
+export function CompanyListContent(props: {
+  environmentId: string | undefined;
+}) {
+  const { environmentId } = props;
+
+  return (
+    <CompanyListProvider environmentId={environmentId}>
+      <CompanyListContentInner environmentId={environmentId} />
     </CompanyListProvider>
   );
 }

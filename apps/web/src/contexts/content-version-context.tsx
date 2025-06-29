@@ -56,11 +56,7 @@ export function ContentVersionProvider(props: ContentVersionProviderProps): JSX.
     refetch,
   };
 
-  return (
-    <ContentVersionContext.Provider value={value}>
-      {version && children}
-    </ContentVersionContext.Provider>
-  );
+  return <ContentVersionContext.Provider value={value}>{children}</ContentVersionContext.Provider>;
 }
 
 export function useContentVersionContext(): ContentVersionContextValue {
