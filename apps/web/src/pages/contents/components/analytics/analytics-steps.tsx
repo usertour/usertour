@@ -3,9 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { AnalyticsViewsByStep } from '@usertour-ui/types';
+import { AnalyticsStepsSkeleton } from './analytics-skeleton';
 
 export const AnalyticsSteps = () => {
-  const { analyticsData } = useAnalyticsContext();
+  const { analyticsData, loading } = useAnalyticsContext();
+
+  if (loading) {
+    return <AnalyticsStepsSkeleton />;
+  }
 
   const computeRate = (step: AnalyticsViewsByStep, firstStep: AnalyticsViewsByStep) => {
     if (!step || !step.analytics || !firstStep.analytics.uniqueViews) {

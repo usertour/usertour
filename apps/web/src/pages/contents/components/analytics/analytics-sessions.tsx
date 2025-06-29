@@ -4,8 +4,16 @@ import { Button } from '@usertour-ui/button';
 import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';
 import { DownloadIcon } from 'lucide-react';
+import { useBizSessionContext } from '@/contexts/biz-session-context';
+import { AnalyticsSessionsSkeleton } from './analytics-skeleton';
 
 export const AnalyticsSessions = () => {
+  const { loading } = useBizSessionContext();
+
+  if (loading) {
+    return <AnalyticsSessionsSkeleton />;
+  }
+
   return (
     <>
       <Card>
