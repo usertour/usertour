@@ -541,12 +541,14 @@ export class App extends Evented {
     if (!userId || !token) {
       return;
     }
-    return await this.socket.createSession({
+    const newSesison = await this.socket.createSession({
       userId,
       contentId,
       token,
       companyId,
     });
+    await this.refresh();
+    return newSesison;
   }
 
   /**

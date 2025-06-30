@@ -139,7 +139,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const storeData = await this.buildStoreData();
     const content = this.getContent();
     const initialDisplay = getChecklistInitialDisplay(content);
-
     this.setStore({
       ...storeData,
       content: {
@@ -158,18 +157,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const initialDisplay = store.content?.data.initialDisplay;
     const { openState, ...storeData } = await this.buildStoreData();
 
-    const previousItems = [...(store?.content?.data?.items || [])];
-    const currentItems = [...(storeData.content?.data?.items || [])];
-    // Check if we need to update initialDisplay to EXPANDED
-    const shouldExpand = this.shouldExpandForNewCompletedItems(currentItems, previousItems);
-
     this.updateStore({
       ...storeData,
       content: {
         ...storeData.content,
         data: {
-          ...storeData.content.data,
-          initialDisplay: shouldExpand ? ChecklistInitialDisplay.EXPANDED : initialDisplay,
+          ...storeData.content?.data,
+          initialDisplay,
         },
       },
     });
@@ -314,7 +308,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const { items: updatedItems, hasChanges } = await processChecklistItems(content);
     // Check if we need to update initialDisplay to EXPANDED
     const shouldExpand = this.shouldExpandForNewCompletedItems(updatedItems, items);
-
     // Update store if there are changes or if we need to expand
     if (hasChanges || shouldExpand) {
       this.updateStore({
@@ -352,6 +345,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
     currentItems: ChecklistItemType[],
     previousItems: ChecklistItemType[],
   ): boolean {
+    if (
+      currentItems.filter((item) => item.isCompleted && item.isVisible && item.isShowAnimation)
+        .length > 0
+    ) {
+      return true;
+    }
     // Get visible completed item IDs from previous collapsed state
     const previousCompletedIds = new Set(
       previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),

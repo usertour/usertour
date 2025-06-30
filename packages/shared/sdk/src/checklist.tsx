@@ -105,14 +105,6 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     [onOpenChange],
   );
 
-  // Handle initial display
-  useEffect(() => {
-    const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
-    (async () => {
-      await handleOpenChange(shouldBeOpen);
-    })();
-  }, [data.initialDisplay, handleOpenChange]);
-
   // Track completion changes and add to pending animations if checklist is closed
   useEffect(() => {
     if (!isOpen) {
@@ -124,8 +116,12 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         }
       }
     }
+    const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+    if (data.initialDisplay !== prevData.initialDisplay) {
+      handleOpenChange(shouldBeOpen);
+    }
     setPrevData(data);
-  }, [data.items, isOpen, prevData]);
+  }, [data, isOpen, prevData]);
 
   const updateItemStatus = (itemId: string, isCompleted: boolean) => {
     setData((prevData) => ({
