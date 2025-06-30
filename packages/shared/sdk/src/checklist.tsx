@@ -49,7 +49,7 @@ interface ChecklistRootContextValue {
   showDismissConfirm: boolean;
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
   onDismiss?: () => Promise<void>;
-  onOpenChange?: (open: boolean) => Promise<void>;
+  handleOpenChange?: (open: boolean) => Promise<void>;
   // Animation state tracking
   pendingAnimationItems: Set<string>;
   removePendingAnimation: (itemId: string) => void;
@@ -97,9 +97,21 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     setData(initialData);
   }, [initialData]);
 
+  const handleOpenChange = useCallback(
+    async (open: boolean) => {
+      await onOpenChange?.(open);
+      setIsOpen(open);
+    },
+    [onOpenChange],
+  );
+
+  // Handle initial display
   useEffect(() => {
-    setIsOpen(data.initialDisplay === ChecklistInitialDisplay.EXPANDED);
-  }, [data.initialDisplay]);
+    const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+    (async () => {
+      await handleOpenChange(shouldBeOpen);
+    })();
+  }, [data.initialDisplay, handleOpenChange]);
 
   // Track completion changes and add to pending animations if checklist is closed
   useEffect(() => {
@@ -142,7 +154,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         showDismissConfirm,
         setShowDismissConfirm,
         onDismiss,
-        onOpenChange,
+        handleOpenChange,
         pendingAnimationItems,
         removePendingAnimation,
         zIndex,
@@ -326,13 +338,7 @@ ChecklistContainer.displayName = 'ChecklistContainer';
 const ChecklistPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
     const { children } = props;
-    const { globalStyle, isOpen, setIsOpen, themeSetting, onOpenChange } =
-      useChecklistRootContext();
-
-    const handleOpenChange = async () => {
-      await onOpenChange?.(true);
-      setIsOpen(true);
-    };
+    const { globalStyle, isOpen, themeSetting, handleOpenChange } = useChecklistRootContext();
 
     return (
       <>
@@ -355,7 +361,7 @@ const ChecklistPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyl
             </PopperModalContentPotal>
           </Popper>
         )}
-        {!isOpen && <ChecklistLauncher onClick={handleOpenChange} />}
+        {!isOpen && <ChecklistLauncher onClick={async () => await handleOpenChange?.(true)} />}
       </>
     );
   },
@@ -440,7 +446,7 @@ ChecklistLauncherFrame.displayName = 'ChecklistLauncherFrame';
 
 const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>((props, _) => {
   const { globalStyle, onSizeChange } = props;
-  const { data, setIsOpen, themeSetting, onOpenChange } = useChecklistRootContext();
+  const { data, themeSetting, handleOpenChange } = useChecklistRootContext();
   const { document } = useFrame();
 
   useEffect(() => {
@@ -449,11 +455,6 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
       document.body.className = 'usertour-widget-root';
     }
   }, [globalStyle]);
-
-  const handleOnOpenChange = async () => {
-    await onOpenChange?.(true);
-    setIsOpen(true);
-  };
 
   const isCompleted = checklistIsCompleted(data.items);
   const number = checklistUnCompletedItemsCount(data.items);
@@ -464,7 +465,7 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
       height={themeSetting?.checklistLauncher.height}
       number={number}
       isCompleted={isCompleted}
-      onClick={handleOnOpenChange}
+      onClick={async () => await handleOpenChange?.(true)}
       onSizeChange={onSizeChange}
     />
   );
@@ -502,18 +503,18 @@ ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 
 const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { setIsOpen, onOpenChange } = useChecklistRootContext();
-    const handleOnOpenChange = async () => {
-      await onOpenChange?.(false);
-      setIsOpen(false);
-    };
+    const { handleOpenChange } = useChecklistRootContext();
     return (
       <div
         className="rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-pointer"
         ref={ref}
         {...props}
       >
-        <DropDownIcon height={24} width={24} onClick={handleOnOpenChange} />
+        <DropDownIcon
+          height={24}
+          width={24}
+          onClick={async () => await handleOpenChange?.(false)}
+        />
       </div>
     );
   },
@@ -527,14 +528,12 @@ interface ChecklistItemsProps {
 }
 const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
   ({ onClick, disabledUpdate }, ref) => {
-    const { data, updateItemStatus, themeSetting, setIsOpen, onOpenChange } =
-      useChecklistRootContext();
+    const { data, updateItemStatus, themeSetting, handleOpenChange } = useChecklistRootContext();
 
     const textDecoration = themeSetting?.checklist.completedTaskTextDecoration;
 
     const closeChecklist = async () => {
-      await onOpenChange?.(false);
-      setIsOpen(false);
+      await handleOpenChange?.(false);
     };
 
     const handleItemClick = useCallback(

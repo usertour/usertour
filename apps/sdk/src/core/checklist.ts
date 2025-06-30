@@ -24,6 +24,8 @@ import {
 import { ChecklistStore } from '../types/store';
 
 export class Checklist extends BaseContent<ChecklistStore> {
+  private hasPendingCompletedItems = false; // Track if there are pending completed items to expand
+
   /**
    * Constructs a Checklist instance.
    * @param {App} instance - The app instance
@@ -41,14 +43,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 3. Handles visibility state based on checklist status
    */
   async monitor() {
+    if (this.isActiveChecklist()) {
+      // Monitor individual item conditions
+      await this.itemConditionsMonitor();
+
+      // Update visibility state based on checklist status
+      this.handleVisibilityState();
+    }
     // Activate content conditions first
     await this.activeContentConditions();
-
-    // Monitor individual item conditions
-    await this.itemConditionsMonitor();
-
-    // Update visibility state based on checklist status
-    this.handleVisibilityState();
   }
 
   /**
@@ -136,6 +139,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const storeData = await this.buildStoreData();
     const content = this.getContent();
     const initialDisplay = getChecklistInitialDisplay(content);
+
     this.setStore({
       ...storeData,
       content: {
@@ -153,11 +157,20 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const store = this.getStore().getSnapshot();
     const initialDisplay = store.content?.data.initialDisplay;
     const { openState, ...storeData } = await this.buildStoreData();
+
+    const previousItems = [...(store?.content?.data?.items || [])];
+    const currentItems = [...(storeData.content?.data?.items || [])];
+    // Check if we need to update initialDisplay to EXPANDED
+    const shouldExpand = this.shouldExpandForNewCompletedItems(currentItems, previousItems);
+
     this.updateStore({
       ...storeData,
       content: {
         ...storeData.content,
-        data: { ...storeData.content.data, initialDisplay },
+        data: {
+          ...storeData.content.data,
+          initialDisplay: shouldExpand ? ChecklistInitialDisplay.EXPANDED : initialDisplay,
+        },
       },
     });
   }
@@ -286,6 +299,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 1. Checks completion and visibility conditions for each item
    * 2. Updates item status and store if changes are detected
    * 3. Triggers appropriate events for completed items
+   * 4. Updates initialDisplay to EXPANDED when there are new completed items
    */
   private async itemConditionsMonitor() {
     // Get content and validate
@@ -298,15 +312,18 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
     // Process items to determine their status
     const { items: updatedItems, hasChanges } = await processChecklistItems(content);
+    // Check if we need to update initialDisplay to EXPANDED
+    const shouldExpand = this.shouldExpandForNewCompletedItems(updatedItems, items);
 
-    if (hasChanges) {
-      // Update store with filtered visible items
+    // Update store if there are changes or if we need to expand
+    if (hasChanges || shouldExpand) {
       this.updateStore({
         content: {
           ...content,
           data: {
             ...checklistData,
             items: updatedItems,
+            ...(shouldExpand && { initialDisplay: ChecklistInitialDisplay.EXPANDED }),
           },
         },
       });
@@ -323,6 +340,74 @@ export class Checklist extends BaseContent<ChecklistStore> {
     if (isSendChecklistCompletedEvent(updatedItems, content.latestSession)) {
       await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
     }
+  }
+
+  /**
+   * Checks if there are new completed items compared to the initial state
+   * @param currentItems - Current checklist items
+   * @param previousItems - Previous checklist items
+   * @returns True if there are new completed items, false otherwise
+   */
+  private hasNewCompletedItems(
+    currentItems: ChecklistItemType[],
+    previousItems: ChecklistItemType[],
+  ): boolean {
+    // Get visible completed item IDs from previous collapsed state
+    const previousCompletedIds = new Set(
+      previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+    );
+
+    // Get visible completed item IDs from current state
+    const currentCompletedIds = new Set(
+      currentItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+    );
+
+    // Check if there are any new completed items (items that are completed now but weren't before)
+    for (const itemId of currentCompletedIds) {
+      if (!previousCompletedIds.has(itemId)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Checks if there are new completed items and handles tour conflict
+   * @param currentItems - Current checklist items
+   * @param previousItems - Previous checklist items
+   * @returns True if there are new completed items and no active tour, false otherwise
+   */
+  private shouldExpandForNewCompletedItems(
+    currentItems: ChecklistItemType[],
+    previousItems: ChecklistItemType[],
+  ): boolean {
+    // First check if there are pending completed items from previous tour conflicts
+    if (this.hasPendingCompletedItems) {
+      const activeTour = this.getActiveTour();
+      if (!activeTour?.isShow()) {
+        // No active tour, safe to expand
+        this.hasPendingCompletedItems = false;
+        return true;
+      }
+      // Still has active tour, keep pending
+      return false;
+    }
+
+    // Check for new completed items
+    const hasNewCompleted = this.hasNewCompletedItems(currentItems, previousItems);
+
+    if (hasNewCompleted) {
+      // Check if there's an active tour that would prevent immediate expansion
+      const activeTour = this.getActiveTour();
+      if (activeTour?.isShow()) {
+        // Store the state to expand later when tour closes
+        this.hasPendingCompletedItems = true;
+        return false; // Don't expand immediately
+      }
+    }
+
+    return hasNewCompleted;
   }
 
   /**
