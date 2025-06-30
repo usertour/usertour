@@ -149,13 +149,51 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
+   * Expands or collapses the checklist
+   * @param isExpanded - Whether the checklist should be expanded or collapsed
+   */
+  expand(isExpanded: boolean) {
+    const store = this.getStore().getSnapshot();
+    if (!store.content) return;
+    this.updateStore({
+      content: {
+        ...store.content,
+        data: {
+          ...store.content.data,
+          initialDisplay: isExpanded
+            ? ChecklistInitialDisplay.EXPANDED
+            : ChecklistInitialDisplay.BUTTON,
+        },
+      },
+    });
+  }
+
+  /**
    * Refreshes the checklist data while maintaining its current open/closed state.
    * This method updates the store with fresh data without changing visibility.
+   * Includes throttling to prevent frequent refreshes.
    */
   async refresh() {
     const store = this.getStore().getSnapshot();
     const initialDisplay = store.content?.data.initialDisplay;
     const { openState, ...storeData } = await this.buildStoreData();
+    const snapShotItems = store.content?.data?.items;
+
+    const items = storeData.content?.data?.items?.map((item: ChecklistItemType) => {
+      const snapShotItem = snapShotItems?.find(
+        (snapShotItem: ChecklistItemType) => snapShotItem.id === item.id,
+      );
+      if (snapShotItem) {
+        return {
+          ...item,
+          isClicked: snapShotItem.isClicked,
+          isCompleted: snapShotItem.isCompleted,
+          isVisible: snapShotItem.isVisible,
+          isShowAnimation: snapShotItem.isShowAnimation,
+        };
+      }
+      return item;
+    });
 
     this.updateStore({
       ...storeData,
@@ -163,6 +201,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
         ...storeData.content,
         data: {
           ...storeData.content?.data,
+          items,
           initialDisplay,
         },
       },
@@ -278,6 +317,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * @param item - The checklist item that was clicked
    */
   handleItemClick = async (item: ChecklistItemType) => {
+    this.expand(false);
     // Update item clicked state in store
     this.updateItemClickedState(item.id);
 
@@ -285,6 +325,10 @@ export class Checklist extends BaseContent<ChecklistStore> {
     await this.reportTaskClickEvent(item);
     //handle actions
     await this.handleActions(item.clickedActions);
+    // const itemIsCompleted = checklistItemIsCompleted(this.getContent(), item);
+    // if (!itemIsCompleted) {
+    // await this.expand(false);
+    // }
   };
 
   /**

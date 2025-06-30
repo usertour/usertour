@@ -105,6 +105,11 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     [onOpenChange],
   );
 
+  useEffect(() => {
+    const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+    handleOpenChange(shouldBeOpen);
+  }, [data.initialDisplay]);
+
   // Track completion changes and add to pending animations if checklist is closed
   useEffect(() => {
     if (!isOpen) {
@@ -116,12 +121,8 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         }
       }
     }
-    const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
-    if (data.initialDisplay !== prevData.initialDisplay) {
-      handleOpenChange(shouldBeOpen);
-    }
     setPrevData(data);
-  }, [data, isOpen, prevData]);
+  }, [data, isOpen]);
 
   const updateItemStatus = (itemId: string, isCompleted: boolean) => {
     setData((prevData) => ({
@@ -524,19 +525,14 @@ interface ChecklistItemsProps {
 }
 const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
   ({ onClick, disabledUpdate }, ref) => {
-    const { data, updateItemStatus, themeSetting, handleOpenChange } = useChecklistRootContext();
+    const { data, updateItemStatus, themeSetting } = useChecklistRootContext();
 
     const textDecoration = themeSetting?.checklist.completedTaskTextDecoration;
-
-    const closeChecklist = async () => {
-      await handleOpenChange?.(false);
-    };
 
     const handleItemClick = useCallback(
       (item: ChecklistItemType, index: number) => {
         if (disabledUpdate) {
           if (onClick) {
-            closeChecklist();
             onClick(item, index);
           }
           return;
@@ -544,7 +540,6 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
         if (!item.isCompleted) {
           updateItemStatus(item.id, !item.isCompleted);
         }
-        closeChecklist();
         onClick?.(item, index);
       },
       [onClick, updateItemStatus],
