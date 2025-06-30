@@ -114,18 +114,16 @@ export class Checklist extends BaseContent<ChecklistStore> {
       return;
     }
 
-    const { openState } = this.getStore().getSnapshot();
-
     // Handle temporarily hidden state
     if (this.isTemporarilyHidden()) {
-      if (openState) {
+      if (this.isOpen()) {
         this.hide();
       }
       return;
     }
 
     // Show checklist if it's not already open
-    if (!openState) {
+    if (!this.isOpen()) {
       this.open();
     }
   }
