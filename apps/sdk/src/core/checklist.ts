@@ -320,6 +320,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     const itemIsCompleted = await this.itemIsCompleted(item);
     if (!itemIsCompleted) {
       await this.expand(false);
+      await this.reportOpenChangeEvent(false);
     }
 
     //handle actions after state update is complete
