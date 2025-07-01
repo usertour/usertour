@@ -1,4 +1,5 @@
 import {
+  BizEvent,
   BizEvents,
   BizSession,
   ChecklistData,
@@ -21,6 +22,8 @@ import {
 import { window } from './globals';
 import { RulesType } from '@usertour-ui/constants';
 import { canCompleteChecklistItem } from '@usertour-ui/sdk';
+import { BaseStore } from '../types/store';
+import isEqual from 'fast-deep-equal';
 
 /**
  * Initialize or update content items based on the provided contents
@@ -267,6 +270,34 @@ export const checklistIsCompleted = (content: SDKContent) => {
   );
 };
 
+export const isValidChecklistCompletedEvent = (bizEvents: BizEvent[] | undefined) => {
+  // Find the latest CHECKLIST_TASK_COMPLETED event
+  const taskCompletedEvents =
+    bizEvents?.filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED) ||
+    [];
+
+  if (taskCompletedEvents.length === 0) {
+    return false;
+  }
+
+  const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
+    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+  });
+
+  // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
+  const eventsAfterTaskCompleted =
+    bizEvents?.filter(
+      (event) => new Date(event.createdAt) > new Date(latestTaskCompletedEvent.createdAt),
+    ) || [];
+
+  // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
+  const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
+    (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+  );
+
+  return !hasChecklistCompletedAfter;
+};
+
 /**
  * Checks if a checklist is all completed
  * @param content - The content to check
@@ -276,23 +307,18 @@ export const isSendChecklistCompletedEvent = (
   items: ChecklistItemType[] = [],
   latestSession?: BizSession | undefined,
 ) => {
-  const isVisibleItems = items.filter((item: ChecklistItemType) => item.isVisible);
-  const isCompletedItems = items.filter((item: ChecklistItemType) => item.isCompleted);
+  const visibleItems = items.filter((item: ChecklistItemType) => item.isVisible);
+  const completedItems = items.filter((item: ChecklistItemType) => item.isCompleted);
 
-  const taskCompletedEvents =
-    latestSession?.bizEvent?.filter(
-      (event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
-    ) || [];
-
-  if (isCompletedItems.length === 0) {
+  if (completedItems.length === 0) {
     return false;
   }
 
-  if (taskCompletedEvents.length > 0 && isCompletedItems.length < taskCompletedEvents.length) {
+  if (!isValidChecklistCompletedEvent(latestSession?.bizEvent)) {
     return false;
   }
 
-  if (isVisibleItems.length === isCompletedItems.length) {
+  if (visibleItems.length === completedItems.length) {
     return true;
   }
 
@@ -305,9 +331,11 @@ export const isSendChecklistCompletedEvent = (
  * @param checklistItem - The checklist item to check
  * @returns True if the checklist item is completed, false otherwise
  */
-export const checklistItemIsCompleted = (content: SDKContent, checklistItem: ChecklistItemType) => {
-  const latestSession = content.latestSession;
-  return !!latestSession?.bizEvent?.find(
+export const checklistItemIsCompleted = (
+  bizEvents: BizEvent[] | undefined,
+  checklistItem: ChecklistItemType,
+) => {
+  return !!bizEvents?.find(
     (event) =>
       event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
       event.data.checklist_task_id === checklistItem.id,
@@ -418,7 +446,7 @@ export const processChecklistItems = async (content: SDKContent) => {
       const isShowAnimation = checklistIsShowAnimation(content, item);
 
       const isCompleted =
-        item.isCompleted || checklistItemIsCompleted(content, item)
+        item.isCompleted || checklistItemIsCompleted(content.latestSession?.bizEvent, item)
           ? true
           : canCompleteChecklistItem(checklistData.completionOrder, items, item) &&
             isActive(activeConditions);
@@ -516,4 +544,26 @@ export const isSameChecklist = (
     return false;
   }
   return checklist1.getContent().contentId === checklist2.getContent().contentId;
+};
+
+/**
+ * Checks if the base information has changed
+ * @param currentStore - The current store
+ * @param previousStore - The previous store
+ * @returns True if the base information has changed, false otherwise
+ */
+export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: BaseStore) => {
+  // Early return if stores are the same reference
+  if (currentStore === previousStore) {
+    return false;
+  }
+
+  // Direct property comparison for better performance
+  return (
+    !isEqual(currentStore.userInfo, previousStore.userInfo) ||
+    !isEqual(currentStore.assets, previousStore.assets) ||
+    !isEqual(currentStore.globalStyle, previousStore.globalStyle) ||
+    !isEqual(currentStore.theme, previousStore.theme) ||
+    currentStore.zIndex !== previousStore.zIndex
+  );
 };

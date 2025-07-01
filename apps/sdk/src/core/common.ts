@@ -1,5 +1,11 @@
 import { AssetAttributes } from '@usertour-ui/frame';
-import { BizUserInfo, PlanType, Theme } from '@usertour-ui/types';
+import {
+  BizUserInfo,
+  ChecklistCompletionOrder,
+  ChecklistInitialDisplay,
+  PlanType,
+  Theme,
+} from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
 import { ChecklistStore, LauncherStore, TourStore } from '../types/store';
 import { getUserTourCss } from '../utils/env';
@@ -76,7 +82,14 @@ const createMockUser = (userId?: string): BizUserInfo => {
 const defaultChecklistStore: ChecklistStore = {
   ...DEFAULT_STORE_VALUES,
   zIndex: 1000000,
-  content: undefined,
+  checklistData: {
+    buttonText: 'Get Started',
+    completionOrder: ChecklistCompletionOrder.ANY,
+    initialDisplay: ChecklistInitialDisplay.BUTTON,
+    preventDismissChecklist: false,
+    items: [],
+    content: undefined,
+  },
   theme: undefined,
 };
 

@@ -1,5 +1,5 @@
 import { AssetAttributes } from '@usertour-ui/frame';
-import { BizUserInfo, SDKConfig, SDKContent, Step, Theme } from '@usertour-ui/types';
+import { BizUserInfo, ChecklistData, SDKConfig, SDKContent, Step, Theme } from '@usertour-ui/types';
 
 // Base store interface
 export interface BaseStore {
@@ -21,7 +21,8 @@ export type TourStore = BaseStore & {
 
 // Checklist store type
 export type ChecklistStore = BaseStore & {
-  content: SDKContent | undefined;
+  // content: SDKContent | undefined;
+  checklistData: ChecklistData;
 };
 
 // Launcher store type

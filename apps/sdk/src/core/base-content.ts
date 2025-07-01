@@ -4,6 +4,7 @@ import {
   BizCompany,
   ContentDataType,
   EventAttributes,
+  SDKConfig,
   SDKContent,
   Step,
   Theme,
@@ -545,20 +546,20 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Get the SDK configuration
    */
-  getSdkConfig(): Record<string, any> {
+  getSdkConfig(): SDKConfig {
     return this.getInstance().getSdkConfig();
   }
 
   /**
    * Get the base information for the store
    */
-  getStoreBaseInfo(): Record<string, any> {
+  getStoreBaseInfo(): BaseStore | undefined {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
     const sdkConfig = this.getSdkConfig();
     if (!themes || themes.length === 0) {
-      return {};
+      return undefined;
     }
     let theme: Theme | undefined;
     const currentStep = this.getCurrentStep();
@@ -568,7 +569,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
       theme = themes.find((item) => this.getContent()?.themeId === item.id);
     }
     if (!theme) {
-      return {};
+      return undefined;
     }
     return {
       sdkConfig,
@@ -577,6 +578,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
       theme,
       zIndex,
       userInfo,
+      openState: false,
     };
   }
 

@@ -29,7 +29,6 @@ import {
   isSameTour,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
-import { AppEvents } from '../utils/event';
 import { extensionIsRunning } from '../utils/extension';
 import { document, window } from '../utils/globals';
 import { on } from '../utils/listener';
@@ -191,10 +190,6 @@ export class App extends Evented {
     if (window) {
       on(window, 'message', this.handlePreviewMessage);
     }
-
-    this.on(AppEvents.EVENT_REPORTED, () => {
-      this.refresh();
-    });
   }
 
   /**
@@ -523,7 +518,7 @@ export class App extends Evented {
         eventData: event.eventData,
         eventName: event.eventName,
       });
-      this.trigger(AppEvents.EVENT_REPORTED);
+      await this.refresh();
     } catch (error) {
       logger.error('Failed to report event:', error);
     }

@@ -92,7 +92,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       content,
       openState: false,
       ...baseInfo,
-      zIndex: zIndex || baseInfo.zIndex,
+      zIndex: zIndex || baseInfo?.zIndex,
       triggerRef: undefined,
     } as LauncherStore;
   }

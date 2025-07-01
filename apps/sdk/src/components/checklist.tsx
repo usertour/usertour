@@ -94,16 +94,15 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     checklist.getStore().getSnapshot,
   );
 
-  const { content, theme, userInfo, openState, assets, sdkConfig, zIndex } = store;
-  const data = content?.data as ChecklistData;
+  const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex } = store;
 
-  if (!theme || !data || !openState || !userInfo) {
+  if (!theme || !checklistData || !openState || !userInfo) {
     return null;
   }
 
   return (
     <ChecklistWidgetCore
-      data={data}
+      data={checklistData}
       theme={theme}
       userInfo={userInfo}
       assets={assets}

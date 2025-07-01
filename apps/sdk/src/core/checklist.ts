@@ -1,7 +1,6 @@
 import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
 import {
   BizEvents,
-  ChecklistData,
   ChecklistInitialDisplay,
   ChecklistItemType,
   ContentActionsItemType,
@@ -21,6 +20,7 @@ import {
   processChecklistItems,
   isSendChecklistCompletedEvent,
   checklistHasNewCompletedItems,
+  baseStoreInfoIsChanged,
 } from '../utils/content-utils';
 import { ChecklistStore } from '../types/store';
 
@@ -136,16 +136,23 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * This method sets up the initial state of the checklist without displaying it.
    */
   async show() {
-    const storeData = await this.buildStoreData();
+    const baseStoreData = this.getBaseStoreData();
     const content = this.getContent();
+    if (!baseStoreData || !content) {
+      return;
+    }
     const initialDisplay = getChecklistInitialDisplay(content);
-    this.setStore({
-      ...storeData,
-      content: {
-        ...storeData.content,
-        data: { ...storeData.content.data, initialDisplay },
+    // Process items to determine their status
+    const { items } = await processChecklistItems(content);
+    const store = {
+      ...baseStoreData,
+      checklistData: {
+        ...content.data,
+        items,
+        initialDisplay,
       },
-    });
+    };
+    this.setStore(store);
   }
 
   /**
@@ -154,16 +161,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
    */
   expand(isExpanded: boolean) {
     const store = this.getStore().getSnapshot();
-    if (!store.content) return;
+    if (!store) {
+      return;
+    }
     this.updateStore({
-      content: {
-        ...store.content,
-        data: {
-          ...store.content.data,
-          initialDisplay: isExpanded
-            ? ChecklistInitialDisplay.EXPANDED
-            : ChecklistInitialDisplay.BUTTON,
-        },
+      checklistData: {
+        ...store.checklistData,
+        initialDisplay: isExpanded
+          ? ChecklistInitialDisplay.EXPANDED
+          : ChecklistInitialDisplay.BUTTON,
       },
     });
   }
@@ -171,41 +177,25 @@ export class Checklist extends BaseContent<ChecklistStore> {
   /**
    * Refreshes the checklist data while maintaining its current open/closed state.
    * This method updates the store with fresh data without changing visibility.
-   * Includes throttling to prevent frequent refreshes.
+   * Only updates the store if there are actual changes to prevent unnecessary re-renders.
    */
   async refresh() {
-    const store = this.getStore().getSnapshot();
-    const initialDisplay = store.content?.data.initialDisplay;
-    const { openState, ...storeData } = await this.buildStoreData();
-    const snapShotItems = store.content?.data?.items;
-
-    const items = storeData.content?.data?.items?.map((item: ChecklistItemType) => {
-      const snapShotItem = snapShotItems?.find(
-        (snapShotItem: ChecklistItemType) => snapShotItem.id === item.id,
-      );
-      if (snapShotItem) {
-        return {
-          ...item,
-          isClicked: snapShotItem.isClicked,
-          isCompleted: snapShotItem.isCompleted,
-          isVisible: snapShotItem.isVisible,
-          isShowAnimation: snapShotItem.isShowAnimation,
-        };
-      }
-      return item;
-    });
-
-    this.updateStore({
-      ...storeData,
-      content: {
-        ...storeData.content,
-        data: {
-          ...storeData.content?.data,
-          items,
-          initialDisplay,
-        },
-      },
-    });
+    const currentStore = this.getStore().getSnapshot();
+    const baseStoreData = this.getBaseStoreData();
+    if (!baseStoreData || !currentStore) {
+      return;
+    }
+    // Create the new store data to compare
+    const { userInfo, assets, globalStyle, theme, zIndex } = baseStoreData;
+    if (baseStoreInfoIsChanged(currentStore, baseStoreData)) {
+      this.updateStore({
+        userInfo,
+        assets,
+        globalStyle,
+        theme,
+        zIndex,
+      });
+    }
   }
 
   /**
@@ -215,26 +205,17 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 2. Processes checklist items with their completion and visibility states
    * 3. Returns a complete store data object with default values
    */
-  private async buildStoreData() {
+  private getBaseStoreData(): Omit<ChecklistStore, 'checklistData'> | undefined {
     // Get base information and content
     const baseInfo = this.getStoreBaseInfo();
-    const zIndex = baseInfo.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
-    const content = this.getContent();
-
-    // Process items to determine their status
-    const { items } = await processChecklistItems(content);
+    const zIndex = baseInfo?.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
+    if (!baseInfo) {
+      return undefined;
+    }
 
     // Return complete store data
     return {
-      ...defaultChecklistStore,
       ...baseInfo,
-      content: {
-        ...content,
-        data: {
-          ...content.data,
-          items,
-        },
-      },
       openState: false,
       zIndex: zIndex + 100,
     };
@@ -293,21 +274,17 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * @param {string} itemId - The ID of the item to update
    */
   private updateItemClickedState(itemId: string) {
-    const content = this.getStore().getSnapshot().content;
-    if (!content) return;
+    const checklistData = this.getStore().getSnapshot().checklistData;
+    if (!checklistData) return;
 
-    const checklistData = content.data as ChecklistData;
     const updatedItems = checklistData.items.map((storeItem) =>
       storeItem.id === itemId ? { ...storeItem, isClicked: true } : storeItem,
     );
 
     this.updateStore({
-      content: {
-        ...content,
-        data: {
-          ...checklistData,
-          items: updatedItems,
-        },
+      checklistData: {
+        ...checklistData,
+        items: updatedItems,
       },
     });
   }
@@ -341,12 +318,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
    */
   private async itemConditionsMonitor() {
     // Get content and validate
-    const content = this.getStore().getSnapshot().content;
-    if (!content) return;
-
-    const checklistData = content.data as ChecklistData;
+    const content = this.getContent();
+    const checklistData = this.getStore().getSnapshot().checklistData;
     const items = checklistData.items;
-    if (!items?.length) return;
 
     // Process items to determine their status
     const { items: updatedItems, hasChanges } = await processChecklistItems(content);
@@ -355,20 +329,17 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Update store if there are changes or if we need to expand
     if (hasChanges || shouldExpand) {
       this.updateStore({
-        content: {
-          ...content,
-          data: {
-            ...checklistData,
-            items: updatedItems,
-            ...(shouldExpand && { initialDisplay: ChecklistInitialDisplay.EXPANDED }),
-          },
+        checklistData: {
+          ...checklistData,
+          items: updatedItems,
+          ...(shouldExpand && { initialDisplay: ChecklistInitialDisplay.EXPANDED }),
         },
       });
     }
 
     // Trigger completion events
     for (const item of updatedItems) {
-      if (item.isCompleted && !checklistItemIsCompleted(content, item)) {
+      if (item.isCompleted && !checklistItemIsCompleted(content.latestSession?.bizEvent, item)) {
         await this.reportTaskCompleteEvent(item);
       }
     }
