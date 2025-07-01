@@ -99,8 +99,8 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
 
   const handleOpenChange = useCallback(
     async (open: boolean) => {
-      await onOpenChange?.(open);
       setIsOpen(open);
+      await onOpenChange?.(open);
     },
     [onOpenChange],
   );

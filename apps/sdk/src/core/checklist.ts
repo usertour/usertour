@@ -7,13 +7,10 @@ import {
   contentEndReason,
   EventAttributes,
   RulesCondition,
-  SDKContent,
 } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
 import { checklistIsDimissed } from '../utils/conditions';
-import { App } from './app';
 import { BaseContent } from './base-content';
-import { defaultChecklistStore } from './common';
 import {
   checklistItemIsCompleted,
   getChecklistInitialDisplay,
@@ -26,15 +23,6 @@ import { ChecklistStore } from '../types/store';
 
 export class Checklist extends BaseContent<ChecklistStore> {
   private hasPendingCompletedItems = false; // Track if there are pending completed items to expand
-
-  /**
-   * Constructs a Checklist instance.
-   * @param {App} instance - The app instance
-   * @param {SDKContent} content - The checklist content
-   */
-  constructor(instance: App, content: SDKContent) {
-    super(instance, content, defaultChecklistStore);
-  }
 
   /**
    * Monitors the checklist state and updates its visibility.

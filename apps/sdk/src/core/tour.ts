@@ -21,9 +21,7 @@ import { TourStore } from '../types/store';
 import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
-import { type App } from './app';
 import { BaseContent } from './base-content';
-import { defaultTourStore } from './common';
 import { ElementWatcher } from './element-watcher';
 import { logger } from '../utils/logger';
 
@@ -31,10 +29,6 @@ export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
   private triggerTimeouts: NodeJS.Timeout[] = []; // Store timeout IDs
   private flowCompletedReported = false; // Track if FLOW_COMPLETED has been reported
-
-  constructor(instance: App, content: SDKContent) {
-    super(instance, content, defaultTourStore);
-  }
 
   /**
    * Monitors and updates the tour state

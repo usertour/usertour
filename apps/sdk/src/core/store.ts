@@ -13,7 +13,7 @@ export class ExternalStore<T> {
    * Creates a new store instance with initial data
    * @param initial The initial state value
    */
-  constructor(initial: T) {
+  constructor(initial: T | undefined) {
     this.listeners = new Set();
     this.data = initial;
     autoBind(this);

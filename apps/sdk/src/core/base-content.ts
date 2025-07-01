@@ -35,7 +35,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private isStarted = false;
   private sessionId = '';
   private currentStep?: Step | null;
-  constructor(instance: App, content: SDKContent, defaultStore: T) {
+  constructor(instance: App, content: SDKContent, defaultStore?: T) {
     super();
     autoBind(this);
     this.store = new ExternalStore<T>(defaultStore);
