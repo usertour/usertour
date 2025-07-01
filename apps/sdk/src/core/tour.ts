@@ -193,7 +193,6 @@ export class Tour extends BaseContent<TourStore> {
 
     // Combine all store data with proper defaults
     return {
-      ...defaultTourStore, // Start with default values
       triggerRef: null, // Reset trigger reference
       ...baseInfo, // Add base information
       currentStep, // Add current step
