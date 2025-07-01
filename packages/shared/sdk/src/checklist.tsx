@@ -580,9 +580,7 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
     const handleItemClick = useCallback(
       (item: ChecklistItemType, index: number) => {
         if (disabledUpdate) {
-          if (onClick) {
-            onClick(item, index);
-          }
+          onClick?.(item, index);
           return;
         }
         if (!item.isCompleted) {
@@ -590,23 +588,22 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
         }
         onClick?.(item, index);
       },
-      [onClick, updateItemStatus],
+      [onClick, updateItemStatus, disabledUpdate],
     );
 
     return (
       <div ref={ref} className="flex flex-col space-y-1">
-        {data.items.map(
-          (item, index) =>
-            item.isVisible !== false && (
-              <ChecklistItem
-                key={item.id}
-                item={item}
-                index={index}
-                onClick={handleItemClick}
-                textDecoration={textDecoration}
-              />
-            ),
-        )}
+        {data.items
+          .filter((item) => item.isVisible !== false)
+          .map((item, index) => (
+            <ChecklistItem
+              key={item.id}
+              item={item}
+              index={index}
+              onClick={handleItemClick}
+              textDecoration={textDecoration}
+            />
+          ))}
       </div>
     );
   },
@@ -651,19 +648,19 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
         : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
     );
 
+    const handleDismiss = useCallback(() => {
+      if (data.preventDismissChecklist) {
+        return;
+      }
+      if (isAllCompleted) {
+        onDismiss?.();
+      } else {
+        setShowDismissConfirm(true);
+      }
+    }, [data.preventDismissChecklist, isAllCompleted, onDismiss, setShowDismissConfirm]);
+
     return (
-      <div
-        ref={ref}
-        {...props}
-        className={baseClassName}
-        onClick={
-          data.preventDismissChecklist
-            ? undefined
-            : isAllCompleted
-              ? onDismiss
-              : () => setShowDismissConfirm(true)
-        }
-      >
+      <div ref={ref} {...props} className={baseClassName} onClick={handleDismiss}>
         {!data.preventDismissChecklist && 'Dismiss checklist'}
       </div>
     );
@@ -679,7 +676,10 @@ ChecklistPopperContent.displayName = 'ChecklistPopperContent';
 const ChecklistPopperContentBody = (props: { children: React.ReactNode }) => {
   const { children } = props;
   const { showDismissConfirm } = useChecklistRootContext();
-  return <>{showDismissConfirm ? <ChecklistDismissConfirm /> : children}</>;
+  if (showDismissConfirm) {
+    return <ChecklistDismissConfirm />;
+  }
+  return children;
 };
 
 ChecklistPopperContentBody.displayName = 'ChecklistPopperContentBody';
