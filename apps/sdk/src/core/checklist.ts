@@ -23,6 +23,7 @@ import { ChecklistStore } from '../types/store';
 
 export class Checklist extends BaseContent<ChecklistStore> {
   private hasPendingCompletedItems = false; // Track if there are pending completed items to expand
+  private openState: boolean | null = null; // Track actual component state
 
   /**
    * Monitors the checklist state and updates its visibility.
@@ -119,19 +120,64 @@ export class Checklist extends BaseContent<ChecklistStore> {
   /**
    * Expands or collapses the checklist
    * @param isExpanded - Whether the checklist should be expanded or collapsed
+   * @returns Promise that resolves when the state update is complete
    */
-  expand(isExpanded: boolean) {
+  expand(isExpanded: boolean): Promise<void> {
     const store = this.getStore().getSnapshot();
     if (!store) {
-      return;
+      return Promise.resolve();
     }
+
+    // Check if the component is already in the target state
+    if (this.openState === isExpanded) {
+      return Promise.resolve();
+    }
+
+    const initialDisplay = isExpanded
+      ? ChecklistInitialDisplay.EXPANDED
+      : ChecklistInitialDisplay.BUTTON;
+
+    // Update store to trigger component state change
     this.updateStore({
       checklistData: {
         ...store.checklistData,
-        initialDisplay: isExpanded
-          ? ChecklistInitialDisplay.EXPANDED
-          : ChecklistInitialDisplay.BUTTON,
+        initialDisplay,
       },
+    });
+
+    // Return promise that waits for state update
+    return this.waitOpenState(isExpanded);
+  }
+
+  /**
+   * Waits for the component state to update to the target state
+   * @param targetOpenState - The target open state to wait for
+   * @returns Promise that resolves when the state matches the target
+   */
+  private waitOpenState(targetOpenState: boolean): Promise<void> {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      const timeout = 1000; // 1 second timeout
+
+      const checkState = () => {
+        if (this.openState === targetOpenState) {
+          resolve();
+          return;
+        }
+
+        // Check if timeout exceeded
+        if (Date.now() - startTime > timeout) {
+          console.warn('Checklist expand timeout: state update took too long');
+          resolve();
+          return;
+        }
+
+        // Check again after a short delay
+        setTimeout(checkState, 10);
+      };
+
+      // Start checking the state
+      setTimeout(checkState, 10);
     });
   }
 
@@ -251,23 +297,34 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
+   * Checks if a checklist item is completed
+   * @param item - The checklist item to check
+   * @returns True if the item is completed, false otherwise
+   */
+  async itemIsCompleted(item: ChecklistItemType) {
+    const { items } = await processChecklistItems(this.getContent());
+    return items.find((i) => i.id === item.id)?.isCompleted || false;
+  }
+
+  /**
    * Handles the click event of a checklist item
    * @param item - The checklist item that was clicked
    */
-  handleItemClick = async (item: ChecklistItemType) => {
-    this.expand(false);
+  async handleItemClick(item: ChecklistItemType) {
     // Update item clicked state in store
     this.updateItemClickedState(item.id);
 
     //report event
     await this.reportTaskClickEvent(item);
-    //handle actions
+
+    const itemIsCompleted = await this.itemIsCompleted(item);
+    if (!itemIsCompleted) {
+      await this.expand(false);
+    }
+
+    //handle actions after state update is complete
     await this.handleActions(item.clickedActions);
-    // const itemIsCompleted = checklistItemIsCompleted(this.getContent(), item);
-    // if (!itemIsCompleted) {
-    // await this.expand(false);
-    // }
-  };
+  }
 
   /**
    * Monitors and updates the conditions of checklist items.
@@ -326,8 +383,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   ): boolean {
     // First check if there are pending completed items from previous tour conflicts
     if (this.hasPendingCompletedItems) {
-      const activeTour = this.getActiveTour();
-      if (!activeTour?.isShow()) {
+      if (!this.getActiveTour()) {
         // No active tour, safe to expand
         this.hasPendingCompletedItems = false;
         return true;
@@ -341,8 +397,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
     if (hasNewCompleted) {
       // Check if there's an active tour that would prevent immediate expansion
-      const activeTour = this.getActiveTour();
-      if (activeTour?.isShow()) {
+      if (this.getActiveTour()) {
         // Store the state to expand later when tour closes
         this.hasPendingCompletedItems = true;
         return false; // Don't expand immediately
@@ -389,6 +444,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * @param {boolean} open - Whether the checklist is open
    */
   async handleOpenChange(open: boolean) {
+    // Update actual component state based on open status
+    this.openState = open;
+
     if (open) {
       await this.reportSeenEvent();
     } else {

@@ -44,7 +44,6 @@ interface ChecklistRootContextValue {
   themeSetting?: ThemeTypesSetting;
   data: ChecklistData;
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
   updateItemStatus: (itemId: string, isCompleted: boolean) => void;
   showDismissConfirm: boolean;
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
@@ -146,7 +145,6 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         themeSetting,
         data,
         isOpen,
-        setIsOpen,
         updateItemStatus,
         showDismissConfirm,
         setShowDismissConfirm,
