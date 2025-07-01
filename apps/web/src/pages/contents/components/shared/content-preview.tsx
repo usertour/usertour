@@ -144,7 +144,7 @@ const ChecklistPreview = (props: {
   return (
     <ChecklistRoot data={data} theme={currentTheme} zIndex={10000}>
       <ChecklistContainer>
-        <ChecklistStaticPopper zIndex={10000}>
+        <ChecklistStaticPopper>
           <ChecklistDropdown />
           <ChecklistProgress width={45} />
           <ChecklistItems />

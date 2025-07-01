@@ -334,32 +334,52 @@ ChecklistContainer.displayName = 'ChecklistContainer';
 
 const ChecklistPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
-    const { children } = props;
+    const { children, ...popperProps } = props;
     const { globalStyle, isOpen, themeSetting, handleOpenChange } = useChecklistRootContext();
 
+    // Memoize the launcher click handler to prevent unnecessary re-renders
+    const handleLauncherClick = useCallback(async () => {
+      await handleOpenChange?.(true);
+    }, [handleOpenChange]);
+
+    // Memoize the modal content props to prevent unnecessary re-renders
+    const modalContentProps = useMemo(
+      () => ({
+        position: themeSetting?.checklist.placement.position as ModalPosition,
+        positionOffsetX: themeSetting?.checklist.placement.positionOffsetX,
+        positionOffsetY: themeSetting?.checklist.placement.positionOffsetY,
+        enabledBackdrop: false,
+        width: `${themeSetting?.checklist.width}px`,
+      }),
+      [
+        themeSetting?.checklist.placement.position,
+        themeSetting?.checklist.placement.positionOffsetX,
+        themeSetting?.checklist.placement.positionOffsetY,
+        themeSetting?.checklist.width,
+      ],
+    );
+
+    // Memoize the popper props to prevent unnecessary re-renders
+    const optimizedPopperProps = useMemo(
+      () => ({
+        ...popperProps,
+        triggerRef: undefined,
+        open: isOpen,
+        globalStyle,
+      }),
+      [popperProps, isOpen, globalStyle],
+    );
+
+    // Early return for closed state
+    if (!isOpen) {
+      return <ChecklistLauncher onClick={handleLauncherClick} />;
+    }
+
+    // Main content when open
     return (
-      <>
-        {isOpen && (
-          <Popper
-            triggerRef={undefined}
-            open={isOpen}
-            ref={ref}
-            {...props}
-            globalStyle={globalStyle}
-          >
-            <PopperModalContentPotal
-              position={themeSetting?.checklist.placement.position as ModalPosition}
-              positionOffsetX={themeSetting?.checklist.placement.positionOffsetX}
-              positionOffsetY={themeSetting?.checklist.placement.positionOffsetY}
-              enabledBackdrop={false}
-              width={`${themeSetting?.checklist.width}px`}
-            >
-              {children}
-            </PopperModalContentPotal>
-          </Popper>
-        )}
-        {!isOpen && <ChecklistLauncher onClick={async () => await handleOpenChange?.(true)} />}
-      </>
+      <Popper ref={ref} {...optimizedPopperProps}>
+        <PopperModalContentPotal {...modalContentProps}>{children}</PopperModalContentPotal>
+      </Popper>
     );
   },
 );
@@ -368,33 +388,51 @@ ChecklistPopper.displayName = 'ChecklistPopper';
 
 const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
-    const { children, assets } = props;
+    const { children, assets, ...popperProps } = props;
     const { globalStyle, isOpen, themeSetting } = useChecklistRootContext();
+
+    // Memoize the modal content props to prevent unnecessary re-renders
+    const modalContentProps = useMemo(
+      () => ({
+        position: themeSetting?.checklist.placement.position as ModalPosition,
+        positionOffsetX: themeSetting?.checklist.placement.positionOffsetX,
+        positionOffsetY: themeSetting?.checklist.placement.positionOffsetY,
+        enabledBackdrop: false,
+        width: `${themeSetting?.checklist.width}px`,
+      }),
+      [
+        themeSetting?.checklist.placement.position,
+        themeSetting?.checklist.placement.positionOffsetX,
+        themeSetting?.checklist.placement.positionOffsetY,
+        themeSetting?.checklist.width,
+      ],
+    );
+
+    // Memoize the popper props to prevent unnecessary re-renders
+    const optimizedPopperProps = useMemo(
+      () => ({
+        ...popperProps,
+        triggerRef: undefined,
+        open: isOpen,
+        globalStyle,
+      }),
+      [popperProps, isOpen, globalStyle],
+    );
+
+    // Early return for closed state
+    if (!isOpen) {
+      return <ChecklistLauncherFrame assets={assets} />;
+    }
+
+    // Main content when open
     return (
-      <>
-        {isOpen && (
-          <Popper
-            triggerRef={undefined}
-            open={isOpen}
-            ref={ref}
-            {...props}
-            globalStyle={globalStyle}
-          >
-            <PopperModalContentPotal
-              position={themeSetting?.checklist.placement.position as ModalPosition}
-              positionOffsetX={themeSetting?.checklist.placement.positionOffsetX}
-              positionOffsetY={themeSetting?.checklist.placement.positionOffsetY}
-              enabledBackdrop={false}
-              width={`${themeSetting?.checklist.width}px`}
-            >
-              <PopperContentFrame ref={ref} {...props}>
-                {children}
-              </PopperContentFrame>
-            </PopperModalContentPotal>
-          </Popper>
-        )}
-        {!isOpen && <ChecklistLauncherFrame assets={assets} />}
-      </>
+      <Popper ref={ref} {...optimizedPopperProps}>
+        <PopperModalContentPotal {...modalContentProps}>
+          <PopperContentFrame ref={ref} {...props}>
+            {children}
+          </PopperContentFrame>
+        </PopperModalContentPotal>
+      </Popper>
     );
   },
 );
@@ -468,33 +506,43 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
   );
 });
 
-const ChecklistStaticPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
-  (props, ref) => {
-    const { children } = props;
-    const { globalStyle, zIndex } = useChecklistRootContext();
-    return (
-      <>
-        <Popper
-          triggerRef={undefined}
-          open={true}
-          ref={ref}
-          globalStyle={globalStyle}
-          zIndex={zIndex}
-        >
-          <PopperStaticContent
-            ref={ref}
-            globalStyle={globalStyle}
-            height={'auto'}
-            width={`${360}px`}
-            showArrow={false}
-          >
-            {children}
-          </PopperStaticContent>
-        </Popper>
-      </>
-    );
-  },
-);
+const ChecklistStaticPopper = forwardRef<
+  HTMLDivElement,
+  Omit<PopperProps, 'globalStyle' | 'zIndex'>
+>((props, ref) => {
+  const { children, ...popperProps } = props;
+  const { globalStyle, zIndex } = useChecklistRootContext();
+
+  // Memoize the popper props to prevent unnecessary re-renders
+  const optimizedPopperProps = useMemo(
+    () => ({
+      ...popperProps,
+      triggerRef: undefined,
+      open: true,
+      globalStyle,
+      zIndex,
+    }),
+    [popperProps, globalStyle, zIndex],
+  );
+
+  // Memoize the static content props
+  const staticContentProps = useMemo(
+    () => ({
+      ref,
+      globalStyle,
+      height: 'auto',
+      width: '360px',
+      showArrow: false,
+    }),
+    [globalStyle],
+  );
+
+  return (
+    <Popper {...optimizedPopperProps}>
+      <PopperStaticContent {...staticContentProps}>{children}</PopperStaticContent>
+    </Popper>
+  );
+});
 
 ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 
