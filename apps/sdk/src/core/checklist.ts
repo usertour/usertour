@@ -20,6 +20,7 @@ import {
   getChecklistInitialDisplay,
   processChecklistItems,
   isSendChecklistCompletedEvent,
+  checklistHasNewCompletedItems,
 } from '../utils/content-utils';
 import { ChecklistStore } from '../types/store';
 
@@ -379,41 +380,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Checks if there are new completed items compared to the initial state
-   * @param currentItems - Current checklist items
-   * @param previousItems - Previous checklist items
-   */
-  private hasNewCompletedItems(
-    currentItems: ChecklistItemType[],
-    previousItems: ChecklistItemType[],
-  ): boolean {
-    if (
-      currentItems.filter((item) => item.isCompleted && item.isVisible && item.isShowAnimation)
-        .length > 0
-    ) {
-      return true;
-    }
-    // Get visible completed item IDs from previous collapsed state
-    const previousCompletedIds = new Set(
-      previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
-    );
-
-    // Get visible completed item IDs from current state
-    const currentCompletedIds = new Set(
-      currentItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
-    );
-
-    // Check if there are any new completed items (items that are completed now but weren't before)
-    for (const itemId of currentCompletedIds) {
-      if (!previousCompletedIds.has(itemId)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
    * Checks if there are new completed items and handles tour conflict
    * @param currentItems - Current checklist items
    * @param previousItems - Previous checklist items
@@ -435,7 +401,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
 
     // Check for new completed items
-    const hasNewCompleted = this.hasNewCompletedItems(currentItems, previousItems);
+    const hasNewCompleted = checklistHasNewCompletedItems(currentItems, previousItems);
 
     if (hasNewCompleted) {
       // Check if there's an active tour that would prevent immediate expansion

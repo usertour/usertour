@@ -453,6 +453,43 @@ export const processChecklistItems = async (content: SDKContent) => {
 };
 
 /**
+ * Checks if a checklist has new completed items
+ * @param currentItems - The current items
+ * @param previousItems - The previous items
+ * @returns True if the checklist has new completed items, false otherwise
+ */
+export const checklistHasNewCompletedItems = (
+  currentItems: ChecklistItemType[],
+  previousItems: ChecklistItemType[],
+): boolean => {
+  const isShowAnimationItems = currentItems.filter(
+    (item) => item.isCompleted && item.isVisible && item.isShowAnimation,
+  );
+  if (isShowAnimationItems.length > 0) {
+    return true;
+  }
+
+  // Get visible completed item IDs from previous collapsed state
+  const previousCompletedIds = new Set(
+    previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+  );
+
+  // Get visible completed item IDs from current state
+  const currentCompletedIds = new Set(
+    currentItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+  );
+
+  // Check if there are any new completed items (items that are completed now but weren't before)
+  for (const itemId of currentCompletedIds) {
+    if (!previousCompletedIds.has(itemId)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
  * Checks if two tours are the same
  * @param tour1 - The first tour
  * @param tour2 - The second tour
