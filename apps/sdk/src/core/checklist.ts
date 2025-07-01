@@ -60,9 +60,8 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 1. The checklist has valid data and a latest session
    * 2. The checklist has not been dismissed
    *
-   * @returns {string | null} The session ID if reusable, null otherwise
    */
-  getReusedSessionId() {
+  getReusedSessionId(): string | null {
     const checklistContent = this.getContent();
     const hasValidContent = checklistContent.data && checklistContent.latestSession;
 
@@ -383,7 +382,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Checks if there are new completed items compared to the initial state
    * @param currentItems - Current checklist items
    * @param previousItems - Previous checklist items
-   * @returns True if there are new completed items, false otherwise
    */
   private hasNewCompletedItems(
     currentItems: ChecklistItemType[],
@@ -419,7 +417,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Checks if there are new completed items and handles tour conflict
    * @param currentItems - Current checklist items
    * @param previousItems - Previous checklist items
-   * @returns True if there are new completed items and no active tour, false otherwise
    */
   private shouldExpandForNewCompletedItems(
     currentItems: ChecklistItemType[],
@@ -455,7 +452,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
   /**
    * Checks if the checklist is active
-   * @returns True if the checklist is active, false otherwise
    */
   isActiveChecklist() {
     return this.getActiveChecklist() === this;
@@ -516,7 +512,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
   /**
    * Checks if the checklist is default expanded
-   * @returns True if the checklist is default expanded, false otherwise
    */
   defaultIsExpanded() {
     const content = this.getContent();
