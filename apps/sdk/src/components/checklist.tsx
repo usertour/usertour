@@ -94,10 +94,14 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     checklist.getStore().getSnapshot,
   );
 
+  if (!store) {
+    return <></>;
+  }
+
   const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex } = store;
 
   if (!theme || !checklistData || !openState || !userInfo) {
-    return null;
+    return <></>;
   }
 
   return (

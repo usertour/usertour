@@ -208,7 +208,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Set the store
    * @param store - The store to set
    */
-  setStore(store: T) {
+  setStore(store: T | undefined) {
     this.store.setData(store);
   }
 
@@ -217,7 +217,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {boolean} True if the content is open, false otherwise
    */
   isOpen(): boolean {
-    return this.getStore().getSnapshot().openState === true;
+    return this.getStore()?.getSnapshot()?.openState === true;
   }
 
   /**

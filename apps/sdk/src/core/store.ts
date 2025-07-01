@@ -5,7 +5,7 @@ import autoBind from '../utils/auto-bind';
  */
 export class ExternalStore<T> {
   // Stores the current state
-  private data: T;
+  private data: T | undefined;
   // Set of subscriber callback functions
   private listeners: Set<() => void>;
 
@@ -23,7 +23,7 @@ export class ExternalStore<T> {
    * Replaces the entire state with new data
    * @param newData New state to set
    */
-  public setData(newData: T): void {
+  public setData(newData: T | undefined): void {
     this.data = newData;
     this.emitChange();
   }
@@ -33,8 +33,10 @@ export class ExternalStore<T> {
    * @param partialData Partial state to merge with current state
    */
   public update(partialData: Partial<T>): void {
-    this.data = { ...this.data, ...partialData };
-    this.emitChange();
+    if (this.data) {
+      this.data = { ...this.data, ...partialData };
+      this.emitChange();
+    }
   }
 
   /**
@@ -51,7 +53,7 @@ export class ExternalStore<T> {
    * Returns the current state
    * @returns Current state value
    */
-  public getSnapshot(): T {
+  public getSnapshot(): T | undefined {
     return this.data;
   }
 

@@ -600,7 +600,11 @@ export class Tour extends BaseContent<TourStore> {
    * @returns {Promise<void>}
    */
   async checkStepVisible(): Promise<void> {
-    const { triggerRef, currentStep, openState } = this.getStore().getSnapshot();
+    const store = this.getStore()?.getSnapshot();
+    if (!store) {
+      return;
+    }
+    const { triggerRef, currentStep, openState } = store;
 
     // Early return if no current step
     if (!this.getCurrentStep() || !currentStep) {
@@ -765,7 +769,7 @@ export class Tour extends BaseContent<TourStore> {
    * @returns {boolean} True if the tour is visible and active, false otherwise
    */
   isShow(): boolean {
-    const { openState } = this.getStore().getSnapshot();
+    const openState = this.getStore().getSnapshot()?.openState || false;
     return this.isActiveTour() && Boolean(this.getCurrentStep()) && openState;
   }
 
@@ -774,7 +778,7 @@ export class Tour extends BaseContent<TourStore> {
    */
   reset() {
     this.setCurrentStep(null);
-    this.setStore(defaultTourStore);
+    this.setStore(undefined);
   }
 
   /**

@@ -274,7 +274,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * @param {string} itemId - The ID of the item to update
    */
   private updateItemClickedState(itemId: string) {
-    const checklistData = this.getStore().getSnapshot().checklistData;
+    const checklistData = this.getStore()?.getSnapshot()?.checklistData;
     if (!checklistData) return;
 
     const updatedItems = checklistData.items.map((storeItem) =>
@@ -319,7 +319,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private async itemConditionsMonitor() {
     // Get content and validate
     const content = this.getContent();
-    const checklistData = this.getStore().getSnapshot().checklistData;
+    const store = this.getStore()?.getSnapshot();
+    if (!store) {
+      return;
+    }
+    const checklistData = store.checklistData;
     const items = checklistData.items;
 
     // Process items to determine their status
@@ -439,7 +443,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     if (this.isActiveChecklist()) {
       this.unsetActiveChecklist();
     }
-    this.setStore(defaultChecklistStore);
+    this.setStore(undefined);
   }
 
   /**

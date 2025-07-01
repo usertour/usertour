@@ -45,8 +45,9 @@ export class Launcher extends BaseContent<LauncherStore> {
       return;
     }
 
-    const { openState } = this.getStore().getSnapshot();
+    const store = this.getStore().getSnapshot();
     const { isHidden } = await this.watcher.checkVisibility();
+    const openState = store?.openState;
 
     // Hide launcher if it's temporarily hidden or target element is not visible
     if (this.isTemporarilyHidden() || isHidden) {
@@ -243,7 +244,7 @@ export class Launcher extends BaseContent<LauncherStore> {
    */
   destroy() {
     // Reset store to default state
-    this.setStore(defaultLauncherStore);
+    this.setStore(undefined);
 
     // Clean up element watcher
     if (this.watcher) {
