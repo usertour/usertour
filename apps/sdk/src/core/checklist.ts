@@ -66,33 +66,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Ends the latest session
-   * @param reason - The reason for ending the session
-   */
-  async endLatestSession(reason: contentEndReason) {
-    const content = this.getContent();
-    const sessionId = this.getReusedSessionId();
-    if (!sessionId) {
-      return;
-    }
-    const baseEventData = {
-      [EventAttributes.CHECKLIST_ID]: content.contentId,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: content.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: content.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-      [EventAttributes.CHECKLIST_END_REASON]: reason,
-    };
-
-    await this.reportEventWithSession({
-      sessionId,
-      eventName: BizEvents.CHECKLIST_DISMISSED,
-      eventData: {
-        ...baseEventData,
-      },
-    });
-  }
-
-  /**
    * Handles the visibility state of the checklist.
    * This method:
    * 1. Checks if checklist has started and not been dismissed
@@ -451,6 +424,33 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * Initializes event listeners for checklist lifecycle and item events.
    */
   initializeEventListeners() {}
+
+  /**
+   * Ends the latest session
+   * @param reason - The reason for ending the session
+   */
+  async endLatestSession(reason: contentEndReason) {
+    const content = this.getContent();
+    const sessionId = this.getReusedSessionId();
+    if (!sessionId) {
+      return;
+    }
+    const baseEventData = {
+      [EventAttributes.CHECKLIST_ID]: content.contentId,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: content.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: content.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+      [EventAttributes.CHECKLIST_END_REASON]: reason,
+    };
+
+    await this.reportEventWithSession({
+      sessionId,
+      eventName: BizEvents.CHECKLIST_DISMISSED,
+      eventData: {
+        ...baseEventData,
+      },
+    });
+  }
 
   /**
    * Reports a checklist event with session and additional data.
