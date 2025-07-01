@@ -415,8 +415,9 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
         triggerRef: undefined,
         open: isOpen,
         globalStyle,
+        assets,
       }),
-      [popperProps, isOpen, globalStyle],
+      [popperProps, isOpen, globalStyle, assets],
     );
 
     // Early return for closed state
