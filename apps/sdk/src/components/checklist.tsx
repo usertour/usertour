@@ -33,7 +33,8 @@ type ChecklistWidgetCoreProps = {
   handleItemClick: (item: ChecklistItemType, index: number) => void;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   handleDismiss: () => Promise<void>;
-  handleOpenChange: (open: boolean) => Promise<void>;
+  handleOpenChange: (open: boolean) => void;
+  reportOpenChangeEvent: (open: boolean) => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
 };
@@ -62,6 +63,7 @@ const ChecklistWidgetCore = ({
   handleOnClick,
   handleDismiss,
   handleOpenChange,
+  reportOpenChangeEvent,
   removeBranding,
   zIndex,
 }: ChecklistWidgetCoreProps) => (
@@ -71,6 +73,7 @@ const ChecklistWidgetCore = ({
     defaultOpen={data.initialDisplay === ChecklistInitialDisplay.EXPANDED}
     onDismiss={handleDismiss}
     onOpenChange={handleOpenChange}
+    reportOpenChangeEvent={reportOpenChangeEvent}
     zIndex={zIndex}
   >
     <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
@@ -114,6 +117,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
       handleOnClick={checklist.handleOnClick}
       handleDismiss={checklist.handleDismiss}
       handleOpenChange={checklist.handleOpenChange}
+      reportOpenChangeEvent={checklist.reportOpenChangeEvent}
       removeBranding={sdkConfig.removeBranding}
       zIndex={zIndex}
     />

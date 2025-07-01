@@ -48,7 +48,7 @@ interface ChecklistRootContextValue {
   showDismissConfirm: boolean;
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
   onDismiss?: () => Promise<void>;
-  handleOpenChange?: (open: boolean) => Promise<void>;
+  handleManualOpenChange?: (open: boolean) => Promise<void>;
   // Animation state tracking
   pendingAnimationItems: Set<string>;
   removePendingAnimation: (itemId: string) => void;
@@ -71,7 +71,8 @@ interface ChecklistRootProps {
   data: ChecklistData;
   defaultOpen?: boolean;
   onDismiss?: () => Promise<void>;
-  onOpenChange?: (open: boolean) => Promise<void>;
+  onOpenChange?: (open: boolean) => void;
+  reportOpenChangeEvent?: (open: boolean) => Promise<void>;
   zIndex: number;
 }
 
@@ -83,6 +84,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     defaultOpen = true,
     onDismiss,
     onOpenChange,
+    reportOpenChangeEvent,
     zIndex,
   } = props;
   const { globalStyle, themeSetting } = useThemeStyles(theme);
@@ -96,17 +98,23 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     setData(initialData);
   }, [initialData]);
 
-  const handleOpenChange = useCallback(
+  //manual control open state
+  const handleManualOpenChange = useCallback(
     async (open: boolean) => {
       setIsOpen(open);
-      await onOpenChange?.(open);
+      await reportOpenChangeEvent?.(open);
     },
-    [onOpenChange],
+    [reportOpenChangeEvent],
   );
 
   useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen]);
+
+  // Handle business-controlled initialDisplay changes (no event reporting)
+  useEffect(() => {
     const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
-    handleOpenChange(shouldBeOpen);
+    setIsOpen(shouldBeOpen);
   }, [data.initialDisplay]);
 
   // Track completion changes and add to pending animations if checklist is closed
@@ -149,7 +157,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         showDismissConfirm,
         setShowDismissConfirm,
         onDismiss,
-        handleOpenChange,
+        handleManualOpenChange,
         pendingAnimationItems,
         removePendingAnimation,
         zIndex,
@@ -333,12 +341,12 @@ ChecklistContainer.displayName = 'ChecklistContainer';
 const ChecklistPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
     const { children, ...popperProps } = props;
-    const { globalStyle, isOpen, themeSetting, handleOpenChange } = useChecklistRootContext();
+    const { globalStyle, isOpen, themeSetting, handleManualOpenChange } = useChecklistRootContext();
 
     // Memoize the launcher click handler to prevent unnecessary re-renders
     const handleLauncherClick = useCallback(async () => {
-      await handleOpenChange?.(true);
-    }, [handleOpenChange]);
+      await handleManualOpenChange?.(true);
+    }, [handleManualOpenChange]);
 
     // Memoize the modal content props to prevent unnecessary re-renders
     const modalContentProps = useMemo(
@@ -480,7 +488,7 @@ ChecklistLauncherFrame.displayName = 'ChecklistLauncherFrame';
 
 const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>((props, _) => {
   const { globalStyle, onSizeChange } = props;
-  const { data, themeSetting, handleOpenChange } = useChecklistRootContext();
+  const { data, themeSetting, handleManualOpenChange } = useChecklistRootContext();
   const { document } = useFrame();
 
   useEffect(() => {
@@ -499,7 +507,7 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
       height={themeSetting?.checklistLauncher.height}
       number={number}
       isCompleted={isCompleted}
-      onClick={async () => await handleOpenChange?.(true)}
+      onClick={async () => await handleManualOpenChange?.(true)}
       onSizeChange={onSizeChange}
     />
   );
@@ -547,7 +555,7 @@ ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 
 const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { handleOpenChange } = useChecklistRootContext();
+    const { handleManualOpenChange } = useChecklistRootContext();
     return (
       <div
         className="rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-pointer"
@@ -557,7 +565,7 @@ const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
         <DropDownIcon
           height={24}
           width={24}
-          onClick={async () => await handleOpenChange?.(false)}
+          onClick={async () => await handleManualOpenChange?.(false)}
         />
       </div>
     );

@@ -342,32 +342,36 @@ export class Checklist extends BaseContent<ChecklistStore> {
       return;
     }
     const checklistData = store.checklistData;
-    const items = checklistData.items;
 
     // Process items to determine their status
-    const { items: updatedItems, hasChanges } = await processChecklistItems(content);
+    const { items, hasChanges } = await processChecklistItems(content);
     // Check if we need to update initialDisplay to EXPANDED
-    const shouldExpand = this.shouldExpandForNewCompletedItems(updatedItems, items);
+    const shouldExpand = this.shouldExpandForNewCompletedItems(items, checklistData.items);
     // Update store if there are changes or if we need to expand
-    if (hasChanges || shouldExpand) {
+    if (hasChanges) {
       this.updateStore({
         checklistData: {
           ...checklistData,
-          items: updatedItems,
-          ...(shouldExpand && { initialDisplay: ChecklistInitialDisplay.EXPANDED }),
+          items,
         },
       });
     }
 
+    // Expand the checklist if there are new completed items
+    if (shouldExpand) {
+      await this.expand(true);
+      await this.reportOpenChangeEvent(true);
+    }
+
     // Trigger completion events
-    for (const item of updatedItems) {
+    for (const item of items) {
       if (item.isCompleted && !checklistItemIsCompleted(content.latestSession?.bizEvent, item)) {
         await this.reportTaskCompleteEvent(item);
       }
     }
 
     // Check if all items are completed
-    if (isSendChecklistCompletedEvent(updatedItems, content.latestSession)) {
+    if (isSendChecklistCompletedEvent(items, content.latestSession)) {
       await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
     }
   }
@@ -439,19 +443,25 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Handles the open/close state change of the checklist.
-   * Triggers the appropriate event based on the open state.
+   * Reports the open/close event of the checklist.
    * @param {boolean} open - Whether the checklist is open
    */
-  async handleOpenChange(open: boolean) {
-    // Update actual component state based on open status
-    this.openState = open;
-
+  async reportOpenChangeEvent(open: boolean) {
     if (open) {
       await this.reportSeenEvent();
     } else {
       await this.reportHiddenEvent();
     }
+  }
+
+  /**
+   * Handles the open/close state change of the checklist.
+   * Triggers the appropriate event based on the open state.
+   * @param {boolean} open - Whether the checklist is open
+   */
+  handleOpenChange(open: boolean) {
+    // Update actual component state based on open status
+    this.openState = open;
   }
 
   /**
