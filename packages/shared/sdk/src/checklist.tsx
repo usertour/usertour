@@ -71,8 +71,8 @@ interface ChecklistRootProps {
   data: ChecklistData;
   defaultOpen?: boolean;
   onDismiss?: () => Promise<void>;
-  onOpenChange?: (open: boolean) => void;
-  reportOpenChangeEvent?: (open: boolean) => Promise<void>;
+  onExpandedChange?: (expanded: boolean) => void;
+  reportExpandedChangeEvent?: (expanded: boolean) => Promise<void>;
   zIndex: number;
 }
 
@@ -83,8 +83,8 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     data: initialData,
     defaultOpen = true,
     onDismiss,
-    onOpenChange,
-    reportOpenChangeEvent,
+    onExpandedChange,
+    reportExpandedChangeEvent,
     zIndex,
   } = props;
   const { globalStyle, themeSetting } = useThemeStyles(theme);
@@ -102,13 +102,13 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   const handleManualOpenChange = useCallback(
     async (open: boolean) => {
       setIsOpen(open);
-      await reportOpenChangeEvent?.(open);
+      await reportExpandedChangeEvent?.(open);
     },
-    [reportOpenChangeEvent],
+    [reportExpandedChangeEvent],
   );
 
   useEffect(() => {
-    onOpenChange?.(isOpen);
+    onExpandedChange?.(isOpen);
   }, [isOpen]);
 
   // Handle business-controlled initialDisplay changes (no event reporting)
