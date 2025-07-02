@@ -409,18 +409,33 @@ export const checklistIsShowAnimation = (content: SDKContent, checklistItem: Che
   }
 
   // If the latest event is CHECKLIST_HIDDEN, check if there's a CHECKLIST_TASK_COMPLETED
-  // event for this specific item that occurred after the hidden event
+  // event for this specific item that occurred after the last SEEN event
   if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_HIDDEN) {
     // Get the latest task completed event for this item
     const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
       return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
     });
 
-    // Check if the task was completed after the checklist was hidden
-    const hiddenTime = new Date(latestHiddenOrSeenEvent.createdAt);
+    // Find the last CHECKLIST_SEEN event before the HIDDEN event
+    const seenEvents = hiddenOrSeenEvents.filter(
+      (event) => event.event?.codeName === BizEvents.CHECKLIST_SEEN,
+    );
+
+    // If there's no SEEN event before HIDDEN, show animation
+    if (seenEvents.length === 0) {
+      return true;
+    }
+
+    // Get the last SEEN event
+    const lastSeenEvent = seenEvents.reduce((latest, current) => {
+      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    });
+
+    // Check if the task was completed after the last SEEN event
+    const lastSeenTime = new Date(lastSeenEvent.createdAt);
     const completedTime = new Date(latestTaskCompletedEvent.createdAt);
 
-    return completedTime > hiddenTime;
+    return completedTime > lastSeenTime;
   }
 
   return false;
@@ -473,7 +488,9 @@ export const processChecklistItems = async (content: SDKContent) => {
     const updatedItem = updatedItems.find((updated) => updated.id === item.id);
     return (
       updatedItem &&
-      (item.isCompleted !== updatedItem.isCompleted || item.isVisible !== updatedItem.isVisible)
+      (item.isCompleted !== updatedItem.isCompleted ||
+        item.isVisible !== updatedItem.isVisible ||
+        item.isShowAnimation !== updatedItem.isShowAnimation)
     );
   });
 
