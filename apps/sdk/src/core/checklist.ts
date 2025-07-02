@@ -320,7 +320,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     await this.reportTaskClickEvent(item);
 
     const itemIsCompleted = await this.itemIsCompleted(item);
-    if (!itemIsCompleted) {
+    if (!itemIsCompleted && this.isExpanded()) {
       await this.expand(false);
       await this.reportOpenChangeEvent(false);
     }
@@ -361,7 +361,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
 
     // Expand the checklist if there are new completed items
-    if (shouldExpand) {
+    if (shouldExpand && !this.isExpanded()) {
       await this.expand(true);
       await this.reportOpenChangeEvent(true);
     }
@@ -465,6 +465,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
   handleOpenChange(open: boolean) {
     // Update actual component state based on open status
     this.openState = open;
+  }
+
+  /**
+   * Checks if the checklist is expanded
+   */
+  isExpanded() {
+    return this.openState === true;
   }
 
   /**
