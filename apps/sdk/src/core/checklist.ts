@@ -323,7 +323,10 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Expand the checklist if there are new completed items
     if (shouldExpand && !this.isExpanded()) {
       this.expand(true);
-      await this.reportExpandedChangeEvent(true);
+      // Delay reporting the expanded event to give animation time to complete
+      setTimeout(async () => {
+        await this.reportExpandedChangeEvent(true);
+      }, 200);
     }
 
     // Trigger completion events
