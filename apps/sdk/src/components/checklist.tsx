@@ -10,13 +10,7 @@ import {
   ChecklistRoot,
 } from '@usertour-ui/sdk/src/checklist';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import {
-  BizUserInfo,
-  ChecklistData,
-  ChecklistInitialDisplay,
-  ChecklistItemType,
-  Theme,
-} from '@usertour-ui/types';
+import { BizUserInfo, ChecklistData, ChecklistItemType, Theme } from '@usertour-ui/types';
 import { useSyncExternalStore } from 'react';
 import { Checklist } from '../core/checklist';
 
@@ -37,6 +31,7 @@ type ChecklistWidgetCoreProps = {
   reportExpandedChangeEvent: (expanded: boolean) => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
+  expanded: boolean;
 };
 
 // Components
@@ -66,11 +61,12 @@ const ChecklistWidgetCore = ({
   reportExpandedChangeEvent,
   removeBranding,
   zIndex,
+  expanded,
 }: ChecklistWidgetCoreProps) => (
   <ChecklistRoot
     data={data}
     theme={theme}
-    defaultOpen={data.initialDisplay === ChecklistInitialDisplay.EXPANDED}
+    expanded={expanded}
     onDismiss={handleDismiss}
     onExpandedChange={handleExpandedChange}
     reportExpandedChangeEvent={reportExpandedChangeEvent}
@@ -101,7 +97,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     return <></>;
   }
 
-  const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex } = store;
+  const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex, expanded } = store;
 
   if (!theme || !checklistData || !openState || !userInfo) {
     return <></>;
@@ -120,6 +116,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
       reportExpandedChangeEvent={checklist.reportExpandedChangeEvent}
       removeBranding={sdkConfig.removeBranding}
       zIndex={zIndex}
+      expanded={expanded}
     />
   );
 };

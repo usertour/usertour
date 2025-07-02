@@ -24,7 +24,6 @@ import { ChecklistStore } from '../types/store';
 
 export class Checklist extends BaseContent<ChecklistStore> {
   private hasPendingCompletedItems = false; // Track if there are pending completed items to expand
-  private expanded: boolean | null = null; // Track actual component state
 
   /**
    * Monitors the checklist state and updates its visibility.
@@ -107,14 +106,15 @@ export class Checklist extends BaseContent<ChecklistStore> {
       return;
     }
     const initialDisplay = getChecklistInitialDisplay(content);
+    const expanded = initialDisplay === ChecklistInitialDisplay.EXPANDED;
     // Process items to determine their status
     const { items } = await processChecklistItems(content);
     const store = {
       ...baseStoreData,
+      expanded,
       checklistData: {
         ...content.data,
         items,
-        initialDisplay,
       },
     };
     this.setStore(store);
@@ -125,62 +125,20 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * @param isExpanded - Whether the checklist should be expanded or collapsed
    * @returns Promise that resolves when the state update is complete
    */
-  expand(isExpanded: boolean): Promise<void> {
+  expand(isExpanded: boolean) {
     const store = this.getStore().getSnapshot();
     if (!store) {
-      return Promise.resolve();
+      return;
     }
 
     // Check if the component is already in the target state
-    if (this.expanded === isExpanded) {
-      return Promise.resolve();
+    if (store.expanded === isExpanded) {
+      return;
     }
-
-    const initialDisplay = isExpanded
-      ? ChecklistInitialDisplay.EXPANDED
-      : ChecklistInitialDisplay.BUTTON;
 
     // Update store to trigger component state change
     this.updateStore({
-      checklistData: {
-        ...store.checklistData,
-        initialDisplay,
-      },
-    });
-
-    // Return promise that waits for state update
-    return this.waitExpandedState(isExpanded);
-  }
-
-  /**
-   * Waits for the component state to update to the target state
-   * @param targetExpandedState - The target expanded state to wait for
-   * @returns Promise that resolves when the state matches the target
-   */
-  private waitExpandedState(targetExpandedState: boolean): Promise<void> {
-    return new Promise((resolve) => {
-      const startTime = Date.now();
-      const timeout = 1000; // 1 second timeout
-
-      const checkState = () => {
-        if (this.expanded === targetExpandedState) {
-          resolve();
-          return;
-        }
-
-        // Check if timeout exceeded
-        if (Date.now() - startTime > timeout) {
-          console.warn('Checklist expand timeout: state update took too long');
-          resolve();
-          return;
-        }
-
-        // Check again after a short delay
-        setTimeout(checkState, 10);
-      };
-
-      // Start checking the state
-      setTimeout(checkState, 10);
+      expanded: isExpanded,
     });
   }
 
@@ -227,6 +185,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     return {
       ...baseInfo,
       openState: false,
+      expanded: false,
       zIndex: zIndex + 100,
     };
   }
@@ -322,7 +281,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
     const itemIsCompleted = await this.itemIsCompleted(item);
     if (!itemIsCompleted && this.isExpanded()) {
-      await this.expand(false);
+      this.expand(false);
       await this.reportExpandedChangeEvent(false);
     }
 
@@ -363,7 +322,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
     // Expand the checklist if there are new completed items
     if (shouldExpand && !this.isExpanded()) {
-      await this.expand(true);
+      this.expand(true);
       await this.reportExpandedChangeEvent(true);
     }
 
@@ -468,15 +427,16 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * @param {boolean} expanded - Whether the checklist is expanded
    */
   handleExpandedChange(expanded: boolean) {
-    // Update actual component state based on open status
-    this.expanded = expanded;
+    this.updateStore({
+      expanded,
+    });
   }
 
   /**
    * Checks if the checklist is expanded
    */
   isExpanded() {
-    return this.expanded === true;
+    return this.getStore().getSnapshot()?.expanded ?? false;
   }
 
   /**

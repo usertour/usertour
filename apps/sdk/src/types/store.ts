@@ -23,6 +23,7 @@ export type TourStore = BaseStore & {
 export type ChecklistStore = BaseStore & {
   // content: SDKContent | undefined;
   checklistData: ChecklistData;
+  expanded: boolean;
 };
 
 // Launcher store type

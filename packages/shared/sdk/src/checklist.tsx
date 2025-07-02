@@ -1,6 +1,5 @@
 import {
   ChecklistData,
-  ChecklistInitialDisplay,
   ChecklistItemType,
   ModalPosition,
   Theme,
@@ -70,6 +69,7 @@ interface ChecklistRootProps {
   theme: Theme;
   data: ChecklistData;
   defaultOpen?: boolean;
+  expanded?: boolean;
   onDismiss?: () => Promise<void>;
   onExpandedChange?: (expanded: boolean) => void;
   reportExpandedChangeEvent?: (expanded: boolean) => Promise<void>;
@@ -82,17 +82,20 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     theme,
     data: initialData,
     defaultOpen = true,
+    expanded,
     onDismiss,
     onExpandedChange,
     reportExpandedChangeEvent,
     zIndex,
   } = props;
   const { globalStyle, themeSetting } = useThemeStyles(theme);
-  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [data, setData] = useState(initialData);
   const [showDismissConfirm, setShowDismissConfirm] = useState(false);
   const [pendingAnimationItems, setPendingAnimationItems] = useState<Set<string>>(new Set());
   const [prevData, setPrevData] = useState(initialData);
+
+  // Use expanded from store if provided, otherwise use local state
+  const isOpen = expanded !== undefined ? expanded : defaultOpen;
 
   useEffect(() => {
     setData(initialData);
@@ -101,21 +104,11 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   //manual control open state
   const handleManualOpenChange = useCallback(
     async (open: boolean) => {
-      setIsOpen(open);
+      onExpandedChange?.(open);
       await reportExpandedChangeEvent?.(open);
     },
     [reportExpandedChangeEvent],
   );
-
-  useEffect(() => {
-    onExpandedChange?.(isOpen);
-  }, [isOpen]);
-
-  // Handle business-controlled initialDisplay changes (no event reporting)
-  useEffect(() => {
-    const shouldBeOpen = data.initialDisplay === ChecklistInitialDisplay.EXPANDED;
-    setIsOpen(shouldBeOpen);
-  }, [data.initialDisplay]);
 
   // Track completion changes and add to pending animations if checklist is closed
   useEffect(() => {
