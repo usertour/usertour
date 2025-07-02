@@ -50,15 +50,17 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 1. The checklist has valid data and a latest session
    * 2. The checklist has not been dismissed
    *
+   * @returns The session ID if reusable, null otherwise
    */
   getReusedSessionId(): string | null {
     const checklistContent = this.getContent();
-    const hasValidContent = checklistContent.data && checklistContent.latestSession;
 
-    if (!hasValidContent || !checklistContent.latestSession) {
+    // Early return if no content or missing required data
+    if (!checklistContent?.data || !checklistContent?.latestSession) {
       return null;
     }
 
+    // Early return if checklist has been dismissed
     if (checklistIsDimissed(checklistContent)) {
       return null;
     }
