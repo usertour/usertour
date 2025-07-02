@@ -244,7 +244,7 @@ export const getChecklistInitialDisplay = (content: SDKContent): ChecklistInitia
   );
 
   if (!hiddenOrSeenEvents || hiddenOrSeenEvents.length === 0) {
-    return ChecklistInitialDisplay.BUTTON;
+    return content?.data?.initialDisplay;
   }
 
   // Get the latest hidden or seen event
