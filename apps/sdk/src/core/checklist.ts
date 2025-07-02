@@ -341,11 +341,11 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private async monitorItemConditions() {
     // Get content and validate
     const content = this.getContent();
-    const store = this.getStore()?.getSnapshot();
-    if (!store) {
+    const snapshot = this.getStore()?.getSnapshot();
+    if (!snapshot) {
       return;
     }
-    const checklistData = store.checklistData;
+    const checklistData = snapshot.checklistData;
 
     // Process items to determine their status
     const { items, hasChanges } = await processChecklistItems(content);
