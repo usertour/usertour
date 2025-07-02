@@ -1115,70 +1115,65 @@ export class WebSocketService {
         : undefined;
     const state = getEventState(eventName);
 
-    return await this.prisma.$transaction(
-      async (tx) => {
-        // Re-fetch the session with latest events inside the transaction and lock the row
-        const latestBizSession = await tx.bizSession.findUnique({
-          where: { id: sessionId },
-          include: {
-            bizEvent: { include: { event: true } },
-          },
-        });
+    return await this.prisma.$transaction(async (tx) => {
+      // Re-fetch the session with latest events inside the transaction and lock the row
+      const latestBizSession = await tx.bizSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          bizEvent: { include: { event: true } },
+        },
+      });
 
-        if (!latestBizSession || latestBizSession.state === 1) {
-          return false;
-        }
+      if (!latestBizSession || latestBizSession.state === 1) {
+        return false;
+      }
 
-        // Validate event inside the transaction with latest data
-        if (!isValidEvent(eventName, latestBizSession, events)) {
-          return false;
-        }
+      // Validate event inside the transaction with latest data
+      if (!isValidEvent(eventName, latestBizSession, events)) {
+        return false;
+      }
 
-        const insert = {
+      const insert = {
+        bizUserId: user.id,
+        eventId: event.id,
+        data: events,
+        bizSessionId: bizSession.id,
+      };
+      const bizEvent = await tx.bizEvent.create({
+        data: insert,
+      });
+      await tx.bizSession.update({
+        where: { id: bizSession.id },
+        data: {
+          ...(progress !== undefined && { progress }),
+          state,
+        },
+      });
+      if (eventName === BizEvents.QUESTION_ANSWERED) {
+        const answer: any = {
+          bizEventId: bizEvent.id,
+          contentId: currentVersion.contentId,
+          cvid: events[EventAttributes.QUESTION_CVID],
+          versionId: currentVersion.id,
           bizUserId: user.id,
-          eventId: event.id,
-          data: events,
           bizSessionId: bizSession.id,
+          environmentId,
         };
-        const bizEvent = await tx.bizEvent.create({
-          data: insert,
-        });
-        await tx.bizSession.update({
-          where: { id: bizSession.id },
-          data: {
-            ...(progress !== undefined && { progress }),
-            state,
-          },
-        });
-        if (eventName === BizEvents.QUESTION_ANSWERED) {
-          const answer: any = {
-            bizEventId: bizEvent.id,
-            contentId: currentVersion.contentId,
-            cvid: events[EventAttributes.QUESTION_CVID],
-            versionId: currentVersion.id,
-            bizUserId: user.id,
-            bizSessionId: bizSession.id,
-            environmentId,
-          };
-          if (events[EventAttributes.NUMBER_ANSWER]) {
-            answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];
-          }
-          if (events[EventAttributes.TEXT_ANSWER]) {
-            answer.textAnswer = events[EventAttributes.TEXT_ANSWER];
-          }
-          if (events[EventAttributes.LIST_ANSWER]) {
-            answer.listAnswer = events[EventAttributes.LIST_ANSWER];
-          }
-          await tx.bizAnswer.create({
-            data: answer,
-          });
+        if (events[EventAttributes.NUMBER_ANSWER]) {
+          answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];
         }
+        if (events[EventAttributes.TEXT_ANSWER]) {
+          answer.textAnswer = events[EventAttributes.TEXT_ANSWER];
+        }
+        if (events[EventAttributes.LIST_ANSWER]) {
+          answer.listAnswer = events[EventAttributes.LIST_ANSWER];
+        }
+        await tx.bizAnswer.create({
+          data: answer,
+        });
+      }
 
-        return bizEvent;
-      },
-      {
-        isolationLevel: 'Serializable',
-      },
-    );
+      return bizEvent;
+    });
   }
 }
