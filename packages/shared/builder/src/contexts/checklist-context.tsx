@@ -24,7 +24,7 @@ export interface ChecklistContextValue {
   zIndex: number;
   isLoading: boolean;
   localData: ChecklistData | null;
-  update: (data: Partial<ChecklistData>) => Promise<void>;
+  update: (data: ChecklistData) => Promise<void>;
   updateLocalData: (updates: Partial<ChecklistData>) => void;
   addItem: (item: ChecklistItemType) => void;
   removeItem: (id: string) => void;
@@ -70,39 +70,24 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
   // Track the last saved data to avoid unnecessary updates
   const lastSavedDataRef = useRef<ChecklistData | null>(null);
 
-  const updateContentVersionData = useCallback(
-    async (updates: Partial<ChecklistData>) => {
+  const update = useCallback(
+    async (newData: ChecklistData) => {
       if (!currentVersion) {
         return;
       }
-      const ret = await updateContentVersionMutation(currentVersion.id, {
-        data: { ...data, ...updates },
-      });
 
-      if (ret && currentVersion?.contentId) {
-        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
-      } else {
-        throw new Error('Failed to update content version');
-      }
-    },
-    [
-      currentVersion?.id,
-      currentVersion?.contentId,
-      data,
-      fetchContentAndVersion,
-      updateContentVersionMutation,
-    ],
-  );
-
-  const update = useCallback(
-    async (updates: Partial<ChecklistData>) => {
       setIsLoading(true);
       try {
-        await updateContentVersionData(updates);
-        // Update the last saved data reference
-        if (data) {
-          lastSavedDataRef.current = { ...data, ...updates } as ChecklistData;
+        await updateContentVersionMutation(currentVersion.id, {
+          data: newData,
+        });
+
+        if (currentVersion.contentId) {
+          await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
         }
+
+        // Update the last saved data reference
+        lastSavedDataRef.current = newData;
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -112,7 +97,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
         setIsLoading(false);
       }
     },
-    [updateContentVersionData, toast, setIsLoading, data],
+    [currentVersion, updateContentVersionMutation, fetchContentAndVersion, toast, setIsLoading],
   );
 
   // Create a debounced save function that only triggers when data actually changes
@@ -159,15 +144,15 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
         items: prev.items.map((item) => (item.id === currentItem.id ? currentItem : item)),
       };
 
-      // Trigger immediate save for current item
+      // Trigger debounced save for current item
       if (!isEqual(newData, lastSavedDataRef.current)) {
-        update(newData);
+        debouncedSave(newData);
       }
 
       return newData;
     });
     setCurrentMode({ mode: BuilderMode.CHECKLIST });
-  }, [currentItem, setCurrentMode, update]);
+  }, [currentItem, setCurrentMode, debouncedSave]);
 
   const addItem = useCallback(
     (item: ChecklistItemType) => {
@@ -246,9 +231,11 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
   // Cleanup debounced function on unmount
   useEffect(() => {
     return () => {
-      debouncedSave.cancel();
+      if (debouncedSave) {
+        debouncedSave.cancel();
+      }
     };
-  }, [debouncedSave]);
+  }, []);
 
   const value: ChecklistContextValue = {
     zIndex,
