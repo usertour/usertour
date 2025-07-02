@@ -35,6 +35,7 @@ import { useSize } from '@usertour-ui/react-use-size';
 import {
   canCompleteChecklistItem,
   checklistIsCompleted,
+  checklistProgress,
   checklistUnCompletedItemsCount,
 } from './utils';
 
@@ -43,6 +44,9 @@ interface ChecklistRootContextValue {
   themeSetting?: ThemeTypesSetting;
   data: ChecklistData;
   isOpen: boolean;
+  isAllCompleted: boolean;
+  unCompletedItemsCount: number;
+  progress: number;
   updateItemStatus: (itemId: string, isCompleted: boolean) => void;
   showDismissConfirm: boolean;
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
@@ -96,6 +100,9 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
 
   // Use expanded from store if provided, otherwise use local state
   const isOpen = expanded !== undefined ? expanded : defaultOpen;
+  const isAllCompleted = checklistIsCompleted(data.items);
+  const unCompletedItemsCount = checklistUnCompletedItemsCount(data.items);
+  const progress = checklistProgress(data.items);
 
   useEffect(() => {
     setData(initialData);
@@ -146,6 +153,9 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         themeSetting,
         data,
         isOpen,
+        isAllCompleted,
+        unCompletedItemsCount,
+        progress,
         updateItemStatus,
         showDismissConfirm,
         setShowDismissConfirm,
@@ -192,25 +202,20 @@ ChecklistChecked.displayName = 'ChecklistChecked';
 
 const ChecklistProgress = memo(
   forwardRef<HTMLDivElement, { width?: number }>(({ width }, ref) => {
-    const { data } = useChecklistRootContext();
-    const progress = useMemo(() => {
-      const completedCount = data.items.filter((item) => item.isCompleted).length;
-      if (data.items.length === 0) {
-        return width ?? 0;
-      }
-      return width ?? Math.round((completedCount / data.items.length) * 100) ?? 0;
-    }, [data.items, width]);
+    const { progress } = useChecklistRootContext();
+
+    const finalProgress = width ?? progress ?? 0;
 
     return (
       <div className="w-full bg-sdk-foreground rounded-full my-3" ref={ref}>
         <div
           className={cn(
             'text-sdk-background font-medium p-1 px-2 leading-none rounded-full text-left',
-            progress > 0 && 'bg-sdk-progress',
+            finalProgress > 0 && 'bg-sdk-progress',
           )}
-          style={{ width: `${progress}%` }}
+          style={{ width: `${finalProgress}%` }}
         >
-          {progress}%
+          {finalProgress}%
         </div>
       </div>
     );
@@ -279,14 +284,13 @@ ChecklistLauncherContent.displayName = 'ChecklistLauncherContent';
 
 const ChecklistLauncher = forwardRef<HTMLDivElement, { onClick?: () => void }>((props, ref) => {
   const { onClick } = props;
-  const { themeSetting, data, zIndex } = useChecklistRootContext();
+  const { themeSetting, data, zIndex, isAllCompleted, unCompletedItemsCount } =
+    useChecklistRootContext();
   const style = computePositionStyle(
     themeSetting?.checklistLauncher.placement.position as ModalPosition,
     themeSetting?.checklistLauncher.placement.positionOffsetX ?? 0,
     themeSetting?.checklistLauncher.placement.positionOffsetY ?? 0,
   );
-
-  const isAllCompleted = data.items.filter((item) => item.isCompleted).length === data.items.length;
 
   return (
     <div
@@ -303,7 +307,7 @@ const ChecklistLauncher = forwardRef<HTMLDivElement, { onClick?: () => void }>((
         buttonText={data.buttonText}
         height={themeSetting?.checklistLauncher.height}
         onClick={onClick}
-        number={data.items.filter((item) => !item.isCompleted).length}
+        number={unCompletedItemsCount}
         isCompleted={isAllCompleted}
       />
     </div>
@@ -481,7 +485,8 @@ ChecklistLauncherFrame.displayName = 'ChecklistLauncherFrame';
 
 const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>((props, _) => {
   const { globalStyle, onSizeChange } = props;
-  const { data, themeSetting, handleExpandedChange } = useChecklistRootContext();
+  const { data, themeSetting, handleExpandedChange, isAllCompleted, unCompletedItemsCount } =
+    useChecklistRootContext();
   const { document } = useFrame();
 
   useEffect(() => {
@@ -491,15 +496,12 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
     }
   }, [globalStyle]);
 
-  const isCompleted = checklistIsCompleted(data.items);
-  const number = checklistUnCompletedItemsCount(data.items);
-
   return (
     <ChecklistLauncherContent
       buttonText={data.buttonText}
       height={themeSetting?.checklistLauncher.height}
-      number={number}
-      isCompleted={isCompleted}
+      number={unCompletedItemsCount}
+      isCompleted={isAllCompleted}
       onClick={async () => await handleExpandedChange?.(true)}
       onSizeChange={onSizeChange}
     />
@@ -635,10 +637,7 @@ ChecklistDismissConfirm.displayName = 'ChecklistDismissConfirm';
 
 const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { data, onDismiss, setShowDismissConfirm } = useChecklistRootContext();
-
-    const isAllCompleted =
-      data.items.filter((item) => item.isCompleted).length === data.items.length;
+    const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
 
     const baseClassName = cn(
       'text-right',
