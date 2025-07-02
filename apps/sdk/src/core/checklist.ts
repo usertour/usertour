@@ -35,7 +35,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   async monitor() {
     if (this.isActiveChecklist()) {
       // Monitor individual item conditions
-      await this.itemConditionsMonitor();
+      await this.monitorItemConditions();
 
       // Update visibility state based on checklist status
       this.handleVisibilityState();
@@ -337,7 +337,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 3. Triggers appropriate events for completed items
    * 4. Updates initialDisplay to EXPANDED when there are new completed items
    */
-  private async itemConditionsMonitor() {
+  private async monitorItemConditions() {
     // Get content and validate
     const content = this.getContent();
     const store = this.getStore()?.getSnapshot();
