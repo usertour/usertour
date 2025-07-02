@@ -21,7 +21,11 @@ import {
 } from './conditions';
 import { window } from './globals';
 import { RulesType } from '@usertour-ui/constants';
-import { canCompleteChecklistItem } from '@usertour-ui/sdk';
+import {
+  canCompleteChecklistItem,
+  checklistCompletedItemsCount,
+  checklistVisibleItemsCount,
+} from '@usertour-ui/sdk';
 import { BaseStore } from '../types/store';
 import isEqual from 'fast-deep-equal';
 
@@ -307,10 +311,10 @@ export const isSendChecklistCompletedEvent = (
   items: ChecklistItemType[] = [],
   latestSession?: BizSession | undefined,
 ) => {
-  const visibleItems = items.filter((item: ChecklistItemType) => item.isVisible);
-  const completedItems = items.filter((item: ChecklistItemType) => item.isCompleted);
+  const visibleItemsCount = checklistVisibleItemsCount(items);
+  const completedItemsCount = checklistCompletedItemsCount(items);
 
-  if (completedItems.length === 0) {
+  if (completedItemsCount === 0) {
     return false;
   }
 
@@ -318,7 +322,7 @@ export const isSendChecklistCompletedEvent = (
     return false;
   }
 
-  if (visibleItems.length === completedItems.length) {
+  if (visibleItemsCount === completedItemsCount) {
     return true;
   }
 

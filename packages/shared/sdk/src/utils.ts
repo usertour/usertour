@@ -43,6 +43,15 @@ export const checklistUnCompletedItemsCount = (items: ChecklistItemType[]): numb
 };
 
 /**
+ * Checks the number of completed items
+ * @param items - The items to check
+ * @returns The number of completed items
+ */
+export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).filter((item) => item.isCompleted).length;
+};
+
+/**
  * Checks the number of visible items
  * @param items - The items to check
  * @returns The number of visible items
