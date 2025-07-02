@@ -1,5 +1,3 @@
-import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour-ui/gql';
 import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
@@ -16,6 +14,7 @@ import {
   useState,
 } from 'react';
 import { BuilderMode, useBuilderContext } from './builder-context';
+import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
 
 export interface ChecklistProviderProps {
   children: ReactNode;
@@ -63,7 +62,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     return mergedData;
   }, [currentVersion]);
 
-  const [updateContentVersionMutation] = useMutation(updateContentVersion);
+  const { invoke: updateContentVersionMutation } = useUpdateContentVersionMutation();
   const { toast } = useToast();
   const [localData, setLocalData] = useState<ChecklistData | null>(data);
   const [currentItem, setCurrentItem] = useState<ChecklistItemType | null>(null);
@@ -76,14 +75,11 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       if (!currentVersion) {
         return;
       }
-      const ret = await updateContentVersionMutation({
-        variables: {
-          versionId: currentVersion?.id,
-          content: { data: { ...data, ...updates } },
-        },
+      const ret = await updateContentVersionMutation(currentVersion.id, {
+        data: { ...data, ...updates },
       });
 
-      if (ret.data.updateContentVersion && currentVersion?.contentId) {
+      if (ret && currentVersion?.contentId) {
         await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
       } else {
         throw new Error('Failed to update content version');

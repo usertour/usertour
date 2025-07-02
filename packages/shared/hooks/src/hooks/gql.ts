@@ -20,6 +20,7 @@ import {
   removeTeamMember,
   signUp,
   updateContent,
+  updateContentVersion,
   createCheckoutSession,
   createPortalSession,
   getSubscriptionPlans,
@@ -281,6 +282,18 @@ export const useUpdateContentMutation = () => {
   ) => {
     const response = await mutation({ variables: { contentId, content } });
     return response.data?.updateContent;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateContentVersionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateContentVersion);
+  const invoke = async (
+    versionId: string,
+    content: { data?: any; config?: any; themeId?: string },
+  ) => {
+    const response = await mutation({ variables: { versionId, content } });
+    return response.data?.updateContentVersion;
   };
   return { invoke, loading, error };
 };
