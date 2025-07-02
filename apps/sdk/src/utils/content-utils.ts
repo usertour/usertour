@@ -481,6 +481,15 @@ export const processChecklistItems = async (content: SDKContent) => {
 };
 
 /**
+ * Checks if a checklist has show animation items
+ * @param items - The items to check
+ * @returns True if the checklist has show animation items, false otherwise
+ */
+export const checklistHasShowAnimationItems = (items: ChecklistItemType[]) => {
+  return items.some((item) => item.isCompleted && item.isVisible && item.isShowAnimation);
+};
+
+/**
  * Checks if a checklist has new completed items
  * @param currentItems - The current items
  * @param previousItems - The previous items
@@ -490,13 +499,6 @@ export const checklistHasNewCompletedItems = (
   currentItems: ChecklistItemType[],
   previousItems: ChecklistItemType[],
 ): boolean => {
-  const isShowAnimationItems = currentItems.filter(
-    (item) => item.isCompleted && item.isVisible && item.isShowAnimation,
-  );
-  if (isShowAnimationItems.length > 0) {
-    return true;
-  }
-
   // Get visible completed item IDs from previous collapsed state
   const previousCompletedIds = new Set(
     previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),

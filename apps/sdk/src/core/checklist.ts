@@ -18,6 +18,7 @@ import {
   isSendChecklistCompletedEvent,
   checklistHasNewCompletedItems,
   baseStoreInfoIsChanged,
+  checklistHasShowAnimationItems,
 } from '../utils/content-utils';
 import { ChecklistStore } from '../types/store';
 
@@ -399,10 +400,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
       return false;
     }
 
-    // Check for new completed items
-    const hasNewCompleted = checklistHasNewCompletedItems(currentItems, previousItems);
+    // Check if there are show animation items
+    const hasShowAnimationItems = checklistHasShowAnimationItems(currentItems);
+    // Check if there are new completed items
+    const hasNewCompletedItems = checklistHasNewCompletedItems(currentItems, previousItems);
+    // Check if there are show animation items or new completed items
+    const shouldExpand = hasShowAnimationItems || hasNewCompletedItems;
 
-    if (hasNewCompleted) {
+    if (shouldExpand) {
       // Check if there's an active tour that would prevent immediate expansion
       if (this.getActiveTour()) {
         // Store the state to expand later when tour closes
@@ -411,7 +416,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       }
     }
 
-    return hasNewCompleted;
+    return shouldExpand;
   }
 
   /**
