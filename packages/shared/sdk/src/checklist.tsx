@@ -47,7 +47,7 @@ interface ChecklistRootContextValue {
   showDismissConfirm: boolean;
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
   onDismiss?: () => Promise<void>;
-  handleManualOpenChange?: (open: boolean) => Promise<void>;
+  handleExpandedChange?: (expanded: boolean) => Promise<void>;
   // Animation state tracking
   pendingAnimationItems: Set<string>;
   removePendingAnimation: (itemId: string) => void;
@@ -102,7 +102,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   }, [initialData]);
 
   //manual control open state
-  const handleManualOpenChange = useCallback(
+  const handleExpandedChange = useCallback(
     async (open: boolean) => {
       onExpandedChange?.(open);
       await reportExpandedChangeEvent?.(open);
@@ -150,7 +150,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         showDismissConfirm,
         setShowDismissConfirm,
         onDismiss,
-        handleManualOpenChange,
+        handleExpandedChange,
         pendingAnimationItems,
         removePendingAnimation,
         zIndex,
@@ -334,12 +334,12 @@ ChecklistContainer.displayName = 'ChecklistContainer';
 const ChecklistPopper = forwardRef<HTMLDivElement, Omit<PopperProps, 'globalStyle'>>(
   (props, ref) => {
     const { children, ...popperProps } = props;
-    const { globalStyle, isOpen, themeSetting, handleManualOpenChange } = useChecklistRootContext();
+    const { globalStyle, isOpen, themeSetting, handleExpandedChange } = useChecklistRootContext();
 
     // Memoize the launcher click handler to prevent unnecessary re-renders
     const handleLauncherClick = useCallback(async () => {
-      await handleManualOpenChange?.(true);
-    }, [handleManualOpenChange]);
+      await handleExpandedChange?.(true);
+    }, [handleExpandedChange]);
 
     // Memoize the modal content props to prevent unnecessary re-renders
     const modalContentProps = useMemo(
@@ -481,7 +481,7 @@ ChecklistLauncherFrame.displayName = 'ChecklistLauncherFrame';
 
 const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>((props, _) => {
   const { globalStyle, onSizeChange } = props;
-  const { data, themeSetting, handleManualOpenChange } = useChecklistRootContext();
+  const { data, themeSetting, handleExpandedChange } = useChecklistRootContext();
   const { document } = useFrame();
 
   useEffect(() => {
@@ -500,7 +500,7 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
       height={themeSetting?.checklistLauncher.height}
       number={number}
       isCompleted={isCompleted}
-      onClick={async () => await handleManualOpenChange?.(true)}
+      onClick={async () => await handleExpandedChange?.(true)}
       onSizeChange={onSizeChange}
     />
   );
@@ -548,7 +548,7 @@ ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 
 const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { handleManualOpenChange } = useChecklistRootContext();
+    const { handleExpandedChange } = useChecklistRootContext();
     return (
       <div
         className="rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-pointer"
@@ -558,7 +558,7 @@ const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
         <DropDownIcon
           height={24}
           width={24}
-          onClick={async () => await handleManualOpenChange?.(false)}
+          onClick={async () => await handleExpandedChange?.(false)}
         />
       </div>
     );
