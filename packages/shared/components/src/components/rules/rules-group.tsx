@@ -18,6 +18,7 @@ import {
   UserIcon,
 } from '@usertour-ui/icons';
 import { RulesCondition } from '@usertour-ui/types';
+import { deepClone } from '@usertour-ui/shared-utils';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { useRulesContext } from './rules-context';
@@ -33,6 +34,7 @@ import { RulesUrlPattern } from './rules-url-pattern';
 import { RulesUserAttribute } from './rules-user-attribute';
 import { RulesUserFills } from './rules-user-fills';
 import { RulesTaskIsClicked } from './task-clicked';
+import isEqual from 'fast-deep-equal';
 
 export const RULES_ITEMS = [
   {
@@ -154,9 +156,7 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const { isSubItems = false, onChange, defaultConditions } = props;
   const { isHorizontal, filterItems, addButtonText, disabled } = useRulesContext();
 
-  const [conditions, setConditions] = useState<RulesCondition[]>(
-    JSON.parse(JSON.stringify(defaultConditions)),
-  );
+  const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
   const [rulesItems, _] = useState<typeof RULES_ITEMS>(
     RULES_ITEMS.filter((item) => {
       if (filterItems.length > 0) {
@@ -173,10 +173,15 @@ export const RulesGroup = (props: RulesGroupProps) => {
   );
 
   const setNewConditions = (newConditions: RulesCondition[]) => {
-    setConditions(newConditions);
-    if (onChange) {
-      onChange(newConditions);
-    }
+    setConditions((prev) => {
+      if (isEqual(prev, newConditions)) {
+        return prev;
+      }
+      if (onChange) {
+        onChange(newConditions);
+      }
+      return newConditions;
+    });
   };
 
   const handleOnSelect = useCallback(
@@ -192,7 +197,10 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const handleOnChange = (index: number, conds: RulesCondition[]) => {
     const newConds = conditions.map((condition, i) => {
       if (i === index) {
-        condition.conditions = [...conds];
+        return {
+          ...condition,
+          conditions: [...conds],
+        };
       }
       return condition;
     });
@@ -212,10 +220,11 @@ export const RulesGroup = (props: RulesGroupProps) => {
     (index: number, data: any) => {
       const newConds = conditions.map((condition, i) => {
         if (i === index) {
-          if (data) {
-            condition.data = data;
-          }
-          condition.operators = conditionType;
+          return {
+            ...condition,
+            ...(data && { data }),
+            operators: conditionType,
+          };
         }
         return condition;
       });
