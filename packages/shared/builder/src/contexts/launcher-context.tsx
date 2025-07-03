@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
@@ -85,6 +86,11 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     [currentVersion, updateContentVersionMutation, fetchContentAndVersion, toast, setIsLoading],
   );
 
+  // Create a debounced version of saveData
+  const debouncedSaveData = useDebouncedCallback((newData: LauncherData) => {
+    saveData(newData);
+  }, 500);
+
   const updateLocalDataTooltip = useCallback(
     (updates: Partial<LauncherData['tooltip']>) => {
       setLocalData((prev) => {
@@ -94,12 +100,12 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
         const newData = { ...prev, tooltip: { ...prev.tooltip, ...updates } };
 
         // Save immediately when data changes
-        saveData(newData);
+        debouncedSaveData(newData);
 
         return newData;
       });
     },
-    [saveData],
+    [debouncedSaveData],
   );
 
   const updateLocalDataBehavior = useCallback(
@@ -111,12 +117,12 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
         const newData = { ...prev, behavior: { ...prev.behavior, ...updates } };
 
         // Save immediately when data changes
-        saveData(newData);
+        debouncedSaveData(newData);
 
         return newData;
       });
     },
-    [saveData],
+    [debouncedSaveData],
   );
 
   const updateLocalData = useCallback(
@@ -128,12 +134,12 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
         const newData = { ...prev, ...updates };
 
         // Save immediately when data changes
-        saveData(newData);
+        debouncedSaveData(newData);
 
         return newData;
       });
     },
-    [saveData],
+    [debouncedSaveData],
   );
 
   const updateLocalDataTarget = useCallback(
@@ -145,12 +151,12 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
         const newData = { ...prev, target: { ...prev.target, ...updates } };
 
         // Save immediately when data changes
-        saveData(newData);
+        debouncedSaveData(newData);
 
         return newData;
       });
     },
-    [saveData],
+    [debouncedSaveData],
   );
 
   const backToLauncher = useCallback(() => {
