@@ -1,8 +1,10 @@
 import { Environment, Project } from '@/types/project';
-import { useMutation, useQuery } from '@apollo/client';
 import { UID_COOKIE } from '@usertour-ui/constants';
-import { getUserInfo, logout } from '@usertour-ui/gql';
-import { useGlobalConfigQuery } from '@usertour-ui/shared-hooks';
+import {
+  useGlobalConfigQuery,
+  useGetUserInfoQuery,
+  useLogoutMutation,
+} from '@usertour-ui/shared-hooks';
 import { removeAuthToken } from '@usertour-ui/shared-utils';
 import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
@@ -33,11 +35,9 @@ export const AppProvider = (props: AppProviderProps) => {
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
   const [uid] = useCookie(UID_COOKIE);
-  const { data, refetch, loading, error } = useQuery(getUserInfo, {
-    skip: !uid,
-  });
+  const { data, refetch, loading, error } = useGetUserInfoQuery(uid || undefined);
   const { data: globalConfig } = useGlobalConfigQuery();
-  const [logoutMutation] = useMutation(logout);
+  const { invoke: logout } = useLogoutMutation();
 
   useEffect(() => {
     // Skip if still loading
@@ -46,19 +46,18 @@ export const AppProvider = (props: AppProviderProps) => {
     }
 
     // Reset user info if no uid or error occurs
-    if (!uid || error || !data?.me) {
-      console.log('reset user info');
+    if (!uid || error || !data) {
       setUserInfo(null);
       return;
     }
 
     // Set user info when data is available
-    setUserInfo({ ...data.me });
+    setUserInfo({ ...data });
   }, [data, loading, error, uid]);
 
   const handleLogout = async () => {
     try {
-      await logoutMutation();
+      await logout();
       removeAuthToken();
       setUserInfo(null);
     } catch (error) {
@@ -67,7 +66,7 @@ export const AppProvider = (props: AppProviderProps) => {
   };
 
   const projects: Project[] =
-    data?.me?.projects?.map((p: any) => ({
+    data?.projects?.map((p: any) => ({
       role: p.role,
       actived: p.actived,
       ...p.project,

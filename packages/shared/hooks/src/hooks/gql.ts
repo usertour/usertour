@@ -36,6 +36,8 @@ import {
   addContentSteps,
   addContentStep,
   updateContentStep,
+  getUserInfo,
+  logout,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -472,6 +474,23 @@ export const useUpdateContentStepMutation = () => {
   const invoke = async (stepId: string, data: { [key: string]: any }) => {
     const response = await mutation({ variables: { stepId, data } });
     return response.data?.updateContentStep;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetUserInfoQuery = (uid?: string, options?: QueryHookOptions) => {
+  const { data, refetch, loading, error } = useQuery(getUserInfo, {
+    skip: !uid,
+    ...options,
+  });
+  return { data: data?.me, refetch, loading, error };
+};
+
+export const useLogoutMutation = () => {
+  const [mutation, { loading, error }] = useMutation(logout);
+  const invoke = async () => {
+    const response = await mutation();
+    return response.data?.logout;
   };
   return { invoke, loading, error };
 };
