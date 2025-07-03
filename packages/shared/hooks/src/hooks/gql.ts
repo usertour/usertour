@@ -39,6 +39,7 @@ import {
   getUserInfo,
   logout,
   createContentVersion,
+  resetUserPasswordByCode,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -501,6 +502,15 @@ export const useCreateContentVersionMutation = () => {
   const invoke = async (data: { versionId: string }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
+export const useResetUserPasswordByCodeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(resetUserPasswordByCode);
+  const invoke = async (code: string, password: string) => {
+    const response = await mutation({ variables: { code, password } });
+    return response.data?.resetUserPasswordByCode;
   };
   return { invoke, loading, error };
 };

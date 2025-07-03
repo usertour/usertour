@@ -1,9 +1,7 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';
-import { resetUserPasswordByCode } from '@usertour-ui/gql';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -23,6 +21,7 @@ import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { useToast } from '@usertour-ui/use-toast';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useResetUserPasswordByCodeMutation } from '@usertour-ui/shared-hooks';
 
 const formSchema = z.object({
   password: z
@@ -47,7 +46,7 @@ const defaultValues: Partial<FormValues> = {
 };
 
 export const PasswordReset = () => {
-  const [mutation] = useMutation(resetUserPasswordByCode);
+  const { invoke: resetPassword } = useResetUserPasswordByCodeMutation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
@@ -67,11 +66,17 @@ export const PasswordReset = () => {
         title: 'The passwords entered twice are inconsistent.',
       });
     }
+    if (!code) {
+      return toast({
+        variant: 'destructive',
+        title: 'Reset code is missing.',
+      });
+    }
     try {
       setIsLoading(true);
-      const { data } = await mutation({ variables: { code, password } });
+      const result = await resetPassword(code, password);
       setIsLoading(false);
-      if (data.resetUserPasswordByCode.success) {
+      if (result?.success) {
         return navigate('/auth/signin');
       }
       toast({
