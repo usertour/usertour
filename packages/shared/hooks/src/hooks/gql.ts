@@ -1,4 +1,4 @@
-import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
+import { QueryHookOptions, useMutation, useQuery, useLazyQuery } from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
@@ -31,6 +31,10 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   updateProjectName,
+  getContent,
+  getContentVersion,
+  addContentSteps,
+  addContentStep,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -416,6 +420,48 @@ export const useUpdateProjectNameMutation = () => {
   const invoke = async (projectId: string, name: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, name } });
     return !!response.data?.updateProjectName;
+  };
+  return { invoke, loading, error };
+};
+
+// Builder related hooks
+export const useGetContentLazyQuery = () => {
+  const [query, { loading, error }] = useLazyQuery(getContent);
+  const invoke = async (contentId: string) => {
+    const response = await query({ variables: { contentId } });
+    return response.data?.getContent;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetContentVersionLazyQuery = () => {
+  const [query, { loading, error }] = useLazyQuery(getContentVersion);
+  const invoke = async (versionId: string) => {
+    const response = await query({ variables: { versionId } });
+    return response.data?.getContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAddContentStepsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(addContentSteps);
+  const invoke = async (variables: {
+    contentId: string;
+    versionId: string;
+    themeId: string;
+    steps: any[];
+  }) => {
+    const response = await mutation({ variables });
+    return response.data?.addContentSteps;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAddContentStepMutation = () => {
+  const [mutation, { loading, error }] = useMutation(addContentStep);
+  const invoke = async (data: { [key: string]: any; versionId: string }) => {
+    const response = await mutation({ variables: { data } });
+    return response.data?.addContentStep;
   };
   return { invoke, loading, error };
 };
