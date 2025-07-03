@@ -2,7 +2,7 @@ import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import { deepmerge } from 'deepmerge-ts';
-import { debounce, isEqual, isUndefined } from 'lodash';
+import { isEqual, isUndefined } from 'lodash';
 import {
   ReactNode,
   createContext,
@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
 
@@ -101,15 +102,11 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
   );
 
   // Create a debounced save function that only triggers when data actually changes
-  const debouncedSave = useMemo(
-    () =>
-      debounce((newData: ChecklistData) => {
-        if (!isEqual(newData, lastSavedDataRef.current)) {
-          update(newData);
-        }
-      }, 500),
-    [update],
-  );
+  const debouncedSave = useDebouncedCallback((newData: ChecklistData) => {
+    if (!isEqual(newData, lastSavedDataRef.current)) {
+      update(newData);
+    }
+  }, 500);
 
   // Unified update function that handles both local state and server updates
   const updateLocalData = useCallback(
@@ -227,15 +224,6 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       lastSavedDataRef.current = data;
     }
   }, [data]);
-
-  // Cleanup debounced function on unmount
-  useEffect(() => {
-    return () => {
-      if (debouncedSave) {
-        debouncedSave.cancel();
-      }
-    };
-  }, []);
 
   const value: ChecklistContextValue = {
     zIndex,
