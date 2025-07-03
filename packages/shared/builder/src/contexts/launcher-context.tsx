@@ -1,17 +1,17 @@
-import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour-ui/gql';
 import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour-ui/types';
-import { debounce, isEqual } from 'lodash';
+import { isEqual } from 'lodash';
 import {
   ReactNode,
   createContext,
   useCallback,
   useContext,
   useEffect,
-  useMemo,
+  useRef,
   useState,
 } from 'react';
 import { BuilderMode, useBuilderContext } from './builder-context';
+import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
+import { useToast } from '@usertour-ui/use-toast';
 
 export interface LauncherProviderProps {
   children: ReactNode;
@@ -23,7 +23,6 @@ export interface LauncherContextValue {
   localData: LauncherData | undefined;
   backToLauncher: () => void;
   gotoLauncherTarget: () => void;
-  saveLocalData: () => Promise<void>;
   updateLocalDataTooltip: (updates: Partial<LauncherData['tooltip']>) => void;
   updateLocalData: (data: Partial<LauncherData>) => void;
   updateLocalDataTarget: (data: Partial<LauncherData['target']>) => void;
@@ -47,92 +46,112 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     setCurrentMode,
   } = useBuilderContext();
 
-  const [updateContentVersionMutation] = useMutation(updateContentVersion);
-
+  const { invoke: updateContentVersionMutation } = useUpdateContentVersionMutation();
+  const { toast } = useToast();
   const [localData, setLocalData] = useState<LauncherData | undefined>();
-
   const [launcherTooltip, setLauncherTooltip] = useState<LauncherData['tooltip'] | undefined>();
   const [launcherTarget, setLauncherTarget] = useState<LauncherData['target'] | undefined>();
 
-  const updateContentVersionData = useCallback(
-    async (updates: Partial<LauncherData>) => {
-      setIsLoading(true);
-      const ret = await updateContentVersionMutation({
-        variables: {
-          versionId: currentVersion?.id,
-          content: { data: { ...localData, ...updates } },
-        },
-      });
+  // Track the last saved data to avoid unnecessary updates
+  const lastSavedDataRef = useRef<LauncherData | null>(null);
 
-      if (ret.data.updateContentVersion && currentVersion?.contentId) {
-        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
-      } else {
-        throw new Error('Failed to update content version');
-      }
-      setIsLoading(false);
-    },
-    [
-      currentVersion?.id,
-      currentVersion?.contentId,
-      localData,
-      fetchContentAndVersion,
-      updateContentVersionMutation,
-    ],
-  );
-
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((newData: Partial<LauncherData>) => {
-        if (!isEqual(newData, currentVersion?.data)) {
-          updateContentVersionData(newData);
-        }
-      }, 500),
-    [updateContentVersionData, currentVersion?.data],
-  );
-
-  const updateLocalDataTooltip = (updates: Partial<LauncherData['tooltip']>) => {
-    setLocalData((prev) => {
-      if (prev) {
-        return { ...prev, tooltip: { ...prev.tooltip, ...updates } };
-      }
-    });
-  };
-
-  const updateLocalDataBehavior = (updates: Partial<LauncherData['behavior']>) => {
-    setLocalData((prev) => {
-      if (prev) {
-        return { ...prev, behavior: { ...prev.behavior, ...updates } };
-      }
-    });
-  };
-
-  const updateLocalData = (updates: Partial<LauncherData>) => {
-    setLocalData((prev) => {
-      if (prev) {
-        return { ...prev, ...updates };
-      }
-    });
-  };
-
-  const updateLocalDataTarget = (updates: Partial<LauncherData['target']>) => {
-    setLocalData((prev) => {
-      if (prev) {
-        return { ...prev, target: { ...prev.target, ...updates } };
-      }
-    });
-  };
-
-  const saveLocalData = useCallback(async () => {
-    try {
-      if (!localData) {
+  const saveData = useCallback(
+    async (newData: LauncherData) => {
+      if (!currentVersion || isEqual(newData, lastSavedDataRef.current)) {
         return;
       }
-      await updateContentVersionData(localData);
-      setCurrentMode({ mode: BuilderMode.LAUNCHER });
-    } catch (error) {
-      console.error('Failed to save changes:', error);
-    }
-  }, [localData, updateContentVersionData, setCurrentMode]);
+
+      setIsLoading(true);
+      try {
+        await updateContentVersionMutation(currentVersion.id, {
+          data: newData,
+        });
+
+        if (currentVersion.contentId) {
+          await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
+        }
+
+        // Update the last saved data reference
+        lastSavedDataRef.current = newData;
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: error instanceof Error ? error.message : 'Failed to save launcher!',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [currentVersion, updateContentVersionMutation, fetchContentAndVersion, toast, setIsLoading],
+  );
+
+  const updateLocalDataTooltip = useCallback(
+    (updates: Partial<LauncherData['tooltip']>) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const newData = { ...prev, tooltip: { ...prev.tooltip, ...updates } };
+
+        // Save immediately when data changes
+        saveData(newData);
+
+        return newData;
+      });
+    },
+    [saveData],
+  );
+
+  const updateLocalDataBehavior = useCallback(
+    (updates: Partial<LauncherData['behavior']>) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const newData = { ...prev, behavior: { ...prev.behavior, ...updates } };
+
+        // Save immediately when data changes
+        saveData(newData);
+
+        return newData;
+      });
+    },
+    [saveData],
+  );
+
+  const updateLocalData = useCallback(
+    (updates: Partial<LauncherData>) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const newData = { ...prev, ...updates };
+
+        // Save immediately when data changes
+        saveData(newData);
+
+        return newData;
+      });
+    },
+    [saveData],
+  );
+
+  const updateLocalDataTarget = useCallback(
+    (updates: Partial<LauncherData['target']>) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const newData = { ...prev, target: { ...prev.target, ...updates } };
+
+        // Save immediately when data changes
+        saveData(newData);
+
+        return newData;
+      });
+    },
+    [saveData],
+  );
 
   const backToLauncher = useCallback(() => {
     setCurrentMode({ mode: BuilderMode.LAUNCHER });
@@ -143,35 +162,24 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     setLauncherTarget(localData?.target);
   }, [setCurrentMode, localData?.target, setLauncherTarget]);
 
+  // Only sync localData with server data when server data changes
   useEffect(() => {
     if (!currentVersion) {
       return;
     }
 
-    if (currentVersion.data) {
-      setLocalData(currentVersion?.data);
-    } else {
-      setLocalData(DEFAULT_LAUNCHER_DATA);
+    const serverData = currentVersion.data || DEFAULT_LAUNCHER_DATA;
+
+    if (!isEqual(serverData, lastSavedDataRef.current)) {
+      setLocalData(serverData);
+      lastSavedDataRef.current = serverData;
     }
   }, [currentVersion]);
-
-  useEffect(() => {
-    if (!localData || isEqual(localData, currentVersion?.data)) {
-      return;
-    }
-
-    debouncedUpdate(localData);
-
-    return () => {
-      debouncedUpdate.cancel();
-    };
-  }, [localData, debouncedUpdate, currentVersion?.data]);
 
   const value: LauncherContextValue = {
     zIndex,
     isLoading,
     localData,
-    saveLocalData,
     backToLauncher,
     gotoLauncherTarget,
     updateLocalDataTooltip,
