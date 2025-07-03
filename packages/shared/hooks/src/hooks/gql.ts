@@ -38,6 +38,7 @@ import {
   updateContentStep,
   getUserInfo,
   logout,
+  createContentVersion,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -491,6 +492,15 @@ export const useLogoutMutation = () => {
   const invoke = async () => {
     const response = await mutation();
     return response.data?.logout;
+  };
+  return { invoke, loading, error };
+};
+
+export const useCreateContentVersionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createContentVersion);
+  const invoke = async (data: { versionId: string }) => {
+    const response = await mutation({ variables: { data } });
+    return response.data?.createContentVersion;
   };
   return { invoke, loading, error };
 };
