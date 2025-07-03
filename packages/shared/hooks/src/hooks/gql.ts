@@ -35,6 +35,7 @@ import {
   getContentVersion,
   addContentSteps,
   addContentStep,
+  updateContentStep,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -462,6 +463,15 @@ export const useAddContentStepMutation = () => {
   const invoke = async (data: { [key: string]: any; versionId: string }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.addContentStep;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateContentStepMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateContentStep);
+  const invoke = async (stepId: string, data: { [key: string]: any }) => {
+    const response = await mutation({ variables: { stepId, data } });
+    return response.data?.updateContentStep;
   };
   return { invoke, loading, error };
 };
