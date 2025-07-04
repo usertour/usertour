@@ -7,18 +7,11 @@ import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  BizEvent,
-  BizSession,
-  BizUser,
-  Content,
-  Environment,
-  Step,
-  Theme,
-  Event,
-} from '@prisma/client';
+import { BizUser, Content, Environment, Step, Theme } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import {
+  BizEventWithEvent,
+  BizSessionWithEvents,
   ConfigRequest,
   ConfigResponse,
   ContentResponse,
@@ -808,7 +801,7 @@ export class WebSocketService {
    * @param sessionId - The ID of the session to list events for
    * @returns Array of events
    */
-  async listEvents(sessionId: string): Promise<any> {
+  async listEvents(sessionId: string): Promise<BizEventWithEvent[]> {
     return await this.prisma.bizEvent.findMany({
       where: { bizSessionId: sessionId },
       include: { event: true },
@@ -824,7 +817,7 @@ export class WebSocketService {
   async getLatestSession(
     contentId: string,
     bizUserId: string,
-  ): Promise<(BizSession & { bizEvent: (BizEvent & { event: Event })[] }) | null> {
+  ): Promise<BizSessionWithEvents | null> {
     return await this.prisma.bizSession.findFirst({
       where: { contentId, bizUserId, deleted: false },
       include: { bizEvent: { include: { event: true } } },

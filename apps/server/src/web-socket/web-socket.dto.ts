@@ -1,5 +1,6 @@
 import { ContentType } from '@/content/models/content.model';
-import { BizCompany, BizEvent, BizSession, BizUser, Step, Version } from '@prisma/client';
+import { ContentConfigObject } from '@/content/models/version.model';
+import { BizCompany, BizEvent, BizSession, BizUser, Step, Version, Event } from '@prisma/client';
 
 // Base request interface with token
 export interface BaseRequest {
@@ -66,21 +67,17 @@ export type CreateSessionResponse = BizSession | null;
 
 export type TrackEventResponse = BizEvent | null | false;
 
-export interface ContentConfig {
-  enabledAutoStartRules: boolean;
-  enabledHideRules: boolean;
-  autoStartRules: any[];
-  hideRules: any[];
-}
+export type BizEventWithEvent = BizEvent & { event: Event };
+export type BizSessionWithEvents = BizSession & { bizEvent: BizEventWithEvent[] };
 
 export type ContentResponse = Version & {
   type: ContentType;
   name: string;
   data: any;
   steps: Step[];
-  config: ContentConfig;
-  latestSession?: any;
-  events?: any[];
+  config: ContentConfigObject;
+  latestSession?: BizSessionWithEvents;
+  events?: BizEventWithEvent[];
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;
