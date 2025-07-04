@@ -13,6 +13,7 @@ import { useLauncherContext } from '../../contexts/launcher-context';
 import { SidebarContainer } from '../sidebar';
 import { LauncherPosition } from './components/launcher-position';
 import { LauncherSettings } from './components/launcher-settings';
+import { useCallback } from 'react';
 
 const LauncherTooltipHeader = () => {
   const { backToLauncher, setLauncherTooltip } = useLauncherContext();
@@ -89,11 +90,11 @@ const LauncherTooltipFooter = () => {
   const { isLoading, updateLocalData, launcherTooltip, backToLauncher, setLauncherTooltip } =
     useLauncherContext();
 
-  const saveTooltip = () => {
+  const saveTooltip = useCallback(() => {
     updateLocalData({ tooltip: launcherTooltip });
     backToLauncher();
     setLauncherTooltip(undefined);
-  };
+  }, [launcherTooltip, updateLocalData, backToLauncher, setLauncherTooltip]);
 
   return (
     <CardFooter className="flex-none p-5">

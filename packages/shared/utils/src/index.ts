@@ -10,3 +10,4 @@ export * from './settings';
 export * from './is-url';
 export * from './globals';
 export * from './content';
+export * from './utils';

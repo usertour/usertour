@@ -9,6 +9,7 @@ export const getUserInfo = gql`
       email
       createdAt
       updatedAt
+      isOAuthUser
       projects {
         id
         role

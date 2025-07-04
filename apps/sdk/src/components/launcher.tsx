@@ -210,14 +210,19 @@ const LauncherWidgetCore = ({
 };
 
 export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
-  const store = launcher.getStore();
-  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } =
-    useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const store = useSyncExternalStore(
+    launcher.getStore().subscribe,
+    launcher.getStore().getSnapshot,
+  );
+  if (!store) {
+    return <></>;
+  }
+  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } = store;
 
   const data = content?.data as LauncherData | undefined;
 
   if (!theme || !data || !triggerRef || !openState) {
-    return null;
+    return <></>;
   }
 
   return (

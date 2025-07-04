@@ -138,7 +138,7 @@ export const getStepError = (data: any) => {
 
 export const getNavitateError = (data: any) => {
   const ret = { showError: false, errorInfo: '' };
-  if (!data.value) {
+  if (!data.value || data.value === '') {
     ret.showError = true;
     ret.errorInfo = 'Enter the navigator url';
   }

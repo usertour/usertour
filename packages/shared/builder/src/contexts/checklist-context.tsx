@@ -1,10 +1,8 @@
-import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour-ui/gql';
 import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import { deepmerge } from 'deepmerge-ts';
-import { debounce, isEqual, isUndefined } from 'lodash';
+import { isEqual, isUndefined } from 'lodash';
 import {
   ReactNode,
   createContext,
@@ -12,9 +10,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
+import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
 
 export interface ChecklistProviderProps {
   children: ReactNode;
@@ -24,7 +25,7 @@ export interface ChecklistContextValue {
   zIndex: number;
   isLoading: boolean;
   localData: ChecklistData | null;
-  update: (data: Partial<ChecklistData>) => Promise<void>;
+  update: (data: ChecklistData) => Promise<void>;
   updateLocalData: (updates: Partial<ChecklistData>) => void;
   addItem: (item: ChecklistItemType) => void;
   removeItem: (id: string) => void;
@@ -62,43 +63,32 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     return mergedData;
   }, [currentVersion]);
 
-  const [updateContentVersionMutation] = useMutation(updateContentVersion);
+  const { invoke: updateContentVersionMutation } = useUpdateContentVersionMutation();
   const { toast } = useToast();
   const [localData, setLocalData] = useState<ChecklistData | null>(data);
   const [currentItem, setCurrentItem] = useState<ChecklistItemType | null>(null);
 
-  const updateContentVersionData = useCallback(
-    async (updates: Partial<ChecklistData>) => {
+  // Track the last saved data to avoid unnecessary updates
+  const lastSavedDataRef = useRef<ChecklistData | null>(null);
+
+  const update = useCallback(
+    async (newData: ChecklistData) => {
       if (!currentVersion) {
         return;
       }
-      const ret = await updateContentVersionMutation({
-        variables: {
-          versionId: currentVersion?.id,
-          content: { data: { ...data, ...updates } },
-        },
-      });
 
-      if (ret.data.updateContentVersion && currentVersion?.contentId) {
-        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
-      } else {
-        throw new Error('Failed to update content version');
-      }
-    },
-    [
-      currentVersion?.id,
-      currentVersion?.contentId,
-      data,
-      fetchContentAndVersion,
-      updateContentVersionMutation,
-    ],
-  );
-
-  const update = useCallback(
-    async (updates: Partial<ChecklistData>) => {
       setIsLoading(true);
       try {
-        await updateContentVersionData(updates);
+        await updateContentVersionMutation(currentVersion.id, {
+          data: newData,
+        });
+
+        if (currentVersion.contentId) {
+          await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
+        }
+
+        // Update the last saved data reference
+        lastSavedDataRef.current = newData;
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -108,22 +98,37 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
         setIsLoading(false);
       }
     },
-    [updateContentVersionData, toast, setIsLoading],
+    [currentVersion, updateContentVersionMutation, fetchContentAndVersion, toast, setIsLoading],
   );
 
-  const updateLocalData = (updates: Partial<ChecklistData>) => {
-    setLocalData((prev) => {
-      if (!prev) {
-        return null;
-      }
-      return {
-        ...prev,
-        ...updates,
-      };
-    });
-  };
+  // Create a debounced save function that only triggers when data actually changes
+  const debouncedSave = useDebouncedCallback((newData: ChecklistData) => {
+    if (!isEqual(newData, lastSavedDataRef.current)) {
+      update(newData);
+    }
+  }, 500);
 
-  const saveCurrentItem = () => {
+  // Unified update function that handles both local state and server updates
+  const updateLocalData = useCallback(
+    (updates: Partial<ChecklistData>) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return null;
+        }
+        const newData = { ...prev, ...updates };
+
+        // Trigger debounced save if data has changed
+        if (!isEqual(newData, lastSavedDataRef.current)) {
+          debouncedSave(newData);
+        }
+
+        return newData;
+      });
+    },
+    [debouncedSave],
+  );
+
+  const saveCurrentItem = useCallback(() => {
     if (!currentItem) {
       return;
     }
@@ -131,77 +136,94 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       if (!prev) {
         return null;
       }
-      return {
+      const newData = {
         ...prev,
         items: prev.items.map((item) => (item.id === currentItem.id ? currentItem : item)),
       };
+
+      // Trigger debounced save for current item
+      if (!isEqual(newData, lastSavedDataRef.current)) {
+        debouncedSave(newData);
+      }
+
+      return newData;
     });
     setCurrentMode({ mode: BuilderMode.CHECKLIST });
-  };
+  }, [currentItem, setCurrentMode, debouncedSave]);
 
-  const addItem = (item: ChecklistItemType) => {
-    setLocalData((prev) => {
-      if (!prev) {
-        return null;
-      }
-      return {
-        ...prev,
-        items: [...prev.items, item],
-      };
-    });
-  };
-
-  const removeItem = useCallback((id: string) => {
-    setLocalData((prev) => {
-      if (!prev) {
-        return null;
-      }
-      return {
-        ...prev,
-        items: prev.items.filter((item) => item.id !== id),
-      };
-    });
-  }, []);
-
-  const reorderItems = useCallback((startIndex: number, endIndex: number) => {
-    setLocalData((prev) => {
-      if (!prev) {
-        return null;
-      }
-      const items = [...prev.items];
-      const [removed] = items.splice(startIndex, 1);
-      items.splice(endIndex, 0, removed);
-      return { ...prev, items };
-    });
-  }, []);
-
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((newData: ChecklistData) => {
-        if (!isEqual(newData, currentVersion?.data)) {
-          update(newData);
+  const addItem = useCallback(
+    (item: ChecklistItemType) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return null;
         }
-      }, 500),
-    [update, currentVersion?.data],
+        const newData = {
+          ...prev,
+          items: [...prev.items, item],
+        };
+
+        // Trigger debounced save
+        if (!isEqual(newData, lastSavedDataRef.current)) {
+          debouncedSave(newData);
+        }
+
+        return newData;
+      });
+    },
+    [debouncedSave],
   );
 
+  const removeItem = useCallback(
+    (id: string) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return null;
+        }
+        const newData = {
+          ...prev,
+          items: prev.items.filter((item) => item.id !== id),
+        };
+
+        // Trigger debounced save
+        if (!isEqual(newData, lastSavedDataRef.current)) {
+          debouncedSave(newData);
+        }
+
+        return newData;
+      });
+    },
+    [debouncedSave],
+  );
+
+  const reorderItems = useCallback(
+    (startIndex: number, endIndex: number) => {
+      setLocalData((prev) => {
+        if (!prev) {
+          return null;
+        }
+        const items = [...prev.items];
+        const [removed] = items.splice(startIndex, 1);
+        items.splice(endIndex, 0, removed);
+        const newData = { ...prev, items };
+
+        // Trigger debounced save
+        if (!isEqual(newData, lastSavedDataRef.current)) {
+          debouncedSave(newData);
+        }
+
+        return newData;
+      });
+    },
+    [debouncedSave],
+  );
+
+  // Only sync localData with server data when server data changes
   useEffect(() => {
-    if (data) {
+    if (data && !isEqual(data, lastSavedDataRef.current)) {
       setLocalData(data);
+      lastSavedDataRef.current = data;
     }
   }, [data]);
-
-  useEffect(() => {
-    if (!localData || isEqual(localData, data)) {
-      return;
-    }
-
-    debouncedUpdate(localData);
-
-    return () => {
-      debouncedUpdate.cancel();
-    };
-  }, [localData, debouncedUpdate]);
 
   const value: ChecklistContextValue = {
     zIndex,

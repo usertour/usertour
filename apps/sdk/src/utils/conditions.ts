@@ -1,5 +1,5 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { PRIORITIES } from '@usertour-ui/constants';
+import { PRIORITIES, RulesType, rulesTypes } from '@usertour-ui/constants';
 import { finderV2 } from '@usertour-ui/finder';
 import { isMatchUrlPattern } from '@usertour-ui/shared-utils';
 import { conditionsIsSame } from '@usertour-ui/shared-utils';
@@ -176,22 +176,8 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
   return false;
 };
 
-export const rulesTypes: string[] = [
-  'user-attr',
-  'current-page',
-  'event',
-  'segment',
-  'content',
-  'element',
-  'text-input',
-  'text-fill',
-  'time',
-  'group',
-  'task-is-clicked',
-];
-
 const isValidRulesType = (type: string) => {
-  return rulesTypes.includes(type);
+  return rulesTypes.includes(type as RulesType);
 };
 
 const isActiveRules = async (rules: RulesCondition) => {
@@ -199,24 +185,22 @@ const isActiveRules = async (rules: RulesCondition) => {
     return true;
   }
   switch (rules.type) {
-    case 'current-page':
+    case RulesType.CURRENT_PAGE:
       return isActiveRulesByCurrentPage(rules);
-    case 'time':
+    case RulesType.TIME:
       return isActiveRulesByCurrentTime(rules);
-    case 'element':
+    case RulesType.ELEMENT:
       return await isActiveRulesByElement(rules);
-    case 'text-input':
+    case RulesType.TEXT_INPUT:
       return await isActiveRulesByTextInput(rules);
-    case 'text-fill':
+    case RulesType.TEXT_FILL:
       return await isActiveRulesByTextFill(rules);
     default:
       return rules.actived;
   }
 };
 
-type RewriteRulesCondition = {
-  'task-is-clicked': boolean;
-};
+type RewriteRulesCondition = Partial<Record<RulesType, boolean>>;
 
 export const activedRulesConditions = async (
   conditions: RulesCondition[],

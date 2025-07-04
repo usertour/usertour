@@ -32,3 +32,55 @@ export const hiddenStyle: React.CSSProperties = {
   pointerEvents: 'none',
   opacity: 0,
 };
+
+/**
+ * Checks the number of uncompleted items
+ * @param items - The items to check
+ * @returns The number of uncompleted items
+ */
+export const checklistUnCompletedItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).filter((item) => !item.isCompleted).length;
+};
+
+/**
+ * Checks the number of completed items
+ * @param items - The items to check
+ * @returns The number of completed items
+ */
+export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).filter((item) => item.isCompleted).length;
+};
+
+/**
+ * Checks the number of visible items
+ * @param items - The items to check
+ * @returns The number of visible items
+ */
+export const checklistVisibleItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).length;
+};
+
+/**
+ * Checks if all items are completed
+ * @param items - The items to check
+ * @returns True if all items are completed, false otherwise
+ */
+export const checklistIsCompleted = (items: ChecklistItemType[]): boolean => {
+  return items.filter((item) => item.isVisible).every((item) => item.isCompleted);
+};
+
+/**
+ * Calculates the progress of a checklist
+ * @param items - The items to check
+ * @returns The progress of the checklist
+ */
+export const checklistProgress = (items: ChecklistItemType[]): number => {
+  const totalVisibleItemsCount = checklistVisibleItemsCount(items);
+  const unCompletedItemsCount = checklistUnCompletedItemsCount(items);
+  if (totalVisibleItemsCount === 0) {
+    return 0;
+  }
+  return Math.round(
+    ((totalVisibleItemsCount - unCompletedItemsCount) / totalVisibleItemsCount) * 100,
+  );
+};

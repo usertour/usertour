@@ -9,6 +9,7 @@ import { ContentAlignment } from '../../components/content-alignment';
 import { useLauncherContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
 import { LauncherPlacement } from './components/launcher-placement';
+import { useCallback } from 'react';
 
 const LauncherTargetHeader = () => {
   const { backToLauncher, setLauncherTarget } = useLauncherContext();
@@ -70,13 +71,13 @@ const LauncherTargetFooter = () => {
   const { isLoading, launcherTarget, backToLauncher, updateLocalData, setLauncherTarget } =
     useLauncherContext();
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (launcherTarget) {
       updateLocalData({ target: launcherTarget });
     }
     backToLauncher();
     setLauncherTarget(undefined);
-  };
+  }, [launcherTarget, updateLocalData, backToLauncher, setLauncherTarget]);
 
   return (
     <CardFooter className="flex-none p-5">

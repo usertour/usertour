@@ -1,8 +1,10 @@
 import { convertSettings } from '@usertour-ui/shared-utils';
 import { convertToCssVars } from '@usertour-ui/shared-utils';
 import {
+  BizCompany,
   ContentDataType,
   EventAttributes,
+  SDKConfig,
   SDKContent,
   Step,
   Theme,
@@ -33,7 +35,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private isStarted = false;
   private sessionId = '';
   private currentStep?: Step | null;
-  constructor(instance: App, content: SDKContent, defaultStore: T) {
+  constructor(instance: App, content: SDKContent, defaultStore?: T) {
     super();
     autoBind(this);
     this.store = new ExternalStore<T>(defaultStore);
@@ -206,7 +208,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Set the store
    * @param store - The store to set
    */
-  setStore(store: T) {
+  setStore(store: T | undefined) {
     this.store.setData(store);
   }
 
@@ -215,7 +217,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {boolean} True if the content is open, false otherwise
    */
   isOpen(): boolean {
-    return this.getStore().getSnapshot().openState === true;
+    return this.getStore()?.getSnapshot()?.openState === true;
   }
 
   /**
@@ -326,8 +328,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @param reason - The reason for starting the tour
    * @returns {Promise<void>} A promise that resolves when the tour is started
    */
-  startTour(contentId: string | undefined, reason: string) {
-    return this.getInstance().startTour(contentId, reason);
+  startTour(contentId: string | undefined, reason: string, cvid?: string) {
+    return this.getInstance().startTour(contentId, reason, { cvid });
   }
 
   /**
@@ -457,18 +459,16 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Get the company information
-   * @returns {Object} The company information
    */
-  getCompanyInfo() {
+  getCompanyInfo(): BizCompany | undefined {
     return this.getInstance().companyInfo;
   }
 
   /**
    * Unsets the active tour
-   * @returns {Promise<void>} A promise that resolves when the active tour is unset
    */
-  unsetActiveTour() {
-    return this.getInstance().unsetActiveTour();
+  unsetActiveTour(): void {
+    this.getInstance().unsetActiveTour();
   }
 
   /**
@@ -490,23 +490,21 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Starts a new tour
    * @param contentId - The ID of the content to start
-   * @returns {Promise<void>} A promise that resolves when the new tour is started
    */
-  async startNewTour(contentId: string) {
-    await this.startTour(contentId, contentStartReason.ACTION);
+  async startNewTour(contentId: string, cvid?: string) {
+    await this.startTour(contentId, contentStartReason.ACTION, cvid);
   }
 
   /**
    * Starts a new content
    * @param contentId - The ID of the content to start
-   * @returns {Promise<void>} A promise that resolves when the new content is started
    */
-  async startNewContent(contentId: string) {
+  async startNewContent(contentId: string, cvid?: string): Promise<void> {
     const content = this.getOriginContents()?.find((item) => item.contentId === contentId);
     if (content?.type === ContentDataType.CHECKLIST) {
       await this.startNewChecklist(contentId);
     } else if (content?.type === ContentDataType.FLOW) {
-      await this.startNewTour(contentId);
+      await this.startNewTour(contentId, cvid);
     } else {
       logger.error(`Unsupported content type: ${content?.type}`);
     }
@@ -515,9 +513,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Starts a new checklist
    * @param contentId - The ID of the content to start
-   * @returns {Promise<void>} A promise that resolves when the new checklist is started
    */
-  async startNewChecklist(contentId: string) {
+  async startNewChecklist(contentId: string): Promise<void> {
     await this.startChecklist(contentId, contentStartReason.ACTION);
   }
   /**
@@ -541,31 +538,28 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Activates the content conditions
-   * @returns {Promise<void>} A promise that resolves when the content conditions are activated
    */
-  async activeContentConditions() {
+  async activeContentConditions(): Promise<void> {
     return await this.getConfig().activeConditions();
   }
 
   /**
    * Get the SDK configuration
-   * @returns {Object} The SDK configuration
    */
-  getSdkConfig() {
+  getSdkConfig(): SDKConfig {
     return this.getInstance().getSdkConfig();
   }
 
   /**
    * Get the base information for the store
-   * @returns {Object} The base information for the store
    */
-  getStoreBaseInfo() {
+  getStoreBaseInfo(): BaseStore | undefined {
     const themes = this.getThemes();
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
     const sdkConfig = this.getSdkConfig();
     if (!themes || themes.length === 0) {
-      return {};
+      return undefined;
     }
     let theme: Theme | undefined;
     const currentStep = this.getCurrentStep();
@@ -575,7 +569,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
       theme = themes.find((item) => this.getContent()?.themeId === item.id);
     }
     if (!theme) {
-      return {};
+      return undefined;
     }
     return {
       sdkConfig,
@@ -584,23 +578,22 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
       theme,
       zIndex,
       userInfo,
+      openState: false,
     };
   }
 
   /**
    * Refreshes the app contents
-   * @returns {Promise<void>} A promise that resolves when the app contents are refreshed
    */
-  async refreshContents() {
+  async refreshContents(): Promise<void> {
     await this.getInstance().refresh();
   }
 
   /**
    * Checks if the content is the same as the new content
    * @param newContent - The new content to compare
-   * @returns {boolean} True if the content is the same, false otherwise
    */
-  isEqual(newContent: SDKContent) {
+  isEqual(newContent: SDKContent): boolean {
     return isEqual(this.getContent(), newContent);
   }
 

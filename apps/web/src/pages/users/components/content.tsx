@@ -1,6 +1,5 @@
-import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { UserListProvider } from '@/contexts/user-list-context';
+import { UserListProvider, useUserListContext } from '@/contexts/user-list-context';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { EditIcon } from '@usertour-ui/icons';
@@ -13,11 +12,13 @@ import { UserEditDropdownMenu } from './edit-dropmenu';
 import { UserSegmentEditForm } from './edit-form';
 import { UserSegmentFilterSave } from './filter-save';
 import { useAppContext } from '@/contexts/app-context';
+import { UserListContentSkeleton } from './content-skeleton';
 
-export function UserListContent(props: { environmentId: string | undefined }) {
-  const { environmentId } = props;
+// Inner component that uses the context
+function UserListContentInner({ environmentId }: { environmentId: string | undefined }) {
   const [open, setOpen] = useState(false);
-  const { currentSegment, refetch, loading } = useSegmentListContext();
+  const { currentSegment, refetch, loading: segmentLoading } = useSegmentListContext();
+  const { loading: userLoading } = useUserListContext();
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
   const handleOnClose = () => {
@@ -25,8 +26,13 @@ export function UserListContent(props: { environmentId: string | undefined }) {
     refetch();
   };
 
+  // Show skeleton if any data is loading
+  if (segmentLoading || userLoading) {
+    return <UserListContentSkeleton />;
+  }
+
   return (
-    <UserListProvider environmentId={environmentId}>
+    <>
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
         <div className="flex items-center justify-between ">
           <div className="space-y-1 flex flex-row items-center relative">
@@ -71,12 +77,21 @@ export function UserListContent(props: { environmentId: string | undefined }) {
           )}
         </div>
         <Separator className="my-4" />
-        {loading && <ListSkeleton />}
         {currentSegment && (
           <DataTable published={false} segment={currentSegment} key={currentSegment.id} />
         )}
       </div>
       <UserSegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+    </>
+  );
+}
+
+export function UserListContent(props: { environmentId: string | undefined }) {
+  const { environmentId } = props;
+
+  return (
+    <UserListProvider environmentId={environmentId}>
+      <UserListContentInner environmentId={environmentId} />
     </UserListProvider>
   );
 }

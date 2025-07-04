@@ -3,7 +3,7 @@
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
+import { EXTENSION_SELECT, RulesType } from '@usertour-ui/constants';
 import { useAttributeListContext, useContentListContext } from '@usertour-ui/contexts';
 import { SpinnerIcon } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
@@ -127,7 +127,7 @@ const ChecklistItemBody = () => {
             <Rules
               onDataChange={handleRulesChange('completeConditions')}
               defaultConditions={currentItem?.completeConditions ?? []}
-              filterItems={[...defaultRulesItems, 'task-is-clicked']}
+              filterItems={[...defaultRulesItems, RulesType.TASK_IS_CLICKED]}
               attributes={attributeList}
               contents={contents}
               segments={segmentList}

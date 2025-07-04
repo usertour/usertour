@@ -62,6 +62,7 @@
     "@usertour-ui/separator": "workspace:^",
     "@usertour-ui/shared-components": "workspace:^",
     "@usertour-ui/shared-editor": "workspace:^",
+    "@usertour-ui/shared-hooks": "workspace:^",
     "@usertour-ui/shared-utils": "workspace:^",
     "@usertour-ui/slider": "workspace:^",
     "@usertour-ui/storage": "workspace:^",
@@ -75,7 +76,6 @@
     "@usertour-ui/types": "workspace:^",
     "@usertour-ui/ui-utils": "workspace:^",
     "@usertour-ui/use-toast": "workspace:^",
-    "@usertour-ui/shared-hooks": "workspace:^",
     "animejs": "^3.2.1",
     "apollo3-cache-persist": "^0.14.1",
     "axios": "^1.6.0",
@@ -90,6 +90,7 @@
     "react-redux": "^8.1.1",
     "react-use": "^17.4.0",
     "tailwind-merge": "^1.14.0",
+    "use-debounce": "^10.0.5",
     "zod": "^3.21.4"
   },
   "peerDependencies": {

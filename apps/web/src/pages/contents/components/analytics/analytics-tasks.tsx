@@ -3,9 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { AnalyticsViewsByTask } from '@usertour-ui/types';
+import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 
 export const AnalyticsTasks = () => {
-  const { analyticsData } = useAnalyticsContext();
+  const { analyticsData, loading } = useAnalyticsContext();
+
+  if (loading) {
+    return <AnalyticsTasksSkeleton />;
+  }
 
   const computeRate = (task: AnalyticsViewsByTask) => {
     if (!task.analytics.uniqueViews) {

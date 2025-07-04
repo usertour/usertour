@@ -14,6 +14,11 @@ import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-ui/shared-utils';
 import { BindAttribute } from './bind-attribute';
 import { BizAttributeTypes } from '@usertour-ui/types';
+
+// Constants
+const DEFAULT_PLACEHOLDER = 'Enter text...';
+const DEFAULT_BUTTON_TEXT = 'Submit';
+
 interface ContentEditorMultiLineTextProps {
   element: ContentEditorMultiLineTextElement;
   id: string;
@@ -32,59 +37,67 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
     createStep,
     projectId,
   } = useContentEditorContext();
-  const [isOpen, setIsOpen] = useState<boolean>();
-  const [isShowError, setIsShowError] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [openError, setOpenError] = useState<boolean>(false);
   const [localData, setLocalData] = useState(element.data);
-  const [shouldUpdate, setShouldUpdate] = useState(false);
 
   const handleDataChange = useCallback(
     (data: Partial<ContentEditorMultiLineTextElement['data']>) => {
-      setLocalData((prevData) => {
-        const newData = { ...prevData, ...data };
-        setShouldUpdate(true);
-        return newData;
-      });
+      setLocalData((prevData) => ({ ...prevData, ...data }));
     },
     [],
   );
 
   useEffect(() => {
-    if (shouldUpdate) {
-      updateElement(
-        {
-          ...element,
-          data: localData,
-        },
-        id,
-      );
-      setShouldUpdate(false);
-    }
-  }, [shouldUpdate, localData, updateElement, element, id]);
+    setOpenError(isEmptyString(localData.name) && !isOpen);
+  }, [localData.name, isOpen]);
 
-  useEffect(() => {
-    setIsShowError(isEmptyString(localData.name));
-  }, [localData.name]);
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (open) {
+        setOpenError(false);
+        return;
+      }
+      if (isEmptyString(localData.name)) {
+        setOpenError(true);
+        return;
+      }
+
+      // Only update if data has changed
+      if (JSON.stringify(localData) !== JSON.stringify(element.data)) {
+        updateElement(
+          {
+            ...element,
+            data: localData,
+          },
+          id,
+        );
+      }
+    },
+    [localData, element, id, updateElement],
+  );
 
   return (
-    <EditorError open={isShowError}>
+    <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
               <Textarea
-                placeholder={localData.placeholder || 'Enter text...'}
+                placeholder={localData.placeholder || DEFAULT_PLACEHOLDER}
                 className="border-sdk-question bg-sdk-background"
                 disabled
               />
               <div className="flex justify-end w-full">
-                <Button forSdk={true}>{localData.buttonText || 'Submit'}</Button>
+                <Button forSdk={true}>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Button>
               </div>
             </div>
           </Popover.Trigger>
 
           <Popover.Portal>
             <Popover.Content
-              className="z-50 w-72 rounded-md border bg-background p-4"
+              className="z-50 w-72 rounded-md border bg-background p-4 shadow-lg"
               style={{ zIndex }}
               sideOffset={10}
               side="right"
@@ -94,7 +107,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   <Label htmlFor="question-name">Question name</Label>
                   <Input
                     id="question-name"
-                    value={localData.name}
+                    value={localData.name || ''}
                     onChange={(e) => handleDataChange({ name: e.target.value })}
                     placeholder="Enter question name"
                   />
@@ -117,7 +130,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   <Label htmlFor="placeholder">Placeholder</Label>
                   <Input
                     id="placeholder"
-                    value={localData.placeholder}
+                    value={localData.placeholder || ''}
                     onChange={(e) => handleDataChange({ placeholder: e.target.value })}
                     placeholder="Enter placeholder text"
                   />
@@ -127,7 +140,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                   <Label htmlFor="button-text">Button text</Label>
                   <Input
                     id="button-text"
-                    value={localData.buttonText}
+                    value={localData.buttonText || ''}
                     onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                     placeholder="Enter button text"
                   />
@@ -136,7 +149,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="required"
-                    checked={localData.required}
+                    checked={localData.required || false}
                     onCheckedChange={(checked) => handleDataChange({ required: checked })}
                   />
                   <Label htmlFor="required">Required</Label>
@@ -174,7 +187,7 @@ export const ContentEditorMultiLineTextSerialize = (props: {
   return (
     <div className="flex flex-col gap-2 items-center w-full">
       <Textarea
-        placeholder={element.data.placeholder || 'Enter text...'}
+        placeholder={element.data.placeholder || DEFAULT_PLACEHOLDER}
         className="border-sdk-question bg-sdk-background"
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -185,7 +198,7 @@ export const ContentEditorMultiLineTextSerialize = (props: {
           onClick={() => onClick?.(element, value)}
           disabled={element.data.required && isEmptyString(value)}
         >
-          {element.data.buttonText || 'Submit'}
+          {element.data.buttonText || DEFAULT_BUTTON_TEXT}
         </Button>
       </div>
     </div>

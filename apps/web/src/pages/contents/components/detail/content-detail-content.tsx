@@ -32,6 +32,7 @@ import {
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-ui/button';
+import { ContentDetailContentSkeleton } from './content-detail-skeleton';
 
 interface ContentDetailContentStepProps {
   currentStep: Step;
@@ -340,8 +341,9 @@ const ChecklistContentPreview = ({
 };
 
 export const ContentDetailContent = () => {
-  const { version } = useContentVersionContext();
-  const { content, contentType } = useContentDetailContext();
+  const { version, loading: versionLoading } = useContentVersionContext();
+  const { content, contentType, loading: contentLoading } = useContentDetailContext();
+  const { loading: themeLoading } = useThemeListContext();
   const [state, setState] = useState({
     isOpenedInstall: false,
     open: false,
@@ -349,6 +351,12 @@ export const ContentDetailContent = () => {
   });
   const { openBuilder } = useContentBuilder();
   const { isViewOnly } = useAppContext();
+
+  // Show skeleton if any of the required data is loading
+  if (versionLoading || contentLoading || themeLoading) {
+    return <ContentDetailContentSkeleton />;
+  }
+
   if (!version || !content || !contentType) return null;
 
   const showAddButton = contentType === ContentTypeName.FLOWS;

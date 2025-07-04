@@ -8,5 +8,6 @@ export type UserProfile = {
   name?: string;
   projectId?: string;
   invitationToken?: string;
+  isOAuthUser?: boolean;
   createdAt: string;
 };

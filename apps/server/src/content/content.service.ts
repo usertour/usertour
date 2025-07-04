@@ -6,16 +6,16 @@ import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
-import { ParamsError, UnknownError } from '@/common/errors';
-import { ConfigService } from '@nestjs/config';
+import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
+import { ParamsError, UnknownError } from '@/common/errors';
 
 @Injectable()
 export class ContentService {
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService,
+    private webSocketGateway: WebSocketGateway,
   ) {}
 
   async createContent(input: ContentInput) {
@@ -319,7 +319,7 @@ export class ContentService {
       });
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const content = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
         where: { id: version.contentId },
@@ -354,10 +354,15 @@ export class ContentService {
 
       return content;
     });
+
+    // Send WebSocket notification outside of transaction
+    await this.webSocketGateway.notifyContentChanged(environmentId);
+
+    return content;
   }
 
   async unpublishedContentVersion(contentId: string, environmentId: string) {
-    return await this.prisma.$transaction(async (tx) => {
+    const content = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
         where: { id: contentId },
@@ -390,6 +395,10 @@ export class ContentService {
 
       return content;
     });
+
+    // send content change notification to all users in the environment
+    await this.webSocketGateway.notifyContentChanged(environmentId);
+    return content;
   }
 
   async deleteContent(contentId: string) {

@@ -49,4 +49,9 @@ export class UsersResolver {
     }
     return userOnProjects;
   }
+
+  @ResolveField('isOAuthUser')
+  async isOAuthUser(@Parent() author: User) {
+    return await this.usersService.isOAuthUser(author.id);
+  }
 }
