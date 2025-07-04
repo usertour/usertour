@@ -357,7 +357,7 @@ importers:
         version: 4.7.8
       jsforce:
         specifier: ^3.8.2
-        version: 3.8.2(encoding@0.1.13)
+        version: 3.9.1(encoding@0.1.13)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -782,6 +782,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.6
         version: 1.0.7(tailwindcss@3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.1.6)))
+      use-debounce:
+        specifier: ^10.0.5
+        version: 10.0.5(react@18.2.0)
       usertour.js:
         specifier: ^0.0.10
         version: 0.0.10
@@ -3241,6 +3244,9 @@ importers:
       tailwind-merge:
         specifier: ^1.14.0
         version: 1.14.0
+      use-debounce:
+        specifier: ^10.0.5
+        version: 10.0.5(react@18.2.0)
       zod:
         specifier: ^3.21.4
         version: 3.23.8
@@ -3455,6 +3461,9 @@ importers:
       deepmerge-ts:
         specifier: ^7.1.3
         version: 7.1.3
+      fast-deep-equal:
+        specifier: ^3.1.3
+        version: 3.1.3
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -4815,8 +4824,8 @@ packages:
     resolution: {integrity: sha512-YXHu5lN8kJCb1LOb9PgV6pvak43X2h4HvRApcN5SdWeaItQOzfn1hgP6jasD6KWQyJDBxrVmA9o9OivlnNJK/w==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/runtime-corejs3@7.27.6':
-    resolution: {integrity: sha512-vDVrlmRAY8z9Ul/HxT+8ceAru95LQgkSKiXkSYZvqtbkPSfhZJgpRp45Cldbh1GJ1kxzQkI70AqyrTI58KpaWQ==}
+  '@babel/runtime-corejs3@7.28.0':
+    resolution: {integrity: sha512-nlIXnSqLcBij8K8TtkxbBJgfzfvi75V1pAKSM7dUXejGw12vJAqez74jZrHTsJ3Z+Aczc5Q/6JgNjKRMsVU44g==}
     engines: {node: '>=6.9.0'}
 
   '@babel/runtime@7.26.0':
@@ -9022,6 +9031,9 @@ packages:
   core-js-pure@3.39.0:
     resolution: {integrity: sha512-7fEcWwKI4rJinnK+wLTezeg2smbFFdSBP6E2kQZNbnzM2s1rpKQ6aaRteZSSg7FLU3P0HGGVo/gbpfanU36urg==}
 
+  core-js-pure@3.43.0:
+    resolution: {integrity: sha512-i/AgxU2+A+BbJdMxh3v7/vxi2SbFqxiFmg6VsDwYB4jkucrd1BZNA9a9gphC0fYMG5IBSgQcbQnk865VCLe7xA==}
+
   core-js@3.39.0:
     resolution: {integrity: sha512-raM0ew0/jJUqkJ0E6e8UDtl+y/7ktFivgWvqw8dNSQeNWoSDLvQ1H/RN3aPXB9tBd4/FhyR4RDPGhsNIMsAn7g==}
 
@@ -9830,8 +9842,8 @@ packages:
     resolution: {integrity: sha512-CzbClwlXAuiRQAlUyfqPgvPoNKTckTPGfwZV4ZdAhVcP2lh9KUxJg2b5GkE7XbjKQ3YJnQ9z6D9ntLAlB+tP8g==}
     engines: {node: '>=0.8.0'}
 
-  faye@1.4.0:
-    resolution: {integrity: sha512-kRrIg4be8VNYhycS2PY//hpBJSzZPr/DBbcy9VWelhZMW3KhyLkQR0HL0k0MNpmVoNFF4EdfMFkNAWjTP65g6w==}
+  faye@1.4.1:
+    resolution: {integrity: sha512-Cg/khikhqlvumHO3efwx2tps2ZgQRjUMrO24G0quz7MMzRYYaEjU224YFXOeuPIvanRegIchVxj6pmHK1W0ikA==}
     engines: {node: '>=0.8.0'}
 
   fb-watchman@2.0.2:
@@ -10762,8 +10774,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  jsforce@3.8.2:
-    resolution: {integrity: sha512-W1iwDeOEZdtGGwBARWckE133NuG1OxoL8gzCzq+7FO6KuGeMAfR3O2pDqSDYBacn1zboMD2IDkEQC44iQ74t1w==}
+  jsforce@3.9.1:
+    resolution: {integrity: sha512-zTpRckVSDmoR3dzEHju/8x925aN8qTCpRExqp6jwz+1feUEhhOjP3s4NF2TARFgLCw1Y4eGYnJRZQLoOW21Jkw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -13904,6 +13916,12 @@ packages:
       '@types/react':
         optional: true
 
+  use-debounce@10.0.5:
+    resolution: {integrity: sha512-Q76E3lnIV+4YT9AHcrHEHYmAd9LKwUAbPXDm7FlqVGDHiSOhX3RDjT8dm0AxbJup6WgOb1YEcKyCr11kBJR5KQ==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      react: '*'
+
   use-sidecar@1.1.2:
     resolution: {integrity: sha512-epTbsLuzZ7lPClpz2TyryBfztm7m+28DlEv2ZCQ3MDr5ssiwyOwGH/e5F9CkfWjJ1t4clvI58yF822/GUkjjhw==}
     engines: {node: '>=10'}
@@ -15261,9 +15279,9 @@ snapshots:
       core-js-pure: 3.39.0
       regenerator-runtime: 0.14.1
 
-  '@babel/runtime-corejs3@7.27.6':
+  '@babel/runtime-corejs3@7.28.0':
     dependencies:
-      core-js-pure: 3.39.0
+      core-js-pure: 3.43.0
 
   '@babel/runtime@7.26.0':
     dependencies:
@@ -20154,6 +20172,8 @@ snapshots:
 
   core-js-pure@3.39.0: {}
 
+  core-js-pure@3.43.0: {}
+
   core-js@3.39.0: {}
 
   core-util-is@1.0.3: {}
@@ -21138,7 +21158,7 @@ snapshots:
     dependencies:
       websocket-driver: 0.7.4
 
-  faye@1.4.0:
+  faye@1.4.1:
     dependencies:
       asap: 2.0.6
       csprng: 0.1.2
@@ -22333,17 +22353,17 @@ snapshots:
 
   jsesc@3.0.2: {}
 
-  jsforce@3.8.2(encoding@0.1.13):
+  jsforce@3.9.1(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.27.6
-      '@babel/runtime-corejs3': 7.27.6
+      '@babel/runtime-corejs3': 7.28.0
       '@sindresorhus/is': 4.6.0
       base64url: 3.0.1
       commander: 4.1.1
       core-js: 3.39.0
       csv-parse: 5.6.0
       csv-stringify: 6.5.2
-      faye: 1.4.0
+      faye: 1.4.1
       form-data: 4.0.1
       https-proxy-agent: 5.0.1
       inquirer: 8.2.6
@@ -25957,6 +25977,10 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 18.2.15
+
+  use-debounce@10.0.5(react@18.2.0):
+    dependencies:
+      react: 18.2.0
 
   use-sidecar@1.1.2(@types/react@18.2.15)(react@18.2.0):
     dependencies:

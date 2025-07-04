@@ -34,11 +34,10 @@ import { postProxyMessageToWindow } from '../../utils/post-message';
 import { ContentEditorRoot, hasMissingRequiredData } from '@usertour-ui/shared-editor';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { PlusIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { useMutation } from '@apollo/client';
-import { addContentStep, updateContentStep } from '@usertour-ui/gql';
 import { useToast } from '@usertour-ui/use-toast';
 import { ContentType } from '../../components/content-type';
 import { FlowPlacement } from './components/flow-placement';
+import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour-ui/shared-hooks';
 
 const FlowBuilderDetailHeader = () => {
   const { setCurrentMode, currentStep, currentContent, updateCurrentStep } = useBuilderContext();
@@ -229,8 +228,8 @@ const FlowBuilderDetailFooter = () => {
   } = useBuilderContext();
   const [backupStepData] = useState(currentStep);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [addContentStepMutation] = useMutation(addContentStep);
-  const [updateContentStepMutation] = useMutation(updateContentStep);
+  const { invoke: addContentStep } = useAddContentStepMutation();
+  const { invoke: updateContentStep } = useUpdateContentStepMutation();
   const { toast } = useToast();
 
   const handleSave = useCallback(async () => {
@@ -265,10 +264,14 @@ const FlowBuilderDetailFooter = () => {
         setting: { ...currentStep.setting, height },
       };
       if (!step.id) {
-        const ret = await addContentStepMutation({
-          variables: { data: { ...step, versionId: currentVersion?.id } },
-        });
-        if (ret.data.addContentStep && currentVersion?.contentId) {
+        if (!currentVersion?.id) {
+          return toast({
+            variant: 'destructive',
+            title: 'Failed to create step!',
+          });
+        }
+        const createdStep = await addContentStep({ ...step, versionId: currentVersion.id });
+        if (createdStep && currentVersion?.contentId) {
           await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
         } else {
           return toast({
@@ -278,10 +281,8 @@ const FlowBuilderDetailFooter = () => {
         }
       } else {
         const { id, createdAt, updatedAt, cvid, ...updates } = step;
-        const ret = await updateContentStepMutation({
-          variables: { stepId: step.id, data: updates },
-        });
-        if (ret.data.updateContentStep && currentVersion?.contentId) {
+        const updatedStep = await updateContentStep(step.id, updates);
+        if (updatedStep && currentVersion?.contentId) {
           await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
         } else {
           return toast({

@@ -1,20 +1,15 @@
 import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
-import { BizEvents, EventAttributes, LauncherData, SDKContent } from '@usertour-ui/types';
+import { BizEvents, EventAttributes, LauncherData } from '@usertour-ui/types';
 import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
 import { LauncherStore } from '../types/store';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
-import { App } from './app';
 import { BaseContent } from './base-content';
-import { defaultLauncherStore } from './common';
 import { ElementWatcher } from './element-watcher';
 
 export class Launcher extends BaseContent<LauncherStore> {
   private watcher: ElementWatcher | null = null;
-  constructor(instance: App, content: SDKContent) {
-    super(instance, content, defaultLauncherStore);
-  }
 
   /**
    * Monitors the launcher's visibility state and ensures it's properly handled
@@ -45,8 +40,9 @@ export class Launcher extends BaseContent<LauncherStore> {
       return;
     }
 
-    const { openState } = this.getStore().getSnapshot();
+    const store = this.getStore().getSnapshot();
     const { isHidden } = await this.watcher.checkVisibility();
+    const openState = store?.openState;
 
     // Hide launcher if it's temporarily hidden or target element is not visible
     if (this.isTemporarilyHidden() || isHidden) {
@@ -59,13 +55,23 @@ export class Launcher extends BaseContent<LauncherStore> {
     // Show launcher if it's not already open
     if (!openState) {
       this.open();
-      this.trigger(BizEvents.LAUNCHER_SEEN);
+      await this.reportSeenEvent();
     }
   }
 
+  /**
+   * Gets the reused session ID for the launcher
+   * @returns {string | null} The reused session ID or null if not applicable
+   */
   getReusedSessionId() {
     return null;
   }
+
+  /**
+   * Reports the start event for the launcher
+   * @returns {Promise<void>} A promise that resolves when the event is reported
+   */
+  async reportStartEvent() {}
 
   /**
    * Builds the store data for the launcher
@@ -78,11 +84,10 @@ export class Launcher extends BaseContent<LauncherStore> {
     const { zIndex } = content.data;
 
     return {
-      ...defaultLauncherStore,
       content,
       openState: false,
       ...baseInfo,
-      zIndex: zIndex || baseInfo.zIndex,
+      zIndex: zIndex || baseInfo?.zIndex,
       triggerRef: undefined,
     } as LauncherStore;
   }
@@ -104,7 +109,7 @@ export class Launcher extends BaseContent<LauncherStore> {
    * 3. Initialize a new element watcher
    * 4. Set up event handlers for element found and timeout scenarios
    */
-  show() {
+  async show() {
     const data = this.getContent().data as LauncherData;
 
     // Early return if document or target element is not available
@@ -171,7 +176,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       const { type, data } = actionRule;
 
       if (type === ContentActionsItemType.FLOW_START) {
-        await this.startNewContent(data.contentId);
+        await this.startNewContent(data.contentId, data.stepCvid);
       } else if (type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(data.value);
       } else if (type === ContentActionsItemType.LAUNCHER_DISMIS) {
@@ -186,36 +191,29 @@ export class Launcher extends BaseContent<LauncherStore> {
   }
 
   /**
-   * Initializes event listeners for launcher lifecycle events
-   * Sets up handlers for activation, dismissal, and visibility events
+   * Handles the activation of the launcher
+   * This method:
+   * 1. Reports the activation event
+   * 2. Auto-dismisses the launcher after activation if configured
    */
-  initializeEventListeners() {
+  async handleActive() {
     const content = this.getContent();
     const data = content.data as LauncherData;
     const { tooltip } = data;
-
-    // Handle launcher activation
-    this.once(BizEvents.LAUNCHER_ACTIVATED, async () => {
-      await this.reportActiveEvent();
-
-      // Auto-dismiss after activation if configured
-      if (tooltip?.settings?.dismissAfterFirstActivation) {
-        setTimeout(() => {
-          this.close();
-        }, 2000);
-      }
-    });
-
-    // Handle launcher dismissal
-    this.once(BizEvents.LAUNCHER_DISMISSED, () => {
-      this.reportDismissEvent();
-    });
-
-    // Handle launcher visibility
-    this.once(BizEvents.LAUNCHER_SEEN, () => {
-      this.reportSeenEvent();
-    });
+    await this.reportActiveEvent();
+    // Auto-dismiss after activation if configured
+    if (tooltip?.settings?.dismissAfterFirstActivation) {
+      setTimeout(() => {
+        this.close();
+      }, 2000);
+    }
   }
+
+  /**
+   * Initializes event listeners for launcher lifecycle events
+   * Sets up handlers for activation, dismissal, and visibility events
+   */
+  initializeEventListeners() {}
 
   /**
    * Closes the launcher and triggers dismissal events
@@ -228,7 +226,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     this.setDismissed(true);
     this.setStarted(false);
     this.hide();
-    this.trigger(BizEvents.LAUNCHER_DISMISSED);
+    await this.reportDismissEvent();
   }
 
   /**
@@ -240,7 +238,7 @@ export class Launcher extends BaseContent<LauncherStore> {
    */
   destroy() {
     // Reset store to default state
-    this.setStore(defaultLauncherStore);
+    this.setStore(undefined);
 
     // Clean up element watcher
     if (this.watcher) {

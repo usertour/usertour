@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour-ui/icons';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { AnalyticsData, ContentDataType } from '@usertour-ui/types';
+import { AnalyticsViewsSkeleton } from './analytics-skeleton';
 
 interface AnalyticsViewsProps {
   analyticsData: AnalyticsData;
@@ -151,9 +152,14 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
 );
 
 export const AnalyticsViews = () => {
-  const { analyticsData } = useAnalyticsContext();
+  const { analyticsData, loading } = useAnalyticsContext();
   const { content } = useContentDetailContext();
   const contentType = content?.type;
+
+  if (loading) {
+    return <AnalyticsViewsSkeleton />;
+  }
+
   if (!content || !analyticsData) {
     return null;
   }

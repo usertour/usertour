@@ -7,5 +7,6 @@ import { IntegrationModule } from '@/integration/integration.module';
 @Module({
   imports: [BizModule, IntegrationModule],
   providers: [WebSocketGateway, WebSocketService],
+  exports: [WebSocketGateway],
 })
 export class WebSocketModule {}

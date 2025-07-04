@@ -6,16 +6,21 @@ import { format } from 'date-fns';
 import { useEffect } from 'react';
 import { ContentVersionAction } from './content-version-action';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { ListSkeleton } from '@/components/molecules/skeleton';
 
 export const ContentVersionTable = () => {
-  const { content } = useContentDetailContext();
-  const { versionList, refetch } = useContentVersionListContext();
-
-  const { environmentList } = useEnvironmentListContext();
+  const { content, loading: contentLoading } = useContentDetailContext();
+  const { versionList, refetch, loading: versionListLoading } = useContentVersionListContext();
+  const { environmentList, loading: environmentLoading } = useEnvironmentListContext();
 
   useEffect(() => {
     refetch();
   }, [refetch]);
+
+  // Show skeleton if any of the required data is loading
+  if (contentLoading || versionListLoading || environmentLoading) {
+    return <ListSkeleton />;
+  }
 
   const getPublishedEnvironmentsForVersion = (versionId: string) => {
     let environmentsFromContentOnEnvironments: string[] = [];

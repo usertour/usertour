@@ -6,6 +6,7 @@ import { ThemeDetailPreview } from './theme-detail-preview';
 
 export const ThemeDetailContent = () => {
   const { setSettings, theme } = useThemeDetailContext();
+
   return (
     <div className="flex flex-row pt-24 px-8 ">
       <ThemeSettings

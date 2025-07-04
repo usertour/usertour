@@ -55,7 +55,8 @@ const FlowBuilderTriggerHeader = () => {
   );
 };
 
-const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => {
+const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boolean }) => {
+  const { attributes, loading } = props;
   const {
     zIndex,
     currentStep,
@@ -157,104 +158,53 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
     });
   };
 
-  // useEffect(() => {
-  //   if (currentMode?.mode === BuilderMode.FLOW_STEP_TRIGGER && selectorOutput && !isWebBuilder) {
-  //     const { triggerConditionData } = currentMode;
-  //     if (!triggerConditionData) {
-  //       return;
-  //     }
-
-  //     const elementData = {
-  //       precision: 'loose',
-  //       sequence: '1st',
-  //       type: 'auto',
-  //       isDynamicContent: false,
-  //       selectors: selectorOutput.target.selectors,
-  //       content: selectorOutput.target.content,
-  //       screenshot: selectorOutput.screenshot.mini,
-  //       selectorsList: selectorOutput.target.selectorsList,
-  //     };
-
-  //     updateCurrentStep((step) => {
-  //       if (step.trigger) {
-  //         const trigger = [...step.trigger];
-  //         const { index, conditionIndex, type } = triggerConditionData;
-  //         if (!trigger[index]) {
-  //           return step;
-  //         }
-  //         let conditions = [...trigger[index].conditions];
-  //         const operators = conditions.length > 0 ? conditions[0].operators : 'or';
-
-  //         if (conditionIndex >= conditions.length) {
-  //           conditions.push({
-  //             type,
-  //             operators,
-  //             data: {
-  //               logic: 'present',
-  //               elementData,
-  //             },
-  //           });
-  //         } else {
-  //           conditions = trigger[index].conditions.map((condition, i) => {
-  //             if (i === conditionIndex) {
-  //               return {
-  //                 ...condition,
-  //                 data: { ...condition.data, elementData },
-  //               };
-  //             }
-  //             return condition;
-  //           });
-  //         }
-  //         trigger[index].id = uuidV4();
-  //         trigger[index].conditions = [...conditions];
-  //         return { ...step, trigger };
-  //       }
-  //       return step;
-  //     });
-  //   }
-  // }, [currentMode, selectorOutput, isWebBuilder]);
-
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full ">
         <div className="flex-col space-y-3 p-4">
           <h1 className="text-sm">Triggers</h1>
-          {currentStep?.trigger?.map((trigger, index) => (
-            <ContentTrigger
-              key={trigger.id ?? index}
-              showError={showError}
-              attributeList={attributes}
-              contents={contents}
-              onActionsChange={(actions) => {
-                handleOnActionsChange(actions, index);
-              }}
-              onConditonsChange={(conditions) => {
-                handleOnConditonsChange(conditions, index);
-              }}
-              onDelete={() => {
-                handleOnDelete(index);
-              }}
-              zIndex={zIndex}
-              currentVersion={currentVersion}
-              createStep={createNewStep}
-              currentStep={currentStep}
-              currentContent={currentContent}
-              conditions={trigger.conditions}
-              actions={trigger.actions}
-              token={token}
-              wait={trigger.wait ?? 0}
-              onWaitChange={(wait) => {
-                handleOnWaitChange(wait, index);
-              }}
-              onRulesConditionElementChange={
-                isWebBuilder
-                  ? undefined
-                  : (conditionIndex, type) => {
-                      handleOnRulesConditionElementChange(index, conditionIndex, type);
-                    }
-              }
-            />
-          ))}
+          {loading && (
+            <div className="flex justify-center items-center h-full">
+              <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+            </div>
+          )}
+          {!loading &&
+            currentStep?.trigger?.map((trigger, index) => (
+              <ContentTrigger
+                key={trigger.id ?? index}
+                showError={showError}
+                attributeList={attributes}
+                contents={contents}
+                onActionsChange={(actions) => {
+                  handleOnActionsChange(actions, index);
+                }}
+                onConditonsChange={(conditions) => {
+                  handleOnConditonsChange(conditions, index);
+                }}
+                onDelete={() => {
+                  handleOnDelete(index);
+                }}
+                zIndex={zIndex}
+                currentVersion={currentVersion}
+                createStep={createNewStep}
+                currentStep={currentStep}
+                currentContent={currentContent}
+                conditions={trigger.conditions}
+                actions={trigger.actions}
+                token={token}
+                wait={trigger.wait ?? 0}
+                onWaitChange={(wait) => {
+                  handleOnWaitChange(wait, index);
+                }}
+                onRulesConditionElementChange={
+                  isWebBuilder
+                    ? undefined
+                    : (conditionIndex, type) => {
+                        handleOnRulesConditionElementChange(index, conditionIndex, type);
+                      }
+                }
+              />
+            ))}
           <Button className="w-full" variant="secondary" onClick={handleOnClick}>
             <PlusCircledIcon className="mr-2" />
             Add trigger
@@ -265,7 +215,8 @@ const FlowBuilderTriggerBody = ({ attributes }: { attributes: Attribute[] }) => 
   );
 };
 
-const FlowBuilderTriggerFooter = ({ attributes }: { attributes: Attribute[] }) => {
+const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
+  const { attributes } = props;
   const { setCurrentMode, currentStep, fetchContentAndVersion, currentVersion } =
     useBuilderContext();
 
@@ -325,7 +276,7 @@ export const FlowBuilderTrigger = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex, position, projectId } = useBuilderContext();
 
-  const { attributes } = useListAttributesQuery(projectId, AttributeBizTypes.Nil);
+  const { attributes, loading } = useListAttributesQuery(projectId, AttributeBizTypes.Nil);
 
   return (
     <>
@@ -341,7 +292,7 @@ export const FlowBuilderTrigger = () => {
           <SidebarMini container={ref} containerWidth={374} />
           <Card className="h-full flex flex-col bg-background-800">
             <FlowBuilderTriggerHeader />
-            <FlowBuilderTriggerBody attributes={attributes} />
+            <FlowBuilderTriggerBody attributes={attributes} loading={loading} />
             <FlowBuilderTriggerFooter attributes={attributes} />
           </Card>
         </div>

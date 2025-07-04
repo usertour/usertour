@@ -45,13 +45,13 @@ const App = ({ toursStore, launchersStore, checklistsStore }: AppProps) => {
   return (
     <React.StrictMode>
       <React.Suspense fallback={<div>Loading...</div>}>
-        {tours.map((tour) => (
+        {tours?.map((tour) => (
           <WIDGETS.Tour tour={tour} key={tour.getContent().contentId} />
         ))}
-        {launchers.map((launcher) => (
+        {launchers?.map((launcher) => (
           <WIDGETS.Launcher launcher={launcher} key={launcher.getContent().contentId} />
         ))}
-        {checklists.map((checklist) => (
+        {checklists?.map((checklist) => (
           <WIDGETS.Checklist checklist={checklist} key={checklist.getContent().contentId} />
         ))}
       </React.Suspense>

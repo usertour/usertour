@@ -8,7 +8,13 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-ui/shared-hooks';
 import { Table, TableBody, TableCell, TableRow } from '@usertour-ui/table';
-import { BizEvent, BizEvents, ContentDataType } from '@usertour-ui/types';
+import {
+  BizEvent,
+  BizEvents,
+  ContentDataType,
+  EventAttributes,
+  flowReasonTitleMap,
+} from '@usertour-ui/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
@@ -56,7 +62,9 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   };
 
   const startEvent = session?.bizEvent?.find(
-    (bizEvent) => bizEvent.event?.codeName === BizEvents.FLOW_STARTED,
+    (bizEvent) =>
+      bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
+      bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
   );
 
   if (!eventList || !content || !version) {
@@ -70,6 +78,34 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   const answerEvents = session?.bizEvent?.filter(
     (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
   );
+
+  const getStartReasonTitle = (startEvent: BizEvent | undefined) => {
+    try {
+      const reason =
+        startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
+        startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON];
+      return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason;
+    } catch (_) {
+      return '';
+    }
+  };
+
+  const getFieldValue = (key: string, value: any) => {
+    if (
+      key === EventAttributes.FLOW_START_REASON ||
+      key === EventAttributes.CHECKLIST_START_REASON
+    ) {
+      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
+    }
+    if (key === EventAttributes.FLOW_END_REASON || key === EventAttributes.CHECKLIST_END_REASON) {
+      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
+    }
+    return key === 'question_type'
+      ? contentTypesConfig.find((config) => config.element.type === value)?.name
+      : typeof value === 'string'
+        ? value
+        : JSON.stringify(value);
+  };
 
   return (
     <>
@@ -104,7 +140,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
       </div>
       <div className="flex flex-col space-y-6 w-full max-w-screen-xl mx-auto p-14 mt-12  ">
         <SessionItemContainer className="grid grid-cols-2 gap-2 gap-x-12">
-          <div className="border-b flex flex-col">
+          <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">User</span>
             <Link
               className="text-primary"
@@ -113,7 +149,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
               {session?.bizUser?.data?.name ?? 'Unnamed user'}
             </Link>
           </div>
-          <div className="border-b flex flex-col ">
+          <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
               className=" text-primary"
@@ -122,7 +158,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
               {session?.content?.name}
             </Link>
           </div>
-          <div className="border-b flex flex-col">
+          <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Version</span>
             <Link
               className="text-primary"
@@ -131,15 +167,15 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
               V{session?.version?.sequence}
             </Link>
           </div>
-          <div className="border-b flex flex-col">
+          <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Started</span>
             <span>
               {session?.createdAt && formatDistanceToNow(new Date(session?.createdAt))} ago
             </span>
           </div>
-          <div className="border-b flex flex-col">
+          <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Start reason</span>
-            <span>{startEvent?.data?.flow_start_reason}</span>
+            <span>{getStartReasonTitle(startEvent)}</span>
           </div>
         </SessionItemContainer>
         <SessionItemContainer>
@@ -200,15 +236,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                                     {attributeList?.find((attr) => attr.codeName === key)
                                       ?.displayName || key}
                                   </span>
-                                  <span className="grow">
-                                    {key === 'question_type'
-                                      ? contentTypesConfig.find(
-                                          (config) => config.element.type === value,
-                                        )?.name
-                                      : typeof value === 'string'
-                                        ? value
-                                        : JSON.stringify(value)}
-                                  </span>
+                                  <span className="grow">{getFieldValue(key, value)}</span>
                                 </div>
                               ))}
                             </div>

@@ -8,7 +8,6 @@ import {
 } from '@usertour-ui/sdk/src/launcher';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
-  BizEvents,
   BizUserInfo,
   LauncherActionType,
   LauncherData,
@@ -211,22 +210,25 @@ const LauncherWidgetCore = ({
 };
 
 export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
-  const store = launcher.getStore();
-  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } =
-    useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const store = useSyncExternalStore(
+    launcher.getStore().subscribe,
+    launcher.getStore().getSnapshot,
+  );
+  if (!store) {
+    return <></>;
+  }
+  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } = store;
 
   const data = content?.data as LauncherData | undefined;
 
   if (!theme || !data || !triggerRef || !openState) {
-    return null;
+    return <></>;
   }
 
   return (
     <LauncherWidgetCore
       data={data}
-      handleActive={() => {
-        launcher.trigger(BizEvents.LAUNCHER_ACTIVATED);
-      }}
+      handleActive={launcher.handleActive}
       handleActions={launcher.handleActions}
       theme={theme}
       zIndex={zIndex}

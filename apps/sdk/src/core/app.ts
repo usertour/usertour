@@ -29,7 +29,6 @@ import {
   isSameTour,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
-import { AppEvents } from '../utils/event';
 import { extensionIsRunning } from '../utils/extension';
 import { document, window } from '../utils/globals';
 import { on } from '../utils/listener';
@@ -83,8 +82,6 @@ export class App extends Evented {
   toursStore = new ExternalStore<Tour[]>([]);
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
-  private contentPollingInterval: number | undefined;
-  private readonly CONTENT_POLLING_INTERVAL = 60000; // 1 minute
   private isMonitoring = false;
   private readonly MONITOR_INTERVAL = 200;
   private lastCheck = 0;
@@ -181,6 +178,10 @@ export class App extends Evented {
       this.createContainer();
       this.createRoot();
     });
+    // refresh data when content changed in the server
+    this.socket.on('content-changed', () => {
+      this.refresh();
+    });
     if (document?.readyState !== 'loading') {
       this.trigger('dom-loaded');
     } else if (document) {
@@ -191,10 +192,6 @@ export class App extends Evented {
     if (window) {
       on(window, 'message', this.handlePreviewMessage);
     }
-
-    this.on(AppEvents.EVENT_REPORTED, () => {
-      this.refresh();
-    });
   }
 
   /**
@@ -483,7 +480,6 @@ export class App extends Evented {
     this.syncAllStores();
     await this.startContents();
     await this.startActivityMonitor();
-    this.startContentPolling();
   }
 
   getSdkConfig() {
@@ -523,7 +519,7 @@ export class App extends Evented {
         eventData: event.eventData,
         eventName: event.eventName,
       });
-      this.trigger(AppEvents.EVENT_REPORTED);
+      await this.refresh();
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
@@ -541,12 +537,14 @@ export class App extends Evented {
     if (!userId || !token) {
       return;
     }
-    return await this.socket.createSession({
+    const newSesison = await this.socket.createSession({
       userId,
       contentId,
       token,
       companyId,
     });
+    await this.refresh();
+    return newSesison;
   }
 
   /**
@@ -699,7 +697,7 @@ export class App extends Evented {
     }
 
     if (this.activeChecklist) {
-      await this.activeChecklist.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeChecklist.close(contentEndReason.URL_START_CLOSED);
     }
 
     this.activeChecklist = checklistFromUrl;
@@ -727,12 +725,12 @@ export class App extends Evented {
     }
 
     if (this.activeChecklist) {
-      await this.activeChecklist.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeChecklist.close(contentEndReason.USER_STARTED_OTHER_CONTENT);
     }
 
     this.activeChecklist = activeChecklist;
     if (!opts?.continue) {
-      await this.activeChecklist.endLatestSession(contentEndReason.SYSTEM_CLOSED);
+      await this.activeChecklist.endLatestSession(contentEndReason.USER_STARTED_OTHER_CONTENT);
     }
     await this.activeChecklist.start(reason);
   }
@@ -836,7 +834,7 @@ export class App extends Evented {
     }
 
     if (this.activeTour) {
-      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeTour.close(contentEndReason.URL_START_CLOSED);
     }
     const contentId = urlTour.getContent().contentId;
 
@@ -876,25 +874,26 @@ export class App extends Evented {
     }
 
     if (this.activeTour) {
-      await this.activeTour.close(contentEndReason.SYSTEM_CLOSED);
+      await this.activeTour.close(contentEndReason.USER_STARTED_OTHER_CONTENT);
     }
 
     const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours, contentId);
     const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
-    const cvid = latestActivatedTourAndCvid?.cvid;
+    const cvid = opts?.cvid;
 
     if (isSameTour(activeTour, latestActivatedTour)) {
       if (opts?.continue) {
         this.activeTour = latestActivatedTour;
-        await this.activeTour?.start(contentStartReason.START_FROM_SESSION, cvid);
+        const continueCvid = latestActivatedTourAndCvid?.cvid;
+        await this.activeTour?.start(contentStartReason.START_FROM_SESSION, continueCvid);
       } else {
         this.activeTour = latestActivatedTour;
-        await this.activeTour?.endLatestSession(contentEndReason.SYSTEM_CLOSED);
-        await this.activeTour?.start(reason);
+        await this.activeTour?.endLatestSession(contentEndReason.USER_STARTED_OTHER_CONTENT);
+        await this.activeTour?.start(reason, cvid);
       }
     } else {
       this.activeTour = activeTour;
-      await this.activeTour.start(reason);
+      await this.activeTour.start(reason, cvid);
     }
   }
 
@@ -1169,31 +1168,6 @@ export class App extends Evented {
   }
 
   /**
-   * Starts polling for content updates
-   */
-  private startContentPolling() {
-    // Clear any existing interval
-    if (this.contentPollingInterval) {
-      clearInterval(this.contentPollingInterval);
-    }
-
-    // Set up new polling interval
-    this.contentPollingInterval = window?.setInterval(async () => {
-      this.refresh();
-    }, this.CONTENT_POLLING_INTERVAL);
-  }
-
-  /**
-   * Stops content polling
-   */
-  private stopContentPolling() {
-    if (this.contentPollingInterval) {
-      clearInterval(this.contentPollingInterval);
-      this.contentPollingInterval = undefined;
-    }
-  }
-
-  /**
    * Resets the application state
    */
   async reset() {
@@ -1201,7 +1175,6 @@ export class App extends Evented {
     this.originContents = undefined;
     this.isMonitoring = false;
     this.tours = [];
-    this.stopContentPolling();
     await this.closeActiveTour();
     this.closeActiveChecklist();
   }

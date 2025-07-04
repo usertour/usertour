@@ -10,7 +10,7 @@ import {
   RulesWait,
 } from '@usertour-ui/shared-components';
 import { useContentListQuery } from '@usertour-ui/shared-hooks';
-import { getAuthToken } from '@usertour-ui/shared-utils';
+import { deepClone, getAuthToken } from '@usertour-ui/shared-utils';
 import { conditionsIsSame } from '@usertour-ui/shared-utils';
 import { Switch } from '@usertour-ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
@@ -21,7 +21,7 @@ import {
   RulesCondition,
   autoStartRulesSetting,
 } from '@usertour-ui/types';
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useId, useState, useEffect } from 'react';
 
 export enum ContentDetailAutoStartRulesType {
   START_RULES = 'start-rules',
@@ -62,9 +62,16 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   } = props;
 
   const [enabled, setEnabled] = useState(defaultEnabled);
-  const [conditions, setConditions] = useState<RulesCondition[]>(
-    JSON.parse(JSON.stringify(defaultConditions)),
-  );
+  const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
+
+  // Sync internal state with props when they change
+  useEffect(() => {
+    setEnabled(defaultEnabled);
+  }, [defaultEnabled]);
+
+  useEffect(() => {
+    setConditions(deepClone(defaultConditions));
+  }, [defaultConditions]);
 
   const updateSettings = useCallback(
     (updates: Partial<autoStartRulesSetting>) => {
@@ -77,7 +84,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     (conds: RulesCondition[], hasError: boolean) => {
       if (hasError || conditionsIsSame(conds, conditions)) return;
 
-      const newConditions = JSON.parse(JSON.stringify(conds));
+      const newConditions = deepClone(conds);
       setConditions(newConditions);
       onDataChange(enabled, newConditions, setting);
     },

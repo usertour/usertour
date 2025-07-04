@@ -5,13 +5,28 @@ import { createConditionsFilter, createFilterItem } from '@/common/attribute/fil
 import { BizEvents, EventAttributes } from '@/common/consts/attribute';
 import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
-import { Environment } from '@/environments/models/environment.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { BizUser, Content, Step } from '@prisma/client';
+import { BizUser, Content, Environment, Step, Theme } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
+import {
+  BizEventWithEvent,
+  BizSessionWithEvents,
+  ConfigRequest,
+  ConfigResponse,
+  ContentResponse,
+  CreateSessionRequest,
+  CreateSessionResponse,
+  ListContentsRequest,
+  TrackEventRequest,
+  TrackEventResponse,
+  UpsertCompanyRequest,
+  UpsertCompanyResponse,
+  UpsertUserRequest,
+  UpsertUserResponse,
+} from './web-socket.dto';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -31,15 +46,6 @@ interface SegmentDataItem {
   operators: 'and' | 'or';
 }
 
-interface ConfigResponse {
-  removeBranding: boolean;
-  planType: string;
-}
-
-interface ConfigRequest {
-  token: string;
-}
-
 @Injectable()
 export class WebSocketService {
   private readonly logger = new Logger(WebSocketService.name);
@@ -54,24 +60,13 @@ export class WebSocketService {
    * @param body - Request body containing environment token
    * @returns Configuration object with plan type and branding settings
    */
-  async getConfig(body: ConfigRequest): Promise<ConfigResponse> {
+  async getConfig(body: ConfigRequest, environment: Environment): Promise<ConfigResponse> {
     try {
-      const { token } = body;
-
       // Default configuration
       const defaultConfig: ConfigResponse = {
         removeBranding: false,
         planType: 'hobby',
       };
-
-      // Find environment by token
-      const environment = await this.prisma.environment.findFirst({
-        where: { token },
-      });
-
-      if (!environment) {
-        return defaultConfig;
-      }
 
       // Get project details
       const project = await this.prisma.project.findUnique({
@@ -123,7 +118,7 @@ export class WebSocketService {
     bizUser: BizUser,
     attributes: Attribute[],
     externalCompanyId?: string,
-  ): Promise<any> {
+  ): Promise<ContentResponse> {
     const publishedVersionId =
       content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
         ?.publishedVersionId || content.publishedVersionId;
@@ -195,10 +190,10 @@ export class WebSocketService {
 
     return {
       ...version,
-      data,
+      data: data as any,
       steps,
       config: { ...config, autoStartRules, hideRules },
-      type: content.type,
+      type: content.type as ContentType,
       name: content.name,
       latestSession,
       events,
@@ -213,15 +208,12 @@ export class WebSocketService {
    * @param body - The body containing the token, user ID, and company ID
    * @returns Array of content
    */
-  async listContent(body: any): Promise<any> {
+  async listContent(
+    body: ListContentsRequest,
+    environment: Environment,
+  ): Promise<ContentResponse[]> {
     try {
-      const { token, userId: externalUserId, companyId: externalCompanyId } = body;
-      const environment = await this.prisma.environment.findFirst({
-        where: { token },
-      });
-      if (!environment) {
-        return;
-      }
+      const { userId: externalUserId, companyId: externalCompanyId } = body;
       const environmentId = environment.id;
       const contentList = await this.prisma.content.findMany({
         where: {
@@ -263,7 +255,7 @@ export class WebSocketService {
         },
       });
 
-      const response: any[] = [];
+      const response: ContentResponse[] = [];
       for (let index = 0; index < contentList.length; index++) {
         const content = contentList[index];
         const processedContent = await this.processContent(
@@ -782,7 +774,7 @@ export class WebSocketService {
       if (!latestSession) {
         return logic === 'unactived';
       }
-      const hasEndedEvent = latestSession.bizEvent.find(
+      const hasEndedEvent = latestSession.bizEvent?.find(
         (event) => event.event.codeName === BizEvents.FLOW_ENDED,
       );
       const isActived = !hasEndedEvent;
@@ -812,7 +804,7 @@ export class WebSocketService {
    * @param sessionId - The ID of the session to list events for
    * @returns Array of events
    */
-  async listEvents(sessionId: string): Promise<any> {
+  async listEvents(sessionId: string): Promise<BizEventWithEvent[]> {
     return await this.prisma.bizEvent.findMany({
       where: { bizSessionId: sessionId },
       include: { event: true },
@@ -825,7 +817,10 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns The latest session
    */
-  async getLatestSession(contentId: string, bizUserId: string): Promise<any> {
+  async getLatestSession(
+    contentId: string,
+    bizUserId: string,
+  ): Promise<BizSessionWithEvents | null> {
     return await this.prisma.bizSession.findFirst({
       where: { contentId, bizUserId, deleted: false },
       include: { bizEvent: { include: { event: true } } },
@@ -839,7 +834,7 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns The number of dismissed sessions
    */
-  async getDismissedSessions(content: Content, bizUserId: string): Promise<any> {
+  async getDismissedSessions(content: Content, bizUserId: string): Promise<number> {
     let codeName = '';
     if (content.type === ContentType.FLOW) {
       codeName = BizEvents.FLOW_ENDED;
@@ -870,7 +865,7 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns The number of completed sessions
    */
-  async getCompletedSessions(content: Content, bizUserId: string): Promise<any> {
+  async getCompletedSessions(content: Content, bizUserId: string): Promise<number> {
     let codeName = '';
     if (content.type === ContentType.FLOW) {
       codeName = BizEvents.FLOW_COMPLETED;
@@ -901,7 +896,7 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns The total number of sessions
    */
-  async getTotalSessions(content: Content, bizUserId: string): Promise<any> {
+  async getTotalSessions(content: Content, bizUserId: string): Promise<number> {
     return await this.prisma.bizSession.count({
       where: { contentId: content.id, bizUserId, deleted: false },
     });
@@ -913,7 +908,7 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns The number of active sessions
    */
-  async getActiveSessions(content: Content, bizUserId: string): Promise<any> {
+  async getActiveSessions(content: Content, bizUserId: string): Promise<number> {
     return await this.prisma.bizSession.count({
       where: { contentId: content.id, bizUserId, deleted: false, state: 0 },
     });
@@ -924,15 +919,9 @@ export class WebSocketService {
    * @param token - The token of the environment
    * @returns Array of themes
    */
-  async listThemes({ token }: any): Promise<any> {
-    const environmenet = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environmenet) {
-      return;
-    }
+  async listThemes(environment: Environment): Promise<Theme[]> {
     return await this.prisma.theme.findMany({
-      where: { projectId: environmenet.projectId },
+      where: { projectId: environment.projectId },
     });
   }
 
@@ -941,15 +930,12 @@ export class WebSocketService {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(data: any): Promise<any> {
-    const { userId, attributes, token } = data;
-    const environmenet = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environmenet) {
-      return;
-    }
-    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environmenet.id);
+  async upsertBizUsers(
+    data: UpsertUserRequest,
+    environment: Environment,
+  ): Promise<UpsertUserResponse> {
+    const { userId, attributes } = data;
+    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
   }
 
   /**
@@ -957,26 +943,17 @@ export class WebSocketService {
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(data: any): Promise<any> {
-    const {
-      companyId: externalCompanyId,
-      userId: externalUserId,
-      attributes,
-      token,
-      membership,
-    } = data;
-    const environmenet = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environmenet) {
-      return;
-    }
+  async upsertBizCompanies(
+    data: UpsertCompanyRequest,
+    environment: Environment,
+  ): Promise<UpsertCompanyResponse> {
+    const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
     return await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
       externalUserId,
       attributes,
-      environmenet.id,
+      environment.id,
       membership,
     );
   }
@@ -986,14 +963,11 @@ export class WebSocketService {
    * @param data - The data to create a session
    * @returns The created session
    */
-  async createSession(data: any): Promise<any> {
-    const { userId: externalUserId, token, contentId, companyId: externalCompanyId } = data;
-    const environment = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environment) {
-      return;
-    }
+  async createSession(
+    data: CreateSessionRequest,
+    environment: Environment,
+  ): Promise<CreateSessionResponse> {
+    const { userId: externalUserId, contentId, companyId: externalCompanyId } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
@@ -1002,7 +976,7 @@ export class WebSocketService {
       where: { externalId: String(externalCompanyId), environmentId },
     });
     if (!bizUser || (externalCompanyId && !bizCompany)) {
-      return false;
+      return null;
     }
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
@@ -1011,7 +985,7 @@ export class WebSocketService {
       },
     });
     if (!content) {
-      return false;
+      return null;
     }
 
     const publishedVersionId =
@@ -1038,7 +1012,7 @@ export class WebSocketService {
    * @param data - The data to get filtered event data
    * @returns The filtered event data
    */
-  async getFilterdEventData(eventId: string, data: any): Promise<any> {
+  async getFilterdEventData(eventId: string, data: any): Promise<Record<string, any> | false> {
     const attributes = await this.prisma.attributeOnEvent.findMany({
       where: { eventId },
       include: { attribute: true },
@@ -1062,16 +1036,10 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: any): Promise<any> {
-    const { userId: externalUserId, token, eventName, sessionId, eventData } = data;
-    const environmenet = await this.prisma.environment.findFirst({
-      where: { token },
-    });
-    if (!environmenet) {
-      return;
-    }
-    const environmentId = environmenet.id;
-    const projectId = environmenet.projectId;
+  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<TrackEventResponse> {
+    const { userId: externalUserId, eventName, sessionId, eventData } = data;
+    const environmentId = environment.id;
+    const projectId = environment.projectId;
     const user = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
@@ -1109,7 +1077,7 @@ export class WebSocketService {
       include: { steps: true },
     });
 
-    if (!currentVersion || !isValidEvent(eventName, bizSession, events)) {
+    if (!currentVersion) {
       return false;
     }
 
@@ -1120,6 +1088,23 @@ export class WebSocketService {
     const state = getEventState(eventName);
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // Re-fetch the session with latest events inside the transaction and lock the row
+      const latestBizSession = await tx.bizSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          bizEvent: { include: { event: true } },
+        },
+      });
+
+      if (!latestBizSession || latestBizSession.state === 1) {
+        return false;
+      }
+
+      // Validate event inside the transaction with latest data
+      if (!isValidEvent(eventName, latestBizSession, events)) {
+        return false;
+      }
+
       const insert = {
         bizUserId: user.id,
         eventId: event.id,

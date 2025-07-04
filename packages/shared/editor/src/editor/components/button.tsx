@@ -110,8 +110,8 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
 
   useEffect(() => {
     const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
-    setIsShowError(isEmptyActions);
-  }, [element?.data?.actions]);
+    setIsShowError(isEmptyActions && !isOpen);
+  }, [element?.data?.actions, isOpen]);
 
   return (
     <EditorError open={isShowError}>

@@ -3,7 +3,7 @@ import { CodeIcon } from '@radix-ui/react-icons';
 import CodeMirror from '@uiw/react-codemirror';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
 import { getCodeError } from '@usertour-ui/shared-utils';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
@@ -28,71 +28,136 @@ export interface ContentActionsCodeProps {
   };
 }
 
-export const ContentActionsCode = (props: ContentActionsCodeProps) => {
-  const { data, index } = props;
+// Custom hook for code error handling
+const useCodeErrorHandling = (value: string, open: boolean, index: number) => {
   const { updateConditionData } = useActionsGroupContext();
-  const { zIndex } = useContentActionsContext();
-
-  const [state, setState] = useState({
-    open: false,
-    openError: false,
-    errorInfo: '',
-    value: data?.value || '',
-  });
+  const [openError, setOpenError] = useState(false);
+  const [errorInfo, setErrorInfo] = useState('');
 
   useEffect(() => {
-    if (state.open) return;
-
-    const updates = { value: state.value };
+    const updates = { value };
     const { showError, errorInfo } = getCodeError(updates);
+    if (showError && !open) {
+      setErrorInfo(errorInfo);
+      setOpenError(true);
+      return;
+    }
+  }, [open, value]);
 
-    setState((prev) => ({
-      ...prev,
-      openError: showError,
-      errorInfo,
-    }));
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (isOpen) {
+        setOpenError(false);
+        setErrorInfo('');
+        return;
+      }
 
-    updateConditionData(index, updates);
-  }, [state.open, state.value, index, updateConditionData]);
+      const updates = { value };
+      const { showError, errorInfo } = getCodeError(updates);
 
-  const handleOpenChange = (open: boolean) => {
-    setState((prev) => ({ ...prev, open }));
-  };
+      if (showError) {
+        setErrorInfo(errorInfo);
+        setOpenError(true);
+        return;
+      }
+      updateConditionData(index, updates);
+    },
+    [value, index, updateConditionData, setErrorInfo, setOpenError],
+  );
 
-  const handleChange = (newValue: string) => {
-    setState((prev) => ({ ...prev, value: newValue }));
-  };
+  return { openError, errorInfo, handleOpenChange };
+};
+
+// Memoized CodeMirror component for better performance
+const CodeEditor = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
+  const extensions = useMemo(() => [javascript({ jsx: false, typescript: false })], []);
 
   return (
-    <ContentActionsError open={state.openError}>
+    <CodeMirror
+      value={value}
+      height="200px"
+      basicSetup={{ lineNumbers: false }}
+      extensions={extensions}
+      onChange={onChange}
+    />
+  );
+};
+
+// Memoized display text component
+const CodeDisplayText = ({ value }: { value: string }) => {
+  const displayText = useMemo(() => {
+    if (!value.trim()) {
+      return 'Evaluate code...';
+    }
+
+    // Truncate long code for display
+    const maxLength = 50;
+    const trimmedValue = value.trim();
+    return trimmedValue.length > maxLength
+      ? `Evaluate ${trimmedValue.substring(0, maxLength)}...`
+      : `Evaluate ${trimmedValue}`;
+  }, [value]);
+
+  return (
+    <span className="break-words" style={{ wordBreak: 'break-word' }}>
+      {displayText}
+    </span>
+  );
+};
+
+export const ContentActionsCode = (props: ContentActionsCodeProps) => {
+  const { data, index } = props;
+  const { zIndex } = useContentActionsContext();
+
+  // Initialize state with memoized initial value
+  const initialValue = useMemo(() => data?.value || '', [data?.value]);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(initialValue);
+
+  // Handle error state
+  const { openError, errorInfo, handleOpenChange } = useCodeErrorHandling(value, open, index);
+
+  const handleChange = useCallback((newValue: string) => {
+    setValue(newValue);
+  }, []);
+
+  const handleOpenChangeWrapper = useCallback(
+    (isOpen: boolean) => {
+      setOpen(isOpen);
+      handleOpenChange(isOpen);
+    },
+    [handleOpenChange],
+  );
+
+  // Memoize trigger content
+  const triggerContent = useMemo(
+    () => (
+      <ContentActionsPopoverTrigger className="flex flex-row items-center w-fit">
+        <ContentActionsConditionIcon>
+          <CodeIcon width={16} height={16} />
+        </ContentActionsConditionIcon>
+        <CodeDisplayText value={value} />
+      </ContentActionsPopoverTrigger>
+    ),
+    [value],
+  );
+
+  return (
+    <ContentActionsError open={openError}>
       <div className="flex flex-row space-x-3">
         <ContentActionsErrorAnchor>
           <ActionsConditionRightContent className="w-fit pr-5">
-            <ContentActionsPopover onOpenChange={handleOpenChange} open={state.open}>
-              <ContentActionsPopoverTrigger className="flex flex-row items-center w-fit">
-                <ContentActionsConditionIcon>
-                  <CodeIcon width={16} height={16} />
-                </ContentActionsConditionIcon>
-                <span className="break-words" style={{ wordBreak: 'break-word' }}>
-                  {' '}
-                  Evaluate {state.value}
-                </span>
-              </ContentActionsPopoverTrigger>
+            <ContentActionsPopover onOpenChange={handleOpenChangeWrapper} open={open}>
+              {triggerContent}
               <ContentActionsPopoverContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}>
-                <CodeMirror
-                  value={state.value}
-                  height="200px"
-                  basicSetup={{ lineNumbers: false }}
-                  extensions={[javascript({ jsx: false, typescript: false })]}
-                  onChange={handleChange}
-                />
+                <CodeEditor value={value} onChange={handleChange} />
               </ContentActionsPopoverContent>
             </ContentActionsPopover>
             <ContentActionsRemove index={index} />
           </ActionsConditionRightContent>
         </ContentActionsErrorAnchor>
         <ContentActionsErrorContent style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 3 }}>
-          {state.errorInfo}
+          {errorInfo}
         </ContentActionsErrorContent>
       </div>
     </ContentActionsError>

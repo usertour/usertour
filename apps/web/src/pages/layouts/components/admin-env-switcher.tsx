@@ -83,12 +83,7 @@ export const AdminEnvSwitcher = () => {
                     }}
                     className="text-sm"
                   >
-                    <Avatar className="mr-2 h-6 w-6">
-                      {/* <AvatarImage
-                        src="https://avatar.vercel.sh/acme-inc.png"
-                        alt={env.name}
-                        className="grayscale"
-                      /> */}
+                    <Avatar className="mr-2 h-5 w-5">
                       <AvatarFallback className="bg-blue-800 text-white text-xs">
                         {env?.name?.slice(0, 2)}
                       </AvatarFallback>

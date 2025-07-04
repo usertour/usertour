@@ -13,6 +13,7 @@ export interface AnalyticsProviderProps {
 
 export interface AnalyticsContextValue {
   analyticsData: AnalyticsData | undefined;
+  loading: boolean;
   refetch: any;
   query: AnalyticsQuery;
   setQuery: React.Dispatch<React.SetStateAction<AnalyticsQuery>>;
@@ -38,7 +39,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const { data, refetch } = useQuery(queryContentAnalytics, {
+  const { data, refetch, loading } = useQuery(queryContentAnalytics, {
     variables: {
       environmentId: environment?.id,
       contentId,
@@ -57,6 +58,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
   const value: AnalyticsContextValue = {
     refetch,
     analyticsData,
+    loading,
     query,
     setQuery,
     dateRange,

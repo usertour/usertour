@@ -139,10 +139,15 @@ const TourModal = ({ store, onClose, handleOnClick }: PopperContentProps) => {
 
 export const Tour = ({ tour }: TourProps) => {
   const store = useSyncExternalStore(tour.getStore().subscribe, tour.getStore().getSnapshot);
+  if (!store) {
+    return <></>;
+  }
   const { userInfo, currentStep, triggerRef, openState } = store;
   const { handleClose, handleOnClick, handleActions } = tour;
 
-  if (!userInfo || !currentStep || !openState) return null;
+  if (!userInfo || !currentStep || !openState) {
+    return <></>;
+  }
 
   const sharedProps = {
     store,

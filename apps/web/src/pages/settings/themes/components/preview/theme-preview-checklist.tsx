@@ -15,20 +15,21 @@ import {
   ChecklistData,
   ChecklistInitialDisplay,
 } from '@usertour-ui/types';
+import { useEffect, useState } from 'react';
 
 interface ThemePreviewChecklistProps {
-  open?: boolean;
+  expanded?: boolean;
 }
 
 export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
-  const { open = true } = props;
+  const { expanded = true } = props;
   const { theme, settings } = useThemeDetailContext();
 
   if (!settings) return null;
 
   const data: ChecklistData = {
     buttonText: 'Get Started',
-    initialDisplay: open ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
+    initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
     completionOrder: ChecklistCompletionOrder.ANY,
     preventDismissChecklist: false,
     items: [
@@ -66,10 +67,22 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
     content: [],
   };
 
+  const [expandedState, setExpandedState] = useState(expanded);
+
+  useEffect(() => {
+    setExpandedState(expanded);
+  }, [expanded]);
+
   return (
     <div className="h-full w-full">
       <div className="flex flex-row items-center justify-center h-full scale-100	 ">
-        <ChecklistRoot data={data} theme={{ ...theme, settings }} zIndex={10000}>
+        <ChecklistRoot
+          data={data}
+          expanded={expandedState}
+          theme={{ ...theme, settings }}
+          zIndex={10000}
+          onExpandedChange={setExpandedState}
+        >
           <ChecklistContainer>
             <ChecklistPopper zIndex={10000}>
               <ChecklistPopperContent>
