@@ -519,7 +519,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
         updateLocalData({ attrId: item.id });
       }
     }
-  }, [attributes]);
+  }, [attributes, data?.attrId]);
 
   const updateLocalData = useCallback(
     (updates: RulesUserAttributeData) => {
@@ -574,6 +574,9 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
     if (showError && !open) {
       setErrorInfo(errorInfo);
       setOpenError(true);
+    } else {
+      setErrorInfo('');
+      setOpenError(false);
     }
   }, [localData, attributes, setErrorInfo, setOpenError, open]);
 
