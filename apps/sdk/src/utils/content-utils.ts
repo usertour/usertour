@@ -438,39 +438,45 @@ export const checklistIsShowAnimation = (content: SDKContent, checklistItem: Che
 export const processChecklistItems = async (content: SDKContent) => {
   const checklistData = content.data as ChecklistData;
   const items = checklistData.items;
-  // Process all items in parallel and return new array
-  const updatedItems = await Promise.all(
-    items.map(async (item) => {
-      const isClicked = checklistItemIsClicked(content, item) || item.isClicked || false;
-      // Check completion conditions using item's isClicked state
-      const activeConditions = await activedRulesConditions(item.completeConditions, {
-        [RulesType.TASK_IS_CLICKED]: isClicked,
-      });
 
-      const isShowAnimation = checklistIsShowAnimation(content, item);
+  // Process items sequentially to handle ordered completion dependency
+  const updatedItems: ChecklistItemType[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const isClicked = checklistItemIsClicked(content, item) || item.isClicked || false;
 
-      const isCompleted =
-        item.isCompleted || checklistItemIsCompleted(content.latestSession?.bizEvent, item)
-          ? true
-          : canCompleteChecklistItem(checklistData.completionOrder, items, item) &&
-            isActive(activeConditions);
+    // Check completion conditions using item's isClicked state
+    const activeConditions = await activedRulesConditions(item.completeConditions, {
+      [RulesType.TASK_IS_CLICKED]: isClicked,
+    });
 
-      // Check visibility conditions
-      let isVisible = true;
-      if (item.onlyShowTask) {
-        const visibleConditions = await activedRulesConditions(item.onlyShowTaskConditions);
-        isVisible = isActive(visibleConditions);
-      }
+    const isShowAnimation = checklistIsShowAnimation(content, item);
 
-      // Return updated item
-      return {
-        ...item,
-        isShowAnimation,
-        isCompleted,
-        isVisible,
-      };
-    }),
-  );
+    // For ordered completion, we need to check against the current state of items
+    // Use the updated items processed so far plus the original remaining items
+    const currentItemsState: ChecklistItemType[] = [...updatedItems, ...items.slice(i)];
+
+    const isCompleted: boolean =
+      item.isCompleted || checklistItemIsCompleted(content.latestSession?.bizEvent, item)
+        ? true
+        : canCompleteChecklistItem(checklistData.completionOrder, currentItemsState, item) &&
+          isActive(activeConditions);
+
+    // Check visibility conditions
+    let isVisible = true;
+    if (item.onlyShowTask) {
+      const visibleConditions = await activedRulesConditions(item.onlyShowTaskConditions);
+      isVisible = isActive(visibleConditions);
+    }
+
+    // Add updated item to the array
+    updatedItems.push({
+      ...item,
+      isShowAnimation,
+      isCompleted,
+      isVisible,
+    });
+  }
 
   // Check if any changes occurred
   const hasChanges = items.some((item) => {
