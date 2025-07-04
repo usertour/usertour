@@ -82,8 +82,6 @@ export class App extends Evented {
   toursStore = new ExternalStore<Tour[]>([]);
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
-  private contentPollingInterval: number | undefined;
-  private readonly CONTENT_POLLING_INTERVAL = 60000; // 1 minute
   private isMonitoring = false;
   private readonly MONITOR_INTERVAL = 200;
   private lastCheck = 0;
@@ -179,6 +177,10 @@ export class App extends Evented {
     this.once('css-loaded', () => {
       this.createContainer();
       this.createRoot();
+    });
+    // refresh data when content changed in the server
+    this.socket.on('content-changed', () => {
+      this.refresh();
     });
     if (document?.readyState !== 'loading') {
       this.trigger('dom-loaded');
@@ -478,7 +480,6 @@ export class App extends Evented {
     this.syncAllStores();
     await this.startContents();
     await this.startActivityMonitor();
-    this.startContentPolling();
   }
 
   getSdkConfig() {
@@ -1167,31 +1168,6 @@ export class App extends Evented {
   }
 
   /**
-   * Starts polling for content updates
-   */
-  private startContentPolling() {
-    // Clear any existing interval
-    if (this.contentPollingInterval) {
-      clearInterval(this.contentPollingInterval);
-    }
-
-    // Set up new polling interval
-    this.contentPollingInterval = window?.setInterval(async () => {
-      this.refresh();
-    }, this.CONTENT_POLLING_INTERVAL);
-  }
-
-  /**
-   * Stops content polling
-   */
-  private stopContentPolling() {
-    if (this.contentPollingInterval) {
-      clearInterval(this.contentPollingInterval);
-      this.contentPollingInterval = undefined;
-    }
-  }
-
-  /**
    * Resets the application state
    */
   async reset() {
@@ -1199,7 +1175,6 @@ export class App extends Evented {
     this.originContents = undefined;
     this.isMonitoring = false;
     this.tours = [];
-    this.stopContentPolling();
     await this.closeActiveTour();
     this.closeActiveChecklist();
   }

@@ -6,5 +6,6 @@ import { BizModule } from '@/biz/biz.module';
 @Module({
   imports: [BizModule],
   providers: [WebSocketGateway, WebSocketService],
+  exports: [WebSocketGateway],
 })
 export class WebSocketModule {}

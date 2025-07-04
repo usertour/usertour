@@ -4,7 +4,7 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { Prisma } from '@prisma/client';
+import { BizCompany, BizUser, BizUserOnCompany, Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
 import { CreateBizInput } from './dto/biz.input';
@@ -431,14 +431,14 @@ export class BizService {
   async upsertBizUsers(
     tx: Prisma.TransactionClient,
     userId: string,
-    attributes: any,
+    attributes: Record<string, any>,
     environmentId: string,
-  ): Promise<any> {
+  ): Promise<BizUser | null> {
     const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
     });
     if (!environmenet) {
-      return;
+      return null;
     }
     const projectId = environmenet.projectId;
     const insertAttribute = await this.insertBizAttributes(
@@ -480,21 +480,21 @@ export class BizService {
     tx: Prisma.TransactionClient,
     externalCompanyId: string,
     externalUserId: string,
-    attributes: any,
+    attributes: Record<string, any>,
     environmentId: string,
-    membership: any,
-  ): Promise<any> {
+    membership: Record<string, any>,
+  ): Promise<BizCompany | null> {
     const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
     });
     if (!environmenet) {
-      return;
+      return null;
     }
     const user = await tx.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
-      return;
+      return null;
     }
 
     const projectId = environmenet.projectId;
@@ -514,8 +514,8 @@ export class BizService {
     projectId: string,
     environmentId: string,
     companyId: string,
-    attributes: any,
-  ): Promise<any> {
+    attributes: Record<string, any>,
+  ): Promise<BizCompany | null> {
     return await this.upsertBizCompanyAttributes(
       this.prisma,
       projectId,
@@ -530,8 +530,8 @@ export class BizService {
     projectId: string,
     environmentId: string,
     externalCompanyId: string,
-    attributes: any,
-  ): Promise<any> {
+    attributes: Record<string, any>,
+  ): Promise<BizCompany | null> {
     const company = await tx.bizCompany.findFirst({
       where: { externalId: String(externalCompanyId), environmentId },
     });
@@ -573,8 +573,8 @@ export class BizService {
     projectId: string,
     bizCompanyId: string,
     bizUserId: string,
-    membership: any,
-  ): Promise<any> {
+    membership: Record<string, any>,
+  ): Promise<BizUserOnCompany> {
     const insertAttribute = await this.insertBizAttributes(
       tx,
       projectId,
@@ -614,8 +614,8 @@ export class BizService {
     tx: Prisma.TransactionClient,
     projectId: string,
     bizType: AttributeBizType,
-    attributes: any,
-  ): Promise<any> {
+    attributes: Record<string, any>,
+  ): Promise<Record<string, any>> {
     const insertAttribute = {};
     for (const codeName in attributes) {
       const attrValue = attributes[codeName];
@@ -717,7 +717,11 @@ export class BizService {
     });
   }
 
-  async getBizCompany(id: string, environmentId: string, include?: Prisma.BizCompanyInclude) {
+  async getBizCompany(
+    id: string,
+    environmentId: string,
+    include?: Prisma.BizCompanyInclude,
+  ): Promise<BizCompany | null> {
     const bizCompany = await this.prisma.bizCompany.findFirst({
       where: {
         externalId: id,
@@ -727,7 +731,7 @@ export class BizService {
     });
 
     if (!bizCompany) {
-      throw new ParamsError('Company not found');
+      return null;
     }
 
     return bizCompany;
