@@ -119,6 +119,7 @@ export interface TrackOptions {
 export interface StartOptions {
   once?: boolean;
   continue?: boolean; // If true, continue the content if it's in progress. Default is false (restart)
+  cvid?: string;
 }
 
 export interface ResourceCenterState {

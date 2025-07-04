@@ -968,6 +968,7 @@ type User {
   createdAt: DateTime!
   email: String!
   id: ID!
+  isOAuthUser: Boolean
   name: String
   projects: [UserOnProject!]!
 

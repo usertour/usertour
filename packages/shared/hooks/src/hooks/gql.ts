@@ -1,4 +1,4 @@
-import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
+import { QueryHookOptions, useMutation, useQuery, useLazyQuery } from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
@@ -20,6 +20,7 @@ import {
   removeTeamMember,
   signUp,
   updateContent,
+  updateContentVersion,
   createCheckoutSession,
   createPortalSession,
   getSubscriptionPlans,
@@ -30,6 +31,15 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   updateProjectName,
+  getContent,
+  getContentVersion,
+  addContentSteps,
+  addContentStep,
+  updateContentStep,
+  getUserInfo,
+  logout,
+  createContentVersion,
+  resetUserPasswordByCode,
 } from '@usertour-ui/gql';
 import type {
   Content,
@@ -285,6 +295,18 @@ export const useUpdateContentMutation = () => {
   return { invoke, loading, error };
 };
 
+export const useUpdateContentVersionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateContentVersion);
+  const invoke = async (
+    versionId: string,
+    content: { data?: any; config?: any; themeId?: string },
+  ) => {
+    const response = await mutation({ variables: { versionId, content } });
+    return response.data?.updateContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
 export type CreateAttributeMutationVariables = {
   projectId: string;
   description: string;
@@ -403,6 +425,92 @@ export const useUpdateProjectNameMutation = () => {
   const invoke = async (projectId: string, name: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, name } });
     return !!response.data?.updateProjectName;
+  };
+  return { invoke, loading, error };
+};
+
+// Builder related hooks
+export const useGetContentLazyQuery = () => {
+  const [query, { loading, error }] = useLazyQuery(getContent);
+  const invoke = async (contentId: string) => {
+    const response = await query({ variables: { contentId } });
+    return response.data?.getContent;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetContentVersionLazyQuery = () => {
+  const [query, { loading, error }] = useLazyQuery(getContentVersion);
+  const invoke = async (versionId: string) => {
+    const response = await query({ variables: { versionId } });
+    return response.data?.getContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAddContentStepsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(addContentSteps);
+  const invoke = async (variables: {
+    contentId: string;
+    versionId: string;
+    themeId: string;
+    steps: any[];
+  }) => {
+    const response = await mutation({ variables });
+    return response.data?.addContentSteps;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAddContentStepMutation = () => {
+  const [mutation, { loading, error }] = useMutation(addContentStep);
+  const invoke = async (data: { [key: string]: any; versionId: string }) => {
+    const response = await mutation({ variables: { data } });
+    return response.data?.addContentStep;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateContentStepMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateContentStep);
+  const invoke = async (stepId: string, data: { [key: string]: any }) => {
+    const response = await mutation({ variables: { stepId, data } });
+    return response.data?.updateContentStep;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetUserInfoQuery = (uid?: string, options?: QueryHookOptions) => {
+  const { data, refetch, loading, error } = useQuery(getUserInfo, {
+    skip: !uid,
+    ...options,
+  });
+  return { data: data?.me, refetch, loading, error };
+};
+
+export const useLogoutMutation = () => {
+  const [mutation, { loading, error }] = useMutation(logout);
+  const invoke = async () => {
+    const response = await mutation();
+    return response.data?.logout;
+  };
+  return { invoke, loading, error };
+};
+
+export const useCreateContentVersionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createContentVersion);
+  const invoke = async (data: { versionId: string }) => {
+    const response = await mutation({ variables: { data } });
+    return response.data?.createContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
+export const useResetUserPasswordByCodeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(resetUserPasswordByCode);
+  const invoke = async (code: string, password: string) => {
+    const response = await mutation({ variables: { code, password } });
+    return response.data?.resetUserPasswordByCode;
   };
   return { invoke, loading, error };
 };

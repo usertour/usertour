@@ -21,6 +21,7 @@ export interface CompanyListContextValue {
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
   query: CompanyQuery;
   setQuery: React.Dispatch<React.SetStateAction<CompanyQuery>>;
+  loading: boolean;
 }
 export const CompanyListContext = createContext<CompanyListContextValue | undefined>(undefined);
 
@@ -29,7 +30,7 @@ export function CompanyListProvider(props: CompanyListProviderProps): JSX.Elemen
   const [requestPagination, setRequestPagination] = useState<Pagination>({ first: 10 });
   const [query, setQuery] = useState<CompanyQuery>(defaultQuery);
 
-  const { data, refetch } = useQuery(queryBizCompany, {
+  const { data, refetch, loading } = useQuery(queryBizCompany, {
     variables: {
       ...requestPagination,
       query: { environmentId, ...query },
@@ -49,6 +50,7 @@ export function CompanyListProvider(props: CompanyListProviderProps): JSX.Elemen
     setRequestPagination,
     query,
     setQuery,
+    loading,
   };
 
   return <CompanyListContext.Provider value={value}>{children}</CompanyListContext.Provider>;

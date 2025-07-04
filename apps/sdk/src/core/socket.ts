@@ -66,6 +66,7 @@ export class Socket extends Evented {
 
     this.socket = io(baseUri, this.options.socketConfig);
     this.setupErrorHandling();
+    this.setupContentChangedListener();
   }
 
   /**
@@ -74,6 +75,15 @@ export class Socket extends Evented {
   private setupErrorHandling(): void {
     this.socket.on('connect_error', (error) => {
       this.trigger('error', error);
+    });
+  }
+
+  /**
+   * Setup content changed listener
+   */
+  private setupContentChangedListener(): void {
+    this.socket.on('content-changed', () => {
+      this.trigger('content-changed');
     });
   }
 

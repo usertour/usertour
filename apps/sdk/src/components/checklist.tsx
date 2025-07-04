@@ -10,13 +10,7 @@ import {
   ChecklistRoot,
 } from '@usertour-ui/sdk/src/checklist';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import {
-  BizUserInfo,
-  ChecklistData,
-  ChecklistInitialDisplay,
-  ChecklistItemType,
-  Theme,
-} from '@usertour-ui/types';
+import { BizUserInfo, ChecklistData, ChecklistItemType, Theme } from '@usertour-ui/types';
 import { useSyncExternalStore } from 'react';
 import { Checklist } from '../core/checklist';
 
@@ -33,9 +27,11 @@ type ChecklistWidgetCoreProps = {
   handleItemClick: (item: ChecklistItemType, index: number) => void;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   handleDismiss: () => Promise<void>;
-  handleOpenChange: (open: boolean) => Promise<void>;
+  handleExpandedChange: (expanded: boolean) => void;
+  reportExpandedChangeEvent: (expanded: boolean) => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
+  expanded: boolean;
 };
 
 // Components
@@ -61,16 +57,19 @@ const ChecklistWidgetCore = ({
   handleItemClick,
   handleOnClick,
   handleDismiss,
-  handleOpenChange,
+  handleExpandedChange,
+  reportExpandedChangeEvent,
   removeBranding,
   zIndex,
+  expanded,
 }: ChecklistWidgetCoreProps) => (
   <ChecklistRoot
     data={data}
     theme={theme}
-    defaultOpen={data.initialDisplay === ChecklistInitialDisplay.EXPANDED}
+    expanded={expanded}
     onDismiss={handleDismiss}
-    onOpenChange={handleOpenChange}
+    onExpandedChange={handleExpandedChange}
+    reportExpandedChangeEvent={reportExpandedChangeEvent}
     zIndex={zIndex}
   >
     <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
@@ -94,25 +93,30 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     checklist.getStore().getSnapshot,
   );
 
-  const { content, theme, userInfo, openState, assets, sdkConfig, zIndex } = store;
-  const data = content?.data as ChecklistData;
+  if (!store) {
+    return <></>;
+  }
 
-  if (!theme || !data || !openState || !userInfo) {
-    return null;
+  const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex, expanded } = store;
+
+  if (!theme || !checklistData || !openState || !userInfo) {
+    return <></>;
   }
 
   return (
     <ChecklistWidgetCore
-      data={data}
+      data={checklistData}
       theme={theme}
       userInfo={userInfo}
       assets={assets}
       handleItemClick={checklist.handleItemClick}
       handleOnClick={checklist.handleOnClick}
       handleDismiss={checklist.handleDismiss}
-      handleOpenChange={checklist.handleOpenChange}
+      handleExpandedChange={checklist.handleExpandedChange}
+      reportExpandedChangeEvent={checklist.reportExpandedChangeEvent}
       removeBranding={sdkConfig.removeBranding}
       zIndex={zIndex}
+      expanded={expanded}
     />
   );
 };

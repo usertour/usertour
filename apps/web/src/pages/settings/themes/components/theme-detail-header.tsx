@@ -61,8 +61,8 @@ export const ThemeDetailHeader = () => {
     <div className="border-b bg-white flex-col md:flex w-full fixed z-[100]">
       <div className="flex h-16 items-center px-4">
         <ArrowLeftIcon className="ml-4 h-6 w-8 cursor-pointer" onClick={navigateToThemesListPage} />
-        <span>{theme.name}</span>
-        {theme.isSystem && (
+        <span>{theme?.name}</span>
+        {theme?.isSystem && (
           <>
             <InfoCircledIcon className="ml-4 mr-0.5 text-muted-foreground" />
             <span className="text-sm text-muted-foreground ">
@@ -70,7 +70,7 @@ export const ThemeDetailHeader = () => {
             </span>
           </>
         )}
-        {!theme.isSystem && (
+        {!theme?.isSystem && (
           <ThemeRenameForm
             data={theme}
             onSubmit={() => {
@@ -84,11 +84,11 @@ export const ThemeDetailHeader = () => {
         )}
         {/* <MainNav className="mx-6" /> */}
         <div className="ml-auto flex items-center space-x-4">
-          <Button onClick={handleSaveTheme} disabled={theme.isSystem || isViewOnly}>
+          <Button onClick={handleSaveTheme} disabled={theme?.isSystem || isViewOnly}>
             {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
-          <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSubmit}>
+          <ThemeEditDropdownMenu theme={theme!} onSubmit={handleOnSubmit}>
             <Button variant="secondary" disabled={isViewOnly}>
               <span className="sr-only">Actions</span>
               <DotsHorizontalIcon className="h-4 w-4" />

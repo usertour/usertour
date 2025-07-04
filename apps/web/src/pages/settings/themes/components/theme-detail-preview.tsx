@@ -48,8 +48,9 @@ export const ThemeDetailPreview = () => {
         {selectedType.type === 'launcher-beacon' && (
           <ThemePreviewLauncher type={LauncherDataType.BEACON} />
         )}
-        {selectedType.type === 'checklist' && <ThemePreviewChecklist />}
-        {selectedType.type === 'checklist-launcher' && <ThemePreviewChecklist open={false} />}
+        {(selectedType.type === 'checklist' || selectedType.type === 'checklist-launcher') && (
+          <ThemePreviewChecklist expanded={selectedType.type === 'checklist'} />
+        )}
       </div>
     </div>
   );

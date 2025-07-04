@@ -19,6 +19,7 @@ export interface BizSessionProviderProps {
 
 export interface BizSessionContextValue {
   refetch: any;
+  loading: boolean;
   requestPagination: Pagination;
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
   pagination: PaginationState;
@@ -49,7 +50,7 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
   const { dateRange } = useAnalyticsContext();
   const { environment } = useAppContext();
 
-  const { data, refetch } = useQuery(queryBizSession, {
+  const { data, refetch, loading } = useQuery(queryBizSession, {
     variables: {
       ...requestPagination,
       query: {
@@ -129,6 +130,7 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
   const value: BizSessionContextValue = {
     bizSessions,
     refetch,
+    loading,
     requestPagination,
     setRequestPagination,
     pagination,

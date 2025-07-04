@@ -14,6 +14,7 @@ import { ContentDataType } from '@usertour-ui/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
+import { AnalyticsDaysSkeleton } from './analytics-skeleton';
 
 // Add new function to generate chart configs
 const generateChartConfig = (
@@ -197,7 +198,7 @@ const AnalyticsRateChart = (props: {
 };
 
 export const AnalyticsDays = () => {
-  const { analyticsData } = useAnalyticsContext();
+  const { analyticsData, loading } = useAnalyticsContext();
   const { content } = useContentDetailContext();
   const contentType = content?.type;
   const [viewData, setViewData] = useState<ChartDataType[]>();
@@ -230,6 +231,10 @@ export const AnalyticsDays = () => {
     setViewData(transformData.map((d) => d.viewData));
     setRateData(transformData.map((d) => d.rateData));
   }, [analyticsData]);
+
+  if (loading) {
+    return <AnalyticsDaysSkeleton />;
+  }
 
   if (!contentType || !viewData || !rateData) {
     return null;

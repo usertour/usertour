@@ -15,9 +15,10 @@ import { Fragment, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { UserSegmentCreateForm } from './create-form';
 import { useAppContext } from '@/contexts/app-context';
+import { UserSegmentListSkeleton } from './sidebar-skeleton';
 
 export const UserListSidebar = () => {
-  const { segmentList, refetch, environmentId, currentSegment } = useSegmentListContext();
+  const { segmentList, refetch, environmentId, currentSegment, loading } = useSegmentListContext();
   const [_, setSearchParams] = useSearchParams();
   const { isViewOnly } = useAppContext();
   const [open, setOpen] = useState(false);
@@ -62,33 +63,40 @@ export const UserListSidebar = () => {
             </Tooltip>
           </TooltipProvider>
         </AdminSidebarHeaderTemplate>
-        <AdminSidebarBodyTemplate>
-          <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
-          {segmentList?.map((segment, index) => (
-            <Fragment key={index}>
-              <AdminSidebarBodyItemTemplate
-                variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
-                className={
-                  segment.id === currentSegment?.id ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
-                }
-                onClick={() => {
-                  handleOnClick(segment);
-                }}
-              >
-                {segment.dataType === 'CONDITION' && (
-                  <Filter2LineIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.dataType === 'ALL' && (
-                  <GroupLineIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.dataType === 'MANUAL' && (
-                  <Archive2LineIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.name}
-              </AdminSidebarBodyItemTemplate>
-            </Fragment>
-          ))}
-        </AdminSidebarBodyTemplate>
+
+        {/* Show skeleton for segment list when loading, otherwise show actual segments */}
+        {loading ? (
+          <UserSegmentListSkeleton />
+        ) : (
+          <AdminSidebarBodyTemplate>
+            <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
+            {segmentList?.map((segment, index) => (
+              <Fragment key={index}>
+                <AdminSidebarBodyItemTemplate
+                  variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
+                  className={
+                    segment.id === currentSegment?.id ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
+                  }
+                  onClick={() => {
+                    handleOnClick(segment);
+                  }}
+                >
+                  {segment.dataType === 'CONDITION' && (
+                    <Filter2LineIcon width={16} height={16} className="mr-1" />
+                  )}
+                  {segment.dataType === 'ALL' && (
+                    <GroupLineIcon width={16} height={16} className="mr-1" />
+                  )}
+                  {segment.dataType === 'MANUAL' && (
+                    <Archive2LineIcon width={16} height={16} className="mr-1" />
+                  )}
+                  {segment.name}
+                </AdminSidebarBodyItemTemplate>
+              </Fragment>
+            ))}
+          </AdminSidebarBodyTemplate>
+        )}
+
         <AdminSidebarFooter />
       </AdminSidebarContainerTemplate>
       <UserSegmentCreateForm isOpen={open} onClose={handleOnClose} environmentId={environmentId} />

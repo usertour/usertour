@@ -79,7 +79,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
     (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
   );
 
-  const getReasonTitle = (startEvent: BizEvent | undefined) => {
+  const getStartReasonTitle = (startEvent: BizEvent | undefined) => {
     try {
       const reason =
         startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
@@ -88,6 +88,23 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
     } catch (_) {
       return '';
     }
+  };
+
+  const getFieldValue = (key: string, value: any) => {
+    if (
+      key === EventAttributes.FLOW_START_REASON ||
+      key === EventAttributes.CHECKLIST_START_REASON
+    ) {
+      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
+    }
+    if (key === EventAttributes.FLOW_END_REASON || key === EventAttributes.CHECKLIST_END_REASON) {
+      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
+    }
+    return key === 'question_type'
+      ? contentTypesConfig.find((config) => config.element.type === value)?.name
+      : typeof value === 'string'
+        ? value
+        : JSON.stringify(value);
   };
 
   return (
@@ -158,7 +175,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
           </div>
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Start reason</span>
-            <span>{getReasonTitle(startEvent)}</span>
+            <span>{getStartReasonTitle(startEvent)}</span>
           </div>
         </SessionItemContainer>
         <SessionItemContainer>
@@ -219,15 +236,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                                     {attributeList?.find((attr) => attr.codeName === key)
                                       ?.displayName || key}
                                   </span>
-                                  <span className="grow">
-                                    {key === 'question_type'
-                                      ? contentTypesConfig.find(
-                                          (config) => config.element.type === value,
-                                        )?.name
-                                      : typeof value === 'string'
-                                        ? value
-                                        : JSON.stringify(value)}
-                                  </span>
+                                  <span className="grow">{getFieldValue(key, value)}</span>
                                 </div>
                               ))}
                             </div>

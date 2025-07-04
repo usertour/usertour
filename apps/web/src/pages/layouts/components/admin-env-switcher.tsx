@@ -5,7 +5,7 @@ import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { EnvironmentCreateForm } from '@/pages/settings/environments/components/environment-create-form';
 import { Environment } from '@/types/project';
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
+import { Avatar, AvatarFallback } from '@usertour-ui/avatar';
 import { Button } from '@usertour-ui/button';
 import {
   Command,
@@ -84,12 +84,9 @@ export const AdminEnvSwitcher = () => {
                     className="text-sm"
                   >
                     <Avatar className="mr-2 h-5 w-5">
-                      <AvatarImage
-                        src="https://avatar.vercel.sh/acme-inc.png"
-                        alt={env.name}
-                        className="grayscale"
-                      />
-                      <AvatarFallback>SC</AvatarFallback>
+                      <AvatarFallback className="bg-blue-800 text-white text-xs">
+                        {env?.name?.slice(0, 2)}
+                      </AvatarFallback>
                     </Avatar>
                     {env.name}
                     <CheckIcon

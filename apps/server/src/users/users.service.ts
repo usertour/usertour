@@ -22,6 +22,19 @@ export class UsersService {
     });
   }
 
+  /**
+   * Check if the user is an OAuth user
+   * @param userId - The user ID
+   * @returns True if the user is an OAuth user, false otherwise
+   */
+  async isOAuthUser(userId: string): Promise<boolean> {
+    const user = await this.prisma.account.findFirst({
+      where: { userId, type: 'oauth' },
+    });
+
+    return !!user;
+  }
+
   async changePassword(userId: string, userPassword: string, changePassword: ChangePasswordInput) {
     const passwordValid = await this.passwordService.validatePassword(
       changePassword.oldPassword,

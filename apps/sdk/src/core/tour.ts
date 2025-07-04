@@ -21,9 +21,7 @@ import { TourStore } from '../types/store';
 import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
-import { type App } from './app';
 import { BaseContent } from './base-content';
-import { defaultTourStore } from './common';
 import { ElementWatcher } from './element-watcher';
 import { logger } from '../utils/logger';
 
@@ -31,10 +29,6 @@ export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
   private triggerTimeouts: NodeJS.Timeout[] = []; // Store timeout IDs
   private flowCompletedReported = false; // Track if FLOW_COMPLETED has been reported
-
-  constructor(instance: App, content: SDKContent) {
-    super(instance, content, defaultTourStore);
-  }
 
   /**
    * Monitors and updates the tour state
@@ -193,7 +187,6 @@ export class Tour extends BaseContent<TourStore> {
 
     // Combine all store data with proper defaults
     return {
-      ...defaultTourStore, // Start with default values
       triggerRef: null, // Reset trigger reference
       ...baseInfo, // Add base information
       currentStep, // Add current step
@@ -507,7 +500,7 @@ export class Tour extends BaseContent<TourStore> {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
         await this.goto(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.startNewContent(action.data.contentId);
+        await this.startNewContent(action.data.contentId, action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
         await this.handleClose(contentEndReason.USER_CLOSED);
       } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
@@ -600,7 +593,11 @@ export class Tour extends BaseContent<TourStore> {
    * @returns {Promise<void>}
    */
   async checkStepVisible(): Promise<void> {
-    const { triggerRef, currentStep, openState } = this.getStore().getSnapshot();
+    const store = this.getStore()?.getSnapshot();
+    if (!store) {
+      return;
+    }
+    const { triggerRef, currentStep, openState } = store;
 
     // Early return if no current step
     if (!this.getCurrentStep() || !currentStep) {
@@ -765,7 +762,7 @@ export class Tour extends BaseContent<TourStore> {
    * @returns {boolean} True if the tour is visible and active, false otherwise
    */
   isShow(): boolean {
-    const { openState } = this.getStore().getSnapshot();
+    const openState = this.getStore().getSnapshot()?.openState || false;
     return this.isActiveTour() && Boolean(this.getCurrentStep()) && openState;
   }
 
@@ -774,7 +771,7 @@ export class Tour extends BaseContent<TourStore> {
    */
   reset() {
     this.setCurrentStep(null);
-    this.setStore(defaultTourStore);
+    this.setStore(undefined);
   }
 
   /**

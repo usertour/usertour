@@ -51,6 +51,7 @@
     "@usertour-ui/label": "workspace:^",
     "@usertour-ui/menubar": "workspace:^",
     "@usertour-ui/popover": "workspace:^",
+    "@usertour-ui/progress": "workspace:^",
     "@usertour-ui/radio-group": "workspace:^",
     "@usertour-ui/react-use-size": "workspace:^",
     "@usertour-ui/scroll-area": "workspace:^",
@@ -74,7 +75,6 @@
     "@usertour-ui/types": "workspace:^",
     "@usertour-ui/ui-utils": "workspace:^",
     "@usertour-ui/use-toast": "workspace:^",
-    "@usertour-ui/progress": "workspace:^",
     "apollo3-cache-persist": "^0.14.1",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
@@ -105,6 +105,7 @@
     "recharts": "^2.7.2",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.6",
+    "use-debounce": "^10.0.5",
     "usertour.js": "^0.0.10",
     "vite-plugin-mkcert": "^1.17.5",
     "zod": "^3.21.4"

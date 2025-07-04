@@ -25,6 +25,13 @@ export const ChecklistEmbed = () => {
   const [theme, setTheme] = useState<Theme | undefined>();
   const { themeList } = useThemeListContext();
   const { currentVersion, projectId } = useBuilderContext();
+  const [expanded, setExpanded] = useState(
+    localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
+  );
+
+  useEffect(() => {
+    setExpanded(localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED);
+  }, [localData?.initialDisplay]);
 
   useEffect(() => {
     if (!themeList) {
@@ -70,7 +77,8 @@ export const ChecklistEmbed = () => {
       <ChecklistRoot
         data={{ ...localData, items }}
         theme={theme}
-        defaultOpen={localData.initialDisplay === ChecklistInitialDisplay.EXPANDED}
+        expanded={expanded}
+        onExpandedChange={setExpanded}
         zIndex={10000}
       >
         <ChecklistContainer>

@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { EXTENSION_CONTENT_RULES, RulesType } from '@usertour-ui/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import {
   UserIcon,
 } from '@usertour-ui/icons';
 import { RulesCondition } from '@usertour-ui/types';
+import { deepClone } from '@usertour-ui/shared-utils';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { useRulesContext } from './rules-context';
@@ -33,22 +34,23 @@ import { RulesUrlPattern } from './rules-url-pattern';
 import { RulesUserAttribute } from './rules-user-attribute';
 import { RulesUserFills } from './rules-user-fills';
 import { RulesTaskIsClicked } from './task-clicked';
+import isEqual from 'fast-deep-equal';
 
 export const RULES_ITEMS = [
   {
-    type: 'user-attr',
+    type: RulesType.USER_ATTR,
     text: 'Attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: 'company-attr',
+    type: RulesType.COMPANY_ATTR,
     text: 'Company attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
   {
-    type: 'current-page',
+    type: RulesType.CURRENT_PAGE,
     text: 'Current page(Url)',
     IconElement: PagesIcon,
     RulesElement: RulesUrlPattern,
@@ -60,49 +62,49 @@ export const RULES_ITEMS = [
   //   RulesElement: null,
   // },
   {
-    type: 'segment',
+    type: RulesType.SEGMENT,
     text: 'Segment',
     IconElement: SegmentIcon,
     RulesElement: RulesSegment,
   },
   {
-    type: 'content',
+    type: RulesType.CONTENT,
     text: 'Flow',
     IconElement: ContentIcon,
     RulesElement: RulesContent,
   },
   {
-    type: 'task-is-clicked',
+    type: RulesType.TASK_IS_CLICKED,
     text: 'Task is clicked',
     IconElement: TaskClickedIcon,
     RulesElement: RulesTaskIsClicked,
   },
   {
-    type: 'element',
+    type: RulesType.ELEMENT,
     text: 'Element (present, clicked, disabled)',
     IconElement: ElementIcon,
     RulesElement: RulesElement,
   },
   {
-    type: 'text-input',
+    type: RulesType.TEXT_INPUT,
     text: 'Text input value',
     IconElement: TextInputIcon,
     RulesElement: RulesTextInput,
   },
   {
-    type: 'text-fill',
+    type: RulesType.TEXT_FILL,
     text: 'User fills in input',
     IconElement: TextFillIcon,
     RulesElement: RulesUserFills,
   },
   {
-    type: 'time',
+    type: RulesType.TIME,
     text: 'Current time',
     IconElement: TimeIcon,
     RulesElement: RulesCurrentTime,
   },
   {
-    type: 'group',
+    type: RulesType.GROUP,
     text: 'Logic group (and, or)',
     IconElement: GroupIcon,
     RulesElement: null,
@@ -154,9 +156,7 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const { isSubItems = false, onChange, defaultConditions } = props;
   const { isHorizontal, filterItems, addButtonText, disabled } = useRulesContext();
 
-  const [conditions, setConditions] = useState<RulesCondition[]>(
-    JSON.parse(JSON.stringify(defaultConditions)),
-  );
+  const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
   const [rulesItems, _] = useState<typeof RULES_ITEMS>(
     RULES_ITEMS.filter((item) => {
       if (filterItems.length > 0) {
@@ -173,10 +173,15 @@ export const RulesGroup = (props: RulesGroupProps) => {
   );
 
   const setNewConditions = (newConditions: RulesCondition[]) => {
-    setConditions(newConditions);
-    if (onChange) {
-      onChange(newConditions);
-    }
+    setConditions((prev) => {
+      if (isEqual(prev, newConditions)) {
+        return prev;
+      }
+      if (onChange) {
+        onChange(newConditions);
+      }
+      return newConditions;
+    });
   };
 
   const handleOnSelect = useCallback(
@@ -192,7 +197,10 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const handleOnChange = (index: number, conds: RulesCondition[]) => {
     const newConds = conditions.map((condition, i) => {
       if (i === index) {
-        condition.conditions = [...conds];
+        return {
+          ...condition,
+          conditions: [...conds],
+        };
       }
       return condition;
     });
@@ -212,10 +220,11 @@ export const RulesGroup = (props: RulesGroupProps) => {
     (index: number, data: any) => {
       const newConds = conditions.map((condition, i) => {
         if (i === index) {
-          if (data) {
-            condition.data = data;
-          }
-          condition.operators = conditionType;
+          return {
+            ...condition,
+            ...(data && { data }),
+            operators: conditionType,
+          };
         }
         return condition;
       });
@@ -273,7 +282,9 @@ export const RulesGroup = (props: RulesGroupProps) => {
             disabled={disabled}
             items={
               isSubItems
-                ? rulesItems.filter((item) => item.type !== 'group' && item.type !== 'wait')
+                ? rulesItems.filter(
+                    (item) => item.type !== RulesType.GROUP && item.type !== RulesType.WAIT,
+                  )
                 : rulesItems
             }
           >

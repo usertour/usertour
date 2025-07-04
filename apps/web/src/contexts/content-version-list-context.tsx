@@ -10,6 +10,7 @@ export interface ContentVersionListProviderProps {
 
 export interface ContentVersionListContextValue {
   versionList: ContentVersion[];
+  loading: boolean;
   refetch: any;
 }
 
@@ -21,7 +22,7 @@ export function ContentVersionListProvider(props: ContentVersionListProviderProp
   const { children, contentId } = props;
   const [versionList, setVersionList] = useState<ContentVersion[]>([]);
 
-  const { data, refetch } = useQuery(listContentVersions, {
+  const { data, refetch, loading } = useQuery(listContentVersions, {
     variables: { contentId: contentId },
   });
 
@@ -39,6 +40,7 @@ export function ContentVersionListProvider(props: ContentVersionListProviderProp
 
   const value: ContentVersionListContextValue = {
     versionList,
+    loading,
     refetch,
   };
 

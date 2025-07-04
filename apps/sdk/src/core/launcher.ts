@@ -1,20 +1,15 @@
 import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
-import { BizEvents, EventAttributes, LauncherData, SDKContent } from '@usertour-ui/types';
+import { BizEvents, EventAttributes, LauncherData } from '@usertour-ui/types';
 import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
 import { evalCode } from '@usertour-ui/ui-utils';
 import { LauncherStore } from '../types/store';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
-import { App } from './app';
 import { BaseContent } from './base-content';
-import { defaultLauncherStore } from './common';
 import { ElementWatcher } from './element-watcher';
 
 export class Launcher extends BaseContent<LauncherStore> {
   private watcher: ElementWatcher | null = null;
-  constructor(instance: App, content: SDKContent) {
-    super(instance, content, defaultLauncherStore);
-  }
 
   /**
    * Monitors the launcher's visibility state and ensures it's properly handled
@@ -45,8 +40,9 @@ export class Launcher extends BaseContent<LauncherStore> {
       return;
     }
 
-    const { openState } = this.getStore().getSnapshot();
+    const store = this.getStore().getSnapshot();
     const { isHidden } = await this.watcher.checkVisibility();
+    const openState = store?.openState;
 
     // Hide launcher if it's temporarily hidden or target element is not visible
     if (this.isTemporarilyHidden() || isHidden) {
@@ -88,11 +84,10 @@ export class Launcher extends BaseContent<LauncherStore> {
     const { zIndex } = content.data;
 
     return {
-      ...defaultLauncherStore,
       content,
       openState: false,
       ...baseInfo,
-      zIndex: zIndex || baseInfo.zIndex,
+      zIndex: zIndex || baseInfo?.zIndex,
       triggerRef: undefined,
     } as LauncherStore;
   }
@@ -181,7 +176,7 @@ export class Launcher extends BaseContent<LauncherStore> {
       const { type, data } = actionRule;
 
       if (type === ContentActionsItemType.FLOW_START) {
-        await this.startNewContent(data.contentId);
+        await this.startNewContent(data.contentId, data.stepCvid);
       } else if (type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
         evalCode(data.value);
       } else if (type === ContentActionsItemType.LAUNCHER_DISMIS) {
@@ -243,7 +238,7 @@ export class Launcher extends BaseContent<LauncherStore> {
    */
   destroy() {
     // Reset store to default state
-    this.setStore(defaultLauncherStore);
+    this.setStore(undefined);
 
     // Clean up element watcher
     if (this.watcher) {
