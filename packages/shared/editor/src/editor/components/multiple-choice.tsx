@@ -585,6 +585,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                   </div>
                   <BindAttribute
                     zIndex={zIndex}
+                    popoverContentClassName="w-[350px]"
                     bindToAttribute={localData.bindToAttribute || false}
                     selectedAttribute={localData.selectedAttribute}
                     onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
