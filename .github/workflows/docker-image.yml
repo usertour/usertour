@@ -50,7 +50,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Image digest
-        run: echo "Docker image digest: ${{ steps.docker_build.outputs.digest }}"
+        run: echo ${{ steps.docker_build.outputs.digest }}
 
       - name: Notify team on failure
         if: ${{ failure() }}
