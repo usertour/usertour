@@ -3,7 +3,6 @@ name: Publish Docker Image
 on:
   push:
     tags: ['v*']
-  workflow_dispatch:
 
 jobs:
   push_to_registry:
@@ -25,6 +24,9 @@ jobs:
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           STRIPPED=${TAG#v}
+          echo "Git ref: $GITHUB_REF"
+          echo "Extracted tag: $TAG"
+          echo "Stripped version: $STRIPPED"
           echo "VERSION=$STRIPPED" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
