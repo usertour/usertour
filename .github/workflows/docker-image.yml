@@ -24,8 +24,9 @@ jobs:
         with:
           images: usertour/usertour
           tags: |
-            # type=raw,value=latest
-            type=ref,event=tag
+            type=raw,value=latest
+            type=ref,event=tag,prefix=v
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
