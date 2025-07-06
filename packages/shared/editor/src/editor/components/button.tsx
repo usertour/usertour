@@ -16,7 +16,7 @@ import {
 } from '@usertour-ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { RulesCondition } from '@usertour-ui/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ContentActions } from '../..';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -25,30 +25,156 @@ import {
   ContentEditorElementInsertDirection,
 } from '../../types/editor';
 
-const marginKeyMapping = {
+// Constants
+const MARGIN_KEY_MAPPING = {
   left: 'marginLeft',
   top: 'marginTop',
   bottom: 'marginBottom',
   right: 'marginRight',
-};
-const transformsStyle = (element: ContentEditorButtonElement) => {
-  const _style: any = {};
+} as const;
+
+const BUTTON_STYLES = {
+  DEFAULT: 'default',
+  SECONDARY: 'secondary',
+} as const;
+
+const MARGIN_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
+
+// Types
+type MarginPosition = keyof typeof MARGIN_KEY_MAPPING;
+
+interface ButtonStyleProps {
+  marginLeft?: string;
+  marginTop?: string;
+  marginBottom?: string;
+  marginRight?: string;
+}
+
+// Utility functions
+const transformsStyle = (element: ContentEditorButtonElement): ButtonStyleProps => {
+  const style: ButtonStyleProps = {};
+
+  // Handle margins
   if (element.margin) {
-    for (const k in marginKeyMapping) {
-      const key = k as keyof typeof marginKeyMapping;
-      const marginName = marginKeyMapping[key];
-      if (element.margin[key]) {
-        if (element.margin.enabled) {
-          _style[marginName] = `${element.margin[key]}px`;
-        } else {
-          _style[marginName] = null;
-        }
+    for (const position of MARGIN_POSITIONS) {
+      const marginName = MARGIN_KEY_MAPPING[position];
+      if (element.margin?.[position]) {
+        style[marginName] = element.margin.enabled ? `${element.margin[position]}px` : undefined;
       }
     }
   }
-  return _style;
+
+  return style;
 };
 
+// Margin controls component
+const MarginControls = ({
+  element,
+  onMarginChange,
+  onMarginEnabledChange,
+}: {
+  element: ContentEditorButtonElement;
+  onMarginChange: (position: MarginPosition, value: string) => void;
+  onMarginEnabledChange: (enabled: boolean) => void;
+}) => (
+  <>
+    <div className="flex gap-x-2">
+      <Checkbox
+        id="margin"
+        checked={element.margin?.enabled}
+        onCheckedChange={onMarginEnabledChange}
+      />
+      <Label htmlFor="margin">Margin</Label>
+    </div>
+    {element.margin?.enabled && (
+      <div className="flex gap-x-2">
+        <div className="flex flex-col justify-center">
+          <Input
+            value={element.margin?.left}
+            placeholder="Left"
+            onChange={(e) => onMarginChange('left', e.target.value)}
+            className="bg-background flex-none w-20"
+          />
+        </div>
+        <div className="flex flex-col justify-center gap-y-2">
+          <Input
+            value={element.margin?.top}
+            onChange={(e) => onMarginChange('top', e.target.value)}
+            placeholder="Top"
+            className="bg-background flex-none w-20"
+          />
+          <Input
+            value={element.margin?.bottom}
+            onChange={(e) => onMarginChange('bottom', e.target.value)}
+            placeholder="Bottom"
+            className="bg-background flex-none w-20"
+          />
+        </div>
+        <div className="flex flex-col justify-center">
+          <Input
+            value={element.margin?.right}
+            placeholder="Right"
+            onChange={(e) => onMarginChange('right', e.target.value)}
+            className="bg-background flex-none w-20"
+          />
+        </div>
+      </div>
+    )}
+  </>
+);
+
+// Action buttons component
+const ActionButtons = ({
+  onDelete,
+  onAddLeft,
+  onAddRight,
+}: {
+  onDelete: () => void;
+  onAddLeft: () => void;
+  onAddRight: () => void;
+}) => (
+  <div className="flex items-center">
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            className="flex-none hover:bg-red-200"
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+          >
+            <DeleteIcon className="fill-red-500" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">Delete button</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+    <div className="grow" />
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button className="flex-none" variant="ghost" size="icon" onClick={onAddLeft}>
+            <InsertColumnLeftIcon className="fill-foreground" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">Insert button to the left</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+    <div className="flex-none mx-1 leading-10">Insert button</div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button className="flex-none" variant="ghost" size="icon" onClick={onAddRight}>
+            <InsertColumnRightIcon className="fill-foreground" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">Insert button to the right</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </div>
+);
+
+// Main editable button component
 export interface ContentEditorButtonProps {
   element: ContentEditorButtonElement;
   id: string;
@@ -72,42 +198,72 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   const [isShowError, setIsShowError] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean | undefined>();
 
-  const handleDelete = () => {
-    deleteElementInColumn(path);
-  };
-  const handleAddLeft = () => {
-    insertElementInColumn(element, path, ContentEditorElementInsertDirection.LEFT);
-  };
-  const handleAddRight = () => {
-    insertElementInColumn(element, path, ContentEditorElementInsertDirection.RIGHT);
-  };
+  // Memoized style calculation
+  const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
 
-  const handleButtonStyleChange = (type: string) => {
-    updateElement({ ...element, data: { ...element.data, type } }, id);
-  };
+  // Event handlers
+  const handleDelete = useCallback(() => {
+    deleteElementInColumn(path);
+  }, [deleteElementInColumn, path]);
+
+  const handleAddLeft = useCallback(() => {
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.LEFT);
+  }, [insertElementInColumn, element, path]);
+
+  const handleAddRight = useCallback(() => {
+    insertElementInColumn(element, path, ContentEditorElementInsertDirection.RIGHT);
+  }, [insertElementInColumn, element, path]);
+
+  const handleButtonStyleChange = useCallback(
+    (type: string) => {
+      updateElement({ ...element, data: { ...element.data, type } }, id);
+    },
+    [element, id, updateElement],
+  );
 
   const handleButtonTextChange = useCallback(
-    (e: any) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       updateElement({ ...element, data: { ...element.data, text: value } }, id);
     },
-    [element, path],
+    [element, id, updateElement],
   );
 
-  const handleMarginValueChange = (e: any, position: string) => {
-    const value = e.target.value;
-    const margin = { ...element.margin, [position]: value };
-    updateElement({ ...element, margin } as any, id);
-  };
+  const handleMarginValueChange = useCallback(
+    (position: MarginPosition, value: string) => {
+      const margin = { ...element.margin, [position]: value };
+      updateElement({ ...element, margin } as any, id);
+    },
+    [element, id, updateElement],
+  );
 
-  const handleMarginCheckedChange = (enabled: boolean) => {
-    updateElement({ ...element, margin: { top: 0, left: 0, bottom: 0, right: 0, enabled } }, id);
-  };
+  const handleMarginCheckedChange = useCallback(
+    (enabled: boolean) => {
+      updateElement(
+        {
+          ...element,
+          margin: {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            enabled,
+          },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
 
-  const handleActionChange = (actions: RulesCondition[]) => {
-    updateElement({ ...element, data: { ...element.data, actions } }, id);
-  };
+  const handleActionChange = useCallback(
+    (actions: RulesCondition[]) => {
+      updateElement({ ...element, data: { ...element.data, actions } }, id);
+    },
+    [element, id, updateElement],
+  );
 
+  // Error state effect
   useEffect(() => {
     const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
     setIsShowError(isEmptyActions && !isOpen);
@@ -123,7 +279,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
               variant={element.data.type as any}
               contentEditable={false}
               className="h-fit"
-              style={{ ...transformsStyle(element) }}
+              style={buttonStyle}
             >
               <span>{element.data.text}</span>
             </Button>
@@ -139,79 +295,34 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
               <div className="flex flex-col gap-2.5">
                 <Label htmlFor="button-text">Button text</Label>
                 <Input
-                  type="button-text"
+                  type="text"
                   className="bg-background"
                   id="button-text"
                   value={element.data.text}
                   placeholder="Enter button text"
                   onChange={handleButtonTextChange}
                 />
+
                 <Label>Button style</Label>
-                <Select onValueChange={handleButtonStyleChange} defaultValue={element.data.type}>
+                <Select onValueChange={handleButtonStyleChange} value={element.data.type}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a distribute" />
                   </SelectTrigger>
                   <SelectPortal style={{ zIndex: zIndex + EDITOR_SELECT }}>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="default">Primary</SelectItem>
-                        <SelectItem value="secondary">Secondary</SelectItem>
-                        {/* <SelectItem value="destructive">Destructive</SelectItem>
-                        <SelectItem value="outline">Outline</SelectItem> */}
+                        <SelectItem value={BUTTON_STYLES.DEFAULT}>Primary</SelectItem>
+                        <SelectItem value={BUTTON_STYLES.SECONDARY}>Secondary</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </SelectPortal>
                 </Select>
-                <div className="flex gap-x-2">
-                  <Checkbox
-                    id="margin"
-                    checked={element.margin?.enabled}
-                    onCheckedChange={handleMarginCheckedChange}
-                  />
-                  <Label htmlFor="margin">Margin</Label>
-                </div>
-                {element.margin?.enabled && (
-                  <div className="flex gap-x-2">
-                    <div className="flex flex-col justify-center">
-                      <Input
-                        value={element.margin?.left}
-                        placeholder="Left"
-                        onChange={(e) => {
-                          handleMarginValueChange(e, 'left');
-                        }}
-                        className="bg-background flex-none w-20"
-                      />
-                    </div>
-                    <div className="flex flex-col justify-center gap-y-2">
-                      <Input
-                        value={element.margin?.top}
-                        onChange={(e) => {
-                          handleMarginValueChange(e, 'top');
-                        }}
-                        placeholder="Top"
-                        className="bg-background flex-none w-20"
-                      />
-                      <Input
-                        value={element.margin?.bottom}
-                        onChange={(e) => {
-                          handleMarginValueChange(e, 'bottom');
-                        }}
-                        placeholder="Bottom"
-                        className="bg-background flex-none w-20"
-                      />
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <Input
-                        value={element.margin?.right}
-                        placeholder="Right"
-                        onChange={(e) => {
-                          handleMarginValueChange(e, 'right');
-                        }}
-                        className="bg-background flex-none w-20"
-                      />
-                    </div>
-                  </div>
-                )}
+
+                <MarginControls
+                  element={element}
+                  onMarginChange={handleMarginValueChange}
+                  onMarginEnabledChange={handleMarginCheckedChange}
+                />
 
                 <Label>When button is clicked</Label>
                 <ContentActions
@@ -224,67 +335,16 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                   defaultConditions={element?.data?.actions || []}
                   attributes={attributes}
                   filterItems={actionItems}
-                  // segments={segmentList || []}
                   contents={contentList}
                   createStep={createStep}
                 />
-                <div className="flex items-center">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none hover:bg-red-200"
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleDelete}
-                        >
-                          <DeleteIcon className="fill-red-500" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Delete button</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <div className="grow" />
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none"
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleAddLeft}
-                        >
-                          <InsertColumnLeftIcon className="fill-foreground" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Insert button to the left</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <div className="flex-none mx-1 leading-10">Insert button</div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          className="flex-none"
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleAddRight}
-                        >
-                          <InsertColumnRightIcon className="fill-foreground" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Insert button to the right</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+
+                <ActionButtons
+                  onDelete={handleDelete}
+                  onAddLeft={handleAddLeft}
+                  onAddRight={handleAddRight}
+                />
               </div>
-              {/* <Popover.Arrow className="fill-slate-900" /> */}
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
@@ -298,6 +358,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
 
 ContentEditorButton.displayName = 'ContentEditorButton';
 
+// Read-only serialized component for SDK
 export type ContentEditorButtonSerializeType = {
   className?: string;
   children?: React.ReactNode;
@@ -308,23 +369,24 @@ export type ContentEditorButtonSerializeType = {
 export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerializeType) => {
   const { element, onClick } = props;
 
-  const handleOnClick = () => {
+  const handleOnClick = useCallback(() => {
     if (onClick) {
       onClick(element);
     }
-  };
+  }, [onClick, element]);
+
+  const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
+
   return (
-    <>
-      <Button
-        variant={element.data?.type as any}
-        forSdk={true}
-        onClick={handleOnClick}
-        className="h-fit"
-        style={{ ...transformsStyle(element) }}
-      >
-        <span>{element.data?.text}</span>
-      </Button>
-    </>
+    <Button
+      variant={element.data?.type as any}
+      forSdk={true}
+      onClick={handleOnClick}
+      className="h-fit"
+      style={buttonStyle}
+    >
+      <span>{element.data?.text}</span>
+    </Button>
   );
 };
 
