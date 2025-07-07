@@ -18,7 +18,7 @@ import { Input } from '@usertour-ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
 import { Textarea } from '@usertour-ui/textarea';
 import { cn } from '@usertour-ui/ui-utils';
-import { toast } from '@usertour-ui/use-toast';
+import { useToast } from '@usertour-ui/use-toast';
 
 const profileFormSchema = z.object({
   username: z
@@ -53,6 +53,7 @@ const defaultValues: Partial<ProfileFormValues> = {
 };
 
 export function ProfileForm() {
+  const { toast } = useToast();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,

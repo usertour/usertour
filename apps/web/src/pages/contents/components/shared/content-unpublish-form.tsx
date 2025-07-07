@@ -133,7 +133,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
         .join(', ');
 
       toast({
-        variant: allSuccess ? 'default' : 'destructive',
+        variant: allSuccess ? 'success' : 'destructive',
         title: allSuccess
           ? `The ${content?.type} has been successfully unpublished from ${envNames}`
           : 'Some environments failed to unpublish',
