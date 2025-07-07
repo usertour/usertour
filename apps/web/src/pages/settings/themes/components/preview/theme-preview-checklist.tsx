@@ -42,6 +42,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         onlyShowTask: false,
         isCompleted: false,
         onlyShowTaskConditions: [],
+        isVisible: true,
       },
       {
         id: '2',
@@ -52,6 +53,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         onlyShowTask: false,
         isCompleted: false,
         onlyShowTaskConditions: [],
+        isVisible: true,
       },
       {
         id: '3',
@@ -62,6 +64,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         onlyShowTask: false,
         isCompleted: false,
         onlyShowTaskConditions: [],
+        isVisible: true,
       },
     ],
     content: [],
@@ -87,7 +90,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
             <ChecklistPopper zIndex={10000}>
               <ChecklistPopperContent>
                 <ChecklistDropdown />
-                <ChecklistProgress width={45} />
+                <ChecklistProgress />
                 <ChecklistItems />
                 <ChecklistDismiss />
                 <PopperMadeWith />

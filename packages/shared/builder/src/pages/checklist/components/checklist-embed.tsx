@@ -69,7 +69,8 @@ export const ChecklistEmbed = () => {
   }
 
   const items = localData.items.map((item) => {
-    return item.id === currentItem?.id ? currentItem : item;
+    const newItem = item.id === currentItem?.id ? currentItem : item;
+    return { ...newItem, isVisible: true };
   });
 
   return (

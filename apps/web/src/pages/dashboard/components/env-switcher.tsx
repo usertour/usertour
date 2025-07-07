@@ -3,7 +3,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { EnvironmentCreateForm } from '@/pages/settings/environments/components/environment-create-form';
-import { Environment } from '@/types/project';
+import { Environment } from '@usertour-ui/types';
 import { CaretSortIcon, CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
 import { Button } from '@usertour-ui/button';

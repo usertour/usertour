@@ -1,4 +1,4 @@
-import { Environment } from '@/types/project';
+import { Environment } from '@usertour-ui/types';
 import { useQuery } from '@apollo/client';
 import { getUserEnvironments } from '@usertour-ui/gql';
 import { ReactNode, createContext, useContext } from 'react';

@@ -22,6 +22,8 @@ import {
   Content,
   ContentOmbedInfo,
   ContentVersion,
+  ProgressBarPosition,
+  ProgressBarType,
   Side,
   Step,
   Theme,
@@ -104,12 +106,18 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
-    const progress = Math.min(
-      totalSteps > 0 ? Math.round(((currentIndex + 1) / totalSteps) * 100) : 0,
-      100,
-    );
-
     const enabledElementTypes = Object.values(ContentEditorElementType);
+
+    const progressType = themeSetting?.progress.type;
+    const progressPosition = themeSetting?.progress.position;
+    const progressEnabled = themeSetting?.progress.enabled;
+
+    // Optimized progress display logic
+    const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+    const showTopProgress =
+      progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+    const showBottomProgress =
+      progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
     if (!triggerRef?.current) {
       return <></>;
@@ -145,6 +153,15 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
           >
             <PopperContent>
               {currentStep.setting.skippable && <PopperClose />}
+
+              {showTopProgress && (
+                <PopperProgress
+                  type={progressType}
+                  position={progressPosition}
+                  currentStepIndex={currentIndex}
+                  totalSteps={totalSteps}
+                />
+              )}
               <ContentEditor
                 zIndex={zIndex + EXTENSION_CONTENT_POPPER}
                 customUploadRequest={handleCustomUploadRequest}
@@ -159,8 +176,15 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                 createStep={createStep}
                 projectId={projectId}
               />
+              {showBottomProgress && (
+                <PopperProgress
+                  type={progressType}
+                  position={progressPosition}
+                  currentStepIndex={currentIndex}
+                  totalSteps={totalSteps}
+                />
+              )}
               <PopperMadeWith />
-              <PopperProgress width={progress} />
             </PopperContent>
           </PopperContentPotal>
         </Popper>

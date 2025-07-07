@@ -1,6 +1,6 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
-import { ThemeTypesSettingsButton } from '@/types/theme-settings';
+import { ThemeTypesSettingsButton } from '@usertour-ui/types';
 import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';

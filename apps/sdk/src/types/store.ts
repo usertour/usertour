@@ -17,6 +17,8 @@ export type TourStore = BaseStore & {
   triggerRef?: any;
   currentStep: Step | undefined;
   progress: number;
+  currentStepIndex?: number; // Current step number (0-based)
+  totalSteps?: number; // Total number of steps
 };
 
 // Checklist store type
