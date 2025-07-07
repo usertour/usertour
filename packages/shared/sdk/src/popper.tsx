@@ -802,7 +802,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   // currentStepIndex is 0-based, so we add 1 for display and progress calculation
   const displayStep = currentStepIndex + 1;
   const progressPercentage = totalSteps > 0 ? (displayStep / totalSteps) * 100 : 0;
-  const maxItems = Math.max(2, totalSteps);
+  const maxItems = totalSteps;
 
   if (type === ProgressBarType.NARROW) {
     return (
