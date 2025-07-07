@@ -1,4 +1,4 @@
-import { ThemeTypesSetting } from '@/types/theme-settings';
+import { ThemeTypesSetting } from '@usertour-ui/types';
 import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';

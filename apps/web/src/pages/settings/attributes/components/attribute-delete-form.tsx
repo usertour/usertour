@@ -1,4 +1,4 @@
-import { Attribute } from '@/types/project';
+import { Attribute } from '@usertour-ui/types';
 import { useMutation } from '@apollo/client';
 import {
   AlertDialog,

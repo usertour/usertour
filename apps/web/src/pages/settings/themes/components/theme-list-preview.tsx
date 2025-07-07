@@ -1,6 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import { ThemeTypesSetting } from '@/types/theme-settings';
+import { ThemeTypesSetting } from '@usertour-ui/types';
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour-ui/sdk';

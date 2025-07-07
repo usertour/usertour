@@ -27,7 +27,7 @@ import type { SideObject, Rect, Placement, Middleware } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './backdrop';
 import { computePositionStyle } from './position';
 import { cn } from '@usertour-ui/ui-utils';
-import { Align, Side } from '@usertour-ui/types';
+import { Align, ProgressBarType, Side } from '@usertour-ui/types';
 import { hiddenStyle } from './utils';
 import { usePopperAnimation } from './hooks';
 
@@ -731,10 +731,155 @@ const PopperMadeWith = forwardRef<HTMLDivElement>((_, ref) => {
 });
 
 interface PopperProgresshProps {
-  width: number;
+  width?: number;
+  type?: ProgressBarType;
+  currentStepIndex?: number;
+  totalSteps?: number;
+  position?: 'top' | 'bottom';
 }
+
+const PopperProgressContainer = forwardRef<
+  HTMLDivElement,
+  {
+    children: React.ReactNode;
+    className?: string;
+    type?: ProgressBarType;
+    position?: 'top' | 'bottom';
+  }
+>((props, ref) => {
+  const { children, className, type, position = 'top' } = props;
+
+  // Get the appropriate CSS variable based on type
+  const getProgressHeightVariable = (progressType?: ProgressBarType) => {
+    switch (progressType) {
+      case ProgressBarType.NARROW:
+        return 'var(--usertour-narrow-progress-bar-height)';
+      case ProgressBarType.CHAIN_ROUNDED:
+        return 'var(--usertour-rounded-progress-bar-height)';
+      case ProgressBarType.CHAIN_SQUARED:
+        return 'var(--usertour-squared-progress-bar-height)';
+      case ProgressBarType.DOTS:
+        return 'var(--usertour-dotted-progress-bar-height)';
+      case ProgressBarType.NUMBERED:
+        return 'var(--usertour-numbered-progress-bar-height)';
+      default:
+        return 'var(--usertour-progress-bar-height)';
+    }
+  };
+
+  const progressHeight = getProgressHeightVariable(type);
+  const multiplier = type === ProgressBarType.NUMBERED ? 0.5 : 1;
+
+  // Calculate margin values based on position and multiplier
+  const marginValue = `calc(${progressHeight} * ${multiplier})`;
+  const marginTop = position === 'bottom' ? marginValue : '0';
+  const marginBottom = position === 'top' ? marginValue : '0';
+
+  return (
+    <div
+      className={cn('w-full flex items-center justify-center overflow-hidden', className)}
+      ref={ref}
+      style={{
+        marginTop,
+        marginBottom,
+      }}
+    >
+      {children}
+    </div>
+  );
+});
+PopperProgressContainer.displayName = 'PopperProgressContainer';
+
 const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, ref) => {
-  const { width = 0 } = props;
+  const {
+    type = ProgressBarType.FULL_WIDTH,
+    currentStepIndex = 0,
+    totalSteps = 1,
+    position = 'top',
+  } = props;
+
+  // Calculate progress percentage based on currentStepIndex and totalSteps
+  // currentStepIndex is 0-based, so we add 1 for display and progress calculation
+  const displayStep = currentStepIndex + 1;
+  const progressPercentage = totalSteps > 0 ? (displayStep / totalSteps) * 100 : 0;
+  const maxItems = Math.max(2, totalSteps);
+
+  if (type === ProgressBarType.NARROW) {
+    return (
+      <>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
+          <div className="w-[80px] h-sdk-narrow-progress border border-sdk-progress rounded-lg">
+            <div
+              className="h-full bg-sdk-progress transition-[width] duration-300"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </PopperProgressContainer>
+      </>
+    );
+  }
+  if (type === ProgressBarType.CHAIN_ROUNDED) {
+    return (
+      <>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
+          {Array.from({ length: maxItems }, (_, index) => (
+            <div
+              key={index}
+              className={`h-sdk-rounded-progress w-sdk-rounded-progress rounded-lg border border-sdk-progress transition-colors duration-300 mx-1 ${
+                index < displayStep ? 'bg-sdk-progress' : ''
+              }`}
+            />
+          ))}
+        </PopperProgressContainer>
+      </>
+    );
+  }
+  if (type === ProgressBarType.CHAIN_SQUARED) {
+    return (
+      <>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
+          {Array.from({ length: maxItems }, (_, index) => (
+            <div
+              key={index}
+              className={`h-sdk-squared-progress w-sdk-squared-progress border border-sdk-progress transition-colors duration-300 mx-1 ${
+                index < displayStep ? 'bg-sdk-progress' : ''
+              }`}
+            />
+          ))}
+        </PopperProgressContainer>
+      </>
+    );
+  }
+
+  if (type === ProgressBarType.DOTS) {
+    return (
+      <>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
+          {Array.from({ length: maxItems }, (_, index) => (
+            <div
+              key={index}
+              className={`h-sdk-dotted-progress w-sdk-dotted-progress border border-sdk-progress rounded-full transition-colors duration-300 mx-0.5 ${
+                index < displayStep ? 'bg-sdk-progress' : ''
+              }`}
+            />
+          ))}
+        </PopperProgressContainer>
+      </>
+    );
+  }
+
+  if (type === ProgressBarType.NUMBERED) {
+    return (
+      <>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
+          <span className="text-sdk-numbered-progress text-sdk-progress font-bold">
+            {displayStep} of {totalSteps}
+          </span>
+        </PopperProgressContainer>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="h-2.5" />
@@ -745,7 +890,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
       >
         <div
           className="h-full bg-sdk-progress transition-[width] duration-200"
-          style={{ width: `${width}%` }}
+          style={{ width: `${progressPercentage}%` }}
         />
       </div>
     </>

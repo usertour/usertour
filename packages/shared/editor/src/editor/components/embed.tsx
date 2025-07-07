@@ -20,7 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import {
+  QuestionTooltip,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-ui/tooltip';
 import { ContentOmbedInfo } from '@usertour-ui/types';
 import { ChangeEvent, useCallback, useMemo, useState, forwardRef } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -515,7 +521,14 @@ export const ContentEditorEmbed = ({ element, path, id }: ContentEditorEmbedProp
           sideOffset={10}
         >
           <div className="flex flex-col gap-2.5">
-            <Label htmlFor="embed-url">Embed URL</Label>
+            <div className="flex flex-row space-x-1">
+              <Label htmlFor="embed-url">Embed URL</Label>
+              <QuestionTooltip>
+                Enter the URL of any content you want to embed. This could be a YouTube video, a
+                form, documentation, a website, or even a direct link to a video file. We support
+                most embeddable content from the web.
+              </QuestionTooltip>
+            </div>
             <div className="flex gap-x-2">
               <Input
                 id="embed-url"
