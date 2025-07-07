@@ -4,15 +4,9 @@ import * as sonner from 'sonner';
 
 type ToastVariant = 'default' | 'success' | 'destructive' | 'warning';
 
-interface ToastOptions {
+interface ToastOptions extends sonner.ExternalToast {
   variant?: ToastVariant;
   title: string;
-  description?: string;
-  duration?: number;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
 }
 
 type IconProps = React.HTMLAttributes<SVGElement>;
@@ -75,18 +69,14 @@ export const Toaster = sonner.Toaster;
 
 function useToast() {
   const toast = React.useCallback((options: ToastOptions) => {
-    const { variant = 'default', title, description, duration, action } = options;
+    const { variant = 'default', title, icon, ...toastOptions } = options;
     const config = TOAST_CONFIG[variant];
 
-    const toastOptions: Parameters<typeof config.method>[1] = {
-      description,
-      duration,
-      action,
-    };
-
-    // Add icon if available for the variant
-    if (config.icon) {
-      toastOptions.icon = config.icon;
+    // Add icon if available for the variant, or use custom icon if provided
+    if (icon) {
+      (toastOptions as any).icon = icon;
+    } else if (config.icon) {
+      (toastOptions as any).icon = config.icon;
     }
 
     config.method(title, toastOptions);
