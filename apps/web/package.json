@@ -70,7 +70,6 @@
     "@usertour-ui/tabs": "workspace:^",
     "@usertour-ui/tailwind": "workspace:^",
     "@usertour-ui/textarea": "workspace:^",
-    "@usertour-ui/toaster": "workspace:^",
     "@usertour-ui/tooltip": "workspace:^",
     "@usertour-ui/types": "workspace:^",
     "@usertour-ui/ui-utils": "workspace:^",

@@ -80,7 +80,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   );
 
   const showToast = (isSuccess: boolean, message?: string) => {
-    const variant = isSuccess ? 'default' : 'destructive';
+    const variant = isSuccess ? 'success' : 'destructive';
     const title = isSuccess ? 'The flow published successfully.' : 'The flow published failed.';
     toast({ variant, title: message || title });
   };

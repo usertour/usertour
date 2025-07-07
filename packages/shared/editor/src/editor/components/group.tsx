@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { DragHandleDots2Icon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { cn } from '@usertour-ui/ui-utils';
-import { ReactNode, forwardRef, useCallback, useEffect, useState } from 'react';
+import { ReactNode, forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElement,
@@ -14,6 +14,59 @@ import {
 } from '../../types/editor';
 import { ContentEditorSideBar } from './sidebar';
 
+interface DragStyle {
+  transform: string;
+  transition: string | undefined;
+  opacity: number;
+}
+
+// Utility functions
+const createDragStyle = (
+  transform: any,
+  transition: string | undefined,
+  isDragging: boolean,
+): DragStyle => ({
+  transform: CSS.Transform.toString(transform) || '',
+  transition,
+  opacity: isDragging ? 0.5 : 1,
+});
+
+const animateLayoutChanges: AnimateLayoutChanges = (args) =>
+  defaultAnimateLayoutChanges({ ...args, wasDragging: true });
+
+// Drag handle component
+const DragHandle = ({
+  isVisible,
+  isOverlay = false,
+  setActivatorNodeRef,
+  attributes,
+  listeners,
+}: {
+  isVisible: boolean;
+  isOverlay?: boolean;
+  setActivatorNodeRef: (node: HTMLElement | null) => void;
+  attributes: any;
+  listeners: any;
+}) => {
+  if (!isVisible) return null;
+
+  return (
+    <Button
+      size="icon"
+      ref={setActivatorNodeRef}
+      className={cn(
+        'rounded-none absolute w-4 h-full rounded-l -left-4 cursor-move',
+        isOverlay && 'bg-sdk-primary',
+      )}
+      {...attributes}
+      {...listeners}
+    >
+      <DragHandleDots2Icon className="h-4" />
+    </Button>
+  );
+};
+
+// Main editable group component
 export interface ContentEditorGroupProps {
   children: ReactNode;
   element: ContentEditorGroupElement;
@@ -21,9 +74,6 @@ export interface ContentEditorGroupProps {
   path: number[];
   items: any[];
 }
-
-const animateLayoutChanges: AnimateLayoutChanges = (args) =>
-  defaultAnimateLayoutChanges({ ...args, wasDragging: true });
 
 export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
   const { children, path, id, items } = props;
@@ -48,25 +98,27 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
     animateLayoutChanges,
   });
 
-  useDndMonitor({
-    onDragEnd() {
+  // Memoized values and styles
+  const dragStyle = useMemo(
+    () => createDragStyle(transform, transition, isDragging),
+    [transform, transition, isDragging],
+  );
+
+  const shouldShowDragHandle = useMemo(
+    () => isDragging || isGroupHover,
+    [isDragging, isGroupHover],
+  );
+
+  const shouldShowSidebar = useMemo(() => isGroupHover || isOpen, [isGroupHover, isOpen]);
+
+  // Event handlers
+  const insertBlockAtRight = useCallback(
+    (element: ContentEditorElement) => {
+      insertColumnInGroup(element, path, ContentEditorElementInsertDirection.RIGHT);
       setIsGroupHover(false);
     },
-    onDragCancel() {
-      setIsGroupHover(false);
-    },
-  });
-
-  const dragStyle = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const insertBlockAtRight = (element: ContentEditorElement) => {
-    insertColumnInGroup(element, path, ContentEditorElementInsertDirection.RIGHT);
-    setIsGroupHover(false);
-  };
+    [insertColumnInGroup, path],
+  );
 
   const handleMouseOver = useCallback(() => {
     if (activeId && activeId !== id) {
@@ -75,6 +127,32 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
     setIsGroupHover(true);
   }, [activeId, id]);
 
+  const handleMouseOut = useCallback(() => {
+    setIsGroupHover(false);
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    if (activeId && activeId !== id) {
+      return;
+    }
+    setIsGroupHover(true);
+  }, [activeId, id]);
+
+  const handleBlur = useCallback(() => {
+    setIsGroupHover(false);
+  }, []);
+
+  // DnD monitor
+  useDndMonitor({
+    onDragEnd: useCallback(() => {
+      setIsGroupHover(false);
+    }, []),
+    onDragCancel: useCallback(() => {
+      setIsGroupHover(false);
+    }, []),
+  });
+
+  // Effect for active state management
   useEffect(() => {
     if (activeId && activeId !== id) {
       setIsGroupHover(false);
@@ -84,29 +162,21 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        'relative flex items-stretch',
-        // "hover:bg-editor-hover"
-        // isDragging ? "hidden" : ""
-      )}
-      style={{ ...dragStyle }}
+      className="relative flex items-stretch"
+      style={dragStyle}
       onMouseOver={handleMouseOver}
-      onMouseOut={() => setIsGroupHover(false)}
-      onFocus={handleMouseOver}
-      onBlur={() => setIsGroupHover(false)}
+      onMouseOut={handleMouseOut}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     >
-      {(isDragging || isGroupHover) && (
-        <Button
-          size="icon"
-          ref={setActivatorNodeRef}
-          className={cn('rounded-none	 absolute w-4 h-full rounded-l -left-4 cursor-move')}
-          {...attributes}
-          {...listeners}
-        >
-          <DragHandleDots2Icon className="h-4" />
-        </Button>
-      )}
-      {(isGroupHover || isOpen) && (
+      <DragHandle
+        isVisible={shouldShowDragHandle}
+        setActivatorNodeRef={setActivatorNodeRef}
+        attributes={attributes}
+        listeners={listeners}
+      />
+
+      {shouldShowSidebar && (
         <ContentEditorSideBar
           type={ContentEditorSideBarType.RIGHT}
           setIsOpen={setIsOpen}
@@ -114,6 +184,7 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
           onClick={insertBlockAtRight}
         />
       )}
+
       {children}
     </div>
   );
@@ -121,15 +192,18 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
 
 ContentEditorGroup.displayName = 'ContentEditorGroup';
 
+// Overlay component
 export const ContentEditorGroupOverlay = forwardRef<HTMLDivElement, ContentEditorGroupProps>(
   (props: ContentEditorGroupProps, ref) => {
     const { children } = props;
+
     return (
-      <div ref={ref} className={cn('relative h-full w-full', 'flex items-stretch')}>
+      <div ref={ref} className="relative h-full w-full flex items-stretch">
         <Button
           size="icon"
           className={cn(
-            'rounded-none	 absolute w-4 h-full rounded-l -left-4 cursor-move bg-sdk-primary',
+            'rounded-none absolute w-4 h-full rounded-l -left-4 cursor-move',
+            'bg-sdk-primary',
           )}
         >
           <DragHandleDots2Icon className="h-4" />
@@ -142,12 +216,15 @@ export const ContentEditorGroupOverlay = forwardRef<HTMLDivElement, ContentEdito
 
 ContentEditorGroupOverlay.displayName = 'ContentEditorGroupOverlay';
 
+// Read-only serialized component for SDK
 export type ContentEditorGroupSerializeType = {
   children: React.ReactNode;
 };
+
 export const ContentEditorGroupSerialize = (props: ContentEditorGroupSerializeType) => {
   const { children } = props;
-  return <div className={cn('relative flex items-stretch')}>{children}</div>;
+
+  return <div className="relative flex items-stretch">{children}</div>;
 };
 
 ContentEditorGroupSerialize.displayName = 'ContentEditorGroupSerialize';
