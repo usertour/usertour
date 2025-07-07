@@ -5,7 +5,7 @@ import * as sonner from 'sonner';
 type ToastVariant = 'default' | 'success' | 'destructive' | 'warning';
 
 interface ToastOptions {
-  variant: ToastVariant;
+  variant?: ToastVariant;
   title: string;
   description?: string;
   duration?: number;
@@ -75,7 +75,7 @@ export const Toaster = sonner.Toaster;
 
 function useToast() {
   const toast = React.useCallback((options: ToastOptions) => {
-    const { variant, title, description, duration, action } = options;
+    const { variant = 'default', title, description, duration, action } = options;
     const config = TOAST_CONFIG[variant];
 
     const toastOptions: Parameters<typeof config.method>[1] = {
