@@ -45,6 +45,7 @@ export const ThemePreviewPopper = () => {
               {showTopProgress && (
                 <SharedPopper.PopperProgress
                   type={progressType}
+                  position={progressPosition}
                   currentStepIndex={2}
                   totalSteps={4}
                 />
@@ -54,6 +55,7 @@ export const ThemePreviewPopper = () => {
               {showBottomProgress && (
                 <SharedPopper.PopperProgress
                   type={progressType}
+                  position={progressPosition}
                   currentStepIndex={2}
                   totalSteps={4}
                 />

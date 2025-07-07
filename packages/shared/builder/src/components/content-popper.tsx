@@ -157,6 +157,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
               {showTopProgress && (
                 <PopperProgress
                   type={progressType}
+                  position={progressPosition}
                   currentStepIndex={currentIndex}
                   totalSteps={totalSteps}
                 />
@@ -178,6 +179,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
               {showBottomProgress && (
                 <PopperProgress
                   type={progressType}
+                  position={progressPosition}
                   currentStepIndex={currentIndex}
                   totalSteps={totalSteps}
                 />

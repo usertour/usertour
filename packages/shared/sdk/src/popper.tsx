@@ -735,22 +735,69 @@ interface PopperProgresshProps {
   type?: ProgressBarType;
   currentStepIndex?: number;
   totalSteps?: number;
+  position?: 'top' | 'bottom';
 }
 
-const PopperProgressContainer = forwardRef<HTMLDivElement, { children: React.ReactNode }>(
-  (props, ref) => {
-    const { children } = props;
-    return (
-      <div className="w-full flex items-center justify-center overflow-hidden" ref={ref}>
-        {children}
-      </div>
-    );
-  },
-);
+const PopperProgressContainer = forwardRef<
+  HTMLDivElement,
+  {
+    children: React.ReactNode;
+    className?: string;
+    type?: ProgressBarType;
+    position?: 'top' | 'bottom';
+  }
+>((props, ref) => {
+  const { children, className, type, position = 'top' } = props;
+
+  // Get the appropriate CSS variable based on type
+  const getProgressHeightVariable = (progressType?: ProgressBarType) => {
+    switch (progressType) {
+      case ProgressBarType.NARROW:
+        return 'var(--usertour-narrow-progress-bar-height)';
+      case ProgressBarType.CHAIN_ROUNDED:
+        return 'var(--usertour-rounded-progress-bar-height)';
+      case ProgressBarType.CHAIN_SQUARED:
+        return 'var(--usertour-squared-progress-bar-height)';
+      case ProgressBarType.DOTS:
+        return 'var(--usertour-dotted-progress-bar-height)';
+      case ProgressBarType.NUMBERED:
+        return 'var(--usertour-numbered-progress-bar-height)';
+      default:
+        return 'var(--usertour-progress-bar-height)';
+    }
+  };
+
+  const progressHeight = getProgressHeightVariable(type);
+  const multiplier =
+    type === ProgressBarType.NUMBERED
+      ? position === 'top'
+        ? -0.5
+        : 0.5
+      : position === 'top'
+        ? -1
+        : 1;
+
+  return (
+    <div
+      className={cn('w-full flex items-center justify-center overflow-hidden', className)}
+      ref={ref}
+      style={{
+        transform: `translateY(calc(${progressHeight} * ${multiplier}))`,
+      }}
+    >
+      {children}
+    </div>
+  );
+});
 PopperProgressContainer.displayName = 'PopperProgressContainer';
 
 const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, ref) => {
-  const { type = ProgressBarType.FULL_WIDTH, currentStepIndex = 0, totalSteps = 1 } = props;
+  const {
+    type = ProgressBarType.FULL_WIDTH,
+    currentStepIndex = 0,
+    totalSteps = 1,
+    position = 'top',
+  } = props;
 
   // Calculate progress percentage based on currentStepIndex and totalSteps
   // currentStepIndex is 0-based, so we add 1 for display and progress calculation
@@ -761,7 +808,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   if (type === ProgressBarType.NARROW) {
     return (
       <>
-        <PopperProgressContainer ref={ref}>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
           <div className="w-[80px] h-sdk-narrow-progress border border-sdk-progress rounded-lg">
             <div
               className="h-full bg-sdk-progress transition-[width] duration-300"
@@ -775,7 +822,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   if (type === ProgressBarType.CHAIN_ROUNDED) {
     return (
       <>
-        <PopperProgressContainer ref={ref}>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
           {Array.from({ length: maxItems }, (_, index) => (
             <div
               key={index}
@@ -791,7 +838,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   if (type === ProgressBarType.CHAIN_SQUARED) {
     return (
       <>
-        <PopperProgressContainer ref={ref}>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
           {Array.from({ length: maxItems }, (_, index) => (
             <div
               key={index}
@@ -808,7 +855,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   if (type === ProgressBarType.DOTS) {
     return (
       <>
-        <PopperProgressContainer ref={ref}>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
           {Array.from({ length: maxItems }, (_, index) => (
             <div
               key={index}
@@ -825,7 +872,7 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   if (type === ProgressBarType.NUMBERED) {
     return (
       <>
-        <PopperProgressContainer ref={ref}>
+        <PopperProgressContainer ref={ref} type={type} position={position}>
           <span className="text-sdk-numbered-progress text-sdk-progress font-bold">
             {displayStep} of {totalSteps}
           </span>

@@ -55,6 +55,7 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
           type={progressType}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
+          position={progressPosition}
         />
       )}
       <ContentEditorSerialize
@@ -68,6 +69,7 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
           type={progressType}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
+          position={progressPosition}
         />
       )}
     </SharedPopper.PopperContentFrame>

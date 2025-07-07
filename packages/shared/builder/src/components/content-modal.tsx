@@ -131,6 +131,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   width={60}
                   type={progressType}
                   currentStepIndex={currentIndex}
+                  position={progressPosition}
                   totalSteps={totalSteps}
                 />
               )}
@@ -154,6 +155,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   width={60}
                   type={progressType}
                   currentStepIndex={currentIndex}
+                  position={progressPosition}
                   totalSteps={totalSteps}
                 />
               )}

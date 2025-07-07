@@ -31,6 +31,7 @@ export const ThemePreviewModal = (props: { contents: ContentEditorRoot[] }) => {
               <SharedPopper.PopperProgress
                 type={progressType}
                 currentStepIndex={2}
+                position={progressPosition}
                 totalSteps={4}
               />
             )}
@@ -41,6 +42,7 @@ export const ThemePreviewModal = (props: { contents: ContentEditorRoot[] }) => {
                 type={progressType}
                 currentStepIndex={2}
                 totalSteps={4}
+                position={progressPosition}
               />
             )}
           </SharedPopper.PopperContent>
