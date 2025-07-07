@@ -7,11 +7,13 @@ import {
   RulesCondition,
   Side,
   StepContentType,
+  Theme,
 } from '@usertour-ui/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
 import { TourStore } from '../types/store';
 import { off, on } from '../utils/listener';
+import { useThemeStyles } from '@usertour-ui/sdk';
 
 // Types
 type TourProps = {
@@ -31,7 +33,8 @@ type PopperContentProps = Omit<TourSharedProps, 'handleActions'>;
 const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) => {
   const { currentStep, userInfo, currentStepIndex, totalSteps, theme } = store;
 
-  const themeSetting = theme?.settings;
+  const { themeSetting } = useThemeStyles(theme as Theme);
+
   const progressType = themeSetting?.progress.type;
   const progressPosition = themeSetting?.progress.position;
   const progressEnabled = themeSetting?.progress.enabled;
@@ -154,7 +157,7 @@ const TourPopper = ({ store, ...props }: TourSharedProps) => {
 };
 
 const TourModal = ({ store, onClose, handleOnClick }: PopperContentProps) => {
-  const { openState, zIndex, globalStyle, currentStep, assets } = store;
+  const { openState, zIndex, currentStep, assets, globalStyle } = store;
 
   return (
     <SharedPopper.Popper open={openState} zIndex={zIndex} globalStyle={globalStyle} assets={assets}>
