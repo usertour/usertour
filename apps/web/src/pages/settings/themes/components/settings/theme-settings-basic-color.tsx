@@ -1,5 +1,5 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
-import { ThemeTypesSettingsColor } from '@/types/theme-settings';
+import { ThemeTypesSettingsColor } from '@usertour-ui/types';
 import { Separator } from '@usertour-ui/separator';
 import { changeColor } from '@usertour-ui/ui-utils';
 import { useThemeSettingsContext } from '.';

@@ -1,7 +1,7 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
-import { Environment } from '@/types/project';
+import { Environment } from '@usertour-ui/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-ui/button';

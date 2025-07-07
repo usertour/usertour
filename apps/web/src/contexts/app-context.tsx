@@ -1,4 +1,4 @@
-import { Environment, Project } from '@/types/project';
+import { Environment, Project } from '@usertour-ui/types';
 import { UID_COOKIE } from '@usertour-ui/constants';
 import {
   useGlobalConfigQuery,

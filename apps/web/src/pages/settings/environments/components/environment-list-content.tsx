@@ -1,6 +1,6 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@/types/project';
+import { Environment } from '@usertour-ui/types';
 import { CopyIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';

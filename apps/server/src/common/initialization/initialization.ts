@@ -83,8 +83,11 @@ export const initializationThemes: InitThemeInput[] = [
       tooltip: { width: 300, notchSize: 20 },
       xbutton: { color: 'Auto' },
       progress: {
+        enabled: true,
         color: 'Auto',
         height: 2,
+        type: 'full-width',
+        position: 'top',
       },
       checklist: {
         width: 360,
@@ -226,8 +229,11 @@ export const initializationThemes: InitThemeInput[] = [
       tooltip: { width: 300, notchSize: 20 },
       xbutton: { color: 'Auto' },
       progress: {
+        enabled: true,
         color: 'Auto',
         height: 2,
+        type: 'full-width',
+        position: 'top',
       },
       checklist: {
         width: 360,

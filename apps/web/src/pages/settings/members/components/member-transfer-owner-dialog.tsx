@@ -1,6 +1,6 @@
 'use client';
 
-import { TeamMemberRole, type TeamMember } from '@/types/theme-settings';
+import { TeamMemberRole, type TeamMember } from '@usertour-ui/types';
 import { Button } from '@usertour-ui/button';
 import {
   Dialog,

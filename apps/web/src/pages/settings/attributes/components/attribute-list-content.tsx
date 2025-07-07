@@ -1,6 +1,6 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Attribute } from '@/types/project';
+import { Attribute } from '@usertour-ui/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';

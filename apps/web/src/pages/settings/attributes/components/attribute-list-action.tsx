@@ -1,5 +1,5 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Attribute } from '@/types/project';
+import { Attribute } from '@usertour-ui/types';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import {

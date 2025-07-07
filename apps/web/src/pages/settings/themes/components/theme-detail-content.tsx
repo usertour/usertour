@@ -1,5 +1,5 @@
 import { useThemeDetailContext } from '@/contexts/theme-detail-context';
-import { defaultSettings } from '@/types/theme-settings';
+import { defaultSettings } from '@usertour-ui/types';
 import { deepmerge } from 'deepmerge-ts';
 import { ThemeSettings } from './settings';
 import { ThemeDetailPreview } from './theme-detail-preview';

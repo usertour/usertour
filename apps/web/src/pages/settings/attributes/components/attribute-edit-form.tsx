@@ -1,7 +1,7 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
-import { Attribute } from '@/types/project';
+import { Attribute } from '@usertour-ui/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
