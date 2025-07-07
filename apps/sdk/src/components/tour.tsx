@@ -1,6 +1,13 @@
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import { Align, RulesCondition, Side, StepContentType } from '@usertour-ui/types';
+import {
+  Align,
+  ProgressBarPosition,
+  ProgressBarType,
+  RulesCondition,
+  Side,
+  StepContentType,
+} from '@usertour-ui/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
 import { TourStore } from '../types/store';
@@ -22,7 +29,19 @@ type PopperContentProps = Omit<TourSharedProps, 'handleActions'>;
 
 // Components
 const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) => {
-  const { currentStep, userInfo, progress } = store;
+  const { currentStep, userInfo, currentStepIndex, totalSteps, theme } = store;
+
+  const themeSetting = theme?.settings;
+  const progressType = themeSetting?.progress.type;
+  const progressPosition = themeSetting?.progress.position;
+  const progressEnabled = themeSetting?.progress.enabled;
+
+  // Optimized progress display logic
+  const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+  const showTopProgress =
+    progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+  const showBottomProgress =
+    progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
   if (!currentStep) return null;
 
@@ -31,13 +50,26 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
       {currentStep.setting.skippable && (
         <SharedPopper.PopperClose onClick={onClose} className="cursor-pointer" />
       )}
+      {showTopProgress && (
+        <SharedPopper.PopperProgress
+          type={progressType}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+        />
+      )}
       <ContentEditorSerialize
         contents={currentStep.data}
         onClick={handleOnClick}
         userInfo={userInfo}
       />
       {!store.sdkConfig.removeBranding && <SharedPopper.PopperMadeWith />}
-      <SharedPopper.PopperProgress width={progress} />
+      {showBottomProgress && (
+        <SharedPopper.PopperProgress
+          type={progressType}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+        />
+      )}
     </SharedPopper.PopperContentFrame>
   );
 };

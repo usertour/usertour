@@ -363,7 +363,7 @@ export class Tour extends BaseContent<TourStore> {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    const { progress } = this.getCurrentStepInfo(step);
+    const { progress, index, total } = this.getCurrentStepInfo(step);
 
     // Scroll element into view if tour is visible
     if (openState) {
@@ -374,6 +374,8 @@ export class Tour extends BaseContent<TourStore> {
     this.setStore({
       ...store,
       progress,
+      currentStepIndex: index,
+      totalSteps: total,
       triggerRef: el,
       openState,
     });
@@ -418,7 +420,7 @@ export class Tour extends BaseContent<TourStore> {
   async showModal(currentStep: Step) {
     // Build store data and get step information
     const store = this.buildStoreData();
-    const { progress, isComplete } = this.getCurrentStepInfo(currentStep);
+    const { progress, isComplete, index, total } = this.getCurrentStepInfo(currentStep);
 
     // Report that the step has been seen
     await this.reportStepEvents(currentStep, BizEvents.FLOW_STEP_SEEN);
@@ -428,7 +430,13 @@ export class Tour extends BaseContent<TourStore> {
 
     // Set up modal state
     const openState = !this.isTemporarilyHidden();
-    this.setStore({ ...store, openState, progress });
+    this.setStore({
+      ...store,
+      openState,
+      progress,
+      currentStepIndex: index, // Convert to 0-based index
+      totalSteps: total,
+    });
 
     // If this is the last step, report completion
     if (isComplete) {

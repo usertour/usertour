@@ -53,6 +53,15 @@ export const extendSdk = {
     'sdk-line-height': 'var(--usertour-line-height)',
     'sdk-button': 'var(--usertour-button-height)',
     'sdk-progress': 'var(--usertour-progress-bar-height)',
+    'sdk-narrow-progress': 'var(--usertour-narrow-progress-bar-height)',
+    'sdk-squared-progress': 'var(--usertour-squared-progress-bar-height)',
+    'sdk-rounded-progress': 'var(--usertour-rounded-progress-bar-height)',
+    'sdk-dotted-progress': 'var(--usertour-dotted-progress-bar-height)',
+  },
+  width: {
+    'sdk-rounded-progress': 'calc(var(--usertour-rounded-progress-bar-height) * 2)',
+    'sdk-squared-progress': 'calc(var(--usertour-squared-progress-bar-height) * 3)',
+    'sdk-dotted-progress': 'var(--usertour-dotted-progress-bar-height)',
   },
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',
@@ -65,6 +74,7 @@ export const extendSdk = {
     'sdk-h1': 'var(--usertour-font-size-h1)',
     'sdk-h2': 'var(--usertour-font-size-h2)',
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.75)',
+    'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',
   },
   fontWeight: {
     'sdk-normal': 'var(--usertour-font-weight)',

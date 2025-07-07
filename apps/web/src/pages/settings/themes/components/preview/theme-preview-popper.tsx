@@ -2,11 +2,22 @@ import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { Button } from '@usertour-ui/button';
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ContentEditorSerialize, createValue5 } from '@usertour-ui/shared-editor';
+import { ProgressBarPosition, ProgressBarType } from '@usertour-ui/types';
 import { useRef } from 'react';
 
 export const ThemePreviewPopper = () => {
   const { settings, customStyle, viewRect } = useThemeDetailContext();
   const ref = useRef(null);
+  const progressType = settings?.progress.type;
+  const progressPosition = settings?.progress.position;
+  const progressEnabled = settings?.progress.enabled;
+
+  // Optimized progress display logic
+  const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+  const showTopProgress =
+    progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+  const showBottomProgress =
+    progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
   return (
     <div className="h-full w-full" style={{ transform: 'scale(1)' }}>
@@ -31,9 +42,22 @@ export const ThemePreviewPopper = () => {
           >
             <SharedPopper.PopperContent>
               <SharedPopper.PopperClose />
+              {showTopProgress && (
+                <SharedPopper.PopperProgress
+                  type={progressType}
+                  currentStepIndex={2}
+                  totalSteps={4}
+                />
+              )}
               <ContentEditorSerialize contents={createValue5 as any} />
               <SharedPopper.PopperMadeWith />
-              <SharedPopper.PopperProgress width={60} />
+              {showBottomProgress && (
+                <SharedPopper.PopperProgress
+                  type={progressType}
+                  currentStepIndex={2}
+                  totalSteps={4}
+                />
+              )}
             </SharedPopper.PopperContent>
           </SharedPopper.PopperContentPotal>
         </SharedPopper.Popper>
