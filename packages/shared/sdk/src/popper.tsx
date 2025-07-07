@@ -768,21 +768,20 @@ const PopperProgressContainer = forwardRef<
   };
 
   const progressHeight = getProgressHeightVariable(type);
-  const multiplier =
-    type === ProgressBarType.NUMBERED
-      ? position === 'top'
-        ? -0.5
-        : 0.5
-      : position === 'top'
-        ? -1
-        : 1;
+  const multiplier = type === ProgressBarType.NUMBERED ? 0.5 : 1;
+
+  // Calculate margin values based on position and multiplier
+  const marginValue = `calc(${progressHeight} * ${multiplier})`;
+  const marginTop = position === 'bottom' ? marginValue : '0';
+  const marginBottom = position === 'top' ? marginValue : '0';
 
   return (
     <div
       className={cn('w-full flex items-center justify-center overflow-hidden', className)}
       ref={ref}
       style={{
-        transform: `translateY(calc(${progressHeight} * ${multiplier}))`,
+        marginTop,
+        marginBottom,
       }}
     >
       {children}
