@@ -73,7 +73,7 @@ export const useContentVersionUpdate = () => {
         await processVersion(cfg);
 
         toast({
-          variant: 'default',
+          variant: 'success',
           title: 'The flow updated successfully.',
         });
       } catch (error) {
