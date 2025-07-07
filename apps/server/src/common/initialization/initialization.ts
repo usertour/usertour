@@ -85,9 +85,14 @@ export const initializationThemes: InitThemeInput[] = [
       progress: {
         enabled: true,
         color: 'Auto',
-        height: 2,
         type: 'full-width',
         position: 'top',
+        height: 2,
+        narrowHeight: 5,
+        chainSquaredHeight: 4,
+        chainRoundedHeight: 6,
+        dotsHeight: 10,
+        numberedHeight: 12,
       },
       checklist: {
         width: 360,
@@ -231,9 +236,14 @@ export const initializationThemes: InitThemeInput[] = [
       progress: {
         enabled: true,
         color: 'Auto',
-        height: 2,
         type: 'full-width',
         position: 'top',
+        height: 2,
+        narrowHeight: 5,
+        chainSquaredHeight: 4,
+        chainRoundedHeight: 6,
+        dotsHeight: 10,
+        numberedHeight: 12,
       },
       checklist: {
         width: 360,

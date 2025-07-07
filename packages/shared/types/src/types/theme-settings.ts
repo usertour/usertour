@@ -60,6 +60,11 @@ export type ThemeTypesSetting = {
     height: number;
     type: ProgressBarType;
     position: ProgressBarPosition;
+    narrowHeight: number;
+    chainSquaredHeight: number;
+    chainRoundedHeight: number;
+    dotsHeight: number;
+    numberedHeight: number;
   };
   survey: {
     color: string;
@@ -162,6 +167,11 @@ export const defaultSettings: ThemeTypesSetting = {
     height: 2,
     type: ProgressBarType.FULL_WIDTH,
     position: ProgressBarPosition.TOP,
+    narrowHeight: 5,
+    chainSquaredHeight: 4,
+    chainRoundedHeight: 6,
+    dotsHeight: 10,
+    numberedHeight: 12,
   },
   survey: {
     color: '#1d4ed8',

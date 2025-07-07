@@ -4,7 +4,9 @@ import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-s
 import { ProgressBarType, ProgressBarPosition } from '@usertour-ui/types';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
+import { Alert, AlertDescription } from '@usertour-ui/alert';
 import { useThemeSettingsContext } from '.';
+import { WarningIcon } from '@usertour-ui/icons';
 
 export const ThemeSettingsProgress = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
@@ -36,9 +38,11 @@ export const ThemeSettingsProgress = () => {
   const getHeightInputProps = () => {
     switch (settings.progress.type) {
       case ProgressBarType.FULL_WIDTH:
+        return { text: 'Progress bar height', name: 'progress-bar-height' };
       case ProgressBarType.NARROW:
         return { text: 'Progress bar height', name: 'progress-bar-height' };
       case ProgressBarType.CHAIN_ROUNDED:
+        return { text: 'Chain height', name: 'progress-bar-height' };
       case ProgressBarType.CHAIN_SQUARED:
         return { text: 'Chain height', name: 'progress-bar-height' };
       case ProgressBarType.DOTS:
@@ -50,23 +54,50 @@ export const ThemeSettingsProgress = () => {
     }
   };
 
-  // Get default height value for each progress type
-  const getDefaultHeight = (type: ProgressBarType) => {
-    switch (type) {
+  // Get current height value for the selected progress type
+  const getCurrentHeight = () => {
+    switch (settings.progress.type) {
       case ProgressBarType.FULL_WIDTH:
-        return 2;
+        return settings.progress.height;
       case ProgressBarType.NARROW:
-        return 5;
+        return settings.progress.narrowHeight;
       case ProgressBarType.CHAIN_ROUNDED:
-        return 6;
+        return settings.progress.chainRoundedHeight;
       case ProgressBarType.CHAIN_SQUARED:
-        return 4;
+        return settings.progress.chainSquaredHeight;
       case ProgressBarType.DOTS:
-        return 10;
+        return settings.progress.dotsHeight;
       case ProgressBarType.NUMBERED:
-        return 12;
+        return settings.progress.numberedHeight;
       default:
-        return 2;
+        return settings.progress.height;
+    }
+  };
+
+  // Update height for the current progress type
+  const updateHeight = (value: number) => {
+    switch (settings.progress.type) {
+      case ProgressBarType.FULL_WIDTH:
+        update({ height: value });
+        break;
+      case ProgressBarType.NARROW:
+        update({ narrowHeight: value });
+        break;
+      case ProgressBarType.CHAIN_ROUNDED:
+        update({ chainRoundedHeight: value });
+        break;
+      case ProgressBarType.CHAIN_SQUARED:
+        update({ chainSquaredHeight: value });
+        break;
+      case ProgressBarType.DOTS:
+        update({ dotsHeight: value });
+        break;
+      case ProgressBarType.NUMBERED:
+        update({ numberedHeight: value });
+        break;
+      default:
+        update({ height: value });
+        break;
     }
   };
 
@@ -99,8 +130,7 @@ export const ThemeSettingsProgress = () => {
               vertical={true}
               onValueChange={(value: string) => {
                 const progressType = value as ProgressBarType;
-                const defaultHeight = getDefaultHeight(progressType);
-                update({ type: progressType, height: defaultHeight });
+                update({ type: progressType });
               }}
             />
 
@@ -130,11 +160,21 @@ export const ThemeSettingsProgress = () => {
             <ThemeSettingInput
               text={heightInputProps.text}
               name={heightInputProps.name}
-              defaultValue={String(settings.progress.height)}
+              defaultValue={String(getCurrentHeight())}
               onChange={(value: string) => {
-                update({ height: Number(value) });
+                updateHeight(Number(value));
               }}
             />
+            {settings.progress.type !== ProgressBarType.FULL_WIDTH &&
+              settings.progress.type !== ProgressBarType.NARROW && (
+                <Alert variant="warning">
+                  <WarningIcon className="w-4 h-4" />
+                  <AlertDescription className="text-sm">
+                    Progress bar may not work correctly with non-linear flows that have conditional
+                    steps or branching paths.
+                  </AlertDescription>
+                </Alert>
+              )}
           </>
         )}
       </div>
