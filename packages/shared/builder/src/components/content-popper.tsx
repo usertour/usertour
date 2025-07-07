@@ -9,13 +9,14 @@ import {
   PopperMadeWith,
   PopperOverlay,
   PopperProgress,
+  useThemeStyles,
 } from '@usertour-ui/sdk';
 import {
   ContentEditor,
   ContentEditorElementType,
   ContentEditorRoot,
 } from '@usertour-ui/shared-editor';
-import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-ui/shared-utils';
+import { loadGoogleFontCss } from '@usertour-ui/shared-utils';
 import {
   Align,
   Attribute,
@@ -27,7 +28,6 @@ import {
   Side,
   Step,
   Theme,
-  ThemeTypesSetting,
 } from '@usertour-ui/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
@@ -62,10 +62,9 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       createStep,
       projectId,
     } = props;
-    const [globalStyle, setGlobalStyle] = useState<string>('');
-    const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
+    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
 
     const { upload } = useAws();
 
@@ -76,18 +75,6 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     const handleCustomUploadRequest = (file: File): Promise<string> => {
       return upload(file);
     };
-
-    useEffect(() => {
-      if (theme) {
-        setThemeSetting(theme.settings);
-      }
-    }, [theme]);
-
-    useEffect(() => {
-      if (themeSetting) {
-        setGlobalStyle(convertToCssVars(convertSettings(themeSetting)));
-      }
-    }, [themeSetting]);
 
     useEffect(() => {
       if (themeSetting?.font?.fontFamily) {
