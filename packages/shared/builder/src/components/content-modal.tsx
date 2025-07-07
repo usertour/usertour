@@ -8,13 +8,14 @@ import {
   PopperMadeWith,
   PopperModalContentPotal,
   PopperProgress,
+  useThemeStyles,
 } from '@usertour-ui/sdk';
 import {
   ContentEditor,
   ContentEditorElementType,
   ContentEditorRoot,
 } from '@usertour-ui/shared-editor';
-import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-ui/shared-utils';
+import { loadGoogleFontCss } from '@usertour-ui/shared-utils';
 import {
   Attribute,
   Content,
@@ -24,7 +25,6 @@ import {
   ProgressBarType,
   Step,
   Theme,
-  ThemeTypesSetting,
 } from '@usertour-ui/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
@@ -62,18 +62,10 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       createStep,
       projectId,
     } = props;
-    const [globalStyle, setGlobalStyle] = useState<string>('');
-    const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-
-    useEffect(() => {
-      if (theme) {
-        setThemeSetting(theme.settings);
-        setGlobalStyle(convertToCssVars(convertSettings(theme.settings)));
-      }
-    }, [theme]);
+    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
 
     const handleEditorValueChange = (value: any) => {
       setData(value);
