@@ -142,7 +142,8 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
         setSelectedAttributeValue(value);
       } else {
         toast({
-          description: 'That attribute is already associated with the event.',
+          variant: 'warning',
+          title: 'That attribute is already associated with the event.',
         });
         setSelectedAttributeValue('');
       }
