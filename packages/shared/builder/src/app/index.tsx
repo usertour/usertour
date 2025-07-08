@@ -17,7 +17,6 @@ import { ChecklistBuilder } from '../pages/checklist';
 import { FlowBuilderDetail, FlowBuilderTrigger } from '../pages/flow';
 import { LauncherBuilder } from '../pages/launcher';
 import { BuilderSideBar } from '../pages/sidebar';
-import { SpinnerIcon } from '@usertour-ui/icons';
 
 const Container = () => {
   const { currentMode, currentVersion, setCurrentTheme } = useBuilderContext();
@@ -75,7 +74,7 @@ export interface WebBuilderProps {
 
 const WebBuilderCore = (props: WebBuilderProps) => {
   const { contentId, environmentId, versionId, projectId, envToken } = props;
-  const { initContent, isLoading } = useBuilderContext();
+  const { initContent } = useBuilderContext();
 
   useEffect(() => {
     const params = {
@@ -87,14 +86,6 @@ const WebBuilderCore = (props: WebBuilderProps) => {
     };
     initContent(params);
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen w-full">
-        <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <>
