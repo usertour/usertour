@@ -73,14 +73,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {Promise<void>} A promise that resolves when the content is started
    */
   async start(reason?: string, cvid?: string) {
-    // let reusedSessionId: string | null;
     const reusedSessionId = this.getReusedSessionId();
-    // if (reusedSessionId && this.sessionIsTimeout()) {
-    //   this.sessionId = reusedSessionId;
-    //   await this.endSession(contentEndReason.SESSION_TIMEOUT);
-    //   reusedSessionId = null;
-    //   this.sessionId = '';
-    // }
     const sessionId = reusedSessionId || (await this.createSessionId());
     if (!sessionId) {
       throw new Error('Failed to create user session.');
