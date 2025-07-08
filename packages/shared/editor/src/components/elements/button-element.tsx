@@ -101,7 +101,7 @@ export const ButtonElement = (props: RenderElementProps & { className?: string }
   };
 
   return (
-    <Popover.Root modal={true}>
+    <Popover.Root>
       <Popover.Trigger asChild>
         <Button
           {...props.attributes}

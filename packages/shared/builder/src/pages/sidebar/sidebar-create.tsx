@@ -85,7 +85,7 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
   );
 
   return (
-    <Popover.Root modal={true}>
+    <Popover.Root>
       <Popover.Trigger asChild>
         <Button className="w-full h-10" variant="secondary">
           <PlusCircledIcon className="mr-2" />

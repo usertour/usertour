@@ -10,7 +10,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectPortal,
   SelectTrigger,
   SelectValue,
 } from '@usertour-ui/select';
@@ -272,7 +271,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   return (
     <EditorError open={isShowError}>
       <EditorErrorAnchor>
-        <Popover.Root modal={true} onOpenChange={setIsOpen} open={isOpen}>
+        <Popover.Root onOpenChange={setIsOpen} open={isOpen}>
           <Popover.Trigger asChild>
             <Button
               forSdk={true}
@@ -308,14 +307,12 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                   <SelectTrigger>
                     <SelectValue placeholder="Select a distribute" />
                   </SelectTrigger>
-                  <SelectPortal style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value={BUTTON_STYLES.DEFAULT}>Primary</SelectItem>
-                        <SelectItem value={BUTTON_STYLES.SECONDARY}>Secondary</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </SelectPortal>
+                  <SelectContent style={{ zIndex: zIndex + EDITOR_SELECT }}>
+                    <SelectGroup>
+                      <SelectItem value={BUTTON_STYLES.DEFAULT}>Primary</SelectItem>
+                      <SelectItem value={BUTTON_STYLES.SECONDARY}>Secondary</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
                 </Select>
 
                 <MarginControls

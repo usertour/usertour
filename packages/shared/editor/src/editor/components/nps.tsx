@@ -223,7 +223,7 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
+        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="w-full">
               <NPSScale forSdk={true} />
