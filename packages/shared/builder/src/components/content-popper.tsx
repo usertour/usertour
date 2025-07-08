@@ -9,23 +9,25 @@ import {
   PopperMadeWith,
   PopperOverlay,
   PopperProgress,
+  useThemeStyles,
 } from '@usertour-ui/sdk';
 import {
   ContentEditor,
   ContentEditorElementType,
   ContentEditorRoot,
 } from '@usertour-ui/shared-editor';
-import { convertSettings, convertToCssVars, loadGoogleFontCss } from '@usertour-ui/shared-utils';
+import { loadGoogleFontCss } from '@usertour-ui/shared-utils';
 import {
   Align,
   Attribute,
   Content,
   ContentOmbedInfo,
   ContentVersion,
+  ProgressBarPosition,
+  ProgressBarType,
   Side,
   Step,
   Theme,
-  ThemeTypesSetting,
 } from '@usertour-ui/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
@@ -60,10 +62,9 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       createStep,
       projectId,
     } = props;
-    const [globalStyle, setGlobalStyle] = useState<string>('');
-    const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
+    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
 
     const { upload } = useAws();
 
@@ -74,18 +75,6 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     const handleCustomUploadRequest = (file: File): Promise<string> => {
       return upload(file);
     };
-
-    useEffect(() => {
-      if (theme) {
-        setThemeSetting(theme.settings);
-      }
-    }, [theme]);
-
-    useEffect(() => {
-      if (themeSetting) {
-        setGlobalStyle(convertToCssVars(convertSettings(themeSetting)));
-      }
-    }, [themeSetting]);
 
     useEffect(() => {
       if (themeSetting?.font?.fontFamily) {
@@ -104,12 +93,18 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
-    const progress = Math.min(
-      totalSteps > 0 ? Math.round(((currentIndex + 1) / totalSteps) * 100) : 0,
-      100,
-    );
-
     const enabledElementTypes = Object.values(ContentEditorElementType);
+
+    const progressType = themeSetting?.progress.type;
+    const progressPosition = themeSetting?.progress.position;
+    const progressEnabled = themeSetting?.progress.enabled;
+
+    // Optimized progress display logic
+    const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+    const showTopProgress =
+      progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+    const showBottomProgress =
+      progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
     if (!triggerRef?.current) {
       return <></>;
@@ -145,6 +140,15 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
           >
             <PopperContent>
               {currentStep.setting.skippable && <PopperClose />}
+
+              {showTopProgress && (
+                <PopperProgress
+                  type={progressType}
+                  position={progressPosition}
+                  currentStepIndex={currentIndex}
+                  totalSteps={totalSteps}
+                />
+              )}
               <ContentEditor
                 zIndex={zIndex + EXTENSION_CONTENT_POPPER}
                 customUploadRequest={handleCustomUploadRequest}
@@ -159,8 +163,15 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                 createStep={createStep}
                 projectId={projectId}
               />
+              {showBottomProgress && (
+                <PopperProgress
+                  type={progressType}
+                  position={progressPosition}
+                  currentStepIndex={currentIndex}
+                  totalSteps={totalSteps}
+                />
+              )}
               <PopperMadeWith />
-              <PopperProgress width={progress} />
             </PopperContent>
           </PopperContentPotal>
         </Popper>

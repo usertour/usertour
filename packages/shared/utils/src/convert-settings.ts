@@ -198,6 +198,11 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-backdrop-opacity': settings.backdrop.opacity / 100,
     '--usertour-progress-bar-color': settings.progress.color,
     '--usertour-progress-bar-height': `${settings.progress.height}px`,
+    '--usertour-narrow-progress-bar-height': `${settings.progress.narrowHeight}px`,
+    '--usertour-squared-progress-bar-height': `${settings.progress.chainSquaredHeight}px`,
+    '--usertour-rounded-progress-bar-height': `${settings.progress.chainRoundedHeight}px`,
+    '--usertour-dotted-progress-bar-height': `${settings.progress.dotsHeight}px`,
+    '--usertour-numbered-progress-bar-height': `${settings.progress.numberedHeight}px`,
     '--usertour-widget-popper-padding':
       type === 'modal' ? `${settings.modal.padding}px` : undefined,
     '--usertour-xbutton': settings.xbutton.color,

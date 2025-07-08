@@ -3,8 +3,8 @@
 import { Icons } from '@/components/atoms/icons';
 import { ListSkeletonCount } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Event } from '@/types/project';
-import { Attribute } from '@/types/project';
+import { Event } from '@usertour-ui/types';
+import { Attribute } from '@usertour-ui/types';
 import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';

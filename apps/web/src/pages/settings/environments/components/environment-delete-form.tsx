@@ -1,4 +1,4 @@
-import { Environment } from '@/types/project';
+import { Environment } from '@usertour-ui/types';
 import { useMutation } from '@apollo/client';
 import {
   AlertDialog,

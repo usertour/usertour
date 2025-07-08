@@ -1,10 +1,19 @@
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import { Align, RulesCondition, Side, StepContentType } from '@usertour-ui/types';
+import {
+  Align,
+  ProgressBarPosition,
+  ProgressBarType,
+  RulesCondition,
+  Side,
+  StepContentType,
+  Theme,
+} from '@usertour-ui/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
 import { TourStore } from '../types/store';
 import { off, on } from '../utils/listener';
+import { useThemeStyles } from '@usertour-ui/sdk';
 
 // Types
 type TourProps = {
@@ -22,7 +31,20 @@ type PopperContentProps = Omit<TourSharedProps, 'handleActions'>;
 
 // Components
 const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) => {
-  const { currentStep, userInfo, progress } = store;
+  const { currentStep, userInfo, currentStepIndex, totalSteps, theme } = store;
+
+  const { themeSetting } = useThemeStyles(theme as Theme);
+
+  const progressType = themeSetting?.progress.type;
+  const progressPosition = themeSetting?.progress.position;
+  const progressEnabled = themeSetting?.progress.enabled;
+
+  // Optimized progress display logic
+  const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+  const showTopProgress =
+    progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+  const showBottomProgress =
+    progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
   if (!currentStep) return null;
 
@@ -31,13 +53,28 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
       {currentStep.setting.skippable && (
         <SharedPopper.PopperClose onClick={onClose} className="cursor-pointer" />
       )}
+      {showTopProgress && (
+        <SharedPopper.PopperProgress
+          type={progressType}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          position={progressPosition}
+        />
+      )}
       <ContentEditorSerialize
         contents={currentStep.data}
         onClick={handleOnClick}
         userInfo={userInfo}
       />
       {!store.sdkConfig.removeBranding && <SharedPopper.PopperMadeWith />}
-      <SharedPopper.PopperProgress width={progress} />
+      {showBottomProgress && (
+        <SharedPopper.PopperProgress
+          type={progressType}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          position={progressPosition}
+        />
+      )}
     </SharedPopper.PopperContentFrame>
   );
 };
@@ -120,7 +157,7 @@ const TourPopper = ({ store, ...props }: TourSharedProps) => {
 };
 
 const TourModal = ({ store, onClose, handleOnClick }: PopperContentProps) => {
-  const { openState, zIndex, globalStyle, currentStep, assets } = store;
+  const { openState, zIndex, currentStep, assets, globalStyle } = store;
 
   return (
     <SharedPopper.Popper open={openState} zIndex={zIndex} globalStyle={globalStyle} assets={assets}>

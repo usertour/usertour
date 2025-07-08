@@ -1,5 +1,5 @@
 import { useEventListContext } from '@/contexts/event-list-context';
-import { Event } from '@/types/project';
+import { Event } from '@usertour-ui/types';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import {
