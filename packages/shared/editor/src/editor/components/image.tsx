@@ -362,7 +362,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
 
   // Render image with popover
   const renderImageWithPopover = () => (
-    <Popover.Root modal={true}>
+    <Popover.Root>
       <Popover.Trigger asChild>
         <img
           src={element.url}

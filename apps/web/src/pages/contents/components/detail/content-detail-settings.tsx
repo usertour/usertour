@@ -9,7 +9,6 @@ import {
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
 import { useAppContext } from '@/contexts/app-context';
-import { ContentDetailSettingsSkeleton } from './content-detail-skeleton';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
 const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
@@ -25,8 +24,8 @@ const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObje
 };
 
 export const ContentDetailSettings = () => {
-  const { version, loading: versionLoading } = useContentVersionContext();
-  const { content, loading: contentLoading } = useContentDetailContext();
+  const { version } = useContentVersionContext();
+  const { content } = useContentDetailContext();
   const { isViewOnly } = useAppContext();
   const { debouncedUpdateVersion } = useContentVersionUpdate();
 
@@ -58,11 +57,6 @@ export const ContentDetailSettings = () => {
     },
     [config, debouncedUpdateVersion],
   );
-
-  // Show skeleton if any of the required data is loading
-  if (versionLoading || contentLoading) {
-    return <ContentDetailSettingsSkeleton />;
-  }
 
   const contentType = content?.type;
 

@@ -19,7 +19,6 @@ import ReactDOM from 'react-dom/client';
 import { render } from '../components';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
-import { compareContentPriorities } from '../utils/content';
 import {
   findTourFromUrl,
   initializeContentItems,
@@ -27,6 +26,7 @@ import {
   findLatestActivatedTourAndCvid,
   findLatestValidActivatedChecklist,
   isSameTour,
+  getAutoStartContentSortedByPriority,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -654,8 +654,8 @@ export class App extends Evented {
     opts?: UserTourTypes.StartOptions,
   ) {
     try {
-      // if the user is not identified, do nothing
-      if (!this.userInfo?.externalId) {
+      // If the app is not ready, do nothing
+      if (!this.isReady()) {
         return;
       }
 
@@ -744,7 +744,10 @@ export class App extends Evented {
       return false;
     }
 
-    const latestActivatedChecklist = findLatestValidActivatedChecklist(this.checklists);
+    const latestActivatedChecklist = findLatestValidActivatedChecklist(
+      this.checklists.filter((checklist) => !checklist.isTemporarilyHidden()),
+    );
+
     if (latestActivatedChecklist && !latestActivatedChecklist.hasDismissed()) {
       this.activeChecklist = latestActivatedChecklist;
       await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
@@ -755,36 +758,59 @@ export class App extends Evented {
   }
 
   /**
-   * Starts the highest priority checklist
+   * Starts the highest priority checklist based on auto-start conditions and priority settings
+   * @param reason - The reason for starting the checklist
+   * @returns Promise that resolves when the checklist is started or rejected if no eligible checklist is found
    */
   private async startHighestPriorityChecklist(reason: string): Promise<void> {
+    // Early return if there's already an active checklist
     if (this.activeChecklist) {
       return;
     }
 
-    const autoStartChecklists = this.checklists
-      .filter((checklist) => checklist.canAutoStart())
-      .sort((a, b) => compareContentPriorities(a, b));
+    try {
+      // Get auto-start eligible checklists sorted by priority and take the first one
+      const sortedChecklists = getAutoStartContentSortedByPriority(this.checklists);
+      const highestPriorityChecklist = sortedChecklists[0];
 
-    const activeChecklist = autoStartChecklists[0];
-    if (!activeChecklist) {
-      return;
+      if (!highestPriorityChecklist) {
+        return;
+      }
+
+      // Set as active checklist and start it
+      this.activeChecklist = highestPriorityChecklist;
+      await this.activeChecklist.autoStart(reason);
+    } catch (error) {
+      logger.error('Failed to start highest priority checklist:', error);
+      // Reset active checklist on error to prevent stuck state
+      this.activeChecklist = undefined;
     }
-
-    this.activeChecklist = activeChecklist;
-    await this.activeChecklist.autoStart(reason);
   }
 
   /**
-   * Starts all registered launchers
+   * Starts all registered launchers that can auto-start, sorted by priority
    */
   async startLauncher() {
-    const sortedLaunchers = this.launchers
-      .filter((launcher) => launcher.canAutoStart())
-      .sort((a, b) => compareContentPriorities(a, b));
+    // If the app is not ready, do nothing
+    if (!this.isReady()) {
+      return;
+    }
 
-    for (const launcher of sortedLaunchers) {
-      launcher.autoStart();
+    try {
+      // Get all auto-start eligible launchers sorted by priority
+      const sortedLaunchers = getAutoStartContentSortedByPriority(this.launchers);
+
+      // Early return if no eligible launchers found
+      if (!sortedLaunchers.length) {
+        return;
+      }
+
+      // Start all eligible launchers in priority order
+      for (const launcher of sortedLaunchers) {
+        await launcher.autoStart();
+      }
+    } catch (error) {
+      logger.error('Failed to start launchers:', error);
     }
   }
 
@@ -800,6 +826,11 @@ export class App extends Evented {
     opts?: UserTourTypes.StartOptions,
   ) {
     try {
+      // If the app is not ready, do nothing
+      if (!this.isReady()) {
+        return;
+      }
+
       // Start URL-based tour
       const urlTour = findTourFromUrl(this.tours);
       if (await this.startUrlTour(urlTour)) {
@@ -906,11 +937,13 @@ export class App extends Evented {
       return false;
     }
 
-    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours);
+    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(
+      this.tours.filter((tour) => !tour.isTemporarilyHidden()),
+    );
     const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
     const cvid = latestActivatedTourAndCvid?.cvid;
 
-    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
+    if (latestActivatedTour) {
       this.activeTour = latestActivatedTour;
       await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
       return true;
@@ -920,24 +953,33 @@ export class App extends Evented {
   }
 
   /**
-   * Starts the highest priority tour
+   * Starts the highest priority tour based on auto-start conditions and priority settings
+   * @param reason - The reason for starting the tour
+   * @returns Promise that resolves when the tour is started or rejected if no eligible tour is found
    */
   private async startHighestPriorityTour(reason: string): Promise<void> {
+    // Early return if there's already an active tour
     if (this.activeTour) {
       return;
     }
 
-    const autoStartTours = this.tours
-      .filter((tour) => tour.canAutoStart())
-      .sort((a, b) => compareContentPriorities(a, b));
+    try {
+      // Get auto-start eligible tours sorted by priority and take the first one
+      const sortedTours = getAutoStartContentSortedByPriority(this.tours);
+      const highestPriorityTour = sortedTours[0];
 
-    const activeTour = autoStartTours[0];
-    if (!activeTour) {
-      return;
+      if (!highestPriorityTour) {
+        return;
+      }
+
+      // Set as active tour and start it
+      this.activeTour = highestPriorityTour;
+      await this.activeTour.autoStart(reason);
+    } catch (error) {
+      logger.error('Failed to start highest priority tour:', error);
+      // Reset active tour on error to prevent stuck state
+      this.activeTour = undefined;
     }
-
-    this.activeTour = activeTour;
-    await this.activeTour.autoStart(reason);
   }
 
   /**
@@ -1012,6 +1054,14 @@ export class App extends Evented {
       launchersStore: this.launchersStore,
       checklistsStore: this.checklistsStore,
     });
+  }
+
+  /**
+   * Checks if the app is ready to start
+   * @returns true if the app is ready to start, false otherwise
+   */
+  isReady() {
+    return this.container && this.root && this.userInfo?.externalId;
   }
 
   /**
