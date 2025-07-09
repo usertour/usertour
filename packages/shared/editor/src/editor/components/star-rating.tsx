@@ -218,7 +218,7 @@ export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor>
-        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
+        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div>
               <StarRatingDisplay

@@ -11,12 +11,13 @@ export interface ThemeListProviderProps {
 export interface ThemeListContextValue {
   themeList: Theme[] | null;
   refetch: any;
+  loading: boolean;
 }
 export const ThemeListContext = createContext<ThemeListContextValue | undefined>(undefined);
 
 export function ThemeListProvider(props: ThemeListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { data, refetch } = useQuery(listThemes, {
+  const { data, refetch, loading } = useQuery(listThemes, {
     variables: { projectId: projectId },
   });
 
@@ -24,6 +25,7 @@ export function ThemeListProvider(props: ThemeListProviderProps): JSX.Element {
   const value: ThemeListContextValue = {
     themeList,
     refetch,
+    loading,
   };
 
   return <ThemeListContext.Provider value={value}>{children}</ThemeListContext.Provider>;

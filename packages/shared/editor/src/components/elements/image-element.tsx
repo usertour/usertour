@@ -180,7 +180,7 @@ const ImageElement = (props: RenderElementProps) => {
     <div {...props.attributes} className="group relative flex max-w-lg flex-col">
       {props.children}
       {element.url && (
-        <Popover.Root modal={true}>
+        <Popover.Root>
           <Popover.Trigger asChild>
             <img src={element.url} style={{ ...style }} className="cursor-pointer" />
           </Popover.Trigger>

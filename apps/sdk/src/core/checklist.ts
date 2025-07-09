@@ -86,6 +86,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       if (this.isOpen()) {
         this.hide();
       }
+      this.unsetActiveChecklist();
       return;
     }
 
@@ -339,7 +340,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Check if all items are completed
     if (isSendChecklistCompletedEvent(items, content.latestSession)) {
       await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
+      if (this.isAutoDismissChecklist()) {
+        await this.close(contentEndReason.AUTO_DISMISSED);
+      }
     }
+  }
+
+  private isAutoDismissChecklist() {
+    return this.getContent()?.data?.autoDismissChecklist ?? false;
   }
 
   /**

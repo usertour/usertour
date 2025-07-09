@@ -6,6 +6,7 @@ import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/car
 import { EXTENSION_SELECT } from '@usertour-ui/constants';
 import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import {
   Select,
@@ -25,7 +26,6 @@ import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ChecklistContents } from './components/checklist-contents';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
 
 // Common styles
 const flexBetween = 'flex items-center justify-between space-x-2';
@@ -140,14 +140,35 @@ const ChecklistCoreBody = () => {
 
           {/* Prevent Dismiss Checklist Switch */}
           <div className={flexBetween}>
-            <Label htmlFor="prevent-dismiss-checklist" className="font-normal">
-              Prevent users from dismissing checklist
-            </Label>
+            <div className={labelStyles}>
+              <Label htmlFor="prevent-dismiss-checklist" className="font-normal">
+                Prevent dismissal
+              </Label>
+              <QuestionTooltip>Prevent users from dismissing the checklist.</QuestionTooltip>
+            </div>
             <Switch
               id="prevent-dismiss-checklist"
               className="data-[state=unchecked]:bg-input"
               checked={localData.preventDismissChecklist}
               onCheckedChange={(value) => updateLocalData({ preventDismissChecklist: value })}
+            />
+          </div>
+
+          {/* Auto-dismiss Checklist Switch */}
+          <div className={flexBetween}>
+            <div className={labelStyles}>
+              <Label htmlFor="auto-dismiss-checklist" className="font-normal">
+                Auto-dismiss checklist
+              </Label>
+              <QuestionTooltip>
+                Automatically dismiss the checklist when all tasks are completed.
+              </QuestionTooltip>
+            </div>
+            <Switch
+              id="auto-dismiss-checklist"
+              className="data-[state=unchecked]:bg-input"
+              checked={localData.autoDismissChecklist}
+              onCheckedChange={(value) => updateLocalData({ autoDismissChecklist: value })}
             />
           </div>
         </div>

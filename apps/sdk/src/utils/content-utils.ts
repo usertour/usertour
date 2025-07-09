@@ -8,6 +8,7 @@ import {
   ContentDataType,
   contentEndReason,
   SDKContent,
+  Step,
 } from '@usertour-ui/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
@@ -20,7 +21,7 @@ import {
   parseUrlParams,
 } from './conditions';
 import { window } from './globals';
-import { RulesType } from '@usertour-ui/constants';
+import { PRIORITIES, RulesType } from '@usertour-ui/constants';
 import {
   canCompleteChecklistItem,
   checklistCompletedItemsCount,
@@ -28,6 +29,22 @@ import {
 } from '@usertour-ui/sdk';
 import { BaseStore } from '../types/store';
 import isEqual from 'fast-deep-equal';
+
+/**
+ * Compares two contents based on their priority
+ * @param contentA - First content to compare
+ * @param contentB - Second content to compare
+ * @returns Comparison result (-1, 0, or 1)
+ */
+export const compareContentPriorities = (
+  contentA: Tour | Launcher | Checklist,
+  contentB: Tour | Launcher | Checklist,
+): number => {
+  const priorityA = PRIORITIES.indexOf(contentA.getConfigPriority());
+  const priorityB = PRIORITIES.indexOf(contentB.getConfigPriority());
+
+  return priorityA === priorityB ? 0 : priorityA < priorityB ? -1 : 1;
+};
 
 /**
  * Initialize or update content items based on the provided contents
@@ -120,11 +137,12 @@ export const findLatestActivatedTourAndCvid = (
   tours: Tour[],
   contentId?: string,
 ): { latestActivatedTour: Tour; cvid: string } | undefined => {
+  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent()));
   const latestActivatedTour = contentId
-    ? tours.find((tour) => tour.getContent().contentId === contentId)
-    : findLatestActivatedTour(tours);
+    ? activeTours.find((tour) => tour.getContent().contentId === contentId)
+    : findLatestActivatedTour(activeTours);
   // if the tour is dismissed, return null
-  if (!latestActivatedTour || flowIsDismissed(latestActivatedTour.getContent())) {
+  if (!latestActivatedTour) {
     return undefined;
   }
   // if the tour is not dismissed, return the latest step cvid
@@ -183,7 +201,11 @@ export const findTourFromUrl = (tours: Tour[]): Tour | undefined => {
  * @returns The most recently activated checklist or undefined if no checklists exist
  */
 export const findLatestActivatedChecklist = (checklists: Checklist[]): Checklist | undefined => {
-  const checklistsWithValidSession = checklists.filter(
+  const activeChecklists = checklists.filter(
+    (checklist) => !checklistIsDimissed(checklist.getContent()),
+  );
+
+  const checklistsWithValidSession = activeChecklists.filter(
     (checklist) => checklist.getContent().latestSession?.createdAt,
   );
 
@@ -219,15 +241,7 @@ export const findChecklistFromUrl = (checklists: Checklist[]): Checklist | undef
 export const findLatestValidActivatedChecklist = (
   checklists: Checklist[],
 ): Checklist | undefined => {
-  const latestActivatedChecklist = findLatestActivatedChecklist(checklists);
-  if (latestActivatedChecklist) {
-    const content = latestActivatedChecklist.getContent();
-    // if the checklist is not dismissed, start the next step
-    if (!checklistIsDimissed(content)) {
-      return latestActivatedChecklist;
-    }
-  }
-  return undefined;
+  return findLatestActivatedChecklist(checklists);
 };
 
 /**
@@ -532,6 +546,29 @@ export const checklistHasNewCompletedItems = (
 };
 
 /**
+ * Gets auto-start eligible content items sorted by priority
+ * @param contentInstances - Array of content instances to search through
+ * @returns Array of eligible content instances sorted by priority (highest first), or empty array if none found
+ */
+export const getAutoStartContentSortedByPriority = <T extends Tour | Launcher | Checklist>(
+  contentInstances: T[],
+): T[] => {
+  if (!contentInstances.length) {
+    return [];
+  }
+
+  // Find all instances that can auto-start
+  const eligibleInstances = contentInstances.filter((instance) => instance.canAutoStart());
+
+  if (!eligibleInstances.length) {
+    return [];
+  }
+
+  // Sort instances by priority (highest priority first)
+  return eligibleInstances.sort((a, b) => compareContentPriorities(a, b));
+};
+
+/**
  * Checks if two tours are the same
  * @param tour1 - The first tour
  * @param tour2 - The second tour
@@ -580,4 +617,17 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
     !isEqual(currentStore.theme, previousStore.theme) ||
     currentStore.zIndex !== previousStore.zIndex
   );
+};
+
+/**
+ * Finds a step by cvid
+ * @param steps - The steps to search through
+ * @param cvid - The cvid to search for
+ * @returns The step with the given cvid or undefined if no step is found
+ */
+export const getStepByCvid = (steps: Step[] | undefined, cvid: string): Step | undefined => {
+  if (!steps) {
+    return undefined;
+  }
+  return steps.find((step) => step.cvid === cvid);
 };
