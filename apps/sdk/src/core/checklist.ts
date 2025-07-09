@@ -33,6 +33,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 3. Handles visibility state based on checklist status
    */
   async monitor() {
+    // Activate content conditions first
+    await this.activeContentConditions();
+
     if (this.isActiveChecklist()) {
       // Monitor individual item conditions
       await this.monitorItemConditions();
@@ -40,8 +43,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
       // Update visibility state based on checklist status
       this.handleVisibilityState();
     }
-    // Activate content conditions first
-    await this.activeContentConditions();
   }
 
   /**

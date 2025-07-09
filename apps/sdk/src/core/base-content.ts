@@ -92,7 +92,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {boolean} True if the content can auto start, false otherwise
    */
   canAutoStart(): boolean {
-    return this.isAutoStart() && this.isValid();
+    return !this.hasStarted() && this.isAutoStart() && this.isValid();
   }
 
   /**
