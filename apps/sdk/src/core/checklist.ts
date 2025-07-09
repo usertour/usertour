@@ -86,6 +86,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       if (this.isOpen()) {
         this.hide();
       }
+      this.unsetActiveChecklist();
       return;
     }
 

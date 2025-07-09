@@ -654,8 +654,8 @@ export class App extends Evented {
     opts?: UserTourTypes.StartOptions,
   ) {
     try {
-      // if the user is not identified, do nothing
-      if (!this.userInfo?.externalId) {
+      // If the app is not ready, do nothing
+      if (!this.isReady()) {
         return;
       }
 
@@ -744,7 +744,10 @@ export class App extends Evented {
       return false;
     }
 
-    const latestActivatedChecklist = findLatestValidActivatedChecklist(this.checklists);
+    const latestActivatedChecklist = findLatestValidActivatedChecklist(
+      this.checklists.filter((checklist) => !checklist.isTemporarilyHidden()),
+    );
+
     if (latestActivatedChecklist && !latestActivatedChecklist.hasDismissed()) {
       this.activeChecklist = latestActivatedChecklist;
       await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
@@ -779,6 +782,10 @@ export class App extends Evented {
    * Starts all registered launchers
    */
   async startLauncher() {
+    // If the app is not ready, do nothing
+    if (!this.isReady()) {
+      return;
+    }
     const sortedLaunchers = this.launchers
       .filter((launcher) => launcher.canAutoStart())
       .sort((a, b) => compareContentPriorities(a, b));
@@ -800,6 +807,11 @@ export class App extends Evented {
     opts?: UserTourTypes.StartOptions,
   ) {
     try {
+      // If the app is not ready, do nothing
+      if (!this.isReady()) {
+        return;
+      }
+
       // Start URL-based tour
       const urlTour = findTourFromUrl(this.tours);
       if (await this.startUrlTour(urlTour)) {
@@ -906,11 +918,13 @@ export class App extends Evented {
       return false;
     }
 
-    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(this.tours);
+    const latestActivatedTourAndCvid = findLatestActivatedTourAndCvid(
+      this.tours.filter((tour) => !tour.isTemporarilyHidden()),
+    );
     const latestActivatedTour = latestActivatedTourAndCvid?.latestActivatedTour;
     const cvid = latestActivatedTourAndCvid?.cvid;
 
-    if (latestActivatedTour && !latestActivatedTour.hasDismissed()) {
+    if (latestActivatedTour) {
       this.activeTour = latestActivatedTour;
       await this.activeTour.start(contentStartReason.START_FROM_SESSION, cvid);
       return true;
@@ -1012,6 +1026,14 @@ export class App extends Evented {
       launchersStore: this.launchersStore,
       checklistsStore: this.checklistsStore,
     });
+  }
+
+  /**
+   * Checks if the app is ready to start
+   * @returns true if the app is ready to start, false otherwise
+   */
+  isReady() {
+    return this.container && this.root && this.userInfo?.externalId;
   }
 
   /**

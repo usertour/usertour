@@ -91,15 +91,15 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Checks if the content can auto start
    * @returns {boolean} True if the content can auto start, false otherwise
    */
-  canAutoStart() {
-    return !this.hasDismissed() && this.isAutoStart() && this.isValid() && this.hasContainer();
+  canAutoStart(): boolean {
+    return this.isAutoStart() && this.isValid();
   }
 
   /**
    * Checks if the content has been dismissed
    * @returns {boolean} True if the content has been dismissed, false otherwise
    */
-  hasDismissed() {
+  hasDismissed(): boolean {
     return this.isDismissed;
   }
 

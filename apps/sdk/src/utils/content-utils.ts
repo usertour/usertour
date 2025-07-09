@@ -8,6 +8,7 @@ import {
   ContentDataType,
   contentEndReason,
   SDKContent,
+  Step,
 } from '@usertour-ui/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
@@ -120,11 +121,12 @@ export const findLatestActivatedTourAndCvid = (
   tours: Tour[],
   contentId?: string,
 ): { latestActivatedTour: Tour; cvid: string } | undefined => {
+  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent()));
   const latestActivatedTour = contentId
-    ? tours.find((tour) => tour.getContent().contentId === contentId)
-    : findLatestActivatedTour(tours);
+    ? activeTours.find((tour) => tour.getContent().contentId === contentId)
+    : findLatestActivatedTour(activeTours);
   // if the tour is dismissed, return null
-  if (!latestActivatedTour || flowIsDismissed(latestActivatedTour.getContent())) {
+  if (!latestActivatedTour) {
     return undefined;
   }
   // if the tour is not dismissed, return the latest step cvid
@@ -183,7 +185,11 @@ export const findTourFromUrl = (tours: Tour[]): Tour | undefined => {
  * @returns The most recently activated checklist or undefined if no checklists exist
  */
 export const findLatestActivatedChecklist = (checklists: Checklist[]): Checklist | undefined => {
-  const checklistsWithValidSession = checklists.filter(
+  const activeChecklists = checklists.filter(
+    (checklist) => !checklistIsDimissed(checklist.getContent()),
+  );
+
+  const checklistsWithValidSession = activeChecklists.filter(
     (checklist) => checklist.getContent().latestSession?.createdAt,
   );
 
@@ -219,15 +225,7 @@ export const findChecklistFromUrl = (checklists: Checklist[]): Checklist | undef
 export const findLatestValidActivatedChecklist = (
   checklists: Checklist[],
 ): Checklist | undefined => {
-  const latestActivatedChecklist = findLatestActivatedChecklist(checklists);
-  if (latestActivatedChecklist) {
-    const content = latestActivatedChecklist.getContent();
-    // if the checklist is not dismissed, start the next step
-    if (!checklistIsDimissed(content)) {
-      return latestActivatedChecklist;
-    }
-  }
-  return undefined;
+  return findLatestActivatedChecklist(checklists);
 };
 
 /**
@@ -580,4 +578,17 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
     !isEqual(currentStore.theme, previousStore.theme) ||
     currentStore.zIndex !== previousStore.zIndex
   );
+};
+
+/**
+ * Finds a step by cvid
+ * @param steps - The steps to search through
+ * @param cvid - The cvid to search for
+ * @returns The step with the given cvid or undefined if no step is found
+ */
+export const getStepByCvid = (steps: Step[] | undefined, cvid: string): Step | undefined => {
+  if (!steps) {
+    return undefined;
+  }
+  return steps.find((step) => step.cvid === cvid);
 };

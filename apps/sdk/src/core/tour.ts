@@ -24,6 +24,7 @@ import { document } from '../utils/globals';
 import { BaseContent } from './base-content';
 import { ElementWatcher } from './element-watcher';
 import { logger } from '../utils/logger';
+import { getStepByCvid } from '../utils/content-utils';
 
 export class Tour extends BaseContent<TourStore> {
   private watcher: ElementWatcher | null = null;
@@ -66,23 +67,28 @@ export class Tour extends BaseContent<TourStore> {
   async show(cvid?: string): Promise<void> {
     const content = this.getContent();
 
-    // Validate content has steps
-    if (!content.steps?.length) {
+    // Validate content is valid
+    if (!this.isValidTour(content)) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
 
+    const steps = content.steps ?? [];
     // Find the target step
-    const targetStep = cvid ? content.steps.find((step) => step.cvid === cvid) : content.steps[0];
+    const step = cvid ? getStepByCvid(steps, cvid) : steps[0];
 
     // If no valid step found, close the tour
-    if (!targetStep?.cvid) {
+    if (!step?.cvid) {
       await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
 
-    // Navigate to the target step
-    await this.goto(targetStep.cvid);
+    // Reset tour state and set new step
+    this.reset();
+    this.setCurrentStep(step);
+
+    // Display step based on its type
+    await this.displayStep(step);
   }
 
   /**
@@ -196,61 +202,12 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   /**
-   * Get a step by its cvid
-   * @param cvid - The cvid of the step to get
-   * @returns The step with the given cvid, or null if it doesn't exist
+   * Validates if the tour is valid
+   * @param content - The content to validate
+   * @returns {boolean} True if the tour is valid, false otherwise
    */
-  getStepByCvid(cvid: string): Step | null {
-    if (!cvid) {
-      return null;
-    }
-    const content = this.getContent();
-    if (!content?.steps?.length) {
-      return null;
-    }
-    return content.steps.find((step) => step.cvid === cvid) ?? null;
-  }
-
-  /**
-   * Navigates to a specific step in the tour by its cvid
-   * This method handles:
-   * 1. Validating user and content state
-   * 2. Finding and setting the target step
-   * 3. Displaying the step based on its type (tooltip or modal)
-   *
-   * @param stepCvid - The cvid of the step to navigate to
-   * @throws Will close the tour if validation fails or step is not found
-   */
-  async goto(stepCvid: string): Promise<void> {
-    // Validate user and content state
+  private isValidTour(content: SDKContent): boolean {
     const userInfo = this.getUserInfo();
-    const content = this.getContent();
-
-    if (!this.isValidTourState(content, userInfo)) {
-      await this.close(contentEndReason.SYSTEM_CLOSED);
-      return;
-    }
-
-    // Find and validate target step
-    const targetStep = this.getStepByCvid(stepCvid);
-    if (!targetStep) {
-      await this.close(contentEndReason.STEP_NOT_FOUND);
-      return;
-    }
-
-    // Reset tour state and set new step
-    this.reset();
-    this.setCurrentStep(targetStep);
-
-    // Display step based on its type
-    await this.displayStep(targetStep);
-  }
-
-  /**
-   * Validates if the tour can proceed with the current state
-   * @private
-   */
-  private isValidTourState(content: SDKContent, userInfo: any): boolean {
     return Boolean(content.steps?.length && userInfo?.externalId);
   }
 
@@ -379,6 +336,11 @@ export class Tour extends BaseContent<TourStore> {
       triggerRef: el,
       openState,
     });
+
+    // If the tour is temporarily hidden, unset the active tour
+    if (!openState) {
+      this.unsetActiveTour();
+    }
   }
 
   private handleElementChanged(el: Element, step: Step, store: TourStore): void {
@@ -441,6 +403,11 @@ export class Tour extends BaseContent<TourStore> {
     // If this is the last step, report completion
     if (isComplete) {
       await this.reportStepEvents(currentStep, BizEvents.FLOW_COMPLETED);
+    }
+
+    // If the tour is temporarily hidden, unset the active tour
+    if (!openState) {
+      this.unsetActiveTour();
     }
   }
 
@@ -506,7 +473,7 @@ export class Tour extends BaseContent<TourStore> {
     // Execute non-PAGE_NAVIGATE actions first
     for (const action of otherActions) {
       if (action.type === ContentActionsItemType.STEP_GOTO) {
-        await this.goto(action.data.stepCvid);
+        await this.show(action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_START) {
         await this.startNewContent(action.data.contentId, action.data.stepCvid);
       } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
@@ -617,6 +584,7 @@ export class Tour extends BaseContent<TourStore> {
       if (openState) {
         this.hide();
       }
+      this.unsetActiveTour();
       return;
     }
 
