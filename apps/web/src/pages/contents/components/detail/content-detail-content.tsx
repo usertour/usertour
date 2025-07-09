@@ -5,8 +5,8 @@ import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Badge } from '@usertour-ui/badge';
 import { stepIsReachable } from '@usertour-ui/builder/src/utils/content-validate';
-import { AddIcon, EditIcon, EyeNoneIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { GoogleFontCss, LoadingContainer } from '@usertour-ui/shared-components';
+import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-ui/icons';
+import { GoogleFontCss } from '@usertour-ui/shared-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-ui/tooltip';
 import { TooltipProvider } from '@usertour-ui/tooltip';
 import {
@@ -356,11 +356,6 @@ export const ContentDetailContent = () => {
 
   return (
     <>
-      {state.isLoading && (
-        <LoadingContainer>
-          <SpinnerIcon className="mr-2 h-4 w-4 animate-spin text-primary" />
-        </LoadingContainer>
-      )}
       <div className="flex flex-col space-y-6 grow">
         {contentType === ContentTypeName.FLOWS &&
           version.steps?.map((step, index) => (

@@ -30,20 +30,30 @@ const ContentDetailProviderContext = createContext<ContentDetailProviderValue | 
 
 // Inner component to access all provider contexts and combine loading states
 function ContentDetailContent({ children }: { children: ReactNode }) {
-  const { loading: contentDetailLoading } = useContentDetailContext();
+  const { loading: contentDetailLoading, content } = useContentDetailContext();
   const { isLoading: contentListLoading } = useContentListContext();
-  const { loading: contentVersionLoading } = useContentVersionContext();
-  const { loading: contentVersionListLoading } = useContentVersionListContext();
+  const { loading: contentVersionLoading, version } = useContentVersionContext();
+  const { loading: contentVersionListLoading, versionList } = useContentVersionListContext();
   const { loading: segmentListLoading } = useSegmentListContext();
   const { loading: themeListLoading } = useThemeListContext();
 
+  // For ContentDetailContext: only show loading if it's initial load (no content data yet)
+  const isContentDetailInitialLoading = contentDetailLoading && !content;
+
+  // For ContentVersionContext: only show loading if it's initial load (no version data yet)
+  const isContentVersionInitialLoading = contentVersionLoading && !version;
+
+  // For ContentVersionListContext: only show loading if it's initial load (no versionList data yet)
+  const isContentVersionListInitialLoading = contentVersionListLoading && versionList.length === 0;
+
+  // Other contexts can show loading normally as they are less likely to refresh frequently
+  const isOtherLoading = contentListLoading || segmentListLoading || themeListLoading;
+
   const isLoading =
-    contentDetailLoading ||
-    contentListLoading ||
-    contentVersionLoading ||
-    contentVersionListLoading ||
-    segmentListLoading ||
-    themeListLoading;
+    isContentDetailInitialLoading ||
+    isContentVersionInitialLoading ||
+    isContentVersionListInitialLoading ||
+    isOtherLoading;
 
   const value: ContentDetailProviderValue = {
     isLoading,
