@@ -25,9 +25,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   const { expanded = true } = props;
   const { theme, settings } = useThemeDetailContext();
 
-  if (!settings) return null;
-
-  const data: ChecklistData = {
+  const [data] = useState<ChecklistData>({
     buttonText: 'Get Started',
     initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
     completionOrder: ChecklistCompletionOrder.ANY,
@@ -69,7 +67,9 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
       },
     ],
     content: [],
-  };
+  });
+
+  if (!settings) return null;
 
   const [expandedState, setExpandedState] = useState(expanded);
 
