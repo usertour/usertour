@@ -32,6 +32,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
     initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
     completionOrder: ChecklistCompletionOrder.ANY,
     preventDismissChecklist: false,
+    autoDismissChecklist: false,
     items: [
       {
         id: '1',
