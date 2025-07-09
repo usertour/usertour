@@ -21,7 +21,7 @@ import {
   parseUrlParams,
 } from './conditions';
 import { window } from './globals';
-import { RulesType } from '@usertour-ui/constants';
+import { PRIORITIES, RulesType } from '@usertour-ui/constants';
 import {
   canCompleteChecklistItem,
   checklistCompletedItemsCount,
@@ -29,6 +29,22 @@ import {
 } from '@usertour-ui/sdk';
 import { BaseStore } from '../types/store';
 import isEqual from 'fast-deep-equal';
+
+/**
+ * Compares two contents based on their priority
+ * @param contentA - First content to compare
+ * @param contentB - Second content to compare
+ * @returns Comparison result (-1, 0, or 1)
+ */
+export const compareContentPriorities = (
+  contentA: Tour | Launcher | Checklist,
+  contentB: Tour | Launcher | Checklist,
+): number => {
+  const priorityA = PRIORITIES.indexOf(contentA.getConfigPriority());
+  const priorityB = PRIORITIES.indexOf(contentB.getConfigPriority());
+
+  return priorityA === priorityB ? 0 : priorityA < priorityB ? -1 : 1;
+};
 
 /**
  * Initialize or update content items based on the provided contents
@@ -527,6 +543,29 @@ export const checklistHasNewCompletedItems = (
   }
 
   return false;
+};
+
+/**
+ * Gets auto-start eligible content items sorted by priority
+ * @param contentInstances - Array of content instances to search through
+ * @returns Array of eligible content instances sorted by priority (highest first), or empty array if none found
+ */
+export const getAutoStartContentSortedByPriority = <T extends Tour | Launcher | Checklist>(
+  contentInstances: T[],
+): T[] => {
+  if (!contentInstances.length) {
+    return [];
+  }
+
+  // Find all instances that can auto-start
+  const eligibleInstances = contentInstances.filter((instance) => instance.canAutoStart());
+
+  if (!eligibleInstances.length) {
+    return [];
+  }
+
+  // Sort instances by priority (highest priority first)
+  return eligibleInstances.sort((a, b) => compareContentPriorities(a, b));
 };
 
 /**
