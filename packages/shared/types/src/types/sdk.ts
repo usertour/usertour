@@ -16,6 +16,7 @@ export enum contentEndReason {
   USER_CLOSED = 'user_closed',
   TOOLTIP_TARGET_MISSING = 'tooltip_target_missing',
   SYSTEM_CLOSED = 'system_closed',
+  AUTO_DISMISSED = 'auto_dismissed',
   CONTENT_NOT_FOUND = 'content_not_found',
   SESSION_TIMEOUT = 'session_timeout',
   URL_START_CLOSED = 'url_start_closed',
@@ -51,6 +52,7 @@ export const flowReasonTitleMap = {
   [contentEndReason.USER_STARTED_OTHER_CONTENT]: 'User started other content',
   [contentEndReason.PROGRAM_STARTED_OTHER_CONTENT]: 'Program started other content',
   [contentEndReason.STEP_NOT_FOUND]: 'Step not found',
+  [contentEndReason.AUTO_DISMISSED]: 'Auto dismissed',
 };
 
 export interface SDKConfig {

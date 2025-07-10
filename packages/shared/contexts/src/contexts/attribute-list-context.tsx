@@ -11,12 +11,13 @@ export interface AttributeListProviderProps {
 export interface AttributeListContextValue {
   attributeList: Attribute[] | undefined;
   refetch: any;
+  loading: boolean;
 }
 export const AttributeListContext = createContext<AttributeListContextValue | undefined>(undefined);
 
 export function AttributeListProvider(props: AttributeListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { data, refetch } = useQuery(listAttributes, {
+  const { data, refetch, loading } = useQuery(listAttributes, {
     variables: { projectId: projectId, bizType: 0 },
   });
 
@@ -24,6 +25,7 @@ export function AttributeListProvider(props: AttributeListProviderProps): JSX.El
   const value: AttributeListContextValue = {
     attributeList,
     refetch,
+    loading,
   };
 
   return <AttributeListContext.Provider value={value}>{children}</AttributeListContext.Provider>;

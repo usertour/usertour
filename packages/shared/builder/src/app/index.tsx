@@ -1,23 +1,13 @@
-import {
-  AttributeListProvider,
-  ContentListProvider,
-  ThemeListProvider,
-  useThemeListContext,
-} from '@usertour-ui/contexts';
-import { useEffect } from 'react';
-import {
-  BuilderMode,
-  BuilderProvider,
-  ChecklistProvider,
-  LauncherProvider,
-  useBuilderContext,
-} from '../contexts';
+import { useThemeListContext } from '@usertour-ui/contexts';
+import { useEffect, useState } from 'react';
+import { BuilderMode, useBuilderContext } from '../contexts';
+import { WebBuilderProvider, useWebBuilderProvider } from '../contexts/web-builder-provider';
+import { WebBuilderLoading } from '../components/web-builder-loading';
 import { BannerBuilder } from '../pages/banner';
 import { ChecklistBuilder } from '../pages/checklist';
 import { FlowBuilderDetail, FlowBuilderTrigger } from '../pages/flow';
 import { LauncherBuilder } from '../pages/launcher';
 import { BuilderSideBar } from '../pages/sidebar';
-import { SpinnerIcon } from '@usertour-ui/icons';
 
 const Container = () => {
   const { currentMode, currentVersion, setCurrentTheme } = useBuilderContext();
@@ -71,65 +61,43 @@ export interface WebBuilderProps {
   envToken: string;
   usertourjsUrl?: string;
   onSaved: () => Promise<void>;
+  isLoading?: boolean;
 }
 
-const WebBuilderCore = (props: WebBuilderProps) => {
+// Inner component that uses the provider context
+function WebBuilderContent(props: WebBuilderProps) {
   const { contentId, environmentId, versionId, projectId, envToken } = props;
-  const { initContent, isLoading } = useBuilderContext();
+  const { initContent } = useBuilderContext();
+  const { isLoading: providerLoading } = useWebBuilderProvider();
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const params = {
-      contentId,
-      environmentId,
-      versionId,
-      projectId,
-      envToken,
-    };
-    initContent(params);
+    (async () => {
+      const params = {
+        contentId,
+        environmentId,
+        versionId,
+        projectId,
+        envToken,
+      };
+      await initContent(params);
+      setIsInitializing(false);
+    })();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen w-full">
-        <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-      </div>
-    );
+  // Show loading if any provider is loading or if we're still initializing
+  if (providerLoading || isInitializing) {
+    return <WebBuilderLoading message="Loading builder..." />;
   }
 
-  return (
-    <>
-      <ThemeListProvider projectId={projectId}>
-        <AttributeListProvider projectId={projectId}>
-          <ContentListProvider
-            environmentId={environmentId}
-            key={'environmentId'}
-            contentType={undefined}
-            defaultQuery={{}}
-            defaultPagination={{
-              pageSize: 1000,
-              pageIndex: 0,
-            }}
-          >
-            <Container />
-          </ContentListProvider>
-        </AttributeListProvider>
-      </ThemeListProvider>
-    </>
-  );
-};
-
-WebBuilderCore.displayName = 'WebBuilderCore';
+  return <Container />;
+}
 
 export const WebBuilder = (props: WebBuilderProps) => {
-  const { onSaved, usertourjsUrl } = props;
   return (
-    <BuilderProvider isWebBuilder={true} onSaved={onSaved} usertourjsUrl={usertourjsUrl}>
-      <LauncherProvider>
-        <ChecklistProvider>
-          <WebBuilderCore {...props} />
-        </ChecklistProvider>
-      </LauncherProvider>
-    </BuilderProvider>
+    <WebBuilderProvider {...props}>
+      <WebBuilderContent {...props} />
+    </WebBuilderProvider>
   );
 };
 

@@ -141,7 +141,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root modal={true} onOpenChange={handleOpenChange} open={isOpen}>
+        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
               <Input

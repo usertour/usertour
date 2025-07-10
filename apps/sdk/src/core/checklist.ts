@@ -33,6 +33,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 3. Handles visibility state based on checklist status
    */
   async monitor() {
+    // Activate content conditions first
+    await this.activeContentConditions();
+
     if (this.isActiveChecklist()) {
       // Monitor individual item conditions
       await this.monitorItemConditions();
@@ -40,8 +43,6 @@ export class Checklist extends BaseContent<ChecklistStore> {
       // Update visibility state based on checklist status
       this.handleVisibilityState();
     }
-    // Activate content conditions first
-    await this.activeContentConditions();
   }
 
   /**
@@ -86,6 +87,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       if (this.isOpen()) {
         this.hide();
       }
+      this.unsetActiveChecklist();
       return;
     }
 
@@ -339,7 +341,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
     // Check if all items are completed
     if (isSendChecklistCompletedEvent(items, content.latestSession)) {
       await this.reportChecklistEvent(BizEvents.CHECKLIST_COMPLETED);
+      if (this.isAutoDismissChecklist()) {
+        await this.close(contentEndReason.AUTO_DISMISSED);
+      }
     }
+  }
+
+  private isAutoDismissChecklist() {
+    return this.getContent()?.data?.autoDismissChecklist ?? false;
   }
 
   /**
