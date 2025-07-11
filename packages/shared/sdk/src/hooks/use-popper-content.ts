@@ -199,6 +199,7 @@ export const usePopperContent = (
     stableThreshold: 250,
     offset: 20,
     animationDuration: 500,
+    enabled: enabled, // Pass the enabled parameter
   });
 
   const [placedSide] = getSideAndAlignFromPlacement(placement);
