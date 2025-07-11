@@ -9,6 +9,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useMemo,
 } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -83,6 +84,29 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
   const [container, setContainer] = useState<Element | DocumentFragment>();
   const composedRefs = useComposedRefs(ref, nodeRef);
 
+  // Use ref to persist loaded assets across renders and prevent memory leaks
+  const assetsRef = useRef<AssetAttributes[]>(assets);
+  const assetLoadMapRef = useRef<Map<string, boolean>>(new Map());
+
+  // Combined state to ensure all conditions are met
+  const isReadyToRender = useMemo(() => {
+    return (
+      iframeLoaded &&
+      assetsLoaded &&
+      !!contentDocument &&
+      !!contentDocument.defaultView &&
+      !!container
+    );
+  }, [iframeLoaded, assetsLoaded, contentDocument, container]);
+
+  // Update assets ref when assets prop changes
+  useEffect(() => {
+    assetsRef.current = assets;
+    // Reset loaded assets when assets change
+    assetLoadMapRef.current.clear();
+    checkAndUpdateAssetsLoaded();
+  }, [assets]);
+
   // Handle iframe load event
   const handleLoad = () => {
     if (!iframeLoaded) {
@@ -138,16 +162,43 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     }
   };
 
-  // Track loaded assets and trigger content rendering when all assets are loaded
-  const loadedAssets: AssetAttributes[] = [];
-  const handleAssetLoad = (asset: AssetAttributes, isCheckLoaded: boolean) => {
-    if (isCheckLoaded) {
-      loadedAssets.push(asset);
-    }
-    const checkLoadedCount = assets.filter((as: AssetAttributes) => as.isCheckLoaded).length;
-    if (checkLoadedCount === loadedAssets.length) {
+  // Check and update assets loaded state
+  const checkAndUpdateAssetsLoaded = () => {
+    const checkLoadedAssets = assetsRef.current.filter((asset) => asset.isCheckLoaded);
+    const checkLoadedCount = checkLoadedAssets.length;
+    const loadedCount = assetLoadMapRef.current.size;
+
+    if (checkLoadedCount === 0) {
+      // No assets need loading check
       setAssetsLoaded(true);
+    } else if (checkLoadedCount === loadedCount) {
+      // All assets that need loading check are loaded
+      setAssetsLoaded(true);
+    } else {
+      // Some assets still loading
+      setAssetsLoaded(false);
     }
+  };
+
+  // Track loaded assets and trigger content rendering when all assets are loaded
+  const handleAssetLoad = (
+    assetItem: AssetAttributes,
+    isCheckLoaded: boolean,
+    assetIndex: number,
+  ) => {
+    // Early return if this asset doesn't need loading check
+    if (!isCheckLoaded) {
+      return;
+    }
+
+    // Create a unique key for the asset using its properties and index
+    const assetKey = assetItem.href || assetItem.src || `${assetItem.tagName}-${assetIndex}`;
+
+    // Mark this specific asset as loaded
+    assetLoadMapRef.current.set(assetKey, true);
+
+    // Check and update assets loaded state
+    checkAndUpdateAssetsLoaded();
   };
 
   // Render asset elements (links/scripts) to inject into iframe head
@@ -160,7 +211,7 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
           {...attrs}
           key={`${asset.tagName}-${index}`}
           onLoad={() => {
-            handleAssetLoad(asset, isCheckLoaded);
+            handleAssetLoad(asset, isCheckLoaded, index);
           }}
         />,
       );
@@ -190,21 +241,18 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
         createPortal(renderHeaderAssets(), contentDocument.head)}
 
       {/* Render main content when all assets are loaded */}
-      {assetsLoaded &&
-        contentDocument &&
-        contentDocument.defaultView &&
-        container &&
+      {isReadyToRender &&
         createPortal(
           <FrameContext.Provider
             value={{
-              document: contentDocument,
-              window: contentDocument.defaultView,
+              document: contentDocument!,
+              window: contentDocument!.defaultView,
               setStyle,
             }}
           >
             {children}
           </FrameContext.Provider>,
-          container,
+          container!,
         )}
     </>
   );
