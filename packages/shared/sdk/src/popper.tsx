@@ -5,28 +5,13 @@ import { createContext } from '@usertour-ui/react-context';
 import { useSize } from '@usertour-ui/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-ui/icons';
 import { useComposedRefs } from '@usertour-ui/react-compose-refs';
-import { detectOverflow, autoUpdate, platform, ReferenceElement } from '@floating-ui/dom';
-import {
-  useFloating,
-  offset,
-  shift,
-  limitShift,
-  hide,
-  arrow as floatingUIarrow,
-  flip,
-  size,
-} from '@floating-ui/react-dom';
-import type { SideObject, Rect, Placement, Middleware } from '@floating-ui/dom';
+import type { SideObject, Rect } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
-import {
-  computePositionStyle,
-  getSideAndAlignFromPlacement,
-  transformOrigin,
-} from './utils/position';
+import { computePositionStyle } from './utils/position';
 import { cn } from '@usertour-ui/ui-utils';
 import { Align, ProgressBarType, Side } from '@usertour-ui/types';
 import { hiddenStyle } from './utils/content';
-import { usePopperAnimation } from './hooks';
+import { usePopperContent } from './hooks/use-popper-content';
 
 const POPPER_NAME = 'Popover';
 
@@ -105,10 +90,6 @@ type PopperContextProps = {
   setIsIframeLoaded?: (loaded: boolean) => void;
   shouldShow?: boolean;
 };
-
-function isNotNull<T>(value: T | null): value is T {
-  return value !== null;
-}
 
 const [PopperProvider, usePopperContext] = createContext<PopperContextProps>(POPPER_NAME);
 
@@ -254,179 +235,48 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
 const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props, forwardedRef) => {
   const {
     children,
-    side = 'bottom',
-    sideOffset = 0,
-    align = 'center',
-    alignOffset = 0,
-    arrowPadding = 0,
-    avoidCollisions = true,
-    collisionBoundary = [],
     arrowSize = { width: 20, height: 10 },
-    collisionPadding: collisionPaddingProp = 0,
-    sticky = 'partial',
     arrowColor = 'white',
-    hideWhenDetached = false,
     dir = 'ltr',
-    width = 'auto',
-    updatePositionStrategy = 'optimized',
   } = props;
-  const { triggerRef, zIndex, setReferenceHidden, setRect, setOverflow } =
+
+  const { shouldShow, triggerRef, zIndex, setReferenceHidden, setRect, setOverflow } =
     usePopperContext(POPPER_NAME);
-  const arrowRef = useRef(null);
-  const referenceEl = triggerRef?.current as ReferenceElement;
-  const arrowRectSize = useSize(arrowRef.current);
-  const arrowWidth = arrowRectSize?.width ?? 0;
-  const arrowHeight = arrowRectSize?.height ?? 0;
-  // const arrowWidth = 40;
-  // const arrowHeight = 40;
-  const desiredPlacement = `${side}${align !== 'center' ? `-${align}` : ''}` as Placement;
-  const collisionPadding =
-    typeof collisionPaddingProp === 'number'
-      ? collisionPaddingProp
-      : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
 
-  const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
-  const hasExplicitBoundaries = boundary.length > 0;
-
-  const detectOverflowOptions = {
-    padding: collisionPadding,
-    boundary: boundary.filter(isNotNull),
-    // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
-    altBoundary: hasExplicitBoundaries,
-  };
-
-  // Custom middleware that extends the original hide logic
-  const customHideMiddleware = (options: {
-    strategy?: 'referenceHidden' | 'escaped';
-    padding?: number | Partial<Record<Side, number>>;
-    boundary?: Boundary | Boundary[];
-  }): Middleware => ({
-    name: 'customHide',
-    options,
-    async fn(state) {
-      const { rects } = state;
-      const originalHide = hide({ strategy: 'referenceHidden', ...detectOverflowOptions });
-      const originalResult = await originalHide.fn(state);
-      const { width, height, x, y } = rects.reference;
-      // Check if reference element is valid (has size and is in viewport)
-      const isInvalid =
-        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
-      // Combine original hide logic with custom logic
-      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
-      const escaped = originalResult.data?.escaped || false;
-
-      return {
-        data: {
-          referenceHidden,
-          escaped,
-        },
-      };
+  const popperData = usePopperContent(
+    props,
+    {
+      triggerRef: triggerRef!,
+      zIndex,
+      setReferenceHidden: setReferenceHidden!,
+      setRect: setRect!,
+      setOverflow: setOverflow!,
     },
-  });
-
-  const { refs, floatingStyles, placement, middlewareData } = useFloating({
-    // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
-    strategy: 'fixed',
-    placement: desiredPlacement,
-    whileElementsMounted: (...args) => {
-      const cleanup = autoUpdate(...args, {
-        animationFrame: updatePositionStrategy === 'always',
-      });
-      return cleanup;
-    },
-    elements: {
-      reference: referenceEl,
-    },
-    platform: {
-      ...platform,
-      convertOffsetParentRelativeRectToViewportRelativeRect(...args) {
-        const rect = platform.convertOffsetParentRelativeRectToViewportRelativeRect(
-          ...args,
-        ) as Rect;
-        setRect?.(rect);
-        return rect;
-      },
-    },
-    middleware: [
-      offset({
-        mainAxis: sideOffset + arrowHeight,
-        alignmentAxis: alignOffset,
-      }),
-      avoidCollisions &&
-        shift({
-          mainAxis: true,
-          crossAxis: false,
-          limiter: sticky === 'partial' ? limitShift() : undefined,
-          ...detectOverflowOptions,
-        }),
-      avoidCollisions && flip({ ...detectOverflowOptions }),
-      size({
-        ...detectOverflowOptions,
-      }),
-      arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
-      transformOrigin({ arrowWidth, arrowHeight }),
-      hideWhenDetached &&
-        customHideMiddleware({
-          strategy: 'referenceHidden',
-          padding: detectOverflowOptions.padding,
-          boundary: detectOverflowOptions.boundary,
-        }),
-      // Custom middleware to set overflow state
-      {
-        name: 'overflowState',
-        async fn(state) {
-          if (setOverflow) {
-            const overflow = await detectOverflow(state, {
-              elementContext: 'reference',
-            });
-            setOverflow(overflow);
-          }
-          return {};
-        },
-      },
-    ],
-  });
-
-  // Use the animation hook
-  const { finalStyles } = usePopperAnimation(floatingStyles, placement, {
-    stableThreshold: 250,
-    offset: 20,
-    animationDuration: 500,
-  });
-
-  const [placedSide] = getSideAndAlignFromPlacement(placement);
-  useEffect(() => {
-    setReferenceHidden?.(middlewareData.customHide?.referenceHidden ?? false);
-  }, [middlewareData.customHide?.referenceHidden]);
-
-  const arrowX = middlewareData.arrow?.x;
-  const arrowY = middlewareData.arrow?.y;
-  const cannotCenterArrow = false;
-  const baseSide = OPPOSITE_SIDE[placedSide];
-
-  const popperRef = useRef<HTMLDivElement | null>(null);
-  const composedRefs = useComposedRefs(forwardedRef, popperRef, (node: any) =>
-    refs.setFloating(node),
+    shouldShow,
   );
 
-  const inlineStyle: React.CSSProperties = {
-    ...finalStyles,
-    width: width,
-    zIndex: zIndex + 1,
-    ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : { opacity: 1 }),
-  };
+  const {
+    arrowRef,
+    composedRefs,
+    inlineStyle,
+    placedSide,
+    arrowX,
+    arrowY,
+    baseSide,
+    middlewareData,
+  } = popperData;
+
+  // Combine refs
+  const finalComposedRefs = useComposedRefs(forwardedRef, composedRefs);
 
   return (
     <>
       <div
         className="usertour-widget-popper usertour-centered usertour-enabled"
-        ref={composedRefs}
+        ref={finalComposedRefs}
         data-usertour-popper-content-wrapper=""
         data-usertour-popper-data-placement={placedSide}
         style={inlineStyle}
-        // Floating UI interally calculates logical alignment based the `dir` attribute on
-        // the reference/floating node, we must add this attribute here to ensure
-        // this is calculated when portalled as well as inline.
         dir={dir}
       >
         <div className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left">
@@ -450,10 +300,8 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
               right: 'translateY(50%) rotate(90deg) translateX(-50%)',
               bottom: 'rotate(180deg)',
               left: 'translateY(50%) rotate(-90deg) translateX(50%)',
-            }[placedSide],
-            ...(cannotCenterArrow || middlewareData.customHide?.referenceHidden
-              ? hiddenStyle
-              : { opacity: 1 }),
+            }[placedSide] as string,
+            ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : { opacity: 1 }),
           }}
         >
           <ArrowPrimitive.Root
@@ -461,7 +309,6 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
             height={arrowSize.height}
             style={{
               fill: arrowColor,
-              // ensures the element can be measured correctly (mostly for if SVG)
               display: 'block',
             }}
           />
