@@ -989,6 +989,14 @@ export class WebSocketService {
       content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
         ?.publishedVersionId || content.publishedVersionId;
 
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+    });
+
+    if (!version) {
+      return null;
+    }
+
     return await this.prisma.bizSession.create({
       data: {
         state: 0,
