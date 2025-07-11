@@ -30,7 +30,9 @@ type AssetTagType = 'link' | 'script';
  * Asset attributes for loading external resources in iframe
  * Extends both link and script HTML attributes
  */
-export interface AssetAttributes extends LinkHTMLAttributes<any>, ScriptHTMLAttributes<any> {
+export interface AssetAttributes
+  extends LinkHTMLAttributes<HTMLElement>,
+    ScriptHTMLAttributes<HTMLElement> {
   tagName: AssetTagType;
   isCheckLoaded: boolean;
 }
@@ -125,6 +127,12 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     }
   }, [iframeLoaded]);
 
+  // Handle iframe error
+  const handleIframeError = useCallback(() => {
+    console.error('Iframe failed to load');
+    // Could add error state management here if needed
+  }, []);
+
   // Get iframe document safely with cross-origin handling
   const getDocument = useCallback(() => {
     try {
@@ -179,11 +187,11 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
   }, [contentDocument, mountTarget]);
 
   // Style setter for iframe element
-  const setStyle = (style: string) => {
+  const setStyle = useCallback((style: string) => {
     if (nodeRef.current) {
       nodeRef.current.style.cssText = style;
     }
-  };
+  }, []);
 
   // Check and update assets loaded state
   const checkAndUpdateAssetsLoaded = useCallback(() => {
@@ -253,7 +261,10 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
         style={{ ...defaultStyle }}
         ref={composedRefs}
         onLoad={handleLoad}
+        onError={handleIframeError}
         title="Content Frame"
+        aria-label="Content Frame"
+        role="document"
       />
 
       {/* Inject head content into iframe */}
