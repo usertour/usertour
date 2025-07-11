@@ -26,8 +26,8 @@ import {
 } from './popper';
 import { CheckmarkIcon, DropDownIcon } from '@usertour-ui/icons';
 import { useComposedRefs } from '@usertour-ui/react-compose-refs';
-import { useThemeStyles } from './hook';
-import { computePositionStyle } from './position';
+import { useThemeStyles } from './hooks';
+import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { cn } from '@usertour-ui/ui-utils';
 import { Button } from '@usertour-ui/button';
@@ -37,7 +37,7 @@ import {
   checklistIsCompleted,
   checklistProgress,
   checklistUnCompletedItemsCount,
-} from './utils';
+} from './utils/content';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -430,7 +430,7 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
 
     // Main content when open
     return (
-      <Popper ref={ref} {...optimizedPopperProps}>
+      <Popper ref={ref} {...optimizedPopperProps} isIframeMode={true}>
         <PopperModalContentPotal {...modalContentProps}>
           <PopperContentFrame ref={ref} {...props}>
             {children}
