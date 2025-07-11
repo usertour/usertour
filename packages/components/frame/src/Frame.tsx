@@ -119,16 +119,28 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
   }, [assets]);
 
   // Handle iframe load event
-  const handleLoad = () => {
+  const handleLoad = useCallback(() => {
     if (!iframeLoaded) {
       setIframeLoaded(true);
     }
-  };
+  }, [iframeLoaded]);
 
-  // Get iframe document safely
-  const getDocument = () => {
-    return nodeRef.current ? nodeRef.current.contentDocument : null;
-  };
+  // Get iframe document safely with cross-origin handling
+  const getDocument = useCallback(() => {
+    try {
+      return nodeRef.current ? nodeRef.current.contentDocument : null;
+    } catch {
+      // Cross-origin access blocked
+      console.warn('Cross-origin access blocked for iframe');
+      return null;
+    }
+  }, []);
+
+  // Handle asset load error
+  const handleAssetError = useCallback((asset: AssetAttributes, index: number) => {
+    console.error('Asset failed to load:', asset, 'at index:', index);
+    // Could add error state management here if needed
+  }, []);
 
   // Set up DOMContentLoaded listener for iframe
   useEffect(() => {
@@ -141,7 +153,7 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     return () => {
       win?.removeEventListener('DOMContentLoaded', handleLoad);
     };
-  }, [nodeRef]);
+  }, [nodeRef, getDocument, handleLoad]);
 
   // Initialize iframe document and window when loaded
   useEffect(() => {
@@ -152,7 +164,7 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
         setContentDocument(doc);
       }
     }
-  }, [iframeLoaded, nodeRef.current]);
+  }, [iframeLoaded, nodeRef.current, getDocument]);
 
   // Set up container element for mounting React components
   useEffect(() => {
@@ -223,11 +235,14 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
           onLoad={() => {
             handleAssetLoad(asset, isCheckLoaded, index);
           }}
+          onError={() => {
+            handleAssetError(asset, index);
+          }}
         />,
       );
     });
     return nodes;
-  }, [assets, handleAssetLoad]);
+  }, [assets, handleAssetLoad, handleAssetError]);
 
   return (
     <>
