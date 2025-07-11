@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
   useMemo,
+  useCallback,
 } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -99,6 +100,16 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     );
   }, [iframeLoaded, assetsLoaded, contentDocument, container]);
 
+  // Check if head content should be rendered
+  const shouldRenderHead = useMemo(() => {
+    return iframeLoaded && contentDocument && head;
+  }, [iframeLoaded, contentDocument, head]);
+
+  // Check if assets should be rendered
+  const shouldRenderAssets = useMemo(() => {
+    return iframeLoaded && contentDocument && contentDocument.head;
+  }, [iframeLoaded, contentDocument]);
+
   // Update assets ref when assets prop changes
   useEffect(() => {
     assetsRef.current = assets;
@@ -163,7 +174,7 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
   };
 
   // Check and update assets loaded state
-  const checkAndUpdateAssetsLoaded = () => {
+  const checkAndUpdateAssetsLoaded = useCallback(() => {
     const checkLoadedAssets = assetsRef.current.filter((asset) => asset.isCheckLoaded);
     const checkLoadedCount = checkLoadedAssets.length;
     const loadedCount = assetLoadMapRef.current.size;
@@ -178,31 +189,30 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
       // Some assets still loading
       setAssetsLoaded(false);
     }
-  };
+  }, []);
 
   // Track loaded assets and trigger content rendering when all assets are loaded
-  const handleAssetLoad = (
-    assetItem: AssetAttributes,
-    isCheckLoaded: boolean,
-    assetIndex: number,
-  ) => {
-    // Early return if this asset doesn't need loading check
-    if (!isCheckLoaded) {
-      return;
-    }
+  const handleAssetLoad = useCallback(
+    (assetItem: AssetAttributes, isCheckLoaded: boolean, assetIndex: number) => {
+      // Early return if this asset doesn't need loading check
+      if (!isCheckLoaded) {
+        return;
+      }
 
-    // Create a unique key for the asset using its properties and index
-    const assetKey = assetItem.href || assetItem.src || `${assetItem.tagName}-${assetIndex}`;
+      // Create a unique key for the asset using its properties and index
+      const assetKey = assetItem.href || assetItem.src || `${assetItem.tagName}-${assetIndex}`;
 
-    // Mark this specific asset as loaded
-    assetLoadMapRef.current.set(assetKey, true);
+      // Mark this specific asset as loaded
+      assetLoadMapRef.current.set(assetKey, true);
 
-    // Check and update assets loaded state
-    checkAndUpdateAssetsLoaded();
-  };
+      // Check and update assets loaded state
+      checkAndUpdateAssetsLoaded();
+    },
+    [checkAndUpdateAssetsLoaded],
+  );
 
   // Render asset elements (links/scripts) to inject into iframe head
-  const renderHeaderAssets = () => {
+  const renderHeaderAssets = useMemo(() => {
     const nodes: ReactNode[] = [];
     assets.forEach((asset: AssetAttributes, index: number) => {
       const { tagName: TagName, isCheckLoaded, ...attrs } = asset;
@@ -217,7 +227,7 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
       );
     });
     return nodes;
-  };
+  }, [assets, handleAssetLoad]);
 
   return (
     <>
@@ -232,13 +242,10 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
       />
 
       {/* Inject head content into iframe */}
-      {iframeLoaded && contentDocument && head && createPortal(head, contentDocument.head)}
+      {shouldRenderHead && createPortal(head, contentDocument!.head)}
 
       {/* Inject assets (CSS/JS) into iframe head */}
-      {iframeLoaded &&
-        contentDocument &&
-        contentDocument.head &&
-        createPortal(renderHeaderAssets(), contentDocument.head)}
+      {shouldRenderAssets && createPortal(renderHeaderAssets, contentDocument!.head)}
 
       {/* Render main content when all assets are loaded */}
       {isReadyToRender &&
