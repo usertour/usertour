@@ -132,6 +132,7 @@ const TourPopper = ({ store, ...props }: TourSharedProps) => {
       zIndex={zIndex}
       globalStyle={globalStyle}
       assets={assets}
+      isIframeMode={true}
     >
       {currentStep?.setting?.enabledBackdrop && (
         <SharedPopper.PopperOverlay blockTarget={currentStep?.setting.enabledBlockTarget} />
@@ -160,7 +161,13 @@ const TourModal = ({ store, onClose, handleOnClick }: PopperContentProps) => {
   const { openState, zIndex, currentStep, assets, globalStyle } = store;
 
   return (
-    <SharedPopper.Popper open={openState} zIndex={zIndex} globalStyle={globalStyle} assets={assets}>
+    <SharedPopper.Popper
+      isIframeMode={true}
+      open={openState}
+      zIndex={zIndex}
+      globalStyle={globalStyle}
+      assets={assets}
+    >
       <SharedPopper.PopperModalContentPotal
         position={currentStep?.setting.position ?? ''}
         enabledBackdrop={currentStep?.setting?.enabledBackdrop}

@@ -160,7 +160,9 @@ export class Tour extends BaseContent<TourStore> {
    */
   async endLatestSession(reason: contentEndReason) {
     const eventData: Record<string, any> = {
-      flow_end_reason: reason,
+      [EventAttributes.FLOW_END_REASON]: reason,
+      [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
     };
     const sessionId = this.getReusedSessionId();
     if (!sessionId) {
@@ -805,7 +807,9 @@ export class Tour extends BaseContent<TourStore> {
     await this.reportEventWithSession({
       eventName: BizEvents.FLOW_STARTED,
       eventData: {
-        flow_start_reason: reason ?? 'auto_start',
+        [EventAttributes.FLOW_START_REASON]: reason ?? 'auto_start',
+        [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
+        [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
       },
     });
   }
@@ -817,16 +821,18 @@ export class Tour extends BaseContent<TourStore> {
   private async reportCloseEvent(reason: contentEndReason) {
     const currentStep = this.getCurrentStep();
     const eventData: Record<string, any> = {
-      flow_end_reason: reason,
+      [EventAttributes.FLOW_END_REASON]: reason,
+      [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
     };
 
     if (currentStep) {
       const { index, progress } = this.getCurrentStepInfo(currentStep);
       Object.assign(eventData, {
-        flow_step_number: index,
-        flow_step_cvid: currentStep.cvid,
-        flow_step_name: currentStep.name,
-        flow_step_progress: progress,
+        [EventAttributes.FLOW_STEP_NUMBER]: index,
+        [EventAttributes.FLOW_STEP_CVID]: currentStep.cvid,
+        [EventAttributes.FLOW_STEP_NAME]: currentStep.name,
+        [EventAttributes.FLOW_STEP_PROGRESS]: progress,
       });
     }
 
@@ -846,10 +852,12 @@ export class Tour extends BaseContent<TourStore> {
     await this.reportEventWithSession({
       eventName: BizEvents.TOOLTIP_TARGET_MISSING,
       eventData: {
-        flow_step_number: index,
-        flow_step_cvid: currentStep.cvid,
-        flow_step_name: currentStep.name,
-        flow_step_progress: progress,
+        [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
+        [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
+        [EventAttributes.FLOW_STEP_NUMBER]: index,
+        [EventAttributes.FLOW_STEP_CVID]: currentStep.cvid,
+        [EventAttributes.FLOW_STEP_NAME]: currentStep.name,
+        [EventAttributes.FLOW_STEP_PROGRESS]: progress,
       },
     });
   }
@@ -870,10 +878,12 @@ export class Tour extends BaseContent<TourStore> {
     const { index, progress } = this.getCurrentStepInfo(currentStep);
 
     const eventData = {
-      flow_step_number: index,
-      flow_step_cvid: currentStep.cvid,
-      flow_step_name: currentStep.name,
-      flow_step_progress: Math.round(progress),
+      [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
+      [EventAttributes.FLOW_STEP_NUMBER]: index,
+      [EventAttributes.FLOW_STEP_CVID]: currentStep.cvid,
+      [EventAttributes.FLOW_STEP_NAME]: currentStep.name,
+      [EventAttributes.FLOW_STEP_PROGRESS]: Math.round(progress),
     };
 
     await this.reportEventWithSession({

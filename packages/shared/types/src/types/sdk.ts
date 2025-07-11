@@ -23,6 +23,7 @@ export enum contentEndReason {
   USER_STARTED_OTHER_CONTENT = 'user_started_other_content',
   PROGRAM_STARTED_OTHER_CONTENT = 'program_started_other_content',
   STEP_NOT_FOUND = 'step_not_found',
+  UNPUBLISHED_CONTENT = 'unpublished_content',
 }
 
 export enum contentStartReason {
@@ -53,6 +54,7 @@ export const flowReasonTitleMap = {
   [contentEndReason.PROGRAM_STARTED_OTHER_CONTENT]: 'Program started other content',
   [contentEndReason.STEP_NOT_FOUND]: 'Step not found',
   [contentEndReason.AUTO_DISMISSED]: 'Auto dismissed',
+  [contentEndReason.UNPUBLISHED_CONTENT]: 'Unpublished content',
 };
 
 export interface SDKConfig {

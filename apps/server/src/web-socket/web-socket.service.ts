@@ -989,6 +989,14 @@ export class WebSocketService {
       content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
         ?.publishedVersionId || content.publishedVersionId;
 
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+    });
+
+    if (!version) {
+      return null;
+    }
+
     return await this.prisma.bizSession.create({
       data: {
         state: 0,
@@ -1064,18 +1072,8 @@ export class WebSocketService {
       return false;
     }
 
-    const publishedVersionId =
-      bizSession.content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-        ?.publishedVersionId || bizSession.content.publishedVersionId;
-
-    const currentVersion = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
-      include: { steps: true },
-    });
-
-    if (!currentVersion) {
-      return false;
-    }
+    const contentId = bizSession.contentId;
+    const versionId = bizSession.versionId;
 
     const progress =
       events?.flow_step_progress !== undefined
@@ -1120,9 +1118,9 @@ export class WebSocketService {
       if (eventName === BizEvents.QUESTION_ANSWERED) {
         const answer: any = {
           bizEventId: bizEvent.id,
-          contentId: currentVersion.contentId,
+          contentId,
           cvid: events[EventAttributes.QUESTION_CVID],
-          versionId: currentVersion.id,
+          versionId,
           bizUserId: user.id,
           bizSessionId: bizSession.id,
           environmentId,
