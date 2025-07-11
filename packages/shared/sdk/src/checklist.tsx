@@ -430,7 +430,7 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
 
     // Main content when open
     return (
-      <Popper ref={ref} {...optimizedPopperProps}>
+      <Popper ref={ref} {...optimizedPopperProps} isIframeMode={true}>
         <PopperModalContentPotal {...modalContentProps}>
           <PopperContentFrame ref={ref} {...props}>
             {children}

@@ -1,4 +1,4 @@
-import { CSSProperties, forwardRef, useEffect, useRef, useState } from 'react';
+import { CSSProperties, forwardRef, useEffect, useRef, useState, useCallback } from 'react';
 import * as ArrowPrimitive from '@usertour-ui/react-arrow';
 import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { createContext } from '@usertour-ui/react-context';
@@ -81,6 +81,8 @@ type PopperProps = {
   zIndex: number;
   assets?: AssetAttributes[];
   globalStyle?: string;
+  // Whether to use iframe mode, default false
+  isIframeMode?: boolean;
 };
 
 type PopperContextProps = {
@@ -97,6 +99,11 @@ type PopperContextProps = {
   setRect?: (rect: Rect | undefined) => void;
   overflow?: SideObject;
   setOverflow?: (overflow: SideObject | undefined) => void;
+  // Iframe related states
+  isIframeMode?: boolean;
+  isIframeLoaded?: boolean;
+  setIsIframeLoaded?: (loaded: boolean) => void;
+  shouldShow?: boolean;
 };
 
 function isNotNull<T>(value: T | null): value is T {
@@ -106,24 +113,28 @@ function isNotNull<T>(value: T | null): value is T {
 const [PopperProvider, usePopperContext] = createContext<PopperContextProps>(POPPER_NAME);
 
 const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
-  const { triggerRef, open = false, children, zIndex, assets, globalStyle } = props;
+  const {
+    triggerRef,
+    open = false,
+    children,
+    zIndex,
+    assets,
+    globalStyle,
+    isIframeMode = false,
+    onOpenChange,
+  } = props;
   const [referenceHidden, setReferenceHidden] = useState(false);
   const [rect, setRect] = useState<Rect>();
   const [overflow, setOverflow] = useState<SideObject>();
+  const [isIframeLoaded, setIsIframeLoaded] = useState(false);
 
-  //todo optimzed
-  const [, setOpenState] = useState(open);
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpenState(isOpen);
-  };
-  useEffect(() => {
-    setOpenState(open);
-  }, [open]);
+  // Show condition: direct display for non-iframe mode, wait for loading in iframe mode
+  const shouldShow = open && (isIframeMode ? isIframeLoaded : true);
 
   return (
     <>
       <PopperProvider
-        onOpenChange={handleOpenChange}
+        onOpenChange={onOpenChange}
         triggerRef={triggerRef}
         zIndex={zIndex}
         assets={assets}
@@ -134,6 +145,10 @@ const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
         setRect={setRect}
         overflow={overflow}
         setOverflow={setOverflow}
+        isIframeMode={isIframeMode}
+        isIframeLoaded={isIframeLoaded}
+        setIsIframeLoaded={setIsIframeLoaded}
+        shouldShow={shouldShow}
       >
         {open && <PopperContainer>{children}</PopperContainer>}
       </PopperProvider>
@@ -144,26 +159,39 @@ const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
 const PopperContainer = forwardRef<HTMLDivElement, PopperContentProps>(({ children }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const composedRefs = useComposedRefs(ref, containerRef);
-  const { globalStyle } = usePopperContext(POPPER_NAME);
+  const { globalStyle, isIframeMode, shouldShow } = usePopperContext(POPPER_NAME);
+
   useEffect(() => {
     if (containerRef.current && globalStyle) {
-      containerRef.current.style.cssText = globalStyle;
+      let finalStyle = globalStyle;
+
+      // Only add loading state styles in iframe mode
+      if (isIframeMode) {
+        const loadingStyle = `opacity: ${shouldShow ? 1 : 0}; visibility: ${shouldShow ? 'visible' : 'hidden'};`;
+        finalStyle = `${globalStyle}; ${loadingStyle}`;
+      }
+
+      containerRef.current.style.cssText = finalStyle;
     }
-  }, [containerRef.current, globalStyle]);
+  }, [containerRef.current, globalStyle, isIframeMode, shouldShow]);
+
   return (
-    <>
-      <div className="usertour-widget-chrome usertour-widget-root" ref={composedRefs}>
-        {children}
-      </div>
-    </>
+    <div className="usertour-widget-chrome usertour-widget-root" ref={composedRefs}>
+      {children}
+    </div>
   );
 });
 
 const PopperContentFrame = forwardRef<HTMLDivElement, PopperContentProps>(({ children }, _) => {
-  const { onOpenChange, assets, globalStyle } = usePopperContext(POPPER_NAME);
+  const { onOpenChange, assets, globalStyle, setIsIframeLoaded } = usePopperContext(POPPER_NAME);
+
+  const handleFrameLoad = useCallback(() => {
+    setIsIframeLoaded?.(true);
+  }, [setIsIframeLoaded]);
+
   return (
     <>
-      <Frame assets={assets} className="usertour-widget-popper__frame">
+      <Frame assets={assets} className="usertour-widget-popper__frame" onLoad={handleFrameLoad}>
         <PopperContentInFrame onOpenChange={onOpenChange} globalStyle={globalStyle}>
           {children}
         </PopperContentInFrame>

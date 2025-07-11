@@ -62,6 +62,7 @@ interface FrameProps {
   defaultStyle?: React.CSSProperties; // Default iframe styles
   initialContent?: string; // Initial HTML content for iframe
   className?: string; // CSS class for iframe element
+  onLoad?: () => void; // Callback when iframe and assets are fully loaded
 }
 
 /**
@@ -77,18 +78,18 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     defaultStyle = {},
     initialContent = '',
     className = '',
+    onLoad,
   } = props;
 
   // State management for iframe lifecycle
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [assetsLoaded, setAssetsLoaded] = useState(assets.length === 0);
+  const [assetsLoaded, setAssetsLoaded] = useState(false); // Start with false, will be updated in useEffect
   const nodeRef = useRef<HTMLIFrameElement>(null);
   const [contentDocument, setContentDocument] = useState<Document>();
   const [container, setContainer] = useState<Element | DocumentFragment>();
   const composedRefs = useComposedRefs(ref, nodeRef);
 
-  // Use ref to persist loaded assets across renders and prevent memory leaks
-  const assetsRef = useRef<AssetAttributes[]>(assets);
+  // Track loaded assets to prevent memory leaks
   const assetLoadMapRef = useRef<Map<string, boolean>>(new Map());
 
   // Combined state to ensure all conditions are met
@@ -112,13 +113,28 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     return iframeLoaded && contentDocument && contentDocument.head;
   }, [iframeLoaded, contentDocument]);
 
-  // Update assets ref when assets prop changes
-  useEffect(() => {
-    assetsRef.current = assets;
-    // Reset loaded assets when assets change
-    assetLoadMapRef.current.clear();
-    checkAndUpdateAssetsLoaded();
+  // Check and update assets loaded state
+  const checkAndUpdateAssetsLoaded = useCallback(() => {
+    const checkLoadedAssets = assets.filter((asset: AssetAttributes) => asset.isCheckLoaded);
+    const checkLoadedCount = checkLoadedAssets.length;
+    const loadedCount = assetLoadMapRef.current.size;
+
+    if (checkLoadedCount === 0) {
+      // No assets need loading check
+      setAssetsLoaded(true);
+    } else if (checkLoadedCount === loadedCount) {
+      // All assets that need loading check are loaded
+      setAssetsLoaded(true);
+    } else {
+      // Some assets still loading
+      setAssetsLoaded(false);
+    }
   }, [assets]);
+
+  // Initialize assets loaded state
+  useEffect(() => {
+    checkAndUpdateAssetsLoaded();
+  }, [checkAndUpdateAssetsLoaded]);
 
   // Handle iframe load event
   const handleLoad = useCallback(() => {
@@ -193,24 +209,6 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     }
   }, []);
 
-  // Check and update assets loaded state
-  const checkAndUpdateAssetsLoaded = useCallback(() => {
-    const checkLoadedAssets = assetsRef.current.filter((asset) => asset.isCheckLoaded);
-    const checkLoadedCount = checkLoadedAssets.length;
-    const loadedCount = assetLoadMapRef.current.size;
-
-    if (checkLoadedCount === 0) {
-      // No assets need loading check
-      setAssetsLoaded(true);
-    } else if (checkLoadedCount === loadedCount) {
-      // All assets that need loading check are loaded
-      setAssetsLoaded(true);
-    } else {
-      // Some assets still loading
-      setAssetsLoaded(false);
-    }
-  }, []);
-
   // Track loaded assets and trigger content rendering when all assets are loaded
   const handleAssetLoad = useCallback(
     (assetItem: AssetAttributes, isCheckLoaded: boolean, assetIndex: number) => {
@@ -251,6 +249,13 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
     });
     return nodes;
   }, [assets, handleAssetLoad, handleAssetError]);
+
+  // Call onLoad callback when iframe and assets are fully loaded
+  useEffect(() => {
+    if (onLoad && isReadyToRender) {
+      onLoad();
+    }
+  }, [onLoad, isReadyToRender]);
 
   return (
     <>
