@@ -1,8 +1,8 @@
 import { CSSProperties, forwardRef, useEffect, useRef, useState } from 'react';
+import * as ArrowPrimitive from '@usertour-ui/react-arrow';
 // import { PopperContent } from "./PopperContent";
 import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { createContext } from '@usertour-ui/react-context';
-import * as ArrowPrimitive from '@usertour-ui/react-arrow';
 import { useSize } from '@usertour-ui/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-ui/icons';
 import { useComposedRefs } from '@usertour-ui/react-compose-refs';
@@ -18,14 +18,21 @@ import {
   size,
 } from '@floating-ui/react-dom';
 import type { SideObject, Rect, Placement, Middleware } from '@floating-ui/dom';
-import { positionModal, getReClippingRect, getViewportRect } from './backdrop';
-import { computePositionStyle } from './position';
+import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
+import { computePositionStyle } from './utils/position';
 import { cn } from '@usertour-ui/ui-utils';
 import { Align, ProgressBarType, Side } from '@usertour-ui/types';
-import { hiddenStyle } from './utils';
+import { hiddenStyle } from './utils/content';
 import { usePopperAnimation } from './hooks';
 
 const POPPER_NAME = 'Popover';
+
+const OPPOSITE_SIDE: Record<Side, Side> = {
+  top: 'bottom',
+  right: 'left',
+  bottom: 'top',
+  left: 'right',
+};
 
 type Boundary = Element | null;
 
@@ -213,12 +220,7 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
   );
 });
 
-const OPPOSITE_SIDE: Record<Side, Side> = {
-  top: 'bottom',
-  right: 'left',
-  bottom: 'top',
-  left: 'right',
-};
+// Arrow component
 
 const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props, forwardedRef) => {
   const {
@@ -370,9 +372,9 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
 
   const arrowX = middlewareData.arrow?.x;
   const arrowY = middlewareData.arrow?.y;
-  // const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
   const cannotCenterArrow = false;
   const baseSide = OPPOSITE_SIDE[placedSide];
+
   const popperRef = useRef<HTMLDivElement | null>(null);
   const composedRefs = useComposedRefs(forwardedRef, popperRef, (node: any) =>
     refs.setFloating(node),
@@ -640,7 +642,6 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
       className,
     } = props;
 
-    const baseSide = OPPOSITE_SIDE[side];
     return (
       <div
         className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
@@ -668,7 +669,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
               position: 'absolute',
               left: width ? Number.parseInt(width) / 2 - arrowSize.width / 2 : '50%',
               top: `-${arrowSize.height}px`,
-              [baseSide]: 0,
+              [OPPOSITE_SIDE[side]]: 0,
               transformOrigin: {
                 top: '',
                 right: '0 0',
@@ -681,6 +682,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
                 bottom: 'rotate(180deg)',
                 left: 'translateY(50%) rotate(-90deg) translateX(50%)',
               }[side],
+              opacity: 1,
             }}
           >
             <ArrowPrimitive.Root

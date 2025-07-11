@@ -21,7 +21,7 @@ import {
   PopperContentProps,
   PopperProps,
 } from './popper';
-import { useThemeStyles } from './hook';
+import { useThemeStyles } from './hooks';
 
 function isNotNull<T>(value: T | null): value is T {
   return value !== null;
