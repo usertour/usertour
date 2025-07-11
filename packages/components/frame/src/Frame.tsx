@@ -12,22 +12,33 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+/**
+ * Context value for Frame component
+ * Provides access to iframe document, window and style setter
+ */
 interface FrameContentValue {
   document: Document;
   window: Window | null;
-  setStyle: (style: any) => void;
+  setStyle: (style: string) => void;
 }
 
 type AssetTagType = 'link' | 'script';
 
+/**
+ * Asset attributes for loading external resources in iframe
+ * Extends both link and script HTML attributes
+ */
 export interface AssetAttributes extends LinkHTMLAttributes<any>, ScriptHTMLAttributes<any> {
   tagName: AssetTagType;
   isCheckLoaded: boolean;
 }
 
 const FrameContext = createContext<FrameContentValue | undefined>(undefined);
-// export const useFrame = () => useContext(FrameContext);
 
+/**
+ * Hook to access Frame context
+ * Must be used within a Frame component
+ */
 export function useFrame(): FrameContentValue {
   const context = useContext(FrameContext);
   if (!context) {
@@ -36,17 +47,24 @@ export function useFrame(): FrameContentValue {
   return context;
 }
 
+/**
+ * Props for Frame component
+ */
 interface FrameProps {
   children: ReactNode;
-  mountTarget?: any;
-  head?: any;
-  assets?: AssetAttributes[];
-  defaultStyle?: any;
-  initialContent?: string;
-  className?: string;
+  mountTarget?: string; // CSS selector for mounting point in iframe
+  head?: ReactNode; // Content to inject into iframe head
+  assets?: AssetAttributes[]; // External resources to load
+  defaultStyle?: React.CSSProperties; // Default iframe styles
+  initialContent?: string; // Initial HTML content for iframe
+  className?: string; // CSS class for iframe element
 }
 
-export const Frame = forwardRef<HTMLIFrameElement, any>((props: FrameProps, ref) => {
+/**
+ * Frame component that creates an isolated iframe environment
+ * Allows rendering React components inside an iframe with custom head content
+ */
+export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
   const {
     children,
     mountTarget,
@@ -56,28 +74,30 @@ export const Frame = forwardRef<HTMLIFrameElement, any>((props: FrameProps, ref)
     initialContent = '',
     className = '',
   } = props;
+
+  // State management for iframe lifecycle
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(assets.length === 0);
   const nodeRef = useRef<HTMLIFrameElement>(null);
   const [contentDocument, setContentDocument] = useState<Document>();
-  const [_, setContentWindow] = useState<Window>();
   const [container, setContainer] = useState<Element | DocumentFragment>();
   const composedRefs = useComposedRefs(ref, nodeRef);
-  // const defaultContent =
-  //   '<!DOCTYPE html><html><head></head><body></body></html>';
 
+  // Handle iframe load event
   const handleLoad = () => {
     if (!iframeLoaded) {
       setIframeLoaded(true);
     }
   };
 
-  const getDoc = () => {
-    return nodeRef.current ? nodeRef.current.contentDocument : null; // eslint-disable-line
+  // Get iframe document safely
+  const getDocument = () => {
+    return nodeRef.current ? nodeRef.current.contentDocument : null;
   };
 
+  // Set up DOMContentLoaded listener for iframe
   useEffect(() => {
-    const doc = getDoc();
+    const doc = getDocument();
     const win = nodeRef.current?.contentWindow;
 
     if (doc && win) {
@@ -88,17 +108,18 @@ export const Frame = forwardRef<HTMLIFrameElement, any>((props: FrameProps, ref)
     };
   }, [nodeRef]);
 
+  // Initialize iframe document and window when loaded
   useEffect(() => {
     if (iframeLoaded && nodeRef.current) {
-      const doc = getDoc();
+      const doc = getDocument();
       const win = nodeRef.current.contentWindow;
       if (doc && win) {
-        setContentWindow(win);
         setContentDocument(doc);
       }
     }
   }, [iframeLoaded, nodeRef.current]);
 
+  // Set up container element for mounting React components
   useEffect(() => {
     if (contentDocument) {
       const target = mountTarget
@@ -110,32 +131,36 @@ export const Frame = forwardRef<HTMLIFrameElement, any>((props: FrameProps, ref)
     }
   }, [contentDocument, mountTarget]);
 
-  const setStyle = (style: any) => {
+  // Style setter for iframe element
+  const setStyle = (style: string) => {
     if (nodeRef.current) {
       nodeRef.current.style.cssText = style;
     }
   };
 
-  const loaded: AssetAttributes[] = [];
-  const handleOnload = (asset: AssetAttributes, isCheckLoaded: boolean) => {
+  // Track loaded assets and trigger content rendering when all assets are loaded
+  const loadedAssets: AssetAttributes[] = [];
+  const handleAssetLoad = (asset: AssetAttributes, isCheckLoaded: boolean) => {
     if (isCheckLoaded) {
-      loaded.push(asset);
+      loadedAssets.push(asset);
     }
     const checkLoadedCount = assets.filter((as: AssetAttributes) => as.isCheckLoaded).length;
-    if (checkLoadedCount === loaded.length) {
+    if (checkLoadedCount === loadedAssets.length) {
       setAssetsLoaded(true);
     }
   };
-  const header = () => {
+
+  // Render asset elements (links/scripts) to inject into iframe head
+  const renderHeaderAssets = () => {
     const nodes: ReactNode[] = [];
     assets.forEach((asset: AssetAttributes, index: number) => {
       const { tagName: TagName, isCheckLoaded, ...attrs } = asset;
       nodes.push(
         <TagName
           {...attrs}
-          key={index}
+          key={`${asset.tagName}-${index}`}
           onLoad={() => {
-            handleOnload(asset, isCheckLoaded);
+            handleAssetLoad(asset, isCheckLoaded);
           }}
         />,
       );
@@ -145,6 +170,7 @@ export const Frame = forwardRef<HTMLIFrameElement, any>((props: FrameProps, ref)
 
   return (
     <>
+      {/* Main iframe element */}
       <iframe
         srcDoc={initialContent}
         className={className}
@@ -153,11 +179,17 @@ export const Frame = forwardRef<HTMLIFrameElement, any>((props: FrameProps, ref)
         onLoad={handleLoad}
         title="Content Frame"
       />
+
+      {/* Inject head content into iframe */}
       {iframeLoaded && contentDocument && head && createPortal(head, contentDocument.head)}
+
+      {/* Inject assets (CSS/JS) into iframe head */}
       {iframeLoaded &&
         contentDocument &&
         contentDocument.head &&
-        createPortal(header(), contentDocument.head)}
+        createPortal(renderHeaderAssets(), contentDocument.head)}
+
+      {/* Render main content when all assets are loaded */}
       {assetsLoaded &&
         contentDocument &&
         contentDocument.defaultView &&
