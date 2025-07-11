@@ -223,8 +223,6 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
   );
 });
 
-// Arrow component
-
 const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props, forwardedRef) => {
   const {
     children,
