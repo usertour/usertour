@@ -71,9 +71,9 @@ export function initializeContentItems<T extends Tour | Launcher | Checklist>(
     const contentId = item.getContent().contentId;
     if (!contentIdMap.has(contentId)) {
       if (contentType === ContentDataType.LAUNCHER) {
-        item.close();
+        item.close(contentEndReason.UNPUBLISHED_CONTENT);
       } else {
-        item.close(contentEndReason.CONTENT_NOT_FOUND);
+        item.close(contentEndReason.UNPUBLISHED_CONTENT);
       }
       return false;
     }
