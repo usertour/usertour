@@ -1,18 +1,11 @@
 import { CSSProperties, forwardRef, useEffect, useRef, useState } from 'react';
-// import { PopperContent } from "./PopperContent";
+import * as ArrowPrimitive from '@usertour-ui/react-arrow';
 import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { createContext } from '@usertour-ui/react-context';
-import * as ArrowPrimitive from '@usertour-ui/react-arrow';
 import { useSize } from '@usertour-ui/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-ui/icons';
 import { useComposedRefs } from '@usertour-ui/react-compose-refs';
-import {
-  computePosition,
-  detectOverflow,
-  autoUpdate,
-  platform,
-  ReferenceElement,
-} from '@floating-ui/dom';
+import { detectOverflow, autoUpdate, platform, ReferenceElement } from '@floating-ui/dom';
 import {
   useFloating,
   offset,
@@ -24,14 +17,25 @@ import {
   size,
 } from '@floating-ui/react-dom';
 import type { SideObject, Rect, Placement, Middleware } from '@floating-ui/dom';
-import { positionModal, getReClippingRect, getViewportRect } from './backdrop';
-import { computePositionStyle } from './position';
+import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
+import {
+  computePositionStyle,
+  getSideAndAlignFromPlacement,
+  transformOrigin,
+} from './utils/position';
 import { cn } from '@usertour-ui/ui-utils';
 import { Align, ProgressBarType, Side } from '@usertour-ui/types';
-import { hiddenStyle } from './utils';
+import { hiddenStyle } from './utils/content';
 import { usePopperAnimation } from './hooks';
 
 const POPPER_NAME = 'Popover';
+
+const OPPOSITE_SIDE: Record<Side, Side> = {
+  top: 'bottom',
+  right: 'left',
+  bottom: 'top',
+  left: 'right',
+};
 
 type Boundary = Element | null;
 
@@ -89,6 +93,10 @@ type PopperContextProps = {
   viewportRef?: React.RefObject<any>;
   referenceHidden?: boolean;
   setReferenceHidden?: (hidden: boolean) => void;
+  rect?: Rect;
+  setRect?: (rect: Rect | undefined) => void;
+  overflow?: SideObject;
+  setOverflow?: (overflow: SideObject | undefined) => void;
 };
 
 function isNotNull<T>(value: T | null): value is T {
@@ -100,6 +108,8 @@ const [PopperProvider, usePopperContext] = createContext<PopperContextProps>(POP
 const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
   const { triggerRef, open = false, children, zIndex, assets, globalStyle } = props;
   const [referenceHidden, setReferenceHidden] = useState(false);
+  const [rect, setRect] = useState<Rect>();
+  const [overflow, setOverflow] = useState<SideObject>();
 
   //todo optimzed
   const [, setOpenState] = useState(open);
@@ -120,6 +130,10 @@ const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
         globalStyle={globalStyle}
         referenceHidden={referenceHidden}
         setReferenceHidden={setReferenceHidden}
+        rect={rect}
+        setRect={setRect}
+        overflow={overflow}
+        setOverflow={setOverflow}
       >
         {open && <PopperContainer>{children}</PopperContainer>}
       </PopperProvider>
@@ -160,41 +174,11 @@ const PopperContentFrame = forwardRef<HTMLDivElement, PopperContentProps>(({ chi
 
 type PopperOverlayProps = { blockTarget?: boolean; viewportRect?: Rect };
 const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) => {
-  const { triggerRef, zIndex, referenceHidden } = usePopperContext(POPPER_NAME);
+  const { triggerRef, zIndex, referenceHidden, rect, overflow } = usePopperContext(POPPER_NAME);
   const { blockTarget = false, viewportRect } = props;
   const [backdrop, setBackdrop] = useState<BackdropRect | null>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
-  const [overflow, setOverflow] = useState<SideObject>();
-  const [rect, setRect] = useState<Rect>();
-  const updatePosition = () => {
-    const referenceEl = triggerRef?.current as ReferenceElement;
-    const floatingEl = backdropRef.current as HTMLElement;
-    computePosition(referenceEl, floatingEl, {
-      strategy: 'fixed',
-      platform: {
-        ...platform,
-        convertOffsetParentRelativeRectToViewportRelativeRect(...args) {
-          const rect = platform.convertOffsetParentRelativeRectToViewportRelativeRect(
-            ...args,
-          ) as Rect;
-          setRect(rect);
-          return rect;
-        },
-      },
-      middleware: [
-        {
-          name: 'middleware',
-          async fn(state) {
-            const overf = await detectOverflow(state, {
-              elementContext: 'reference',
-            });
-            setOverflow(overf);
-            return {};
-          },
-        },
-      ],
-    });
-  };
+
   useEffect(() => {
     const referenceEl = triggerRef?.current as Element;
     if (rect && triggerRef && overflow) {
@@ -203,18 +187,7 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
       const b = positionModal(referenceEl, clippingRect, zIndex, viewRect, 0);
       setBackdrop(b);
     }
-  }, [overflow, rect, viewportRect]);
-
-  useEffect(() => {
-    const referenceEl = triggerRef?.current as ReferenceElement;
-    const floatingEl = backdropRef.current as HTMLElement;
-    if (referenceEl && floatingEl) {
-      const cleanup = autoUpdate(referenceEl, floatingEl, updatePosition, {
-        animationFrame: true,
-      });
-      return cleanup;
-    }
-  }, [backdropRef, triggerRef]);
+  }, [overflow, rect, viewportRect, triggerRef, zIndex]);
 
   const backdropStyle = {
     ...backdrop?.box,
@@ -250,13 +223,6 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
   );
 });
 
-const OPPOSITE_SIDE: Record<Side, Side> = {
-  top: 'bottom',
-  right: 'left',
-  bottom: 'top',
-  left: 'right',
-};
-
 const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props, forwardedRef) => {
   const {
     children,
@@ -276,7 +242,8 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     width = 'auto',
     updatePositionStrategy = 'optimized',
   } = props;
-  const { triggerRef, zIndex, setReferenceHidden } = usePopperContext(POPPER_NAME);
+  const { triggerRef, zIndex, setReferenceHidden, setRect, setOverflow } =
+    usePopperContext(POPPER_NAME);
   const arrowRef = useRef(null);
   const referenceEl = triggerRef?.current as ReferenceElement;
   const arrowRectSize = useSize(arrowRef.current);
@@ -342,6 +309,16 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     elements: {
       reference: referenceEl,
     },
+    platform: {
+      ...platform,
+      convertOffsetParentRelativeRectToViewportRelativeRect(...args) {
+        const rect = platform.convertOffsetParentRelativeRectToViewportRelativeRect(
+          ...args,
+        ) as Rect;
+        setRect?.(rect);
+        return rect;
+      },
+    },
     middleware: [
       offset({
         mainAxis: sideOffset + arrowHeight,
@@ -366,6 +343,19 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
           padding: detectOverflowOptions.padding,
           boundary: detectOverflowOptions.boundary,
         }),
+      // Custom middleware to set overflow state
+      {
+        name: 'overflowState',
+        async fn(state) {
+          if (setOverflow) {
+            const overflow = await detectOverflow(state, {
+              elementContext: 'reference',
+            });
+            setOverflow(overflow);
+          }
+          return {};
+        },
+      },
     ],
   });
 
@@ -383,9 +373,9 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
 
   const arrowX = middlewareData.arrow?.x;
   const arrowY = middlewareData.arrow?.y;
-  // const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
   const cannotCenterArrow = false;
   const baseSide = OPPOSITE_SIDE[placedSide];
+
   const popperRef = useRef<HTMLDivElement | null>(null);
   const composedRefs = useComposedRefs(forwardedRef, popperRef, (node: any) =>
     refs.setFloating(node),
@@ -587,51 +577,6 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
 
 PopperClose.displayName = CLOSE_NAME;
 
-const transformOrigin = (options: {
-  arrowWidth: number;
-  arrowHeight: number;
-}): Middleware => ({
-  name: 'transformOrigin',
-  options,
-  fn(data) {
-    const { placement, rects, middlewareData } = data;
-
-    const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
-    const isArrowHidden = cannotCenterArrow;
-    const arrowWidth = isArrowHidden ? 0 : options.arrowWidth;
-    const arrowHeight = isArrowHidden ? 0 : options.arrowHeight;
-
-    const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
-    const noArrowAlign = { start: '0%', center: '50%', end: '100%' }[placedAlign];
-
-    const arrowXCenter = (middlewareData.arrow?.x ?? 0) + arrowWidth / 2;
-    const arrowYCenter = (middlewareData.arrow?.y ?? 0) + arrowHeight / 2;
-
-    let x = '';
-    let y = '';
-
-    if (placedSide === 'bottom') {
-      x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
-      y = `${-arrowHeight}px`;
-    } else if (placedSide === 'top') {
-      x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
-      y = `${rects.floating.height + arrowHeight}px`;
-    } else if (placedSide === 'right') {
-      x = `${-arrowHeight}px`;
-      y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
-    } else if (placedSide === 'left') {
-      x = `${rects.floating.width + arrowHeight}px`;
-      y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
-    }
-    return { data: { x, y } };
-  },
-});
-
-function getSideAndAlignFromPlacement(placement: Placement) {
-  const [side, align = 'center'] = placement.split('-');
-  return [side as Side, align as Align] as const;
-}
-
 type PopperStaticContentProps = PopperContentProps & {
   height: string;
   showArrow: boolean;
@@ -653,7 +598,6 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
       className,
     } = props;
 
-    const baseSide = OPPOSITE_SIDE[side];
     return (
       <div
         className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
@@ -681,7 +625,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
               position: 'absolute',
               left: width ? Number.parseInt(width) / 2 - arrowSize.width / 2 : '50%',
               top: `-${arrowSize.height}px`,
-              [baseSide]: 0,
+              [OPPOSITE_SIDE[side]]: 0,
               transformOrigin: {
                 top: '',
                 right: '0 0',
@@ -694,6 +638,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
                 bottom: 'rotate(180deg)',
                 left: 'translateY(50%) rotate(-90deg) translateX(50%)',
               }[side],
+              opacity: 1,
             }}
           >
             <ArrowPrimitive.Root
