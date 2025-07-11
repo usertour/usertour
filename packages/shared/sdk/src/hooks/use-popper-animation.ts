@@ -61,15 +61,6 @@ export const usePopperAnimation = (
   const [lastTransform, setLastTransform] = useState('');
   const stableTimerRef = useRef<NodeJS.Timeout>();
 
-  // If animation is disabled, return original styles immediately
-  if (!enabled) {
-    return {
-      finalStyles: floatingStyles,
-      animationPhase: 'animating',
-      isStable: true,
-    };
-  }
-
   // Reset animation phase when placement changes
   useEffect(() => {
     setAnimationPhase('offset');
@@ -83,6 +74,11 @@ export const usePopperAnimation = (
 
   // Detect position stability using setTimeout
   useEffect(() => {
+    // If animation is disabled, skip the effect
+    if (!enabled) {
+      return;
+    }
+
     const currentTransform = floatingStyles.transform as string;
     if (currentTransform && currentTransform !== lastTransform) {
       setLastTransform(currentTransform);
@@ -118,10 +114,15 @@ export const usePopperAnimation = (
         }
       }, stableThreshold);
     }
-  }, [floatingStyles.transform, animationPhase, stableThreshold]);
+  }, [floatingStyles.transform, animationPhase, stableThreshold, enabled]);
 
   // Calculate final styles based on animation phase
   const finalStyles = useMemo(() => {
+    // If animation is disabled, return original styles immediately
+    if (!enabled) {
+      return floatingStyles;
+    }
+
     if (animationPhase === 'offset') {
       // Offset position, no animation
       return {
@@ -138,11 +139,11 @@ export const usePopperAnimation = (
       ...floatingStyles,
       transition: `opacity 250ms linear, transform ${animationDuration}ms ${easing}`,
     };
-  }, [floatingStyles, placement, animationPhase, offset, animationDuration, easing]);
+  }, [floatingStyles, placement, animationPhase, offset, animationDuration, easing, enabled]);
 
   return {
     finalStyles,
-    animationPhase,
-    isStable: animationPhase === 'animating',
+    animationPhase: enabled ? animationPhase : 'animating',
+    isStable: enabled ? animationPhase === 'animating' : true,
   };
 };

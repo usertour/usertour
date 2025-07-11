@@ -12,7 +12,7 @@ const getAssets = (theme: Theme): AssetAttributes[] => {
   const assets: AssetAttributes[] = [
     {
       tagName: 'link',
-      isCheckLoaded: false,
+      isCheckLoaded: true,
       href: getUserTourCss(),
       rel: 'stylesheet',
       type: 'text/css',
