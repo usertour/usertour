@@ -168,7 +168,10 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
               className="text-primary"
               to={`/env/${environmentId}/user/${session?.bizUser?.id}`}
             >
-              {session?.bizUser?.data?.name ?? 'Unnamed user'}
+              {session?.bizUser?.data?.name ??
+                session?.bizUser?.data?.email ??
+                session?.bizUser?.data?.externalId ??
+                'Unnamed user'}
             </Link>
           </div>
           <div className="border-b flex flex-col pb-1">
