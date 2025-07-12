@@ -107,6 +107,28 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
         : JSON.stringify(value);
   };
 
+  const sortEventDataEntries = (data: Record<string, any>, attributes: typeof attributeList) => {
+    return Object.entries(data || {}).sort(([keyA], [keyB]) => {
+      // Find attributes in attributeList to determine order
+      const attrA = attributes?.find((attr) => attr.codeName === keyA);
+      const attrB = attributes?.find((attr) => attr.codeName === keyB);
+
+      // If both are in attributeList, sort by their order in the list
+      if (attrA && attrB && attributes) {
+        const indexA = attributes.indexOf(attrA);
+        const indexB = attributes.indexOf(attrB);
+        return indexA - indexB;
+      }
+
+      // If only one is in attributeList, prioritize the one in the list
+      if (attrA && !attrB) return -1;
+      if (!attrA && attrB) return 1;
+
+      // If neither is in attributeList, sort alphabetically
+      return keyA.localeCompare(keyB);
+    });
+  };
+
   return (
     <>
       <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
@@ -230,15 +252,17 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                         <TableRow>
                           <TableCell colSpan={2} className="bg-gray-50 p-4">
                             <div className="text-sm">
-                              {Object.entries(bizEvent.data || {}).map(([key, value]) => (
-                                <div key={key} className="py-2 border-b flex flex-row">
-                                  <span className="font-medium w-[200px] flex-none">
-                                    {attributeList?.find((attr) => attr.codeName === key)
-                                      ?.displayName || key}
-                                  </span>
-                                  <span className="grow">{getFieldValue(key, value)}</span>
-                                </div>
-                              ))}
+                              {sortEventDataEntries(bizEvent.data, attributeList).map(
+                                ([key, value]) => (
+                                  <div key={key} className="py-2 border-b flex flex-row">
+                                    <span className="font-medium w-[200px] flex-none">
+                                      {attributeList?.find((attr) => attr.codeName === key)
+                                        ?.displayName || key}
+                                    </span>
+                                    <span className="grow">{getFieldValue(key, value)}</span>
+                                  </div>
+                                ),
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
