@@ -13,6 +13,7 @@ import {
   FlowProgressColumn,
   LauncherProgressColumn,
 } from '@/components/molecules/session';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 
 const ProgressColumn = (props: Row<BizSession>) => {
   const { content } = useContentDetailContext();
@@ -69,12 +70,17 @@ export const columns: ColumnDef<BizSession>[] = [
     cell: ({ row }) => {
       const { environment } = useAppContext();
       const href = `/env/${environment?.id}/user/${row.getValue('bizUserId')}`;
+      const bizUser = row.original.bizUser;
+      const email = bizUser?.data?.email || '';
+      const name = bizUser?.data?.name || '';
+
       return (
         <a
           href={href}
-          className="text-muted-foreground hover:text-primary hover:underline underline-offset-4 "
+          className="text-muted-foreground hover:text-primary hover:underline underline-offset-4 flex items-center gap-2"
         >
-          {row.original.bizUser?.externalId}
+          <UserAvatar email={email} name={name} size="sm" />
+          <span>{bizUser?.data?.email || bizUser?.data?.name || bizUser?.externalId || ''}</span>
         </a>
       );
     },
