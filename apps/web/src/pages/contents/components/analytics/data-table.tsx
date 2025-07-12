@@ -23,13 +23,15 @@ import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { Button } from '@usertour-ui/button';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { ListSkeleton } from '@/components/molecules/skeleton';
 
 export const BizSessionsDataTable = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, bizSessions, refetch } = useBizSessionContext();
+  const { setPagination, pagination, pageCount, bizSessions, refetch, loading } =
+    useBizSessionContext();
 
   const table = useReactTable({
     data: bizSessions,
@@ -56,6 +58,16 @@ export const BizSessionsDataTable = () => {
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
+
+  // Show loading skeleton when data is loading
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <ListSkeleton length={pagination.pageSize} />
+        <DataTablePagination table={table} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
