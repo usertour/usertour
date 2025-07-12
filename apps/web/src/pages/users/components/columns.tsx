@@ -6,6 +6,7 @@ import { Checkbox } from '@usertour-ui/checkbox';
 import { format } from 'date-fns';
 import { Flow } from '../data/schema';
 import { DataTableColumnHeader } from './data-table-column-header';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 
 export const columns: ColumnDef<Flow>[] = [
   {
@@ -39,7 +40,17 @@ export const columns: ColumnDef<Flow>[] = [
   {
     accessorKey: 'externalId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
-    cell: ({ row }) => <div className="px-2">{row.getValue('externalId')}</div>,
+    cell: ({ row }) => {
+      const email = row.original.email || '';
+      const name = row.original.name || '';
+
+      return (
+        <div className="px-2 flex items-center gap-2">
+          <UserAvatar email={email} name={name} size="sm" />
+          <span>{row.getValue('externalId')}</span>
+        </div>
+      );
+    },
     enableSorting: false,
     enableHiding: false,
   },
