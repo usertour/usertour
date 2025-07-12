@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
 import { getGravatarUrl } from '@/utils/avatar';
-import { cn } from '@usertour-ui/ui-utils';
+import { cn, getRandomColor } from '@usertour-ui/ui-utils';
 
 interface UserAvatarProps {
   email: string;
@@ -32,7 +32,9 @@ export const UserAvatar = ({ email, name, size = 'md', className }: UserAvatarPr
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
       <AvatarImage src={avatarUrl} alt={name || 'User avatar'} />
-      <AvatarFallback className="bg-white">{getInitials(name)}</AvatarFallback>
+      <AvatarFallback className={cn(getRandomColor(), 'text-background')}>
+        {getInitials(name)}
+      </AvatarFallback>
     </Avatar>
   );
 };
