@@ -11,7 +11,7 @@ import { useEventListContext } from '@/contexts/event-list-context';
 import { Link } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { cn } from '@usertour-ui/ui-utils';
-import { FlowIcon, LauncherIcon, ChecklistIcon } from '@usertour-ui/icons';
+import { FlowIcon, LauncherIcon, ChecklistIcon, SpinnerIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
@@ -119,7 +119,14 @@ const LoadMoreButton = () => {
         disabled={loading}
         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Loading...' : 'Load More Sessions'}
+        {loading ? (
+          <div className="flex items-center space-x-2">
+            <SpinnerIcon className="w-4 h-4 animate-spin" />
+            <span>Loading...</span>
+          </div>
+        ) : (
+          'Load More Sessions'
+        )}
       </Button>
     </div>
   );
@@ -158,7 +165,7 @@ export const UserSessionsList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {loading && userSessions.length === 0 ? (
           <ListSkeleton length={5} />
         ) : userSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
