@@ -181,7 +181,7 @@ export const UserSessionsList = () => {
               <TableRow
                 key={session.id}
                 className={cn(
-                  'cursor-pointer h-10 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
+                  'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
                 )}
               >
                 <TableCell className="w-1/3">
