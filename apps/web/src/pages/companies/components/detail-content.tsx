@@ -1,7 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { CompanyIcon, UserProfile, Delete2Icon } from '@usertour-ui/icons';
+import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-ui/icons';
 import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour-ui/types';
 import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -224,7 +224,14 @@ const LoadMoreButton = () => {
         disabled={loading}
         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Loading...' : 'Load More Users'}
+        {loading ? (
+          <div className="flex items-center space-x-2">
+            <SpinnerIcon className="w-4 h-4 animate-spin" />
+            <span>Loading...</span>
+          </div>
+        ) : (
+          'Load More Users'
+        )}
       </Button>
     </div>
   );
@@ -270,7 +277,7 @@ const CompanyUserList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {loading && contents.length === 0 ? (
           <ListSkeleton length={5} />
         ) : contents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
