@@ -13,6 +13,8 @@ import {
   FlowProgressColumn,
   LauncherProgressColumn,
 } from '@/components/molecules/session';
+import { UserAvatar } from '@/components/molecules/user-avatar';
+import { Link } from 'react-router-dom';
 
 const ProgressColumn = (props: Row<BizSession>) => {
   const { content } = useContentDetailContext();
@@ -68,14 +70,19 @@ export const columns: ColumnDef<BizSession>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
     cell: ({ row }) => {
       const { environment } = useAppContext();
-      const href = `/env/${environment?.id}/user/${row.getValue('bizUserId')}`;
+
+      const bizUser = row.original.bizUser;
+      const email = bizUser?.data?.email || '';
+      const name = bizUser?.data?.name || '';
+
       return (
-        <a
-          href={href}
-          className="text-muted-foreground hover:text-primary hover:underline underline-offset-4 "
+        <Link
+          to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
+          className="text-muted-foreground hover:text-primary hover:underline underline-offset-4 flex items-center gap-2"
         >
-          {row.original.bizUser?.externalId}
-        </a>
+          <UserAvatar email={email} name={name} size="sm" />
+          <span>{bizUser?.data?.email || bizUser?.data?.name || bizUser?.externalId || ''}</span>
+        </Link>
       );
     },
     enableSorting: false,

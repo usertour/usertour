@@ -1,7 +1,7 @@
 import { Skeleton } from '@usertour-ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 
-export const ListSkeleton = () => {
+export const ListSkeleton = ({ length = 5 }: { length?: number }) => {
   return (
     <div className="rounded-md border-none">
       <Table>
@@ -25,7 +25,7 @@ export const ListSkeleton = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Array.from({ length: 5 }, (_, index) => (
+          {Array.from({ length }, (_, index) => (
             <TableRow key={index}>
               <TableCell>
                 <Skeleton className="h-4 w-32" />

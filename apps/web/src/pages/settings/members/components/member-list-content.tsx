@@ -3,9 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { MemberListAction } from './member-list-action';
 import type { TeamMember } from '@usertour-ui/types';
 import { useMemberContext } from '@/contexts/member-context';
-import { Avatar, AvatarImage } from '@usertour-ui/avatar';
-import { getGravatarUrl } from '@/utils/avatar';
 import { Badge } from '@usertour-ui/badge';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 
 interface MemberListContentTableRowProps {
   data: TeamMember;
@@ -17,9 +16,7 @@ const MemberListContentTableRow = (props: MemberListContentTableRowProps) => {
     <TableRow className="cursor-pointer">
       <TableCell>
         <div className="flex flex-row items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={getGravatarUrl(data.email)} />
-          </Avatar>
+          <UserAvatar email={data.email} name={data.name} />
           <span>{data.name}</span>
           {data.isInvite && <Badge variant="success">Invite pending</Badge>}
         </div>

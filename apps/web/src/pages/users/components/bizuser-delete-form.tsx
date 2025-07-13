@@ -41,9 +41,11 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
     try {
       const ret = await mutation({ variables: { data } });
       if (ret.data?.deleteBizUser?.success) {
+        const count = ret.data?.deleteBizUser.count;
+        const userText = count === 1 ? 'user' : 'users';
         toast({
           variant: 'success',
-          title: `${ret.data?.deleteBizUser.count} users has been successfully deleted`,
+          title: `${count} ${userText} has been successfully deleted`,
         });
         await refetch();
         onSubmit(true);
@@ -58,22 +60,29 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
     }
   }, [bizUserIds, environment?.id]);
 
+  const isSingleUser = bizUserIds.length === 1;
+  const actionText = isSingleUser
+    ? 'Yes, delete this user'
+    : `Yes, delete ${bizUserIds.length} users`;
+
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirm deleting the users</AlertDialogTitle>
+          <AlertDialogTitle>
+            {isSingleUser ? 'Confirm deleting the user' : 'Confirm deleting the users'}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This will delete all traces of the selected users from your account. Including in
-            analytics.
+            This will delete all traces of the {isSingleUser ? 'user' : 'selected users'} from your
+            account. Including in analytics.
             <br />
-            Confirm deleting the users?
+            {isSingleUser ? 'Confirm deleting the user?' : 'Confirm deleting the users?'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Yes, delete {bizUserIds.length} users
+          <AlertDialogAction onClick={handleDeleteSubmit} variant={'destructive'}>
+            {actionText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

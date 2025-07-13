@@ -1,6 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { getGravatarUrl } from '@/utils/avatar';
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Badge } from '@usertour-ui/badge';
 import { Button } from '@usertour-ui/button';
 import {
@@ -59,8 +58,6 @@ export const AdminUserNav = () => {
   };
   useEvent('keydown', handleKeyEvent, window, { capture: true });
 
-  const avatarUrl = user?.email ? getGravatarUrl(user?.email) : '';
-
   const handleActiveProject = async (projectId: string | undefined) => {
     if (user?.id && projectId) {
       try {
@@ -87,10 +84,7 @@ export const AdminUserNav = () => {
           variant="ghost"
           className="flex p-0 text-sm rounded-full shadow-none dark:bg-transparent ring-transparent hover:bg-transparent focus:ring-0"
         >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarUrl} alt={user?.name ?? ''} />
-            <AvatarFallback className="bg-white">T</AvatarFallback>
-          </Avatar>
+          <UserAvatar email={user?.email || ''} name={user?.name} size="md" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount side="right">

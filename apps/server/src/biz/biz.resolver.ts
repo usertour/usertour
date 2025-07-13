@@ -18,7 +18,7 @@ import {
   ListSegment,
   UpdateSegment,
 } from './dto/segment.input';
-import { BizConnection } from './models/biz-connection.model';
+import { BizConnection, BizUserConnection } from './models/biz-connection.model';
 import { Segment } from './models/segment.model';
 
 @Resolver()
@@ -26,7 +26,7 @@ import { Segment } from './models/segment.model';
 export class BizResolver {
   constructor(private service: BizService) {}
 
-  @Query(() => BizConnection)
+  @Query(() => BizUserConnection)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
   async queryBizUser(
     @Args() pagination: PaginationArgs,

@@ -15,6 +15,15 @@ export type AnalyticsQuery = {
   endDate: string;
 };
 
+export type SessionQuery = {
+  environmentId: string;
+  externalUserId?: string;
+  externalCompanyId?: string;
+  contentId?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
 export type AnalyticsViews = {
   uniqueViews: number;
   totalViews: number;

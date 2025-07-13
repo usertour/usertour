@@ -6,6 +6,7 @@ import { AnalyticsService } from './analytics.service';
 import { AnalyticsIdArgs } from './args/analytics-query.args';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
+import { SessionQuery } from './dto/session-query.input';
 import { Analytics } from './models/analytics';
 import { BizSessionConnection } from './models/analytics-connection.model';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -84,5 +85,15 @@ export class AnalyticsResolver {
     @Args('orderBy') orderBy: AnalyticsOrder,
   ) {
     return await this.service.listSessionsDetail(query, pagination, orderBy);
+  }
+
+  @Query(() => BizSessionConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async querySessionsByExternalId(
+    @Args() pagination: PaginationArgs,
+    @Args('query') query: SessionQuery,
+    @Args('orderBy') orderBy: AnalyticsOrder,
+  ) {
+    return await this.service.querySessionsByExternalId(query, pagination, orderBy);
   }
 }
