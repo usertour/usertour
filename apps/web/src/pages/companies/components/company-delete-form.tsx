@@ -41,9 +41,11 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
     try {
       const ret = await mutation({ variables: { data } });
       if (ret.data?.deleteBizCompany?.success) {
+        const count = ret.data?.deleteBizCompany.count;
+        const companyText = count === 1 ? 'company' : 'companies';
         toast({
           variant: 'success',
-          title: `${ret.data?.deleteBizCompany.count} users has been successfully deleted`,
+          title: `${count} ${companyText} has been successfully deleted`,
         });
         await refetch();
         onSubmit(true);
@@ -55,24 +57,26 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
       });
       onSubmit(false);
     }
-  }, [bizCompanyIds, environment?.id]);
+  }, [bizCompanyIds, environment?.id, mutation, refetch, toast, onSubmit]);
+
+  const companyText = bizCompanyIds.length === 1 ? 'company' : 'companies';
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirm deleting the users</AlertDialogTitle>
+          <AlertDialogTitle>Confirm deleting the {companyText}</AlertDialogTitle>
           <AlertDialogDescription>
-            This will delete all traces of the selected users from your account. Including in
-            analytics.
+            This will delete all traces of the selected {companyText} from your account. Including
+            in analytics.
             <br />
-            Confirm deleting the users?
+            Confirm deleting the {companyText}?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
-            Yes, delete {bizCompanyIds.length} users
+          <AlertDialogAction onClick={handleDeleteSubmit} variant={'destructive'}>
+            Yes, delete {bizCompanyIds.length} {companyText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
