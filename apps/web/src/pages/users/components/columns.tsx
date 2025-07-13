@@ -2,13 +2,15 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@usertour-ui/checkbox';
+import { BizUser } from '@usertour-ui/types';
+import { CompanyIcon } from '@usertour-ui/icons';
 
 import { format } from 'date-fns';
-import { Flow } from '../data/schema';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { UserAvatar } from '@/components/molecules/user-avatar';
+import { Link } from 'react-router-dom';
 
-export const columns: ColumnDef<Flow>[] = [
+export const columns: ColumnDef<BizUser>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -41,13 +43,36 @@ export const columns: ColumnDef<Flow>[] = [
     accessorKey: 'externalId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
     cell: ({ row }) => {
-      const email = row.original.email || '';
-      const name = row.original.name || '';
+      const email = row.original.data?.email || '';
+      const name = row.original.data?.name || '';
+      const companies = row.original.bizUsersOnCompany || [];
 
       return (
-        <div className="px-2 flex items-center gap-2">
+        <div className="flex items-center gap-2 p-2">
           <UserAvatar email={email} name={name} size="sm" />
-          <span>{row.getValue('externalId')}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="leading-none">{email || row.getValue('externalId')}</span>
+            {companies.length > 0 && (
+              <div className="flex flex-wrap gap-0.5">
+                {companies.slice(0, 3).map((membership) => (
+                  <Link
+                    key={membership.id}
+                    to={`/env/${row.original.environmentId}/company/${membership.bizCompany?.id}`}
+                    className="inline-flex items-center gap-1 rounded-md text-xs hover:text-primary underline-offset-4 hover:underline transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <CompanyIcon className="w-3 h-3" />
+                    <span>{membership.bizCompany?.externalId || 'Unknown'}</span>
+                  </Link>
+                ))}
+                {companies.length > 3 && (
+                  <span className="text-xs text-muted-foreground">
+                    +{companies.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       );
     },
@@ -85,7 +110,7 @@ export const columns: ColumnDef<Flow>[] = [
   // },
 ];
 
-export const columnsSystem: ColumnDef<Flow>[] = [
+export const columnsSystem: ColumnDef<BizUser>[] = [
   {
     accessorKey: 'environmentId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="environmentId" />,

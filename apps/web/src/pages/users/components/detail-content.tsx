@@ -66,25 +66,21 @@ const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailConte
 // Inner component that handles the actual content rendering
 const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
-  const { bizUserList } = useUserListContext();
+  const { contents } = useUserListContext();
   const [bizUser, setBizUser] = useState<BizUser>();
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
-    if (!bizUserList) {
+    if (!contents) {
       return;
     }
-    const { edges, pageInfo } = bizUserList;
-    if (!edges || !pageInfo) {
-      return;
+    const user = contents.find((c: BizUser) => c.id === userId);
+    if (user) {
+      setBizUser(user);
     }
-    const user = edges.find((c: any) => c.node.id === userId);
-    if (user?.node) {
-      setBizUser(user.node);
-    }
-  }, [bizUserList, userId]);
+  }, [contents, userId]);
 
   useEffect(() => {
     if (attributeList && bizUser) {
