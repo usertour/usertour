@@ -11,11 +11,12 @@ import { useEventListContext } from '@/contexts/event-list-context';
 import { Link } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { cn } from '@usertour-ui/ui-utils';
-import { FlowIcon, LauncherIcon, ChecklistIcon } from '@usertour-ui/icons';
+import { FlowIcon, LauncherIcon, ChecklistIcon, SpinnerIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { useAppContext } from '@/contexts/app-context';
 
 const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList: Event[] }) => {
   const { bizEvent, content, version } = session;
@@ -66,7 +67,10 @@ const CreateAtColumn = ({ session }: { session: BizSession }) => {
   );
 };
 
-const ContentColumn = ({ session }: { session: BizSession }) => {
+const ContentColumn = ({
+  session,
+  environmentId,
+}: { session: BizSession; environmentId: string }) => {
   const { content } = session;
 
   if (!content) {
@@ -92,7 +96,7 @@ const ContentColumn = ({ session }: { session: BizSession }) => {
     <div className="font-medium flex items-center space-x-2 hover:text-primary underline-offset-4 hover:underline transition-colors">
       {getContentIcon(content.type)}
       <div className="flex flex-col">
-        <Link to={`/env/${session.environmentId}/${content.type}s/${content.id}/detail`}>
+        <Link to={`/env/${environmentId}/${content.type}s/${content.id}/detail`}>
           {content.name}
         </Link>
       </div>
@@ -115,7 +119,14 @@ const LoadMoreButton = () => {
         disabled={loading}
         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Loading...' : 'Load More Sessions'}
+        {loading ? (
+          <div className="flex items-center space-x-2">
+            <SpinnerIcon className="w-4 h-4 animate-spin" />
+            <span>Loading...</span>
+          </div>
+        ) : (
+          'Load More Sessions'
+        )}
       </Button>
     </div>
   );
@@ -124,6 +135,7 @@ const LoadMoreButton = () => {
 export const UserSessionsList = () => {
   const { userSessions, loading, totalCount, refetch } = useUserSessionsContext();
   const { eventList } = useEventListContext();
+  const { environment } = useAppContext();
 
   const handleRefresh = () => {
     refetch();
@@ -153,7 +165,7 @@ export const UserSessionsList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {loading && userSessions.length === 0 ? (
           <ListSkeleton length={5} />
         ) : userSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
@@ -179,10 +191,10 @@ export const UserSessionsList = () => {
                     )}
                   >
                     <TableCell className="w-1/3">
-                      <ContentColumn session={session} />
+                      <ContentColumn session={session} environmentId={environment?.id || ''} />
                     </TableCell>
                     <TableCell className="w-1/3">
-                      <Link to={`/env/${session.environmentId}/session/${session.id}`}>
+                      <Link to={`/env/${environment?.id}/session/${session.id}`}>
                         <ProgressColumn session={session} eventList={eventList || []} />
                       </Link>
                     </TableCell>
