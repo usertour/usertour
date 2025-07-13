@@ -33,6 +33,7 @@ export class AnalyticsGuard implements CanActivate {
 
     const contentId = args.contentId || args.query?.contentId || args.data?.contentId;
     const sessionId = args.sessionId || args.query?.sessionId || args.data?.sessionId;
+    environmentId = args.environmentId || args.query?.environmentId || args.data?.environmentId;
 
     const user = req.user;
     const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());

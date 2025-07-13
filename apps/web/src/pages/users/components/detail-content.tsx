@@ -5,6 +5,7 @@ import { UserIcon, UserProfile } from '@usertour-ui/icons';
 import { AttributeBizTypes, BizUser } from '@usertour-ui/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserSessions } from './user-sessions';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -65,9 +66,10 @@ export function UserDetailContent(props: UserDetailContentProps) {
           <span>{bizUser?.externalId}</span>
         </div>
       </div>
-      <div className="flex flex-row p-14 mt-12 space-x-8 justify-center ">
-        <div className="flex flex-col w-[550px] flex-none space-y-4">
-          <div className="flex-1 px-4 py-6 grow shadow bg-white rounded-lg">
+      <div className="flex flex-row p-14 mt-12 space-x-8 justify-center">
+        {/* Left column - fixed height */}
+        <div className="flex flex-col w-[550px] flex-none space-y-4 h-fit">
+          <div className="px-4 py-6 shadow bg-white rounded-lg">
             <div className="mb-2 flex flex-row items-center font-bold	">
               <UserIcon width={18} height={18} className="mr-2" />
               User details
@@ -78,7 +80,7 @@ export function UserDetailContent(props: UserDetailContentProps) {
               <div>Email: {bizUser?.externalId}</div>
             </div>
           </div>
-          <div className="flex-1 px-4 py-6 grow shadow bg-white rounded-lg">
+          <div className="px-4 py-6 shadow bg-white rounded-lg">
             <div className="mb-2 flex flex-row items-center font-bold	">
               <UserProfile width={18} height={18} className="mr-2" />
               User attributes
@@ -96,16 +98,12 @@ export function UserDetailContent(props: UserDetailContentProps) {
           </div>
         </div>
 
+        {/* Right column - scrollable */}
         <div className="flex flex-col w-[800px]">
-          <div className="flex-1 px-4 py-6 grow shadow bg-white rounded-lg">
-            <div className="mb-2 flex flex-row items-center font-bold	">
-              <UserIcon width={18} height={18} className="mr-2" />
-              User sessions
-            </div>
-            <div className="flex flex-col items-center w-full h-full justify-center">
-              <img src="/images/rocket.png" />
-              <div className="text-muted-foreground text-base	">Coming soon!</div>
-            </div>
+          <div className="px-4 py-6 shadow bg-white rounded-lg">
+            {bizUser?.externalId && (
+              <UserSessions environmentId={environmentId} externalUserId={bizUser?.externalId} />
+            )}
           </div>
         </div>
       </div>

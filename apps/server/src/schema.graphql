@@ -729,6 +729,7 @@ type Query {
   queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
+  querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -794,6 +795,15 @@ enum SegmentDataType {
   ALL
   CONDITION
   MANUAL
+}
+
+input SessionQuery {
+  contentId: String
+  endDate: String
+  environmentId: String!
+  externalCompanyId: String
+  externalUserId: String
+  startDate: String
 }
 
 input SignupInput {
