@@ -430,25 +430,21 @@ const CompanyDetailContentWithLoading = ({
 // Inner component that handles the actual content rendering
 const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailContentProps) => {
   const navigator = useNavigate();
-  const { bizCompanyList } = useCompanyListContext();
+  const { contents } = useCompanyListContext();
   const [bizCompany, setBizCompany] = useState<BizCompany>();
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
-    if (!bizCompanyList) {
+    if (!contents) {
       return;
     }
-    const { edges, pageInfo } = bizCompanyList;
-    if (!edges || !pageInfo) {
-      return;
+    const company = contents.find((c: any) => c.id === companyId);
+    if (company) {
+      setBizCompany(company);
     }
-    const company = edges.find((c: any) => c.node.id === companyId);
-    if (company?.node) {
-      setBizCompany(company.node);
-    }
-  }, [bizCompanyList, companyId]);
+  }, [contents, companyId]);
 
   useEffect(() => {
     if (attributeList && bizCompany) {

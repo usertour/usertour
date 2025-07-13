@@ -4,11 +4,11 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@usertour-ui/checkbox';
 
 import { format } from 'date-fns';
-import { Flow } from '../data/schema';
+import { BizCompany } from '@usertour-ui/types';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 
-export const columns: ColumnDef<Flow>[] = [
+export const columns: ColumnDef<BizCompany>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -41,8 +41,8 @@ export const columns: ColumnDef<Flow>[] = [
     accessorKey: 'externalId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Company" />,
     cell: ({ row }) => {
-      const email = row.original.email || '';
-      const name = row.original.name || '';
+      const email = row.original.data?.email || '';
+      const name = row.original.data?.name || '';
 
       return (
         <div className="px-2 flex items-center gap-2">
@@ -85,7 +85,7 @@ export const columns: ColumnDef<Flow>[] = [
   // },
 ];
 
-export const columnsSystem: ColumnDef<Flow>[] = [
+export const columnsSystem: ColumnDef<BizCompany>[] = [
   {
     accessorKey: 'environmentId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="environmentId" />,
