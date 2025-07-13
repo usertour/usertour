@@ -3,8 +3,8 @@ import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon } from '@usertour-ui/icons';
 import { AttributeBizTypes, BizCompany } from '@usertour-ui/types';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
@@ -18,6 +18,223 @@ import {
 } from '@usertour-ui/dropdown-menu';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteForm } from './company-delete-form';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import { ReloadIcon } from '@radix-ui/react-icons';
+import { cn } from '@usertour-ui/ui-utils';
+import { UserAvatar } from '@/components/molecules/user-avatar';
+import { useQuery } from '@apollo/client';
+import { queryBizUser } from '@usertour-ui/gql';
+import { PaginationState } from '@tanstack/react-table';
+
+// Company User List Context
+interface CompanyUserListContextValue {
+  contents: any[];
+  loading: boolean;
+  totalCount: number;
+  loadMore: () => void;
+  refetch: () => void;
+  hasNextPage: boolean;
+  setPagination: (pagination: PaginationState) => void;
+}
+
+const CompanyUserListContext = createContext<CompanyUserListContextValue | undefined>(undefined);
+
+const useCompanyUserListContext = () => {
+  const context = useContext(CompanyUserListContext);
+  if (!context) {
+    throw new Error('useCompanyUserListContext must be used within a CompanyUserListProvider');
+  }
+  return context;
+};
+
+interface CompanyUserListProviderProps {
+  children: ReactNode;
+  environmentId: string;
+  companyId: string;
+}
+
+const CompanyUserListProvider = ({
+  children,
+  environmentId,
+  companyId,
+}: CompanyUserListProviderProps) => {
+  const [contents, setContents] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [pageInfo, setPageInfo] = useState<any>();
+
+  const { data, refetch, loading } = useQuery(queryBizUser, {
+    variables: {
+      first:
+        pagination.pageIndex === 0
+          ? pagination.pageSize
+          : pagination.pageSize * (pagination.pageIndex + 1),
+      query: { environmentId, companyId },
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    },
+  });
+
+  const bizUserList = data?.queryBizUser;
+
+  useEffect(() => {
+    if (!bizUserList) {
+      return;
+    }
+    const { edges, pageInfo: newPageInfo, totalCount } = bizUserList;
+    if (!edges || !newPageInfo) {
+      return;
+    }
+
+    setPageInfo(newPageInfo);
+    const newContents = edges.map((e: any) => {
+      return { ...e.node, ...e.node.data };
+    });
+
+    // Replace data when it's the first page (refresh), accumulate when loading more
+    if (pagination.pageIndex === 0) {
+      setContents(newContents);
+    } else {
+      // Always accumulate data - never replace for load more
+      setContents((prev) => {
+        // Create a Set of existing content IDs to avoid duplicates
+        const existingIds = new Set(prev.map((content: any) => content.id));
+        const uniqueNewContents = newContents.filter(
+          (content: any) => !existingIds.has(content.id),
+        );
+        return [...prev, ...uniqueNewContents];
+      });
+    }
+
+    setTotalCount(totalCount);
+    setIsLoadingMore(false);
+  }, [bizUserList, pagination.pageIndex]);
+
+  const loadMore = () => {
+    if (!isLoadingMore && pageInfo?.hasNextPage) {
+      setIsLoadingMore(true);
+      setPagination((prev) => ({
+        ...prev,
+        pageIndex: prev.pageIndex + 1,
+      }));
+    }
+  };
+
+  const value: CompanyUserListContextValue = {
+    contents,
+    loading: loading || isLoadingMore,
+    totalCount,
+    loadMore,
+    refetch,
+    hasNextPage: pageInfo?.hasNextPage || false,
+    setPagination,
+  };
+
+  return (
+    <CompanyUserListContext.Provider value={value}>{children}</CompanyUserListContext.Provider>
+  );
+};
+
+// --- CompanyUserList components ---
+const LoadMoreButton = () => {
+  const { loading, hasNextPage, loadMore } = useCompanyUserListContext();
+
+  if (!hasNextPage) {
+    return null;
+  }
+
+  return (
+    <div className="flex justify-center mt-4">
+      <Button
+        onClick={loadMore}
+        disabled={loading}
+        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Loading...' : 'Load More Users'}
+      </Button>
+    </div>
+  );
+};
+
+const CompanyUserList = () => {
+  const { contents, loading, refetch, totalCount, setPagination } = useCompanyUserListContext();
+
+  const handleRefresh = () => {
+    // Reset pagination to first page when refreshing
+    setPagination({ pageIndex: 0, pageSize: 10 });
+    refetch();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Company Users ({totalCount})</CardTitle>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading && contents.length === 0 ? (
+          <div className="space-y-4">
+            <ContentLoading />
+          </div>
+        ) : contents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <img src="/images/rocket.png" alt="No users" className="w-16 h-16 mb-4 opacity-50" />
+            <p className="text-muted-foreground text-center">No users found for this company.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col w-full grow">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/2">User</TableHead>
+                  <TableHead className="w-1/2">Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contents.map((user: any) => (
+                  <TableRow key={user.id} className="cursor-pointer h-12 hover:bg-muted">
+                    <TableCell className="w-1/2">
+                      <Link to={`/env/${user.environmentId}/user/${user.id}`}>
+                        <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline">
+                          <UserAvatar email={user.email || ''} name={user.name || ''} size="sm" />
+                          <span>{user.email || user.externalId}</span>
+                        </div>
+                      </Link>
+                    </TableCell>
+                    <TableCell className="w-1/2">
+                      {user.createdAt
+                        ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })
+                        : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        <LoadMoreButton />
+      </CardContent>
+    </Card>
+  );
+};
 
 interface CompanyDetailContentProps {
   environmentId: string;
@@ -205,26 +422,11 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           </Card>
         </div>
 
-        {/* Right column - scrollable */}
+        {/* Right column - user list */}
         <div className="flex flex-col w-[800px]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CompanyIcon width={18} height={18} className="mr-2" />
-                Company sessions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center w-full h-full justify-center py-8">
-                <img
-                  src="/images/rocket.png"
-                  alt="Coming soon"
-                  className="w-16 h-16 mb-4 opacity-50"
-                />
-                <div className="text-muted-foreground text-base">Coming soon!</div>
-              </div>
-            </CardContent>
-          </Card>
+          <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
+            <CompanyUserList />
+          </CompanyUserListProvider>
         </div>
       </div>
 
