@@ -1266,6 +1266,9 @@ export class AnalyticsService {
       const where: Prisma.BizSessionWhereInput = {
         environmentId,
         deleted: false,
+        bizEvent: {
+          some: {},
+        },
       };
 
       // Add contentId filter if provided
