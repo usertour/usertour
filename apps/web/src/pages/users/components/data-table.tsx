@@ -18,13 +18,12 @@ import {
 import { ColumnDef } from '@tanstack/react-table';
 import { isUndefined } from '@usertour-ui/shared-utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { Segment } from '@usertour-ui/types';
+import { BizUser, Segment } from '@usertour-ui/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns, columnsSystem } from '../components/columns';
 import { DataTablePagination } from '../components/data-table-pagination';
 import { DataTableToolbar } from '../components/data-table-toolbar';
-import { Flow } from '../data/schema';
 import { DataTableColumnHeader } from './data-table-column-header';
 
 interface TableProps {
@@ -49,7 +48,7 @@ export function DataTable({ segment }: TableProps) {
   React.useEffect(() => {
     const attrList = attributeList?.filter((attr) => attr.bizType === 1);
     if (attrList && attrList?.length > 0) {
-      const _customColumns: ColumnDef<Flow>[] = [];
+      const _customColumns: ColumnDef<BizUser>[] = [];
       const _columnVisibility: VisibilityState = {
         environmentId: false,
         id: false,
@@ -82,7 +81,7 @@ export function DataTable({ segment }: TableProps) {
 
   const table = useReactTable({
     data: contents,
-    columns: customColumns,
+    columns: customColumns as ColumnDef<BizUser>[],
     pageCount,
     manualPagination: true,
     state: {

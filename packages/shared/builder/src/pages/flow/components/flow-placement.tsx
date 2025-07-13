@@ -50,7 +50,7 @@ export const FlowPlacement = () => {
 
   const handleAboutPlacement = () => {
     window?.open(
-      'https://docs.usertour.io/building-experiences/creating-your-first-flow/#edit-flow',
+      'https://docs.usertour.io/building-experiences/creating-your-first-flow#tooltip-placement-tooltips-only',
       '_blank',
     );
   };

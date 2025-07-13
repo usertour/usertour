@@ -65,6 +65,15 @@ export const queryBizUser = gql`
           externalId
           environmentId
           data
+          bizUsersOnCompany {
+            id
+            data
+            bizCompany {
+              id
+              externalId
+              data
+            }
+          }
         }
       }
       pageInfo {

@@ -56,6 +56,7 @@ export const queryBizSession = gql`
           contentId
           bizUser {
             externalId
+            data
           }
           bizEvent {
             data
@@ -147,6 +148,91 @@ export const listSessionsDetail = gql`
             event {
               id
               codeName
+            }
+          }
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;
+
+export const querySessionsByExternalId = gql`
+  query querySessionsByExternalId(
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+    $query: SessionQuery!
+    $orderBy: AnalyticsOrder!
+  ) {
+    querySessionsByExternalId(
+      first: $first
+      last: $last
+      after: $after
+      before: $before
+      query: $query
+      orderBy: $orderBy
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          createdAt
+          progress
+          data
+          bizUserId
+          state
+          contentId
+          content {
+            id
+            name
+            buildUrl
+            environmentId
+            editedVersionId
+            publishedVersionId
+            published
+            deleted
+            publishedAt
+            createdAt
+            updatedAt
+            type
+          }
+          version {
+            id
+            sequence
+            data
+          }
+          bizUser {
+            id
+            externalId
+            environmentId
+            data
+            bizUsersOnCompany {
+              id
+              data
+              bizCompany {
+                id
+                externalId
+                data
+              }
+            }
+          }
+          bizEvent {
+            id
+            eventId
+            createdAt
+            data
+            event {
+              id
+              codeName
+              displayName
             }
           }
         }

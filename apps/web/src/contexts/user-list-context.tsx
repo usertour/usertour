@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { queryBizUser } from '@usertour-ui/gql';
-import { PageInfo, Pagination } from '@usertour-ui/types';
+import { BizUser, PageInfo, Pagination } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface UserQuery {
@@ -16,7 +16,6 @@ export interface UserListProviderProps {
 }
 
 export interface UserListContextValue {
-  bizUserList: any;
   refetch: any;
   requestPagination: Pagination;
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
@@ -25,7 +24,7 @@ export interface UserListContextValue {
   pagination: PaginationState;
   setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
   pageCount: number;
-  contents: any[];
+  contents: BizUser[];
   loading: boolean;
 }
 export const UserListContext = createContext<UserListContextValue | undefined>(undefined);
@@ -48,7 +47,7 @@ export function UserListProvider(props: UserListProviderProps): JSX.Element {
     ...defaultPagination,
   });
   const [currentPageInfo, setCurrentPageInfo] = useState<PageInfo>();
-  const [contents, setContents] = useState([]);
+  const [contents, setContents] = useState<BizUser[]>([]);
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
 
@@ -118,7 +117,6 @@ export function UserListProvider(props: UserListProviderProps): JSX.Element {
   }, [query, requestPagination]);
 
   const value: UserListContextValue = {
-    bizUserList,
     refetch,
     requestPagination,
     setRequestPagination,

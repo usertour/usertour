@@ -27,6 +27,7 @@ import { Button } from '@usertour-ui/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { contentTypesConfig } from '@usertour-ui/shared-editor';
 import { SessionResponse } from '@/components/molecules/session-detail';
+import { ContentLoading } from '@/components/molecules/content-loading';
 
 const SessionItemContainer = ({
   children,
@@ -46,10 +47,38 @@ interface SessionDetailContentProps {
   sessionId: string;
 }
 
-export function SessionDetailContent(props: SessionDetailContentProps) {
-  const { environmentId, sessionId } = props;
+// Loading wrapper component to handle all loading states
+const SessionDetailContentWithLoading = ({
+  environmentId,
+  sessionId,
+}: SessionDetailContentProps) => {
+  const { loading: eventListLoading } = useEventListContext();
+  const { loading: attributeListLoading } = useAttributeListContext();
+  const { session, loading: sessionLoading, refetch } = useQuerySessionDetailQuery(sessionId);
+
+  // Check if any provider is still loading
+  const isLoading = eventListLoading || attributeListLoading || sessionLoading;
+
+  if (isLoading) {
+    return <ContentLoading />;
+  }
+
+  return (
+    <SessionDetailContentInner environmentId={environmentId} session={session} refetch={refetch} />
+  );
+};
+
+// Inner component that handles the actual content rendering
+const SessionDetailContentInner = ({
+  environmentId,
+  session,
+  refetch,
+}: {
+  environmentId: string;
+  session: any;
+  refetch: () => void;
+}) => {
   const navigator = useNavigate();
-  const { session, refetch } = useQuerySessionDetailQuery(sessionId);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const { attributeList } = useAttributeListContext();
   const { eventList } = useEventListContext();
@@ -62,21 +91,30 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
   };
 
   const startEvent = session?.bizEvent?.find(
-    (bizEvent) =>
+    (bizEvent: BizEvent) =>
       bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
   );
 
   if (!eventList || !content || !version) {
-    return <></>;
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <img
+          src="/images/rocket.png"
+          alt="Session not found"
+          className="w-16 h-16 mb-4 opacity-50"
+        />
+        <p className="text-muted-foreground text-center">Session not found or incomplete data.</p>
+      </div>
+    );
   }
 
-  const bizEvents = session?.bizEvent?.sort((a, b) => {
+  const bizEvents = session?.bizEvent?.sort((a: BizEvent, b: BizEvent) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   const answerEvents = session?.bizEvent?.filter(
-    (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
+    (bizEvent: BizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
   );
 
   const getStartReasonTitle = (startEvent: BizEvent | undefined) => {
@@ -105,6 +143,28 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
       : typeof value === 'string'
         ? value
         : JSON.stringify(value);
+  };
+
+  const sortEventDataEntries = (data: Record<string, any>, attributes: typeof attributeList) => {
+    return Object.entries(data || {}).sort(([keyA], [keyB]) => {
+      // Find attributes in attributeList to determine order
+      const attrA = attributes?.find((attr) => attr.codeName === keyA);
+      const attrB = attributes?.find((attr) => attr.codeName === keyB);
+
+      // If both are in attributeList, sort by their order in the list
+      if (attrA && attrB && attributes) {
+        const indexA = attributes.indexOf(attrA);
+        const indexB = attributes.indexOf(attrB);
+        return indexA - indexB;
+      }
+
+      // If only one is in attributeList, prioritize the one in the list
+      if (attrA && !attrB) return -1;
+      if (!attrA && attrB) return 1;
+
+      // If neither is in attributeList, sort alphabetically
+      return keyA.localeCompare(keyB);
+    });
   };
 
   return (
@@ -146,7 +206,10 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
               className="text-primary"
               to={`/env/${environmentId}/user/${session?.bizUser?.id}`}
             >
-              {session?.bizUser?.data?.name ?? 'Unnamed user'}
+              {session?.bizUser?.data?.name ??
+                session?.bizUser?.data?.email ??
+                session?.bizUser?.data?.externalId ??
+                'Unnamed user'}
             </Link>
           </div>
           <div className="border-b flex flex-col pb-1">
@@ -226,19 +289,21 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                           )}
                         </TableCell>
                       </TableRow>
-                      {expandedRowId === bizEvent.id && (
+                      {expandedRowId === bizEvent.id && bizEvent.data && (
                         <TableRow>
                           <TableCell colSpan={2} className="bg-gray-50 p-4">
                             <div className="text-sm">
-                              {Object.entries(bizEvent.data || {}).map(([key, value]) => (
-                                <div key={key} className="py-2 border-b flex flex-row">
-                                  <span className="font-medium w-[200px] flex-none">
-                                    {attributeList?.find((attr) => attr.codeName === key)
-                                      ?.displayName || key}
-                                  </span>
-                                  <span className="grow">{getFieldValue(key, value)}</span>
-                                </div>
-                              ))}
+                              {sortEventDataEntries(bizEvent.data, attributeList || []).map(
+                                ([key, value]) => (
+                                  <div key={key} className="py-2 border-b flex flex-row">
+                                    <span className="font-medium w-[200px] flex-none">
+                                      {attributeList?.find((attr) => attr.codeName === key)
+                                        ?.displayName || key}
+                                    </span>
+                                    <span className="grow">{getFieldValue(key, value)}</span>
+                                  </div>
+                                ),
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -247,7 +312,7 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell className="h-24 text-center">No results.</TableCell>
+                    <TableCell className="h-24 text-center">No events found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -257,6 +322,11 @@ export function SessionDetailContent(props: SessionDetailContentProps) {
       </div>
     </>
   );
+};
+
+// Main export component
+export function SessionDetailContent(props: SessionDetailContentProps) {
+  return <SessionDetailContentWithLoading {...props} />;
 }
 
 SessionDetailContent.displayName = 'SessionDetailContent';
