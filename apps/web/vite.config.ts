@@ -17,13 +17,13 @@ export default defineConfig({
     https: false,
     proxy: {
       '/graphql': {
-        target: 'https://local.usertour.io/graphql',
+        target: 'http://localhost:3000/graphql',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/graphql/, ''),
       },
       '/api': {
-        target: 'https://local.usertour.io/api',
+        target: 'http://localhost:3000/api',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
