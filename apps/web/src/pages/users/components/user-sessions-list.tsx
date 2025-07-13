@@ -167,7 +167,7 @@ export const UserSessionsList = () => {
         </TooltipProvider>
       </div>
 
-      <div className="flex flex-col w-full px-4 py-6 grow">
+      <div className="flex flex-col w-full py-6 grow">
         <Table>
           <TableHeader>
             <TableRow>
