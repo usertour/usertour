@@ -20,6 +20,7 @@ import {
 } from '@usertour-ui/dropdown-menu';
 import { BizUserDeleteForm } from './bizuser-delete-form';
 import { ContentLoading } from '@/components/molecules/content-loading';
+import { TruncatedText } from '@/components/molecules/truncated-text';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -163,15 +164,15 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               <div className="grid grid-cols-2 gap-2 gap-x-12 ">
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={IdCardIcon} tooltip="User ID" />
-                  <span>{bizUser?.externalId}</span>
+                  <TruncatedText text={bizUser?.externalId || ''} maxLength={15} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={EnvelopeClosedIcon} tooltip="Email" />
-                  <span>{bizUser?.data?.email}</span>
+                  <TruncatedText text={bizUser?.data?.email || ''} maxLength={15} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={PersonIcon} tooltip="Name" />
-                  <span>{bizUser?.data?.name || 'Unnamed user'}</span>
+                  <TruncatedText text={bizUser?.data?.name || 'Unnamed user'} maxLength={15} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
@@ -196,8 +197,12 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               </div>
               {bizUserAttributes.map(({ name, value }, key) => (
                 <div className="flex flex-row py-2 text-sm" key={key}>
-                  <div className="w-1/2">{name}</div>
-                  <div className="w-1/2">{`${value}`}</div>
+                  <div className="w-1/2">
+                    <TruncatedText text={name} maxLength={15} />
+                  </div>
+                  <div className="w-1/2">
+                    <TruncatedText text={`${value}`} maxLength={15} />
+                  </div>
                 </div>
               ))}
             </CardContent>

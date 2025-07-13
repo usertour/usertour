@@ -18,6 +18,7 @@ import {
 } from '@usertour-ui/dropdown-menu';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteForm } from './company-delete-form';
+import { TruncatedText } from '@/components/molecules/truncated-text';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour-ui/ui-utils';
@@ -532,11 +533,14 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
               <div className="grid grid-cols-2 gap-2 gap-x-12">
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={IdCardIcon} tooltip="Company ID" />
-                  <span>{bizCompany?.externalId}</span>
+                  <TruncatedText text={bizCompany?.externalId || ''} maxLength={15} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CompanyIcon} tooltip="Name" />
-                  <span>{bizCompany?.data?.name || 'Unnamed company'}</span>
+                  <TruncatedText
+                    text={bizCompany?.data?.name || 'Unnamed company'}
+                    maxLength={20}
+                  />
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
@@ -562,8 +566,12 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
               </div>
               {bizCompanyAttributes.map(({ name, value }, key) => (
                 <div className="flex flex-row py-2 text-sm" key={key}>
-                  <div className="w-1/2">{name}</div>
-                  <div className="w-1/2">{`${value}`}</div>
+                  <div className="w-1/2">
+                    <TruncatedText text={name} maxLength={15} />
+                  </div>
+                  <div className="w-1/2">
+                    <TruncatedText text={`${value}`} maxLength={15} />
+                  </div>
                 </div>
               ))}
             </CardContent>
