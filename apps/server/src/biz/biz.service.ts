@@ -342,6 +342,13 @@ export class BizService {
               environmentId,
               ...where,
             },
+            include: {
+              bizUsersOnCompany: {
+                include: {
+                  bizCompany: true,
+                },
+              },
+            },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
