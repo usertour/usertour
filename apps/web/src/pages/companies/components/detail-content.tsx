@@ -26,6 +26,7 @@ import { UserAvatar } from '@/components/molecules/user-avatar';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-ui/gql';
 import { PaginationState } from '@tanstack/react-table';
+import { ListSkeleton } from '@/components/molecules/skeleton';
 
 // Company User List Context
 interface CompanyUserListContextValue {
@@ -269,10 +270,8 @@ const CompanyUserList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {loading && contents.length === 0 ? (
-          <div className="space-y-4">
-            <ContentLoading />
-          </div>
+        {loading ? (
+          <ListSkeleton length={5} />
         ) : contents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
             <img src="/images/rocket.png" alt="No users" className="w-16 h-16 mb-4 opacity-50" />

@@ -129,31 +129,6 @@ export const UserSessionsList = () => {
     refetch();
   };
 
-  if (loading && userSessions.length === 0) {
-    return (
-      <Card>
-        <CardContent>
-          <div className="space-y-4">
-            <ListSkeleton length={5} />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (userSessions.length === 0) {
-    return (
-      <Card>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8">
-            <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
-            <p className="text-muted-foreground text-center">No sessions found for this user.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -178,39 +153,48 @@ export const UserSessionsList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col w-full grow">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-1/3">Content</TableHead>
-                <TableHead className="w-1/3">Progress</TableHead>
-                <TableHead className="w-1/3">Last activity</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {userSessions.map((session) => (
-                <TableRow
-                  key={session.id}
-                  className={cn(
-                    'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
-                  )}
-                >
-                  <TableCell className="w-1/3">
-                    <ContentColumn session={session} />
-                  </TableCell>
-                  <TableCell className="w-1/3">
-                    <Link to={`/env/${session.environmentId}/session/${session.id}`}>
-                      <ProgressColumn session={session} eventList={eventList || []} />
-                    </Link>
-                  </TableCell>
-                  <TableCell className="w-1/3">
-                    <CreateAtColumn session={session} />
-                  </TableCell>
+        {loading ? (
+          <ListSkeleton length={5} />
+        ) : userSessions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
+            <p className="text-muted-foreground text-center">No sessions found for this user.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col w-full grow">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/3">Content</TableHead>
+                  <TableHead className="w-1/3">Progress</TableHead>
+                  <TableHead className="w-1/3">Last activity</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {userSessions.map((session) => (
+                  <TableRow
+                    key={session.id}
+                    className={cn(
+                      'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
+                    )}
+                  >
+                    <TableCell className="w-1/3">
+                      <ContentColumn session={session} />
+                    </TableCell>
+                    <TableCell className="w-1/3">
+                      <Link to={`/env/${session.environmentId}/session/${session.id}`}>
+                        <ProgressColumn session={session} eventList={eventList || []} />
+                      </Link>
+                    </TableCell>
+                    <TableCell className="w-1/3">
+                      <CreateAtColumn session={session} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
         <LoadMoreButton />
       </CardContent>
