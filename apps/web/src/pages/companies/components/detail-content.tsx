@@ -2,11 +2,11 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon } from '@usertour-ui/icons';
-import { AttributeBizTypes, BizCompany } from '@usertour-ui/types';
-import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
+import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour-ui/types';
+import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
+import { IdCardIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 import { Button } from '@usertour-ui/button';
@@ -28,13 +28,14 @@ import { PaginationState } from '@tanstack/react-table';
 
 // Company User List Context
 interface CompanyUserListContextValue {
-  contents: any[];
+  contents: BizUser[];
   loading: boolean;
   totalCount: number;
   loadMore: () => void;
   refetch: () => void;
   hasNextPage: boolean;
   setPagination: (pagination: PaginationState) => void;
+  companyId: string;
 }
 
 const CompanyUserListContext = createContext<CompanyUserListContextValue | undefined>(undefined);
@@ -58,7 +59,7 @@ const CompanyUserListProvider = ({
   environmentId,
   companyId,
 }: CompanyUserListProviderProps) => {
-  const [contents, setContents] = useState<any[]>([]);
+  const [contents, setContents] = useState<BizUser[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -126,6 +127,7 @@ const CompanyUserListProvider = ({
     totalCount,
     loadMore,
     refetch,
+    companyId,
     hasNextPage: pageInfo?.hasNextPage || false,
     setPagination,
   };
@@ -133,6 +135,76 @@ const CompanyUserListProvider = ({
   return (
     <CompanyUserListContext.Provider value={value}>{children}</CompanyUserListContext.Provider>
   );
+};
+
+// Helper function to get membership attributes for a user
+const getMembershipAttributes = (
+  user: BizUser,
+  companyId: string,
+  attributeList: any[] | undefined,
+) => {
+  if (!user.bizUsersOnCompany || !attributeList) {
+    return [];
+  }
+
+  // Find the membership for this specific company
+  const membership = user.bizUsersOnCompany.find(
+    (m: BizUserOnCompany) => m.bizCompany?.id === companyId,
+  );
+  if (!membership || !membership.data) {
+    return [];
+  }
+
+  const membershipData = membership.data;
+  const membershipAttributes = attributeList.filter(
+    (attr) => attr.bizType === AttributeBizTypes.Membership,
+  );
+
+  return Object.entries(membershipData)
+    .filter(([key]) => membershipAttributes.some((attr) => attr.codeName === key))
+    .map(([key, value]) => {
+      const attr = membershipAttributes.find((attr) => attr.codeName === key);
+      return {
+        name: attr?.displayName || key,
+        value: typeof value === 'string' ? value : JSON.stringify(value),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+// Helper function to sort membership data entries
+const sortMembershipDataEntries = (data: Record<string, any>, attributes: any[]) => {
+  return Object.entries(data || {}).sort(([keyA], [keyB]) => {
+    // Find attributes in attributeList to determine order
+    const attrA = attributes?.find((attr) => attr.codeName === keyA);
+    const attrB = attributes?.find((attr) => attr.codeName === keyB);
+
+    // If both are in attributeList, sort by their order in the list
+    if (attrA && attrB && attributes) {
+      const indexA = attributes.indexOf(attrA);
+      const indexB = attributes.indexOf(attrB);
+      return indexA - indexB;
+    }
+
+    // If only one is in attributeList, prioritize the one in the list
+    if (attrA && !attrB) return -1;
+    if (!attrA && attrB) return 1;
+
+    // If neither is in attributeList, sort alphabetically
+    return keyA.localeCompare(keyB);
+  });
+};
+
+// Helper function to get membership data for a user
+const getMembershipData = (user: BizUser, companyId: string) => {
+  if (!user.bizUsersOnCompany) {
+    return null;
+  }
+
+  const membership = user.bizUsersOnCompany.find(
+    (m: BizUserOnCompany) => m.bizCompany?.id === companyId,
+  );
+  return membership?.data || null;
 };
 
 // --- CompanyUserList components ---
@@ -157,7 +229,14 @@ const LoadMoreButton = () => {
 };
 
 const CompanyUserList = () => {
-  const { contents, loading, refetch, totalCount, setPagination } = useCompanyUserListContext();
+  const { contents, loading, refetch, totalCount, setPagination, companyId } =
+    useCompanyUserListContext();
+  const { attributeList } = useAttributeListContext();
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+
+  const handleRowClick = (id: string) => {
+    setExpandedRowId(expandedRowId === id ? null : id);
+  };
 
   const handleRefresh = () => {
     // Reset pagination to first page when refreshing
@@ -204,27 +283,96 @@ const CompanyUserList = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-1/2">User</TableHead>
-                  <TableHead className="w-1/2">Created</TableHead>
+                  <TableHead className="w-1/2">Membership Attributes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contents.map((user: any) => (
-                  <TableRow key={user.id} className="cursor-pointer h-12 hover:bg-muted">
-                    <TableCell className="w-1/2">
-                      <Link to={`/env/${user.environmentId}/user/${user.id}`}>
-                        <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline">
-                          <UserAvatar email={user.email || ''} name={user.name || ''} size="sm" />
-                          <span>{user.email || user.externalId}</span>
-                        </div>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="w-1/2">
-                      {user.createdAt
-                        ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })
-                        : '-'}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {contents.map((user: BizUser) => {
+                  const membershipAttributes = getMembershipAttributes(
+                    user,
+                    companyId,
+                    attributeList,
+                  );
+                  const membershipData = getMembershipData(user, companyId);
+                  const hasMembershipData =
+                    membershipData && Object.keys(membershipData).length > 0;
+
+                  return (
+                    <Fragment key={user.id}>
+                      <TableRow
+                        className={cn(
+                          'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
+                          hasMembershipData && 'hover:bg-muted',
+                        )}
+                        onClick={() => hasMembershipData && handleRowClick(user.id)}
+                      >
+                        <TableCell className="w-1/2">
+                          <Link to={`/env/${user.environmentId}/user/${user.id}`}>
+                            <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline">
+                              <UserAvatar
+                                email={user.data?.email || ''}
+                                name={user.data?.name || ''}
+                                size="sm"
+                              />
+                              <span>{user.data?.email || user.externalId}</span>
+                            </div>
+                          </Link>
+                        </TableCell>
+                        <TableCell className="w-1/2">
+                          {hasMembershipData ? (
+                            <div className="flex justify-between items-center">
+                              <div className="space-y-1">
+                                {membershipAttributes.slice(0, 2).map((attr, index) => (
+                                  <div key={index} className="text-sm">
+                                    <span className="font-medium text-muted-foreground">
+                                      {attr.name}:
+                                    </span>{' '}
+                                    <span>{attr.value}</span>
+                                  </div>
+                                ))}
+                                {membershipAttributes.length > 2 && (
+                                  <div className="text-xs text-muted-foreground">
+                                    +{membershipAttributes.length - 2} more attributes
+                                  </div>
+                                )}
+                              </div>
+                              {expandedRowId === user.id ? (
+                                <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              ) : (
+                                <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              No membership attributes
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {expandedRowId === user.id && membershipData && (
+                        <TableRow>
+                          <TableCell colSpan={2} className="bg-gray-50 p-4">
+                            <div className="text-sm">
+                              {sortMembershipDataEntries(membershipData, attributeList || []).map(
+                                ([key, value]) => (
+                                  <div key={key} className="py-2 border-b flex flex-row">
+                                    <span className="font-medium w-[200px] flex-none">
+                                      {attributeList?.find((attr) => attr.codeName === key)
+                                        ?.displayName || key}
+                                    </span>
+                                    <span className="grow">
+                                      {typeof value === 'string' ? value : JSON.stringify(value)}
+                                    </span>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
