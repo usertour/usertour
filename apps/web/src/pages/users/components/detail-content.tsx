@@ -9,6 +9,7 @@ import { UserSessions } from './user-sessions';
 import { formatDistanceToNow } from 'date-fns';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -92,57 +93,63 @@ export function UserDetailContent(props: UserDetailContentProps) {
       <div className="flex flex-row p-14 mt-12 space-x-8 justify-center">
         {/* Left column - fixed height */}
         <div className="flex flex-col w-[550px] flex-none space-y-4 h-fit">
-          <div className="px-4 py-6 shadow bg-white rounded-lg">
-            <div className="mb-2 flex flex-row items-center font-bold	">
-              <UserIcon width={18} height={18} className="mr-2" />
-              User details
-            </div>
-            <div className="grid grid-cols-2 gap-2 gap-x-12 py-4">
-              <div className="flex items-center space-x-2">
-                <TooltipIcon icon={IdCardIcon} tooltip="User ID" />
-                <span>{bizUser?.externalId}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <UserIcon width={18} height={18} className="mr-2" />
+                User details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2 gap-x-12 ">
+                <div className="flex items-center space-x-2">
+                  <TooltipIcon icon={IdCardIcon} tooltip="User ID" />
+                  <span>{bizUser?.externalId}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <TooltipIcon icon={EnvelopeClosedIcon} tooltip="Email" />
+                  <span>{bizUser?.data?.email}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <TooltipIcon icon={PersonIcon} tooltip="Name" />
+                  <span>{bizUser?.data?.name || 'Unnamed user'}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <TooltipIcon icon={CalendarIcon} tooltip="Created" />
+                  <span>
+                    {bizUser?.createdAt && formatDistanceToNow(new Date(bizUser?.createdAt))} ago
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <TooltipIcon icon={EnvelopeClosedIcon} tooltip="Email" />
-                <span>{bizUser?.data?.email}</span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <UserProfile width={18} height={18} className="mr-2" />
+                User attributes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-row border-b py-2 text-sm opacity-80">
+                <div className="w-1/2 ">Name</div>
+                <div className="w-1/2 ">Value</div>
               </div>
-              <div className="flex items-center space-x-2">
-                <TooltipIcon icon={PersonIcon} tooltip="Name" />
-                <span>{bizUser?.data?.name || 'Unnamed user'}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <TooltipIcon icon={CalendarIcon} tooltip="Created" />
-                <span>
-                  {bizUser?.createdAt && formatDistanceToNow(new Date(bizUser?.createdAt))} ago
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="px-4 py-6 shadow bg-white rounded-lg">
-            <div className="mb-2 flex flex-row items-center font-bold	">
-              <UserProfile width={18} height={18} className="mr-2" />
-              User attributes
-            </div>
-            <div className="flex flex-row border-b py-2 text-sm opacity-80">
-              <div className="w-1/2 ">Name</div>
-              <div className="w-1/2 ">Value</div>
-            </div>
-            {bizUserAttributes.map(({ name, value }, key) => (
-              <div className="flex flex-row py-2 text-sm" key={key}>
-                <div className="w-1/2">{name}</div>
-                <div className="w-1/2">{`${value}`}</div>
-              </div>
-            ))}
-          </div>
+              {bizUserAttributes.map(({ name, value }, key) => (
+                <div className="flex flex-row py-2 text-sm" key={key}>
+                  <div className="w-1/2">{name}</div>
+                  <div className="w-1/2">{`${value}`}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right column - scrollable */}
         <div className="flex flex-col w-[800px]">
-          <div className="px-4 py-6 shadow bg-white rounded-lg">
-            {bizUser?.externalId && (
-              <UserSessions environmentId={environmentId} externalUserId={bizUser?.externalId} />
-            )}
-          </div>
+          {bizUser?.externalId && (
+            <UserSessions environmentId={environmentId} externalUserId={bizUser?.externalId} />
+          )}
         </div>
       </div>
     </>

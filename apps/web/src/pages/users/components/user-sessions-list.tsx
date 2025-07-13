@@ -15,6 +15,7 @@ import { FlowIcon, LauncherIcon, ChecklistIcon } from '@usertour-ui/icons';
 import { Button } from '@usertour-ui/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
 
 const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList: Event[] }) => {
   const { bizEvent, content, version } = session;
@@ -130,79 +131,90 @@ export const UserSessionsList = () => {
 
   if (loading && userSessions.length === 0) {
     return (
-      <div className="space-y-4">
-        <ListSkeleton length={5} />
-      </div>
+      <Card>
+        <CardContent>
+          <div className="space-y-4">
+            <ListSkeleton length={5} />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (userSessions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
-        <p className="text-muted-foreground text-center">No sessions found for this user.</p>
-      </div>
+      <Card>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8">
+            <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
+            <p className="text-muted-foreground text-center">No sessions found for this user.</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">User Sessions ({totalCount})</h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleRefresh}
-                disabled={loading}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Refresh</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <div className="flex flex-col w-full py-6 grow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-1/3">Content</TableHead>
-              <TableHead className="w-1/3">Progress</TableHead>
-              <TableHead className="w-1/3">Last activity</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {userSessions.map((session) => (
-              <TableRow
-                key={session.id}
-                className={cn(
-                  'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
-                )}
-              >
-                <TableCell className="w-1/3">
-                  <ContentColumn session={session} />
-                </TableCell>
-                <TableCell className="w-1/3">
-                  <Link to={`/env/${session.environmentId}/session/${session.id}`}>
-                    <ProgressColumn session={session} eventList={eventList || []} />
-                  </Link>
-                </TableCell>
-                <TableCell className="w-1/3">
-                  <CreateAtColumn session={session} />
-                </TableCell>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>User Sessions ({totalCount})</CardTitle>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col w-full grow">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-1/3">Content</TableHead>
+                <TableHead className="w-1/3">Progress</TableHead>
+                <TableHead className="w-1/3">Last activity</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {userSessions.map((session) => (
+                <TableRow
+                  key={session.id}
+                  className={cn(
+                    'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
+                  )}
+                >
+                  <TableCell className="w-1/3">
+                    <ContentColumn session={session} />
+                  </TableCell>
+                  <TableCell className="w-1/3">
+                    <Link to={`/env/${session.environmentId}/session/${session.id}`}>
+                      <ProgressColumn session={session} eventList={eventList || []} />
+                    </Link>
+                  </TableCell>
+                  <TableCell className="w-1/3">
+                    <CreateAtColumn session={session} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-      <LoadMoreButton />
-    </div>
+        <LoadMoreButton />
+      </CardContent>
+    </Card>
   );
 };
 
