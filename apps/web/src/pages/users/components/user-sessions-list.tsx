@@ -16,6 +16,7 @@ import { Button } from '@usertour-ui/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { useAppContext } from '@/contexts/app-context';
 
 const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList: Event[] }) => {
   const { bizEvent, content, version } = session;
@@ -66,7 +67,10 @@ const CreateAtColumn = ({ session }: { session: BizSession }) => {
   );
 };
 
-const ContentColumn = ({ session }: { session: BizSession }) => {
+const ContentColumn = ({
+  session,
+  environmentId,
+}: { session: BizSession; environmentId: string }) => {
   const { content } = session;
 
   if (!content) {
@@ -92,7 +96,7 @@ const ContentColumn = ({ session }: { session: BizSession }) => {
     <div className="font-medium flex items-center space-x-2 hover:text-primary underline-offset-4 hover:underline transition-colors">
       {getContentIcon(content.type)}
       <div className="flex flex-col">
-        <Link to={`/env/${session.environmentId}/${content.type}s/${content.id}/detail`}>
+        <Link to={`/env/${environmentId}/${content.type}s/${content.id}/detail`}>
           {content.name}
         </Link>
       </div>
@@ -124,6 +128,7 @@ const LoadMoreButton = () => {
 export const UserSessionsList = () => {
   const { userSessions, loading, totalCount, refetch } = useUserSessionsContext();
   const { eventList } = useEventListContext();
+  const { environment } = useAppContext();
 
   const handleRefresh = () => {
     refetch();
@@ -179,10 +184,10 @@ export const UserSessionsList = () => {
                     )}
                   >
                     <TableCell className="w-1/3">
-                      <ContentColumn session={session} />
+                      <ContentColumn session={session} environmentId={environment?.id || ''} />
                     </TableCell>
                     <TableCell className="w-1/3">
-                      <Link to={`/env/${session.environmentId}/session/${session.id}`}>
+                      <Link to={`/env/${environment?.id}/session/${session.id}`}>
                         <ProgressColumn session={session} eventList={eventList || []} />
                       </Link>
                     </TableCell>
