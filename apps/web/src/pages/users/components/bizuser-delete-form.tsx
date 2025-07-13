@@ -72,7 +72,7 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>
+          <AlertDialogAction onClick={handleDeleteSubmit} variant={'destructive'}>
             Yes, delete {bizUserIds.length} users
           </AlertDialogAction>
         </AlertDialogFooter>

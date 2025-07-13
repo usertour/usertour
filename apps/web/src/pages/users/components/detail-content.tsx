@@ -1,7 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
-import { ArrowLeftIcon } from '@radix-ui/react-icons';
-import { UserIcon, UserProfile } from '@usertour-ui/icons';
+import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { UserIcon, UserProfile, Delete2Icon } from '@usertour-ui/icons';
 import { AttributeBizTypes, BizUser } from '@usertour-ui/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Button } from '@usertour-ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour-ui/dropdown-menu';
+import { BizUserDeleteForm } from './bizuser-delete-form';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -43,6 +51,7 @@ export function UserDetailContent(props: UserDetailContentProps) {
   const [bizUser, setBizUser] = useState<BizUser>();
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (!bizUserList) {
@@ -77,17 +86,40 @@ export function UserDetailContent(props: UserDetailContentProps) {
     }
   }, [bizUser, attributeList]);
 
+  const handleDeleteSuccess = () => {
+    navigator(`/env/${environmentId}/users`);
+  };
+
   return (
     <>
-      <div className="border-b bg-white flex-col md:flex w-full fixed">
-        <div className="flex h-16 items-center px-4">
+      <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
+        <div className="flex h-16 items-center px-4 w-full">
           <ArrowLeftIcon
             className="ml-4 h-6 w-8 cursor-pointer"
             onClick={() => {
               navigator(`/env/${environmentId}/users`);
             }}
           />
-          <span>{bizUser?.externalId}</span>
+          <span>User Detail</span>
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary">
+                  <span className="sr-only">Actions</span>
+                  <DotsHorizontalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Delete2Icon className="mr-2 h-4 w-4" />
+                  Delete User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
       <div className="flex flex-row p-14 mt-12 space-x-8 justify-center">
@@ -152,6 +184,14 @@ export function UserDetailContent(props: UserDetailContentProps) {
           )}
         </div>
       </div>
+
+      {/* Delete Dialog */}
+      <BizUserDeleteForm
+        bizUserIds={bizUser ? [bizUser.id] : []}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onSubmit={handleDeleteSuccess}
+      />
     </>
   );
 }
