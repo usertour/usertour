@@ -6,11 +6,34 @@ import { AttributeBizTypes, BizUser } from '@usertour-ui/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from './user-sessions';
+import { formatDistanceToNow } from 'date-fns';
+import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 
 interface UserDetailContentProps {
   environmentId: string;
   userId: string;
 }
+
+// TooltipIcon component to reduce repetitive code
+const TooltipIcon = ({
+  icon: Icon,
+  tooltip,
+  className = 'w-4 h-4 text-foreground/60 cursor-help',
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  tooltip: string;
+  className?: string;
+}) => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Icon className={className} />
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
 
 export function UserDetailContent(props: UserDetailContentProps) {
   const { environmentId, userId } = props;
@@ -74,10 +97,25 @@ export function UserDetailContent(props: UserDetailContentProps) {
               <UserIcon width={18} height={18} className="mr-2" />
               User details
             </div>
-            <div className="flex flex-col space-y-2 text-sm py-2">
-              <div>ID: {bizUser?.externalId}</div>
-              <div>createdAt: {bizUser?.createdAt}</div>
-              <div>Email: {bizUser?.externalId}</div>
+            <div className="grid grid-cols-2 gap-2 gap-x-12 py-4">
+              <div className="flex items-center space-x-2">
+                <TooltipIcon icon={IdCardIcon} tooltip="User ID" />
+                <span>{bizUser?.externalId}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <TooltipIcon icon={EnvelopeClosedIcon} tooltip="Email" />
+                <span>{bizUser?.data?.email}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <TooltipIcon icon={PersonIcon} tooltip="Name" />
+                <span>{bizUser?.data?.name || 'Unnamed user'}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <TooltipIcon icon={CalendarIcon} tooltip="Created" />
+                <span>
+                  {bizUser?.createdAt && formatDistanceToNow(new Date(bizUser?.createdAt))} ago
+                </span>
+              </div>
             </div>
           </div>
           <div className="px-4 py-6 shadow bg-white rounded-lg">
