@@ -1,5 +1,6 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
+import { useEventListContext } from '@/contexts/event-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-ui/icons';
 import { AttributeBizTypes, BizUser } from '@usertour-ui/types';
@@ -18,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-ui/dropdown-menu';
 import { BizUserDeleteForm } from './bizuser-delete-form';
+import { ContentLoading } from '@/components/molecules/content-loading';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -44,8 +46,24 @@ const TooltipIcon = ({
   </TooltipProvider>
 );
 
-export function UserDetailContent(props: UserDetailContentProps) {
-  const { environmentId, userId } = props;
+// Loading wrapper component to handle all loading states
+const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
+  const { loading: userListLoading } = useUserListContext();
+  const { loading: eventListLoading } = useEventListContext();
+  const { loading: attributeListLoading } = useAttributeListContext();
+
+  // Check if any provider is still loading
+  const isLoading = userListLoading || eventListLoading || attributeListLoading;
+
+  if (isLoading) {
+    return <ContentLoading />;
+  }
+
+  return <UserDetailContentInner environmentId={environmentId} userId={userId} />;
+};
+
+// Inner component that handles the actual content rendering
+const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
   const { bizUserList } = useUserListContext();
   const [bizUser, setBizUser] = useState<BizUser>();
@@ -89,6 +107,15 @@ export function UserDetailContent(props: UserDetailContentProps) {
   const handleDeleteSuccess = () => {
     navigator(`/env/${environmentId}/users`);
   };
+
+  if (!bizUser) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <img src="/images/rocket.png" alt="User not found" className="w-16 h-16 mb-4 opacity-50" />
+        <p className="text-muted-foreground text-center">User not found.</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -194,6 +221,11 @@ export function UserDetailContent(props: UserDetailContentProps) {
       />
     </>
   );
+};
+
+// Main export component
+export function UserDetailContent(props: UserDetailContentProps) {
+  return <UserDetailContentWithLoading {...props} />;
 }
 
 UserDetailContent.displayName = 'UserDetailContent';
