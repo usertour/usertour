@@ -117,18 +117,18 @@ export function UserSessionsProvider(props: UserSessionsProviderProps): JSX.Elem
       return { ...e.node };
     });
 
-    // If this is the first page, replace the data
-    // If this is a subsequent page, append the data
-    if (pagination.pageIndex === 0) {
-      setUserSessions(newSessions);
-    } else {
-      setUserSessions((prev) => [...prev, ...newSessions]);
-    }
+    // Always accumulate data - never replace
+    setUserSessions((prev) => {
+      // Create a Set of existing session IDs to avoid duplicates
+      const existingIds = new Set(prev.map((session) => session.id));
+      const uniqueNewSessions = newSessions.filter((session) => !existingIds.has(session.id));
+      return [...prev, ...uniqueNewSessions];
+    });
 
     setTotalCount(totalCount);
     setPageCount(Math.ceil(totalCount / currentPagination.pageSize));
     setIsLoadingMore(false);
-  }, [sessionsList, currentPagination, pagination.pageIndex]);
+  }, [sessionsList, currentPagination, pagination.pageIndex, isLoadingMore]);
 
   useEffect(() => {
     refetch();
