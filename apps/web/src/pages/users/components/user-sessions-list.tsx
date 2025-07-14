@@ -145,7 +145,7 @@ export const UserSessionsList = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>User Sessions ({totalCount})</CardTitle>
+          <CardTitle>User sessions ({totalCount})</CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

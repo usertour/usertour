@@ -257,7 +257,7 @@ const CompanyUserList = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Company Users ({totalCount})</CardTitle>
+          <CardTitle>Company members ({totalCount})</CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
