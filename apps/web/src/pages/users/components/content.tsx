@@ -1,5 +1,5 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { UserListProvider, useUserListContext } from '@/contexts/user-list-context';
+import { UserListProvider } from '@/contexts/user-list-context';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
 import { EditIcon } from '@usertour-ui/icons';
@@ -12,24 +12,17 @@ import { UserEditDropdownMenu } from './edit-dropmenu';
 import { UserSegmentEditForm } from './edit-form';
 import { UserSegmentFilterSave } from './filter-save';
 import { useAppContext } from '@/contexts/app-context';
-import { UserListContentSkeleton } from './content-skeleton';
 
 // Inner component that uses the context
 function UserListContentInner({ environmentId }: { environmentId: string | undefined }) {
   const [open, setOpen] = useState(false);
-  const { currentSegment, refetch, loading: segmentLoading } = useSegmentListContext();
-  const { loading: userLoading } = useUserListContext();
+  const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
   const handleOnClose = () => {
     setOpen(false);
     refetch();
   };
-
-  // Show skeleton if any data is loading
-  if (segmentLoading || userLoading) {
-    return <UserListContentSkeleton />;
-  }
 
   return (
     <>
@@ -59,7 +52,7 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
                 </Tooltip>
               </TooltipProvider>
             )}
-            {<UserSegmentFilterSave currentSegment={currentSegment} />}
+            <UserSegmentFilterSave currentSegment={currentSegment} />
           </div>
           {currentSegment && currentSegment.dataType !== 'ALL' && (
             <UserEditDropdownMenu

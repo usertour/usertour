@@ -8,8 +8,8 @@ export const extendSdk = {
       xbutton: 'var(--usertour-xbutton)',
       background: 'hsl(var(--usertour-background))',
       foreground: 'hsl(var(--usertour-foreground))',
-      hover: 'var(--usertour-hover)',
-      active: 'var(--usertour-active)',
+      hover: 'hsl(var(--usertour-main-hover-background-color))',
+      active: 'hsl(var(--usertour-main-active-background-color))',
       destructive: 'var(--usertour-destructive)',
       'destructive-foreground': 'var(--usertour-destructive-foreground)',
       'destructive-hover': 'var(--usertour-destructive-hover)',
@@ -23,6 +23,10 @@ export const extendSdk = {
       'card-foreground': 'var(--usertour-card-foreground)',
       progress: 'var(--usertour-progress-bar-color)',
       question: 'hsl(var(--usertour-question-color))',
+      brand: {
+        hover: 'hsl(var(--usertour-brand-hover-background-color))',
+        active: 'hsl(var(--usertour-brand-active-background-color))',
+      },
       checklist: {
         'trigger-background': 'var(--usertour-checklist-trigger-background-color)',
         'trigger-active-background': 'var(--usertour-checklist-trigger-active-background-color)',

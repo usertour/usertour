@@ -16,8 +16,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { isUndefined } from '@usertour-ui/shared-utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import { Skeleton } from '@usertour-ui/skeleton';
 import { BizCompany, Segment } from '@usertour-ui/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,7 @@ import { columns, columnsSystem } from '../components/columns';
 import { DataTablePagination } from '../components/data-table-pagination';
 import { DataTableToolbar } from '../components/data-table-toolbar';
 import { DataTableColumnHeader } from './data-table-column-header';
+import { formatAttributeValue } from '@/utils/common';
 
 interface TableProps {
   published: boolean;
@@ -37,7 +38,8 @@ export function DataTable({ segment }: TableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [customColumns, setCustomColumns] = React.useState<typeof columns>(columns);
-  const { setQuery, setPagination, pagination, pageCount, contents } = useCompanyListContext();
+  const { setQuery, setPagination, pagination, pageCount, contents, loading } =
+    useCompanyListContext();
   const { attributeList } = useAttributeListContext();
   const navigate = useNavigate();
 
@@ -57,15 +59,16 @@ export function DataTable({ segment }: TableProps) {
         const displayName = attribute.displayName || attribute.codeName;
         _columnVisibility[attribute.codeName] = !!segment.columns?.[attribute.codeName];
         _customColumns.push({
-          accessorKey: attribute.codeName,
+          accessorFn: (row) => {
+            const data = row.data as any;
+            return data?.[attribute.codeName];
+          },
+          id: attribute.codeName,
           header: ({ column }) => <DataTableColumnHeader column={column} title={displayName} />,
-          cell: ({ row }) => (
-            <div className="px-2">
-              {!isUndefined(row.getValue(attribute.codeName))
-                ? `${row.getValue(attribute.codeName)}`
-                : ''}
-            </div>
-          ),
+          cell: ({ row }) => {
+            const value = row.getValue(attribute.codeName);
+            return <div className="px-2">{formatAttributeValue(value)}</div>;
+          },
           enableSorting: false,
           enableHiding: true,
         });
@@ -126,7 +129,18 @@ export function DataTable({ segment }: TableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+              // Show loading skeleton using Skeleton component
+              Array.from({ length: pagination.pageSize }).map((_, index) => (
+                <TableRow key={`loading-${index}`}>
+                  {customColumns.map((_, colIndex) => (
+                    <TableCell key={`loading-cell-${index}-${colIndex}`} className="h-12">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

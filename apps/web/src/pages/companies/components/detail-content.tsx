@@ -257,7 +257,7 @@ const CompanyUserList = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Company Users ({totalCount})</CardTitle>
+          <CardTitle>Company members ({totalCount})</CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -271,7 +271,7 @@ const CompanyUserList = () => {
                   <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh</TooltipContent>
+              <TooltipContent>Reload</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -569,10 +569,10 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
               {bizCompanyAttributes.map(({ name, value }, key) => (
                 <div className="flex flex-row py-2 text-sm" key={key}>
                   <div className="w-1/2">
-                    <TruncatedText text={name} maxLength={15} />
+                    <TruncatedText text={name} maxLength={25} />
                   </div>
                   <div className="w-1/2">
-                    <TruncatedText text={`${value}`} maxLength={15} />
+                    <TruncatedText text={`${value}`} maxLength={25} />
                   </div>
                 </div>
               ))}
