@@ -748,7 +748,7 @@ export class App extends Evented {
       this.checklists.filter((checklist) => !checklist.isTemporarilyHidden()),
     );
 
-    if (latestActivatedChecklist && !latestActivatedChecklist.hasDismissed()) {
+    if (latestActivatedChecklist) {
       this.activeChecklist = latestActivatedChecklist;
       await this.activeChecklist.start(contentStartReason.START_FROM_SESSION);
       return true;
