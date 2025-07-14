@@ -1,4 +1,8 @@
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import {
+  Attribute,
+  AttributeBizType,
+  AttributeDataType,
+} from '@/attributes/models/attribute.model';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -280,6 +284,45 @@ export class BizService {
     });
   }
 
+  private createSearchConditions(
+    search: string,
+    attributes: Attribute[],
+    bizType: AttributeBizType,
+  ) {
+    const conditions: any[] = [
+      // Search in externalId field
+      { externalId: { contains: search } },
+    ];
+
+    // Add search conditions for all string attributes
+    if (attributes && attributes.length > 0) {
+      for (const attr of attributes) {
+        if (attr.bizType === bizType && attr.dataType === AttributeDataType.String) {
+          // String type - use contains search
+          conditions.push({
+            data: { path: [attr.codeName], string_contains: search },
+          });
+        } else if (attr.bizType === bizType && attr.dataType === AttributeDataType.Number) {
+          // Number type - try to convert search to number and use equals
+          const numValue = Number(search);
+          if (!Number.isNaN(numValue)) {
+            conditions.push({
+              data: { path: [attr.codeName], equals: numValue },
+            });
+          }
+        } else if (attr.bizType === bizType && attr.dataType === AttributeDataType.Boolean) {
+          // Boolean type - convert search to boolean
+          const boolValue = search.toLowerCase() === 'true' || search === '1';
+          conditions.push({
+            data: { path: [attr.codeName], equals: boolValue },
+          });
+        }
+      }
+    }
+
+    return conditions;
+  }
+
   async queryBizUser(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, userId, search, companyId } = query;
@@ -326,7 +369,8 @@ export class BizService {
         where.id = userId;
       }
       if (search) {
-        where.externalId = { contains: search };
+        // Support searching across multiple fields
+        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.USER);
       }
       if (companyId) {
         where.bizUsersOnCompany = {
@@ -413,7 +457,8 @@ export class BizService {
         where.id = companyId;
       }
       if (search) {
-        where.externalId = { contains: search };
+        // Support searching across multiple fields for companies
+        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.COMPANY);
       }
       const resp = await findManyCursorConnection(
         (args) =>
