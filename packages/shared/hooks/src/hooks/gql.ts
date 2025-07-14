@@ -14,6 +14,8 @@ import {
   listAttributes,
   listSegment,
   login,
+  queryBizCompany,
+  queryBizUser,
   queryContentQuestionAnalytics,
   queryContent,
   querySessionDetail,
@@ -103,6 +105,76 @@ export const useContentListQuery = ({
   const contents = contentList ? (contentList as Content[]) : [];
 
   return { contents, refetch, error };
+};
+
+type UseCompanyListQueryProps = {
+  query: {
+    environmentId: string;
+    [key: string]: any;
+  };
+  pagination?: Pagination;
+  orderBy?: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+};
+
+export const useCompanyListQuery = ({
+  query,
+  orderBy = { field: 'createdAt', direction: 'desc' },
+  pagination = { first: 10 },
+  options,
+}: UseCompanyListQueryProps & { options?: QueryHookOptions }) => {
+  const { data, refetch, loading, error } = useQuery(queryBizCompany, {
+    variables: {
+      ...pagination,
+      query,
+      orderBy,
+    },
+    ...options,
+  });
+
+  const bizCompanyList = data?.queryBizCompany;
+  const contents = bizCompanyList?.edges?.map((e: any) => ({ ...e.node })) || [];
+  const pageInfo = bizCompanyList?.pageInfo;
+  const totalCount = bizCompanyList?.totalCount || 0;
+
+  return { contents, pageInfo, totalCount, refetch, loading, error };
+};
+
+type UseUserListQueryProps = {
+  query: {
+    environmentId: string;
+    [key: string]: any;
+  };
+  pagination?: Pagination;
+  orderBy?: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+};
+
+export const useUserListQuery = ({
+  query,
+  orderBy = { field: 'createdAt', direction: 'desc' },
+  pagination = { first: 10 },
+  options,
+}: UseUserListQueryProps & { options?: QueryHookOptions }) => {
+  const { data, refetch, loading, error } = useQuery(queryBizUser, {
+    variables: {
+      ...pagination,
+      query,
+      orderBy,
+    },
+    ...options,
+  });
+
+  const bizUserList = data?.queryBizUser;
+  const contents = bizUserList?.edges?.map((e: any) => ({ ...e.node, ...e.node.data })) || [];
+  const pageInfo = bizUserList?.pageInfo;
+  const totalCount = bizUserList?.totalCount || 0;
+
+  return { contents, pageInfo, totalCount, refetch, loading, error };
 };
 
 export const useSegmentListQuery = (

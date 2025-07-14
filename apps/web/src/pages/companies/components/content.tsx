@@ -1,4 +1,4 @@
-import { CompanyListProvider, useCompanyListContext } from '@/contexts/company-list-context';
+import { CompanyListProvider } from '@/contexts/company-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-ui/button';
@@ -12,13 +12,11 @@ import { UserEditDropdownMenu } from './edit-dropmenu';
 import { UserSegmentEditForm } from './edit-form';
 import { UserSegmentFilterSave } from './filter-save';
 import { useAppContext } from '@/contexts/app-context';
-import { CompanyListContentSkeleton } from './content-skeleton';
 
 // Inner component that uses the context
 function CompanyListContentInner({ environmentId }: { environmentId: string | undefined }) {
   const [open, setOpen] = useState(false);
-  const { currentSegment, refetch, loading: segmentLoading } = useSegmentListContext();
-  const { loading: companyLoading } = useCompanyListContext();
+  const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
 
@@ -26,11 +24,6 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
     setOpen(false);
     refetch();
   };
-
-  // Show skeleton if any data is loading
-  if (segmentLoading || companyLoading) {
-    return <CompanyListContentSkeleton />;
-  }
 
   return (
     <>
