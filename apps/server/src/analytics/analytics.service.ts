@@ -1245,6 +1245,118 @@ export class AnalyticsService {
     );
   }
 
+  async querySessionsByExternalId(
+    query: {
+      environmentId: string;
+      externalUserId?: string;
+      externalCompanyId?: string;
+      contentId?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+    pagination: PaginationArgs,
+    orderBy: AnalyticsOrder,
+  ) {
+    const { first, last, before, after } = pagination;
+    const { environmentId, externalUserId, externalCompanyId, contentId, startDate, endDate } =
+      query;
+
+    try {
+      // Build where conditions
+      const where: Prisma.BizSessionWhereInput = {
+        environmentId,
+        deleted: false,
+        bizEvent: {
+          some: {},
+        },
+      };
+
+      // Add contentId filter if provided
+      if (contentId) {
+        where.contentId = contentId;
+      }
+
+      // Add date range filters if provided
+      if (startDate && endDate) {
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        where.createdAt = {
+          gte: startDateObj,
+          lte: endDateObj,
+        };
+      }
+
+      // Add external user filter
+      if (externalUserId) {
+        where.bizUser = {
+          externalId: externalUserId,
+        };
+      }
+
+      // Add external company filter
+      if (externalCompanyId) {
+        where.bizCompany = {
+          externalId: externalCompanyId,
+        };
+      }
+
+      // Ensure at least one of externalUserId or externalCompanyId is provided
+      if (!externalUserId && !externalCompanyId) {
+        return {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: null,
+            endCursor: null,
+          },
+          totalCount: 0,
+        };
+      }
+
+      const resp = await findManyCursorConnection(
+        (args) =>
+          this.prisma.bizSession.findMany({
+            where,
+            include: {
+              bizUser: {
+                include: {
+                  bizUsersOnCompany: {
+                    include: { bizCompany: true },
+                  },
+                },
+              },
+              bizEvent: {
+                include: { event: true },
+              },
+              content: true,
+              version: true,
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+            ...args,
+          }),
+        () =>
+          this.prisma.bizSession.count({
+            where,
+          }),
+        { first, last, before, after },
+      );
+      return resp;
+    } catch (_) {
+      // console.log(error);
+      return {
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      };
+    }
+  }
+
   async deleteContentSessionWithRelations(id: string, environmentId: string) {
     const session = await this.prisma.bizSession.findUnique({
       where: { id, environmentId },

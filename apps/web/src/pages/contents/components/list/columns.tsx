@@ -2,8 +2,8 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Content } from '../../data/schema';
 import { DataTableColumnHeader } from './data-table-column-header';
+import { Content } from '@usertour-ui/types';
 
 export const columns: ColumnDef<Content>[] = [
   // {

@@ -314,7 +314,7 @@ export class BizService {
 
   async queryBizUser(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
     const { first, last, before, after } = pagination;
-    const { environmentId, segmentId, data, userId, search } = query;
+    const { environmentId, segmentId, data, userId, search, companyId } = query;
     try {
       const environmenet = await this.prisma.environment.findUnique({
         where: { id: environmentId },
@@ -360,12 +360,26 @@ export class BizService {
       if (search) {
         where.externalId = { contains: search };
       }
+      if (companyId) {
+        where.bizUsersOnCompany = {
+          some: {
+            bizCompanyId: companyId,
+          },
+        };
+      }
       const resp = await findManyCursorConnection(
         (args) =>
           this.prisma.bizUser.findMany({
             where: {
               environmentId,
               ...where,
+            },
+            include: {
+              bizUsersOnCompany: {
+                include: {
+                  bizCompany: true,
+                },
+              },
             },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,

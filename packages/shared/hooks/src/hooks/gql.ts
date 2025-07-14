@@ -17,6 +17,7 @@ import {
   queryContentQuestionAnalytics,
   queryContent,
   querySessionDetail,
+  querySessionsByExternalId,
   removeTeamMember,
   signUp,
   updateContent,
@@ -69,6 +70,7 @@ import type {
   UpdateIntegrationInput,
   IntegrationModel,
   SalesforceObjectFields,
+  SessionQuery,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -282,6 +284,27 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
 
   const session = data?.querySessionDetail as BizSession;
   return { session, loading, error, refetch };
+};
+
+export const useQuerySessionsByExternalIdQuery = (
+  query: SessionQuery,
+  pagination: Pagination = { first: 10 },
+  orderBy: { field: string; direction: 'asc' | 'desc' } = { field: 'createdAt', direction: 'desc' },
+) => {
+  const { data, loading, error, refetch } = useQuery(querySessionsByExternalId, {
+    variables: {
+      query,
+      orderBy,
+      ...pagination,
+    },
+  });
+
+  const sessions =
+    (data?.querySessionsByExternalId?.edges?.map((edge: any) => edge.node) as BizSession[]) || [];
+  const pageInfo = data?.querySessionsByExternalId?.pageInfo;
+  const totalCount = data?.querySessionsByExternalId?.totalCount || 0;
+
+  return { sessions, pageInfo, totalCount, loading, error, refetch };
 };
 
 export const useQueryContentQuestionAnalyticsQuery = (
