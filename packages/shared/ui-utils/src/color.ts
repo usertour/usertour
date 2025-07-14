@@ -69,44 +69,42 @@ export const hslToHex = (hsl: { h: number; s: number; l: number }): string => {
 // };
 
 export function hexToHSL(hexColor: string): [number, string, string] {
-  // Remove the hash if it exists
-  const cleanHex = hexColor.replace(/^#/, '');
+  try {
+    const color = chroma(hexColor);
+    const [h, s, l] = color.hsl();
 
-  // Convert hex to RGB
-  const r = Number.parseInt(cleanHex.slice(0, 2), 16) / 255;
-  const g = Number.parseInt(cleanHex.slice(2, 4), 16) / 255;
-  const b = Number.parseInt(cleanHex.slice(4, 6), 16) / 255;
+    // Convert to degrees and percentages
+    const hDeg = Math.round(h || 0);
+    const sPct = Math.round(s * 100);
+    const lPct = Math.round(l * 100);
 
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-    }
-    h /= 6;
+    return [hDeg, `${sPct}%`, `${lPct}%`];
+  } catch (error) {
+    console.warn(`Failed to convert ${hexColor} to HSL:`, error);
+    return [0, '0%', '0%']; // Fallback to black
   }
+}
 
-  // Convert to degrees and percentages
-  const hDeg = Math.round(h * 360);
-  const sPct = Math.round(s * 100);
-  const lPct = Math.round(l * 100);
+/**
+ * Convert hex color to HSL string format for Tailwind CSS
+ * @param hexColor - Hex color string (e.g., "#FFFFFF")
+ * @returns HSL string format (e.g., "0 0% 100%")
+ */
+export function hexToHSLString(hexColor: string): string {
+  try {
+    const color = chroma(hexColor);
+    const [h, s, l] = color.hsl();
 
-  return [hDeg, `${sPct}%`, `${lPct}%`];
+    // Convert to degrees and percentages
+    const hDeg = Math.round(h || 0);
+    const sPct = Math.round(s * 100);
+    const lPct = Math.round(l * 100);
+
+    return `${hDeg} ${sPct}% ${lPct}%`;
+  } catch (error) {
+    console.warn(`Failed to convert ${hexColor} to HSL string:`, error);
+    return '0 0% 0%'; // Fallback to black
+  }
 }
 
 export const changeColor = (color: string, amount: number) => {
@@ -229,28 +227,40 @@ export const blendColors = (color1: string, color2: string, weight = 0.5): strin
   }
 };
 
-export const hexToRGBStr = (hex: string) => {
-  let alpha = false;
-  let h = hex.slice(hex.startsWith('#') ? 1 : 0);
-  if (h.length === 3) h = [...h].map((x) => x + x).join('');
-  else if (h.length === 8) alpha = true;
-  const parsedH = Number.parseInt(h, 16);
-  const r = parsedH >>> (alpha ? 24 : 16);
-  const g = (parsedH & (alpha ? 0x00ff0000 : 0x00ff00)) >>> (alpha ? 16 : 8);
-  const b = (parsedH & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0);
-  return `${r}, ${g}, ${b}${alpha ? `, ${parsedH & 0x000000ff}` : ''}`;
+/**
+ * Convert hex color to RGB string format (e.g., "255, 255, 255")
+ * @param hex - Hex color string (e.g., "#FFFFFF")
+ * @returns RGB string format without alpha
+ */
+export const hexToRGBStr = (hex: string): string => {
+  try {
+    const color = chroma(hex);
+    const [r, g, b] = color.rgb();
+    return `${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}`;
+  } catch (error) {
+    console.warn(`Failed to convert ${hex} to RGB string:`, error);
+    return '0, 0, 0'; // Fallback to black
+  }
 };
 
-export const hexToRGB = (hex: string) => {
-  let alpha = false;
-  let h = hex.slice(hex.startsWith('#') ? 1 : 0);
-  if (h.length === 3) h = [...h].map((x) => x + x).join('');
-  else if (h.length === 8) alpha = true;
-  const parsedH = Number.parseInt(h, 16);
-  const r = parsedH >>> (alpha ? 24 : 16);
-  const g = (parsedH & (alpha ? 0x00ff0000 : 0x00ff00)) >>> (alpha ? 16 : 8);
-  const b = (parsedH & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0);
-  return `rgb${alpha ? 'a' : ''}(${r}, ${g}, ${b}${alpha ? `, ${parsedH & 0x000000ff}` : ''})`;
+/**
+ * Convert hex color to RGB/RGBA CSS format (e.g., "rgb(255, 255, 255)" or "rgba(255, 255, 255, 0.5)")
+ * @param hex - Hex color string (e.g., "#FFFFFF" or "#FFFFFF80")
+ * @returns RGB/RGBA CSS format
+ */
+export const hexToRGB = (hex: string): string => {
+  try {
+    const color = chroma(hex);
+    const [r, g, b, a] = color.rgba();
+
+    if (a === 1) {
+      return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+    }
+    return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+  } catch (error) {
+    console.warn(`Failed to convert ${hex} to RGB:`, error);
+    return 'rgb(0, 0, 0)'; // Fallback to black
+  }
 };
 
 /**

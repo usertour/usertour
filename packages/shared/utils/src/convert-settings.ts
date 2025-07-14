@@ -1,5 +1,5 @@
 import { ThemeTypesSetting, defaultSettings } from '@usertour-ui/types';
-import { hexToHSL, hexToRGBStr } from '@usertour-ui/ui-utils';
+import { hexToHSLString, hexToRGBStr } from '@usertour-ui/ui-utils';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';
 
@@ -141,19 +141,31 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
 
 export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') => {
   const cssMapping: any = {
-    '--usertour-background': hexToHSL(settings.mainColor.background).join(' '),
-    '--usertour-foreground': hexToHSL(settings.mainColor.color).join(' '),
+    '--usertour-background': hexToHSLString(settings.mainColor.background),
+    '--usertour-foreground': hexToHSLString(settings.mainColor.color),
+    '--usertour-brand-active-background-color': hexToHSLString(
+      settings.brandColor.autoActive as string,
+    ),
+    '--usertour-brand-hover-background-color': hexToHSLString(
+      settings.brandColor.autoHover as string,
+    ),
     '--usertour-font-family': settings.font.fontFamily,
     '--usertour-font-size': `${settings.font.fontSize}px`,
     '--usertour-main-background-color': settings.mainColor.background,
-    '--usertour-main-foreground-colo': settings.mainColor.color,
+    '--usertour-main-foreground-color': settings.mainColor.color,
+    '--usertour-main-hover-background-color': hexToHSLString(
+      settings.mainColor.autoHover as string,
+    ),
+    '--usertour-main-active-background-color': hexToHSLString(
+      settings.mainColor.autoActive as string,
+    ),
     '--usertour-line-height': `${settings.font.lineHeight}px`,
     '--usertour-widget-popper-border-radius': `${settings.border.borderRadius}px`,
     '--usertour-font-weight-normal': settings.font.fontWeightNormal,
     '--usertour-font-weight-bold': settings.font.fontWeightBold,
     '--usertour-h1-font-size': `${settings.font.h1FontSize}px`,
     '--usertour-h2-font-size': `${settings.font.h2FontSize}px`,
-    '--usertour-link-color': hexToHSL(settings.font.linkColor).join(' '),
+    '--usertour-link-color': hexToHSLString(settings.font.linkColor),
     '--usertour-widget-popper-border-width': settings.border.borderWidthEnabled
       ? `${settings.border.borderWidth}px`
       : '0px',
@@ -227,7 +239,7 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-checkmark-background-color': settings.checklist.checkmarkColor,
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
-    '--usertour-question-color': hexToHSL(settings.survey.color).join(' '),
+    '--usertour-question-color': hexToHSLString(settings.survey.color),
   };
 
   let css = '';
