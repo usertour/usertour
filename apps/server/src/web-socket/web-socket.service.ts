@@ -2,12 +2,17 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import { BizEvents, EventAttributes } from '@/common/consts/attribute';
+import {
+  BizEvents,
+  EventAttributes,
+  UserAttributes,
+  CompanyAttributes,
+} from '@/common/consts/attribute';
 import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { BizUser, Content, Environment, Step, Theme } from '@prisma/client';
+import { BizUser, Content, Environment, Step, Theme, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import {
   BizEventWithEvent,
@@ -1037,6 +1042,58 @@ export class WebSocketService {
   }
 
   /**
+   * Update user and company seen attributes
+   * @param tx - Database transaction
+   * @param user - Business user
+   * @param bizSession - Business session
+   * @returns Promise<void>
+   */
+  private async updateSeenAttributes(
+    tx: Prisma.TransactionClient,
+    user: BizUser,
+    bizSession: { bizCompanyId: string | null },
+  ): Promise<void> {
+    // Update user attributes
+    const currentTime = new Date().toISOString();
+    const userData = (user.data as Record<string, unknown>) || {};
+    const isFirstUserEvent = !userData[UserAttributes.FIRST_SEEN_AT];
+
+    const updatedUserData = {
+      ...userData,
+      [UserAttributes.LAST_SEEN_AT]: currentTime,
+      ...(isFirstUserEvent && { [UserAttributes.FIRST_SEEN_AT]: currentTime }),
+    };
+
+    await tx.bizUser.update({
+      where: { id: user.id },
+      data: { data: updatedUserData },
+    });
+
+    // Update company attributes if user belongs to a company
+    if (bizSession.bizCompanyId) {
+      const company = await tx.bizCompany.findUnique({
+        where: { id: bizSession.bizCompanyId },
+      });
+
+      if (company) {
+        const companyData = (company.data as Record<string, unknown>) || {};
+        const isFirstCompanyEvent = !companyData[CompanyAttributes.FIRST_SEEN_AT];
+
+        const updatedCompanyData = {
+          ...companyData,
+          [CompanyAttributes.LAST_SEEN_AT]: currentTime,
+          ...(isFirstCompanyEvent && { [CompanyAttributes.FIRST_SEEN_AT]: currentTime }),
+        };
+
+        await tx.bizCompany.update({
+          where: { id: company.id },
+          data: { data: updatedCompanyData },
+        });
+      }
+    }
+  }
+
+  /**
    * Track an event
    * @param data - The data to track an event
    * @returns The tracked event
@@ -1098,6 +1155,9 @@ export class WebSocketService {
       if (!isValidEvent(eventName, latestBizSession, events)) {
         return false;
       }
+
+      // Update seen attributes for user and company
+      await this.updateSeenAttributes(tx, user, bizSession);
 
       const insert = {
         bizUserId: user.id,

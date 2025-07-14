@@ -178,10 +178,6 @@ interface ChecklistCheckedProps {
   isShowAnimation: boolean;
 }
 
-const EmptyCircle = () => {
-  return <div className="w-5 h-5 bg-gray-200 rounded-full" />;
-};
-
 const ChecklistChecked = forwardRef<HTMLSpanElement, ChecklistCheckedProps>((props, ref) => {
   const { isChecked, isShowAnimation } = props;
   return (
@@ -189,11 +185,13 @@ const ChecklistChecked = forwardRef<HTMLSpanElement, ChecklistCheckedProps>((pro
       ref={ref}
       className={cn(
         'flex-none w-8 h-8 border-2 border-transparent rounded-full flex justify-center items-center mr-3 text-sm text-white',
-        isChecked ? 'bg-sdk-checklist-checkmark' : 'bg-gray-200',
+        isChecked
+          ? 'bg-sdk-checklist-checkmark'
+          : 'border border-sdk-foreground/25 bg-sdk-background',
         isShowAnimation ? 'animate-pop-scale' : '',
       )}
     >
-      {isChecked ? <CheckmarkIcon className="w-5 h-5 stroke-white" /> : <EmptyCircle />}
+      {isChecked && <CheckmarkIcon className="w-5 h-5 stroke-white" />}
     </span>
   );
 });
@@ -594,7 +592,7 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
     );
 
     return (
-      <div ref={ref} className="flex flex-col space-y-1">
+      <div ref={ref} className="flex flex-col -mx-[24px]">
         {data.items
           .filter((item) => item.isVisible !== false)
           .map((item, index) => (
@@ -639,28 +637,31 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   (props, ref) => {
     const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
 
-    const baseClassName = cn(
-      'text-right',
-      data.preventDismissChecklist ? 'h-sdk-line-height' : 'cursor-pointer',
+    // Return placeholder if dismiss is prevented
+    if (data.preventDismissChecklist) {
+      return <div className="h-4" ref={ref} {...props} />;
+    }
+
+    const textClassName = cn(
+      'text-right cursor-pointer',
       isAllCompleted
         ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
         : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
     );
 
     const handleDismiss = useCallback(() => {
-      if (data.preventDismissChecklist) {
-        return;
-      }
       if (isAllCompleted) {
         onDismiss?.();
       } else {
         setShowDismissConfirm(true);
       }
-    }, [data.preventDismissChecklist, isAllCompleted, onDismiss, setShowDismissConfirm]);
+    }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
 
     return (
-      <div ref={ref} {...props} className={baseClassName} onClick={handleDismiss}>
-        {!data.preventDismissChecklist && 'Dismiss checklist'}
+      <div className="flex justify-end" ref={ref} {...props}>
+        <span className={textClassName} onClick={handleDismiss}>
+          Dismiss checklist
+        </span>
       </div>
     );
   },
@@ -756,7 +757,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   return (
     <div
       className={cn(
-        'flex items-center cursor-pointer',
+        'flex items-center cursor-pointer px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
         isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
       )}
       onClick={() => (isClickable ? onClick(item, index) : undefined)}
@@ -768,8 +769,10 @@ const ChecklistItem = (props: ChecklistItemProps) => {
           isCompleted && `${textDecoration} text-sdk-foreground/60`,
         )}
       >
-        <span className="text-sdk-base">{item.name}</span>
-        {item.description && <span className="text-sdk-xs leading-3">{item.description}</span>}
+        <span className="text-sdk-base font-sdk-bold">{item.name}</span>
+        {item.description && (
+          <span className="text-sdk-xs opacity-75 leading-3">{item.description}</span>
+        )}
       </div>
     </div>
   );

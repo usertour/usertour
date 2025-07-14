@@ -145,7 +145,7 @@ export const UserSessionsList = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>User Sessions ({totalCount})</CardTitle>
+          <CardTitle>User sessions ({totalCount})</CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -159,7 +159,7 @@ export const UserSessionsList = () => {
                   <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh</TooltipContent>
+              <TooltipContent>Reload</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
