@@ -271,7 +271,7 @@ const CompanyUserList = () => {
                   <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh</TooltipContent>
+              <TooltipContent>Reload</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
