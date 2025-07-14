@@ -1,7 +1,7 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeTypesSettingsColor } from '@usertour-ui/types';
 import { Separator } from '@usertour-ui/separator';
-import { changeColor } from '@usertour-ui/ui-utils';
+import { generateAutoStateColors } from '@usertour-ui/ui-utils';
 import { useThemeSettingsContext } from '.';
 
 export const ThemeSettingsBasicColor = () => {
@@ -10,16 +10,24 @@ export const ThemeSettingsBasicColor = () => {
   const updateBrandColor = (data: Partial<ThemeTypesSettingsColor>) => {
     const { brandColor } = settings;
     if (data.background) {
-      data.autoHover = changeColor(data.background, 20);
-      data.autoActive = changeColor(data.background, 40);
+      const { hover, active } = generateAutoStateColors(
+        data.background,
+        data.background, // For brand, base and brand are the same
+      );
+      data.autoHover = hover;
+      data.autoActive = active;
     }
     setSettings((pre) => ({ ...pre, brandColor: { ...brandColor, ...data } }));
   };
   const updateMainColor = (data: Partial<ThemeTypesSettingsColor>) => {
-    const { mainColor } = settings;
+    const { mainColor, brandColor } = settings;
     if (data.background) {
-      data.autoHover = changeColor(data.background, 20);
-      data.autoActive = changeColor(data.background, 40);
+      const { hover, active } = generateAutoStateColors(
+        data.background,
+        brandColor.background, // Always use the current brand color
+      );
+      data.autoHover = hover;
+      data.autoActive = active;
     }
     setSettings((pre) => ({ ...pre, mainColor: { ...mainColor, ...data } }));
   };

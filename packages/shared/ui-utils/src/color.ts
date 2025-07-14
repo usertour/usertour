@@ -1,3 +1,5 @@
+import chroma from 'chroma-js';
+
 export const hslToHex = (hsl: { h: number; s: number; l: number }): string => {
   const { h, s, l } = hsl;
 
@@ -119,6 +121,114 @@ export const changeColor = (color: string, amount: number) => {
   return `#${fill(red.toString(16))}${fill(green.toString(16))}${fill(blue.toString(16))}`;
 };
 
+/**
+ * Adjust color for hover and active states using chroma.js
+ * @param color - Hex color string (e.g., "#FFFFFF")
+ * @param type - "hover" or "active"
+ * @returns Adjusted hex color
+ */
+export const adjustColorForState = (color: string, type: 'hover' | 'active'): string => {
+  try {
+    const chromaColor = chroma(color);
+    const luminance = chromaColor.luminance();
+
+    // Determine adjustment based on luminance and state
+    let adjustment: number;
+    if (type === 'hover') {
+      adjustment = luminance > 0.5 ? -0.15 : 0.15; // Darken light colors, lighten dark colors
+    } else {
+      // active
+      adjustment = luminance > 0.5 ? -0.3 : 0.3; // More dramatic change for active
+    }
+
+    return chromaColor.luminance(Math.max(0, Math.min(1, luminance + adjustment))).hex();
+  } catch (error) {
+    // Fallback to original color if chroma.js fails to parse
+    console.warn(`Failed to adjust color ${color}:`, error);
+    return color;
+  }
+};
+
+/**
+ * Generate hover and active colors for a given base color using chroma.js
+ * @param color - Base hex color
+ * @returns Object with hover and active colors
+ */
+export const generateStateColors = (color: string) => {
+  return {
+    hover: adjustColorForState(color, 'hover'),
+    active: adjustColorForState(color, 'active'),
+  };
+};
+
+/**
+ * Get the most readable text color for a given background color
+ * @param backgroundColor - Background color in hex format
+ * @returns Black or white hex color
+ */
+export const getReadableTextColor = (backgroundColor: string): string => {
+  try {
+    const bgColor = chroma(backgroundColor);
+    return bgColor.luminance() > 0.5 ? '#000000' : '#FFFFFF';
+  } catch (error) {
+    console.warn(`Failed to get readable color for ${backgroundColor}:`, error);
+    return '#000000'; // Fallback to black
+  }
+};
+
+/**
+ * Check if two colors have sufficient contrast for accessibility
+ * @param color1 - First color in hex format
+ * @param color2 - Second color in hex format
+ * @param ratio - Minimum contrast ratio (default: 4.5 for AA standard)
+ * @returns Boolean indicating if contrast is sufficient
+ */
+export const hasSufficientContrast = (color1: string, color2: string, ratio = 4.5): boolean => {
+  try {
+    return chroma.contrast(color1, color2) >= ratio;
+  } catch (error) {
+    console.warn(`Failed to check contrast between ${color1} and ${color2}:`, error);
+    return false;
+  }
+};
+
+/**
+ * Generate a color palette from a base color
+ * @param baseColor - Base color in hex format
+ * @param count - Number of colors in palette (default: 5)
+ * @returns Array of hex colors
+ */
+export const generateColorPalette = (baseColor: string, count = 5): string[] => {
+  try {
+    const color = chroma(baseColor);
+    const palette = chroma
+      .scale([color.darken(2), color, color.brighten(2)])
+      .mode('lab')
+      .colors(count);
+
+    return palette.map((c: any) => chroma(c).hex());
+  } catch (error) {
+    console.warn(`Failed to generate palette for ${baseColor}:`, error);
+    return Array(count).fill(baseColor);
+  }
+};
+
+/**
+ * Blend two colors together
+ * @param color1 - First color in hex format
+ * @param color2 - Second color in hex format
+ * @param weight - Weight of color2 (0-1, default: 0.5)
+ * @returns Blended hex color
+ */
+export const blendColors = (color1: string, color2: string, weight = 0.5): string => {
+  try {
+    return chroma.mix(color1, color2, weight, 'rgb').hex();
+  } catch (error) {
+    console.warn(`Failed to blend colors ${color1} and ${color2}:`, error);
+    return color1; // Fallback to first color
+  }
+};
+
 export const hexToRGBStr = (hex: string) => {
   let alpha = false;
   let h = hex.slice(hex.startsWith('#') ? 1 : 0);
@@ -142,3 +252,43 @@ export const hexToRGB = (hex: string) => {
   const b = (parsedH & (alpha ? 0x0000ff00 : 0x0000ff)) >>> (alpha ? 8 : 0);
   return `rgb${alpha ? 'a' : ''}(${r}, ${g}, ${b}${alpha ? `, ${parsedH & 0x000000ff}` : ''})`;
 };
+
+/**
+ * Automatically generate hover and active colors based on baseColor and brandColor.
+ * If baseColor is similar to brandColor, hover is mixed with white (LAB), active is darkened.
+ * If baseColor is light (e.g., white), hover/active are mixed with brandColor (LAB).
+ * Otherwise, hover is mixed with brandColor (LAB), active is darkened.
+ * @param baseColor - The base color (e.g., button or content background)
+ * @param brandColor - The brand color
+ * @param hoverRatio - Mix ratio for hover state (default 0.15)
+ * @param activeDarken - Darken factor for active state (default 0.12)
+ * @returns An object with hover and active color hex strings
+ */
+export function generateAutoStateColors(
+  baseColor: string,
+  brandColor: string,
+  hoverRatio = 0.12,
+  activeRatio = 0.24,
+) {
+  const isBaseLight = chroma(baseColor).luminance() > 0.8;
+  const isBaseBrand = chroma.distance(baseColor, brandColor) < 10;
+
+  let hover: string;
+  let active: string;
+
+  if (isBaseBrand) {
+    // Brand color: mix with white
+    hover = chroma.mix(baseColor, '#fff', hoverRatio, 'rgb').hex();
+    active = chroma.mix(baseColor, '#fff', activeRatio, 'rgb').hex();
+  } else if (isBaseLight) {
+    // Light base: mix with brand color
+    hover = chroma.mix(baseColor, brandColor, hoverRatio, 'rgb').hex();
+    active = chroma.mix(baseColor, brandColor, activeRatio, 'rgb').hex();
+  } else {
+    // Other: mix with brand color
+    hover = chroma.mix(baseColor, brandColor, hoverRatio, 'rgb').hex();
+    active = chroma.mix(baseColor, brandColor, activeRatio, 'rgb').hex();
+  }
+
+  return { hover, active };
+}
