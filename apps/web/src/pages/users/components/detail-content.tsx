@@ -197,7 +197,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                     <TruncatedText text={name} maxLength={15} />
                   </div>
                   <div className="w-1/2">
-                    <TruncatedText text={`${value}`} maxLength={15} />
+                    <TruncatedText text={`${value}`} maxLength={25} />
                   </div>
                 </div>
               ))}
