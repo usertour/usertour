@@ -2,7 +2,7 @@ import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-colo
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import { ModalPosition } from '@usertour-ui/types';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 const placementItems = [
   { name: 'Top Left', value: ModalPosition.LeftTop },

@@ -5,20 +5,20 @@ import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { GoogleFontCss } from '@usertour-ui/shared-components';
 import { cn } from '@usertour-ui/ui-utils';
 import { createContext, forwardRef, useContext, useEffect, useState } from 'react';
-import { ThemeSettingsBackdrop } from './theme-settings-backdrop';
-import { ThemeSettingsBasicColor } from './theme-settings-basic-color';
-import { ThemeSettingsBeacon } from './theme-settings-beacon';
-import { ThemeSettingsBorder } from './theme-settings-border';
-import { ThemeSettingsButtons } from './theme-settings-buttons';
-import { ThemeSettingsChecklist } from './theme-settings-checklist';
-import { ThemeSettingsChecklistLauncher } from './theme-settings-checklist-launcher';
-import { ThemeSettingsFont } from './theme-settings-font';
-import { ThemeSettingsLauncherIcons } from './theme-settings-launcher-icons';
-import { ThemeSettingsModal } from './theme-settings-modal';
-import { ThemeSettingsProgress } from './theme-settings-progress';
-import { ThemeSettingsSurvey } from './theme-settings-survey';
-import { ThemeSettingsTooltip } from './theme-settings-tooltip';
-import { ThemeSettingsXbutton } from './theme-settings-xbutton';
+import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
+import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
+import { ThemeSettingsBeacon } from './settings/theme-settings-beacon';
+import { ThemeSettingsBorder } from './settings/theme-settings-border';
+import { ThemeSettingsButtons } from './settings/theme-settings-buttons';
+import { ThemeSettingsChecklist } from './settings/theme-settings-checklist';
+import { ThemeSettingsChecklistLauncher } from './settings/theme-settings-checklist-launcher';
+import { ThemeSettingsFont } from './settings/theme-settings-font';
+import { ThemeSettingsLauncherIcons } from './settings/theme-settings-launcher-icons';
+import { ThemeSettingsModal } from './settings/theme-settings-modal';
+import { ThemeSettingsProgress } from './settings/theme-settings-progress';
+import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
+import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
+import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
   <Accordion.Item
@@ -70,40 +70,53 @@ interface ThemeSettingsContextProps {
   settings: ThemeTypesSetting;
   finalSettings: ThemeTypesSetting | null;
 }
+
 const ThemeSettingsContext = createContext<ThemeSettingsContextProps | null>(null);
 
 export function useThemeSettingsContext(): ThemeSettingsContextProps {
   const context = useContext(ThemeSettingsContext);
   if (!context) {
-    throw new Error('useThemeSettingsContext must be used within a ThemeSettingsSettingsProvider.');
+    throw new Error('useThemeSettingsContext must be used within a ThemeSettingsPanel.');
   }
   return context;
 }
 
-interface ThemeSettingsProps {
-  onChange: (settings: ThemeTypesSetting) => void;
+interface ThemeSettingsPanelProps {
+  settings: ThemeTypesSetting;
   defaultSettings: ThemeTypesSetting;
+  onSettingsChange: (settings: ThemeTypesSetting) => void;
+  className?: string;
 }
-export const ThemeSettings = (props: ThemeSettingsProps) => {
-  const { onChange, defaultSettings } = props;
-  const [settings, setSettings] = useState<ThemeTypesSetting>(defaultSettings);
+
+export const ThemeSettingsPanel = ({
+  settings: initialSettings,
+  onSettingsChange,
+  className,
+}: ThemeSettingsPanelProps) => {
+  const [settings, setSettings] = useState<ThemeTypesSetting>(initialSettings);
   const [finalSettings, setFinalSettings] = useState<ThemeTypesSetting | null>(null);
+
+  // Update internal settings when external settings change
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
 
   useEffect(() => {
     if (settings) {
       setFinalSettings(convertSettings(settings));
-      onChange(settings);
+      onSettingsChange(settings);
     }
-  }, [settings]);
+  }, [settings, onSettingsChange]);
 
   const value = { settings, setSettings, finalSettings };
+
   return (
     <ThemeSettingsContext.Provider value={value}>
       <GoogleFontCss settings={settings} />
       <Accordion.Root
         type="multiple"
         defaultValue={['item-1']}
-        className="shadow bg-white rounded-lg w-[350px] "
+        className={cn('shadow bg-white rounded-lg w-[350px]', className)}
       >
         <AccordionItem value="basic">
           <AccordionTrigger>Base colors</AccordionTrigger>
@@ -196,4 +209,4 @@ export const ThemeSettings = (props: ThemeSettingsProps) => {
   );
 };
 
-ThemeSettings.displayName = 'ThemeSettings';
+ThemeSettingsPanel.displayName = 'ThemeSettingsPanel';

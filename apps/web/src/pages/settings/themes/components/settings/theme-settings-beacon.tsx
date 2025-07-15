@@ -1,6 +1,6 @@
 import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBeacon = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();

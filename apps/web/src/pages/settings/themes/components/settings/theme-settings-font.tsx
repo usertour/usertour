@@ -6,7 +6,7 @@ import {
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import { fontItems } from '@/utils/webfonts';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsFont = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();

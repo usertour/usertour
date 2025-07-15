@@ -1,12 +1,21 @@
-import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { Button } from '@usertour-ui/button';
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ContentEditorSerialize, createValue5 } from '@usertour-ui/shared-editor';
-import { ProgressBarPosition, ProgressBarType } from '@usertour-ui/types';
+import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour-ui/types';
 import { useRef } from 'react';
+import { Rect } from '../theme-editor';
 
-export const ThemePreviewPopper = () => {
-  const { settings, customStyle, viewRect } = useThemeDetailContext();
+interface ThemePreviewPopperProps {
+  settings?: ThemeTypesSetting;
+  customStyle?: string;
+  viewRect?: Rect;
+}
+
+export const ThemePreviewPopper = ({
+  settings,
+  customStyle,
+  viewRect,
+}: ThemePreviewPopperProps) => {
   const ref = useRef(null);
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;
@@ -28,8 +37,8 @@ export const ThemePreviewPopper = () => {
         <SharedPopper.Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={customStyle}>
           <SharedPopper.PopperOverlay blockTarget={true} viewportRect={viewRect} />
           <SharedPopper.PopperContentPotal
-            sideOffset={1}
-            alignOffset={1}
+            sideOffset={10}
+            alignOffset={10}
             avoidCollisions={true}
             side={'right'}
             align={'center'}
