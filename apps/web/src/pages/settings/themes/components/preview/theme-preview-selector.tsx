@@ -31,13 +31,13 @@ export function ThemePreviewSelector({ selectedType, onTypeChange }: ThemePrevie
           variant="outline"
           aria-label="Select a type..."
           aria-expanded={open}
-          className="flex-1 justify-between md:max-w-48 lg:max-w-72"
+          className="flex-1 justify-between md:max-w-48 lg:max-w-60"
         >
           {selectedType ? selectedType.name : 'Select a type...'}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0">
+      <PopoverContent className="w-60 p-0">
         <Command>
           <CommandInput placeholder="Search types..." />
           <CommandEmpty>No types found.</CommandEmpty>
