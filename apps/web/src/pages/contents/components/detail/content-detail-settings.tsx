@@ -1,8 +1,7 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
-import { defaultContentConfig } from '@usertour-ui/shared-utils';
-import { ContentConfigObject, ContentDataType, RulesCondition } from '@usertour-ui/types';
-import { deepmerge } from 'deepmerge-ts';
+import { buildConfig } from '@usertour-ui/shared-utils';
+import { ContentDataType, RulesCondition } from '@usertour-ui/types';
 import { useCallback } from 'react';
 import {
   ContentDetailAutoStartRules,
@@ -10,18 +9,6 @@ import {
 } from './content-detail-autostart-rules';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
-
-const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
-  return {
-    ...defaultContentConfig,
-    ...config,
-    autoStartRulesSetting: deepmerge(
-      defaultContentConfig.autoStartRulesSetting,
-      config?.autoStartRulesSetting || {},
-    ),
-    hideRulesSetting: config?.hideRulesSetting || {},
-  };
-};
 
 export const ContentDetailSettings = () => {
   const { version } = useContentVersionContext();
