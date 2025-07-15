@@ -4,6 +4,7 @@ import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { GoogleFontCss } from '@usertour-ui/shared-components';
 import { cn } from '@usertour-ui/ui-utils';
+import { ScrollArea } from '@usertour-ui/scroll-area';
 import { createContext, forwardRef, useContext, useEffect, useState } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
@@ -19,6 +20,8 @@ import { ThemeSettingsProgress } from './settings/theme-settings-progress';
 import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
 import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
 import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
+import { SubThemeModal } from './sub-theme-modal';
+import { Button } from '@usertour-ui/button';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
   <Accordion.Item
@@ -86,16 +89,17 @@ interface ThemeSettingsPanelProps {
   defaultSettings: ThemeTypesSetting;
   onSettingsChange: (settings: ThemeTypesSetting) => void;
   className?: string;
+  enableScroll?: boolean;
 }
 
 export const ThemeSettingsPanel = ({
   settings: initialSettings,
   onSettingsChange,
   className,
+  enableScroll = false,
 }: ThemeSettingsPanelProps) => {
   const [settings, setSettings] = useState<ThemeTypesSetting>(initialSettings);
   const [finalSettings, setFinalSettings] = useState<ThemeTypesSetting | null>(null);
-
   // Update internal settings when external settings change
   useEffect(() => {
     setSettings(initialSettings);
@@ -110,101 +114,122 @@ export const ThemeSettingsPanel = ({
 
   const value = { settings, setSettings, finalSettings };
 
+  const accordionContent = (
+    <>
+      <AccordionItem value="basic">
+        <AccordionTrigger>Base colors</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsBasicColor />
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="font">
+        <AccordionTrigger>Font</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsFont />
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="border">
+        <AccordionTrigger>Chrome border</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsBorder />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="xbutton">
+        <AccordionTrigger>X Button</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsXbutton />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="progress">
+        <AccordionTrigger>Progress bar</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsProgress />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="buttons">
+        <AccordionTrigger>Buttons</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsButtons />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="tooptip">
+        <AccordionTrigger>Tooltip</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsTooltip />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="modal">
+        <AccordionTrigger>Modal</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsModal />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="survey">
+        <AccordionTrigger>Survey</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsSurvey />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="checklist">
+        <AccordionTrigger>Checklist</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsChecklist />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="checklist-launcher">
+        <AccordionTrigger>Checklist launcher</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsChecklistLauncher />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="launcher-beacon">
+        <AccordionTrigger>Launcher beacons</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsBeacon />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="launcher-icons">
+        <AccordionTrigger>Launcher icons</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsLauncherIcons />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="backdrop">
+        <AccordionTrigger>Backdrop</AccordionTrigger>
+        <AccordionContent>
+          <ThemeSettingsBackdrop />
+        </AccordionContent>
+      </AccordionItem>
+    </>
+  );
+
   return (
     <ThemeSettingsContext.Provider value={value}>
       <GoogleFontCss settings={settings} />
-      <Accordion.Root
-        type="multiple"
-        defaultValue={['item-1']}
-        className={cn('shadow bg-white rounded-lg w-[350px]', className)}
-      >
-        <AccordionItem value="basic">
-          <AccordionTrigger>Base colors</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsBasicColor />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="font">
-          <AccordionTrigger>Font</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsFont />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="border">
-          <AccordionTrigger>Chrome border</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsBorder />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="xbutton">
-          <AccordionTrigger>X Button</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsXbutton />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="progress">
-          <AccordionTrigger>Progress bar</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsProgress />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="buttons">
-          <AccordionTrigger>Buttons</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsButtons />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="tooptip">
-          <AccordionTrigger>Tooltip</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsTooltip />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="modal">
-          <AccordionTrigger>Modal</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsModal />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="survey">
-          <AccordionTrigger>Survey</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsSurvey />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="checklist">
-          <AccordionTrigger>Checklist</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsChecklist />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="checklist-launcher">
-          <AccordionTrigger>Checklist launcher</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsChecklistLauncher />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="launcher-beacon">
-          <AccordionTrigger>Launcher beacons</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsBeacon />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="launcher-icons">
-          <AccordionTrigger>Launcher icons</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsLauncherIcons />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="backdrop">
-          <AccordionTrigger>Backdrop</AccordionTrigger>
-          <AccordionContent>
-            <ThemeSettingsBackdrop />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion.Root>
+      {enableScroll ? (
+        <div className={cn('shadow bg-white rounded-lg w-[350px] h-full flex flex-col', className)}>
+          <ScrollArea className="flex-1">
+            <Accordion.Root type="multiple">
+              <div className="p-10 border-b border-blue-100">
+                <Button>DDD</Button>
+              </div>
+              {accordionContent}
+            </Accordion.Root>
+          </ScrollArea>
+        </div>
+      ) : (
+        <Accordion.Root
+          type="multiple"
+          className={cn('shadow bg-white rounded-lg w-[350px]', className)}
+        >
+          <div className="p-10 border-b border-blue-100">
+            <SubThemeModal />
+          </div>
+          {accordionContent}
+        </Accordion.Root>
+      )}
     </ThemeSettingsContext.Provider>
   );
 };
