@@ -475,6 +475,7 @@ input CreateThemeInput {
   name: String!
   projectId: String!
   settings: JSON
+  variations: JSON
 }
 
 """
@@ -1006,6 +1007,7 @@ type Theme {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  variations: JSON
 }
 
 input UpdateAttributeInput {
@@ -1082,6 +1084,7 @@ input UpdateThemeInput {
   isDefault: Boolean
   name: String
   settings: JSON
+  variations: JSON
 }
 
 input UpdateUserInput {

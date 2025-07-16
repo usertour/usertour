@@ -167,19 +167,21 @@ model AccessToken {
 }
 
 model Theme {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
-  name      String    @default("")
-  isDefault Boolean   @default(false)
-  isSystem  Boolean   @default(false)
-  deleted   Boolean   @default(false)
-  project   Project   @relation(fields: [projectId], references: [id])
-  projectId String
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+  name       String    @default("")
+  isDefault  Boolean   @default(false)
+  isSystem   Boolean   @default(false)
+  deleted    Boolean   @default(false)
+  project    Project   @relation(fields: [projectId], references: [id])
+  projectId  String
   // settings  String
-  settings  Json?     @db.JsonB
-  steps     Step[]
-  versions  Version[]
+  settings   Json?     @db.JsonB
+  /// Conditional variations
+  variations Json?     @db.JsonB
+  steps      Step[]
+  versions   Version[]
 }
 
 model Content {

@@ -1,8 +1,8 @@
-import { ThemeTypesSetting } from '@usertour-ui/types';
+import { Attribute, ThemeTypesSetting, ThemeVariation } from '@usertour-ui/types';
 import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
-import { GoogleFontCss } from '@usertour-ui/shared-components';
+import { GoogleFontCss, Rules } from '@usertour-ui/shared-components';
 import { cn } from '@usertour-ui/ui-utils';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { createContext, forwardRef, useContext, useEffect, useState } from 'react';
@@ -20,8 +20,8 @@ import { ThemeSettingsProgress } from './settings/theme-settings-progress';
 import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
 import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
 import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
-import { SubThemeModal } from './sub-theme-modal';
 import { Button } from '@usertour-ui/button';
+import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
   <Accordion.Item
@@ -89,14 +89,28 @@ interface ThemeSettingsPanelProps {
   defaultSettings: ThemeTypesSetting;
   onSettingsChange: (settings: ThemeTypesSetting) => void;
   className?: string;
-  enableScroll?: boolean;
+  isInModal?: boolean;
+  attributeList?: Attribute[];
+  variations?: ThemeVariation[];
+  onVariationsChange?: (variations: ThemeVariation[]) => void;
+  onSave?: () => void;
+  onCancel?: () => void;
+  onConditionsChange?: (conditions: any[]) => void;
+  initialConditions?: any[];
 }
 
 export const ThemeSettingsPanel = ({
   settings: initialSettings,
   onSettingsChange,
   className,
-  enableScroll = false,
+  isInModal = false,
+  onSave,
+  onCancel,
+  onConditionsChange,
+  initialConditions = [],
+  attributeList,
+  variations = [],
+  onVariationsChange,
 }: ThemeSettingsPanelProps) => {
   const [settings, setSettings] = useState<ThemeTypesSetting>(initialSettings);
   const [finalSettings, setFinalSettings] = useState<ThemeTypesSetting | null>(null);
@@ -208,12 +222,35 @@ export const ThemeSettingsPanel = ({
   return (
     <ThemeSettingsContext.Provider value={value}>
       <GoogleFontCss settings={settings} />
-      {enableScroll ? (
+      {isInModal ? (
         <div className={cn('shadow bg-white rounded-lg w-[350px] h-full flex flex-col', className)}>
           <ScrollArea className="flex-1">
             <Accordion.Root type="multiple">
               <div className="p-10 border-b border-blue-100">
-                <Button>DDD</Button>
+                {onConditionsChange && (
+                  <div className="mb-4">
+                    <Rules
+                      onDataChange={onConditionsChange}
+                      defaultConditions={initialConditions}
+                      isHorizontal={true}
+                      isShowIf={false}
+                      filterItems={['group', 'user-attr', 'current-page']}
+                      addButtonText={'Add condition'}
+                      attributes={attributeList || []}
+                      disabled={false}
+                    />
+                  </div>
+                )}
+                {(onSave || onCancel) && (
+                  <div className="flex justify-end gap-2 p-4">
+                    {onCancel && (
+                      <Button variant="outline" onClick={onCancel}>
+                        Cancel
+                      </Button>
+                    )}
+                    {onSave && <Button onClick={onSave}>Save</Button>}
+                  </div>
+                )}
               </div>
               {accordionContent}
             </Accordion.Root>
@@ -225,7 +262,11 @@ export const ThemeSettingsPanel = ({
           className={cn('shadow bg-white rounded-lg w-[350px]', className)}
         >
           <div className="p-10 border-b border-blue-100">
-            <SubThemeModal />
+            <ConditionalVariationsPanel
+              variations={variations}
+              onVariationsChange={onVariationsChange}
+              attributeList={attributeList}
+            />
           </div>
           {accordionContent}
         </Accordion.Root>

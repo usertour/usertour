@@ -1,4 +1,10 @@
+import { RulesCondition } from './contents';
 import { ThemeTypesSetting } from './theme-settings';
+
+export type ThemeVariation = {
+  conditions: RulesCondition[];
+  settings: ThemeTypesSetting;
+};
 
 export type Theme = {
   id: string;
@@ -9,6 +15,7 @@ export type Theme = {
   isSystem: boolean;
   projectId: string;
   settings: ThemeTypesSetting;
+  variations?: ThemeVariation[];
 };
 
 export enum ThemeDetailPreviewType {

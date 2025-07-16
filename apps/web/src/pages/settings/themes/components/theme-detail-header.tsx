@@ -14,7 +14,7 @@ import { ThemeRenameForm } from './theme-rename-form';
 import { useAppContext } from '@/contexts/app-context';
 
 export const ThemeDetailHeader = () => {
-  const { theme, settings, refetch } = useThemeDetailContext();
+  const { theme, settings, refetch, variations } = useThemeDetailContext();
   const { projectId } = useParams();
   const [updateMutation] = useMutation(updateTheme);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -32,6 +32,7 @@ export const ThemeDetailHeader = () => {
           id: theme.id,
           name: theme.name,
           settings: settings,
+          variations: variations,
         },
       });
       refetch();

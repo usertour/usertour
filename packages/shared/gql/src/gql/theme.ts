@@ -11,6 +11,7 @@ export const getTheme = gql`
       settings
       isDefault
       isSystem
+      variations
     }
   }
 `;
@@ -21,6 +22,7 @@ export const createTheme = gql`
     $projectId: String!
     $settings: JSON!
     $isDefault: Boolean!
+    $variations: JSON
   ) {
     createTheme(
       data: {
@@ -41,9 +43,10 @@ export const updateTheme = gql`
     $name: String!
     $settings: JSON
     $isDefault: Boolean
+    $variations: JSON
   ) {
     updateTheme(
-      data: { id: $id, name: $name, settings: $settings, isDefault: $isDefault }
+      data: { id: $id, name: $name, settings: $settings, isDefault: $isDefault, variations: $variations }
     ) {
       id
     }
@@ -77,6 +80,7 @@ export const listThemes = gql`
       settings
       isDefault
       isSystem
+      variations
     }
   }
 `;

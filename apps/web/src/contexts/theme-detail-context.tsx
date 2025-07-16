@@ -1,8 +1,16 @@
-import { ThemeTypesSetting } from '@usertour-ui/types';
+import { ThemeTypesSetting, ThemeVariation } from '@usertour-ui/types';
 import { useQuery } from '@apollo/client';
 import { getTheme } from '@usertour-ui/gql';
 import { Theme, ThemeDetailSelectorType } from '@usertour-ui/types';
-import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useState } from 'react';
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from 'react';
 import { themeDetailSelectorTypes } from '@/utils/theme';
 
 export interface ThemeDetailProviderProps {
@@ -13,6 +21,8 @@ export interface ThemeDetailProviderProps {
 export interface ThemeDetailContextValue {
   settings: ThemeTypesSetting | null;
   setSettings: Dispatch<SetStateAction<ThemeTypesSetting | null>>;
+  variations: ThemeVariation[];
+  setVariations: Dispatch<SetStateAction<ThemeVariation[]>>;
   selectedType: ThemeDetailSelectorType;
   setSelectedType: Dispatch<SetStateAction<ThemeDetailSelectorType>>;
   customStyle: string;
@@ -42,6 +52,7 @@ const defaultRect: Rect = {
 export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Element {
   const { children, themeId } = props;
   const [settings, setSettings] = useState<ThemeTypesSetting | null>(null);
+  const [variations, setVariations] = useState<ThemeVariation[]>([]);
   const [selectedType, setSelectedType] = useState<ThemeDetailSelectorType>(
     themeDetailSelectorTypes[0],
   );
@@ -52,12 +63,22 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
   const [viewRect, setViewRect] = useState<Rect>(defaultRect);
 
   const theme = data?.getTheme;
+
+  // Initialize variations from theme data
+  useEffect(() => {
+    if (theme?.variations) {
+      setVariations(theme.variations);
+    }
+  }, [theme?.variations]);
+
   const value: ThemeDetailContextValue = {
     theme,
     selectedType,
     setSelectedType,
     settings,
     setSettings,
+    variations,
+    setVariations,
     customStyle,
     setCustomStyle,
     viewRect,

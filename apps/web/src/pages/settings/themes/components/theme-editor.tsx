@@ -1,4 +1,10 @@
-import { ThemeTypesSetting, Theme, ThemeDetailSelectorType } from '@usertour-ui/types';
+import {
+  ThemeTypesSetting,
+  Theme,
+  ThemeDetailSelectorType,
+  Attribute,
+  ThemeVariation,
+} from '@usertour-ui/types';
 import { cn } from '@usertour-ui/ui-utils';
 import { ThemeSettingsPanel } from './theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
@@ -34,6 +40,9 @@ export interface ThemeEditorProps {
   customStyle?: string;
   viewRect?: Rect;
   theme?: Theme;
+  attributeList?: Attribute[];
+  variations?: ThemeVariation[];
+  onVariationsChange?: (variations: ThemeVariation[]) => void;
 }
 
 export const ThemeEditor = ({
@@ -51,6 +60,9 @@ export const ThemeEditor = ({
   customStyle,
   viewRect,
   theme,
+  attributeList,
+  variations = [],
+  onVariationsChange,
 }: ThemeEditorProps) => {
   return (
     <div
@@ -64,6 +76,9 @@ export const ThemeEditor = ({
         settings={settings}
         defaultSettings={defaultSettings}
         onSettingsChange={onSettingsChange}
+        attributeList={attributeList}
+        variations={variations}
+        onVariationsChange={onVariationsChange}
       />
       {showPreview && (
         <ThemePreviewPanel

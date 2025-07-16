@@ -151,6 +151,7 @@ Table Theme {
   project Project [not null]
   projectId String [not null]
   settings Json
+  variations Json [note: 'Conditional variations']
   steps Step [not null]
   versions Version [not null]
 }
