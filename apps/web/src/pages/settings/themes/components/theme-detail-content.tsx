@@ -35,7 +35,6 @@ export const ThemeDetailContent = () => {
         layout="horizontal"
         customStyle={customStyle}
         viewRect={viewRect}
-        theme={theme}
         attributeList={attributeList}
         variations={variations}
         onVariationsChange={setVariations}

@@ -2,7 +2,6 @@ import {
   ChecklistData,
   ChecklistItemType,
   ModalPosition,
-  Theme,
   ThemeTypesSetting,
 } from '@usertour-ui/types';
 import {
@@ -26,7 +25,6 @@ import {
 } from './popper';
 import { CheckmarkIcon, DropDownIcon } from '@usertour-ui/icons';
 import { useComposedRefs } from '@usertour-ui/react-compose-refs';
-import { useThemeStyles } from './hooks';
 import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
 import { cn } from '@usertour-ui/ui-utils';
@@ -38,6 +36,7 @@ import {
   checklistProgress,
   checklistUnCompletedItemsCount,
 } from './utils/content';
+import { useSettingsStyles } from './hooks/use-settings-styles';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -70,7 +69,7 @@ const useChecklistRootContext = () => {
 
 interface ChecklistRootProps {
   children: React.ReactNode;
-  theme: Theme;
+  themeSettings: ThemeTypesSetting;
   data: ChecklistData;
   defaultOpen?: boolean;
   expanded?: boolean;
@@ -83,7 +82,6 @@ interface ChecklistRootProps {
 const ChecklistRoot = (props: ChecklistRootProps) => {
   const {
     children,
-    theme,
     data: initialData,
     defaultOpen = true,
     expanded,
@@ -91,8 +89,9 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     onExpandedChange,
     reportExpandedChangeEvent,
     zIndex,
+    themeSettings,
   } = props;
-  const { globalStyle, themeSetting } = useThemeStyles(theme);
+  const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
   const [data, setData] = useState(initialData);
   const [showDismissConfirm, setShowDismissConfirm] = useState(false);
   const [pendingAnimationItems, setPendingAnimationItems] = useState<Set<string>>(new Set());

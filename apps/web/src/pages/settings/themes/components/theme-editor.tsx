@@ -1,6 +1,5 @@
 import {
   ThemeTypesSetting,
-  Theme,
   ThemeDetailSelectorType,
   Attribute,
   ThemeVariation,
@@ -39,7 +38,6 @@ export interface ThemeEditorProps {
   // Additional data for preview
   customStyle?: string;
   viewRect?: Rect;
-  theme?: Theme;
   attributeList?: Attribute[];
   variations?: ThemeVariation[];
   onVariationsChange?: (variations: ThemeVariation[]) => void;
@@ -59,7 +57,6 @@ export const ThemeEditor = ({
   className,
   customStyle,
   viewRect,
-  theme,
   attributeList,
   variations = [],
   onVariationsChange,
@@ -90,7 +87,6 @@ export const ThemeEditor = ({
           showSelector={showSelector}
           customStyle={customStyle}
           viewRect={viewRect}
-          theme={theme}
           className="h-[calc(100vh-180px)]"
         />
       )}

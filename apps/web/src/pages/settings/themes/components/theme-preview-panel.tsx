@@ -4,7 +4,6 @@ import { Separator } from '@usertour-ui/separator';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   LauncherDataType,
-  Theme,
   ThemeDetailSelectorType,
   ThemeDetailPreviewType,
 } from '@usertour-ui/types';
@@ -27,7 +26,6 @@ interface ThemePreviewPanelProps {
   showSelector?: boolean;
   customStyle?: string;
   viewRect?: Rect;
-  theme?: Theme;
   className?: string;
 }
 
@@ -40,7 +38,6 @@ export const ThemePreviewPanel = ({
   showSelector = true,
   customStyle,
   viewRect,
-  theme,
   className,
 }: ThemePreviewPanelProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -92,16 +89,15 @@ export const ThemePreviewPanel = ({
           />
         )}
         {selectedType?.type === ThemeDetailPreviewType.LAUNCHER_ICON && (
-          <ThemePreviewLauncher type={LauncherDataType.ICON} theme={theme} settings={settings} />
+          <ThemePreviewLauncher type={LauncherDataType.ICON} settings={settings} />
         )}
         {selectedType?.type === ThemeDetailPreviewType.LAUNCHER_BEACON && (
-          <ThemePreviewLauncher type={LauncherDataType.BEACON} theme={theme} settings={settings} />
+          <ThemePreviewLauncher type={LauncherDataType.BEACON} settings={settings} />
         )}
         {(selectedType?.type === ThemeDetailPreviewType.CHECKLIST ||
           selectedType?.type === ThemeDetailPreviewType.CHECKLIST_LAUNCHER) && (
           <ThemePreviewChecklist
             expanded={selectedType.type === ThemeDetailPreviewType.CHECKLIST}
-            theme={theme}
             settings={settings}
           />
         )}

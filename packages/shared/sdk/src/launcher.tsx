@@ -5,14 +5,7 @@ import { useFloating, offset, shift, limitShift, hide, flip, size } from '@float
 import type { Placement } from '@floating-ui/dom';
 import { UserIcon } from '@usertour-ui/icons';
 import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
-import {
-  Align,
-  LauncherData,
-  LauncherDataType,
-  Side,
-  Theme,
-  ThemeTypesSetting,
-} from '@usertour-ui/types';
+import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour-ui/types';
 import { cn } from '@usertour-ui/ui-utils';
 import {
   Popper,
@@ -21,7 +14,7 @@ import {
   PopperContentProps,
   PopperProps,
 } from './popper';
-import { useThemeStyles } from './hooks';
+import { useSettingsStyles } from './hooks/use-settings-styles';
 
 function isNotNull<T>(value: T | null): value is T {
   return value !== null;
@@ -58,7 +51,7 @@ interface LauncherContentProps {
 
 interface LauncherRootProps {
   children: React.ReactNode;
-  theme: Theme;
+  themeSettings: ThemeTypesSetting;
   data: LauncherData;
 }
 
@@ -79,8 +72,8 @@ const useLauncherContext = () => {
 };
 
 const LauncherRoot = (props: LauncherRootProps) => {
-  const { children, theme, data } = props;
-  const { globalStyle, themeSetting } = useThemeStyles(theme);
+  const { children, themeSettings, data } = props;
+  const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
   return (
     <LauncherContext.Provider value={{ globalStyle, themeSetting, data }}>
