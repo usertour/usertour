@@ -42,7 +42,7 @@ export const ModalThemeSettingsPanel = ({
   showError = false,
 }: ModalThemeSettingsPanelProps) => {
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="h-full border-r border-blue-100">
       <ThemeSettingsPanel
         settings={settings}
         defaultSettings={defaultSettings}
