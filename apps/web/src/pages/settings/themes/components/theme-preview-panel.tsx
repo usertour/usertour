@@ -99,7 +99,6 @@ export const ThemePreviewPanel = ({
           <ThemePreviewChecklist
             expanded={selectedType.type === ThemeDetailPreviewType.CHECKLIST}
             settings={settings}
-            containerHeight={containerRectSize?.height}
           />
         )}
       </div>
