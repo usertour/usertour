@@ -19,6 +19,9 @@ export type XNode = {
   previousElementSelectors: string[];
   depth: number;
   parentNode?: XNode | null;
+  // New iframe-specific properties
+  iframeContext?: string; // Selector to reach the iframe containing this element
+  isInIframe?: boolean;
 };
 
 export type XData = {
@@ -39,6 +42,24 @@ export type Target = {
   isDynamicContent?: boolean;
   customSelector?: string;
   type?: string;
+  // New iframe-specific properties
+  iframeContext?: string;
+  searchInIframes?: boolean; // Whether to search inside iframes
+};
+
+// New iframe context type
+export interface IFrameContext {
+  iframe: HTMLIFrameElement | null;
+  document: Document;
+  selector: string; // Selector to identify this iframe
+  depth: number; // Nesting depth of iframe
+}
+
+// New result type with iframe information
+export type FinderResult = {
+  element: HTMLElement;
+  iframeContext?: string;
+  isInIframe: boolean;
 };
 
 const finderAttrs = [
@@ -106,6 +127,105 @@ const finderConfigs = [
 //     attr: (name: string, value) => name == attr,
 //   });
 // });
+
+// Iframe detection and traversal functions
+function getAllAccessibleDocuments(rootDocument: Document = document): IFrameContext[] {
+  const contexts: IFrameContext[] = [];
+
+  // Add main document
+  contexts.push({
+    iframe: null,
+    document: rootDocument,
+    selector: '', // Empty selector for main document
+    depth: 0,
+  });
+
+  // Find all iframes in the document
+  const iframes = rootDocument.querySelectorAll('iframe');
+
+  iframes.forEach((iframe, index) => {
+    try {
+      // Try to access iframe content (will fail for cross-origin)
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+      if (iframeDoc) {
+        // Generate a selector for this iframe
+        const iframeSelector = generateIframeSelector(iframe, index);
+
+        contexts.push({
+          iframe,
+          document: iframeDoc,
+          selector: iframeSelector,
+          depth: 1,
+        });
+
+        // Recursively check for nested iframes
+        const nestedContexts = getAllAccessibleDocuments(iframeDoc);
+        for (const nestedContext of nestedContexts) {
+          if (nestedContext.selector) {
+            // Combine selectors for nested iframes
+            nestedContext.selector = `${iframeSelector} ${nestedContext.selector}`;
+            nestedContext.depth = nestedContext.depth + 1;
+          } else {
+            nestedContext.selector = iframeSelector;
+            nestedContext.depth = 1;
+          }
+          if (nestedContext.iframe) {
+            contexts.push(nestedContext);
+          }
+        }
+      }
+    } catch (error) {
+      // Cross-origin iframe - cannot access
+      console.warn(
+        `Cannot access iframe ${index}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+    }
+  });
+
+  return contexts;
+}
+
+function generateIframeSelector(iframe: HTMLIFrameElement, fallbackIndex: number): string {
+  // Try to generate a unique selector for the iframe
+  if (iframe.id) {
+    return `iframe#${iframe.id}`;
+  }
+
+  if (iframe.name) {
+    return `iframe[name="${iframe.name}"]`;
+  }
+
+  if (iframe.src) {
+    return `iframe[src*="${new URL(iframe.src).pathname}"]`;
+  }
+
+  // Try to find a unique class
+  if (iframe.className) {
+    const classes = iframe.className.split(' ').filter((cls) => cls.trim());
+    if (classes.length > 0) {
+      return `iframe.${classes.join('.')}`;
+    }
+  }
+
+  // Fallback to nth-child selector
+  return `iframe:nth-of-type(${fallbackIndex + 1})`;
+}
+
+function isElementInDocument(element: Element, doc: Document): boolean {
+  return doc.contains(element);
+}
+
+function findElementDocument(element: Element, contexts: IFrameContext[]): IFrameContext | null {
+  for (const context of contexts) {
+    if (isElementInDocument(element, context.document)) {
+      return context;
+    }
+  }
+  return null;
+}
 
 function getMaxDepth(node: XNode): number {
   if (node.parentNode) {
@@ -274,6 +394,48 @@ function parseSelectorsTree(input: Element, parentNode: XNode | null, depth = 0)
   return parentNode;
 }
 
+// Enhanced version that includes iframe context
+function parseSelectorsTreeWithIframes(
+  input: Element,
+  parentNode: XNode | null,
+  iframeContext = '',
+  depth = 0,
+): XNode | null {
+  const selectors = queryElementSelectors(input);
+  if (selectors.length === 0) {
+    return parentNode;
+  }
+
+  const currentNode: XNode = {
+    previousElementSelectors: [],
+    nextElementSelectors: [],
+    selectors,
+    depth,
+    iframeContext,
+    isInIframe: !!iframeContext,
+  };
+
+  if (input.previousElementSibling) {
+    currentNode.previousElementSelectors = queryElementSelectors(input.previousElementSibling);
+  }
+  if (input.nextElementSibling) {
+    currentNode.nextElementSelectors = queryElementSelectors(input.nextElementSibling);
+  }
+
+  if (parentNode === null) {
+    if (input.parentElement) {
+      parseSelectorsTreeWithIframes(input.parentElement, currentNode, iframeContext, depth + 1);
+    }
+    return currentNode;
+  }
+
+  parentNode.parentNode = currentNode;
+  if (input.parentElement) {
+    parseSelectorsTreeWithIframes(input.parentElement, currentNode, iframeContext, depth + 1);
+  }
+  return parentNode;
+}
+
 function finderMostPrecisionElement(
   elements: Element[],
   node: XNode,
@@ -335,15 +497,47 @@ export type TargetResult = {
   content: string;
   selectors: XNode | null;
   selectorsList: string[];
+  iframeContext?: string;
+  isInIframe?: boolean;
 };
-export function parserV2(element: HTMLElement): TargetResult {
+
+export function parserV2(element: HTMLElement, searchInIframes = false): TargetResult {
   const content = element.innerText ?? '';
-  const selectors = parseSelectorsTree(element, null);
+  let selectors: XNode | null;
+  let iframeContext: string | undefined;
+  let isInIframe = false;
+
+  if (searchInIframes) {
+    // Determine if element is in an iframe
+    const contexts = getAllAccessibleDocuments();
+    const elementContext = findElementDocument(element, contexts);
+
+    if (elementContext?.selector) {
+      iframeContext = elementContext.selector;
+      isInIframe = true;
+      selectors = parseSelectorsTreeWithIframes(element, null, iframeContext);
+    } else {
+      selectors = parseSelectorsTree(element, null);
+    }
+  } else {
+    selectors = parseSelectorsTree(element, null);
+  }
+
   const selectorsList = queryElementSelectors(element);
-  return { content, selectors, selectorsList };
+  return { content, selectors, selectorsList, iframeContext, isInIframe };
 }
 
-export function finderV2(target: Target, root: Element | Document) {
+/**
+ * Find element using enhanced selector system with optional iframe support
+ * @param target - Target configuration with selectors and options
+ * @param root - Root document or element to search within
+ * @returns HTMLElement if found, null otherwise
+ *
+ * Note: When searchInIframes is true, this function searches across all accessible iframes
+ * but only returns the HTMLElement for backward compatibility. Use findElementWithIframes()
+ * to get the full iframe context information.
+ */
+export function finderV2(target: Target, root: Element | Document = document): HTMLElement | null {
   const {
     selectors,
     content = '',
@@ -352,7 +546,16 @@ export function finderV2(target: Target, root: Element | Document) {
     isDynamicContent = false,
     customSelector = '',
     type = 'auto',
+    searchInIframes = false,
   } = target;
+
+  // If iframe search is enabled, search across all accessible documents
+  if (searchInIframes) {
+    const result = finderV2WithIframes(target, root as Document);
+    return result ? result.element : null;
+  }
+
+  // Original logic for single document search
   if (type === 'auto') {
     const mapping: any = {
       looser: 1,
@@ -392,6 +595,81 @@ export function finderV2(target: Target, root: Element | Document) {
   return null;
 }
 
+// New function for iframe-aware element finding
+export function finderV2WithIframes(
+  target: Target,
+  root: Document = document,
+): FinderResult | null {
+  const contexts = getAllAccessibleDocuments(root);
+
+  const {
+    selectors,
+    content = '',
+    sequence = 0,
+    precision = 'strict',
+    isDynamicContent = false,
+    customSelector = '',
+    type = 'auto',
+  } = target;
+
+  if (type === 'auto' && selectors) {
+    const mapping: any = {
+      looser: 1,
+      loose: 3,
+      loosest: 5,
+      strict: 7,
+      stricter: 8,
+      strictest: 10,
+    };
+
+    // Try to find element in each context
+    for (const context of contexts) {
+      const el = finderX(selectors, context.document, mapping[precision]) as HTMLElement;
+      if (el) {
+        if (isDynamicContent && content && el.innerText !== content) {
+          continue;
+        }
+        return {
+          element: el,
+          iframeContext: context.selector,
+          isInIframe: !!context.selector,
+        };
+      }
+    }
+  } else if (customSelector) {
+    // Handle custom selector case across all contexts
+    const sequenceMapping: any = {
+      '1st': 0,
+      '2st': 1,
+      '3st': 2,
+      '4st': 3,
+      '5st': 4,
+    };
+
+    for (const context of contexts) {
+      try {
+        const selector = customSelector.replace(/\\\\/g, '\\');
+        const elements = context.document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          const el = elements[sequenceMapping[sequence]] || elements[0];
+          if (content && el.textContent?.trim() !== content) {
+            continue;
+          }
+          return {
+            element: el as HTMLElement,
+            iframeContext: context.selector,
+            isInIframe: !!context.selector,
+          };
+        }
+      } catch (error) {
+        console.warn(`Selector error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+  }
+
+  return null;
+}
+
 export function finderX(node: XNode, root: Element | Document, precision = 10) {
   if (!node || node.selectors.length === 0) {
     return null;
@@ -410,4 +688,72 @@ export function finderX(node: XNode, root: Element | Document, precision = 10) {
   }
 
   return finderMostPrecisionElement(elements, node, rootDocument, precision);
+}
+
+// ============================================================================
+// IFRAME SUPPORT FUNCTIONS
+// ============================================================================
+// These functions provide enhanced iframe traversal capabilities while
+// maintaining backward compatibility with existing code.
+
+/**
+ * Generate selectors for an element with iframe context awareness
+ * @param element - The HTML element to generate selectors for
+ * @returns Target object with iframe-aware selectors and context
+ */
+export function generateSelectorsWithIframes(element: HTMLElement): Target {
+  const contexts = getAllAccessibleDocuments();
+  const elementContext = findElementDocument(element, contexts);
+
+  let iframeContext = '';
+  if (elementContext?.selector) {
+    iframeContext = elementContext.selector;
+  }
+
+  const node = iframeContext
+    ? parseSelectorsTreeWithIframes(element, null, iframeContext)
+    : parseSelectorsTree(element, null);
+
+  return {
+    selectors: node,
+    iframeContext,
+    searchInIframes: true,
+    type: 'auto',
+    precision: 'strict',
+  };
+}
+
+/**
+ * Find element across all accessible documents (including iframes)
+ * Returns the full FinderResult with iframe context information
+ */
+export function findElementWithIframes(target: Target): FinderResult | null {
+  return finderV2WithIframes(target);
+}
+
+/**
+ * Find element with iframe support but return only the HTMLElement (backward compatible)
+ * This is equivalent to finderV2 with searchInIframes: true
+ */
+export function findElementInIframes(target: Target): HTMLElement | null {
+  const result = finderV2WithIframes(target);
+  return result ? result.element : null;
+}
+
+/**
+ * Check if an element is inside an iframe
+ */
+export function isElementInIframe(element: HTMLElement): boolean {
+  const contexts = getAllAccessibleDocuments();
+  const elementContext = findElementDocument(element, contexts);
+  return !!elementContext?.selector;
+}
+
+/**
+ * Get iframe context for an element
+ */
+export function getElementIframeContext(element: HTMLElement): string | null {
+  const contexts = getAllAccessibleDocuments();
+  const elementContext = findElementDocument(element, contexts);
+  return elementContext?.selector || null;
 }
