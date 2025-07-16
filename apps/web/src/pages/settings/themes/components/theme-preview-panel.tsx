@@ -60,7 +60,7 @@ export const ThemePreviewPanel = ({
   }, [containerRef, containerRectSize, onViewRectChange]);
 
   return (
-    <div className={cn('shadow bg-white rounded-lg grow ml-4 h-full', className)}>
+    <div className={cn('shadow bg-white rounded-lg grow ml-4 h-full flex flex-col', className)}>
       <div className="flex flex-col items-start justify-between space-y-2 p-4 sm:flex-row sm:items-center sm:space-y-0 md:h-16">
         <h2 className="text-lg font-semibold">Preview</h2>
         {showSelector && (
@@ -70,7 +70,7 @@ export const ThemePreviewPanel = ({
         )}
       </div>
       <Separator />
-      <div className="bg-blue-50 h-full overflow-hidden" ref={containerRef}>
+      <div className="bg-blue-50 flex-1 overflow-hidden" ref={containerRef}>
         {selectedType?.type === ThemeDetailPreviewType.TOOLTIP && (
           <ThemePreviewPopper settings={settings} customStyle={customStyle} viewRect={viewRect} />
         )}
@@ -99,6 +99,7 @@ export const ThemePreviewPanel = ({
           <ThemePreviewChecklist
             expanded={selectedType.type === ThemeDetailPreviewType.CHECKLIST}
             settings={settings}
+            containerHeight={containerRectSize?.height}
           />
         )}
       </div>

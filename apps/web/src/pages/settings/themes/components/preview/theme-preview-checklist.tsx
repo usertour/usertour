@@ -16,10 +16,11 @@ import { defaultChecklistData } from '@/utils/theme';
 interface ThemePreviewChecklistProps {
   expanded?: boolean;
   settings?: ThemeTypesSetting;
+  containerHeight?: number;
 }
 
 export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
-  const { expanded = true, settings } = props;
+  const { expanded = true, settings, containerHeight } = props;
 
   const [data] = useState<ChecklistData>({
     ...defaultChecklistData,
@@ -35,8 +36,14 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   }, [expanded]);
 
   return (
-    <div className="h-full w-full">
-      <div className="flex flex-row items-center justify-center h-full scale-100	 ">
+    <div
+      className="w-full"
+      style={{
+        transform: 'scale(1)',
+        height: containerHeight ? `${containerHeight}px` : '100%',
+      }}
+    >
+      <div className="flex flex-row items-center justify-center h-full scale-100">
         <ChecklistRoot
           data={data}
           expanded={expandedState}

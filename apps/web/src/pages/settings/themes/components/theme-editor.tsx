@@ -87,7 +87,7 @@ export const ThemeEditor = ({
           showSelector={showSelector}
           customStyle={customStyle}
           viewRect={viewRect}
-          className="h-[calc(100vh-180px)]"
+          className="h-[calc(100vh-120px)]"
         />
       )}
     </div>
