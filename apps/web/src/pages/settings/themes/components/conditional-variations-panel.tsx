@@ -3,6 +3,7 @@ import { Button } from '@usertour-ui/button';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import { SubThemeModal } from './sub-theme-modal';
+import { QuestionTooltip } from '@usertour-ui/tooltip';
 
 interface ConditionalVariationsPanelProps {
   variations: ThemeVariation[];
@@ -57,48 +58,58 @@ export const ConditionalVariationsPanel = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Conditional Variations</h3>
-        <Button variant="outline" size="sm" onClick={handleAddVariation} className="gap-2">
+      <div className="flex flex-col justify-between space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Conditional variations</span>
+          <QuestionTooltip>
+            Create theme variations that automatically apply based on user attributes. All matching
+            variations will be applied in the order shown below. Examples: • Apply dark theme when
+            user has dark mode enabled • Show different avatars based on assigned customer success
+            manager • Use premium colors for paid users
+          </QuestionTooltip>
+        </div>
+
+        {variations.length > 0 && (
+          <div className="space-y-2">
+            {variations.map((variation, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+              >
+                <div className="flex-1">
+                  <div className="text-sm font-medium">Variation {index + 1}</div>
+                  <div className="text-xs text-gray-500">
+                    {variation.conditions.length} condition
+                    {variation.conditions.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditVariation(variation, index)}
+                  >
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteVariation(index)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Button
+          variant="link"
+          size="sm"
+          onClick={handleAddVariation}
+          className="gap-2 hover:no-underline w-fit p-0"
+        >
           <PlusIcon className="h-4 w-4" />
           Add Conditional Variation
         </Button>
       </div>
-
-      {variations.length === 0 ? (
-        <div className="text-center py-8 text-sm text-gray-500">
-          No conditional variations yet. Click "Add Conditional Variation" to create one.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {variations.map((variation, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-            >
-              <div className="flex-1">
-                <div className="text-sm font-medium">Variation {index + 1}</div>
-                <div className="text-xs text-gray-500">
-                  {variation.conditions.length} condition
-                  {variation.conditions.length !== 1 ? 's' : ''}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditVariation(variation, index)}
-                >
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDeleteVariation(index)}>
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {openModal && (
         <SubThemeModal
