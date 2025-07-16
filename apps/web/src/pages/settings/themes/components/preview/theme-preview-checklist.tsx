@@ -35,33 +35,26 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   }, [expanded]);
 
   return (
-    <div
-      className="w-full h-full"
-      style={{
-        transform: 'scale(1)',
-      }}
-    >
-      <div className="flex flex-row items-center justify-center h-full scale-100">
-        <ChecklistRoot
-          data={data}
-          expanded={expandedState}
-          themeSettings={settings}
-          zIndex={10000}
-          onExpandedChange={setExpandedState}
-        >
-          <ChecklistContainer>
-            <ChecklistPopper zIndex={10000}>
-              <ChecklistPopperContent>
-                <ChecklistDropdown />
-                <ChecklistProgress />
-                <ChecklistItems />
-                <ChecklistDismiss />
-                <PopperMadeWith />
-              </ChecklistPopperContent>
-            </ChecklistPopper>
-          </ChecklistContainer>
-        </ChecklistRoot>
-      </div>
+    <div className="w-full h-full scale-100">
+      <ChecklistRoot
+        data={data}
+        expanded={expandedState}
+        themeSettings={settings}
+        zIndex={10000}
+        onExpandedChange={setExpandedState}
+      >
+        <ChecklistContainer>
+          <ChecklistPopper zIndex={10000}>
+            <ChecklistPopperContent>
+              <ChecklistDropdown />
+              <ChecklistProgress />
+              <ChecklistItems />
+              <ChecklistDismiss />
+              <PopperMadeWith />
+            </ChecklistPopperContent>
+          </ChecklistPopper>
+        </ChecklistContainer>
+      </ChecklistRoot>
     </div>
   );
 };

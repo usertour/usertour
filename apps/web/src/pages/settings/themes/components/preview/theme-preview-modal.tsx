@@ -22,7 +22,7 @@ export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
     progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
   return (
-    <div className="h-full w-full" style={{ transform: 'scale(1)' }}>
+    <div className="h-full w-full scale-100">
       <SharedPopper.Popper open={true} zIndex={1111} globalStyle={customStyle}>
         <SharedPopper.PopperModalContentPotal
           position={'center'}

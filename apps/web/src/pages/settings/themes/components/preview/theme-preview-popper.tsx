@@ -29,7 +29,7 @@ export const ThemePreviewPopper = ({
     progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
   return (
-    <div className="h-full w-full" style={{ transform: 'scale(1)' }}>
+    <div className="h-full w-full scale-100">
       <Button className="ml-8 mt-16 w-40 rounded-xl	" ref={ref}>
         Tooltip target
       </Button>
