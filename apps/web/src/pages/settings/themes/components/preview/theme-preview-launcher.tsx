@@ -11,17 +11,19 @@ export const ThemePreviewLauncher = ({ type, settings }: ThemePreviewLauncherPro
 
   return (
     <div className="h-full w-full scale-100">
-      <LauncherRoot data={DEFAULT_LAUNCHER_DATA} themeSettings={settings}>
-        <LauncherContainer>
-          <LauncherView
-            type={type}
-            iconType={DEFAULT_LAUNCHER_DATA.iconType}
-            style={{
-              zIndex: 1,
-            }}
-          />
-        </LauncherContainer>
-      </LauncherRoot>
+      <div className="flex flex-row items-center justify-center h-full ">
+        <LauncherRoot data={DEFAULT_LAUNCHER_DATA} themeSettings={settings}>
+          <LauncherContainer>
+            <LauncherView
+              type={type}
+              iconType={DEFAULT_LAUNCHER_DATA.iconType}
+              style={{
+                zIndex: 1,
+              }}
+            />
+          </LauncherContainer>
+        </LauncherRoot>
+      </div>
     </div>
   );
 };

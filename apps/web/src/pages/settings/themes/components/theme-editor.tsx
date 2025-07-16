@@ -87,7 +87,7 @@ export const ThemeEditor = ({
           showSelector={showSelector}
           customStyle={customStyle}
           viewRect={viewRect}
-          className="h-[calc(100vh-120px)]"
+          className="fixed top-24 right-8 w-[calc(100vw-430px)] h-[calc(100vh-120px)]"
         />
       )}
     </div>
