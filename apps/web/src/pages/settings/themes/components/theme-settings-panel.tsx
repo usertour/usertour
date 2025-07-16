@@ -2,10 +2,9 @@ import { Attribute, ThemeTypesSetting, ThemeVariation } from '@usertour-ui/types
 import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
-import { GoogleFontCss, Rules } from '@usertour-ui/shared-components';
+import { GoogleFontCss } from '@usertour-ui/shared-components';
 import { cn } from '@usertour-ui/ui-utils';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { createContext, forwardRef, useContext, useEffect, useState } from 'react';
+import { createContext, forwardRef, useContext, useEffect, useState, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
 import { ThemeSettingsBeacon } from './settings/theme-settings-beacon';
@@ -20,7 +19,6 @@ import { ThemeSettingsProgress } from './settings/theme-settings-progress';
 import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
 import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
 import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
-import { Button } from '@usertour-ui/button';
 import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
@@ -89,31 +87,19 @@ interface ThemeSettingsPanelProps {
   defaultSettings: ThemeTypesSetting;
   onSettingsChange: (settings: ThemeTypesSetting) => void;
   className?: string;
-  isInModal?: boolean;
-  attributeList?: Attribute[];
-  variations?: ThemeVariation[];
-  onVariationsChange?: (variations: ThemeVariation[]) => void;
-  onSave?: () => void;
-  onCancel?: () => void;
-  onConditionsChange?: (conditions: any[]) => void;
-  initialConditions?: any[];
+  children?: ReactNode;
 }
 
+// The main container component that provides context and structure
 export const ThemeSettingsPanel = ({
   settings: initialSettings,
   onSettingsChange,
   className,
-  isInModal = false,
-  onSave,
-  onCancel,
-  onConditionsChange,
-  initialConditions = [],
-  attributeList,
-  variations = [],
-  onVariationsChange,
+  children,
 }: ThemeSettingsPanelProps) => {
   const [settings, setSettings] = useState<ThemeTypesSetting>(initialSettings);
   const [finalSettings, setFinalSettings] = useState<ThemeTypesSetting | null>(null);
+
   // Update internal settings when external settings change
   useEffect(() => {
     setSettings(initialSettings);
@@ -128,151 +114,141 @@ export const ThemeSettingsPanel = ({
 
   const value = { settings, setSettings, finalSettings };
 
-  const accordionContent = (
-    <>
-      <AccordionItem value="basic">
-        <AccordionTrigger>Base colors</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsBasicColor />
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="font">
-        <AccordionTrigger>Font</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsFont />
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="border">
-        <AccordionTrigger>Chrome border</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsBorder />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="xbutton">
-        <AccordionTrigger>X Button</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsXbutton />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="progress">
-        <AccordionTrigger>Progress bar</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsProgress />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="buttons">
-        <AccordionTrigger>Buttons</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsButtons />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="tooptip">
-        <AccordionTrigger>Tooltip</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsTooltip />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="modal">
-        <AccordionTrigger>Modal</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsModal />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="survey">
-        <AccordionTrigger>Survey</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsSurvey />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="checklist">
-        <AccordionTrigger>Checklist</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsChecklist />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="checklist-launcher">
-        <AccordionTrigger>Checklist launcher</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsChecklistLauncher />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="launcher-beacon">
-        <AccordionTrigger>Launcher beacons</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsBeacon />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="launcher-icons">
-        <AccordionTrigger>Launcher icons</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsLauncherIcons />
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="backdrop">
-        <AccordionTrigger>Backdrop</AccordionTrigger>
-        <AccordionContent>
-          <ThemeSettingsBackdrop />
-        </AccordionContent>
-      </AccordionItem>
-    </>
-  );
-
   return (
     <ThemeSettingsContext.Provider value={value}>
       <GoogleFontCss settings={settings} />
-      {isInModal ? (
-        <div className={cn('shadow bg-white rounded-lg w-[350px] h-full flex flex-col', className)}>
-          <ScrollArea className="flex-1">
-            <Accordion.Root type="multiple">
-              <div className="p-10 border-b border-blue-100">
-                {onConditionsChange && (
-                  <div className="mb-4">
-                    <Rules
-                      onDataChange={onConditionsChange}
-                      defaultConditions={initialConditions}
-                      isHorizontal={true}
-                      isShowIf={false}
-                      filterItems={['group', 'user-attr', 'current-page']}
-                      addButtonText={'Add condition'}
-                      attributes={attributeList || []}
-                      disabled={false}
-                    />
-                  </div>
-                )}
-                {(onSave || onCancel) && (
-                  <div className="flex justify-end gap-2 p-4">
-                    {onCancel && (
-                      <Button variant="outline" onClick={onCancel}>
-                        Cancel
-                      </Button>
-                    )}
-                    {onSave && <Button onClick={onSave}>Save</Button>}
-                  </div>
-                )}
-              </div>
-              {accordionContent}
-            </Accordion.Root>
-          </ScrollArea>
-        </div>
-      ) : (
-        <Accordion.Root
-          type="multiple"
-          className={cn('shadow bg-white rounded-lg w-[350px]', className)}
-        >
-          <div className="p-10 border-b border-blue-100">
-            <ConditionalVariationsPanel
-              variations={variations}
-              onVariationsChange={onVariationsChange}
-              attributeList={attributeList}
-            />
-          </div>
-          {accordionContent}
-        </Accordion.Root>
-      )}
+      <div className={cn('shadow bg-white rounded-lg w-[350px]', className)}>
+        <Accordion.Root type="multiple">{children}</Accordion.Root>
+      </div>
     </ThemeSettingsContext.Provider>
   );
 };
+
+// Accordion content for reuse
+export const ThemeSettingsAccordionContent = () => (
+  <>
+    <AccordionItem value="basic">
+      <AccordionTrigger>Base colors</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsBasicColor />
+      </AccordionContent>
+    </AccordionItem>
+
+    <AccordionItem value="font">
+      <AccordionTrigger>Font</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsFont />
+      </AccordionContent>
+    </AccordionItem>
+
+    <AccordionItem value="border">
+      <AccordionTrigger>Chrome border</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsBorder />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="xbutton">
+      <AccordionTrigger>X Button</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsXbutton />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="progress">
+      <AccordionTrigger>Progress bar</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsProgress />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="buttons">
+      <AccordionTrigger>Buttons</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsButtons />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="tooptip">
+      <AccordionTrigger>Tooltip</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsTooltip />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="modal">
+      <AccordionTrigger>Modal</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsModal />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="survey">
+      <AccordionTrigger>Survey</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsSurvey />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="checklist">
+      <AccordionTrigger>Checklist</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsChecklist />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="checklist-launcher">
+      <AccordionTrigger>Checklist launcher</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsChecklistLauncher />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="launcher-beacon">
+      <AccordionTrigger>Launcher beacons</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsBeacon />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="launcher-icons">
+      <AccordionTrigger>Launcher icons</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsLauncherIcons />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="backdrop">
+      <AccordionTrigger>Backdrop</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsBackdrop />
+      </AccordionContent>
+    </AccordionItem>
+  </>
+);
+
+// Default panel for regular theme settings
+export const ThemeSettingsDefaultPanel = ({
+  settings,
+  defaultSettings,
+  onSettingsChange,
+  className,
+  attributeList,
+  variations = [],
+  onVariationsChange,
+}: {
+  settings: ThemeTypesSetting;
+  defaultSettings: ThemeTypesSetting;
+  onSettingsChange: (settings: ThemeTypesSetting) => void;
+  className?: string;
+  attributeList?: Attribute[];
+  variations?: ThemeVariation[];
+  onVariationsChange?: (variations: ThemeVariation[]) => void;
+}) => (
+  <ThemeSettingsPanel
+    settings={settings}
+    defaultSettings={defaultSettings}
+    onSettingsChange={onSettingsChange}
+    className={className}
+  >
+    <div className="p-10 border-b border-blue-100">
+      <ConditionalVariationsPanel
+        variations={variations}
+        onVariationsChange={onVariationsChange}
+        attributeList={attributeList}
+      />
+    </div>
+    <ThemeSettingsAccordionContent />
+  </ThemeSettingsPanel>
+);
 
 ThemeSettingsPanel.displayName = 'ThemeSettingsPanel';

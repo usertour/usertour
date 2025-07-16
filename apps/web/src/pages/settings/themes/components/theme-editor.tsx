@@ -5,7 +5,7 @@ import {
   ThemeVariation,
 } from '@usertour-ui/types';
 import { cn } from '@usertour-ui/ui-utils';
-import { ThemeSettingsPanel } from './theme-settings-panel';
+import { ThemeSettingsDefaultPanel } from './theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 
 export interface Rect {
@@ -69,7 +69,7 @@ export const ThemeEditor = ({
         className,
       )}
     >
-      <ThemeSettingsPanel
+      <ThemeSettingsDefaultPanel
         settings={settings}
         defaultSettings={defaultSettings}
         onSettingsChange={onSettingsChange}

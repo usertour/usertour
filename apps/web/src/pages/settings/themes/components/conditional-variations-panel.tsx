@@ -108,6 +108,16 @@ export const ConditionalVariationsPanel = ({
     setEditingIndex(-1);
   };
 
+  const handleDeleteVariation = () => {
+    if (onVariationsChange && editingIndex >= 0) {
+      const newVariations = variations.filter((_, index) => index !== editingIndex);
+      onVariationsChange(newVariations);
+    }
+    setOpenModal(false);
+    setEditingVariation(null);
+    setEditingIndex(-1);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -176,6 +186,7 @@ export const ConditionalVariationsPanel = ({
           onOpenChange={setOpenModal}
           initialVariation={editingVariation}
           onSave={handleSaveVariation}
+          onDelete={handleDeleteVariation}
           attributeList={attributeList}
         />
       )}
