@@ -30,6 +30,7 @@ export interface ThemeEditorProps {
   // Configuration
   showPreview?: boolean;
   showSelector?: boolean;
+  showConditionalVariations?: boolean;
   layout?: 'horizontal' | 'vertical';
 
   // Styling
@@ -53,6 +54,7 @@ export const ThemeEditor = ({
   onViewRectChange,
   showPreview = true,
   showSelector = true,
+  showConditionalVariations = true,
   layout = 'horizontal',
   className,
   customStyle,
@@ -76,6 +78,7 @@ export const ThemeEditor = ({
         attributeList={attributeList}
         variations={variations}
         onVariationsChange={onVariationsChange}
+        showConditionalVariations={showConditionalVariations}
       />
       {showPreview && (
         <ThemePreviewPanel

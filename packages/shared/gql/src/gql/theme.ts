@@ -22,7 +22,6 @@ export const createTheme = gql`
     $projectId: String!
     $settings: JSON!
     $isDefault: Boolean!
-    $variations: JSON
   ) {
     createTheme(
       data: {

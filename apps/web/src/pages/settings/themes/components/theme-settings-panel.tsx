@@ -225,6 +225,7 @@ export const ThemeSettingsDefaultPanel = ({
   attributeList,
   variations = [],
   onVariationsChange,
+  showConditionalVariations = true,
 }: {
   settings: ThemeTypesSetting;
   defaultSettings: ThemeTypesSetting;
@@ -233,6 +234,7 @@ export const ThemeSettingsDefaultPanel = ({
   attributeList?: Attribute[];
   variations?: ThemeVariation[];
   onVariationsChange?: (variations: ThemeVariation[]) => void;
+  showConditionalVariations?: boolean;
 }) => (
   <ThemeSettingsPanel
     settings={settings}
@@ -240,13 +242,15 @@ export const ThemeSettingsDefaultPanel = ({
     onSettingsChange={onSettingsChange}
     className={className}
   >
-    <div className="p-10 border-b border-blue-100">
-      <ConditionalVariationsPanel
-        variations={variations}
-        onVariationsChange={onVariationsChange}
-        attributeList={attributeList}
-      />
-    </div>
+    {showConditionalVariations && (
+      <div className="p-10 border-b border-blue-100">
+        <ConditionalVariationsPanel
+          variations={variations}
+          onVariationsChange={onVariationsChange}
+          attributeList={attributeList}
+        />
+      </div>
+    )}
     <ThemeSettingsAccordionContent />
   </ThemeSettingsPanel>
 );

@@ -19,6 +19,7 @@ export const ThemeDetailContent = () => {
     viewRect,
   } = useThemeDetailContext();
   const { attributeList } = useAttributeListContext();
+  const showConditionalVariations = !theme.isSystem;
 
   return (
     <div className="flex flex-row pt-24 px-8">
@@ -33,6 +34,7 @@ export const ThemeDetailContent = () => {
         showPreview={true}
         showSelector={true}
         layout="horizontal"
+        showConditionalVariations={showConditionalVariations}
         customStyle={customStyle}
         viewRect={viewRect}
         attributeList={attributeList}

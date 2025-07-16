@@ -64,7 +64,7 @@ export class ThemesService {
   }
 
   async copyTheme(input: CopyThemeInput) {
-    const { settings, projectId } = await this.prisma.theme.findUnique({
+    const { settings, projectId, variations } = await this.prisma.theme.findUnique({
       where: { id: input.id },
     });
     const data: CreateThemeInput = {
@@ -72,6 +72,7 @@ export class ThemesService {
       projectId,
       isDefault: false,
       name: input.name,
+      variations,
     };
     return await this.createTheme(data);
   }
