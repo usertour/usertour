@@ -58,7 +58,7 @@ export const ModalThemeSettingsPanel = ({
                 value={title}
                 onChange={(e) => onTitleChange?.(e.target.value)}
                 placeholder="Enter variation title..."
-                className="h-8 focus-visible:ring-0"
+                className="h-8 shadow-none focus-visible:ring-0 focus:border-b"
               />
             </div>
             {showDelete && (
