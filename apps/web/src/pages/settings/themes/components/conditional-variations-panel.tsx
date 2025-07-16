@@ -140,8 +140,7 @@ export const ConditionalVariationsPanel = ({
           <QuestionTooltip>
             Create theme variations that automatically apply based on user attributes. All matching
             variations will be applied in the order shown below. Examples: • Apply dark theme when
-            user has dark mode enabled • Show different avatars based on assigned customer success
-            manager • Use premium colors for paid users
+            user has dark mode enabled • Use premium colors for paid users
           </QuestionTooltip>
         </div>
 
