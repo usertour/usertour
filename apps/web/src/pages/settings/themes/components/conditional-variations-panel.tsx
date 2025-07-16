@@ -4,12 +4,64 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import { SubThemeModal } from './sub-theme-modal';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { DragHandleDots2Icon } from '@radix-ui/react-icons';
 
 interface ConditionalVariationsPanelProps {
   variations: ThemeVariation[];
   onVariationsChange?: (variations: ThemeVariation[]) => void;
   attributeList?: Attribute[];
 }
+
+// Sortable variation item component
+const SortableVariationItem = ({
+  variation,
+  index,
+  onClick,
+}: {
+  variation: ThemeVariation;
+  index: number;
+  onClick: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: index.toString(),
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="w-full">
+      <Button
+        variant="outline"
+        className="flex items-center gap-2 w-full justify-start h-auto px-1 py-2 border-none hover:text-primary hover:bg-accent/50"
+        onClick={onClick}
+      >
+        <DragHandleDots2Icon className="h-4 w-4 cursor-move" {...attributes} {...listeners} />
+        <span className="text-sm font-medium">{variation.name || `Variation ${index + 1}`}</span>
+      </Button>
+    </div>
+  );
+};
 
 export const ConditionalVariationsPanel = ({
   variations,
@@ -19,6 +71,13 @@ export const ConditionalVariationsPanel = ({
   const [openModal, setOpenModal] = useState(false);
   const [editingVariation, setEditingVariation] = useState<ThemeVariation | null>(null);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const handleAddVariation = () => {
     setEditingVariation(null);
@@ -49,16 +108,23 @@ export const ConditionalVariationsPanel = ({
     setEditingIndex(-1);
   };
 
-  const handleDeleteVariation = (index: number) => {
-    if (onVariationsChange) {
-      const newVariations = variations.filter((_, i) => i !== index);
-      onVariationsChange(newVariations);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = Number.parseInt(active.id as string, 10);
+      const newIndex = Number.parseInt(over?.id as string, 10);
+
+      if (onVariationsChange) {
+        const newVariations = arrayMove(variations, oldIndex, newIndex);
+        onVariationsChange(newVariations);
+      }
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col justify-between space-y-1">
+      <div className="flex flex-col justify-between space-y-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Conditional variations</span>
           <QuestionTooltip>
@@ -70,34 +136,27 @@ export const ConditionalVariationsPanel = ({
         </div>
 
         {variations.length > 0 && (
-          <div className="space-y-2">
-            {variations.map((variation, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-              >
-                <div className="flex-1">
-                  <div className="text-sm font-medium">Variation {index + 1}</div>
-                  <div className="text-xs text-gray-500">
-                    {variation.conditions.length} condition
-                    {variation.conditions.length !== 1 ? 's' : ''}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={variations.map((_, index) => index.toString())}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-1">
+                {variations.map((variation, index) => (
+                  <SortableVariationItem
+                    key={index}
+                    variation={variation}
+                    index={index}
                     onClick={() => handleEditVariation(variation, index)}
-                  >
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteVariation(index)}>
-                    Delete
-                  </Button>
-                </div>
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         <Button

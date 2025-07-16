@@ -2,6 +2,7 @@ import { RulesCondition } from './contents';
 import { ThemeTypesSetting } from './theme-settings';
 
 export type ThemeVariation = {
+  name: string;
   conditions: RulesCondition[];
   settings: ThemeTypesSetting;
 };
