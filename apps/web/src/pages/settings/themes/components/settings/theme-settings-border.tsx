@@ -4,7 +4,7 @@ import { Input } from '@usertour-ui/input';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
 import { ChangeEvent } from 'react';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBorder = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();

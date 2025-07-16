@@ -5,7 +5,7 @@ import { ProgressBarType, ProgressBarPosition } from '@usertour-ui/types';
 import { Label } from '@usertour-ui/label';
 import { Switch } from '@usertour-ui/switch';
 import { Alert, AlertDescription } from '@usertour-ui/alert';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 import { WarningIcon } from '@usertour-ui/icons';
 
 export const ThemeSettingsProgress = () => {

@@ -2,7 +2,7 @@ import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-colo
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-slider';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBackdrop = () => {
   const { settings, setSettings } = useThemeSettingsContext();

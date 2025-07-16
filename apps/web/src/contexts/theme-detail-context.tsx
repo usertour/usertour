@@ -1,12 +1,9 @@
-import {
-  ThemeDetailSelectorType,
-  themeDetailSelectorTypes,
-} from '@/pages/settings/themes/components/preview/theme-preview-selector';
 import { ThemeTypesSetting } from '@usertour-ui/types';
 import { useQuery } from '@apollo/client';
 import { getTheme } from '@usertour-ui/gql';
-import { Theme } from '@usertour-ui/types';
+import { Theme, ThemeDetailSelectorType } from '@usertour-ui/types';
 import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useState } from 'react';
+import { themeDetailSelectorTypes } from '@/utils/theme';
 
 export interface ThemeDetailProviderProps {
   children: ReactNode;

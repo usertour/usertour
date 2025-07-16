@@ -1,11 +1,15 @@
-import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import * as SharedPopper from '@usertour-ui/sdk';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import { ProgressBarPosition, ProgressBarType } from '@usertour-ui/types';
+import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour-ui/types';
 
-export const ThemePreviewModal = (props: { contents: ContentEditorRoot[] }) => {
-  const { contents } = props;
-  const { settings, customStyle } = useThemeDetailContext();
+interface ThemePreviewModalProps {
+  contents: ContentEditorRoot[];
+  settings?: ThemeTypesSetting;
+  customStyle?: string;
+}
+
+export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
+  const { contents, settings, customStyle } = props;
 
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;

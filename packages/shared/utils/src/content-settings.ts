@@ -1,4 +1,5 @@
 import { ContentConfigObject, ContentPriority, autoStartRulesSetting } from '@usertour-ui/types';
+import { deepmerge } from 'deepmerge-ts';
 
 const rulesSetting: autoStartRulesSetting = {
   // frequency: {
@@ -32,4 +33,16 @@ export const autoStartConditions: ContentConfigObject = {
       operators: 'and',
     },
   ],
+};
+
+export const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
+  return {
+    ...defaultContentConfig,
+    ...config,
+    autoStartRulesSetting: deepmerge(
+      defaultContentConfig.autoStartRulesSetting,
+      config?.autoStartRulesSetting || {},
+    ),
+    hideRulesSetting: config?.hideRulesSetting || {},
+  };
 };
