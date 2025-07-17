@@ -2,7 +2,7 @@ import { Switch } from '@usertour-ui/switch';
 import { Label } from '@usertour-ui/label';
 import { QuestionTooltip } from '@usertour-ui/tooltip';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import * as Popover from '@usertour-ui/popover';
+import * as Popover from '@radix-ui/react-popover';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
 import { AttributeCreateForm } from '../../form/attribute-create-form';
 import { useCallback, useState } from 'react';

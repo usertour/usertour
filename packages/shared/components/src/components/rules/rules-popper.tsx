@@ -18,12 +18,25 @@ const RulesPopoverTrigger = React.forwardRef<
 const RulesPopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = 'center', sideOffset = 5, children, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
+>(
+  (
+    {
+      className,
+      align = 'start',
+      sideOffset = 5,
+      alignOffset = -32,
+      side = 'bottom',
+      children,
+      ...props
+    },
+    ref,
+  ) => (
     <PopoverPrimitive.Content
       ref={ref}
       align={align}
+      side={side}
       sideOffset={sideOffset}
+      alignOffset={alignOffset}
       className={cn('z-50 border bg-popover rounded p-4  w-96', className)}
       style={{
         zIndex: EXTENSION_CONTENT_RULES,
@@ -35,8 +48,8 @@ const RulesPopoverContent = React.forwardRef<
       {children}
       <PopoverPrimitive.Arrow className="fill-background" width={20} height={10} />
     </PopoverPrimitive.Content>
-  </PopoverPrimitive.Portal>
-));
+  ),
+);
 
 RulesPopoverContent.displayName = 'RulesPopoverContent';
 

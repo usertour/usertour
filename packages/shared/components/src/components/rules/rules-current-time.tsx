@@ -1,7 +1,7 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { Calendar } from '@usertour-ui/calendar';
 import { TimeIcon } from '@usertour-ui/icons';
-import * as Popover from '@usertour-ui/popover';
+import * as Popover from '@radix-ui/react-popover';
 import {
   Select,
   SelectContent,
