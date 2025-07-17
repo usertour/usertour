@@ -1,5 +1,13 @@
 import { finder as finderLib } from '@medv/finder';
 
+/**
+ * Enhanced element finder with support for:
+ * - Iframe traversal (including nested iframes)
+ * - Shadow DOM traversal (including nested shadow DOMs)
+ * - Cross-origin iframe detection (with graceful fallback)
+ * - Recursive document context discovery
+ */
+
 export type Options = {
   root: Element;
   idName: (name: string) => boolean;
@@ -47,7 +55,7 @@ export type Target = {
   searchInIframes?: boolean; // Whether to search inside iframes
 };
 
-// New iframe context type
+// Legacy iframe context type (for backward compatibility)
 export interface IFrameContext {
   iframe: HTMLIFrameElement | null;
   document: Document;
@@ -128,20 +136,33 @@ const finderConfigs = [
 //   });
 // });
 
-// Iframe detection and traversal functions
-function getAllAccessibleDocuments(rootDocument: Document = document): IFrameContext[] {
-  const contexts: IFrameContext[] = [];
+// Enhanced context type to handle both iframes and shadow DOMs
+export interface DocumentContext {
+  iframe: HTMLIFrameElement | null;
+  shadowHost: Element | null;
+  document: Document;
+  selector: string; // Selector to identify this context
+  depth: number; // Nesting depth
+  contextType: 'main' | 'iframe' | 'shadow';
+}
+
+// Iframe and Shadow DOM detection and traversal functions
+function getAllAccessibleDocuments(rootDocument: Document = document): DocumentContext[] {
+  const contexts: DocumentContext[] = [];
 
   // Add main document
   contexts.push({
     iframe: null,
+    shadowHost: null,
     document: rootDocument,
     selector: '', // Empty selector for main document
     depth: 0,
+    contextType: 'main',
   });
 
   // Find all iframes in the document
   const iframes = rootDocument.querySelectorAll('iframe');
+  console.log('iframes', iframes);
 
   iframes.forEach((iframe, index) => {
     try {
@@ -154,23 +175,25 @@ function getAllAccessibleDocuments(rootDocument: Document = document): IFrameCon
 
         contexts.push({
           iframe,
+          shadowHost: null,
           document: iframeDoc,
           selector: iframeSelector,
           depth: 1,
+          contextType: 'iframe',
         });
 
-        // Recursively check for nested iframes
+        // Recursively check for nested iframes and shadow DOMs
         const nestedContexts = getAllAccessibleDocuments(iframeDoc);
         for (const nestedContext of nestedContexts) {
           if (nestedContext.selector) {
-            // Combine selectors for nested iframes
+            // Combine selectors for nested contexts
             nestedContext.selector = `${iframeSelector} ${nestedContext.selector}`;
             nestedContext.depth = nestedContext.depth + 1;
           } else {
             nestedContext.selector = iframeSelector;
             nestedContext.depth = 1;
           }
-          if (nestedContext.iframe) {
+          if (nestedContext.iframe || nestedContext.shadowHost) {
             contexts.push(nestedContext);
           }
         }
@@ -179,6 +202,51 @@ function getAllAccessibleDocuments(rootDocument: Document = document): IFrameCon
       // Cross-origin iframe - cannot access
       console.warn(
         `Cannot access iframe ${index}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+    }
+  });
+
+  // Find all shadow DOMs in the document
+  const shadowHosts = findShadowHosts(rootDocument);
+  console.log('shadow hosts', shadowHosts);
+
+  shadowHosts.forEach((host, index) => {
+    try {
+      const shadowRoot = host.shadowRoot;
+      if (shadowRoot) {
+        // Generate a selector for this shadow host
+        const shadowSelector = generateShadowSelector(host, index);
+
+        contexts.push({
+          iframe: null,
+          shadowHost: host,
+          document: shadowRoot as unknown as Document, // ShadowRoot implements Document interface
+          selector: shadowSelector,
+          depth: 1,
+          contextType: 'shadow',
+        });
+
+        // Recursively check for nested shadow DOMs and iframes within shadow DOM
+        const nestedContexts = getAllAccessibleDocuments(shadowRoot as unknown as Document);
+        for (const nestedContext of nestedContexts) {
+          if (nestedContext.selector) {
+            // Combine selectors for nested contexts
+            nestedContext.selector = `${shadowSelector} ${nestedContext.selector}`;
+            nestedContext.depth = nestedContext.depth + 1;
+          } else {
+            nestedContext.selector = shadowSelector;
+            nestedContext.depth = 1;
+          }
+          if (nestedContext.iframe || nestedContext.shadowHost) {
+            contexts.push(nestedContext);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(
+        `Cannot access shadow DOM ${index}: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`,
       );
@@ -214,11 +282,77 @@ function generateIframeSelector(iframe: HTMLIFrameElement, fallbackIndex: number
   return `iframe:nth-of-type(${fallbackIndex + 1})`;
 }
 
+function generateShadowSelector(host: Element, fallbackIndex: number): string {
+  // Try to generate a unique selector for the shadow host
+  if (host.id) {
+    return `#${host.id}`;
+  }
+
+  if (host.tagName) {
+    const tagName = host.tagName.toLowerCase();
+
+    // Try to find a unique class
+    if (host.className) {
+      const classes = host.className.split(' ').filter((cls) => cls.trim());
+      if (classes.length > 0) {
+        return `${tagName}.${classes.join('.')}`;
+      }
+    }
+
+    // Try to find unique attributes
+    const uniqueAttrs = ['data-testid', 'data-test-id', 'data-id', 'data-for', 'name', 'role'];
+    for (const attr of uniqueAttrs) {
+      const value = host.getAttribute(attr);
+      if (value) {
+        return `${tagName}[${attr}="${value}"]`;
+      }
+    }
+
+    // Fallback to nth-child selector
+    return `${tagName}:nth-of-type(${fallbackIndex + 1})`;
+  }
+
+  // Ultimate fallback
+  return `*:nth-of-type(${fallbackIndex + 1})`;
+}
+
+function findShadowHosts(rootDocument: Document): Element[] {
+  const shadowHosts: Element[] = [];
+
+  // Walk through all elements in the document
+  const walker = document.createTreeWalker(
+    rootDocument.body || rootDocument,
+    NodeFilter.SHOW_ELEMENT,
+    {
+      acceptNode: (node) => {
+        const element = node as Element;
+        // Check if element has a shadow root
+        if (element.shadowRoot) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+        return NodeFilter.FILTER_SKIP;
+      },
+    },
+  );
+
+  let node: Node | null;
+  while (true) {
+    node = walker.nextNode();
+    if (!node) break;
+    shadowHosts.push(node as Element);
+  }
+
+  return shadowHosts;
+}
+
 function isElementInDocument(element: Element, doc: Document): boolean {
   return doc.contains(element);
 }
 
-function findElementDocument(element: Element, contexts: IFrameContext[]): IFrameContext | null {
+function findElementDocument(
+  element: Element,
+  contexts: DocumentContext[],
+): DocumentContext | null {
   for (const context of contexts) {
     if (isElementInDocument(element, context.document)) {
       return context;
@@ -508,13 +642,14 @@ export function parserV2(element: HTMLElement, searchInIframes = false): TargetR
   let isInIframe = false;
 
   if (searchInIframes) {
-    // Determine if element is in an iframe
+    // Determine if element is in an iframe or shadow DOM
     const contexts = getAllAccessibleDocuments();
     const elementContext = findElementDocument(element, contexts);
 
     if (elementContext?.selector) {
       iframeContext = elementContext.selector;
-      isInIframe = true;
+      isInIframe =
+        elementContext.contextType === 'iframe' || elementContext.contextType === 'shadow';
       selectors = parseSelectorsTreeWithIframes(element, null, iframeContext);
     } else {
       selectors = parseSelectorsTree(element, null);
@@ -595,7 +730,7 @@ export function finderV2(target: Target, root: Element | Document = document): H
   return null;
 }
 
-// New function for iframe-aware element finding
+// New function for iframe and shadow DOM aware element finding
 export function finderV2WithIframes(
   target: Target,
   root: Document = document,
@@ -697,9 +832,9 @@ export function finderX(node: XNode, root: Element | Document, precision = 10) {
 // maintaining backward compatibility with existing code.
 
 /**
- * Generate selectors for an element with iframe context awareness
+ * Generate selectors for an element with iframe and shadow DOM context awareness
  * @param element - The HTML element to generate selectors for
- * @returns Target object with iframe-aware selectors and context
+ * @returns Target object with iframe and shadow DOM aware selectors and context
  */
 export function generateSelectorsWithIframes(element: HTMLElement): Target {
   const contexts = getAllAccessibleDocuments();
@@ -724,15 +859,15 @@ export function generateSelectorsWithIframes(element: HTMLElement): Target {
 }
 
 /**
- * Find element across all accessible documents (including iframes)
- * Returns the full FinderResult with iframe context information
+ * Find element across all accessible documents (including iframes and shadow DOMs)
+ * Returns the full FinderResult with iframe/shadow DOM context information
  */
 export function findElementWithIframes(target: Target): FinderResult | null {
   return finderV2WithIframes(target);
 }
 
 /**
- * Find element with iframe support but return only the HTMLElement (backward compatible)
+ * Find element with iframe and shadow DOM support but return only the HTMLElement (backward compatible)
  * This is equivalent to finderV2 with searchInIframes: true
  */
 export function findElementInIframes(target: Target): HTMLElement | null {
@@ -741,7 +876,7 @@ export function findElementInIframes(target: Target): HTMLElement | null {
 }
 
 /**
- * Check if an element is inside an iframe
+ * Check if an element is inside an iframe or shadow DOM
  */
 export function isElementInIframe(element: HTMLElement): boolean {
   const contexts = getAllAccessibleDocuments();
@@ -750,10 +885,28 @@ export function isElementInIframe(element: HTMLElement): boolean {
 }
 
 /**
- * Get iframe context for an element
+ * Get iframe or shadow DOM context for an element
  */
 export function getElementIframeContext(element: HTMLElement): string | null {
   const contexts = getAllAccessibleDocuments();
   const elementContext = findElementDocument(element, contexts);
   return elementContext?.selector || null;
+}
+
+/**
+ * Check if an element is specifically inside a shadow DOM
+ */
+export function isElementInShadowDOM(element: HTMLElement): boolean {
+  const contexts = getAllAccessibleDocuments();
+  const elementContext = findElementDocument(element, contexts);
+  return elementContext?.contextType === 'shadow';
+}
+
+/**
+ * Check if an element is specifically inside an iframe
+ */
+export function isElementInIframeOnly(element: HTMLElement): boolean {
+  const contexts = getAllAccessibleDocuments();
+  const elementContext = findElementDocument(element, contexts);
+  return elementContext?.contextType === 'iframe';
 }

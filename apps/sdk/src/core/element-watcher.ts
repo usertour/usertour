@@ -1,11 +1,11 @@
 import { isVisibleNode } from '@usertour-ui/dom';
-import { finderV2 } from '@usertour-ui/finder';
+import { finderV2WithIframes } from '@usertour-ui/finder';
 import { ElementSelectorPropsData } from '@usertour-ui/types';
 import { isVisible } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
-import { Evented } from './evented';
 import { DEFAULT_TARGET_MISSING_SECONDS } from './common';
+import { Evented } from './evented';
 
 /**
  * Interface to track element visibility state
@@ -224,6 +224,7 @@ export class ElementWatcher extends Evented {
     if (!document?.body) {
       return null;
     }
-    return finderV2(this.target, document.body);
+    const result = finderV2WithIframes(this.target, document);
+    return result?.element || null;
   }
 }
