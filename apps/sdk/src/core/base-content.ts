@@ -7,6 +7,7 @@ import {
   SDKConfig,
   SDKContent,
   Step,
+  Theme,
   UserTourTypes,
   contentStartReason,
 } from '@usertour-ui/types';
@@ -544,26 +545,32 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   }
 
   /**
+   * Get the active theme
+   */
+  async getActivedTheme(): Promise<Theme | undefined> {
+    const themes = this.getThemes() || [];
+    const themeId = this.getCurrentStep()?.themeId || this.getContent()?.themeId;
+    if (!themeId || themes.length === 0) {
+      return undefined;
+    }
+    return await getActivedTheme(themes, themeId);
+  }
+
+  /**
    * Get the base information for the store
    */
-  getStoreBaseInfo(): BaseStore | undefined {
-    const themes = this.getThemes();
+  async getStoreBaseInfo(): Promise<BaseStore | undefined> {
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
     const sdkConfig = this.getSdkConfig();
-    if (!themes || themes.length === 0) {
-      return undefined;
-    }
-    const currentStep = this.getCurrentStep();
-    const themeId = currentStep?.themeId || this.getContent()?.themeId;
-    const theme = getActivedTheme(themes, themeId);
 
-    if (!theme) {
+    const theme = await this.getActivedTheme();
+    if (!theme || !theme.settings) {
       return undefined;
     }
     return {
       sdkConfig,
-      assets: getAssets(theme),
+      assets: getAssets(theme.settings),
       globalStyle: convertToCssVars(convertSettings(theme.settings)),
       theme,
       zIndex,

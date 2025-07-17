@@ -639,6 +639,24 @@ export const getStepByCvid = (steps: Step[] | undefined, cvid: string): Step | u
  * @param themeId - The theme id to search for
  * @returns The active theme or undefined if no theme is found
  */
-export const getActivedTheme = (themes: Theme[], themeId: string) => {
-  return themes.find((item) => item.id === themeId);
+export const getActivedTheme = async (themes: Theme[], themeId: string) => {
+  const theme = themes.find((item) => item.id === themeId);
+  if (!theme || !theme.variations) {
+    return theme;
+  }
+
+  // Process variations asynchronously to check conditions
+  const activeVariations = [];
+  for (const item of theme.variations) {
+    const activatedConditions = await activedRulesConditions(item.conditions);
+    if (isActive(activatedConditions)) {
+      activeVariations.push(item);
+    }
+  }
+
+  if (activeVariations.length === 0) {
+    return theme;
+  }
+  const settings = activeVariations[0].settings;
+  return { ...theme, settings };
 };

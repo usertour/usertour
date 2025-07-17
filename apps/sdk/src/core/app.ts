@@ -367,7 +367,8 @@ export class App extends Evented {
     });
     if (userInfo?.externalId) {
       this.setUser(userInfo);
-      this.refresh();
+      await this.refresh();
+      await this.initThemeData();
     }
   }
 

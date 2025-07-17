@@ -96,7 +96,7 @@ export class Tour extends BaseContent<TourStore> {
    * while preserving the current trigger state
    * @returns void
    */
-  refresh(): void {
+  async refresh(): Promise<void> {
     const content = this.getContent();
     const currentStep = this.getCurrentStep();
 
@@ -124,7 +124,7 @@ export class Tour extends BaseContent<TourStore> {
     this.setCurrentStep(preservedStep);
 
     // Update store with new data
-    const { openState, triggerRef, progress, ...storeData } = this.buildStoreData();
+    const { openState, triggerRef, progress, ...storeData } = await this.buildStoreData();
     this.updateStore({
       ...storeData,
       currentStep: preservedStep,
@@ -186,9 +186,9 @@ export class Tour extends BaseContent<TourStore> {
    *
    * @returns {TourStore} The complete store data object
    */
-  private buildStoreData(): TourStore {
+  private async buildStoreData(): Promise<TourStore> {
     // Get base store information
-    const baseInfo = this.getStoreBaseInfo();
+    const baseInfo = await this.getStoreBaseInfo();
     const currentStep = this.getCurrentStep();
     const zIndex = this.getBaseZIndex();
 
@@ -253,7 +253,7 @@ export class Tour extends BaseContent<TourStore> {
     await this.activeTriggerConditions();
 
     // Set up element watcher
-    const store = this.buildStoreData();
+    const store = await this.buildStoreData();
     this.setupElementWatcher(currentStep, store);
 
     const { isComplete } = this.getCurrentStepInfo(currentStep);
@@ -382,7 +382,7 @@ export class Tour extends BaseContent<TourStore> {
    */
   async showModal(currentStep: Step) {
     // Build store data and get step information
-    const store = this.buildStoreData();
+    const store = await this.buildStoreData();
     const { progress, isComplete, index, total } = this.getCurrentStepInfo(currentStep);
 
     // Report that the step has been seen
