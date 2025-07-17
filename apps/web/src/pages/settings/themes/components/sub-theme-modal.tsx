@@ -10,6 +10,7 @@ import {
 } from '@usertour-ui/types';
 import { defaultSettings } from '@usertour-ui/types';
 import { useState, useEffect } from 'react';
+import { cuid } from '@usertour-ui/ui-utils';
 import { ModalThemeSettingsPanel } from './modal-theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 import { Rect } from './theme-editor';
@@ -109,6 +110,7 @@ export const SubThemeModal = ({
 
     if (onSave) {
       const variation: ThemeVariation = {
+        id: initialVariation?.id || cuid(), // Use existing ID or generate new one
         name: title.trim(),
         conditions,
         settings: subThemeSettings,

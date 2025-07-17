@@ -57,13 +57,13 @@ export const ModalThemeSettingsPanel = ({
 
   // Initialize initial data when component mounts or when initial data changes
   useEffect(() => {
-    // Always reset initial data when the modal is reopened with new data
+    // Reset initial data when the modal opens with new data (title or conditions change)
     initialDataRef.current = {
       settings: { ...settings },
       title: title,
       conditions: [...initialConditions],
     };
-  }, [settings, title, initialConditions]);
+  }, [title, initialConditions]); // Only reset when title or initialConditions change, not when settings change
 
   // Update current data when props change
   useEffect(() => {

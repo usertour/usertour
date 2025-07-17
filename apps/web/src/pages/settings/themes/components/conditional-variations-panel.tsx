@@ -159,7 +159,7 @@ export const ConditionalVariationsPanel = ({
               <div className="space-y-1">
                 {variations.map((variation, index) => (
                   <SortableVariationItem
-                    key={index}
+                    key={variation.id || index}
                     variation={variation}
                     index={index}
                     onClick={() => handleEditVariation(variation, index)}
