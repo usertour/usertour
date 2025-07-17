@@ -5,6 +5,9 @@ import { Delete2Icon } from '@usertour-ui/icons';
 import { ScrollArea } from '@usertour-ui/scroll-area';
 import { Rules } from '@usertour-ui/shared-components';
 import { ThemeSettingsPanel, ThemeSettingsAccordionContent } from './theme-settings-panel';
+import { useEffect, useRef, useState } from 'react';
+import isEqual from 'fast-deep-equal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
 
 interface ModalThemeSettingsPanelProps {
   settings: ThemeTypesSetting;
@@ -41,6 +44,60 @@ export const ModalThemeSettingsPanel = ({
   errorMessage = '',
   showError = false,
 }: ModalThemeSettingsPanelProps) => {
+  // Track initial data for comparison
+  const initialDataRef = useRef<{
+    settings: ThemeTypesSetting;
+    title: string;
+    conditions: any[];
+  } | null>(null);
+
+  // Track current data
+  const [currentTitle, setCurrentTitle] = useState(title);
+  const [currentConditions, setCurrentConditions] = useState<any[]>(initialConditions);
+
+  // Initialize initial data when component mounts or when initial data changes
+  useEffect(() => {
+    // Always reset initial data when the modal is reopened with new data
+    initialDataRef.current = {
+      settings: { ...settings },
+      title: title,
+      conditions: [...initialConditions],
+    };
+  }, [settings, title, initialConditions]);
+
+  // Update current data when props change
+  useEffect(() => {
+    setCurrentTitle(title);
+  }, [title]);
+
+  useEffect(() => {
+    setCurrentConditions(initialConditions);
+  }, [initialConditions]);
+
+  // Check if data has changed
+  const hasDataChanged = () => {
+    if (!initialDataRef.current) return false;
+
+    const initial = initialDataRef.current;
+    return (
+      !isEqual(settings, initial.settings) ||
+      currentTitle !== initial.title ||
+      !isEqual(currentConditions, initial.conditions)
+    );
+  };
+
+  const handleTitleChange = (newTitle: string) => {
+    setCurrentTitle(newTitle);
+    onTitleChange?.(newTitle);
+  };
+
+  const handleConditionsChange = (newConditions: any[]) => {
+    setCurrentConditions(newConditions);
+    onConditionsChange?.(newConditions);
+  };
+
+  const isSaveDisabled = !hasDataChanged();
+
   return (
     <ScrollArea className="h-full border-r border-blue-100">
       <ThemeSettingsPanel
@@ -55,16 +112,28 @@ export const ModalThemeSettingsPanel = ({
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex-1 mr-4">
               <OutlineInput
-                value={title}
-                onChange={(e) => onTitleChange?.(e.target.value)}
+                value={currentTitle}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Enter variation title..."
-                className="h-8 shadow-none focus-visible:ring-0 focus:border-b"
+                className="h-8 shadow-none focus-visible:ring-0 focus:border-b text-base"
               />
             </div>
             {showDelete && (
-              <Button variant="ghost" size="sm" onClick={onDelete} className="p-1 h-auto">
-                <Delete2Icon className="h-4 w-4 text-gray-500 hover:text-red-500" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="flex-none hover:bg-destructive/20 hover:text-destructive"
+                      variant="ghost"
+                      size="icon"
+                      onClick={onDelete}
+                    >
+                      <Delete2Icon />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Delete condition variation</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
           {/* Save/Cancel buttons */}
@@ -75,8 +144,8 @@ export const ModalThemeSettingsPanel = ({
               </Button>
             )}
             {onSave && (
-              <Button size="sm" onClick={onSave}>
-                Save
+              <Button size="sm" onClick={onSave} disabled={isSaveDisabled}>
+                Apply changes
               </Button>
             )}
           </div>
@@ -84,7 +153,7 @@ export const ModalThemeSettingsPanel = ({
           {onConditionsChange && (
             <div className="p-4">
               <Rules
-                onDataChange={onConditionsChange}
+                onDataChange={handleConditionsChange}
                 defaultConditions={initialConditions}
                 isHorizontal={true}
                 isShowIf={false}
