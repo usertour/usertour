@@ -573,13 +573,6 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   }
 
   /**
-   * Refreshes the app contents
-   */
-  async refreshContents(): Promise<void> {
-    await this.getInstance().refresh();
-  }
-
-  /**
    * Checks if the content is the same as the new content
    * @param newContent - The new content to compare
    */
