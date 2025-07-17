@@ -1,7 +1,7 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { Calendar } from '@usertour-ui/calendar';
 import { TimeIcon } from '@usertour-ui/icons';
-import * as Popover from '@radix-ui/react-popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
 import {
   Select,
   SelectContent,
@@ -92,8 +92,8 @@ const RulesCurrentTimeDatePicker = (props: {
   const { date, setDate } = props;
 
   return (
-    <Popover.Popover>
-      <Popover.PopoverTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button
           variant={'outline'}
           className={cn(
@@ -104,15 +104,16 @@ const RulesCurrentTimeDatePicker = (props: {
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? format(date, 'PPP') : <span>Pick a date</span>}
         </Button>
-      </Popover.PopoverTrigger>
-      <Popover.PopoverContent
+      </PopoverTrigger>
+      <PopoverContent
         className="w-auto p-0"
         align="start"
         style={{ zIndex: EXTENSION_CONTENT_RULES }}
+        withoutPortal
       >
         <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-      </Popover.PopoverContent>
-    </Popover.Popover>
+      </PopoverContent>
+    </Popover>
   );
 };
 
