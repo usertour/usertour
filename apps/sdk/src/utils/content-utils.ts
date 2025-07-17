@@ -9,6 +9,7 @@ import {
   contentEndReason,
   SDKContent,
   Step,
+  Theme,
 } from '@usertour-ui/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
@@ -630,4 +631,14 @@ export const getStepByCvid = (steps: Step[] | undefined, cvid: string): Step | u
     return undefined;
   }
   return steps.find((step) => step.cvid === cvid);
+};
+
+/**
+ * Gets the active theme
+ * @param themes - The themes to search through
+ * @param themeId - The theme id to search for
+ * @returns The active theme or undefined if no theme is found
+ */
+export const getActivedTheme = (themes: Theme[], themeId: string) => {
+  return themes.find((item) => item.id === themeId);
 };

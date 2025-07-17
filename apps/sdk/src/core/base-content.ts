@@ -7,7 +7,6 @@ import {
   SDKConfig,
   SDKContent,
   Step,
-  Theme,
   UserTourTypes,
   contentStartReason,
 } from '@usertour-ui/types';
@@ -25,6 +24,7 @@ import { ExternalStore } from './store';
 import { differenceInHours } from 'date-fns';
 import { logger } from '../utils/logger';
 import { BaseStore } from '../types/store';
+import { getActivedTheme } from '../utils/content-utils';
 
 export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private readonly instance: App;
@@ -554,13 +554,10 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
     if (!themes || themes.length === 0) {
       return undefined;
     }
-    let theme: Theme | undefined;
     const currentStep = this.getCurrentStep();
-    if (currentStep?.themeId) {
-      theme = themes.find((item) => item.id === currentStep?.themeId);
-    } else {
-      theme = themes.find((item) => this.getContent()?.themeId === item.id);
-    }
+    const themeId = currentStep?.themeId || this.getContent()?.themeId;
+    const theme = getActivedTheme(themes, themeId);
+
     if (!theme) {
       return undefined;
     }
