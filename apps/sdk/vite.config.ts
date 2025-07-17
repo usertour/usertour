@@ -81,7 +81,13 @@ export default defineConfig(({ command }) => {
   };
 
   const devConfig: UserConfigExport = {
-    plugins: [react(), mkcert()],
+    plugins: [
+      react({
+        jsxRuntime: 'automatic',
+        include: '**/*.{jsx,tsx,ts,js}',
+      }),
+      mkcert(),
+    ],
     define: {
       ...defaultConfig.define,
     },
