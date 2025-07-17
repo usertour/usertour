@@ -25,6 +25,7 @@ import {
   CreateSessionRequest,
   CreateSessionResponse,
   ListContentsRequest,
+  ListThemesRequest,
   TrackEventRequest,
   TrackEventResponse,
   UpsertCompanyRequest,
@@ -924,10 +925,71 @@ export class WebSocketService {
    * @param token - The token of the environment
    * @returns Array of themes
    */
-  async listThemes(environment: Environment): Promise<Theme[]> {
-    return await this.prisma.theme.findMany({
+  async listThemes(body: ListThemesRequest, environment: Environment): Promise<Theme[]> {
+    const { userId: externalUserId, companyId: externalCompanyId } = body;
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId: environment.id },
+    });
+
+    const themes = await this.prisma.theme.findMany({
       where: { projectId: environment.projectId },
     });
+
+    // Return empty array if no themes found
+    if (!themes || themes.length === 0) {
+      return [];
+    }
+
+    // If no bizUser, return themes as-is without processing conditions
+    if (!bizUser) {
+      return themes;
+    }
+
+    const attributes = await this.prisma.attribute.findMany({
+      where: {
+        projectId: environment.projectId,
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
+      },
+    });
+
+    const processedThemes = await Promise.all(
+      themes.map(async (theme) => {
+        // Check if variations is an array, if not return theme as-is
+        const variations = theme.variations as any[];
+        if (!Array.isArray(variations)) {
+          return theme;
+        }
+
+        // Process each variation's conditions
+        const processedVariations = await Promise.all(
+          variations.map(async (variation: any) => {
+            const processedConditions = variation.conditions
+              ? await this.activedRulesConditions(
+                  variation.conditions,
+                  environment,
+                  attributes,
+                  bizUser,
+                  String(externalCompanyId),
+                )
+              : [];
+
+            return {
+              ...variation,
+              conditions: processedConditions,
+            };
+          }),
+        );
+
+        return {
+          ...theme,
+          variations: processedVariations,
+        };
+      }),
+    );
+
+    return processedThemes;
   }
 
   /**

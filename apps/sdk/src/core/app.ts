@@ -1031,7 +1031,12 @@ export class App extends Evented {
    */
   async initThemeData() {
     const { token } = this.startOptions;
-    const data = await this.socket.listThemes({ token });
+    const params = {
+      token,
+      userId: this.userInfo!.externalId,
+      companyId: this.companyInfo?.externalId,
+    };
+    const data = await this.socket.listThemes(params);
     if (data) {
       this.themes = data;
     } else {

@@ -22,7 +22,10 @@ export interface ListContentsRequest extends BaseRequest {
 }
 
 // List themes request
-export interface ListThemesRequest extends BaseRequest {}
+export interface ListThemesRequest extends BaseRequest {
+  userId?: string;
+  companyId?: string;
+}
 
 // Upsert user request
 export interface UpsertUserRequest extends BaseRequest {

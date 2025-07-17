@@ -177,7 +177,9 @@ export class Socket extends Evented {
    * @param params - Parameters including authentication token
    * @returns Promise with array of themes
    */
-  async listThemes(params: { token: string }): Promise<Theme[]> {
+  async listThemes(params: { token: string; userId?: string; companyId?: string }): Promise<
+    Theme[]
+  > {
     const response = await this.emitWithTimeout('list-themes', params);
     if (!Array.isArray(response)) {
       return [];
