@@ -10,7 +10,7 @@ import '../index.css';
 const WIDGETS = {
   Tour: React.lazy(() =>
     import('./tour').then((module) => ({
-      default: module.Tour,
+      default: module.TourWidget,
     })),
   ),
   Launcher: React.lazy(() =>

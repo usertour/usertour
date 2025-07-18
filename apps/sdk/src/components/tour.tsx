@@ -304,7 +304,7 @@ const TourModal = (props: TourModalProps) => {
   );
 };
 
-export const Tour = (props: { tour: TourCore }) => {
+export const TourWidget = (props: { tour: TourCore }) => {
   const { tour } = props;
   const storeData = useTourStore(tour);
 
