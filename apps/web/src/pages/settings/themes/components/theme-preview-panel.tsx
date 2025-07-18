@@ -6,8 +6,9 @@ import {
   ThemeDetailSelectorType,
   ThemeDetailPreviewType,
 } from '@usertour-ui/types';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRect } from '@usertour-ui/react-use-rect';
+import { useDebouncedCallback } from 'use-debounce';
 import { ThemePreviewChecklist } from './preview/theme-preview-checklist';
 import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
 import { ThemePreviewModal } from './preview/theme-preview-modal';
@@ -37,6 +38,30 @@ export const ThemePreviewPanel = ({
 }: ThemePreviewPanelProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const containerRect = useRect(containerRef.current);
+  const [debouncedRect, setDebouncedRect] = useState<
+    { width: number; height: number; x: number; y: number } | undefined
+  >();
+
+  // Debounced rect update
+  const debouncedSetRect = useDebouncedCallback(
+    (rect: { width: number; height: number; x: number; y: number }) => {
+      setDebouncedRect(rect);
+    },
+    100, // 100ms debounce
+  );
+
+  // Update debounced rect when container rect changes
+  useEffect(() => {
+    if (containerRect) {
+      const rect = {
+        width: containerRect.width,
+        height: containerRect.height,
+        x: containerRect.left,
+        y: containerRect.top,
+      };
+      debouncedSetRect(rect);
+    }
+  }, [containerRect, debouncedSetRect]);
 
   // Generate custom style when settings or selected type changes
   useEffect(() => {
@@ -62,7 +87,7 @@ export const ThemePreviewPanel = ({
           <ThemePreviewPopper
             settings={settings}
             customStyle={customStyle}
-            viewRect={containerRect}
+            viewRect={debouncedRect}
           />
         )}
         {selectedType?.type === ThemeDetailPreviewType.MODAL && (
