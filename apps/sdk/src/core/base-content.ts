@@ -557,6 +557,27 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   }
 
   /**
+   * Checks if theme has changed and updates theme settings if needed
+   */
+  protected async checkAndUpdateThemeSettings() {
+    const activeTheme = await this.getActivedTheme();
+    if (!activeTheme?.settings) {
+      return;
+    }
+
+    // Get current theme settings from store
+    const currentStore = this.getStore()?.getSnapshot();
+    const currentThemeSettings = currentStore?.themeSettings;
+
+    // Check if theme settings have changed using isEqual for deep comparison
+    if (!isEqual(currentThemeSettings, activeTheme.settings)) {
+      this.updateStore({
+        themeSettings: activeTheme.settings,
+      } as Partial<T>);
+    }
+  }
+
+  /**
    * Get the base information for the store
    */
   async getStoreBaseInfo(): Promise<BaseStore | undefined> {

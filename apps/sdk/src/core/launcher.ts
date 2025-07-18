@@ -23,6 +23,9 @@ export class Launcher extends BaseContent<LauncherStore> {
     // First, check and activate any content conditions
     await this.activeContentConditions();
 
+    // Check and update theme settings if needed
+    await this.checkAndUpdateThemeSettings();
+
     // Then, handle the visibility state based on conditions
     await this.handleVisibilityState();
   }

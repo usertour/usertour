@@ -44,12 +44,15 @@ export class Tour extends BaseContent<TourStore> {
     try {
       // Always activate content conditions
       await this.activeContentConditions();
+
       // Handle active tour monitoring
       if (this.isActiveTour()) {
         // Check if the current step is visible
         await this.checkStepVisible();
         // Activate any trigger conditions
         await this.activeTriggerConditions();
+        // Check and update theme settings if needed
+        await this.checkAndUpdateThemeSettings();
       }
     } catch (error) {
       logger.error('Error in tour monitoring:', error);

@@ -42,6 +42,9 @@ export class Checklist extends BaseContent<ChecklistStore> {
 
       // Update visibility state based on checklist status
       this.handleVisibilityState();
+
+      // Check and update theme settings if needed
+      await this.checkAndUpdateThemeSettings();
     }
   }
 
