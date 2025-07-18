@@ -156,13 +156,13 @@ export class Checklist extends BaseContent<ChecklistStore> {
       return;
     }
     // Create the new store data to compare
-    const { userInfo, assets, globalStyle, theme, zIndex } = baseStoreData;
+    const { userInfo, assets, globalStyle, themeSettings, zIndex } = baseStoreData;
     if (baseStoreInfoIsChanged(currentStore, baseStoreData)) {
       this.updateStore({
         userInfo,
         assets,
         globalStyle,
-        theme,
+        themeSettings,
         zIndex,
       });
     }
@@ -178,7 +178,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
   private async getBaseStoreData(): Promise<Omit<ChecklistStore, 'checklistData'> | undefined> {
     // Get base information and content
     const baseInfo = await this.getStoreBaseInfo();
-    const zIndex = baseInfo?.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
+    const zIndex = baseInfo?.themeSettings?.checklist?.zIndex || this.getBaseZIndex();
     if (!baseInfo) {
       return undefined;
     }

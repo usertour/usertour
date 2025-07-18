@@ -572,7 +572,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
       sdkConfig,
       assets: getAssets(theme.settings),
       globalStyle: convertToCssVars(convertSettings(theme.settings)),
-      theme,
+      themeSettings: theme.settings,
       zIndex,
       userInfo,
       openState: false,

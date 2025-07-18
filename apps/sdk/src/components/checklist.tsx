@@ -102,16 +102,17 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     return <></>;
   }
 
-  const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex, expanded } = store;
+  const { checklistData, themeSettings, userInfo, openState, assets, sdkConfig, zIndex, expanded } =
+    store;
 
-  if (!theme || !checklistData || !openState || !userInfo) {
+  if (!themeSettings || !checklistData || !openState || !userInfo) {
     return <></>;
   }
 
   return (
     <ChecklistWidgetCore
       data={checklistData}
-      themeSettings={theme.settings}
+      themeSettings={themeSettings}
       userInfo={userInfo}
       assets={assets}
       handleItemClick={checklist.handleItemClick}

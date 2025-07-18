@@ -20,7 +20,6 @@ import {
   Step,
   StepContentType,
   ThemeTypesSetting,
-  defaultSettings,
 } from '@usertour-ui/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
@@ -76,7 +75,7 @@ const useTourStore = (tour: TourCore) => {
     openState,
     zIndex,
     globalStyle,
-    theme,
+    themeSettings,
     assets,
     sdkConfig,
     currentStepIndex,
@@ -94,7 +93,7 @@ const useTourStore = (tour: TourCore) => {
     openState,
     zIndex,
     globalStyle,
-    themeSettings: theme?.settings || defaultSettings,
+    themeSettings,
     assets,
     sdkConfig,
     currentStepIndex: currentStepIndex || 0,

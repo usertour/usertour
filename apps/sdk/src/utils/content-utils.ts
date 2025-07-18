@@ -615,7 +615,7 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
     !isEqual(currentStore.userInfo, previousStore.userInfo) ||
     !isEqual(currentStore.assets, previousStore.assets) ||
     !isEqual(currentStore.globalStyle, previousStore.globalStyle) ||
-    !isEqual(currentStore.theme, previousStore.theme) ||
+    !isEqual(currentStore.themeSettings, previousStore.themeSettings) ||
     currentStore.zIndex !== previousStore.zIndex
   );
 };

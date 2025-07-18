@@ -217,11 +217,11 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
   if (!store) {
     return <></>;
   }
-  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } = store;
+  const { userInfo, content, zIndex, themeSettings, triggerRef, openState, sdkConfig } = store;
 
   const data = content?.data as LauncherData | undefined;
 
-  if (!theme || !data || !triggerRef || !openState) {
+  if (!themeSettings || !data || !triggerRef || !openState) {
     return <></>;
   }
 
@@ -230,7 +230,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
       data={data}
       handleActive={launcher.handleActive}
       handleActions={launcher.handleActions}
-      themeSettings={theme.settings}
+      themeSettings={themeSettings}
       zIndex={zIndex}
       handleOnClick={launcher.handleOnClick}
       userInfo={userInfo as BizUserInfo}
