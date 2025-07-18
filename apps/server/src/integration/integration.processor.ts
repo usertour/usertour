@@ -22,7 +22,7 @@ export class AmplitudeEventProcessor extends WorkerHost {
 
   async process(job: Job<TrackEventData>) {
     try {
-      this.integrationService.trackAmplitudeEvent(job.data);
+      await this.integrationService.trackAmplitudeEvent(job.data);
 
       this.logger.debug(`Successfully sent event to Amplitude: ${JSON.stringify(job.data)}`);
     } catch (error) {
@@ -41,7 +41,7 @@ export class HeapEventProcessor extends WorkerHost {
 
   async process(job: Job<TrackEventData>) {
     try {
-      this.integrationService.trackHeapEvent(job.data);
+      await this.integrationService.trackHeapEvent(job.data);
 
       this.logger.debug(`Successfully sent event to Heap: ${JSON.stringify(job.data)}`);
     } catch (error) {
@@ -60,7 +60,7 @@ export class HubspotEventProcessor extends WorkerHost {
 
   async process(job: Job<TrackEventData>) {
     try {
-      this.integrationService.trackHubspotEvent(job.data);
+      await this.integrationService.trackHubspotEvent(job.data);
 
       this.logger.debug(`Successfully sent event to HubSpot: ${JSON.stringify(job.data)}`);
     } catch (error) {
@@ -79,7 +79,7 @@ export class PosthogEventProcessor extends WorkerHost {
 
   async process(job: Job<TrackEventData>) {
     try {
-      this.integrationService.trackPosthogEvent(job.data);
+      await this.integrationService.trackPosthogEvent(job.data);
 
       this.logger.debug(`Successfully sent event to Posthog: ${JSON.stringify(job.data)}`);
     } catch (error) {
@@ -98,7 +98,7 @@ export class MixpanelEventProcessor extends WorkerHost {
 
   async process(job: Job<TrackEventData>) {
     try {
-      this.integrationService.trackMixpanelEvent(job.data);
+      await this.integrationService.trackMixpanelEvent(job.data);
 
       this.logger.debug(`Successfully sent event to Mixpanel: ${JSON.stringify(job.data)}`);
     } catch (error) {
@@ -117,7 +117,7 @@ export class SegmentEventProcessor extends WorkerHost {
 
   async process(job: Job<TrackEventData>) {
     try {
-      this.integrationService.trackSegmentEvent(job.data);
+      await this.integrationService.trackSegmentEvent(job.data);
 
       this.logger.debug(`Successfully sent event to Segment: ${JSON.stringify(job.data)}`);
     } catch (error) {

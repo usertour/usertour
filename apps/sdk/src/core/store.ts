@@ -1,4 +1,5 @@
 import autoBind from '../utils/auto-bind';
+import isEqual from 'fast-deep-equal';
 
 /**
  * A generic store class that manages state and notifies subscribers of changes
@@ -21,21 +22,30 @@ export class ExternalStore<T> {
 
   /**
    * Replaces the entire state with new data
+   * Only emits change if the data has actually changed
    * @param newData New state to set
    */
   public setData(newData: T | undefined): void {
-    this.data = newData;
-    this.emitChange();
+    // Only update and emit if data has actually changed
+    if (!isEqual(this.data, newData)) {
+      this.data = newData;
+      this.emitChange();
+    }
   }
 
   /**
    * Updates a portion of the state by merging partial data
+   * Only emits change if the data has actually changed
    * @param partialData Partial state to merge with current state
    */
   public update(partialData: Partial<T>): void {
     if (this.data) {
-      this.data = { ...this.data, ...partialData };
-      this.emitChange();
+      const newData = { ...this.data, ...partialData };
+      // Only update and emit if data has actually changed
+      if (!isEqual(this.data, newData)) {
+        this.data = newData;
+        this.emitChange();
+      }
     }
   }
 
