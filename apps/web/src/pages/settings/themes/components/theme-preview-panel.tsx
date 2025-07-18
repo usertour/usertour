@@ -16,6 +16,7 @@ import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
 import { ContentEditorRoot, createValue6, surveysValue } from '@usertour-ui/shared-editor';
 import { ThemeTypesSetting } from '@usertour-ui/types';
+import { Rect } from './theme-editor';
 
 interface ThemePreviewPanelProps {
   settings: ThemeTypesSetting;
@@ -38,13 +39,11 @@ export const ThemePreviewPanel = ({
 }: ThemePreviewPanelProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const containerRect = useRect(containerRef.current);
-  const [debouncedRect, setDebouncedRect] = useState<
-    { width: number; height: number; x: number; y: number } | undefined
-  >();
+  const [debouncedRect, setDebouncedRect] = useState<Rect | undefined>();
 
   // Debounced rect update
   const debouncedSetRect = useDebouncedCallback(
-    (rect: { width: number; height: number; x: number; y: number }) => {
+    (rect: Rect) => {
       setDebouncedRect(rect);
     },
     100, // 100ms debounce
@@ -53,13 +52,7 @@ export const ThemePreviewPanel = ({
   // Update debounced rect when container rect changes
   useEffect(() => {
     if (containerRect) {
-      const rect = {
-        width: containerRect.width,
-        height: containerRect.height,
-        x: containerRect.left,
-        y: containerRect.top,
-      };
-      debouncedSetRect(rect);
+      debouncedSetRect(containerRect);
     }
   }, [containerRect, debouncedSetRect]);
 
