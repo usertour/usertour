@@ -27,27 +27,11 @@ export interface ThemeDetailContextValue {
   setSelectedType: Dispatch<SetStateAction<ThemeDetailSelectorType>>;
   customStyle: string;
   setCustomStyle: Dispatch<SetStateAction<string>>;
-  viewRect: Rect;
-  setViewRect: Dispatch<SetStateAction<Rect>>;
   theme: Theme;
   refetch: any;
   loading: boolean;
 }
 export const ThemeDetailContext = createContext<ThemeDetailContextValue | undefined>(undefined);
-
-type Rect = {
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-};
-
-const defaultRect: Rect = {
-  width: 0,
-  height: 0,
-  x: 0,
-  y: 0,
-};
 
 export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Element {
   const { children, themeId } = props;
@@ -60,7 +44,6 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
     variables: { themeId },
   });
   const [customStyle, setCustomStyle] = useState('');
-  const [viewRect, setViewRect] = useState<Rect>(defaultRect);
 
   const theme = data?.getTheme;
 
@@ -81,8 +64,6 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
     setVariations,
     customStyle,
     setCustomStyle,
-    viewRect,
-    setViewRect,
     refetch,
     loading,
   };

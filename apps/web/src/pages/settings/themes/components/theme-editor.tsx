@@ -25,7 +25,6 @@ export interface ThemeEditorProps {
   onSettingsChange: (settings: ThemeTypesSetting) => void;
   onTypeChange?: (type: ThemeDetailSelectorType) => void;
   onCustomStyleChange?: (style: string) => void;
-  onViewRectChange?: (rect: Rect) => void;
 
   // Configuration
   showPreview?: boolean;
@@ -38,7 +37,6 @@ export interface ThemeEditorProps {
 
   // Additional data for preview
   customStyle?: string;
-  viewRect?: Rect;
   attributeList?: Attribute[];
   variations?: ThemeVariation[];
   onVariationsChange?: (variations: ThemeVariation[]) => void;
@@ -51,14 +49,12 @@ export const ThemeEditor = ({
   onSettingsChange,
   onTypeChange,
   onCustomStyleChange,
-  onViewRectChange,
   showPreview = true,
   showSelector = true,
   showConditionalVariations = true,
   layout = 'horizontal',
   className,
   customStyle,
-  viewRect,
   attributeList,
   variations = [],
   onVariationsChange,
@@ -86,10 +82,8 @@ export const ThemeEditor = ({
           selectedType={selectedType}
           onTypeChange={onTypeChange}
           onCustomStyleChange={onCustomStyleChange}
-          onViewRectChange={onViewRectChange}
           showSelector={showSelector}
           customStyle={customStyle}
-          viewRect={viewRect}
           className="fixed top-24 right-8 w-[calc(100vw-430px)] h-[calc(100vh-120px)]"
         />
       )}

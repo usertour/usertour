@@ -13,10 +13,8 @@ export const ThemeDetailContent = () => {
     selectedType,
     setSelectedType,
     setCustomStyle,
-    setViewRect,
     theme,
     customStyle,
-    viewRect,
   } = useThemeDetailContext();
   const { attributeList } = useAttributeListContext();
   const showConditionalVariations = !theme.isSystem;
@@ -30,13 +28,11 @@ export const ThemeDetailContent = () => {
         onSettingsChange={setSettings}
         onTypeChange={setSelectedType}
         onCustomStyleChange={setCustomStyle}
-        onViewRectChange={setViewRect}
         showPreview={true}
         showSelector={true}
         layout="horizontal"
         showConditionalVariations={showConditionalVariations}
         customStyle={customStyle}
-        viewRect={viewRect}
         attributeList={attributeList}
         variations={variations}
         onVariationsChange={setVariations}

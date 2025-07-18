@@ -13,7 +13,6 @@ import { useState, useEffect } from 'react';
 import { cuid } from '@usertour-ui/ui-utils';
 import { ModalThemeSettingsPanel } from './modal-theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
-import { Rect } from './theme-editor';
 
 interface SubThemeModalProps {
   isOpen?: boolean;
@@ -43,7 +42,6 @@ export const SubThemeModal = ({
     type: ThemeDetailPreviewType.TOOLTIP,
   });
   const [customStyle, setCustomStyle] = useState<string>('');
-  const [viewRect, setViewRect] = useState<Rect | undefined>();
   const [showError, setShowError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
 
@@ -170,10 +168,8 @@ export const SubThemeModal = ({
           selectedType={selectedType}
           onTypeChange={setSelectedType}
           onCustomStyleChange={setCustomStyle}
-          onViewRectChange={setViewRect}
           showSelector={true}
           customStyle={customStyle}
-          viewRect={viewRect}
           className="h-full ml-0 shadow-none"
         />
       </DialogContentSimple2>

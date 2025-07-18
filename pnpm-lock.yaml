@@ -635,6 +635,9 @@ importers:
       '@usertour-ui/radio-group':
         specifier: workspace:^
         version: link:../../packages/components/radio-group
+      '@usertour-ui/react-use-rect':
+        specifier: workspace:^
+        version: link:../../packages/radix/use-rect
       '@usertour-ui/react-use-size':
         specifier: workspace:^
         version: link:../../packages/radix/use-size

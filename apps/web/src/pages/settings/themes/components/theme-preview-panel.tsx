@@ -1,5 +1,4 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
-import { useSize } from '@usertour-ui/react-use-size';
 import { Separator } from '@usertour-ui/separator';
 import { cn } from '@usertour-ui/ui-utils';
 import {
@@ -8,6 +7,7 @@ import {
   ThemeDetailPreviewType,
 } from '@usertour-ui/types';
 import { useEffect, useRef } from 'react';
+import { useRect } from '@usertour-ui/react-use-rect';
 import { ThemePreviewChecklist } from './preview/theme-preview-checklist';
 import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
 import { ThemePreviewModal } from './preview/theme-preview-modal';
@@ -15,17 +15,14 @@ import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
 import { ContentEditorRoot, createValue6, surveysValue } from '@usertour-ui/shared-editor';
 import { ThemeTypesSetting } from '@usertour-ui/types';
-import { Rect } from './theme-editor';
 
 interface ThemePreviewPanelProps {
   settings: ThemeTypesSetting;
   selectedType?: ThemeDetailSelectorType;
   onTypeChange?: (type: ThemeDetailSelectorType) => void;
   onCustomStyleChange?: (style: string) => void;
-  onViewRectChange?: (rect: Rect) => void;
   showSelector?: boolean;
   customStyle?: string;
-  viewRect?: Rect;
   className?: string;
 }
 
@@ -34,14 +31,12 @@ export const ThemePreviewPanel = ({
   selectedType,
   onTypeChange,
   onCustomStyleChange,
-  onViewRectChange,
   showSelector = true,
   customStyle,
-  viewRect,
   className,
 }: ThemePreviewPanelProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const containerRectSize = useSize(containerRef.current);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRect = useRect(containerRef.current);
 
   // Generate custom style when settings or selected type changes
   useEffect(() => {
@@ -50,14 +45,6 @@ export const ThemePreviewPanel = ({
       onCustomStyleChange(style);
     }
   }, [settings, selectedType, onCustomStyleChange]);
-
-  // Update view rect when container size changes
-  useEffect(() => {
-    if (containerRef.current && onViewRectChange) {
-      const { width, height, x, y } = containerRef.current.getBoundingClientRect();
-      onViewRectChange({ width, height, x, y });
-    }
-  }, [containerRef, containerRectSize, onViewRectChange]);
 
   return (
     <div className={cn('shadow bg-white rounded-lg grow ml-4 h-full flex flex-col', className)}>
@@ -72,7 +59,11 @@ export const ThemePreviewPanel = ({
       <Separator />
       <div className="bg-blue-50 flex-1 overflow-hidden" ref={containerRef}>
         {selectedType?.type === ThemeDetailPreviewType.TOOLTIP && (
-          <ThemePreviewPopper settings={settings} customStyle={customStyle} viewRect={viewRect} />
+          <ThemePreviewPopper
+            settings={settings}
+            customStyle={customStyle}
+            viewRect={containerRect}
+          />
         )}
         {selectedType?.type === ThemeDetailPreviewType.MODAL && (
           <ThemePreviewModal
