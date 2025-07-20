@@ -31,6 +31,7 @@ import {
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
 import { IntegrationSource } from '@/common/types/integration';
+import isEqual from 'fast-deep-equal';
 
 @Injectable()
 export class BizService {
@@ -551,11 +552,16 @@ export class BizService {
         },
       });
     }
-    const userData = JSON.parse(JSON.stringify(user.data));
+    const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
-      ...userData,
+      ...currentData,
       ...insertAttribute,
     });
+
+    // Only update if data has actually changed
+    if (isEqual(currentData, insertData)) {
+      return user;
+    }
 
     return await tx.bizUser.update({
       where: {
@@ -635,17 +641,23 @@ export class BizService {
     );
 
     if (company) {
-      const userData = JSON.parse(JSON.stringify(company.data));
-      const insertData = filterNullAttributes({
-        ...userData,
+      const currentData = (company.data as Record<string, any>) || {};
+      const mergedData = filterNullAttributes({
+        ...currentData,
         ...insertAttribute,
       });
+
+      // Only update if data has actually changed
+      if (isEqual(currentData, mergedData)) {
+        return company;
+      }
+
       return await tx.bizCompany.update({
         where: {
           id: company.id,
         },
         data: {
-          data: insertData,
+          data: mergedData,
         },
       });
     }
@@ -678,17 +690,23 @@ export class BizService {
     });
 
     if (relation) {
-      const userData = JSON.parse(JSON.stringify(relation.data));
-      const insertData = filterNullAttributes({
-        ...userData,
+      const currentData = (relation.data as Record<string, any>) || {};
+      const mergedData = filterNullAttributes({
+        ...currentData,
         ...insertAttribute,
       });
+
+      // Only update if data has actually changed
+      if (isEqual(currentData, mergedData)) {
+        return relation;
+      }
+
       return await tx.bizUserOnCompany.update({
         where: {
           id: relation.id,
         },
         data: {
-          data: insertData,
+          data: mergedData,
         },
       });
     }
