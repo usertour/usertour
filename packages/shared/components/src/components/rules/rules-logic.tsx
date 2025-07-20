@@ -25,6 +25,9 @@ export const RulesLogic = (props: RulesLogicProps) => {
       </Button>
     );
   }
+  if (index === 0 && !isShowIf) {
+    return <></>;
+  }
   if (disabled) {
     return (
       <Tabs className="h-auto flex-none">

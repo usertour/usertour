@@ -1,5 +1,5 @@
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsModal = () => {
   const { settings, setSettings } = useThemeSettingsContext();

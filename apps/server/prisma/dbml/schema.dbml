@@ -122,6 +122,7 @@ Table Environment {
   accessTokens AccessToken [not null]
   contentOnEnvironments ContentOnEnvironment [not null]
   bizSessions BizSession [not null]
+  integrations Integration [not null]
 }
 
 Table AccessToken {
@@ -150,6 +151,7 @@ Table Theme {
   project Project [not null]
   projectId String [not null]
   settings Json
+  variations Json [note: 'Conditional variations']
   steps Step [not null]
   versions Version [not null]
 }
@@ -291,6 +293,7 @@ Table Attribute {
   description String [not null, default: '']
   dataType Int [not null, default: 1]
   randomMax Int [not null, default: 1]
+  source String [not null, default: 'internal']
   predefined Boolean [not null, default: false]
   deleted Boolean [not null, default: false]
   attributeOnEvent AttributeOnEvent [not null]
@@ -362,6 +365,8 @@ Table Segment {
   name String [not null, default: '']
   bizType Int [not null, default: 1]
   dataType Int [not null, default: 1]
+  source String [default: 'internal', note: 'Source of the segment (e.g., "mixpanel", "heap", etc.)']
+  sourceId String [note: 'Source ID of the segment (e.g., "mixpanel_cohort_id")']
   environment Environment
   environmentId String
   project Project
@@ -550,6 +555,69 @@ Table CheckoutSession {
   updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
 }
 
+Table Integration {
+  id String [pk]
+  provider String [not null, note: 'code of rntegration (e.g., "ga", "mixpanel", "posthog")']
+  key String [not null, default: '', note: 'api key or  of integration ']
+  accessToken String [unique, not null, note: 'access token of integration']
+  config Json [note: 'JSON schema for configuration (optional)']
+  enabled Boolean [not null, default: false, note: 'Whether the integration is enabled']
+  environment Environment [not null, note: 'environment of integration']
+  environmentId String [not null, note: 'environment id']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+  integrationLogs IntegrationLog [not null, note: 'integration logs']
+  integrationOAuth IntegrationOAuth
+  integrationObjectMappings IntegrationObjectMapping [not null]
+
+  indexes {
+    (environmentId, provider) [unique]
+  }
+}
+
+Table IntegrationOAuth {
+  id String [pk, note: 'primary key']
+  createdAt DateTime [default: `now()`, not null, note: 'create timestamp']
+  updatedAt DateTime [not null, note: 'update timestamp']
+  accessToken String [not null, note: 'access token']
+  refreshToken String [not null, note: 'refresh token']
+  expiresAt DateTime [not null, note: 'expires at']
+  data Json [note: 'data']
+  scope String [not null, note: 'scope']
+  provider String [not null, note: 'provider (e.g., "salesforce", "hubspot")']
+  providerAccountId String [not null, note: 'provider account id']
+  integration Integration [not null, note: 'integration']
+  integrationId String [unique, not null, note: 'integration id']
+}
+
+Table IntegrationObjectMapping {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [default: `now()`, not null, note: 'Update timestamp']
+  sourceObjectType String [not null, note: 'source object type (e.g., "account", "contact", "lead")']
+  destinationObjectType String [not null, note: 'destination object type (e.g., "user", "company")']
+  settings Json [note: 'settings']
+  enabled Boolean [not null, default: false, note: 'enabled']
+  isSyncing Boolean [not null, default: false, note: 'is syncing']
+  lastSyncedAt DateTime [note: 'last synced at']
+  integration Integration [not null, note: 'integration']
+  integrationId String [not null, note: 'integration id']
+
+  indexes {
+    (integrationId, sourceObjectType, destinationObjectType) [unique]
+  }
+}
+
+Table IntegrationLog {
+  id String [pk, note: 'Primary key']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [not null, note: 'Update timestamp']
+  integration Integration [not null, note: 'integration']
+  integrationId String [not null, note: 'integration id']
+  status String [not null, note: 'status of integration log']
+  data Json [note: 'data of integration log']
+}
+
 Enum Role {
   ADMIN
   VIEWER
@@ -650,3 +718,11 @@ Ref: BizEvent.bizUserId > BizUser.id
 Ref: BizEvent.bizSessionId > BizSession.id
 
 Ref: RefreshToken.userId > User.id
+
+Ref: Integration.environmentId > Environment.id
+
+Ref: IntegrationOAuth.integrationId - Integration.id
+
+Ref: IntegrationObjectMapping.integrationId > Integration.id
+
+Ref: IntegrationLog.integrationId > Integration.id

@@ -118,9 +118,10 @@ const LauncherPreview = ({
   currentVersion: ContentVersion;
 }) => {
   const data = currentVersion.data as LauncherData;
+  const themeSettings = currentTheme.settings;
 
   return (
-    <LauncherRoot theme={currentTheme} data={data}>
+    <LauncherRoot themeSettings={themeSettings} data={data}>
       <LauncherContainer>
         <LauncherView
           type={data.type}
@@ -140,9 +141,10 @@ const ChecklistPreview = (props: {
 }) => {
   const { currentTheme, currentVersion } = props;
   const data = currentVersion.data as ChecklistData;
+  const themeSettings = currentTheme.settings;
 
   return (
-    <ChecklistRoot data={data} theme={currentTheme} zIndex={10000}>
+    <ChecklistRoot data={data} themeSettings={themeSettings} zIndex={10000}>
       <ChecklistContainer>
         <ChecklistStaticPopper>
           <ChecklistDropdown />

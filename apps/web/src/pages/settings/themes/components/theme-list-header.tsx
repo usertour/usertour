@@ -3,6 +3,7 @@ import { useThemeListContext } from '@/contexts/theme-list-context';
 import { Button } from '@usertour-ui/button';
 import { useState } from 'react';
 import { ThemeCreateForm } from './theme-create-form';
+import { PlusIcon } from 'lucide-react';
 
 export const ThemeListHeader = () => {
   const [open, setOpen] = useState(false);
@@ -22,6 +23,7 @@ export const ThemeListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Themes</h3>
             <Button onClick={handleCreateTheme} disabled={isViewOnly}>
+              <PlusIcon className="h-4 w-4" />
               New Theme
             </Button>
           </div>

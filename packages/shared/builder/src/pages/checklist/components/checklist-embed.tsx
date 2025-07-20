@@ -77,7 +77,7 @@ export const ChecklistEmbed = () => {
     <>
       <ChecklistRoot
         data={{ ...localData, items }}
-        theme={theme}
+        themeSettings={theme.settings}
         expanded={expanded}
         onExpandedChange={setExpanded}
         zIndex={10000}

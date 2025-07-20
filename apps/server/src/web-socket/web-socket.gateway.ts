@@ -24,6 +24,7 @@ import {
   CreateSessionResponse,
   TrackEventResponse,
   ContentResponse,
+  ListThemesRequest,
 } from './web-socket.dto';
 import { Environment, Theme } from '@prisma/client';
 
@@ -52,8 +53,11 @@ export class WebSocketGateway {
   }
 
   @SubscribeMessage('list-themes')
-  async listThemes(@WebSocketEnvironment() environment: Environment): Promise<Theme[]> {
-    return await this.service.listThemes(environment);
+  async listThemes(
+    @MessageBody() body: ListThemesRequest,
+    @WebSocketEnvironment() environment: Environment,
+  ): Promise<Theme[]> {
+    return await this.service.listThemes(body, environment);
   }
 
   @SubscribeMessage('identity')

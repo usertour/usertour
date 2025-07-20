@@ -106,6 +106,15 @@ const config: Config = {
     enabledBillingUsers: process.env.ENABLED_BILLING_USERS?.split(',') || [],
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
   },
+  integration: {
+    salesforce: {
+      clientId: process.env.SALESFORCE_CLIENT_ID || '',
+      clientSecret: process.env.SALESFORCE_CLIENT_SECRET || '',
+      callbackUrl: process.env.SALESFORCE_CALLBACK_URL || '',
+      loginUrl: process.env.SALESFORCE_LOGIN_URL || '',
+      sandboxLoginUrl: process.env.SALESFORCE_SANDBOX_LOGIN_URL || 'https://test.salesforce.com',
+    },
+  },
 };
 
 export default (): Config => config;

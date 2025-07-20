@@ -67,7 +67,6 @@ export class UtilitiesService {
         requestUrl = `${endpoint.url}?url=${encodeURIComponent(url)}&format=json`;
       }
       const resp = await this.httpService.axiosRef.get(requestUrl);
-      console.log('resp data:', resp.data);
       if (resp.data) {
         return {
           html: resp.data.html,
@@ -83,9 +82,11 @@ export class UtilitiesService {
     const enabledBillingUsers = this.configService.get('globalConfig.enabledBillingUsers');
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     const enabledBilling = enabledBillingUsers.includes(user.id);
+    const apiUrl = this.configService.get('app.apiUrl');
     return {
       enabledBilling,
       isSelfHostedMode,
+      apiUrl,
     };
   }
 }

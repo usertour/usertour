@@ -14,7 +14,7 @@ import { ThemeRenameForm } from './theme-rename-form';
 import { useAppContext } from '@/contexts/app-context';
 
 export const ThemeDetailHeader = () => {
-  const { theme, settings, refetch } = useThemeDetailContext();
+  const { theme, settings, refetch, variations } = useThemeDetailContext();
   const { projectId } = useParams();
   const [updateMutation] = useMutation(updateTheme);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -32,6 +32,7 @@ export const ThemeDetailHeader = () => {
           id: theme.id,
           name: theme.name,
           settings: settings,
+          variations: variations,
         },
       });
       refetch();
@@ -58,7 +59,7 @@ export const ThemeDetailHeader = () => {
   };
 
   return (
-    <div className="border-b bg-white flex-col md:flex w-full fixed z-[100]">
+    <div className="border-b bg-white flex-col md:flex w-full fixed z-[10]">
       <div className="flex h-16 items-center px-4">
         <ArrowLeftIcon className="ml-4 h-6 w-8 cursor-pointer" onClick={navigateToThemesListPage} />
         <span>{theme?.name}</span>

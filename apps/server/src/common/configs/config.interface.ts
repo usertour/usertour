@@ -101,4 +101,13 @@ export interface Config {
     enabledBillingUsers: string[];
     isSelfHostedMode: boolean;
   };
+  integration: {
+    salesforce: {
+      clientId: string;
+      clientSecret: string;
+      callbackUrl: string;
+      loginUrl: string;
+      sandboxLoginUrl: string;
+    };
+  };
 }

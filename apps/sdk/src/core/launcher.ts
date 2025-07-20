@@ -23,6 +23,9 @@ export class Launcher extends BaseContent<LauncherStore> {
     // First, check and activate any content conditions
     await this.activeContentConditions();
 
+    // Check and update theme settings if needed
+    await this.checkAndUpdateThemeSettings();
+
     // Then, handle the visibility state based on conditions
     await this.handleVisibilityState();
   }
@@ -78,9 +81,9 @@ export class Launcher extends BaseContent<LauncherStore> {
    * Combines default store data with content-specific data and base information
    * @returns {LauncherStore} The complete store data object
    */
-  private buildStoreData(): LauncherStore {
+  private async buildStoreData(): Promise<LauncherStore> {
     const content = this.getContent();
-    const baseInfo = this.getStoreBaseInfo();
+    const baseInfo = await this.getStoreBaseInfo();
     const { zIndex } = content.data;
 
     return {
@@ -96,8 +99,8 @@ export class Launcher extends BaseContent<LauncherStore> {
    * Refreshes the launcher's store data
    * Updates the store with new data while preserving the current open state and trigger reference
    */
-  refresh() {
-    const { openState, triggerRef, ...storeData } = this.buildStoreData();
+  async refresh() {
+    const { openState, triggerRef, ...storeData } = await this.buildStoreData();
     this.updateStore({ ...storeData });
   }
 
@@ -123,7 +126,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     }
 
     // Initialize store data and watcher
-    const storeData = this.buildStoreData();
+    const storeData = await this.buildStoreData();
     const store = { ...storeData, openState: false };
     this.setStore({ ...store });
 

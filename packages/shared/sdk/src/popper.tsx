@@ -485,7 +485,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
           style={{
             width,
             height,
-            overflow: 'scroll',
+            overflow: 'hidden',
           }}
         >
           <div className="usertour-widget-popper__frame-wrapper">

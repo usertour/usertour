@@ -158,10 +158,11 @@
 
           await usertour.identify("user-3333333333336", {
             name: "Iric L",
-            email: "iric-" + new Date().getTime().toString() + "@usertour.com",
+            email: "iric-123@usertour.com",
             male: true,
             sdsdd: 13,
             registerAt: "2024-03-29T10:05:45-06:00",
+            device_type: window.innerWidth > 800 ? "desktop" : "mobile",
           });
           await usertour.updateUser({
             website_lead: true,

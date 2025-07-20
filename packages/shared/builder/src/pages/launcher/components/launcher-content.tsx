@@ -41,7 +41,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
     const isTooltipOpen = data.behavior.actionType === LauncherActionType.SHOW_TOOLTIP;
 
     return (
-      <LauncherRoot theme={theme} data={data}>
+      <LauncherRoot themeSettings={theme.settings} data={data}>
         <LauncherContainer>
           <LauncherPopper triggerRef={triggerReference} open={isTooltipOpen} zIndex={zIndex}>
             <LauncherPopperContentPotal ref={ref}>
