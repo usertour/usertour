@@ -26,7 +26,6 @@ const parsePattern = (pattern: string) => {
   }
   const _pattern = parseUrl(pattern);
   if (!_pattern) {
-    console.error('Invalid URL pattern:', pattern);
     return null;
   }
   const { scheme, domain, path, query, fragment } = _pattern;

@@ -34,6 +34,17 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   updateProjectName,
+  ListIntegrations,
+  UpdateIntegration,
+  GetSalesforceAuthUrl,
+  GetIntegration,
+  DisconnectIntegration,
+  GetIntegrationObjectMappings,
+  GetIntegrationObjectMapping,
+  UpsertIntegrationObjectMapping,
+  UpdateIntegrationObjectMapping,
+  DeleteIntegrationObjectMapping,
+  GetSalesforceObjectFields,
   getContent,
   getContentVersion,
   addContentSteps,
@@ -44,6 +55,7 @@ import {
   createContentVersion,
   resetUserPasswordByCode,
 } from '@usertour-ui/gql';
+
 import type {
   Content,
   ContentDataType,
@@ -57,6 +69,9 @@ import type {
   Attribute,
   Subscription,
   GlobalConfig,
+  UpdateIntegrationInput,
+  IntegrationModel,
+  SalesforceObjectFields,
   SessionQuery,
 } from '@usertour-ui/types';
 
@@ -524,6 +539,23 @@ export const useUpdateProjectNameMutation = () => {
   return { invoke, loading, error };
 };
 
+export const useListIntegrationsQuery = (environmentId: string, options?: QueryHookOptions) => {
+  const { data, loading, error, refetch } = useQuery(ListIntegrations, {
+    variables: { environmentId },
+    ...options,
+  });
+  return { data: data?.listIntegrations, loading, error, refetch };
+};
+
+export const useUpdateIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateIntegration);
+  const invoke = async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
+    const response = await mutation({ variables: { environmentId, provider, input } });
+    return response.data?.updateIntegration;
+  };
+  return { invoke, loading, error };
+};
+
 // Builder related hooks
 export const useGetContentLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContent);
@@ -534,11 +566,80 @@ export const useGetContentLazyQuery = () => {
   return { invoke, loading, error };
 };
 
+export const useGetSalesforceAuthUrlQuery = (
+  environmentId: string,
+  provider: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error } = useQuery(GetSalesforceAuthUrl, {
+    variables: { environmentId, provider },
+    ...options,
+  });
+  return { data: data?.getSalesforceAuthUrl, loading, error };
+};
+
+export const useGetIntegrationQuery = (
+  environmentId: string,
+  provider: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegration, {
+    variables: { environmentId, provider },
+    ...options,
+  });
+  return { data: data?.getIntegration as IntegrationModel, loading, error, refetch };
+};
+
+export const useDisconnectIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DisconnectIntegration);
+  const invoke = async (environmentId: string, provider: string) => {
+    const response = await mutation({ variables: { environmentId, provider } });
+    return response.data?.disconnectIntegration;
+  };
+  return { invoke, loading, error };
+};
+
 export const useGetContentVersionLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContentVersion);
   const invoke = async (versionId: string) => {
     const response = await query({ variables: { versionId } });
     return response.data?.getContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetIntegrationObjectMappingsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMappings, {
+    variables: { integrationId },
+    ...options,
+  });
+  return { data: data?.getIntegrationObjectMappings, loading, error, refetch };
+};
+
+export const useGetIntegrationObjectMappingQuery = (id: string, options?: QueryHookOptions) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMapping, {
+    variables: { id },
+    ...options,
+  });
+  return { data: data?.getIntegrationObjectMapping, loading, error, refetch };
+};
+
+export const useUpsertIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping);
+  const invoke = async (
+    integrationId: string,
+    input: {
+      sourceObjectType: string;
+      destinationObjectType: string;
+      settings?: any;
+      enabled?: boolean;
+    },
+  ) => {
+    const response = await mutation({ variables: { integrationId, input } });
+    return response.data?.upsertIntegrationObjectMapping;
   };
   return { invoke, loading, error };
 };
@@ -557,11 +658,35 @@ export const useAddContentStepsMutation = () => {
   return { invoke, loading, error };
 };
 
+export const useUpdateIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationObjectMapping);
+  const invoke = async (
+    id: string,
+    input: {
+      settings?: any;
+      enabled?: boolean;
+    },
+  ) => {
+    const response = await mutation({ variables: { id, input } });
+    return response.data?.updateIntegrationObjectMapping;
+  };
+  return { invoke, loading, error };
+};
+
 export const useAddContentStepMutation = () => {
   const [mutation, { loading, error }] = useMutation(addContentStep);
   const invoke = async (data: { [key: string]: any; versionId: string }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.addContentStep;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteIntegrationObjectMapping;
   };
   return { invoke, loading, error };
 };
@@ -573,6 +698,22 @@ export const useUpdateContentStepMutation = () => {
     return response.data?.updateContentStep;
   };
   return { invoke, loading, error };
+};
+
+export const useGetSalesforceObjectFieldsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetSalesforceObjectFields, {
+    variables: { integrationId },
+    ...options,
+  });
+  return {
+    data: data?.getSalesforceObjectFields as SalesforceObjectFields | undefined,
+    loading,
+    error,
+    refetch,
+  };
 };
 
 export const useGetUserInfoQuery = (uid?: string, options?: QueryHookOptions) => {

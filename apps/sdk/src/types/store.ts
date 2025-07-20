@@ -1,5 +1,12 @@
 import { AssetAttributes } from '@usertour-ui/frame';
-import { BizUserInfo, ChecklistData, SDKConfig, SDKContent, Step, Theme } from '@usertour-ui/types';
+import {
+  BizUserInfo,
+  ChecklistData,
+  SDKConfig,
+  SDKContent,
+  Step,
+  ThemeTypesSetting,
+} from '@usertour-ui/types';
 
 // Base store interface
 export interface BaseStore {
@@ -8,8 +15,8 @@ export interface BaseStore {
   zIndex: number;
   assets: AssetAttributes[] | undefined;
   userInfo: BizUserInfo | undefined;
-  theme?: Theme;
   sdkConfig: SDKConfig;
+  themeSettings: ThemeTypesSetting;
 }
 
 // Tour store type

@@ -105,7 +105,7 @@ export const BindAttribute = ({
                 <Command>
                   <CommandInput placeholder="Search attributes..." />
                   <CommandEmpty>No attributes found.</CommandEmpty>
-                  <ScrollArea className="max-h-72">
+                  <ScrollArea className="h-72">
                     <CommandGroup heading="User attributes">
                       {filteredAttributes?.map((attr) => (
                         <CommandItem

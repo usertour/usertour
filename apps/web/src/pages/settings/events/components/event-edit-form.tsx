@@ -37,6 +37,7 @@ import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { ScrollArea } from '@usertour-ui/scroll-area';
 
 interface EditFormProps {
   isOpen: boolean;
@@ -341,14 +342,16 @@ export const EventEditForm = (props: EditFormProps) => {
                                 </span>
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent className="w-full">
-                              {eventAttrs.map((eventAttrs) => {
-                                return (
-                                  <SelectItem value={`${eventAttrs.id}`} key={eventAttrs.id}>
-                                    {eventAttrs.displayName}
-                                  </SelectItem>
-                                );
-                              })}
+                            <SelectContent className="w-full" withoutPortal>
+                              <ScrollArea className="h-72">
+                                {eventAttrs.map((eventAttrs) => {
+                                  return (
+                                    <SelectItem value={`${eventAttrs.id}`} key={eventAttrs.id}>
+                                      {eventAttrs.displayName}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </ScrollArea>
                             </SelectContent>
                           </Select>
 

@@ -21,7 +21,7 @@ import {
   DeleteSegment,
   UpdateSegment,
 } from './dto/segment.input';
-import { Segment, SegmentDataType } from './models/segment.model';
+import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
 import { ParamsError, UnknownError } from '@/common/errors';
 import {
   capitalizeFirstLetter,
@@ -30,6 +30,7 @@ import {
   isNull,
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
+import { IntegrationSource } from '@/common/types/integration';
 
 @Injectable()
 export class BizService {
@@ -59,6 +60,30 @@ export class BizService {
 
     return await this.prisma.segment.create({
       data: { ...data, projectId: environment.projectId },
+    });
+  }
+
+  async findSegmentBySource(projectId: string, source: IntegrationSource, sourceId: string) {
+    return await this.prisma.segment.findFirst({
+      where: { projectId, source, sourceId },
+    });
+  }
+
+  async createUserSegmentWithSource(
+    projectId: string,
+    name: string,
+    source: string,
+    sourceId: string,
+  ) {
+    return await this.prisma.segment.create({
+      data: {
+        projectId,
+        name,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+        source,
+        sourceId,
+      },
     });
   }
 
@@ -127,12 +152,19 @@ export class BizService {
       throw new ParamsError('Segment not found');
     }
 
+    // Get the environmentId of the first bizUser
+    const firstBizUser = await this.prisma.bizUser.findFirst({
+      where: {
+        id: data[0].bizUserId,
+      },
+    });
+
     // Batch check all users exist in one query
     const userIds = data.map((item) => item.bizUserId);
     const existingUsers = await this.prisma.bizUser.findMany({
       where: {
         id: { in: userIds },
-        environmentId: segment.environmentId,
+        environmentId: firstBizUser.environmentId,
       },
       select: { id: true },
     });
@@ -489,7 +521,7 @@ export class BizService {
 
   async upsertBizUsers(
     tx: Prisma.TransactionClient,
-    userId: string,
+    externalUserId: string,
     attributes: Record<string, any>,
     environmentId: string,
   ): Promise<BizUser | null> {
@@ -508,12 +540,12 @@ export class BizService {
     );
 
     const user = await tx.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
       return await tx.bizUser.create({
         data: {
-          externalId: String(userId),
+          externalId: String(externalUserId),
           environmentId,
           data: insertAttribute,
         },
@@ -728,7 +760,7 @@ export class BizService {
   }
 
   async upsertUser(
-    id: string,
+    externalUserId: string,
     environmentId: string,
     attributes?: Record<string, any>,
     companies?: Array<{ id: string; attributes?: Record<string, any> }>,
@@ -739,7 +771,7 @@ export class BizService {
   ) {
     return await this.prisma.$transaction(async (tx) => {
       // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, id, attributes || {}, environmentId);
+      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
       if (!user) {
         throw new UnknownError('Failed to upsert user');
@@ -751,7 +783,7 @@ export class BizService {
           await this.upsertBizCompanies(
             tx,
             company.id,
-            id,
+            externalUserId,
             company.attributes || {},
             environmentId,
             {},
@@ -764,7 +796,7 @@ export class BizService {
           await this.upsertBizCompanies(
             tx,
             membership.company.id,
-            id,
+            externalUserId,
             membership.company.attributes || {},
             environmentId,
             membership.attributes || {},

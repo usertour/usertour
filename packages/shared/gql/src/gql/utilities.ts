@@ -15,6 +15,7 @@ export const globalConfig = gql`
     globalConfig {
       enabledBilling
       isSelfHostedMode
+      apiUrl
     }
   }
 `;

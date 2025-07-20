@@ -447,7 +447,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       {/* Table header */}
       <div className="grid grid-cols-5 text-zinc-950/90 dark:text-white/90">
         <div />
-        {['Hobby', 'Pro', 'Growth', 'Enterprise'].map((plan) => (
+        {['Hobby', 'Starter', 'Growth', 'Business'].map((plan) => (
           <div key={plan} className="flex flex-col gap-2 p-4">
             <p className="text-sm font-semibold">{plan}</p>
           </div>

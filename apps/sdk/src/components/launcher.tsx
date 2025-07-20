@@ -13,7 +13,7 @@ import {
   LauncherData,
   LauncherTriggerElement,
   RulesCondition,
-  Theme,
+  ThemeTypesSetting,
 } from '@usertour-ui/types';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Launcher } from '../core/launcher';
@@ -30,7 +30,7 @@ type LauncherWidgetCoreProps = {
   data: LauncherData;
   handleActions: (actions: RulesCondition[]) => void;
   el: HTMLElement;
-  theme: Theme;
+  themeSettings: ThemeTypesSetting;
   zIndex: number;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
   userInfo: BizUserInfo;
@@ -160,7 +160,7 @@ const LauncherWidgetCore = ({
   data,
   handleActions,
   el,
-  theme,
+  themeSettings,
   zIndex,
   handleOnClick,
   userInfo,
@@ -186,7 +186,7 @@ const LauncherWidgetCore = ({
   usePopperMouseLeave(popperRef, actionType, setOpen);
 
   return (
-    <LauncherRoot theme={theme} data={data}>
+    <LauncherRoot themeSettings={themeSettings} data={data}>
       <LauncherPopper
         triggerRef={
           data.behavior.triggerElement === LauncherTriggerElement.LAUNCHER
@@ -217,11 +217,11 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
   if (!store) {
     return <></>;
   }
-  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } = store;
+  const { userInfo, content, zIndex, themeSettings, triggerRef, openState, sdkConfig } = store;
 
   const data = content?.data as LauncherData | undefined;
 
-  if (!theme || !data || !triggerRef || !openState) {
+  if (!themeSettings || !data || !triggerRef || !openState) {
     return <></>;
   }
 
@@ -230,7 +230,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
       data={data}
       handleActive={launcher.handleActive}
       handleActions={launcher.handleActions}
-      theme={theme}
+      themeSettings={themeSettings}
       zIndex={zIndex}
       handleOnClick={launcher.handleOnClick}
       userInfo={userInfo as BizUserInfo}

@@ -1,8 +1,7 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { CloseIcon, UserIcon } from '@usertour-ui/icons';
 import { Input } from '@usertour-ui/input';
-// import * as Popover from "@radix-ui/react-popover";
-import * as Popover from '@usertour-ui/popover';
+import * as Popover from '@radix-ui/react-popover';
 import {
   Select,
   SelectContent,
@@ -46,9 +45,10 @@ import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 
 export const conditionsTypeMapping = {
   [AttributeDataType.Number]: [
@@ -180,7 +180,10 @@ const RulesUserAttributeName = () => {
     (value: string, search: string) => {
       if (attributes) {
         const attribute = attributes.find((attr) => attr.id === value);
-        if (attribute?.displayName.includes(search)) {
+        if (
+          attribute?.displayName.toLowerCase().includes(search.toLowerCase()) ||
+          attribute?.codeName.toLowerCase().includes(search.toLowerCase())
+        ) {
           return 1;
         }
       }
@@ -495,7 +498,7 @@ const RulesUserAttributeInput = () => {
 
 export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   const { index, data, type } = props;
-  const { attributes, isHorizontal } = useRulesContext();
+  const { attributes } = useRulesContext();
   const [selectedPreset, setSelectedPreset] = useState<Attribute | null>(null);
   const { updateConditionData } = useRulesGroupContext();
   const [openError, setOpenError] = useState(false);
@@ -612,7 +615,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   return (
     <RulesUserAttributeContext.Provider value={value}>
       <RulesError open={openError}>
-        <div className={cn('flex flex-row ', isHorizontal ? 'mr-1 mb-1 space-x-1 ' : 'space-x-3 ')}>
+        <RulesContainerWrapper>
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
@@ -620,7 +623,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                 <UserIcon width={16} height={16} />
               </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOpenChange} open={open}>
-                <RulesPopoverTrigger className={cn(isHorizontal ? 'w-auto' : '')}>
+                <RulesPopoverTriggerWrapper>
                   <span className="font-bold">{selectedPreset?.displayName} </span>
                   {displayCondition} <span className="font-bold ">{displayValue}</span>
                   {localData?.logic === 'between' && (
@@ -629,7 +632,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                       <span className="font-bold ">{localData?.value2}</span>
                     </>
                   )}
-                </RulesPopoverTrigger>
+                </RulesPopoverTriggerWrapper>
                 <RulesPopoverContent>
                   <div className=" flex flex-col space-y-2">
                     <div className=" flex flex-col space-y-1">
@@ -651,7 +654,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
             </RulesConditionRightContent>
           </RulesErrorAnchor>
           <RulesErrorContent>{errorInfo}</RulesErrorContent>
-        </div>
+        </RulesContainerWrapper>
       </RulesError>
     </RulesUserAttributeContext.Provider>
   );

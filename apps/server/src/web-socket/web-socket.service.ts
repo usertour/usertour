@@ -14,6 +14,8 @@ import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { BizUser, Content, Environment, Step, Theme, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
+import { IntegrationService } from '@/integration/integration.service';
+import { TrackEventData } from '@/common/types/track';
 import {
   BizEventWithEvent,
   BizSessionWithEvents,
@@ -23,6 +25,7 @@ import {
   CreateSessionRequest,
   CreateSessionResponse,
   ListContentsRequest,
+  ListThemesRequest,
   TrackEventRequest,
   TrackEventResponse,
   UpsertCompanyRequest,
@@ -55,6 +58,7 @@ export class WebSocketService {
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
+    private integrationService: IntegrationService,
   ) {}
 
   /**
@@ -921,10 +925,71 @@ export class WebSocketService {
    * @param token - The token of the environment
    * @returns Array of themes
    */
-  async listThemes(environment: Environment): Promise<Theme[]> {
-    return await this.prisma.theme.findMany({
+  async listThemes(body: ListThemesRequest, environment: Environment): Promise<Theme[]> {
+    const { userId: externalUserId, companyId: externalCompanyId } = body;
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId: environment.id },
+    });
+
+    const themes = await this.prisma.theme.findMany({
       where: { projectId: environment.projectId },
     });
+
+    // Return empty array if no themes found
+    if (!themes || themes.length === 0) {
+      return [];
+    }
+
+    // If no bizUser, return themes as-is without processing conditions
+    if (!bizUser) {
+      return themes;
+    }
+
+    const attributes = await this.prisma.attribute.findMany({
+      where: {
+        projectId: environment.projectId,
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
+      },
+    });
+
+    const processedThemes = await Promise.all(
+      themes.map(async (theme) => {
+        // Check if variations is an array, if not return theme as-is
+        const variations = theme.variations as any[];
+        if (!Array.isArray(variations)) {
+          return theme;
+        }
+
+        // Process each variation's conditions
+        const processedVariations = await Promise.all(
+          variations.map(async (variation: any) => {
+            const processedConditions = variation.conditions
+              ? await this.activedRulesConditions(
+                  variation.conditions,
+                  environment,
+                  attributes,
+                  bizUser,
+                  String(externalCompanyId),
+                )
+              : [];
+
+            return {
+              ...variation,
+              conditions: processedConditions,
+            };
+          }),
+        );
+
+        return {
+          ...theme,
+          variations: processedVariations,
+        };
+      }),
+    );
+
+    return processedThemes;
   }
 
   /**
@@ -1099,11 +1164,11 @@ export class WebSocketService {
    * @returns The tracked event
    */
   async trackEvent(data: TrackEventRequest, environment: Environment): Promise<TrackEventResponse> {
-    const { userId, eventName, sessionId, eventData } = data;
+    const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
     const user = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
       return false;
@@ -1113,6 +1178,7 @@ export class WebSocketService {
       include: {
         content: { include: { contentOnEnvironments: true } },
         bizEvent: { include: { event: true } },
+        version: true,
       },
     });
     if (!bizSession || bizSession.state === 1) {
@@ -1138,7 +1204,7 @@ export class WebSocketService {
         : undefined;
     const state = getEventState(eventName);
 
-    return await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Re-fetch the session with latest events inside the transaction and lock the row
       const latestBizSession = await tx.bizSession.findUnique({
         where: { id: sessionId },
@@ -1201,5 +1267,31 @@ export class WebSocketService {
 
       return bizEvent;
     });
+
+    const trackEventData: TrackEventData = {
+      eventName,
+      bizSessionId: bizSession.id,
+      userId: String(externalUserId),
+      environmentId,
+      projectId,
+      eventProperties: {
+        ...events,
+      },
+      userProperties: user.data as Record<string, any>,
+    };
+    if (bizSession.content.type === ContentType.FLOW) {
+      trackEventData.eventProperties = {
+        ...trackEventData.eventProperties,
+        [EventAttributes.FLOW_ID]: bizSession.content.id,
+        [EventAttributes.FLOW_NAME]: bizSession.content.name,
+        [EventAttributes.FLOW_SESSION_ID]: bizSession.id,
+        [EventAttributes.FLOW_VERSION_ID]: bizSession.version.id,
+        [EventAttributes.FLOW_VERSION_NUMBER]: bizSession.version.sequence,
+      };
+    }
+
+    // this.integrationService.trackEvent(trackEventData);
+
+    return result;
   }
 }

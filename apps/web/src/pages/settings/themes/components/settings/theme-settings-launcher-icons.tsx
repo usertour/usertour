@@ -1,7 +1,7 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-slider';
-import { useThemeSettingsContext } from '.';
+import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsLauncherIcons = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();

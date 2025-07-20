@@ -9,6 +9,7 @@ import {
   contentEndReason,
   SDKContent,
   Step,
+  Theme,
 } from '@usertour-ui/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
@@ -614,7 +615,7 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
     !isEqual(currentStore.userInfo, previousStore.userInfo) ||
     !isEqual(currentStore.assets, previousStore.assets) ||
     !isEqual(currentStore.globalStyle, previousStore.globalStyle) ||
-    !isEqual(currentStore.theme, previousStore.theme) ||
+    !isEqual(currentStore.themeSettings, previousStore.themeSettings) ||
     currentStore.zIndex !== previousStore.zIndex
   );
 };
@@ -630,4 +631,32 @@ export const getStepByCvid = (steps: Step[] | undefined, cvid: string): Step | u
     return undefined;
   }
   return steps.find((step) => step.cvid === cvid);
+};
+
+/**
+ * Gets the active theme
+ * @param themes - The themes to search through
+ * @param themeId - The theme id to search for
+ * @returns The active theme or undefined if no theme is found
+ */
+export const getActivedTheme = async (themes: Theme[], themeId: string) => {
+  const theme = themes.find((item) => item.id === themeId);
+  if (!theme || !theme.variations) {
+    return theme;
+  }
+
+  // Process variations asynchronously to check conditions
+  const activeVariations = [];
+  for (const item of theme.variations) {
+    const activatedConditions = await activedRulesConditions(item.conditions);
+    if (isActive(activatedConditions)) {
+      activeVariations.push(item);
+    }
+  }
+
+  if (activeVariations.length === 0) {
+    return theme;
+  }
+  const settings = activeVariations[0].settings;
+  return { ...theme, settings };
 };

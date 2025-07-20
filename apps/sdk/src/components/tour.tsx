@@ -1,43 +1,123 @@
-import * as SharedPopper from '@usertour-ui/sdk';
+import {
+  Popper,
+  PopperContentFrame,
+  PopperClose,
+  PopperProgress,
+  PopperMadeWith,
+  PopperModalContentPotal,
+  PopperOverlay,
+  PopperContentPotal,
+} from '@usertour-ui/sdk';
 import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
 import {
   Align,
+  BizUserInfo,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
+  SDKConfig,
   Side,
+  Step,
   StepContentType,
-  Theme,
+  ThemeTypesSetting,
 } from '@usertour-ui/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
-import { TourStore } from '../types/store';
 import { off, on } from '../utils/listener';
-import { useThemeStyles } from '@usertour-ui/sdk';
+import { useSettingsStyles } from '@usertour-ui/sdk';
 
-// Types
-type TourProps = {
-  tour: TourCore;
+// Base props that are shared between TourPopper and TourModal
+type TourBaseProps = {
+  openState: boolean;
+  zIndex: number;
+  globalStyle: string;
+  currentStep: Step;
+  assets: any;
+  userInfo: BizUserInfo;
+  currentStepIndex: number;
+  totalSteps: number;
+  sdkConfig: SDKConfig;
+  themeSettings: ThemeTypesSetting;
+  handleClose: () => void;
+  handleOnClick: (element: ContentEditorClickableElement, value?: any) => void;
 };
 
-type TourSharedProps = {
-  store: TourStore;
-  onClose: () => void;
-  handleOnClick: (element: ContentEditorClickableElement, value?: any) => void;
+type TourPopperProps = TourBaseProps & {
+  triggerRef: Element | null;
   handleActions: (actions: RulesCondition[]) => Promise<void>;
 };
 
-type PopperContentProps = Omit<TourSharedProps, 'handleActions'>;
+type TourModalProps = TourBaseProps;
+
+type PopperContentProps = {
+  currentStep: Step;
+  userInfo: BizUserInfo;
+  currentStepIndex: number;
+  totalSteps: number;
+  themeSettings: ThemeTypesSetting;
+  sdkConfig: SDKConfig;
+  handleClose: () => void;
+  handleOnClick: (element: ContentEditorClickableElement, value?: any) => void;
+};
+
+// Custom hook to extract store state
+const useTourStore = (tour: TourCore) => {
+  const store = useSyncExternalStore(tour.getStore().subscribe, tour.getStore().getSnapshot);
+
+  if (!store) {
+    return null;
+  }
+
+  const {
+    userInfo,
+    currentStep,
+    triggerRef,
+    openState,
+    zIndex,
+    globalStyle,
+    themeSettings,
+    assets,
+    sdkConfig,
+    currentStepIndex,
+    totalSteps,
+  } = store;
+
+  if (!userInfo || !currentStep || !openState) {
+    return null;
+  }
+
+  return {
+    userInfo,
+    currentStep,
+    triggerRef,
+    openState,
+    zIndex,
+    globalStyle,
+    themeSettings,
+    assets,
+    sdkConfig,
+    currentStepIndex: currentStepIndex || 0,
+    totalSteps: totalSteps || 0,
+  };
+};
 
 // Components
-const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) => {
-  const { currentStep, userInfo, currentStepIndex, totalSteps, theme } = store;
+const PopperContent = (props: PopperContentProps) => {
+  const {
+    currentStep,
+    userInfo,
+    currentStepIndex,
+    totalSteps,
+    themeSettings,
+    sdkConfig,
+    handleClose,
+    handleOnClick,
+  } = props;
+  const { themeSetting } = useSettingsStyles(themeSettings);
 
-  const { themeSetting } = useThemeStyles(theme as Theme);
-
-  const progressType = themeSetting?.progress.type;
-  const progressPosition = themeSetting?.progress.position;
-  const progressEnabled = themeSetting?.progress.enabled;
+  const progressType = themeSetting.progress.type;
+  const progressPosition = themeSetting.progress.position;
+  const progressEnabled = themeSetting.progress.enabled;
 
   // Optimized progress display logic
   const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
@@ -46,15 +126,13 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
   const showBottomProgress =
     progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
-  if (!currentStep) return null;
-
   return (
-    <SharedPopper.PopperContentFrame>
+    <PopperContentFrame>
       {currentStep.setting.skippable && (
-        <SharedPopper.PopperClose onClick={onClose} className="cursor-pointer" />
+        <PopperClose onClick={handleClose} className="cursor-pointer" />
       )}
       {showTopProgress && (
-        <SharedPopper.PopperProgress
+        <PopperProgress
           type={progressType}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
@@ -66,24 +144,24 @@ const PopperContent = ({ store, onClose, handleOnClick }: PopperContentProps) =>
         onClick={handleOnClick}
         userInfo={userInfo}
       />
-      {!store.sdkConfig.removeBranding && <SharedPopper.PopperMadeWith />}
+      {!sdkConfig.removeBranding && <PopperMadeWith />}
       {showBottomProgress && (
-        <SharedPopper.PopperProgress
+        <PopperProgress
           type={progressType}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           position={progressPosition}
         />
       )}
-    </SharedPopper.PopperContentFrame>
+    </PopperContentFrame>
   );
 };
 
 // Hooks
 const useTargetActions = (
   ref: React.RefObject<HTMLElement> | Element | null | undefined,
-  currentStep: TourStore['currentStep'],
-  handleActions: TourSharedProps['handleActions'],
+  currentStep: Step,
+  handleActions: (actions: RulesCondition[]) => Promise<void>,
 ) => {
   useEffect(() => {
     const element = ref instanceof Element ? ref : ref?.current;
@@ -98,9 +176,24 @@ const useTargetActions = (
 };
 
 // Components
-const TourPopper = ({ store, ...props }: TourSharedProps) => {
-  const { openState, zIndex, globalStyle, currentStep, theme, triggerRef, assets } = store;
-  const themeSetting = theme?.settings;
+const TourPopper = (props: TourPopperProps) => {
+  const {
+    openState,
+    zIndex,
+    globalStyle,
+    currentStep,
+    themeSettings,
+    triggerRef,
+    assets,
+    userInfo,
+    currentStepIndex,
+    totalSteps,
+    sdkConfig,
+    handleClose,
+    handleOnClick,
+    handleActions,
+  } = props;
+  const { themeSetting } = useSettingsStyles(themeSettings);
 
   // Create a responsive React.RefObject that updates when triggerRef changes
   const responsiveRef = useMemo(() => {
@@ -111,22 +204,20 @@ const TourPopper = ({ store, ...props }: TourSharedProps) => {
     return ref;
   }, [triggerRef]);
 
-  useTargetActions(responsiveRef, currentStep, props.handleActions);
-
-  if (!currentStep) return null;
+  useTargetActions(responsiveRef, currentStep, handleActions);
 
   const side =
-    currentStep?.setting?.alignType === 'auto'
+    currentStep.setting.alignType === 'auto'
       ? 'bottom'
-      : ((currentStep?.setting?.side as Side) ?? 'bottom');
+      : ((currentStep.setting.side as Side) ?? 'bottom');
 
   const align =
-    currentStep?.setting?.alignType === 'auto'
+    currentStep.setting.alignType === 'auto'
       ? 'center'
-      : ((currentStep?.setting?.align as Align) ?? 'center');
+      : ((currentStep.setting.align as Align) ?? 'center');
 
   return (
-    <SharedPopper.Popper
+    <Popper
       triggerRef={responsiveRef}
       open={openState}
       zIndex={zIndex}
@@ -134,79 +225,108 @@ const TourPopper = ({ store, ...props }: TourSharedProps) => {
       assets={assets}
       isIframeMode={true}
     >
-      {currentStep?.setting?.enabledBackdrop && (
-        <SharedPopper.PopperOverlay blockTarget={currentStep?.setting.enabledBlockTarget} />
+      {currentStep.setting.enabledBackdrop && (
+        <PopperOverlay blockTarget={currentStep.setting.enabledBlockTarget} />
       )}
-      <SharedPopper.PopperContentPotal
+      <PopperContentPotal
         hideWhenDetached={true}
-        sideOffset={currentStep?.setting.sideOffset}
-        alignOffset={currentStep?.setting.alignOffset}
-        avoidCollisions={currentStep?.setting.alignType === 'auto'}
+        sideOffset={currentStep.setting.sideOffset}
+        alignOffset={currentStep.setting.alignOffset}
+        avoidCollisions={currentStep.setting.alignType === 'auto'}
         side={side}
         align={align}
-        width={`${currentStep?.setting.width}px`}
+        width={`${currentStep.setting.width}px`}
         arrowSize={{
           width: themeSetting?.tooltip.notchSize ?? 20,
           height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
         }}
         arrowColor={themeSetting?.mainColor.background}
       >
-        <PopperContent store={store} onClose={props.onClose} handleOnClick={props.handleOnClick} />
-      </SharedPopper.PopperContentPotal>
-    </SharedPopper.Popper>
+        <PopperContent
+          currentStep={currentStep}
+          userInfo={userInfo}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          themeSettings={themeSettings}
+          sdkConfig={sdkConfig}
+          handleClose={handleClose}
+          handleOnClick={handleOnClick}
+        />
+      </PopperContentPotal>
+    </Popper>
   );
 };
 
-const TourModal = ({ store, onClose, handleOnClick }: PopperContentProps) => {
-  const { openState, zIndex, currentStep, assets, globalStyle } = store;
+const TourModal = (props: TourModalProps) => {
+  const {
+    openState,
+    zIndex,
+    globalStyle,
+    currentStep,
+    assets,
+    userInfo,
+    currentStepIndex,
+    totalSteps,
+    themeSettings,
+    sdkConfig,
+    handleClose,
+    handleOnClick,
+  } = props;
 
   return (
-    <SharedPopper.Popper
+    <Popper
       isIframeMode={true}
       open={openState}
       zIndex={zIndex}
       globalStyle={globalStyle}
       assets={assets}
     >
-      <SharedPopper.PopperModalContentPotal
-        position={currentStep?.setting.position ?? ''}
-        enabledBackdrop={currentStep?.setting?.enabledBackdrop}
-        positionOffsetX={currentStep?.setting?.positionOffsetX}
-        positionOffsetY={currentStep?.setting?.positionOffsetY}
-        width={`${currentStep?.setting.width}px`}
+      <PopperModalContentPotal
+        position={currentStep.setting.position ?? ''}
+        enabledBackdrop={currentStep.setting.enabledBackdrop}
+        positionOffsetX={currentStep.setting.positionOffsetX}
+        positionOffsetY={currentStep.setting.positionOffsetY}
+        width={`${currentStep.setting.width}px`}
       >
-        <PopperContent store={store} onClose={onClose} handleOnClick={handleOnClick} />
-      </SharedPopper.PopperModalContentPotal>
-    </SharedPopper.Popper>
+        <PopperContent
+          currentStep={currentStep}
+          userInfo={userInfo}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          themeSettings={themeSettings}
+          sdkConfig={sdkConfig}
+          handleClose={handleClose}
+          handleOnClick={handleOnClick}
+        />
+      </PopperModalContentPotal>
+    </Popper>
   );
 };
 
-export const Tour = ({ tour }: TourProps) => {
-  const store = useSyncExternalStore(tour.getStore().subscribe, tour.getStore().getSnapshot);
-  if (!store) {
+export const TourWidget = (props: { tour: TourCore }) => {
+  const { tour } = props;
+  const storeData = useTourStore(tour);
+
+  if (!storeData) {
     return <></>;
   }
-  const { userInfo, currentStep, triggerRef, openState } = store;
+
   const { handleClose, handleOnClick, handleActions } = tour;
 
-  if (!userInfo || !currentStep || !openState) {
-    return <></>;
-  }
-
-  const sharedProps = {
-    store,
-    onClose: handleClose,
+  const commonProps: TourBaseProps = {
+    ...storeData,
+    handleClose,
     handleOnClick,
-    handleActions,
-    key: currentStep.id,
   };
+  const stepType = storeData.currentStep.type;
+  const triggerRef = storeData.triggerRef;
 
-  if (currentStep.type === StepContentType.TOOLTIP && triggerRef) {
-    return <TourPopper {...sharedProps} />;
+  if (stepType === StepContentType.TOOLTIP && triggerRef) {
+    return <TourPopper {...commonProps} triggerRef={triggerRef} handleActions={handleActions} />;
   }
 
-  if (currentStep.type === StepContentType.MODAL) {
-    return <TourModal {...sharedProps} />;
+  if (stepType === StepContentType.MODAL) {
+    return <TourModal {...commonProps} />;
   }
 
   return null;
