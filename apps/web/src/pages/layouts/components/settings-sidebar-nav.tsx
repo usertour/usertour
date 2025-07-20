@@ -18,7 +18,7 @@ import {
   FlashlightIcon,
   BankCardIcon,
   ProjectIcon,
-  PlugIcon,
+  // PlugIcon,
   KeyIcon,
 } from '@usertour-ui/icons';
 import { TeamMemberRole } from '@usertour-ui/types';
@@ -156,13 +156,13 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     type: SidebarNavItemType.DEVELOPER,
     icon: <KeyIcon className={ICON_CLASS_NAME} />,
   },
-  {
-    title: 'Integrations',
-    href: '/settings/integrations',
-    role: OWNER_ROLES,
-    type: SidebarNavItemType.DEVELOPER,
-    icon: <PlugIcon className={ICON_CLASS_NAME} />,
-  },
+  // {
+  //   title: 'Integrations',
+  //   href: '/settings/integrations',
+  //   role: OWNER_ROLES,
+  //   type: SidebarNavItemType.DEVELOPER,
+  //   icon: <PlugIcon className={ICON_CLASS_NAME} />,
+  // },
   // {
   //   title: 'Webhooks',
   //   href: '/settings/webhooks',

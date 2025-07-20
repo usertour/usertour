@@ -1,6 +1,7 @@
 export type UpdateIntegrationInput = {
   enabled: boolean;
   config?: any;
+  key?: string;
 };
 
 export type IntegrationModel = {

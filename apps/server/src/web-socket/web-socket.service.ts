@@ -1290,8 +1290,7 @@ export class WebSocketService {
       };
     }
 
-    // Track event to Amplitude
-    this.integrationService.trackEvent(trackEventData);
+    // this.integrationService.trackEvent(trackEventData);
 
     return result;
   }
