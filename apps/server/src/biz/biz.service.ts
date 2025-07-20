@@ -31,6 +31,7 @@ import {
 } from '@/common/attribute/attribute';
 import { BizAttributeTypes } from '@/common/consts/attribute';
 import { IntegrationSource } from '@/common/types/integration';
+import isEqual from 'fast-deep-equal';
 
 @Injectable()
 export class BizService {
@@ -551,11 +552,16 @@ export class BizService {
         },
       });
     }
-    const userData = JSON.parse(JSON.stringify(user.data));
+    const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
-      ...userData,
+      ...currentData,
       ...insertAttribute,
     });
+
+    // Only update if data has actually changed
+    if (isEqual(currentData, insertData)) {
+      return user;
+    }
 
     return await tx.bizUser.update({
       where: {
