@@ -16,10 +16,10 @@ import { UtilitiesModule } from '@/utilities/utilities.module';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { HttpModule } from '@nestjs/axios';
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
-import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
+import { PrismaModule } from 'nestjs-prisma';
 import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './localizations/localizations.module';
 import { TeamModule } from './team/team.module';
@@ -30,6 +30,8 @@ import { LoggerModule } from 'nestjs-pino';
 import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { IntegrationModule } from './integration/integration.module';
+import { loggingMiddleware } from 'nestjs-prisma';
+import { Logger } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -43,11 +45,15 @@ import { IntegrationModule } from './integration/integration.module';
       isGlobal: true,
       prismaServiceOptions: {
         middlewares: [
-          // configure your prisma middleware
-          loggingMiddleware({
-            logger: new Logger('PrismaMiddleware'),
-            logLevel: 'log',
-          }),
+          // Conditionally enable Prisma logging based on environment variable
+          ...(process.env.ENABLE_PRISMA_LOGGING === 'true'
+            ? [
+                loggingMiddleware({
+                  logger: new Logger('PrismaMiddleware'),
+                  logLevel: 'log',
+                }),
+              ]
+            : []),
         ],
       },
     }),

@@ -5,11 +5,12 @@ import {
   WebSocketServer,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketAuthGuard } from './web-socket.guard';
 import { WebSocketEnvironment } from './web-socket.decorator';
+import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import {
   ConfigRequest,
   ConfigResponse,
@@ -30,6 +31,7 @@ import { Environment, Theme } from '@prisma/client';
 
 @WsGateway()
 @UseGuards(WebSocketAuthGuard)
+@UseInterceptors(WebSocketPerformanceInterceptor)
 export class WebSocketGateway {
   private readonly logger = new Logger(WebSocketGateway.name);
   constructor(private service: WebSocketService) {}
