@@ -12,8 +12,6 @@ export class WebSocketPerformanceInterceptor implements NestInterceptor {
     const className = context.getClass().name;
     const methodName = handler.name;
 
-    this.logger.log(`[WS] ${className}.${methodName} - Started`);
-
     return next.handle().pipe(
       tap({
         next: () => {
@@ -21,9 +19,6 @@ export class WebSocketPerformanceInterceptor implements NestInterceptor {
           const duration = endTime - startTime;
 
           this.logger.log(`[WS] ${className}.${methodName} - Completed in ${duration}ms`);
-
-          // You can also log to external monitoring service here
-          this.logPerformanceMetrics(className, methodName, duration, 'success');
         },
         error: (error) => {
           const endTime = Date.now();
@@ -32,31 +27,7 @@ export class WebSocketPerformanceInterceptor implements NestInterceptor {
           this.logger.error(
             `[WS] ${className}.${methodName} - Failed after ${duration}ms: ${error.message}`,
           );
-
-          this.logPerformanceMetrics(className, methodName, duration, 'error');
         },
-      }),
-    );
-  }
-
-  private logPerformanceMetrics(
-    className: string,
-    methodName: string,
-    duration: number,
-    status: 'success' | 'error',
-  ): void {
-    // Here you can send metrics to your monitoring system
-    // For example: Prometheus, DataDog, New Relic, etc.
-
-    // Example: Log to console with structured format
-    console.log(
-      JSON.stringify({
-        type: 'websocket_performance',
-        timestamp: new Date().toISOString(),
-        className,
-        methodName,
-        duration,
-        status,
       }),
     );
   }
