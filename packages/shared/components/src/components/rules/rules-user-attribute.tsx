@@ -180,7 +180,10 @@ const RulesUserAttributeName = () => {
     (value: string, search: string) => {
       if (attributes) {
         const attribute = attributes.find((attr) => attr.id === value);
-        if (attribute?.displayName.includes(search)) {
+        if (
+          attribute?.displayName.toLowerCase().includes(search.toLowerCase()) ||
+          attribute?.codeName.toLowerCase().includes(search.toLowerCase())
+        ) {
           return 1;
         }
       }
