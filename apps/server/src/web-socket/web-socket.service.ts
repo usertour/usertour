@@ -122,6 +122,7 @@ export class WebSocketService {
     const totalSessions = await this.getTotalSessions(content, bizUserId);
     const dismissedSessions = await this.getDismissedSessions(content, bizUserId);
     const completedSessions = await this.getCompletedSessions(content, bizUserId);
+    const seenSessions = await this.getSeenSessions(content, bizUserId);
 
     return {
       latestSession,
@@ -129,6 +130,7 @@ export class WebSocketService {
       totalSessions,
       dismissedSessions,
       completedSessions,
+      seenSessions,
     };
   }
 
@@ -255,6 +257,7 @@ export class WebSocketService {
       totalSessions: sessionStatistics.totalSessions,
       dismissedSessions: sessionStatistics.dismissedSessions,
       completedSessions: sessionStatistics.completedSessions,
+      seenSessions: sessionStatistics.seenSessions,
     };
   }
 
@@ -1011,6 +1014,31 @@ export class WebSocketService {
   }
 
   /**
+   * Get the number of seen sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of seen sessions
+   */
+  async getSeenSessions(content: Content, bizUserId: string): Promise<number> {
+    return await this.prisma.bizSession.count({
+      where: {
+        contentId: content.id,
+        bizUserId,
+        deleted: false,
+        bizEvent: {
+          some: {
+            event: {
+              codeName: {
+                in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN],
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
    * List themes for an environment
    * @param token - The token of the environment
    * @returns Array of themes
@@ -1418,7 +1446,7 @@ export class WebSocketService {
     }
 
     // Batch fetch session counts
-    const [totalSessions, dismissedSessions, completedSessions] = await Promise.all([
+    const [totalSessions, dismissedSessions, completedSessions, seenSessions] = await Promise.all([
       this.prisma.bizSession.groupBy({
         by: ['contentId'],
         where: {
@@ -1472,12 +1500,31 @@ export class WebSocketService {
         },
         _count: { id: true },
       }),
+      this.prisma.bizSession.groupBy({
+        by: ['contentId'],
+        where: {
+          contentId: { in: contentIds },
+          bizUserId,
+          deleted: false,
+          bizEvent: {
+            some: {
+              event: {
+                codeName: {
+                  in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN],
+                },
+              },
+            },
+          },
+        },
+        _count: { id: true },
+      }),
     ]);
 
     // Create maps for quick lookup
     const totalMap = new Map(totalSessions.map((s) => [s.contentId, s._count.id]));
     const dismissedMap = new Map(dismissedSessions.map((s) => [s.contentId, s._count.id]));
     const completedMap = new Map(completedSessions.map((s) => [s.contentId, s._count.id]));
+    const seenMap = new Map(seenSessions.map((s) => [s.contentId, s._count.id]));
 
     // Build statistics for each content
     for (const contentId of contentIds) {
@@ -1491,6 +1538,7 @@ export class WebSocketService {
         totalSessions: totalMap.get(contentId) || 0,
         dismissedSessions: dismissedMap.get(contentId) || 0,
         completedSessions: completedMap.get(contentId) || 0,
+        seenSessions: seenMap.get(contentId) || 0,
       });
     }
 
@@ -1548,6 +1596,7 @@ export class WebSocketService {
       totalSessions: sessionStatistics.totalSessions,
       dismissedSessions: sessionStatistics.dismissedSessions,
       completedSessions: sessionStatistics.completedSessions,
+      seenSessions: sessionStatistics.seenSessions,
     };
   }
 }

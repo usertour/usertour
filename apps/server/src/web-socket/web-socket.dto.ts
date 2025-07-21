@@ -84,6 +84,7 @@ export type ContentResponse = Version & {
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;
+  seenSessions: number;
 };
 
 // Session statistics interface
@@ -93,4 +94,5 @@ export interface SessionStatistics {
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;
+  seenSessions: number;
 }
