@@ -8,6 +8,7 @@ import {
   PlanType,
   SDKConfig,
   SDKContent,
+  ContentSession,
   SDKSettingsMode,
   Theme,
   contentEndReason,
@@ -27,6 +28,7 @@ import {
   findLatestValidActivatedChecklist,
   isSameTour,
   getAutoStartContentSortedByPriority,
+  activedContentsRulesConditions,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -180,7 +182,7 @@ export class App extends Evented {
     });
     // refresh data when content changed in the server
     this.socket.on('content-changed', () => {
-      this.refresh();
+      this.fetchAndInitContent();
     });
     if (document?.readyState !== 'loading') {
       this.trigger('dom-loaded');
@@ -367,8 +369,8 @@ export class App extends Evented {
     });
     if (userInfo?.externalId) {
       this.setUser(userInfo);
-      await this.refresh();
-      await this.initThemeData();
+      await this.fetchAndInitContent();
+      await this.fetchTheme();
     }
   }
 
@@ -416,7 +418,7 @@ export class App extends Evented {
     );
     if (companyInfo?.externalId) {
       this.setCompany(companyInfo);
-      this.refresh();
+      this.fetchAndInitContent();
     }
   }
 
@@ -448,7 +450,7 @@ export class App extends Evented {
       return;
     }
     this.setCompany(companyInfo);
-    this.refresh();
+    this.fetchAndInitContent();
   }
 
   /**
@@ -474,11 +476,9 @@ export class App extends Evented {
       return;
     }
     await this.reset();
-    await this.initSdkConfig();
-    await this.initThemeData();
-    await this.initContentData();
-    this.initContents();
-    this.syncAllStores();
+    await this.fetchSdkConfig();
+    await this.fetchTheme();
+    await this.fetchAndInitContent();
     await this.startContents();
     await this.startActivityMonitor();
   }
@@ -487,14 +487,42 @@ export class App extends Evented {
     return this.sdkConfig;
   }
 
-  async refresh() {
-    await this.initContentData();
+  /**
+   * Fetches fresh content data from server and initializes content
+   */
+  async fetchAndInitContent(fetch = true) {
+    if (fetch) {
+      await this.initContentData();
+    }
     if (this.originContents) {
       this.initContents();
       this.syncAllStores();
     }
   }
 
+  /**
+   * Refreshes the content session
+   * @param contentSession - The content session to refresh
+   */
+  async refreshContentSession(contentSession: ContentSession) {
+    if (!this.originContents) {
+      return;
+    }
+
+    const newContents = this.originContents.map((content) => {
+      if (content.contentId === contentSession.contentId) {
+        return {
+          ...content,
+          ...contentSession,
+        };
+      }
+      return content;
+    });
+
+    this.originContents = await activedContentsRulesConditions(newContents);
+
+    await this.fetchAndInitContent(false);
+  }
   /**
    * Reports an event to the tracking system
    * @param event - Event parameters to report
@@ -513,14 +541,17 @@ export class App extends Evented {
         return;
       }
 
-      await this.socket.trackEvent({
+      const contentSession = await this.socket.trackEvent({
         userId: event.userId,
         token,
         sessionId,
         eventData: event.eventData,
         eventName: event.eventName,
       });
-      await this.refresh();
+
+      if (contentSession) {
+        await this.refreshContentSession(contentSession);
+      }
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
@@ -544,7 +575,7 @@ export class App extends Evented {
       token,
       companyId,
     });
-    await this.refresh();
+    await this.fetchAndInitContent();
     return newSesison;
   }
 
@@ -1020,7 +1051,7 @@ export class App extends Evented {
     }
   }
 
-  async initSdkConfig() {
+  async fetchSdkConfig() {
     const sdkConfig = await this.socket.getConfig(this.startOptions.token);
     if (sdkConfig) {
       this.sdkConfig = sdkConfig;
@@ -1028,9 +1059,9 @@ export class App extends Evented {
   }
 
   /**
-   * Initializes theme data from server
+   * Fetches themes from server
    */
-  async initThemeData() {
+  async fetchTheme() {
     const { token } = this.startOptions;
     const params = {
       token,

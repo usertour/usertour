@@ -337,13 +337,14 @@ ContentEditorStarRating.displayName = 'ContentEditorStarRating';
 
 interface ContentEditorStarRatingSerializeProps {
   element: ContentEditorStarRatingElement;
-  onClick?: (element: ContentEditorStarRatingElement, value: number) => void;
+  onClick?: (element: ContentEditorStarRatingElement, value: number) => Promise<void>;
 }
 
 export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSerializeProps>(
   (props) => {
     const { element, onClick } = props;
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const scaleLength = useMemo(
       () => element.data.highRange - element.data.lowRange + 1,
@@ -359,8 +360,15 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
     }, []);
 
     const handleStarClick = useCallback(
-      (value: number) => {
-        onClick?.(element, value);
+      async (value: number) => {
+        if (onClick) {
+          setLoading(true);
+          try {
+            await onClick(element, value);
+          } finally {
+            setLoading(false);
+          }
+        }
       },
       [onClick, element],
     );
@@ -371,7 +379,7 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
         hoveredIndex={hoveredIndex}
         onStarHover={handleStarHover}
         onStarLeave={handleStarLeave}
-        onStarClick={handleStarClick}
+        onStarClick={loading ? undefined : handleStarClick}
         lowRange={element.data.lowRange}
         lowLabel={element.data.lowLabel}
         highLabel={element.data.highLabel}

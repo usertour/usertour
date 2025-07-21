@@ -2,6 +2,7 @@ import {
   BizCompany,
   BizSession,
   BizUserInfo,
+  ContentSession,
   SDKConfig,
   SDKContent,
   SDKSettingsMode,
@@ -212,7 +213,7 @@ export class Socket extends Evented {
     eventName: string;
     sessionId: string;
     eventData: any;
-  }): Promise<void> {
-    await this.emitWithTimeout('track-event', params);
+  }): Promise<ContentSession | false> {
+    return await this.emitWithTimeout('track-event', params);
   }
 }

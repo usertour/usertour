@@ -12,7 +12,16 @@ import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { BizUser, Content, Environment, Step, Theme, Prisma, Version } from '@prisma/client';
+import {
+  BizUser,
+  Content,
+  Environment,
+  Step,
+  Theme,
+  Prisma,
+  Version,
+  BizEvent,
+} from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
@@ -27,12 +36,11 @@ import {
   ListContentsRequest,
   ListThemesRequest,
   TrackEventRequest,
-  TrackEventResponse,
   UpsertCompanyRequest,
   UpsertCompanyResponse,
   UpsertUserRequest,
   UpsertUserResponse,
-  SessionStatistics,
+  ContentSession,
 } from './web-socket.dto';
 
 const EVENT_CODE_MAP = {
@@ -116,19 +124,20 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns Session statistics including latest session, events, and counts
    */
-  async getSessionStatistics(content: Content, bizUserId: string): Promise<SessionStatistics> {
+  async getContentSession(content: Content, bizUserId: string): Promise<ContentSession> {
     const latestSession = await this.getLatestSession(content.id, bizUserId);
-    const events = latestSession ? await this.listEvents(latestSession.id) : [];
     const totalSessions = await this.getTotalSessions(content, bizUserId);
     const dismissedSessions = await this.getDismissedSessions(content, bizUserId);
     const completedSessions = await this.getCompletedSessions(content, bizUserId);
+    const seenSessions = await this.getSeenSessions(content, bizUserId);
 
     return {
+      contentId: content.id,
       latestSession,
-      events,
       totalSessions,
       dismissedSessions,
       completedSessions,
+      seenSessions,
     };
   }
 
@@ -215,7 +224,7 @@ export class WebSocketService {
       return null;
     }
 
-    const sessionStatistics = await this.getSessionStatistics(content, bizUser.id);
+    const contentSession = await this.getContentSession(content, bizUser.id);
     const config = await this.getProcessedConfig(
       version,
       environment,
@@ -250,11 +259,11 @@ export class WebSocketService {
       config,
       type: content.type as ContentType,
       name: content.name,
-      latestSession: sessionStatistics.latestSession,
-      events: sessionStatistics.events,
-      totalSessions: sessionStatistics.totalSessions,
-      dismissedSessions: sessionStatistics.dismissedSessions,
-      completedSessions: sessionStatistics.completedSessions,
+      latestSession: contentSession.latestSession,
+      totalSessions: contentSession.totalSessions,
+      dismissedSessions: contentSession.dismissedSessions,
+      completedSessions: contentSession.completedSessions,
+      seenSessions: contentSession.seenSessions,
     };
   }
 
@@ -336,7 +345,7 @@ export class WebSocketService {
       const versionMap = new Map(versions.map((v) => [v.id, v]));
 
       // Step 4: Batch fetch session statistics for all contents
-      const sessionStatisticsMap = await this.getBatchSessionStatistics(
+      const contentSessionMap = await this.getBatchContentSession(
         contentList.map((c) => c.id),
         bizUser.id,
       );
@@ -359,7 +368,7 @@ export class WebSocketService {
             environment,
             bizUser,
             attributes,
-            sessionStatisticsMap.get(content.id),
+            contentSessionMap.get(content.id),
             String(externalCompanyId),
           );
         }),
@@ -1011,6 +1020,31 @@ export class WebSocketService {
   }
 
   /**
+   * Get the number of seen sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of seen sessions
+   */
+  async getSeenSessions(content: Content, bizUserId: string): Promise<number> {
+    return await this.prisma.bizSession.count({
+      where: {
+        contentId: content.id,
+        bizUserId,
+        deleted: false,
+        bizEvent: {
+          some: {
+            event: {
+              codeName: {
+                in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN],
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
    * List themes for an environment
    * @param token - The token of the environment
    * @returns Array of themes
@@ -1253,14 +1287,14 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<TrackEventResponse> {
+  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
-    const user = await this.prisma.bizUser.findFirst({
+    const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
-    if (!user) {
+    if (!bizUser) {
       return false;
     }
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -1313,10 +1347,10 @@ export class WebSocketService {
       }
 
       // Update seen attributes for user and company
-      await this.updateSeenAttributes(tx, user, bizSession);
+      await this.updateSeenAttributes(tx, bizUser, bizSession);
 
       const insert = {
-        bizUserId: user.id,
+        bizUserId: bizUser.id,
         eventId: event.id,
         data: events,
         bizSessionId: bizSession.id,
@@ -1337,7 +1371,7 @@ export class WebSocketService {
           contentId,
           cvid: events[EventAttributes.QUESTION_CVID],
           versionId,
-          bizUserId: user.id,
+          bizUserId: bizUser.id,
           bizSessionId: bizSession.id,
           environmentId,
         };
@@ -1367,7 +1401,7 @@ export class WebSocketService {
       eventProperties: {
         ...events,
       },
-      userProperties: user.data as Record<string, any>,
+      userProperties: bizUser.data as Record<string, any>,
     };
     if (bizSession.content.type === ContentType.FLOW) {
       trackEventData.eventProperties = {
@@ -1386,16 +1420,43 @@ export class WebSocketService {
   }
 
   /**
+   * Query ContentSession for a user/session
+   * @param externalUserId - external user id
+   * @param sessionId - session id
+   * @param environment - environment context
+   * @returns ContentSession or false if not found
+   */
+  async getContentSessionBySession(
+    externalUserId: string,
+    sessionId: string,
+    environment: Environment,
+  ): Promise<ContentSession | false> {
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId: environment.id },
+    });
+    if (!bizUser) return false;
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!bizSession) return false;
+    const contentSession = await this.getBatchContentSession([bizSession.contentId], bizUser.id);
+    return {
+      contentId: bizSession.contentId,
+      ...contentSession.get(bizSession.contentId),
+    };
+  }
+
+  /**
    * Get session statistics for multiple contents in batch
    * @param contentIds - Array of content IDs
    * @param bizUserId - The ID of the business user
    * @returns Map of content ID to session statistics
    */
-  private async getBatchSessionStatistics(
+  private async getBatchContentSession(
     contentIds: string[],
     bizUserId: string,
-  ): Promise<Map<string, SessionStatistics>> {
-    const statisticsMap = new Map<string, SessionStatistics>();
+  ): Promise<Map<string, ContentSession>> {
+    const contentSessionMap = new Map<string, ContentSession>();
 
     // Batch fetch latest sessions for all contents
     const latestSessions = await this.prisma.bizSession.findMany({
@@ -1418,7 +1479,7 @@ export class WebSocketService {
     }
 
     // Batch fetch session counts
-    const [totalSessions, dismissedSessions, completedSessions] = await Promise.all([
+    const [totalSessions, dismissedSessions, completedSessions, seenSessions] = await Promise.all([
       this.prisma.bizSession.groupBy({
         by: ['contentId'],
         where: {
@@ -1472,29 +1533,48 @@ export class WebSocketService {
         },
         _count: { id: true },
       }),
+      this.prisma.bizSession.groupBy({
+        by: ['contentId'],
+        where: {
+          contentId: { in: contentIds },
+          bizUserId,
+          deleted: false,
+          bizEvent: {
+            some: {
+              event: {
+                codeName: {
+                  in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN],
+                },
+              },
+            },
+          },
+        },
+        _count: { id: true },
+      }),
     ]);
 
     // Create maps for quick lookup
     const totalMap = new Map(totalSessions.map((s) => [s.contentId, s._count.id]));
     const dismissedMap = new Map(dismissedSessions.map((s) => [s.contentId, s._count.id]));
     const completedMap = new Map(completedSessions.map((s) => [s.contentId, s._count.id]));
+    const seenMap = new Map(seenSessions.map((s) => [s.contentId, s._count.id]));
 
     // Build statistics for each content
     for (const contentId of contentIds) {
       const sessions = sessionsByContent.get(contentId) || [];
       const latestSession = sessions[0] || null;
-      const events = latestSession?.bizEvent || [];
 
-      statisticsMap.set(contentId, {
+      contentSessionMap.set(contentId, {
+        contentId,
         latestSession,
-        events,
         totalSessions: totalMap.get(contentId) || 0,
         dismissedSessions: dismissedMap.get(contentId) || 0,
         completedSessions: completedMap.get(contentId) || 0,
+        seenSessions: seenMap.get(contentId) || 0,
       });
     }
 
-    return statisticsMap;
+    return contentSessionMap;
   }
 
   /**
@@ -1514,7 +1594,7 @@ export class WebSocketService {
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
-    sessionStatistics: SessionStatistics,
+    contentSession: ContentSession,
     externalCompanyId?: string,
   ): Promise<ContentResponse> {
     if (!version) {
@@ -1543,11 +1623,11 @@ export class WebSocketService {
       config,
       type: content.type as ContentType,
       name: content.name,
-      latestSession: sessionStatistics.latestSession,
-      events: sessionStatistics.events,
-      totalSessions: sessionStatistics.totalSessions,
-      dismissedSessions: sessionStatistics.dismissedSessions,
-      completedSessions: sessionStatistics.completedSessions,
+      latestSession: contentSession.latestSession,
+      totalSessions: contentSession.totalSessions,
+      dismissedSessions: contentSession.dismissedSessions,
+      completedSessions: contentSession.completedSessions,
+      seenSessions: contentSession.seenSessions,
     };
   }
 }

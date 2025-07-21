@@ -685,7 +685,7 @@ OtherOptionSerialize.displayName = 'OtherOptionSerialize';
 export const ContentEditorMultipleChoiceSerialize = memo(
   (props: {
     element: ContentEditorMultipleChoiceElement;
-    onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => void;
+    onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => Promise<void> | void;
   }) => {
     const { element, onClick } = props;
     const [otherValue, setOtherValue] = useState<string>('');
@@ -693,6 +693,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
     const [isOtherChecked, setIsOtherChecked] = useState<boolean>(false);
     const otherInputRef = useRef<HTMLInputElement>(null);
+    const [loading, setLoading] = useState(false);
 
     const options = useMemo(() => {
       if (element.data.shuffleOptions) {
@@ -725,13 +726,18 @@ export const ContentEditorMultipleChoiceSerialize = memo(
         });
       }, []);
 
-      const handleSubmit = useCallback(() => {
-        if (isValidSelection()) {
-          const values = [...selectedValues];
-          if (isOtherChecked && otherValue) {
-            values.push(otherValue);
+      const handleSubmit = useCallback(async () => {
+        if (isValidSelection() && onClick) {
+          setLoading(true);
+          try {
+            const values = [...selectedValues];
+            if (isOtherChecked && otherValue) {
+              values.push(otherValue);
+            }
+            await onClick(element, values);
+          } finally {
+            setLoading(false);
           }
-          onClick?.(element, values);
         }
       }, [isValidSelection, selectedValues, isOtherChecked, otherValue, onClick, element]);
 
@@ -798,7 +804,11 @@ export const ContentEditorMultipleChoiceSerialize = memo(
               )}
             </div>
             <div className="flex justify-center w-full">
-              <Button forSdk={true} disabled={!isValidSelection()} onClick={handleSubmit}>
+              <Button
+                forSdk={true}
+                disabled={!isValidSelection() || loading}
+                onClick={handleSubmit}
+              >
                 {element.data.buttonText || DEFAULT_BUTTON_TEXT}
               </Button>
             </div>

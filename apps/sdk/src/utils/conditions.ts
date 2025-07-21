@@ -7,10 +7,14 @@ import {
   BizEvent,
   BizEvents,
   ContentDataType,
+  ContentConditionLogic,
+  ContentSession,
   Frequency,
   FrequencyUnits,
   RulesCondition,
   SDKContent,
+  ElementConditionLogic,
+  StringConditionLogic,
 } from '@usertour-ui/types';
 import {
   differenceInDays,
@@ -42,6 +46,42 @@ const isActiveRulesByCurrentTime = (rules: RulesCondition) => {
     return isAfter(now, startTime);
   }
   return isAfter(now, startTime) && isBefore(now, endTime);
+};
+
+const isActivedContentRulesCondition = (
+  rules: RulesCondition,
+  contentSession: ContentSession,
+): boolean => {
+  const { contentId, logic } = rules.data;
+  const { latestSession, seenSessions, completedSessions } = contentSession;
+
+  if (!contentId || !logic || contentId !== contentSession.contentId) {
+    return false;
+  }
+
+  // Special handling for actived/unactived logic
+  if (logic === ContentConditionLogic.ACTIVED || logic === ContentConditionLogic.UNACTIVED) {
+    if (!latestSession) {
+      return logic === ContentConditionLogic.UNACTIVED;
+    }
+    const hasEndedEvent = latestSession.bizEvent?.find(
+      (bizEvent) => bizEvent?.event?.codeName === BizEvents.FLOW_ENDED,
+    );
+    const isActived = !hasEndedEvent;
+    return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
+  }
+
+  const isSeen = seenSessions > 0;
+  const isCompleted = completedSessions > 0;
+  if (logic === ContentConditionLogic.SEEN || logic === ContentConditionLogic.UNSEEN) {
+    return logic === ContentConditionLogic.SEEN ? isSeen : !isSeen;
+  }
+
+  if (logic === ContentConditionLogic.COMPLETED || logic === ContentConditionLogic.UNCOMPLETED) {
+    return logic === ContentConditionLogic.COMPLETED ? isCompleted : !isCompleted;
+  }
+
+  return false;
 };
 
 export const isVisible = async (el: HTMLElement) => {
@@ -85,17 +125,17 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
   const isPresent = await isVisible(el);
   const isDisabled = (el as any).disabled ?? false;
   switch (data.logic) {
-    case 'present':
+    case ElementConditionLogic.PRESENT:
       return isPresent;
-    case 'unpresent':
+    case ElementConditionLogic.UNPRESENT:
       return !isPresent;
-    case 'disabled':
+    case ElementConditionLogic.DISABLED:
       return el && isDisabled;
-    case 'undisabled':
+    case ElementConditionLogic.UNDISABLED:
       return el && !isDisabled;
-    case 'clicked':
+    case ElementConditionLogic.CLICKED:
       return el && isClicked(el);
-    case 'unclicked':
+    case ElementConditionLogic.UNCLICKED:
       return el && !isClicked(el);
     default:
       return false;
@@ -115,25 +155,25 @@ const isActiveRulesByTextInput = async (rules: RulesCondition) => {
   }
   const elValue = el.value;
   switch (logic) {
-    case 'is':
+    case StringConditionLogic.IS:
       return elValue === value;
-    case 'not':
+    case StringConditionLogic.NOT:
       return elValue !== value;
-    case 'contains':
+    case StringConditionLogic.CONTAINS:
       return elValue.includes(value);
-    case 'notContain':
+    case StringConditionLogic.NOT_CONTAINS:
       return !elValue.includes(value);
-    case 'startsWith':
+    case StringConditionLogic.STARTS_WITH:
       return elValue.startsWith(value);
-    case 'endsWith':
+    case StringConditionLogic.ENDS_WITH:
       return elValue.endsWith(value);
-    case 'match':
+    case StringConditionLogic.MATCH:
       return elValue.search(value) !== -1;
-    case 'unmatch':
+    case StringConditionLogic.UNMATCH:
       return elValue.search(value) === -1;
-    case 'any':
+    case StringConditionLogic.ANY:
       return true;
-    case 'empty':
+    case StringConditionLogic.EMPTY:
       return !elValue;
     default:
       return false;
@@ -217,6 +257,38 @@ export const activedRulesConditions = async (
       }
     } else if (rules.conditions) {
       rulesCondition[j].conditions = await activedRulesConditions(rules.conditions);
+    }
+  }
+  return rulesCondition;
+};
+
+export const activedContentRulesConditions = async (
+  conditions: RulesCondition[],
+  contents: SDKContent[],
+) => {
+  const rulesCondition: RulesCondition[] = [...conditions];
+  for (let j = 0; j < rulesCondition.length; j++) {
+    const rules = rulesCondition[j];
+    if (rules.type !== 'group') {
+      if (rules.type === RulesType.CONTENT) {
+        const content = contents.find((c) => c.contentId === rules.data.contentId);
+        if (content) {
+          const contentSession = {
+            contentId: content.contentId,
+            latestSession: content.latestSession,
+            totalSessions: content.totalSessions,
+            dismissedSessions: content.dismissedSessions,
+            completedSessions: content.completedSessions,
+            seenSessions: content.seenSessions,
+          };
+          rulesCondition[j].actived = isActivedContentRulesCondition(rules, contentSession);
+        }
+      }
+    } else if (rules.conditions) {
+      rulesCondition[j].conditions = await activedContentRulesConditions(
+        rules.conditions,
+        contents,
+      );
     }
   }
   return rulesCondition;

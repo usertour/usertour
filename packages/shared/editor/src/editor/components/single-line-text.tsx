@@ -253,15 +253,16 @@ ContentEditorSingleLineText.displayName = 'ContentEditorSingleLineText';
 
 export const ContentEditorSingleLineTextSerialize = (props: {
   element: ContentEditorSingleLineTextElement;
-  onClick?: (element: ContentEditorSingleLineTextElement, value: string) => void;
+  onClick?: (element: ContentEditorSingleLineTextElement, value: string) => Promise<void> | void;
 }) => {
   const { element, onClick } = props;
   const [value, setValue] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
   // Memoize computed values
   const isDisabled = useMemo(
-    () => element.data.required && isEmptyString(value),
-    [element.data.required, value],
+    () => loading || (element.data.required && isEmptyString(value)),
+    [loading, element.data.required, value],
   );
 
   const defaultValues = useMemo(
@@ -276,8 +277,15 @@ export const ContentEditorSingleLineTextSerialize = (props: {
     setValue(e.target.value);
   }, []);
 
-  const handleSubmit = useCallback(() => {
-    onClick?.(element, value);
+  const handleSubmit = useCallback(async () => {
+    if (onClick) {
+      setLoading(true);
+      try {
+        await onClick(element, value);
+      } finally {
+        setLoading(false);
+      }
+    }
   }, [onClick, element, value]);
 
   return (

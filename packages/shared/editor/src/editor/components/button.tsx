@@ -360,15 +360,22 @@ export type ContentEditorButtonSerializeType = {
   className?: string;
   children?: React.ReactNode;
   element: ContentEditorButtonElement;
-  onClick?: (element: ContentEditorButtonElement) => void;
+  onClick?: (element: ContentEditorButtonElement) => Promise<void>;
 };
 
 export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerializeType) => {
   const { element, onClick } = props;
 
-  const handleOnClick = useCallback(() => {
+  const [loading, setLoading] = useState(false);
+
+  const handleOnClick = useCallback(async () => {
     if (onClick) {
-      onClick(element);
+      setLoading(true);
+      try {
+        await onClick(element);
+      } finally {
+        setLoading(false);
+      }
     }
   }, [onClick, element]);
 
@@ -381,6 +388,7 @@ export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerialize
       onClick={handleOnClick}
       className="h-fit"
       style={buttonStyle}
+      disabled={loading}
     >
       <span>{element.data?.text}</span>
     </Button>

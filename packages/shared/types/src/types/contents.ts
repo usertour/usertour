@@ -261,3 +261,34 @@ export type ContentModalPlacementData = {
   positionOffsetX: number;
   positionOffsetY: number;
 };
+
+export enum ContentConditionLogic {
+  SEEN = 'seen',
+  UNSEEN = 'unseen',
+  COMPLETED = 'completed',
+  UNCOMPLETED = 'uncompleted',
+  ACTIVED = 'actived',
+  UNACTIVED = 'unactived',
+}
+
+export enum ElementConditionLogic {
+  PRESENT = 'present',
+  UNPRESENT = 'unpresent',
+  DISABLED = 'disabled',
+  UNDISABLED = 'undisabled',
+  CLICKED = 'clicked',
+  UNCLICKED = 'unclicked',
+}
+
+export enum StringConditionLogic {
+  IS = 'is',
+  NOT = 'not',
+  CONTAINS = 'contains',
+  NOT_CONTAINS = 'notContains',
+  STARTS_WITH = 'startsWith',
+  ENDS_WITH = 'endsWith',
+  MATCH = 'match',
+  UNMATCH = 'unmatch',
+  ANY = 'any',
+  EMPTY = 'empty',
+}
