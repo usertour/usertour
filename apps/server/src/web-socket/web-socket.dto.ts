@@ -83,7 +83,6 @@ export type ContentResponse = Version & {
   steps: Step[];
   config: ContentConfigObject;
   latestSession?: BizSessionWithEvents;
-  events?: BizEventWithEvent[];
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;
@@ -93,7 +92,6 @@ export type ContentResponse = Version & {
 // Session statistics interface
 export interface SessionStatistics {
   latestSession?: BizSessionWithEvents;
-  events?: BizEventWithEvent[];
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;

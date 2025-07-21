@@ -118,7 +118,6 @@ export class WebSocketService {
    */
   async getSessionStatistics(content: Content, bizUserId: string): Promise<SessionStatistics> {
     const latestSession = await this.getLatestSession(content.id, bizUserId);
-    const events = latestSession ? await this.listEvents(latestSession.id) : [];
     const totalSessions = await this.getTotalSessions(content, bizUserId);
     const dismissedSessions = await this.getDismissedSessions(content, bizUserId);
     const completedSessions = await this.getCompletedSessions(content, bizUserId);
@@ -126,7 +125,6 @@ export class WebSocketService {
 
     return {
       latestSession,
-      events,
       totalSessions,
       dismissedSessions,
       completedSessions,
@@ -253,7 +251,6 @@ export class WebSocketService {
       type: content.type as ContentType,
       name: content.name,
       latestSession: sessionStatistics.latestSession,
-      events: sessionStatistics.events,
       totalSessions: sessionStatistics.totalSessions,
       dismissedSessions: sessionStatistics.dismissedSessions,
       completedSessions: sessionStatistics.completedSessions,
@@ -1543,11 +1540,9 @@ export class WebSocketService {
     for (const contentId of contentIds) {
       const sessions = sessionsByContent.get(contentId) || [];
       const latestSession = sessions[0] || null;
-      const events = latestSession?.bizEvent || [];
 
       statisticsMap.set(contentId, {
         latestSession,
-        events,
         totalSessions: totalMap.get(contentId) || 0,
         dismissedSessions: dismissedMap.get(contentId) || 0,
         completedSessions: completedMap.get(contentId) || 0,
@@ -1605,7 +1600,6 @@ export class WebSocketService {
       type: content.type as ContentType,
       name: content.name,
       latestSession: sessionStatistics.latestSession,
-      events: sessionStatistics.events,
       totalSessions: sessionStatistics.totalSessions,
       dismissedSessions: sessionStatistics.dismissedSessions,
       completedSessions: sessionStatistics.completedSessions,
