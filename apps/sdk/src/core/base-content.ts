@@ -11,7 +11,6 @@ import {
   UserTourTypes,
   contentStartReason,
 } from '@usertour-ui/types';
-import { isEqual } from 'lodash';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';
@@ -26,6 +25,7 @@ import { differenceInHours } from 'date-fns';
 import { logger } from '../utils/logger';
 import { BaseStore } from '../types/store';
 import { getActivedTheme } from '../utils/content-utils';
+import isEqual from 'fast-deep-equal';
 
 export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private readonly instance: App;

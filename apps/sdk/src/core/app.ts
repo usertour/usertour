@@ -8,6 +8,7 @@ import {
   PlanType,
   SDKConfig,
   SDKContent,
+  ContentSession,
   SDKSettingsMode,
   Theme,
   contentEndReason,
@@ -487,6 +488,9 @@ export class App extends Evented {
     return this.sdkConfig;
   }
 
+  /**
+   * Refreshes the content data and syncs all stores
+   */
   async refresh() {
     await this.initContentData();
     if (this.originContents) {
@@ -495,6 +499,28 @@ export class App extends Evented {
     }
   }
 
+  /**
+   * Refreshes the content session
+   * @param contentSession - The content session to refresh
+   */
+  async refreshContentSession(contentSession: ContentSession) {
+    if (!this.originContents) {
+      return;
+    }
+
+    this.originContents = this.originContents.map((content) => {
+      if (content.contentId === contentSession.contentId) {
+        return {
+          ...content,
+          ...contentSession,
+        };
+      }
+      return content;
+    });
+
+    this.initContents();
+    this.syncAllStores();
+  }
   /**
    * Reports an event to the tracking system
    * @param event - Event parameters to report
@@ -513,14 +539,19 @@ export class App extends Evented {
         return;
       }
 
-      await this.socket.trackEvent({
+      const contentSession = await this.socket.trackEvent({
         userId: event.userId,
         token,
         sessionId,
         eventData: event.eventData,
         eventName: event.eventName,
       });
-      await this.refresh();
+
+      if (contentSession) {
+        await this.refreshContentSession(contentSession);
+      }
+
+      // await this.refresh();
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
