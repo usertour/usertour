@@ -68,10 +68,16 @@ export type UpsertCompanyResponse = BizCompany | null;
 
 export type CreateSessionResponse = BizSession | null;
 
-export type TrackEventResponse = {
+export type ContentSession = {
   contentId: string;
-  sessionStatistics: SessionStatistics;
+  latestSession?: BizSessionWithEvents;
+  totalSessions: number;
+  dismissedSessions: number;
+  completedSessions: number;
+  seenSessions: number;
 };
+
+export type TrackEventResponse = ContentSession;
 
 export type BizEventWithEvent = BizEvent & { event: Event };
 export type BizSessionWithEvents = BizSession & { bizEvent: BizEventWithEvent[] };
@@ -88,12 +94,3 @@ export type ContentResponse = Version & {
   completedSessions: number;
   seenSessions: number;
 };
-
-// Session statistics interface
-export interface SessionStatistics {
-  latestSession?: BizSessionWithEvents;
-  totalSessions: number;
-  dismissedSessions: number;
-  completedSessions: number;
-  seenSessions: number;
-}

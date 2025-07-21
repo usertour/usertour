@@ -12,7 +12,16 @@ import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { BizUser, Content, Environment, Step, Theme, Prisma, Version } from '@prisma/client';
+import {
+  BizUser,
+  Content,
+  Environment,
+  Step,
+  Theme,
+  Prisma,
+  Version,
+  BizEvent,
+} from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
@@ -27,12 +36,11 @@ import {
   ListContentsRequest,
   ListThemesRequest,
   TrackEventRequest,
-  TrackEventResponse,
   UpsertCompanyRequest,
   UpsertCompanyResponse,
   UpsertUserRequest,
   UpsertUserResponse,
-  SessionStatistics,
+  ContentSession,
 } from './web-socket.dto';
 
 const EVENT_CODE_MAP = {
@@ -116,7 +124,7 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns Session statistics including latest session, events, and counts
    */
-  async getSessionStatistics(content: Content, bizUserId: string): Promise<SessionStatistics> {
+  async getContentSession(content: Content, bizUserId: string): Promise<ContentSession> {
     const latestSession = await this.getLatestSession(content.id, bizUserId);
     const totalSessions = await this.getTotalSessions(content, bizUserId);
     const dismissedSessions = await this.getDismissedSessions(content, bizUserId);
@@ -124,6 +132,7 @@ export class WebSocketService {
     const seenSessions = await this.getSeenSessions(content, bizUserId);
 
     return {
+      contentId: content.id,
       latestSession,
       totalSessions,
       dismissedSessions,
@@ -215,7 +224,7 @@ export class WebSocketService {
       return null;
     }
 
-    const sessionStatistics = await this.getSessionStatistics(content, bizUser.id);
+    const contentSession = await this.getContentSession(content, bizUser.id);
     const config = await this.getProcessedConfig(
       version,
       environment,
@@ -250,11 +259,11 @@ export class WebSocketService {
       config,
       type: content.type as ContentType,
       name: content.name,
-      latestSession: sessionStatistics.latestSession,
-      totalSessions: sessionStatistics.totalSessions,
-      dismissedSessions: sessionStatistics.dismissedSessions,
-      completedSessions: sessionStatistics.completedSessions,
-      seenSessions: sessionStatistics.seenSessions,
+      latestSession: contentSession.latestSession,
+      totalSessions: contentSession.totalSessions,
+      dismissedSessions: contentSession.dismissedSessions,
+      completedSessions: contentSession.completedSessions,
+      seenSessions: contentSession.seenSessions,
     };
   }
 
@@ -336,7 +345,7 @@ export class WebSocketService {
       const versionMap = new Map(versions.map((v) => [v.id, v]));
 
       // Step 4: Batch fetch session statistics for all contents
-      const sessionStatisticsMap = await this.getBatchSessionStatistics(
+      const contentSessionMap = await this.getBatchContentSession(
         contentList.map((c) => c.id),
         bizUser.id,
       );
@@ -359,7 +368,7 @@ export class WebSocketService {
             environment,
             bizUser,
             attributes,
-            sessionStatisticsMap.get(content.id),
+            contentSessionMap.get(content.id),
             String(externalCompanyId),
           );
         }),
@@ -1278,10 +1287,7 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(
-    data: TrackEventRequest,
-    environment: Environment,
-  ): Promise<TrackEventResponse | false> {
+  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
@@ -1322,7 +1328,7 @@ export class WebSocketService {
         : undefined;
     const state = getEventState(eventName);
 
-    await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Re-fetch the session with latest events inside the transaction and lock the row
       const latestBizSession = await tx.bizSession.findUnique({
         where: { id: sessionId },
@@ -1408,19 +1414,36 @@ export class WebSocketService {
       };
     }
 
-    const sessionStatistics = await this.getBatchSessionStatistics(
-      [bizSession.contentId],
-      bizUser.id,
-    );
-
-    return {
-      contentId: bizSession.contentId,
-      sessionStatistics: sessionStatistics.get(bizSession.contentId),
-    };
-
     // this.integrationService.trackEvent(trackEventData);
 
-    // return result;
+    return result;
+  }
+
+  /**
+   * Query ContentSession for a user/session
+   * @param externalUserId - external user id
+   * @param sessionId - session id
+   * @param environment - environment context
+   * @returns ContentSession or false if not found
+   */
+  async getContentSessionBySession(
+    externalUserId: string,
+    sessionId: string,
+    environment: Environment,
+  ): Promise<ContentSession | false> {
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId: environment.id },
+    });
+    if (!bizUser) return false;
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!bizSession) return false;
+    const contentSession = await this.getBatchContentSession([bizSession.contentId], bizUser.id);
+    return {
+      contentId: bizSession.contentId,
+      ...contentSession.get(bizSession.contentId),
+    };
   }
 
   /**
@@ -1429,11 +1452,11 @@ export class WebSocketService {
    * @param bizUserId - The ID of the business user
    * @returns Map of content ID to session statistics
    */
-  private async getBatchSessionStatistics(
+  private async getBatchContentSession(
     contentIds: string[],
     bizUserId: string,
-  ): Promise<Map<string, SessionStatistics>> {
-    const statisticsMap = new Map<string, SessionStatistics>();
+  ): Promise<Map<string, ContentSession>> {
+    const contentSessionMap = new Map<string, ContentSession>();
 
     // Batch fetch latest sessions for all contents
     const latestSessions = await this.prisma.bizSession.findMany({
@@ -1541,7 +1564,8 @@ export class WebSocketService {
       const sessions = sessionsByContent.get(contentId) || [];
       const latestSession = sessions[0] || null;
 
-      statisticsMap.set(contentId, {
+      contentSessionMap.set(contentId, {
+        contentId,
         latestSession,
         totalSessions: totalMap.get(contentId) || 0,
         dismissedSessions: dismissedMap.get(contentId) || 0,
@@ -1550,7 +1574,7 @@ export class WebSocketService {
       });
     }
 
-    return statisticsMap;
+    return contentSessionMap;
   }
 
   /**
@@ -1570,7 +1594,7 @@ export class WebSocketService {
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
-    sessionStatistics: SessionStatistics,
+    contentSession: ContentSession,
     externalCompanyId?: string,
   ): Promise<ContentResponse> {
     if (!version) {
@@ -1599,11 +1623,11 @@ export class WebSocketService {
       config,
       type: content.type as ContentType,
       name: content.name,
-      latestSession: sessionStatistics.latestSession,
-      totalSessions: sessionStatistics.totalSessions,
-      dismissedSessions: sessionStatistics.dismissedSessions,
-      completedSessions: sessionStatistics.completedSessions,
-      seenSessions: sessionStatistics.seenSessions,
+      latestSession: contentSession.latestSession,
+      totalSessions: contentSession.totalSessions,
+      dismissedSessions: contentSession.dismissedSessions,
+      completedSessions: contentSession.completedSessions,
+      seenSessions: contentSession.seenSessions,
     };
   }
 }

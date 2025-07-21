@@ -28,6 +28,7 @@ import {
   findLatestValidActivatedChecklist,
   isSameTour,
   getAutoStartContentSortedByPriority,
+  activedContentsRulesConditions,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -508,7 +509,7 @@ export class App extends Evented {
       return;
     }
 
-    this.originContents = this.originContents.map((content) => {
+    const newContents = this.originContents.map((content) => {
       if (content.contentId === contentSession.contentId) {
         return {
           ...content,
@@ -517,6 +518,8 @@ export class App extends Evented {
       }
       return content;
     });
+
+    this.originContents = await activedContentsRulesConditions(newContents);
 
     await this.fetchAndInitContent(false);
   }

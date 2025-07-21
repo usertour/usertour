@@ -23,9 +23,9 @@ import {
   UpsertUserResponse,
   UpsertCompanyResponse,
   CreateSessionResponse,
-  TrackEventResponse,
   ContentResponse,
   ListThemesRequest,
+  ContentSession,
 } from './web-socket.dto';
 import { Environment, Theme } from '@prisma/client';
 
@@ -104,8 +104,9 @@ export class WebSocketGateway {
   async sendEvent(
     @MessageBody() body: TrackEventRequest,
     @WebSocketEnvironment() environment: Environment,
-  ): Promise<TrackEventResponse | false> {
-    return await this.service.trackEvent(body, environment);
+  ): Promise<ContentSession | false> {
+    await this.service.trackEvent(body, environment);
+    return await this.service.getContentSessionBySession(body.userId, body.sessionId, environment);
   }
 
   /**
