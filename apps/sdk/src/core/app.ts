@@ -181,7 +181,7 @@ export class App extends Evented {
     });
     // refresh data when content changed in the server
     this.socket.on('content-changed', () => {
-      this.refresh();
+      this.fetchAndInitContent();
     });
     if (document?.readyState !== 'loading') {
       this.trigger('dom-loaded');
@@ -368,8 +368,8 @@ export class App extends Evented {
     });
     if (userInfo?.externalId) {
       this.setUser(userInfo);
-      await this.refresh();
-      await this.initThemeData();
+      await this.fetchAndInitContent();
+      await this.fetchTheme();
     }
   }
 
@@ -417,7 +417,7 @@ export class App extends Evented {
     );
     if (companyInfo?.externalId) {
       this.setCompany(companyInfo);
-      this.refresh();
+      this.fetchAndInitContent();
     }
   }
 
@@ -449,7 +449,7 @@ export class App extends Evented {
       return;
     }
     this.setCompany(companyInfo);
-    this.refresh();
+    this.fetchAndInitContent();
   }
 
   /**
@@ -475,11 +475,9 @@ export class App extends Evented {
       return;
     }
     await this.reset();
-    await this.initSdkConfig();
-    await this.initThemeData();
-    await this.initContentData();
-    this.initContents();
-    this.syncAllStores();
+    await this.fetchSdkConfig();
+    await this.fetchTheme();
+    await this.fetchAndInitContent();
     await this.startContents();
     await this.startActivityMonitor();
   }
@@ -489,9 +487,9 @@ export class App extends Evented {
   }
 
   /**
-   * Refreshes the content data and syncs all stores
+   * Fetches fresh content data from server and initializes content
    */
-  async refresh() {
+  async fetchAndInitContent() {
     await this.initContentData();
     if (this.originContents) {
       this.initContents();
@@ -550,8 +548,6 @@ export class App extends Evented {
       if (contentSession) {
         await this.refreshContentSession(contentSession);
       }
-
-      // await this.refresh();
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
@@ -575,7 +571,7 @@ export class App extends Evented {
       token,
       companyId,
     });
-    await this.refresh();
+    await this.fetchAndInitContent();
     return newSesison;
   }
 
@@ -1051,7 +1047,7 @@ export class App extends Evented {
     }
   }
 
-  async initSdkConfig() {
+  async fetchSdkConfig() {
     const sdkConfig = await this.socket.getConfig(this.startOptions.token);
     if (sdkConfig) {
       this.sdkConfig = sdkConfig;
@@ -1059,9 +1055,9 @@ export class App extends Evented {
   }
 
   /**
-   * Initializes theme data from server
+   * Fetches themes from server
    */
-  async initThemeData() {
+  async fetchTheme() {
     const { token } = this.startOptions;
     const params = {
       token,
