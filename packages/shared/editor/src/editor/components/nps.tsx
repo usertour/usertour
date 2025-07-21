@@ -260,22 +260,30 @@ export type ContentEditorNPSSerializeType = {
   className?: string;
   children?: React.ReactNode;
   element: ContentEditorNPSElement;
-  onClick?: (element: ContentEditorNPSElement, value: number) => void;
+  onClick?: (element: ContentEditorNPSElement, value: number) => Promise<void>;
 };
 
 export const ContentEditorNPSSerialize = memo((props: ContentEditorNPSSerializeType) => {
   const { element, onClick } = props;
+  const [loading, setLoading] = useState(false);
 
   const handleClick = useCallback(
-    (value: number) => {
-      onClick?.(element, value);
+    async (value: number) => {
+      if (onClick) {
+        setLoading(true);
+        try {
+          await onClick(element, value);
+        } finally {
+          setLoading(false);
+        }
+      }
     },
     [onClick, element],
   );
 
   return (
     <div className="w-full">
-      <NPSScale onClick={handleClick} forSdk={true} />
+      <NPSScale onClick={loading ? undefined : handleClick} forSdk={true} />
       <NPSLabels lowLabel={element.data.lowLabel} highLabel={element.data.highLabel} />
     </div>
   );

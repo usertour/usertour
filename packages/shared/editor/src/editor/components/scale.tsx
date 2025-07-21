@@ -373,11 +373,23 @@ export type ContentEditorScaleSerializeType = {
   className?: string;
   children?: React.ReactNode;
   element: ContentEditorScaleElement;
-  onClick?: (element: ContentEditorScaleElement, value: number) => void;
+  onClick?: (element: ContentEditorScaleElement, value: number) => Promise<void>;
 };
 
 export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeType>((props) => {
   const { element, onClick } = props;
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async (el: any, value: number) => {
+    if (onClick) {
+      setLoading(true);
+      try {
+        await onClick(el, value);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   return (
     <ScaleDisplay
@@ -385,7 +397,7 @@ export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeType>
       highRange={element.data.highRange}
       lowLabel={element.data.lowLabel}
       highLabel={element.data.highLabel}
-      onClick={onClick}
+      onClick={loading ? undefined : handleClick}
       element={element}
     />
   );

@@ -39,7 +39,7 @@ type TourBaseProps = {
   sdkConfig: SDKConfig;
   themeSettings: ThemeTypesSetting;
   handleClose: () => void;
-  handleOnClick: (element: ContentEditorClickableElement, value?: any) => void;
+  handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
 type TourPopperProps = TourBaseProps & {
@@ -57,7 +57,7 @@ type PopperContentProps = {
   themeSettings: ThemeTypesSetting;
   sdkConfig: SDKConfig;
   handleClose: () => void;
-  handleOnClick: (element: ContentEditorClickableElement, value?: any) => void;
+  handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
 // Custom hook to extract store state

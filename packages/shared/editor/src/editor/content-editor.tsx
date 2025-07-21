@@ -200,7 +200,7 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];
   userInfo?: BizUserInfo;
-  onClick?: (element: ContentEditorClickableElement, value?: any) => void;
+  onClick?: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 }) => {
   const { contents, onClick, userInfo } = props;
   const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;

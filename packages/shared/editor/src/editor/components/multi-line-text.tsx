@@ -179,10 +179,22 @@ ContentEditorMultiLineText.displayName = 'ContentEditorMultiLineText';
 
 export const ContentEditorMultiLineTextSerialize = (props: {
   element: ContentEditorMultiLineTextElement;
-  onClick?: (element: ContentEditorMultiLineTextElement, value: string) => void;
+  onClick?: (element: ContentEditorMultiLineTextElement, value: string) => Promise<void> | void;
 }) => {
   const { element, onClick } = props;
   const [value, setValue] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    if (onClick) {
+      setLoading(true);
+      try {
+        await onClick(element, value);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2 items-center w-full">
@@ -195,8 +207,8 @@ export const ContentEditorMultiLineTextSerialize = (props: {
       <div className="flex justify-end w-full">
         <Button
           forSdk={true}
-          onClick={() => onClick?.(element, value)}
-          disabled={element.data.required && isEmptyString(value)}
+          onClick={handleClick}
+          disabled={loading || (element.data.required && isEmptyString(value))}
         >
           {element.data.buttonText || DEFAULT_BUTTON_TEXT}
         </Button>
