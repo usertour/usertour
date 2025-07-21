@@ -32,7 +32,7 @@ type LauncherWidgetCoreProps = {
   el: HTMLElement;
   themeSettings: ThemeTypesSetting;
   zIndex: number;
-  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   userInfo: BizUserInfo;
   handleActive: () => void;
   removeBranding: boolean;
@@ -140,7 +140,7 @@ const LauncherTooltip = ({
 }: {
   data: LauncherData;
   userInfo: BizUserInfo;
-  handleOnClick: (element: ContentEditorClickableElement) => void;
+  handleOnClick: (element: ContentEditorClickableElement) => Promise<void>;
   removeBranding: boolean;
   popperRef: React.RefObject<HTMLDivElement>;
 }) => (
