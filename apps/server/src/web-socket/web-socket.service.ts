@@ -12,7 +12,7 @@ import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { BizUser, Content, Environment, Step, Theme, Prisma } from '@prisma/client';
+import { BizUser, Content, Environment, Step, Theme, Prisma, Version } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
@@ -32,6 +32,7 @@ import {
   UpsertCompanyResponse,
   UpsertUserRequest,
   UpsertUserResponse,
+  SessionStatistics,
 } from './web-socket.dto';
 
 const EVENT_CODE_MAP = {
@@ -110,40 +111,43 @@ export class WebSocketService {
   }
 
   /**
-   * Process a single content item and return its configuration
-   * @param content - The content item to process
-   * @param environment - The environment context
-   * @param bizUser - The business user
-   * @param attributes - Available attributes
-   * @param externalCompanyId - Optional company ID
-   * @returns Processed content configuration or null if processing fails
+   * Get session statistics for a content and user
+   * @param content - The content to get statistics for
+   * @param bizUserId - The ID of the business user
+   * @returns Session statistics including latest session, events, and counts
    */
-  private async processContent(
-    content: Content & { contentOnEnvironments: any[] },
-    environment: Environment,
-    bizUser: BizUser,
-    attributes: Attribute[],
-    externalCompanyId?: string,
-  ): Promise<ContentResponse> {
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
-        ?.publishedVersionId || content.publishedVersionId;
-
-    const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
-      include: { steps: { orderBy: { sequence: 'asc' } } },
-    });
-
-    if (!version) {
-      return null;
-    }
-
-    const latestSession = await this.getLatestSession(content.id, bizUser.id);
+  async getSessionStatistics(content: Content, bizUserId: string): Promise<SessionStatistics> {
+    const latestSession = await this.getLatestSession(content.id, bizUserId);
     const events = latestSession ? await this.listEvents(latestSession.id) : [];
-    const totalSessions = await this.getTotalSessions(content, bizUser.id);
-    const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
-    const completedSessions = await this.getCompletedSessions(content, bizUser.id);
+    const totalSessions = await this.getTotalSessions(content, bizUserId);
+    const dismissedSessions = await this.getDismissedSessions(content, bizUserId);
+    const completedSessions = await this.getCompletedSessions(content, bizUserId);
 
+    return {
+      latestSession,
+      events,
+      totalSessions,
+      dismissedSessions,
+      completedSessions,
+    };
+  }
+
+  /**
+   * Process configuration and return processed config with activated rules
+   * @param version - The version containing the config
+   * @param environment - The environment context
+   * @param attributes - Available attributes
+   * @param bizUser - The business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Processed configuration with activated rules
+   */
+  async getProcessedConfig(
+    version: Version,
+    environment: Environment,
+    attributes: Attribute[],
+    bizUser: BizUser,
+    externalCompanyId?: string,
+  ): Promise<ContentConfigObject> {
     const config = version.config
       ? (version.config as ContentConfigObject)
       : {
@@ -175,6 +179,51 @@ export class WebSocketService {
           )
         : [];
 
+    return {
+      ...config,
+      autoStartRules,
+      hideRules,
+    };
+  }
+
+  /**
+   * Process a single content item and return its configuration
+   * @param content - The content item to process
+   * @param environment - The environment context
+   * @param bizUser - The business user
+   * @param attributes - Available attributes
+   * @param externalCompanyId - Optional company ID
+   * @returns Processed content configuration or null if processing fails
+   */
+  private async processContent(
+    content: Content & { contentOnEnvironments: any[] },
+    environment: Environment,
+    bizUser: BizUser,
+    attributes: Attribute[],
+    externalCompanyId?: string,
+  ): Promise<ContentResponse> {
+    const publishedVersionId =
+      content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
+        ?.publishedVersionId || content.publishedVersionId;
+
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
+    });
+
+    if (!version) {
+      return null;
+    }
+
+    const sessionStatistics = await this.getSessionStatistics(content, bizUser.id);
+    const config = await this.getProcessedConfig(
+      version,
+      environment,
+      attributes,
+      bizUser,
+      externalCompanyId,
+    );
+
     const data =
       content.type === ContentType.CHECKLIST
         ? await this.activedChecklistConditions(
@@ -198,14 +247,14 @@ export class WebSocketService {
       ...version,
       data: data as any,
       steps,
-      config: { ...config, autoStartRules, hideRules },
+      config,
       type: content.type as ContentType,
       name: content.name,
-      latestSession,
-      events,
-      totalSessions,
-      dismissedSessions,
-      completedSessions,
+      latestSession: sessionStatistics.latestSession,
+      events: sessionStatistics.events,
+      totalSessions: sessionStatistics.totalSessions,
+      dismissedSessions: sessionStatistics.dismissedSessions,
+      completedSessions: sessionStatistics.completedSessions,
     };
   }
 
