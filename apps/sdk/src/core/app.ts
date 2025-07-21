@@ -489,8 +489,10 @@ export class App extends Evented {
   /**
    * Fetches fresh content data from server and initializes content
    */
-  async fetchAndInitContent() {
-    await this.initContentData();
+  async fetchAndInitContent(fetch = true) {
+    if (fetch) {
+      await this.initContentData();
+    }
     if (this.originContents) {
       this.initContents();
       this.syncAllStores();
@@ -516,8 +518,7 @@ export class App extends Evented {
       return content;
     });
 
-    this.initContents();
-    this.syncAllStores();
+    await this.fetchAndInitContent(false);
   }
   /**
    * Reports an event to the tracking system
