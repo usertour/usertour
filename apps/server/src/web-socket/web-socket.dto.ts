@@ -68,7 +68,10 @@ export type UpsertCompanyResponse = BizCompany | null;
 
 export type CreateSessionResponse = BizSession | null;
 
-export type TrackEventResponse = BizEvent | null | false;
+export type TrackEventResponse = {
+  contentId: string;
+  sessionStatistics: SessionStatistics;
+};
 
 export type BizEventWithEvent = BizEvent & { event: Event };
 export type BizSessionWithEvents = BizSession & { bizEvent: BizEventWithEvent[] };

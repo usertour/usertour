@@ -104,7 +104,7 @@ export class WebSocketGateway {
   async sendEvent(
     @MessageBody() body: TrackEventRequest,
     @WebSocketEnvironment() environment: Environment,
-  ): Promise<TrackEventResponse> {
+  ): Promise<TrackEventResponse | false> {
     return await this.service.trackEvent(body, environment);
   }
 

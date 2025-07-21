@@ -1281,14 +1281,17 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<TrackEventResponse> {
+  async trackEvent(
+    data: TrackEventRequest,
+    environment: Environment,
+  ): Promise<TrackEventResponse | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
-    const user = await this.prisma.bizUser.findFirst({
+    const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
-    if (!user) {
+    if (!bizUser) {
       return false;
     }
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -1322,7 +1325,7 @@ export class WebSocketService {
         : undefined;
     const state = getEventState(eventName);
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx) => {
       // Re-fetch the session with latest events inside the transaction and lock the row
       const latestBizSession = await tx.bizSession.findUnique({
         where: { id: sessionId },
@@ -1341,10 +1344,10 @@ export class WebSocketService {
       }
 
       // Update seen attributes for user and company
-      await this.updateSeenAttributes(tx, user, bizSession);
+      await this.updateSeenAttributes(tx, bizUser, bizSession);
 
       const insert = {
-        bizUserId: user.id,
+        bizUserId: bizUser.id,
         eventId: event.id,
         data: events,
         bizSessionId: bizSession.id,
@@ -1365,7 +1368,7 @@ export class WebSocketService {
           contentId,
           cvid: events[EventAttributes.QUESTION_CVID],
           versionId,
-          bizUserId: user.id,
+          bizUserId: bizUser.id,
           bizSessionId: bizSession.id,
           environmentId,
         };
@@ -1395,7 +1398,7 @@ export class WebSocketService {
       eventProperties: {
         ...events,
       },
-      userProperties: user.data as Record<string, any>,
+      userProperties: bizUser.data as Record<string, any>,
     };
     if (bizSession.content.type === ContentType.FLOW) {
       trackEventData.eventProperties = {
@@ -1408,9 +1411,19 @@ export class WebSocketService {
       };
     }
 
+    const sessionStatistics = await this.getBatchSessionStatistics(
+      [bizSession.contentId],
+      bizUser.id,
+    );
+
+    return {
+      contentId: bizSession.contentId,
+      sessionStatistics: sessionStatistics.get(bizSession.contentId),
+    };
+
     // this.integrationService.trackEvent(trackEventData);
 
-    return result;
+    // return result;
   }
 
   /**
