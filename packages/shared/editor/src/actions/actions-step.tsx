@@ -31,6 +31,7 @@ import {
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { ScrollArea } from '@usertour-ui/scroll-area';
+import { cn } from '@usertour-ui/ui-utils';
 
 export interface ContentActionsStepProps {
   data?: {
@@ -310,7 +311,7 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
   const dropdownContent = useMemo(
     () => (
       <DropdownMenuRadioGroup value={stepCvid}>
-        <ScrollArea className="h-72">
+        <ScrollArea className={cn(availableSteps.length > 9 ? 'h-72' : '')}>
           {availableSteps.map((item: Step, index: number) => (
             <StepItem
               key={item.cvid}
@@ -350,7 +351,11 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
               Duplicate step
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-[240px]">
-              <ScrollArea className="h-72">
+              <ScrollArea
+                className={cn(
+                  currentVersion?.steps?.length && currentVersion?.steps?.length > 9 ? 'h-72' : '',
+                )}
+              >
                 {currentVersion?.steps?.map((item: Step, index: number) => (
                   <DuplicateStepItem
                     key={item.cvid}
