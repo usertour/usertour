@@ -1,7 +1,6 @@
-import { useMutation } from '@apollo/client';
+import { useDeleteSegmentMutation } from '@usertour-ui/shared-hooks';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -9,10 +8,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
-import { deleteSegment } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Segment } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const UserSegmentDeleteForm = (props: {
   segment: Segment;
@@ -21,7 +20,7 @@ export const UserSegmentDeleteForm = (props: {
   onSubmit: (success: boolean) => void;
 }) => {
   const { segment, open, onOpenChange, onSubmit } = props;
-  const [mutation] = useMutation(deleteSegment);
+  const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
   const { toast } = useToast();
 
   const handleDeleteSubmit = async () => {
@@ -29,12 +28,8 @@ export const UserSegmentDeleteForm = (props: {
       return;
     }
     try {
-      const ret = await mutation({
-        variables: {
-          id: segment.id,
-        },
-      });
-      if (ret.data?.deleteSegment?.success) {
+      const success = await deleteSegment(segment.id);
+      if (success) {
         toast({
           variant: 'success',
           title: `The segment ${segment.name} has been successfully deleted`,
@@ -59,8 +54,10 @@ export const UserSegmentDeleteForm = (props: {
           <AlertDialogDescription>Confirm deleting {segment.name}?</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>Yes, delete segment</AlertDialogAction>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <LoadingButton onClick={handleDeleteSubmit} loading={loading} variant="destructive">
+            Yes, delete segment
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

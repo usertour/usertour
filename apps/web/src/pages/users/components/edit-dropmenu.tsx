@@ -41,6 +41,7 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
         open={openDelete}
         onOpenChange={setOpenDelete}
         onSubmit={() => {
+          setOpenDelete(false);
           onSubmit('delete');
         }}
       />
