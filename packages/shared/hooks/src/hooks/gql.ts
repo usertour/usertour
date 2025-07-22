@@ -71,6 +71,7 @@ import {
   deleteTheme,
   listThemes,
   deleteBizUser,
+  deleteBizUserOnSegment,
 } from '@usertour-ui/gql';
 
 import type {
@@ -886,6 +887,21 @@ export const useDeleteBizUserMutation = () => {
     return {
       success: !!response.data?.deleteBizUser?.success,
       count: response.data?.deleteBizUser?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizUserOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment);
+  const invoke = async (data: { bizUserIds: string[]; segmentId: string }): Promise<{
+    success: boolean;
+    count: number;
+  }> => {
+    const response = await mutation({ variables: { data } });
+    return {
+      success: !!response.data?.deleteBizUserOnSegment?.success,
+      count: response.data?.deleteBizUserOnSegment?.count ?? 0,
     };
   };
   return { invoke, loading, error };
