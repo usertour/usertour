@@ -42,6 +42,7 @@ import {
   UpsertUserResponse,
   ContentSession,
 } from './web-socket.dto';
+import { getPublishedVersionId } from '@/utils/content';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -119,29 +120,6 @@ export class WebSocketService {
   }
 
   /**
-   * Get session statistics for a content and user
-   * @param content - The content to get statistics for
-   * @param bizUserId - The ID of the business user
-   * @returns Session statistics including latest session, events, and counts
-   */
-  async getContentSession(content: Content, bizUserId: string): Promise<ContentSession> {
-    const latestSession = await this.getLatestSession(content.id, bizUserId);
-    const totalSessions = await this.getTotalSessions(content, bizUserId);
-    const dismissedSessions = await this.getDismissedSessions(content, bizUserId);
-    const completedSessions = await this.getCompletedSessions(content, bizUserId);
-    const seenSessions = await this.getSeenSessions(content, bizUserId);
-
-    return {
-      contentId: content.id,
-      latestSession,
-      totalSessions,
-      dismissedSessions,
-      completedSessions,
-      seenSessions,
-    };
-  }
-
-  /**
    * Process configuration and return processed config with activated rules
    * @param version - The version containing the config
    * @param environment - The environment context
@@ -196,78 +174,6 @@ export class WebSocketService {
   }
 
   /**
-   * Process a single content item and return its configuration
-   * @param content - The content item to process
-   * @param environment - The environment context
-   * @param bizUser - The business user
-   * @param attributes - Available attributes
-   * @param externalCompanyId - Optional company ID
-   * @returns Processed content configuration or null if processing fails
-   */
-  private async processContent(
-    content: Content & { contentOnEnvironments: any[] },
-    environment: Environment,
-    bizUser: BizUser,
-    attributes: Attribute[],
-    externalCompanyId?: string,
-  ): Promise<ContentResponse> {
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
-        ?.publishedVersionId || content.publishedVersionId;
-
-    const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
-      include: { steps: { orderBy: { sequence: 'asc' } } },
-    });
-
-    if (!version) {
-      return null;
-    }
-
-    const contentSession = await this.getContentSession(content, bizUser.id);
-    const config = await this.getProcessedConfig(
-      version,
-      environment,
-      attributes,
-      bizUser,
-      externalCompanyId,
-    );
-
-    const data =
-      content.type === ContentType.CHECKLIST
-        ? await this.activedChecklistConditions(
-            version.data as unknown as ChecklistData,
-            environment,
-            attributes,
-            bizUser,
-            externalCompanyId,
-          )
-        : version.data;
-
-    const steps = await this.activedStepTriggers(
-      version.steps,
-      environment,
-      attributes,
-      bizUser,
-      externalCompanyId,
-    );
-
-    return {
-      ...version,
-      data: data as any,
-      steps,
-      config,
-      type: content.type as ContentType,
-      name: content.name,
-      latestSession: contentSession.latestSession,
-      totalSessions: contentSession.totalSessions,
-      dismissedSessions: contentSession.dismissedSessions,
-      completedSessions: contentSession.completedSessions,
-      seenSessions: contentSession.seenSessions,
-    };
-  }
-
-  /**
    * List content for a user with optimized performance
    * @param body - The body containing the token, user ID, and company ID
    * @returns Array of content
@@ -283,21 +189,12 @@ export class WebSocketService {
       // Step 1: Get content list
       const contentList = await this.prisma.content.findMany({
         where: {
-          OR: [
-            {
+          contentOnEnvironments: {
+            some: {
               environmentId,
               published: true,
-              contentOnEnvironments: { none: {} },
             },
-            {
-              contentOnEnvironments: {
-                some: {
-                  environmentId,
-                  published: true,
-                },
-              },
-            },
-          ],
+          },
         },
         include: {
           contentOnEnvironments: true,
@@ -329,12 +226,7 @@ export class WebSocketService {
 
       // Step 3: Batch fetch all versions and steps
       const versionIds = contentList
-        .map((content) => {
-          const publishedVersionId =
-            content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
-              ?.publishedVersionId || content.publishedVersionId;
-          return publishedVersionId;
-        })
+        .map((content) => getPublishedVersionId(content, environment.id))
         .filter(Boolean);
 
       const versions = await this.prisma.version.findMany({
@@ -353,9 +245,7 @@ export class WebSocketService {
       // Step 5: Process all contents in parallel
       const processedContents = await Promise.all(
         contentList.map(async (content) => {
-          const publishedVersionId =
-            content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
-              ?.publishedVersionId || content.publishedVersionId;
+          const publishedVersionId = getPublishedVersionId(content, environment.id);
 
           const version = versionMap.get(publishedVersionId);
           if (!version) {
@@ -1179,9 +1069,7 @@ export class WebSocketService {
       return null;
     }
 
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-        ?.publishedVersionId || content.publishedVersionId;
+    const publishedVersionId = getPublishedVersionId(content, environmentId);
 
     const version = await this.prisma.version.findUnique({
       where: { id: publishedVersionId },
@@ -1578,13 +1466,13 @@ export class WebSocketService {
   }
 
   /**
-   * Optimized version of processContent that uses pre-fetched data
+   * Process content with optimized data fetching
    * @param content - The content item to process
    * @param version - Pre-fetched version data
    * @param environment - The environment context
    * @param bizUser - The business user
    * @param attributes - Available attributes
-   * @param sessionStatistics - Pre-fetched session statistics
+   * @param contentSession - Pre-fetched session statistics
    * @param externalCompanyId - Optional company ID
    * @returns Processed content configuration or null if processing fails
    */

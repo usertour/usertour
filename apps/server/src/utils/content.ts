@@ -1,4 +1,11 @@
 import { createId } from '@paralleldrive/cuid2';
+import { Prisma } from '@prisma/client';
+
+type ContentWithContentOnEnvironments = Prisma.ContentGetPayload<{
+  include: {
+    contentOnEnvironments: true;
+  };
+}>;
 
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
@@ -198,3 +205,18 @@ export function processStepData(data: any): any {
 
   return data;
 }
+
+/**
+ * Get the published version ID for a content in a specific environment
+ * @param content - The content to get the published version ID for
+ * @param environmentId - The ID of the environment
+ * @returns The published version ID
+ */
+export const getPublishedVersionId = (
+  content: ContentWithContentOnEnvironments,
+  environmentId: string,
+): string | undefined => {
+  return content.contentOnEnvironments.find(
+    (item) => item.environmentId === environmentId && item.published,
+  )?.publishedVersionId;
+};
