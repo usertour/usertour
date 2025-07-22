@@ -1,5 +1,4 @@
-import { useQuery } from '@apollo/client';
-import { listEvents } from '@usertour-ui/gql';
+import { useListEventsQuery } from '@usertour-ui/shared-hooks';
 import { Event } from '@usertour-ui/types';
 import { ReactNode, createContext, useContext } from 'react';
 
@@ -12,19 +11,18 @@ export interface EventListContextValue {
   eventList: Event[] | undefined;
   refetch: any;
   loading: boolean;
+  isRefetching: boolean;
 }
 export const EventListContext = createContext<EventListContextValue | undefined>(undefined);
 
 export function EventListProvider(props: EventListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { data, refetch, loading } = useQuery(listEvents, {
-    variables: { projectId: projectId, bizType: 0 },
-  });
-  const eventList = data?.listEvents;
+  const { eventList, refetch, loading, isRefetching } = useListEventsQuery(projectId);
   const value: EventListContextValue = {
     eventList,
     refetch,
     loading,
+    isRefetching,
   };
   return <EventListContext.Provider value={value}>{children}</EventListContext.Provider>;
 }

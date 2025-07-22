@@ -66,6 +66,8 @@ import {
   logout,
   createContentVersion,
   resetUserPasswordByCode,
+  deleteEvent,
+  listEvents,
 } from '@usertour-ui/gql';
 
 import type {
@@ -86,6 +88,7 @@ import type {
   IntegrationModel,
   SalesforceObjectFields,
   SessionQuery,
+  Event,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -827,4 +830,24 @@ export const useGetUserEnvironmentsQuery = (projectId: string | undefined) => {
   const environmentList = data?.userEnvironments as Environment[] | null;
 
   return { environmentList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteEventMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteEvent);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteEvent?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListEventsQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listEvents, {
+    variables: { projectId, bizType: 0 },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const eventList = data?.listEvents as Event[] | undefined;
+  return { eventList, refetch, loading, error, isRefetching };
 };
