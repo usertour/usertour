@@ -68,6 +68,8 @@ import {
   resetUserPasswordByCode,
   deleteEvent,
   listEvents,
+  deleteTheme,
+  listThemes,
 } from '@usertour-ui/gql';
 
 import type {
@@ -89,6 +91,7 @@ import type {
   SalesforceObjectFields,
   SessionQuery,
   Event,
+  Theme,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -850,4 +853,24 @@ export const useListEventsQuery = (projectId: string | undefined) => {
   const isRefetching = networkStatus === NetworkStatus.refetch;
   const eventList = data?.listEvents as Event[] | undefined;
   return { eventList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteThemeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteTheme);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteTheme?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListThemesQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listThemes, {
+    variables: { projectId },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const themeList = data?.listThemes as Theme[] | null;
+  return { themeList, refetch, loading, error, isRefetching };
 };
