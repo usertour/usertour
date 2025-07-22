@@ -21,6 +21,7 @@ import {
   Prisma,
   Version,
   BizEvent,
+  BizSession,
 } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
@@ -32,7 +33,6 @@ import {
   ConfigResponse,
   ContentResponse,
   CreateSessionRequest,
-  CreateSessionResponse,
   ListContentsRequest,
   ListThemesRequest,
   TrackEventRequest,
@@ -1047,7 +1047,7 @@ export class WebSocketService {
   async createSession(
     data: CreateSessionRequest,
     environment: Environment,
-  ): Promise<CreateSessionResponse> {
+  ): Promise<BizSession | null> {
     const { userId: externalUserId, contentId, companyId: externalCompanyId } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
