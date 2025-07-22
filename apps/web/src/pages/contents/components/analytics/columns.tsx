@@ -91,7 +91,15 @@ export const columns: ColumnDef<BizSession>[] = [
   {
     accessorKey: 'progress',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Progress" />,
-    cell: ({ row }) => <ProgressColumn {...row} />,
+    cell: ({ row }) => {
+      const { environment } = useAppContext();
+
+      return (
+        <Link to={`/env/${environment?.id}/session/${row.original.id}`}>
+          <ProgressColumn {...row} />
+        </Link>
+      );
+    },
     enableSorting: false,
   },
   {
