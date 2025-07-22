@@ -1346,7 +1346,7 @@ export class WebSocketService {
   ): Promise<Map<string, ContentSession>> {
     const contentSessionMap = new Map<string, ContentSession>();
 
-    // Batch fetch latest sessions for all contents
+    // Batch fetch latest sessions for all contents using distinct
     const latestSessions = await this.prisma.bizSession.findMany({
       where: {
         contentId: { in: contentIds },
@@ -1355,16 +1355,8 @@ export class WebSocketService {
       },
       include: { bizEvent: { include: { event: true } } },
       orderBy: { createdAt: 'desc' },
+      distinct: ['contentId'],
     });
-
-    // Group sessions by contentId and get the latest for each
-    const sessionsByContent = new Map<string, any[]>();
-    for (const session of latestSessions) {
-      if (!sessionsByContent.has(session.contentId)) {
-        sessionsByContent.set(session.contentId, []);
-      }
-      sessionsByContent.get(session.contentId)!.push(session);
-    }
 
     // Batch fetch session counts
     const [totalSessions, dismissedSessions, completedSessions, seenSessions] = await Promise.all([
@@ -1449,8 +1441,8 @@ export class WebSocketService {
 
     // Build statistics for each content
     for (const contentId of contentIds) {
-      const sessions = sessionsByContent.get(contentId) || [];
-      const latestSession = sessions[0] || null;
+      const latestSession =
+        latestSessions.find((session) => session.contentId === contentId) || null;
 
       contentSessionMap.set(contentId, {
         contentId,
