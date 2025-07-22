@@ -5,6 +5,7 @@ import {
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
   deleteAttribute,
+  deleteContent,
   deleteSegment,
   deleteSession,
   endSession,
@@ -781,6 +782,15 @@ export const useUpdateSegmentMutation = () => {
   }): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
     return !!response.data?.updateSegment?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteContent);
+  const invoke = async (contentId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { contentId } });
+    return !!response.data?.deleteContent?.success;
   };
   return { invoke, loading, error };
 };
