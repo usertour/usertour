@@ -70,6 +70,7 @@ import {
   listEvents,
   deleteTheme,
   listThemes,
+  deleteBizUser,
 } from '@usertour-ui/gql';
 
 import type {
@@ -873,4 +874,19 @@ export const useListThemesQuery = (projectId: string | undefined) => {
   const isRefetching = networkStatus === NetworkStatus.refetch;
   const themeList = data?.listThemes as Theme[] | null;
   return { themeList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteBizUserMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizUser);
+  const invoke = async (data: { ids: string[]; environmentId: string }): Promise<{
+    success: boolean;
+    count: number;
+  }> => {
+    const response = await mutation({ variables: { data } });
+    return {
+      success: !!response.data?.deleteBizUser?.success,
+      count: response.data?.deleteBizUser?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
 };
