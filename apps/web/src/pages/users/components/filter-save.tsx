@@ -1,8 +1,7 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { useMutation } from '@apollo/client';
+import { useUpdateSegmentMutation } from '@usertour-ui/shared-hooks';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -11,15 +10,15 @@ import {
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
 import { Button } from '@usertour-ui/button';
-import { updateSegment } from '@usertour-ui/gql';
 import { conditionsIsSame, getErrorMessage } from '@usertour-ui/shared-utils';
 import { Segment } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import { useCallback, useEffect, useState } from 'react';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;
-  const [mutation] = useMutation(updateSegment);
+  const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
   const { refetch, currentConditions } = useSegmentListContext();
 
   const [open, setOpen] = useState(false);
@@ -44,15 +43,14 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
       name: currentSegment.name,
     };
     try {
-      const ret = await mutation({ variables: { data } });
-      if (ret.data?.updateSegment?.id) {
-        await refetch();
-      }
-      if (ret.data?.updateSegment?.id) {
+      const success = await updateSegment(data);
+      if (success) {
+        setOpen(false);
         toast({
           variant: 'success',
           title: `The segment ${currentSegment.name} filter has been successfully saved`,
         });
+        refetch();
       }
     } catch (error) {
       toast({
@@ -95,8 +93,10 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit}>Yes, save</AlertDialogAction>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <LoadingButton onClick={handleSubmit} loading={loading}>
+              Yes, save
+            </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
