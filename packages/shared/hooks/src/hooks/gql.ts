@@ -26,6 +26,7 @@ import {
   signUp,
   updateContent,
   updateContentVersion,
+  updateSegment,
   createCheckoutSession,
   createPortalSession,
   getSubscriptionPlans,
@@ -767,6 +768,19 @@ export const useDeleteSegmentMutation = () => {
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { id } });
     return !!response.data?.deleteSegment?.success;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateSegment);
+  const invoke = async (data: {
+    id: string;
+    data: any;
+    name: string;
+  }): Promise<boolean> => {
+    const response = await mutation({ variables: { data } });
+    return !!response.data?.updateSegment?.id;
   };
   return { invoke, loading, error };
 };
