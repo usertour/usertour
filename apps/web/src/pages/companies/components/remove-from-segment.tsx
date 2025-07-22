@@ -4,6 +4,7 @@ import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BizCompanyRemoveForm } from './company-remove-form';
 import { Segment } from '@usertour-ui/types';
+import { useCompanyListContext } from '@/contexts/company-list-context';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;
@@ -15,6 +16,7 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
+  const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
     const rows = table.getFilteredSelectedRowModel().rows;
@@ -27,6 +29,16 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
       setOpenDelete(true);
     }
   }, [table, bizCompanyIds]);
+
+  const handleSubmit = useCallback(
+    async (success: boolean) => {
+      if (success) {
+        setOpenDelete(false);
+        await refetch();
+      }
+    },
+    [refetch],
+  );
 
   return (
     <>
@@ -44,10 +56,7 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         bizCompanyIds={bizCompanyIds}
         segment={currentSegment}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
-          setOpenDelete(false);
-          // onSubmit("delete");
-        }}
+        onSubmit={handleSubmit}
       />
     </>
   );

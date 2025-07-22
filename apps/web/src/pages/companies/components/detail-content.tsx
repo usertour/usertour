@@ -27,6 +27,7 @@ import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-ui/gql';
 import { PaginationState } from '@tanstack/react-table';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { useCallback } from 'react';
 
 // Company User List Context
 interface CompanyUserListContextValue {
@@ -472,9 +473,14 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
     }
   }, [bizCompany, attributeList]);
 
-  const handleDeleteSuccess = () => {
-    navigator(`/env/${environmentId}/companies`);
-  };
+  const handleDeleteSuccess = useCallback(
+    async (success: boolean) => {
+      if (success) {
+        navigator(`/env/${environmentId}/companies`);
+      }
+    },
+    [navigator, environmentId],
+  );
 
   if (!bizCompany) {
     return (
