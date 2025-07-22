@@ -198,9 +198,8 @@ export class Socket extends Evented {
     token: string;
     contentId: string;
     companyId?: string;
-  }): Promise<BizSession> {
-    const response = await this.emitWithTimeout('create-session', params);
-    return response as BizSession;
+  }): Promise<{ session: BizSession; contentSession: ContentSession } | false> {
+    return await this.emitWithTimeout('create-session', params);
   }
 
   /**

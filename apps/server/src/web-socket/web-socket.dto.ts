@@ -66,7 +66,10 @@ export type UpsertUserResponse = BizUser | null;
 
 export type UpsertCompanyResponse = BizCompany | null;
 
-export type CreateSessionResponse = BizSession | null;
+export type CreateSessionResponse = {
+  session: BizSession;
+  contentSession: ContentSession;
+};
 
 export type ContentSession = {
   contentId: string;

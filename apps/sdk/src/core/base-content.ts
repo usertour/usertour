@@ -371,11 +371,11 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Creates a new session ID
-   * @returns {Promise<string>} A promise that resolves to the new session ID
    */
-  async createSessionId() {
-    const session = await this.getInstance().createSession(this.getContent().contentId);
-    return session?.id;
+  async createSessionId(): Promise<string | null> {
+    const contentId = this.getContent().contentId;
+    const session = await this.getInstance().createSession(contentId);
+    return session ? session.id : null;
   }
 
   /**

@@ -13,6 +13,7 @@ import {
   Theme,
   contentEndReason,
   contentStartReason,
+  BizSession,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
@@ -565,21 +566,24 @@ export class App extends Evented {
    * @param contentId - The content ID to create a session for
    * @returns The session ID if successful
    */
-  async createSession(contentId: string) {
+  async createSession(contentId: string): Promise<BizSession | null> {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;
     const companyId = this.companyInfo?.externalId;
     if (!userId || !token) {
-      return;
+      return null;
     }
-    const newSesison = await this.socket.createSession({
+    const result = await this.socket.createSession({
       userId,
       contentId,
       token,
       companyId,
     });
-    await this.fetchAndInitContent();
-    return newSesison;
+    if (result) {
+      await this.refreshContentSession(result.contentSession);
+      return result.session;
+    }
+    return null;
   }
 
   /**
