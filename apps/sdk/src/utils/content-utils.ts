@@ -139,7 +139,7 @@ export const findLatestActivatedTourAndCvid = (
   tours: Tour[],
   contentId?: string,
 ): { latestActivatedTour: Tour; cvid: string } | undefined => {
-  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent()));
+  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent().latestSession));
   const latestActivatedTour = contentId
     ? activeTours.find((tour) => tour.getContent().contentId === contentId)
     : findLatestActivatedTour(activeTours);
@@ -204,7 +204,7 @@ export const findTourFromUrl = (tours: Tour[]): Tour | undefined => {
  */
 export const findLatestActivatedChecklist = (checklists: Checklist[]): Checklist | undefined => {
   const activeChecklists = checklists.filter(
-    (checklist) => !checklistIsDimissed(checklist.getContent()),
+    (checklist) => !checklistIsDimissed(checklist.getContent().latestSession),
   );
 
   const checklistsWithValidSession = activeChecklists.filter(
@@ -253,7 +253,7 @@ export const findLatestValidActivatedChecklist = (
  */
 export const getChecklistInitialDisplay = (content: SDKContent): ChecklistInitialDisplay => {
   const latestSession = content.latestSession;
-  if (!latestSession || checklistIsDimissed(content)) {
+  if (!latestSession || checklistIsDimissed(content.latestSession)) {
     return content?.data?.initialDisplay;
   }
   // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
@@ -389,7 +389,7 @@ export const checklistItemIsClicked = (content: SDKContent, checklistItem: Check
 export const checklistIsShowAnimation = (content: SDKContent, checklistItem: ChecklistItemType) => {
   const latestSession = content.latestSession;
   // If there is no latest session or the checklist is dismissed, don't show animation
-  if (!latestSession || checklistIsDimissed(content)) {
+  if (!latestSession || checklistIsDimissed(content.latestSession)) {
     return false;
   }
 

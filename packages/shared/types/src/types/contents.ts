@@ -284,7 +284,7 @@ export enum StringConditionLogic {
   IS = 'is',
   NOT = 'not',
   CONTAINS = 'contains',
-  NOT_CONTAINS = 'notContains',
+  NOT_CONTAIN = 'notContain',
   STARTS_WITH = 'startsWith',
   ENDS_WITH = 'endsWith',
   MATCH = 'match',

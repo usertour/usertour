@@ -37,8 +37,8 @@ export class Checklist extends BaseContent<ChecklistStore> {
     await this.activeContentConditions();
 
     if (this.isActiveChecklist()) {
-      // Monitor individual item conditions
-      await this.monitorItemConditions();
+      // Handle item conditions
+      await this.handleItemConditions();
 
       // Update visibility state based on checklist status
       this.handleVisibilityState();
@@ -65,7 +65,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
 
     // Early return if checklist has been dismissed
-    if (checklistIsDimissed(checklistContent)) {
+    if (checklistIsDimissed(checklistContent.latestSession)) {
       return null;
     }
 
@@ -295,14 +295,18 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Monitors and updates the conditions of checklist items.
+   * Handles the conditions of checklist items.
    * This method:
    * 1. Checks completion and visibility conditions for each item
    * 2. Updates item status and store if changes are detected
-   * 3. Triggers appropriate events for completed items
+   * 3. Triggers appropriate events for completed items and checklist
    * 4. Updates initialDisplay to EXPANDED when there are new completed items
+   * 5. Expands the checklist if there are new completed items
+   * 6. Reports the expanded event
+   * 7. Reports the checklist completed event
+   * 8. Closes the checklist if it is auto-dismissed
    */
-  private async monitorItemConditions() {
+  async handleItemConditions() {
     // Get content and validate
     const content = this.getContent();
     const snapshot = this.getStore()?.getSnapshot();

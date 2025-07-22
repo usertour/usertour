@@ -15,6 +15,7 @@ import {
   SDKContent,
   ElementConditionLogic,
   StringConditionLogic,
+  BizSession,
 } from '@usertour-ui/types';
 import {
   differenceInDays,
@@ -64,10 +65,7 @@ const isActivedContentRulesCondition = (
     if (!latestSession) {
       return logic === ContentConditionLogic.UNACTIVED;
     }
-    const hasEndedEvent = latestSession.bizEvent?.find(
-      (bizEvent) => bizEvent?.event?.codeName === BizEvents.FLOW_ENDED,
-    );
-    const isActived = !hasEndedEvent;
+    const isActived = !(flowIsDismissed(latestSession) || checklistIsDimissed(latestSession));
     return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
   }
 
@@ -161,7 +159,7 @@ const isActiveRulesByTextInput = async (rules: RulesCondition) => {
       return elValue !== value;
     case StringConditionLogic.CONTAINS:
       return elValue.includes(value);
-    case StringConditionLogic.NOT_CONTAINS:
+    case StringConditionLogic.NOT_CONTAIN:
       return !elValue.includes(value);
     case StringConditionLogic.STARTS_WITH:
       return elValue.startsWith(value);
@@ -474,26 +472,24 @@ const isGreaterThenDuration = (
   }
 };
 
-export const checklistIsDimissed = (content: SDKContent) => {
-  return content?.latestSession?.bizEvent?.find(
+export const checklistIsDimissed = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
   );
 };
 
-export const flowIsDismissed = (content: SDKContent) => {
-  return content?.latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.FLOW_ENDED,
-  );
+export const flowIsDismissed = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
 };
 
-export const flowIsSeen = (content: SDKContent) => {
-  return content?.latestSession?.bizEvent?.find(
+export const flowIsSeen = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
   );
 };
 
-export const checklistIsSeen = (content: SDKContent) => {
-  return content?.latestSession?.bizEvent?.find(
+export const checklistIsSeen = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
   );
 };
