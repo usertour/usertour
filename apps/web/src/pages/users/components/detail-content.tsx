@@ -101,7 +101,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
     }
   }, [bizUser, attributeList]);
 
-  const handleDeleteSuccess = () => {
+  const handleDeleteSuccess = async () => {
     navigator(`/env/${environmentId}/users`);
   };
 

@@ -1,8 +1,6 @@
 import { Environment } from '@usertour-ui/types';
-import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -10,9 +8,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
-import { deleteEnvironments } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useDeleteEnvironmentsMutation } from '@usertour-ui/shared-hooks';
 import { useToast } from '@usertour-ui/use-toast';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const EnvironmentDeleteForm = (props: {
   data: Environment;
@@ -21,32 +20,39 @@ export const EnvironmentDeleteForm = (props: {
   onSubmit: (success: boolean) => void;
 }) => {
   const { data, open, onOpenChange, onSubmit } = props;
-  const [deleteMutation] = useMutation(deleteEnvironments);
+  const { invoke: deleteEnvironment, loading } = useDeleteEnvironmentsMutation();
   const { toast } = useToast();
 
   const handleDeleteSubmit = async () => {
-    if (!data) {
+    if (!data?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid environment data',
+      });
       return;
     }
+
     try {
-      const ret = await deleteMutation({
-        variables: {
-          id: data.id,
-        },
-      });
-      if (ret.data?.deleteEnvironments?.id) {
+      const success = await deleteEnvironment(data.id);
+      if (success) {
         toast({
           variant: 'success',
           title: 'The environment has been successfully deleted',
         });
         onSubmit(true);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to delete environment',
+        });
+        onSubmit(false);
       }
     } catch (error) {
-      onSubmit(false);
       toast({
         variant: 'destructive',
         title: getErrorMessage(error),
       });
+      onSubmit(false);
     }
   };
 
@@ -62,7 +68,9 @@ export const EnvironmentDeleteForm = (props: {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>Submit</AlertDialogAction>
+          <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
+            Submit
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

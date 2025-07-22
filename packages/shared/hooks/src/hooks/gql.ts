@@ -1,15 +1,26 @@
-import { QueryHookOptions, useMutation, useQuery, useLazyQuery } from '@apollo/client';
+import {
+  QueryHookOptions,
+  useMutation,
+  useQuery,
+  useLazyQuery,
+  NetworkStatus,
+} from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
+  deleteAttribute,
+  deleteContent,
+  deleteEnvironments,
+  deleteSegment,
   deleteSession,
   endSession,
   getAuthConfig,
   getInvite,
   getInvites,
   getTeamMembers,
+  getUserEnvironments,
   inviteTeamMember as inviteTeamMemberMutation,
   listAttributes,
   listSegment,
@@ -24,6 +35,7 @@ import {
   signUp,
   updateContent,
   updateContentVersion,
+  updateSegment,
   createCheckoutSession,
   createPortalSession,
   getSubscriptionPlans,
@@ -54,6 +66,12 @@ import {
   logout,
   createContentVersion,
   resetUserPasswordByCode,
+  deleteEvent,
+  listEvents,
+  deleteTheme,
+  listThemes,
+  deleteBizUser,
+  deleteBizUserOnSegment,
 } from '@usertour-ui/gql';
 
 import type {
@@ -67,12 +85,15 @@ import type {
   BizAttributeTypes,
   AttributeBizTypes,
   Attribute,
+  Environment,
   Subscription,
   GlobalConfig,
   UpdateIntegrationInput,
   IntegrationModel,
   SalesforceObjectFields,
   SessionQuery,
+  Event,
+  Theme,
 } from '@usertour-ui/types';
 
 type UseContentListQueryProps = {
@@ -500,13 +521,16 @@ export interface AccessToken {
 }
 
 export const useListAccessTokensQuery = (environmentId: string | undefined) => {
-  const { data, loading, error, refetch } = useQuery(ListAccessTokens, {
+  const { data, loading, error, refetch, networkStatus } = useQuery(ListAccessTokens, {
     variables: { environmentId },
     skip: !environmentId,
+    notifyOnNetworkStatusChange: true,
   });
 
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+
   const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
-  return { accessTokens, loading, error, refetch };
+  return { accessTokens, loading, error, refetch, isRefetching };
 };
 
 export const useDeleteAccessTokenMutation = () => {
@@ -747,6 +771,138 @@ export const useResetUserPasswordByCodeMutation = () => {
   const invoke = async (code: string, password: string) => {
     const response = await mutation({ variables: { code, password } });
     return response.data?.resetUserPasswordByCode;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteAttributeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteAttribute);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteAttribute?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteSegment);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteSegment?.success;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateSegment);
+  const invoke = async (data: {
+    id: string;
+    data: any;
+    name: string;
+  }): Promise<boolean> => {
+    const response = await mutation({ variables: { data } });
+    return !!response.data?.updateSegment?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteContent);
+  const invoke = async (contentId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { contentId } });
+    return !!response.data?.deleteContent?.success;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteEnvironmentsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteEnvironments);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteEnvironments?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetUserEnvironmentsQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(getUserEnvironments, {
+    variables: { projectId },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const environmentList = data?.userEnvironments as Environment[] | null;
+
+  return { environmentList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteEventMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteEvent);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteEvent?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListEventsQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listEvents, {
+    variables: { projectId, bizType: 0 },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const eventList = data?.listEvents as Event[] | undefined;
+  return { eventList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteThemeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteTheme);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteTheme?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListThemesQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listThemes, {
+    variables: { projectId },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const themeList = data?.listThemes as Theme[] | null;
+  return { themeList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteBizUserMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizUser);
+  const invoke = async (data: { ids: string[]; environmentId: string }): Promise<{
+    success: boolean;
+    count: number;
+  }> => {
+    const response = await mutation({ variables: { data } });
+    return {
+      success: !!response.data?.deleteBizUser?.success,
+      count: response.data?.deleteBizUser?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizUserOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment);
+  const invoke = async (data: { bizUserIds: string[]; segmentId: string }): Promise<{
+    success: boolean;
+    count: number;
+  }> => {
+    const response = await mutation({ variables: { data } });
+    return {
+      success: !!response.data?.deleteBizUserOnSegment?.success,
+      count: response.data?.deleteBizUserOnSegment?.count ?? 0,
+    };
   };
   return { invoke, loading, error };
 };

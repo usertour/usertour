@@ -1,7 +1,5 @@
-import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -9,46 +7,67 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
-import { deleteContent } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { useDeleteContentMutation } from '@usertour-ui/shared-hooks';
 import { Content, ContentDataType } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
+import { LoadingButton } from '@/components/molecules/loading-button';
+import { useCallback } from 'react';
 
-export const ContentDeleteForm = (props: {
+interface ContentDeleteFormProps {
   content: Content;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
   name: string;
-}) => {
-  const { content, open, onOpenChange, onSubmit, name } = props;
-  const [mutation] = useMutation(deleteContent);
+}
+
+export const ContentDeleteForm = ({
+  content,
+  open,
+  onOpenChange,
+  onSubmit,
+  name,
+}: ContentDeleteFormProps) => {
+  const { invoke: deleteContent, loading } = useDeleteContentMutation();
   const { toast } = useToast();
   const contentType = content.type || ContentDataType.FLOW;
+  const contentName = content.name;
 
-  const handleDeleteSubmit = async () => {
-    try {
-      const ret = await mutation({
-        variables: {
-          contentId: content.id,
-        },
+  const handleDeleteSubmit = useCallback(async () => {
+    if (!content?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid content data',
       });
-      if (ret.data?.deleteContent?.success) {
+      return;
+    }
+
+    try {
+      const success = await deleteContent(content.id);
+
+      if (success) {
         toast({
           variant: 'success',
-          title: `The ${contentType} ${name} has been successfully deleted`,
+          title: `The ${contentType} ${contentName} has been successfully deleted`,
         });
         onSubmit(true);
-        return;
+        onOpenChange(false);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to delete content',
+        });
+        onSubmit(false);
       }
     } catch (error) {
-      onSubmit(false);
       toast({
         variant: 'destructive',
         title: getErrorMessage(error),
       });
+      onSubmit(false);
     }
-  };
+  }, [content?.id, contentType, name, deleteContent, toast, onSubmit, onOpenChange]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
@@ -56,15 +75,16 @@ export const ContentDeleteForm = (props: {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone!The {contentType} and all data associated with it will be
-            deleted.
+            This action cannot be undone! The {contentType}{' '}
+            <span className="font-bold text-foreground">{contentName}</span> and all data associated
+            with it will be deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={handleDeleteSubmit}>
+          <LoadingButton variant="destructive" onClick={handleDeleteSubmit} loading={loading}>
             Delete {contentType}
-          </AlertDialogAction>
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -1,7 +1,5 @@
-import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -9,44 +7,60 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
-import { deleteSegment } from '@usertour-ui/gql';
 import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Segment } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
+import { LoadingButton } from '@/components/molecules/loading-button';
+import { useDeleteSegmentMutation } from '@usertour-ui/shared-hooks';
 
-export const CompanySegmentDeleteForm = (props: {
+interface CompanySegmentDeleteFormProps {
   segment: Segment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
-}) => {
-  const { segment, open, onOpenChange, onSubmit } = props;
-  const [mutation] = useMutation(deleteSegment);
+}
+
+export const CompanySegmentDeleteForm = ({
+  segment,
+  open,
+  onOpenChange,
+  onSubmit,
+}: CompanySegmentDeleteFormProps) => {
+  const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
   const { toast } = useToast();
 
   const handleDeleteSubmit = async () => {
-    if (!segment) {
+    if (!segment?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid segment data',
+      });
       return;
     }
+
     try {
-      const ret = await mutation({
-        variables: {
-          id: segment.id,
-        },
-      });
-      if (ret.data?.deleteSegment?.success) {
+      const success = await deleteSegment(segment.id);
+
+      if (success) {
         toast({
           variant: 'success',
-          title: `The segment ${segment.name} has been successfully deleted`,
+          title: `The segment "${segment.name}" has been successfully deleted`,
         });
         onSubmit(true);
+        onOpenChange(false);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to delete segment',
+        });
+        onSubmit(false);
       }
     } catch (error) {
-      onSubmit(false);
       toast({
         variant: 'destructive',
         title: getErrorMessage(error),
       });
+      onSubmit(false);
     }
   };
 
@@ -55,11 +69,17 @@ export const CompanySegmentDeleteForm = (props: {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete segment</AlertDialogTitle>
-          <AlertDialogDescription>Confirm deleting {segment.name}?</AlertDialogDescription>
+          <AlertDialogDescription>
+            Are you sure you want to delete the segment{' '}
+            <span className="font-bold text-foreground">{segment.name}</span>? This action cannot be
+            undone.
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>Yes, delete segment</AlertDialogAction>
+          <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
+            Yes, delete segment
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

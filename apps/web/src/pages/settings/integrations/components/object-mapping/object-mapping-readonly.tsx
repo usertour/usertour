@@ -28,7 +28,6 @@ import { useToast } from '@usertour-ui/use-toast';
 import { useState } from 'react';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -36,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-ui/alert-dialog';
+import { LoadingButton } from '../../../../../components/molecules/loading-button';
 import { ObjectMappingDialog } from './object-mapping-dialog';
 import { Switch } from '@usertour-ui/switch';
 
@@ -77,10 +77,9 @@ export const ObjectMappingReadonly = ({
   onUpdate,
 }: ObjectMappingReadonlyProps) => {
   const { toast } = useToast();
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { invoke: deleteMapping } = useDeleteIntegrationObjectMappingMutation();
+  const { invoke: deleteMapping, loading } = useDeleteIntegrationObjectMappingMutation();
 
   const settings = mapping.settings as IntegrationObjectMappingSettings;
   const matchObjects = settings?.matchObjects;
@@ -90,7 +89,6 @@ export const ObjectMappingReadonly = ({
 
   const handleDelete = async () => {
     try {
-      setIsDeleting(true);
       const success = await deleteMapping(mapping.id);
 
       if (success) {
@@ -114,8 +112,6 @@ export const ObjectMappingReadonly = ({
         description: 'Failed to delete object mapping',
         variant: 'destructive',
       });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -153,9 +149,9 @@ export const ObjectMappingReadonly = ({
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                   onClick={() => setShowDeleteDialog(true)}
-                  disabled={isDeleting}
+                  disabled={loading}
                 >
-                  {isDeleting ? (
+                  {loading ? (
                     <SpinnerIcon className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Delete2Icon className="w-4 h-4 mr-2" />
@@ -176,14 +172,10 @@ export const ObjectMappingReadonly = ({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </AlertDialogAction>
+                  <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+                  <LoadingButton onClick={handleDelete} loading={loading} variant="destructive">
+                    Delete
+                  </LoadingButton>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

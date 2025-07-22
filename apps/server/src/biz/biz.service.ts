@@ -141,49 +141,40 @@ export class BizService {
       throw new ParamsError('No data provided');
     }
 
+    // Extract and validate first item
+    const firstItem = data[0];
+
     // Validate all items have the same segmentId
-    const firstSegmentId = data[0].segmentId;
-    if (!data.every((item) => item.segmentId === firstSegmentId)) {
+    const segmentIds = new Set(data.map((item) => item.segmentId));
+    if (segmentIds.size > 1) {
       throw new ParamsError('All items must have the same segmentId');
     }
 
     // Get segment and validate
-    const segment = await this.getSegment(firstSegmentId);
+    const segment = await this.getSegment(firstItem.segmentId);
     if (!segment) {
       throw new ParamsError('Segment not found');
     }
 
-    // Get the environmentId of the first bizUser
-    const firstBizUser = await this.prisma.bizUser.findFirst({
-      where: {
-        id: data[0].bizUserId,
-      },
-    });
-
-    // Batch check all users exist in one query
-    const userIds = data.map((item) => item.bizUserId);
+    // Batch check all users exist and have the same environmentId
     const existingUsers = await this.prisma.bizUser.findMany({
       where: {
-        id: { in: userIds },
-        environmentId: firstBizUser.environmentId,
+        id: { in: data.map((item) => item.bizUserId) },
       },
-      select: { id: true },
+      select: { id: true, environmentId: true },
     });
 
-    const existingUserIds = new Set(existingUsers.map((user) => user.id));
-
-    // Filter and map valid items
-    const inserts = data
-      .filter((item) => existingUserIds.has(item.bizUserId))
-      .map((item) => ({
-        bizUserId: item.bizUserId,
-        segmentId: item.segmentId,
-        data: item.data || {},
-      }));
-
-    if (inserts.length === 0) {
-      throw new ParamsError('No valid users found');
+    const environmentIds = new Set(existingUsers.map((user) => user.environmentId));
+    if (environmentIds.size > 1) {
+      throw new ParamsError('All users must have the same environmentId');
     }
+
+    // Map items for insertion
+    const inserts = data.map((item) => ({
+      bizUserId: item.bizUserId,
+      segmentId: item.segmentId,
+      data: item.data || {},
+    }));
 
     return await this.prisma.bizUserOnSegment.createMany({
       data: inserts,
@@ -200,24 +191,46 @@ export class BizService {
   }
 
   async createBizCompanyOnSegment(data: BizCompanyOnSegmentInput[]) {
-    if (!data.every((item) => item.segmentId === data[0].segmentId)) {
-      throw new ParamsError();
+    // Validate input data
+    if (!data?.length) {
+      throw new ParamsError('No data provided');
     }
-    const segment = await this.getSegment(data[0].segmentId);
+
+    // Extract and validate first item
+    const firstItem = data[0];
+
+    // Validate all items have the same segmentId
+    const segmentIds = new Set(data.map((item) => item.segmentId));
+    if (segmentIds.size > 1) {
+      throw new ParamsError('All items must have the same segmentId');
+    }
+
+    // Get segment and validate
+    const segment = await this.getSegment(firstItem.segmentId);
     if (!segment) {
-      throw new ParamsError();
+      throw new ParamsError('Segment not found');
     }
-    const inserts = data.filter(async (item) => {
-      return await this.prisma.bizCompany.findFirst({
-        where: {
-          id: item.bizCompanyId,
-          environmentId: segment.environmentId,
-        },
-      });
+
+    // Batch check all companies exist and have the same environmentId
+    const existingCompanies = await this.prisma.bizCompany.findMany({
+      where: {
+        id: { in: data.map((item) => item.bizCompanyId) },
+      },
+      select: { id: true, environmentId: true },
     });
-    if (inserts.length === 0) {
-      throw new ParamsError();
+
+    const environmentIds = new Set(existingCompanies.map((company) => company.environmentId));
+    if (environmentIds.size > 1) {
+      throw new ParamsError('All companies must have the same environmentId');
     }
+
+    // Map items for insertion
+    const inserts = data.map((item) => ({
+      bizCompanyId: item.bizCompanyId,
+      segmentId: item.segmentId,
+      data: item.data || {},
+    }));
+
     return await this.prisma.bizCompanyOnSegment.createMany({
       data: inserts,
     });
