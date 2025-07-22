@@ -1,7 +1,5 @@
-import { Environment } from '@usertour-ui/types';
-import { useQuery } from '@apollo/client';
-import { getUserEnvironments } from '@usertour-ui/gql';
 import { ReactNode, createContext, useContext } from 'react';
+import { useGetUserEnvironmentsQuery } from '@usertour-ui/shared-hooks';
 
 export interface EnvironmentListProviderProps {
   children?: ReactNode;
@@ -9,9 +7,10 @@ export interface EnvironmentListProviderProps {
 }
 
 export interface EnvironmentListContextValue {
-  environmentList: Environment[] | null;
+  environmentList: any[] | null;
   refetch: any;
   loading: boolean;
+  isRefetching: boolean;
 }
 export const EnvironmentListContext = createContext<EnvironmentListContextValue | undefined>(
   undefined,
@@ -19,15 +18,14 @@ export const EnvironmentListContext = createContext<EnvironmentListContextValue 
 
 export function EnvironmentListProvider(props: EnvironmentListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { data, refetch, loading } = useQuery(getUserEnvironments, {
-    variables: { projectId: projectId },
-  });
+  const { environmentList, refetch, loading, isRefetching } =
+    useGetUserEnvironmentsQuery(projectId);
 
-  const environmentList = data?.userEnvironments;
   const value: EnvironmentListContextValue = {
     environmentList,
     refetch,
     loading,
+    isRefetching,
   };
 
   return (

@@ -12,6 +12,7 @@ import {
   createAttribute,
   deleteAttribute,
   deleteContent,
+  deleteEnvironments,
   deleteSegment,
   deleteSession,
   endSession,
@@ -19,6 +20,7 @@ import {
   getInvite,
   getInvites,
   getTeamMembers,
+  getUserEnvironments,
   inviteTeamMember as inviteTeamMemberMutation,
   listAttributes,
   listSegment,
@@ -77,6 +79,7 @@ import type {
   BizAttributeTypes,
   AttributeBizTypes,
   Attribute,
+  Environment,
   Subscription,
   GlobalConfig,
   UpdateIntegrationInput,
@@ -802,4 +805,26 @@ export const useDeleteContentMutation = () => {
     return !!response.data?.deleteContent?.success;
   };
   return { invoke, loading, error };
+};
+
+export const useDeleteEnvironmentsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteEnvironments);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteEnvironments?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetUserEnvironmentsQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(getUserEnvironments, {
+    variables: { projectId },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const environmentList = data?.userEnvironments as Environment[] | null;
+
+  return { environmentList, refetch, loading, error, isRefetching };
 };

@@ -53,8 +53,9 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
 };
 
 export const EnvironmentListContent = () => {
-  const { environmentList, loading } = useEnvironmentListContext();
-  if (loading) {
+  const { environmentList, loading, isRefetching } = useEnvironmentListContext();
+
+  if (loading || isRefetching) {
     return <ListSkeleton />;
   }
   return (
