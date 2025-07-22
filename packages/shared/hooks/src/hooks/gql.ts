@@ -1,4 +1,10 @@
-import { QueryHookOptions, useMutation, useQuery, useLazyQuery } from '@apollo/client';
+import {
+  QueryHookOptions,
+  useMutation,
+  useQuery,
+  useLazyQuery,
+  NetworkStatus,
+} from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
@@ -504,13 +510,16 @@ export interface AccessToken {
 }
 
 export const useListAccessTokensQuery = (environmentId: string | undefined) => {
-  const { data, loading, error, refetch } = useQuery(ListAccessTokens, {
+  const { data, loading, error, refetch, networkStatus } = useQuery(ListAccessTokens, {
     variables: { environmentId },
     skip: !environmentId,
+    notifyOnNetworkStatusChange: true,
   });
 
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+
   const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
-  return { accessTokens, loading, error, refetch };
+  return { accessTokens, loading, error, refetch, isRefetching };
 };
 
 export const useDeleteAccessTokenMutation = () => {
