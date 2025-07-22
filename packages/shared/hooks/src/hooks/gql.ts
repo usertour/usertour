@@ -5,6 +5,7 @@ import {
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
   deleteAttribute,
+  deleteSegment,
   deleteSession,
   endSession,
   getAuthConfig,
@@ -757,6 +758,15 @@ export const useDeleteAttributeMutation = () => {
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { id } });
     return !!response.data?.deleteAttribute?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteSegment);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteSegment?.success;
   };
   return { invoke, loading, error };
 };
