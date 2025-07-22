@@ -522,6 +522,9 @@ export class App extends Evented {
     this.originContents = await activedContentsRulesConditions(newContents);
 
     await this.fetchAndInitContent(false);
+    if (this.activeChecklist) {
+      await this.activeChecklist.handleItemConditions();
+    }
   }
   /**
    * Reports an event to the tracking system
