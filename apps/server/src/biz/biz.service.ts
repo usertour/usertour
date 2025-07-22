@@ -178,6 +178,7 @@ export class BizService {
 
     return await this.prisma.bizUserOnSegment.createMany({
       data: inserts,
+      skipDuplicates: true, // Skip duplicate records based on unique constraint
     });
   }
 
@@ -233,6 +234,7 @@ export class BizService {
 
     return await this.prisma.bizCompanyOnSegment.createMany({
       data: inserts,
+      skipDuplicates: true, // Skip duplicate records based on unique constraint
     });
   }
 
