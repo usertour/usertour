@@ -1,7 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogDescription,
   AlertDialogTitle,
@@ -9,6 +8,7 @@ import {
   AlertDialogContent,
   AlertDialogFooter,
 } from '@usertour-ui/alert-dialog';
+import { LoadingButton } from '@/components/molecules/loading-button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,8 +38,8 @@ const useSessionForm = (
   onSubmit: (success: boolean) => void,
 ) => {
   const { toast } = useToast();
-  const { invoke: deleteSession } = useDeleteSessionMutation();
-  const { invoke: endSession } = useEndSessionMutation();
+  const { invoke: deleteSession, loading: deleteLoading } = useDeleteSessionMutation();
+  const { invoke: endSession, loading: endLoading } = useEndSessionMutation();
 
   const handleSubmit = async () => {
     try {
@@ -63,7 +63,9 @@ const useSessionForm = (
     }
   };
 
-  return { handleSubmit };
+  const loading = action === 'delete' ? deleteLoading : endLoading;
+
+  return { handleSubmit, loading };
 };
 
 // Type definitions for all components
@@ -192,7 +194,7 @@ const DropdownMenuItems = ({
 
 // Form component for session actions (delete/end)
 const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFormProps) => {
-  const { handleSubmit } = useSessionForm(session, type, onSubmit);
+  const { handleSubmit, loading } = useSessionForm(session, type, onSubmit);
 
   const descriptions = {
     delete:
@@ -217,12 +219,13 @@ const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFor
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
+          <LoadingButton
             variant={type === 'delete' ? 'destructive' : undefined}
             onClick={handleSubmit}
+            loading={loading}
           >
             Yes, {type} session
-          </AlertDialogAction>
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

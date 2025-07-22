@@ -2,6 +2,7 @@ import {
   BizCompany,
   BizSession,
   BizUserInfo,
+  ContentSession,
   SDKConfig,
   SDKContent,
   SDKSettingsMode,
@@ -197,9 +198,8 @@ export class Socket extends Evented {
     token: string;
     contentId: string;
     companyId?: string;
-  }): Promise<BizSession> {
-    const response = await this.emitWithTimeout('create-session', params);
-    return response as BizSession;
+  }): Promise<{ session: BizSession; contentSession: ContentSession } | false> {
+    return await this.emitWithTimeout('create-session', params);
   }
 
   /**
@@ -212,7 +212,7 @@ export class Socket extends Evented {
     eventName: string;
     sessionId: string;
     eventData: any;
-  }): Promise<void> {
-    await this.emitWithTimeout('track-event', params);
+  }): Promise<ContentSession | false> {
+    return await this.emitWithTimeout('track-event', params);
   }
 }

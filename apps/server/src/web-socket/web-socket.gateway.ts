@@ -22,10 +22,10 @@ import {
   IdentityRequest,
   UpsertUserResponse,
   UpsertCompanyResponse,
-  CreateSessionResponse,
-  TrackEventResponse,
   ContentResponse,
   ListThemesRequest,
+  ContentSession,
+  CreateSessionResponse,
 } from './web-socket.dto';
 import { Environment, Theme } from '@prisma/client';
 
@@ -96,16 +96,29 @@ export class WebSocketGateway {
   async createSession(
     @MessageBody() body: CreateSessionRequest,
     @WebSocketEnvironment() environment: Environment,
-  ): Promise<CreateSessionResponse> {
-    return await this.service.createSession(body, environment);
+  ): Promise<CreateSessionResponse | false> {
+    const session = await this.service.createSession(body, environment);
+    if (!session) {
+      return false;
+    }
+    const contentSession = await this.service.getContentSessionBySession(
+      body.userId,
+      session.id,
+      environment,
+    );
+    if (!contentSession) {
+      return false;
+    }
+    return { session, contentSession };
   }
 
   @SubscribeMessage('track-event')
   async sendEvent(
     @MessageBody() body: TrackEventRequest,
     @WebSocketEnvironment() environment: Environment,
-  ): Promise<TrackEventResponse> {
-    return await this.service.trackEvent(body, environment);
+  ): Promise<ContentSession | false> {
+    await this.service.trackEvent(body, environment);
+    return await this.service.getContentSessionBySession(body.userId, body.sessionId, environment);
   }
 
   /**

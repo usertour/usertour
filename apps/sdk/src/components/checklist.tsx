@@ -30,7 +30,7 @@ type ChecklistWidgetCoreProps = {
   userInfo: BizUserInfo;
   assets: AssetAttributes[] | undefined;
   handleItemClick: (item: ChecklistItemType, index: number) => void;
-  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   handleDismiss: () => Promise<void>;
   handleExpandedChange: (expanded: boolean) => void;
   reportExpandedChangeEvent: (expanded: boolean) => Promise<void>;

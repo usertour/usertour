@@ -10,6 +10,7 @@ export interface ApiContextValue {
   accessTokens: AccessToken[] | undefined;
   refetch: () => Promise<any>;
   loading: boolean;
+  isRefetching: boolean;
 }
 
 export const ApiContext = createContext<ApiContextValue | undefined>(undefined);
@@ -17,12 +18,15 @@ export const ApiContext = createContext<ApiContextValue | undefined>(undefined);
 export function ApiProvider(props: ApiProviderProps): JSX.Element {
   const { children } = props;
   const { environment } = useAppContext();
-  const { accessTokens, refetch, loading } = useListAccessTokensQuery(environment?.id);
+  const { accessTokens, refetch, loading, isRefetching } = useListAccessTokensQuery(
+    environment?.id,
+  );
 
   const value: ApiContextValue = {
     accessTokens,
     refetch,
     loading,
+    isRefetching,
   };
 
   return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;

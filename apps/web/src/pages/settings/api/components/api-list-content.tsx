@@ -6,10 +6,10 @@ import { useAppContext } from '@/contexts/app-context';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 
 export const ApiListContent = () => {
-  const { accessTokens, loading } = useApiContext();
+  const { accessTokens, loading, isRefetching } = useApiContext();
   const { environment } = useAppContext();
 
-  if (loading || !accessTokens || !environment) {
+  if (loading || !environment || isRefetching) {
     return <ListSkeleton />;
   }
 
@@ -23,7 +23,7 @@ export const ApiListContent = () => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {accessTokens.map((token: AccessToken) => (
+        {accessTokens?.map((token: AccessToken) => (
           <TableRow key={token.id}>
             <TableCell>{token.name}</TableCell>
             <TableCell>{token.accessToken}</TableCell>
@@ -32,7 +32,7 @@ export const ApiListContent = () => {
             </TableCell>
           </TableRow>
         ))}
-        {accessTokens.length === 0 && (
+        {accessTokens?.length === 0 && (
           <TableRow>
             <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
               No API keys found.

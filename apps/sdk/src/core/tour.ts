@@ -151,7 +151,7 @@ export class Tour extends BaseContent<TourStore> {
     }
 
     // Check if flow has been dismissed
-    if (flowIsDismissed(content)) {
+    if (flowIsDismissed(content.latestSession)) {
       return null;
     }
 

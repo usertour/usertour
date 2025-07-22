@@ -3,6 +3,7 @@ import { Button } from '@usertour-ui/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BizUserDeleteForm } from './bizuser-delete-form';
+import { useUserListContext } from '@/contexts/user-list-context';
 
 interface DeleteUserFromSegmentProps {
   table: Table<any>;
@@ -10,9 +11,9 @@ interface DeleteUserFromSegmentProps {
 
 export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
   const { table } = props;
-
   const [openDelete, setOpenDelete] = useState(false);
   const [bizUserIds, setBizUserIds] = useState<string[]>([]);
+  const { refetch } = useUserListContext();
 
   const handleOnClick = useCallback(() => {
     const rows = table.getFilteredSelectedRowModel().rows;
@@ -40,9 +41,9 @@ export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
         open={openDelete}
         bizUserIds={bizUserIds}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
+        onSubmit={async () => {
           setOpenDelete(false);
-          // onSubmit("delete");
+          await refetch();
         }}
       />
     </>

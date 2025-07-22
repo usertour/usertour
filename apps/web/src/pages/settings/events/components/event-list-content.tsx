@@ -6,9 +6,9 @@ import { format } from 'date-fns';
 import { EventListAction } from './event-list-action';
 
 export const EventListContent = () => {
-  const { eventList, loading } = useEventListContext();
+  const { eventList, loading, isRefetching } = useEventListContext();
 
-  if (loading) {
+  if (loading || isRefetching) {
     return <ListSkeleton />;
   }
 

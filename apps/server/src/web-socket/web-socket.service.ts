@@ -12,7 +12,17 @@ import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { BizUser, Content, Environment, Step, Theme, Prisma } from '@prisma/client';
+import {
+  BizUser,
+  Content,
+  Environment,
+  Step,
+  Theme,
+  Prisma,
+  Version,
+  BizEvent,
+  BizSession,
+} from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
@@ -23,16 +33,16 @@ import {
   ConfigResponse,
   ContentResponse,
   CreateSessionRequest,
-  CreateSessionResponse,
   ListContentsRequest,
   ListThemesRequest,
   TrackEventRequest,
-  TrackEventResponse,
   UpsertCompanyRequest,
   UpsertCompanyResponse,
   UpsertUserRequest,
   UpsertUserResponse,
+  ContentSession,
 } from './web-socket.dto';
+import { getPublishedVersionId } from '@/utils/content';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -110,40 +120,21 @@ export class WebSocketService {
   }
 
   /**
-   * Process a single content item and return its configuration
-   * @param content - The content item to process
+   * Process configuration and return processed config with activated rules
+   * @param version - The version containing the config
    * @param environment - The environment context
-   * @param bizUser - The business user
    * @param attributes - Available attributes
+   * @param bizUser - The business user
    * @param externalCompanyId - Optional company ID
-   * @returns Processed content configuration or null if processing fails
+   * @returns Processed configuration with activated rules
    */
-  private async processContent(
-    content: Content & { contentOnEnvironments: any[] },
+  async getProcessedConfig(
+    version: Version,
     environment: Environment,
-    bizUser: BizUser,
     attributes: Attribute[],
+    bizUser: BizUser,
     externalCompanyId?: string,
-  ): Promise<ContentResponse> {
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environment.id)
-        ?.publishedVersionId || content.publishedVersionId;
-
-    const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
-      include: { steps: { orderBy: { sequence: 'asc' } } },
-    });
-
-    if (!version) {
-      return null;
-    }
-
-    const latestSession = await this.getLatestSession(content.id, bizUser.id);
-    const events = latestSession ? await this.listEvents(latestSession.id) : [];
-    const totalSessions = await this.getTotalSessions(content, bizUser.id);
-    const dismissedSessions = await this.getDismissedSessions(content, bizUser.id);
-    const completedSessions = await this.getCompletedSessions(content, bizUser.id);
-
+  ): Promise<ContentConfigObject> {
     const config = version.config
       ? (version.config as ContentConfigObject)
       : {
@@ -175,42 +166,15 @@ export class WebSocketService {
           )
         : [];
 
-    const data =
-      content.type === ContentType.CHECKLIST
-        ? await this.activedChecklistConditions(
-            version.data as unknown as ChecklistData,
-            environment,
-            attributes,
-            bizUser,
-            externalCompanyId,
-          )
-        : version.data;
-
-    const steps = await this.activedStepTriggers(
-      version.steps,
-      environment,
-      attributes,
-      bizUser,
-      externalCompanyId,
-    );
-
     return {
-      ...version,
-      data: data as any,
-      steps,
-      config: { ...config, autoStartRules, hideRules },
-      type: content.type as ContentType,
-      name: content.name,
-      latestSession,
-      events,
-      totalSessions,
-      dismissedSessions,
-      completedSessions,
+      ...config,
+      autoStartRules,
+      hideRules,
     };
   }
 
   /**
-   * List content for a user
+   * List content for a user with optimized performance
    * @param body - The body containing the token, user ID, and company ID
    * @returns Array of content
    */
@@ -221,61 +185,86 @@ export class WebSocketService {
     try {
       const { userId: externalUserId, companyId: externalCompanyId } = body;
       const environmentId = environment.id;
+
+      // Step 1: Get content list
       const contentList = await this.prisma.content.findMany({
         where: {
-          OR: [
-            {
+          contentOnEnvironments: {
+            some: {
               environmentId,
               published: true,
-              contentOnEnvironments: { none: {} },
             },
-            {
-              contentOnEnvironments: {
-                some: {
-                  environmentId,
-                  published: true,
-                },
-              },
-            },
-          ],
+          },
         },
         include: {
           contentOnEnvironments: true,
         },
       });
+
       if (contentList.length === 0) {
-        return;
+        return [];
       }
-      const bizUser = await this.prisma.bizUser.findFirst({
-        where: { externalId: String(externalUserId), environmentId },
-      });
-      if (!bizUser) {
-        return;
-      }
-      const attributes = await this.prisma.attribute.findMany({
-        where: {
-          projectId: environment.projectId,
-          bizType: {
-            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+
+      // Step 2: Get bizUser and attributes in parallel
+      const [bizUser, attributes] = await Promise.all([
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId },
+        }),
+        this.prisma.attribute.findMany({
+          where: {
+            projectId: environment.projectId,
+            bizType: {
+              in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+            },
           },
-        },
+        }),
+      ]);
+
+      if (!bizUser) {
+        return [];
+      }
+
+      // Step 3: Batch fetch all versions and steps
+      const versionIds = contentList
+        .map((content) => getPublishedVersionId(content, environment.id))
+        .filter(Boolean);
+
+      const versions = await this.prisma.version.findMany({
+        where: { id: { in: versionIds } },
+        include: { steps: { orderBy: { sequence: 'asc' } } },
       });
 
-      const response: ContentResponse[] = [];
-      for (let index = 0; index < contentList.length; index++) {
-        const content = contentList[index];
-        const processedContent = await this.processContent(
-          content,
-          environment,
-          bizUser,
-          attributes,
-          String(externalCompanyId),
-        );
-        if (processedContent) {
-          response.push(processedContent);
-        }
-      }
-      return response;
+      const versionMap = new Map(versions.map((v) => [v.id, v]));
+
+      // Step 4: Batch fetch session statistics for all contents
+      const contentSessionMap = await this.getBatchContentSession(
+        contentList.map((c) => c.id),
+        bizUser.id,
+      );
+
+      // Step 5: Process all contents in parallel
+      const processedContents = await Promise.all(
+        contentList.map(async (content) => {
+          const publishedVersionId = getPublishedVersionId(content, environment.id);
+
+          const version = versionMap.get(publishedVersionId);
+          if (!version) {
+            return null;
+          }
+
+          return await this.processContentOptimized(
+            content,
+            version,
+            environment,
+            bizUser,
+            attributes,
+            contentSessionMap.get(content.id),
+            String(externalCompanyId),
+          );
+        }),
+      );
+
+      return processedContents.filter(Boolean);
     } catch (error) {
       this.logger.error({
         message: `Error in listContent: ${error.message}`,
@@ -921,6 +910,31 @@ export class WebSocketService {
   }
 
   /**
+   * Get the number of seen sessions for a content and user
+   * @param content - The content to check
+   * @param bizUserId - The ID of the business user
+   * @returns The number of seen sessions
+   */
+  async getSeenSessions(content: Content, bizUserId: string): Promise<number> {
+    return await this.prisma.bizSession.count({
+      where: {
+        contentId: content.id,
+        bizUserId,
+        deleted: false,
+        bizEvent: {
+          some: {
+            event: {
+              codeName: {
+                in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN],
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
    * List themes for an environment
    * @param token - The token of the environment
    * @returns Array of themes
@@ -1033,7 +1047,7 @@ export class WebSocketService {
   async createSession(
     data: CreateSessionRequest,
     environment: Environment,
-  ): Promise<CreateSessionResponse> {
+  ): Promise<BizSession | null> {
     const { userId: externalUserId, contentId, companyId: externalCompanyId } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -1055,9 +1069,7 @@ export class WebSocketService {
       return null;
     }
 
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-        ?.publishedVersionId || content.publishedVersionId;
+    const publishedVersionId = getPublishedVersionId(content, environmentId);
 
     const version = await this.prisma.version.findUnique({
       where: { id: publishedVersionId },
@@ -1163,14 +1175,14 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<TrackEventResponse> {
+  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
-    const user = await this.prisma.bizUser.findFirst({
+    const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
-    if (!user) {
+    if (!bizUser) {
       return false;
     }
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -1223,10 +1235,10 @@ export class WebSocketService {
       }
 
       // Update seen attributes for user and company
-      await this.updateSeenAttributes(tx, user, bizSession);
+      await this.updateSeenAttributes(tx, bizUser, bizSession);
 
       const insert = {
-        bizUserId: user.id,
+        bizUserId: bizUser.id,
         eventId: event.id,
         data: events,
         bizSessionId: bizSession.id,
@@ -1247,7 +1259,7 @@ export class WebSocketService {
           contentId,
           cvid: events[EventAttributes.QUESTION_CVID],
           versionId,
-          bizUserId: user.id,
+          bizUserId: bizUser.id,
           bizSessionId: bizSession.id,
           environmentId,
         };
@@ -1277,7 +1289,7 @@ export class WebSocketService {
       eventProperties: {
         ...events,
       },
-      userProperties: user.data as Record<string, any>,
+      userProperties: bizUser.data as Record<string, any>,
     };
     if (bizSession.content.type === ContentType.FLOW) {
       trackEventData.eventProperties = {
@@ -1293,5 +1305,209 @@ export class WebSocketService {
     // this.integrationService.trackEvent(trackEventData);
 
     return result;
+  }
+
+  /**
+   * Query ContentSession for a user/session
+   * @param externalUserId - external user id
+   * @param sessionId - session id
+   * @param environment - environment context
+   * @returns ContentSession or false if not found
+   */
+  async getContentSessionBySession(
+    externalUserId: string,
+    sessionId: string,
+    environment: Environment,
+  ): Promise<ContentSession | false> {
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId: environment.id },
+    });
+    if (!bizUser) return false;
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!bizSession) return false;
+    const contentSession = await this.getBatchContentSession([bizSession.contentId], bizUser.id);
+    return {
+      contentId: bizSession.contentId,
+      ...contentSession.get(bizSession.contentId),
+    };
+  }
+
+  /**
+   * Get session statistics for multiple contents in batch
+   * @param contentIds - Array of content IDs
+   * @param bizUserId - The ID of the business user
+   * @returns Map of content ID to session statistics
+   */
+  private async getBatchContentSession(
+    contentIds: string[],
+    bizUserId: string,
+  ): Promise<Map<string, ContentSession>> {
+    const contentSessionMap = new Map<string, ContentSession>();
+
+    // Batch fetch latest sessions for all contents using distinct
+    const latestSessions = await this.prisma.bizSession.findMany({
+      where: {
+        contentId: { in: contentIds },
+        bizUserId,
+        deleted: false,
+      },
+      include: { bizEvent: { include: { event: true } } },
+      orderBy: { createdAt: 'desc' },
+      distinct: ['contentId'],
+    });
+
+    // Batch fetch session counts
+    const [totalSessions, dismissedSessions, completedSessions, seenSessions] = await Promise.all([
+      this.prisma.bizSession.groupBy({
+        by: ['contentId'],
+        where: {
+          contentId: { in: contentIds },
+          bizUserId,
+          deleted: false,
+        },
+        _count: { id: true },
+      }),
+      this.prisma.bizSession.groupBy({
+        by: ['contentId'],
+        where: {
+          contentId: { in: contentIds },
+          bizUserId,
+          deleted: false,
+          bizEvent: {
+            some: {
+              event: {
+                codeName: {
+                  in: [
+                    BizEvents.FLOW_ENDED,
+                    BizEvents.LAUNCHER_DISMISSED,
+                    BizEvents.CHECKLIST_DISMISSED,
+                  ],
+                },
+              },
+            },
+          },
+        },
+        _count: { id: true },
+      }),
+      this.prisma.bizSession.groupBy({
+        by: ['contentId'],
+        where: {
+          contentId: { in: contentIds },
+          bizUserId,
+          deleted: false,
+          bizEvent: {
+            some: {
+              event: {
+                codeName: {
+                  in: [
+                    BizEvents.FLOW_COMPLETED,
+                    BizEvents.LAUNCHER_ACTIVATED,
+                    BizEvents.CHECKLIST_COMPLETED,
+                  ],
+                },
+              },
+            },
+          },
+        },
+        _count: { id: true },
+      }),
+      this.prisma.bizSession.groupBy({
+        by: ['contentId'],
+        where: {
+          contentId: { in: contentIds },
+          bizUserId,
+          deleted: false,
+          bizEvent: {
+            some: {
+              event: {
+                codeName: {
+                  in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN],
+                },
+              },
+            },
+          },
+        },
+        _count: { id: true },
+      }),
+    ]);
+
+    // Create maps for quick lookup
+    const totalMap = new Map(totalSessions.map((s) => [s.contentId, s._count.id]));
+    const dismissedMap = new Map(dismissedSessions.map((s) => [s.contentId, s._count.id]));
+    const completedMap = new Map(completedSessions.map((s) => [s.contentId, s._count.id]));
+    const seenMap = new Map(seenSessions.map((s) => [s.contentId, s._count.id]));
+
+    // Build statistics for each content
+    for (const contentId of contentIds) {
+      const latestSession =
+        latestSessions.find((session) => session.contentId === contentId) || null;
+
+      contentSessionMap.set(contentId, {
+        contentId,
+        latestSession,
+        totalSessions: totalMap.get(contentId) || 0,
+        dismissedSessions: dismissedMap.get(contentId) || 0,
+        completedSessions: completedMap.get(contentId) || 0,
+        seenSessions: seenMap.get(contentId) || 0,
+      });
+    }
+
+    return contentSessionMap;
+  }
+
+  /**
+   * Process content with optimized data fetching
+   * @param content - The content item to process
+   * @param version - Pre-fetched version data
+   * @param environment - The environment context
+   * @param bizUser - The business user
+   * @param attributes - Available attributes
+   * @param contentSession - Pre-fetched session statistics
+   * @param externalCompanyId - Optional company ID
+   * @returns Processed content configuration or null if processing fails
+   */
+  private async processContentOptimized(
+    content: Content & { contentOnEnvironments: any[] },
+    version: Version & { steps: Step[] },
+    environment: Environment,
+    bizUser: BizUser,
+    attributes: Attribute[],
+    contentSession: ContentSession,
+    externalCompanyId?: string,
+  ): Promise<ContentResponse> {
+    if (!version) {
+      return null;
+    }
+
+    // Process config and data in parallel
+    const [config, processedData, processedSteps] = await Promise.all([
+      this.getProcessedConfig(version, environment, attributes, bizUser, externalCompanyId),
+      content.type === ContentType.CHECKLIST
+        ? this.activedChecklistConditions(
+            version.data as unknown as ChecklistData,
+            environment,
+            attributes,
+            bizUser,
+            externalCompanyId,
+          )
+        : Promise.resolve(version.data),
+      this.activedStepTriggers(version.steps, environment, attributes, bizUser, externalCompanyId),
+    ]);
+
+    return {
+      ...version,
+      data: processedData as any,
+      steps: processedSteps,
+      config,
+      type: content.type as ContentType,
+      name: content.name,
+      latestSession: contentSession.latestSession,
+      totalSessions: contentSession.totalSessions,
+      dismissedSessions: contentSession.dismissedSessions,
+      completedSessions: contentSession.completedSessions,
+      seenSessions: contentSession.seenSessions,
+    };
   }
 }

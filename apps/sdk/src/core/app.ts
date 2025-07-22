@@ -8,10 +8,12 @@ import {
   PlanType,
   SDKConfig,
   SDKContent,
+  ContentSession,
   SDKSettingsMode,
   Theme,
   contentEndReason,
   contentStartReason,
+  BizSession,
 } from '@usertour-ui/types';
 import { UserTourTypes } from '@usertour-ui/types';
 import { uuidV4 } from '@usertour-ui/ui-utils';
@@ -27,6 +29,7 @@ import {
   findLatestValidActivatedChecklist,
   isSameTour,
   getAutoStartContentSortedByPriority,
+  activedContentsRulesConditions,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -180,7 +183,7 @@ export class App extends Evented {
     });
     // refresh data when content changed in the server
     this.socket.on('content-changed', () => {
-      this.refresh();
+      this.fetchAndInitContent();
     });
     if (document?.readyState !== 'loading') {
       this.trigger('dom-loaded');
@@ -367,8 +370,8 @@ export class App extends Evented {
     });
     if (userInfo?.externalId) {
       this.setUser(userInfo);
-      await this.refresh();
-      await this.initThemeData();
+      await this.fetchAndInitContent();
+      await this.fetchTheme();
     }
   }
 
@@ -416,7 +419,7 @@ export class App extends Evented {
     );
     if (companyInfo?.externalId) {
       this.setCompany(companyInfo);
-      this.refresh();
+      this.fetchAndInitContent();
     }
   }
 
@@ -448,7 +451,7 @@ export class App extends Evented {
       return;
     }
     this.setCompany(companyInfo);
-    this.refresh();
+    this.fetchAndInitContent();
   }
 
   /**
@@ -474,11 +477,9 @@ export class App extends Evented {
       return;
     }
     await this.reset();
-    await this.initSdkConfig();
-    await this.initThemeData();
-    await this.initContentData();
-    this.initContents();
-    this.syncAllStores();
+    await this.fetchSdkConfig();
+    await this.fetchTheme();
+    await this.fetchAndInitContent();
     await this.startContents();
     await this.startActivityMonitor();
   }
@@ -487,14 +488,45 @@ export class App extends Evented {
     return this.sdkConfig;
   }
 
-  async refresh() {
-    await this.initContentData();
+  /**
+   * Fetches fresh content data from server and initializes content
+   */
+  async fetchAndInitContent(fetch = true) {
+    if (fetch) {
+      await this.fetchContents();
+    }
     if (this.originContents) {
       this.initContents();
       this.syncAllStores();
     }
   }
 
+  /**
+   * Refreshes the content session
+   * @param contentSession - The content session to refresh
+   */
+  async refreshContentSession(contentSession: ContentSession) {
+    if (!this.originContents) {
+      return;
+    }
+
+    const newContents = this.originContents.map((content) => {
+      if (content.contentId === contentSession.contentId) {
+        return {
+          ...content,
+          ...contentSession,
+        };
+      }
+      return content;
+    });
+
+    this.originContents = await activedContentsRulesConditions(newContents);
+
+    await this.fetchAndInitContent(false);
+    if (this.activeChecklist) {
+      await this.activeChecklist.handleItemConditions();
+    }
+  }
   /**
    * Reports an event to the tracking system
    * @param event - Event parameters to report
@@ -513,14 +545,17 @@ export class App extends Evented {
         return;
       }
 
-      await this.socket.trackEvent({
+      const contentSession = await this.socket.trackEvent({
         userId: event.userId,
         token,
         sessionId,
         eventData: event.eventData,
         eventName: event.eventName,
       });
-      await this.refresh();
+
+      if (contentSession) {
+        await this.refreshContentSession(contentSession);
+      }
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
@@ -531,21 +566,24 @@ export class App extends Evented {
    * @param contentId - The content ID to create a session for
    * @returns The session ID if successful
    */
-  async createSession(contentId: string) {
+  async createSession(contentId: string): Promise<BizSession | null> {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;
     const companyId = this.companyInfo?.externalId;
     if (!userId || !token) {
-      return;
+      return null;
     }
-    const newSesison = await this.socket.createSession({
+    const result = await this.socket.createSession({
       userId,
       contentId,
       token,
       companyId,
     });
-    await this.refresh();
-    return newSesison;
+    if (result) {
+      await this.refreshContentSession(result.contentSession);
+      return result.session;
+    }
+    return null;
   }
 
   /**
@@ -582,7 +620,7 @@ export class App extends Evented {
   /**
    * Initializes content data based on current settings
    */
-  async initContentData() {
+  async fetchContents() {
     // Validate required params
     if (!this.validateInitParams()) {
       this.originContents = undefined;
@@ -721,7 +759,7 @@ export class App extends Evented {
       return;
     }
 
-    if (opts?.once && checklistIsSeen(activeChecklist.getContent())) {
+    if (opts?.once && checklistIsSeen(activeChecklist.getContent().latestSession)) {
       return;
     }
 
@@ -901,7 +939,7 @@ export class App extends Evented {
       return;
     }
 
-    if (opts?.once && flowIsSeen(activeTour.getContent())) {
+    if (opts?.once && flowIsSeen(activeTour.getContent().latestSession)) {
       return;
     }
 
@@ -1020,7 +1058,7 @@ export class App extends Evented {
     }
   }
 
-  async initSdkConfig() {
+  async fetchSdkConfig() {
     const sdkConfig = await this.socket.getConfig(this.startOptions.token);
     if (sdkConfig) {
       this.sdkConfig = sdkConfig;
@@ -1028,9 +1066,9 @@ export class App extends Evented {
   }
 
   /**
-   * Initializes theme data from server
+   * Fetches themes from server
    */
-  async initThemeData() {
+  async fetchTheme() {
     const { token } = this.startOptions;
     const params = {
       token,

@@ -17,7 +17,6 @@ import { useState } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -27,6 +26,7 @@ import {
 } from '@usertour-ui/alert-dialog';
 import { useToast } from '@usertour-ui/use-toast';
 import { ApiKeyDialog } from './api-key-dialog';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 // Type definitions
 type ApiListActionProps = {
@@ -58,14 +58,14 @@ const DeleteDialog = ({ token, isOpen, onOpenChange, onDelete, isLoading }: Dele
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-        <AlertDialogAction
+        <LoadingButton
           variant="destructive"
           onClick={onDelete}
-          disabled={isLoading}
+          loading={isLoading}
           className="min-w-[80px]"
         >
-          {isLoading ? 'Deleting...' : 'Delete'}
-        </AlertDialogAction>
+          Delete
+        </LoadingButton>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
@@ -99,20 +99,19 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
     try {
       const success = await deleteAccessToken(environmentId, token.id);
       if (success) {
-        await refetch();
-        setIsDeleteDialogOpen(false);
         toast({
           variant: 'success',
           title: 'API key deleted successfully',
         });
+        setIsDeleteDialogOpen(false);
+        refetch();
       } else {
         toast({
           variant: 'destructive',
           title: 'Failed to delete API key',
         });
       }
-    } catch (error) {
-      console.error('Failed to delete access token:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Failed to delete API key',

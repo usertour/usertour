@@ -1,8 +1,6 @@
-import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -15,19 +13,19 @@ import { getErrorMessage } from '@usertour-ui/shared-utils';
 import { Segment } from '@usertour-ui/types';
 import { useToast } from '@usertour-ui/use-toast';
 import { useCallback } from 'react';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 interface BizCompanyRemoveFormProps {
   bizCompanyIds: string[];
   segment: Segment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (success: boolean) => void;
+  onSubmit: (success: boolean) => Promise<void>;
 }
 
 export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
   const { bizCompanyIds, open, onOpenChange, onSubmit, segment } = props;
-  const [mutation] = useMutation(deleteBizCompanyOnSegment);
-  const { refetch } = useCompanyListContext();
+  const [mutation, { loading }] = useMutation(deleteBizCompanyOnSegment);
   const { toast } = useToast();
 
   const handleSubmit = useCallback(async () => {
@@ -45,8 +43,7 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
           variant: 'success',
           title: `${ret.data?.deleteBizCompanyOnSegment.count} users has been successfully removed`,
         });
-        await refetch();
-        onSubmit(true);
+        await onSubmit(true);
       }
     } catch (error) {
       onSubmit(false);
@@ -55,7 +52,7 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
         title: getErrorMessage(error),
       });
     }
-  }, [bizCompanyIds, segment]);
+  }, [bizCompanyIds, segment, mutation, toast, onSubmit]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
@@ -68,9 +65,9 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSubmit}>
+          <LoadingButton onClick={handleSubmit} loading={loading}>
             Yes, remove {bizCompanyIds.length} users
-          </AlertDialogAction>
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
