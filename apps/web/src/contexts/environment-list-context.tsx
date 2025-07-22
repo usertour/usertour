@@ -1,5 +1,6 @@
 import { ReactNode, createContext, useContext } from 'react';
 import { useGetUserEnvironmentsQuery } from '@usertour-ui/shared-hooks';
+import { Environment } from '@usertour-ui/types';
 
 export interface EnvironmentListProviderProps {
   children?: ReactNode;
@@ -7,7 +8,7 @@ export interface EnvironmentListProviderProps {
 }
 
 export interface EnvironmentListContextValue {
-  environmentList: any[] | null;
+  environmentList: Environment[] | null;
   refetch: any;
   loading: boolean;
   isRefetching: boolean;
