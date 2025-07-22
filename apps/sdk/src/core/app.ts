@@ -492,7 +492,7 @@ export class App extends Evented {
    */
   async fetchAndInitContent(fetch = true) {
     if (fetch) {
-      await this.initContentData();
+      await this.fetchContents();
     }
     if (this.originContents) {
       this.initContents();
@@ -613,7 +613,7 @@ export class App extends Evented {
   /**
    * Initializes content data based on current settings
    */
-  async initContentData() {
+  async fetchContents() {
     // Validate required params
     if (!this.validateInitParams()) {
       this.originContents = undefined;
@@ -752,7 +752,7 @@ export class App extends Evented {
       return;
     }
 
-    if (opts?.once && checklistIsSeen(activeChecklist.getContent())) {
+    if (opts?.once && checklistIsSeen(activeChecklist.getContent().latestSession)) {
       return;
     }
 
@@ -932,7 +932,7 @@ export class App extends Evented {
       return;
     }
 
-    if (opts?.once && flowIsSeen(activeTour.getContent())) {
+    if (opts?.once && flowIsSeen(activeTour.getContent().latestSession)) {
       return;
     }
 

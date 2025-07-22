@@ -65,7 +65,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
 
     // Early return if checklist has been dismissed
-    if (checklistIsDimissed(checklistContent)) {
+    if (checklistIsDimissed(checklistContent.latestSession)) {
       return null;
     }
 
