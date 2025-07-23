@@ -4,7 +4,6 @@ export * from './type-utils';
 export * from './content-settings';
 export * from './error';
 export * from './auth';
-export * from './storage';
 export * from './settings';
 export * from './is-url';
 export * from './globals';

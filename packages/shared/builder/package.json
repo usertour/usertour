@@ -65,7 +65,6 @@
     "@usertour-packages/shared-hooks": "workspace:^",
     "@usertour-packages/utils": "workspace:^",
     "@usertour-packages/slider": "workspace:^",
-    "@usertour-packages/storage": "workspace:^",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/table": "workspace:^",
     "@usertour-packages/tabs": "workspace:^",

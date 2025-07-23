@@ -1,4 +1,6 @@
-import { storage } from './storage';
+import { AppStorage } from './storage';
+
+export const storage = new AppStorage('USERTOUR@0.0.1', 5);
 
 const TOKEN_NAME = 'token';
 
