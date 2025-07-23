@@ -10,3 +10,4 @@ export * from './is-url';
 export * from './globals';
 export * from './content';
 export * from './utils';
+export * from './color';
