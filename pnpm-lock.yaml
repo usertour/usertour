@@ -307,6 +307,9 @@ importers:
       '@types/mjml':
         specifier: ^4.7.1
         version: 4.7.4
+      '@usertour/types':
+        specifier: ^0.0.2
+        version: 0.0.2
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -7984,6 +7987,9 @@ packages:
 
   '@usertour/types@0.0.1':
     resolution: {integrity: sha512-SAqHFEwcxm8/GXmalCFkMBTCDZBAMmnVoV+lR7exGAbLTEEg+Uf0+KVkkKJiwxqXGXvIE3jb73/ejrTbfU4puw==}
+
+  '@usertour/types@0.0.2':
+    resolution: {integrity: sha512-uThgc1jCUzgXZEnE98PlyHIj5UE3usStrcRP6tGOeyFxgeP/hzCKHxBtXRuMRNrdIqnHWReerrtkB2jrAHrVMQ==}
 
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
@@ -19078,6 +19084,8 @@ snapshots:
       - typescript
 
   '@usertour/types@0.0.1': {}
+
+  '@usertour/types@0.0.2': {}
 
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:

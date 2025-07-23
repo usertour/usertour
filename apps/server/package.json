@@ -69,6 +69,7 @@
     "@smithy/url-parser": "^2.0.12",
     "@socket.io/postgres-adapter": "^0.4.0",
     "@socket.io/redis-adapter": "^8.3.0",
+    "@usertour/types": "^0.0.2",
     "@types/mjml": "^4.7.1",
     "argon2": "^0.41.1",
     "axios": "^1.6.2",

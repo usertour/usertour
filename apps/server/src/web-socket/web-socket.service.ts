@@ -2,12 +2,7 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import {
-  BizEvents,
-  EventAttributes,
-  UserAttributes,
-  CompanyAttributes,
-} from '@/common/consts/attribute';
+import { EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
 import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
@@ -43,6 +38,7 @@ import {
   ContentSession,
 } from './web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
+import { BizEvents } from '@usertour/types';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
