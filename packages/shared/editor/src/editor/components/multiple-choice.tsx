@@ -1,14 +1,14 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { CheckboxIcon2, DeleteIcon, PlusIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
-import { Switch } from '@usertour-ui/switch';
-import { TooltipContent } from '@usertour-ui/tooltip';
-import { Tooltip, TooltipTrigger } from '@usertour-ui/tooltip';
-import { TooltipProvider } from '@usertour-ui/tooltip';
+import { Button } from '@usertour-packages/button';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { CheckboxIcon2, DeleteIcon, PlusIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
+import { Switch } from '@usertour-packages/switch';
+import { TooltipContent } from '@usertour-packages/tooltip';
+import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
+import { TooltipProvider } from '@usertour-packages/tooltip';
 import { useCallback, useEffect, useState, useMemo, useRef, memo } from 'react';
 import { ContentActions } from '../../actions';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -19,10 +19,10 @@ import {
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
-import { cn } from '@usertour-ui/ui-utils';
+import { isEmptyString } from '@usertour-packages/shared-utils';
+import { cn } from '@usertour-packages/ui-utils';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-ui/types';
+import { BizAttributeTypes } from '@usertour-packages/types';
 
 // Constants
 const DEFAULT_BUTTON_TEXT = 'Submit';

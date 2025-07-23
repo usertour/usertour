@@ -1,10 +1,10 @@
 import { GearIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { cn } from '@usertour-ui/button/src/utils';
-import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+import { Button } from '@usertour-packages/button';
+import { cn } from '@usertour-packages/button/src/utils';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -13,8 +13,13 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { useEvent } from 'react-use';
 import { Editor, Element as SlateElement, Node, Path, Transforms } from 'slate';

@@ -1,6 +1,6 @@
 import * as Popover from '@radix-ui/react-popover';
-import { EDITOR_SIDEBAR } from '@usertour-ui/constants';
-import { PlusIcon3 } from '@usertour-ui/icons';
+import { EDITOR_SIDEBAR } from '@usertour-packages/constants';
+import { PlusIcon3 } from '@usertour-packages/icons';
 import { CSSProperties, useEffect, useState } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
@@ -8,7 +8,7 @@ import {
   ContentEditorQuestionElement,
   ContentEditorSideBarType,
 } from '../../types/editor';
-import { cuid } from '@usertour-ui/ui-utils';
+import { cuid } from '@usertour-packages/ui-utils';
 import { isQuestionElement } from '../../utils/helper';
 import { contentTypesConfig } from '../../utils/config';
 

@@ -1,8 +1,8 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { PRIORITIES, RulesType, rulesTypes } from '@usertour-ui/constants';
-import { finderV2 } from '@usertour-ui/finder';
-import { isMatchUrlPattern } from '@usertour-ui/shared-utils';
-import { conditionsIsSame } from '@usertour-ui/shared-utils';
+import { PRIORITIES, RulesType, rulesTypes } from '@usertour-packages/constants';
+import { finderV2 } from '@usertour-packages/finder';
+import { isMatchUrlPattern } from '@usertour-packages/shared-utils';
+import { conditionsIsSame } from '@usertour-packages/shared-utils';
 import {
   BizEvent,
   BizEvents,
@@ -16,7 +16,7 @@ import {
   ElementConditionLogic,
   StringConditionLogic,
   BizSession,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import {
   differenceInDays,
   differenceInHours,

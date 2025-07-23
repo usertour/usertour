@@ -1,17 +1,17 @@
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { InfoIcon, XIcon } from 'lucide-react';
-import { ArrowRightIcon, EqualIcon, UsertourIcon2 } from '@usertour-ui/icons';
+import { ArrowRightIcon, EqualIcon, UsertourIcon2 } from '@usertour-packages/icons';
 import { ObjectMappingFieldSelect } from './object-mapping-select';
-import { AttributeCreateForm } from '@usertour-ui/shared-editor';
+import { AttributeCreateForm } from '@usertour-packages/shared-editor';
 import {
   Attribute,
   BizAttributeTypes,
   IntegrationObjectMappingSettings,
   IntegrationObjectMappingItem,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { useState } from 'react';
-import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
-import { cn } from '@usertour-ui/ui-utils';
+import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { cn } from '@usertour-packages/ui-utils';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />

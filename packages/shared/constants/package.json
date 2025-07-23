@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/constants",
+  "name": "@usertour-packages/constants",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "@usertour-ui/types": "workspace:^"
+    "@usertour-packages/types": "workspace:^"
   },
   "peerDependencies": {
     "react": "^18.2.0"

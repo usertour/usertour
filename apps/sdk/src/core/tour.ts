@@ -1,10 +1,10 @@
-import { smoothScroll } from '@usertour-ui/dom';
+import { smoothScroll } from '@usertour-packages/dom';
 import {
   ContentEditorClickableElement,
   ContentEditorElementType,
   ContentEditorQuestionElement,
   isQuestionElement,
-} from '@usertour-ui/shared-editor';
+} from '@usertour-packages/shared-editor';
 import {
   BizEvents,
   ContentActionsItemType,
@@ -15,8 +15,8 @@ import {
   StepContentType,
   StepTrigger,
   contentEndReason,
-} from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/types';
+import { evalCode } from '@usertour-packages/ui-utils';
 import { TourStore } from '../types/store';
 import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';

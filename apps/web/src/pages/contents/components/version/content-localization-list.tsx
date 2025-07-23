@@ -1,4 +1,4 @@
-import { Separator } from '@usertour-ui/separator';
+import { Separator } from '@usertour-packages/separator';
 
 import { useAppContext } from '@/contexts/app-context';
 import { ContentLocalizationListProvider } from '@/contexts/content-localization-list-context';

@@ -3,7 +3,7 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
-import { Content } from '@usertour-ui/types';
+import { Content } from '@usertour-packages/types';
 
 export const columns: ColumnDef<Content>[] = [
   // {

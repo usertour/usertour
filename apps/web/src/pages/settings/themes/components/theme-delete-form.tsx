@@ -1,4 +1,4 @@
-import { useDeleteThemeMutation } from '@usertour-ui/shared-hooks';
+import { useDeleteThemeMutation } from '@usertour-packages/shared-hooks';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -7,10 +7,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Theme } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { Theme } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const ThemeDeleteForm = (props: {

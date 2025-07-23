@@ -1,7 +1,7 @@
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Label } from '@usertour-ui/label';
-import { ContentActions } from '@usertour-ui/shared-editor';
-import { Attribute, Content, ContentVersion, Step } from '@usertour-ui/types';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import { Label } from '@usertour-packages/label';
+import { ContentActions } from '@usertour-packages/shared-editor';
+import { Attribute, Content, ContentVersion, Step } from '@usertour-packages/types';
 import { useContentPlacement } from './content-placement-context';
 
 interface ContentPlacementActionsProps {

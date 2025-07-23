@@ -1,6 +1,6 @@
-import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-ui/icons';
-import { Separator } from '@usertour-ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-packages/icons';
+import { Separator } from '@usertour-packages/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { SettingsContent } from '../components/content';
 import { AttributeListContent } from './components/attribute-list-content';
 import { AttributeListHeader } from './components/attribute-list-header';

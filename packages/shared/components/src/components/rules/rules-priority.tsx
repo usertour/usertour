@@ -5,9 +5,14 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { ContentPriority } from '@usertour-ui/types';
+} from '@usertour-packages/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { ContentPriority } from '@usertour-packages/types';
 import { useState } from 'react';
 
 const itemsMapping = [

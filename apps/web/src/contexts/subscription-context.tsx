@@ -1,12 +1,12 @@
 import { useQuery } from '@apollo/client';
-import { getSubscriptionByProjectId, getSubscriptionUsage } from '@usertour-ui/gql';
-import { PlanType, type Subscription } from '@usertour-ui/types';
+import { getSubscriptionByProjectId, getSubscriptionUsage } from '@usertour-packages/gql';
+import { PlanType, type Subscription } from '@usertour-packages/types';
 import {
   HobbySessionLimit,
   ProSessionLimit,
   GrowthSessionLimit,
   BusinessSessionLimit,
-} from '@usertour-ui/constants';
+} from '@usertour-packages/constants';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface SubscriptionProviderProps {

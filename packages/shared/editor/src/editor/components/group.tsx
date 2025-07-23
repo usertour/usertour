@@ -2,8 +2,8 @@ import { useDndMonitor } from '@dnd-kit/core';
 import { AnimateLayoutChanges, defaultAnimateLayoutChanges, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DragHandleDots2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-packages/button';
+import { cn } from '@usertour-packages/ui-utils';
 import { ReactNode, forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {

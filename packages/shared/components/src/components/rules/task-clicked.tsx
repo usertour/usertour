@@ -1,4 +1,4 @@
-import { TaskClickedIcon } from '@usertour-ui/icons';
+import { TaskClickedIcon } from '@usertour-packages/icons';
 import { RulesLogic } from './rules-logic';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';

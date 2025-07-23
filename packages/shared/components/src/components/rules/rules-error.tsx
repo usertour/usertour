@@ -1,7 +1,7 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour-packages/ui-utils';
 import React from 'react';
 
 const RulesError = PopoverPrimitive.Root;

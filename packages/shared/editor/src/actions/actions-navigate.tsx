@@ -1,7 +1,7 @@
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
-import { PagesIcon } from '@usertour-ui/icons';
-import { getNavitateError } from '@usertour-ui/shared-utils';
-import { Tabs, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
+import { PagesIcon } from '@usertour-packages/icons';
+import { getNavitateError } from '@usertour-packages/shared-utils';
+import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Descendant } from 'slate';
 import { PopperEditorMini, serializeMini } from '../components/editor';

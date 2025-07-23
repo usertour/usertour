@@ -1,4 +1,8 @@
-import { ContentConfigObject, ContentPriority, autoStartRulesSetting } from '@usertour-ui/types';
+import {
+  ContentConfigObject,
+  ContentPriority,
+  autoStartRulesSetting,
+} from '@usertour-packages/types';
 import { deepmerge } from 'deepmerge-ts';
 
 const rulesSetting: autoStartRulesSetting = {

@@ -1,4 +1,4 @@
-import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
 import {
   BizEvents,
   ChecklistInitialDisplay,
@@ -7,8 +7,8 @@ import {
   contentEndReason,
   EventAttributes,
   RulesCondition,
-} from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/types';
+import { evalCode } from '@usertour-packages/ui-utils';
 import { checklistIsDimissed } from '../utils/conditions';
 import { BaseContent } from './base-content';
 import {

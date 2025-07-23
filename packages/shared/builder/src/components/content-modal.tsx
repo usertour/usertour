@@ -1,6 +1,6 @@
 import { useLazyQuery } from '@apollo/client';
-import { EXTENSION_CONTENT_MODAL } from '@usertour-ui/constants';
-import { queryOembedInfo } from '@usertour-ui/gql';
+import { EXTENSION_CONTENT_MODAL } from '@usertour-packages/constants';
+import { queryOembedInfo } from '@usertour-packages/gql';
 import {
   Popper,
   PopperClose,
@@ -9,13 +9,13 @@ import {
   PopperModalContentPotal,
   PopperProgress,
   useThemeStyles,
-} from '@usertour-ui/sdk';
+} from '@usertour-packages/sdk';
 import {
   ContentEditor,
   ContentEditorElementType,
   ContentEditorRoot,
-} from '@usertour-ui/shared-editor';
-import { loadGoogleFontCss } from '@usertour-ui/shared-utils';
+} from '@usertour-packages/shared-editor';
+import { loadGoogleFontCss } from '@usertour-packages/shared-utils';
 import {
   Attribute,
   Content,
@@ -25,7 +25,7 @@ import {
   ProgressBarType,
   Step,
   Theme,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
 

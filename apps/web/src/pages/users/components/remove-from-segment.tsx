@@ -1,9 +1,9 @@
-import { CloseIcon } from '@usertour-ui/icons';
-import { Button } from '@usertour-ui/button';
+import { CloseIcon } from '@usertour-packages/icons';
+import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BizUserRemoveForm } from './bizuser-remove-form';
-import { Segment } from '@usertour-ui/types';
+import { Segment } from '@usertour-packages/types';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;

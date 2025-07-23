@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-ui/react-use-size
+$ yarn add @usertour-packages/react-use-size
 # or
-$ npm install @usertour-ui/react-use-size
+$ npm install @usertour-packages/react-use-size
 ```
 
 ## Usage

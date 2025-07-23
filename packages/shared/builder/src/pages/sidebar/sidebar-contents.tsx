@@ -27,14 +27,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@usertour-ui/alert-dialog';
-import { Button } from '@usertour-ui/button';
-import { Delete2Icon, EventIcon2, EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Step } from '@usertour-ui/types';
+} from '@usertour-packages/alert-dialog';
+import { Button } from '@usertour-packages/button';
+import {
+  Delete2Icon,
+  EventIcon2,
+  EyeNoneIcon,
+  ModelIcon,
+  TooltipIcon,
+} from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Step } from '@usertour-packages/types';
 import { forwardRef, useCallback, useState } from 'react';
 
-import { defaultStep } from '@usertour-ui/shared-utils';
+import { defaultStep } from '@usertour-packages/shared-utils';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { stepIsReachable } from '../../utils/content-validate';
 

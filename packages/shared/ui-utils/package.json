@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/ui-utils",
+  "name": "@usertour-packages/ui-utils",
   "private": true,
   "version": "0.0.0",
   "type": "module",

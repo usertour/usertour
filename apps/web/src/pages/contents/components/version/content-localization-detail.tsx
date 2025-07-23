@@ -6,12 +6,12 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { ArrowLeftIcon, ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Badge } from '@usertour-ui/badge';
-import { useAws } from '@usertour-ui/builder/src/hooks/use-aws';
-import { Button } from '@usertour-ui/button';
-import { ImageEditIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Separator } from '@usertour-ui/separator';
+import { Badge } from '@usertour-packages/badge';
+import { useAws } from '@usertour-packages/builder/src/hooks/use-aws';
+import { Button } from '@usertour-packages/button';
+import { ImageEditIcon, SpinnerIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Separator } from '@usertour-packages/separator';
 import type {
   ContentEditorButtonElement,
   ContentEditorEmebedElement,
@@ -20,10 +20,10 @@ import type {
   ContentEditorRootElement,
   ContentEditorTextElement,
   CustomElement,
-} from '@usertour-ui/shared-editor';
-import { ContentEditorElementType } from '@usertour-ui/shared-editor';
-import type { ContentVersion, Localization, Step } from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/shared-editor';
+import { ContentEditorElementType } from '@usertour-packages/shared-editor';
+import type { ContentVersion, Localization, Step } from '@usertour-packages/types';
+import { cn } from '@usertour-packages/ui-utils';
 import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
 import { ChangeEvent, ReactNode, useState } from 'react';

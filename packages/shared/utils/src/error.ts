@@ -5,7 +5,7 @@ import {
   ElementSelectorPropsData,
   RulesCondition,
   RulesUserAttributeData,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 
 export const isValidSelector = (selector: ElementSelectorPropsData) => {
   if (!selector) {

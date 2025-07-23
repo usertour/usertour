@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext } from 'react';
-import { useGetUserEnvironmentsQuery } from '@usertour-ui/shared-hooks';
-import { Environment } from '@usertour-ui/types';
+import { useGetUserEnvironmentsQuery } from '@usertour-packages/shared-hooks';
+import { Environment } from '@usertour-packages/types';
 
 export interface EnvironmentListProviderProps {
   children?: ReactNode;

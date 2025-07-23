@@ -1,19 +1,19 @@
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { useMutation } from '@apollo/client';
 import { DotsHorizontalIcon, StarFilledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { setDefaultLocalization } from '@usertour-ui/gql';
-import { EditIcon } from '@usertour-ui/icons';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Localization } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dropdown-menu';
+import { setDefaultLocalization } from '@usertour-packages/gql';
+import { EditIcon } from '@usertour-packages/icons';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { Localization } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { LocalizationDeleteForm } from './localization-delete-form';
 import { LocalizationEditForm } from './localization-edit-form';

@@ -1,7 +1,7 @@
 'use client';
 
 import { DialogClose } from '@radix-ui/react-dialog';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { CheckedIcon, IndeterminateCircleIcon, WarningCircleIcon } from '@usertour-ui/icons';
-import { useDetectExtension } from '@usertour-ui/shared-hooks';
+} from '@usertour-packages/dialog';
+import { CheckedIcon, IndeterminateCircleIcon, WarningCircleIcon } from '@usertour-packages/icons';
+import { useDetectExtension } from '@usertour-packages/shared-hooks';
 import { useEffect } from 'react';
 
 interface ExtensionInstallFormProps {

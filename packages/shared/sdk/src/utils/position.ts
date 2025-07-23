@@ -1,6 +1,6 @@
 import { Middleware, Placement } from '@floating-ui/react';
 import { CSSProperties } from 'react';
-import { Align, Side } from '@usertour-ui/types';
+import { Align, Side } from '@usertour-packages/types';
 
 const defaultStyle: CSSProperties = {
   position: 'fixed',

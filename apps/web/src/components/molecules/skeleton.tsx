@@ -1,5 +1,12 @@
-import { Skeleton } from '@usertour-ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import { Skeleton } from '@usertour-packages/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
 
 export const ListSkeleton = ({ length = 5 }: { length?: number }) => {
   return (

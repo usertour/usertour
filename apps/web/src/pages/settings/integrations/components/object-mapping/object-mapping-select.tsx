@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { PlusIcon } from '@usertour-ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
+import { PlusIcon } from '@usertour-packages/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/command';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour-packages/ui-utils';
 
 interface ObjectMappingFieldSelectProps {
   items: Array<{ value: string; label: string; icon?: React.ReactNode }>;

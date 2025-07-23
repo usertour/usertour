@@ -1,15 +1,20 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import type { Content, ContentQuestionAnalytics, NPSByDay, Question } from '@usertour-ui/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import type {
+  Content,
+  ContentQuestionAnalytics,
+  NPSByDay,
+  Question,
+} from '@usertour-packages/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-packages/chart';
 import { format } from 'date-fns';
-import { Badge } from '@usertour-ui/badge';
+import { Badge } from '@usertour-packages/badge';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState, useMemo } from 'react';
-import { cn } from '@usertour-ui/ui-utils';
-import { ArrowRightIcon } from '@usertour-ui/icons';
-import { useUpdateContentMutation } from '@usertour-ui/shared-hooks';
-import { useToast } from '@usertour-ui/use-toast';
+import { cn } from '@usertour-packages/ui-utils';
+import { ArrowRightIcon } from '@usertour-packages/icons';
+import { useUpdateContentMutation } from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 
 interface AnalyticsNPSProps {

@@ -1,7 +1,7 @@
 'use client';
 
-import { TeamMemberRole, type TeamMember } from '@usertour-ui/types';
-import { Button } from '@usertour-ui/button';
+import { TeamMemberRole, type TeamMember } from '@usertour-packages/types';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { SpinnerIcon } from '@usertour-ui/icons';
-import { useChangeTeamMemberRoleMutation } from '@usertour-ui/shared-hooks';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import { SpinnerIcon } from '@usertour-packages/icons';
+import { useChangeTeamMemberRoleMutation } from '@usertour-packages/shared-hooks';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 
 interface EditFormProps {

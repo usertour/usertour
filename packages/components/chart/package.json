@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/chart",
+  "name": "@usertour-packages/chart",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,7 @@
     "build:fast": "tsup src"
   },
   "dependencies": {
-    "@usertour-ui/ui-utils": "workspace:*",
+    "@usertour-packages/ui-utils": "workspace:*",
     "recharts": "^2.7.2"
   },
   "peerDependencies": {

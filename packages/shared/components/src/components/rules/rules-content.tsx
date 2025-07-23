@@ -1,9 +1,9 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Label } from '@usertour-ui//label';
-import { ContentIcon } from '@usertour-ui/icons';
-import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
-import { cn } from '@usertour-ui/ui-utils';
+import { Label } from '@usertour-packages//label';
+import { ContentIcon } from '@usertour-packages/icons';
+import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
+import { cn } from '@usertour-packages/ui-utils';
 import {
   Dispatch,
   SetStateAction,
@@ -15,17 +15,17 @@ import {
 } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { getContentError } from '@usertour-ui/shared-utils';
-import { ContentDataType } from '@usertour-ui/types';
+} from '@usertour-packages/command';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { getContentError } from '@usertour-packages/shared-utils';
+import { ContentDataType } from '@usertour-packages/types';
 import { useRulesContext } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';

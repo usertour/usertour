@@ -1,4 +1,4 @@
-import { loadStyleSheet } from '@usertour-ui/ui-utils';
+import { loadStyleSheet } from '@usertour-packages/ui-utils';
 
 export const loadGoogleFontCss = (fontFamily: string, doc: Document) => {
   if (fontFamily && fontFamily !== 'System font' && fontFamily !== 'Custom font') {

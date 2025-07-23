@@ -1,8 +1,8 @@
-import { Dialog, DialogContent, DialogTrigger, DialogFooter } from '@usertour-ui/dialog';
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { SettingsIcon } from '@usertour-ui/icons';
+import { Dialog, DialogContent, DialogTrigger, DialogFooter } from '@usertour-packages/dialog';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { SettingsIcon } from '@usertour-packages/icons';
 import { useState } from 'react';
 
 interface RollingWindowDialogProps {

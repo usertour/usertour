@@ -1,5 +1,5 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour-ui/constants';
-import { PopperMadeWith } from '@usertour-ui/sdk';
+import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
+import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
   LauncherContainer,
   LauncherContentWrapper,
@@ -7,15 +7,15 @@ import {
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-ui/sdk/src/launcher';
-import { ContentEditor, ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
+} from '@usertour-packages/sdk/src/launcher';
+import { ContentEditor, ContentEditorRoot, createValue1 } from '@usertour-packages/shared-editor';
 import {
   ContentActionsItemType,
   LauncherActionType,
   LauncherData,
   LauncherPositionType,
   Theme,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderContext } from '../../../contexts';
 export interface LauncherContentProps {

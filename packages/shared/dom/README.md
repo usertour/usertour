@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-ui/dom
+$ yarn add @usertour-packages/dom
 # or
-$ npm install @usertour-ui/dom
+$ npm install @usertour-packages/dom
 ```
 
 ## Usage

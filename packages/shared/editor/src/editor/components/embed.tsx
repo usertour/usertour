@@ -1,16 +1,16 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { EDITOR_SELECT } from '@usertour-ui/constants';
-import { VideoIcon } from '@usertour-ui/icons';
+import { Button } from '@usertour-packages/button';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { EDITOR_SELECT } from '@usertour-packages/constants';
+import { VideoIcon } from '@usertour-packages/icons';
 import {
   ArrowRightIcon,
   DeleteIcon,
   InsertColumnLeftIcon,
   InsertColumnRightIcon,
-} from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+} from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -19,15 +19,15 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
+} from '@usertour-packages/select';
 import {
   QuestionTooltip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@usertour-ui/tooltip';
-import { ContentOmbedInfo } from '@usertour-ui/types';
+} from '@usertour-packages/tooltip';
+import { ContentOmbedInfo } from '@usertour-packages/types';
 import { ChangeEvent, useCallback, useMemo, useState, forwardRef } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 /* eslint-disable @next/next/no-img-element */

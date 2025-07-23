@@ -2,9 +2,16 @@
 
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { resetUserPassword } from '@usertour-ui/gql';
+import { Button } from '@usertour-packages/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
+import { resetUserPassword } from '@usertour-packages/gql';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -16,11 +23,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@usertour-ui/card';
-import { SpinnerIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/card';
+import { SpinnerIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 

@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { listContentVersions } from '@usertour-ui/gql';
-import { ContentVersion } from '@usertour-ui/types';
+import { listContentVersions } from '@usertour-packages/gql';
+import { ContentVersion } from '@usertour-packages/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 export interface ContentVersionListProviderProps {

@@ -1,6 +1,6 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
-import { TextInputIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { TextInputIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
 import {
   Select,
   SelectContent,
@@ -8,9 +8,9 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { getTextInputError } from '@usertour-ui/shared-utils';
-import { ElementSelectorPropsData } from '@usertour-ui/types';
+} from '@usertour-packages/select';
+import { getTextInputError } from '@usertour-packages/shared-utils';
+import { ElementSelectorPropsData } from '@usertour-packages/types';
 import {
   ChangeEvent,
   Dispatch,

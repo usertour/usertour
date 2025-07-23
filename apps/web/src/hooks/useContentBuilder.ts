@@ -1,8 +1,8 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Content } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+import { Content } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useCreateContentVersionMutation } from '@usertour-ui/shared-hooks';
+import { useCreateContentVersionMutation } from '@usertour-packages/shared-hooks';
 
 export const useContentBuilder = () => {
   const navigate = useNavigate();

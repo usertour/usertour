@@ -1,5 +1,5 @@
 import { useUserSessionsContext } from '@/contexts/user-sessions-context';
-import { BizSession, ContentDataType, Event } from '@usertour-ui/types';
+import { BizSession, ContentDataType, Event } from '@usertour-packages/types';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -9,13 +9,25 @@ import {
 } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { Link } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { cn } from '@usertour-ui/ui-utils';
-import { FlowIcon, LauncherIcon, ChecklistIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { Button } from '@usertour-ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { cn } from '@usertour-packages/ui-utils';
+import { FlowIcon, LauncherIcon, ChecklistIcon, SpinnerIcon } from '@usertour-packages/icons';
+import { Button } from '@usertour-packages/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { useAppContext } from '@/contexts/app-context';
 
 const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList: Event[] }) => {

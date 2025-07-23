@@ -1,5 +1,5 @@
-import { ContentVersion, Environment } from '@usertour-ui/types';
-import { Content } from '@usertour-ui/types';
+import { ContentVersion, Environment } from '@usertour-packages/types';
+import { Content } from '@usertour-packages/types';
 
 export const isPublishedInAllEnvironments = (
   content: Content | null,

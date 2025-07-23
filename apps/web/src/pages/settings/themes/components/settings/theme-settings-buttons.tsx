@@ -1,5 +1,5 @@
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
-import { Separator } from '@usertour-ui/separator';
+import { Separator } from '@usertour-packages/separator';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 import { ThemeSettingsButton } from './theme-settings-button';
 

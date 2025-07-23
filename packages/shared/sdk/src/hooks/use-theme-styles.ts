@@ -1,6 +1,6 @@
-import { convertSettings, mergeThemeDefaultSettings } from '@usertour-ui/shared-utils';
-import { convertToCssVars } from '@usertour-ui/shared-utils';
-import { Theme, ThemeTypesSetting } from '@usertour-ui/types';
+import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/shared-utils';
+import { convertToCssVars } from '@usertour-packages/shared-utils';
+import { Theme, ThemeTypesSetting } from '@usertour-packages/types';
 import { useEffect, useState } from 'react';
 
 export const useThemeStyles = (theme: Theme) => {

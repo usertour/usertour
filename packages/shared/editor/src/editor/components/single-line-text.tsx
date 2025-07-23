@@ -1,16 +1,16 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorSingleLineTextElement } from '../../types/editor';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
+import { isEmptyString } from '@usertour-packages/shared-utils';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-ui/types';
+import { BizAttributeTypes } from '@usertour-packages/types';
 
 interface ContentEditorSingleLineTextProps {
   element: ContentEditorSingleLineTextElement;

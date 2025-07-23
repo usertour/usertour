@@ -1,6 +1,6 @@
-import { AssetAttributes } from '@usertour-ui/frame';
-import { PopperMadeWith } from '@usertour-ui/sdk';
-import { ChecklistProgress } from '@usertour-ui/sdk';
+import { AssetAttributes } from '@usertour-packages/frame';
+import { PopperMadeWith } from '@usertour-packages/sdk';
+import { ChecklistProgress } from '@usertour-packages/sdk';
 import {
   ChecklistDismiss,
   ChecklistDropdown,
@@ -8,14 +8,17 @@ import {
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-ui/sdk/src/checklist';
-import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+} from '@usertour-packages/sdk/src/checklist';
+import {
+  ContentEditorClickableElement,
+  ContentEditorSerialize,
+} from '@usertour-packages/shared-editor';
 import {
   BizUserInfo,
   ChecklistData,
   ChecklistItemType,
   ThemeTypesSetting,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { useSyncExternalStore } from 'react';
 import { Checklist } from '../core/checklist';
 

@@ -1,4 +1,4 @@
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour-packages/ui-utils';
 
 export const SettingsContent = (props: {
   children: React.ReactNode;

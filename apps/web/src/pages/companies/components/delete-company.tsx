@@ -1,6 +1,6 @@
 import { Table } from '@tanstack/react-table';
-import { Button } from '@usertour-ui/button';
-import { Delete2Icon } from '@usertour-ui/icons';
+import { Button } from '@usertour-packages/button';
+import { Delete2Icon } from '@usertour-packages/icons';
 import { BizCompanyDeleteForm } from './company-delete-form';
 import { useCallback } from 'react';
 import { useState } from 'react';

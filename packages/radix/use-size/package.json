@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/react-use-size",
+  "name": "@usertour-packages/react-use-size",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.13.10",
-    "@usertour-ui/react-use-layout-effect": "workspace:*"
+    "@usertour-packages/react-use-layout-effect": "workspace:*"
   },
   "peerDependencies": {
     "@types/react": "*",

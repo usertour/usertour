@@ -1,7 +1,7 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
-import { ModalPosition } from '@usertour-ui/types';
+import { ModalPosition } from '@usertour-packages/types';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 const placementItems = [

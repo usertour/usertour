@@ -1,4 +1,4 @@
-import { uuidV4 } from '@usertour-ui/ui-utils';
+import { uuidV4 } from '@usertour-packages/ui-utils';
 import { useEffect, useState } from 'react';
 import type { ButtonData, CustomElementStrings } from '../types/slate';
 import { ALIGN_MAPPING, isText, serializeLeaf } from './editor';

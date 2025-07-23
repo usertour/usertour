@@ -1,4 +1,4 @@
-import { ChecklistItemType } from '@usertour-ui/types';
+import { ChecklistItemType } from '@usertour-packages/types';
 
 // Check if a checklist item can be completed based on completion order and item status
 export const canCompleteChecklistItem = (

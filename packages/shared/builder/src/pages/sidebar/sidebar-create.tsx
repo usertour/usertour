@@ -1,10 +1,10 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { EXTENSION_SIDEBAR_POPPER } from '@usertour-ui/constants';
-import { PopperPreview } from '@usertour-ui/shared-components';
-import { getDefaultDataForType } from '@usertour-ui/shared-editor';
-import { defaultStep } from '@usertour-ui/shared-utils';
+import { Button } from '@usertour-packages/button';
+import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
+import { PopperPreview } from '@usertour-packages/shared-components';
+import { getDefaultDataForType } from '@usertour-packages/shared-editor';
+import { defaultStep } from '@usertour-packages/shared-utils';
 import { useCallback } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 

@@ -3,7 +3,7 @@
 import { Icons } from '@/components/atoms/icons';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogClose,
@@ -12,13 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@usertour-ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { updateTheme } from '@usertour-ui/gql';
-import { Input } from '@usertour-ui/input';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Theme } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
+import { updateTheme } from '@usertour-packages/gql';
+import { Input } from '@usertour-packages/input';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { Theme } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

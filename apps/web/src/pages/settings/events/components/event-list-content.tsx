@@ -1,7 +1,14 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { Event } from '@usertour-ui/types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import { Event } from '@usertour-packages/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
 import { format } from 'date-fns';
 import { EventListAction } from './event-list-action';
 

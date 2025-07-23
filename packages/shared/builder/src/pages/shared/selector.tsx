@@ -6,7 +6,7 @@ import {
   MESSAGE_IFRAME_CONTAINER_STYLE,
   MESSAGE_SELECTOR_OUTPUT,
   MESSAGE_SELECTOR_SWITCH,
-} from '@usertour-ui/constants';
+} from '@usertour-packages/constants';
 import { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useEvent } from 'react-use';
 

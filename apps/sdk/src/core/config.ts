@@ -3,7 +3,7 @@ import {
   ContentPriority,
   RulesCondition,
   autoStartRulesSetting,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import autoBind from '../utils/auto-bind';
 import { activedRulesConditions, isActive } from '../utils/conditions';
 import { Evented } from './evented';

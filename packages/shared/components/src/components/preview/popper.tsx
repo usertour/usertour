@@ -1,8 +1,8 @@
-import { EyeNoneIcon } from '@usertour-ui/icons';
-import * as SharedPopper from '@usertour-ui/sdk';
-import { ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import { convertSettings, convertToCssVars } from '@usertour-ui/shared-utils';
-import { ThemeTypesSetting, defaultSettings } from '@usertour-ui/types';
+import { EyeNoneIcon } from '@usertour-packages/icons';
+import * as SharedPopper from '@usertour-packages/sdk';
+import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import { convertSettings, convertToCssVars } from '@usertour-packages/shared-utils';
+import { ThemeTypesSetting, defaultSettings } from '@usertour-packages/types';
 import { useRef } from 'react';
 
 type CreatePopperContentProps = {

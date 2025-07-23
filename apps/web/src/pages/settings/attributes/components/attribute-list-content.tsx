@@ -1,7 +1,14 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Attribute } from '@usertour-ui/types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import { Attribute } from '@usertour-packages/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { AttributeListAction } from './attribute-list-action';

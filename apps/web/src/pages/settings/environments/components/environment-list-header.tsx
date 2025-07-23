@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { OpenInNewWindowIcon, PlusIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { EnvironmentCreateForm } from './environment-create-form';
 

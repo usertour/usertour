@@ -4,7 +4,7 @@ import { getApolloClient } from '@/apollo';
 import App from '@/app/index';
 import { AppProvider } from '@/contexts/app-context';
 import { ApolloProvider } from '@apollo/client';
-import { Toaster } from '@usertour-ui/use-toast';
+import { Toaster } from '@usertour-packages/use-toast';
 import { PostHogProvider } from 'posthog-js/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';

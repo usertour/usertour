@@ -6,8 +6,8 @@ import {
   MESSAGE_CRX_OPEN_TARGET_REPLY,
   MESSAGE_CRX_SEND_PROXY,
   MESSAGE_ELEMENT_SELECT_SUCCESS,
-} from '@usertour-ui/constants';
-import { uuidV4 } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/constants';
+import { uuidV4 } from '@usertour-packages/ui-utils';
 import { useCallback, useState } from 'react';
 import { useEvent } from 'react-use';
 

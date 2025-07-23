@@ -1,4 +1,4 @@
-import { Skeleton } from '@usertour-ui/skeleton';
+import { Skeleton } from '@usertour-packages/skeleton';
 
 // Skeleton for the main navigation tabs
 export const ContentDetailHeaderNavSkeleton = () => {

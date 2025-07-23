@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/gql",
+  "name": "@usertour-packages/gql",
   "private": true,
   "version": "0.0.0",
   "type": "module",

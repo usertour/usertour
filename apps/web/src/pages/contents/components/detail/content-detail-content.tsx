@@ -3,12 +3,12 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Badge } from '@usertour-ui/badge';
-import { stepIsReachable } from '@usertour-ui/builder/src/utils/content-validate';
-import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-ui/icons';
-import { GoogleFontCss } from '@usertour-ui/shared-components';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-ui/tooltip';
-import { TooltipProvider } from '@usertour-ui/tooltip';
+import { Badge } from '@usertour-packages/badge';
+import { stepIsReachable } from '@usertour-packages/builder/src/utils/content-validate';
+import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-packages/icons';
+import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
+import { TooltipProvider } from '@usertour-packages/tooltip';
 import {
   ChecklistData,
   ChecklistInitialDisplay,
@@ -20,7 +20,7 @@ import {
   LauncherDataType,
   Step,
   Theme,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { ContentEditForm } from '../shared/content-edit-form';
@@ -31,7 +31,7 @@ import {
   ScaledPreviewContainer,
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 
 interface ContentDetailContentStepProps {
   currentStep: Step;

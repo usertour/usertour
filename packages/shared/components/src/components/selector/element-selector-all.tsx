@@ -1,8 +1,8 @@
 import { Crosshair2Icon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+import { Button } from '@usertour-packages/button';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -10,11 +10,16 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { Switch } from '@usertour-ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Content, ElementSelectorPropsData } from '@usertour-ui/types';
+} from '@usertour-packages/select';
+import { Switch } from '@usertour-packages/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Content, ElementSelectorPropsData } from '@usertour-packages/types';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 import { SelectorDialog } from './selector-dialog';
 

@@ -1,9 +1,15 @@
 import { CubeIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
-import { HelpTooltip } from '@usertour-ui/shared-components';
-import { Theme } from '@usertour-ui/types';
+import { Button } from '@usertour-packages/button';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
+import { HelpTooltip } from '@usertour-packages/shared-components';
+import { Theme } from '@usertour-packages/types';
 import { useCallback, useMemo, useState } from 'react';
 
 interface ContentThemeProps {

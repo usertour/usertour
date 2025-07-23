@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/react-compose-refs",
+  "name": "@usertour-packages/react-compose-refs",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",

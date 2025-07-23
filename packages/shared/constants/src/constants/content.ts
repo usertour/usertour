@@ -1,4 +1,4 @@
-import { ContentPriority } from '@usertour-ui/types';
+import { ContentPriority } from '@usertour-packages/types';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,

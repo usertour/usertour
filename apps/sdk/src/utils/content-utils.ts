@@ -10,7 +10,7 @@ import {
   SDKContent,
   Step,
   Theme,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
@@ -23,12 +23,12 @@ import {
   parseUrlParams,
 } from './conditions';
 import { window } from './globals';
-import { PRIORITIES, RulesType } from '@usertour-ui/constants';
+import { PRIORITIES, RulesType } from '@usertour-packages/constants';
 import {
   canCompleteChecklistItem,
   checklistCompletedItemsCount,
   checklistVisibleItemsCount,
-} from '@usertour-ui/sdk';
+} from '@usertour-packages/sdk';
 import { BaseStore } from '../types/store';
 import isEqual from 'fast-deep-equal';
 

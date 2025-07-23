@@ -1,7 +1,13 @@
 import { EyeNoneIcon, InfoCircledIcon } from '@radix-ui/react-icons';
-import { LauncherIcon } from '@usertour-ui/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
-import { LauncherDataType } from '@usertour-ui/types';
+import { LauncherIcon } from '@usertour-packages/icons';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
+import { LauncherDataType } from '@usertour-packages/types';
 
 interface LauncherTypeProps {
   type: LauncherDataType;

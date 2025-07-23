@@ -3,8 +3,8 @@ import {
   ThemeDetailSelectorType,
   Attribute,
   ThemeVariation,
-} from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/types';
+import { cn } from '@usertour-packages/ui-utils';
 import { ThemeSettingsDefaultPanel } from './theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 

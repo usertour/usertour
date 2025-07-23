@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { SettingsContent } from '../components/content';
 import Pricing from './components/pricing';
 import { SettingsBillingHeader } from './components/billing-header';
-import { Separator } from '@usertour-ui/separator';
+import { Separator } from '@usertour-packages/separator';
 
 export const SettingsBilling = () => {
   const { project } = useAppContext();

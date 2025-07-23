@@ -1,5 +1,5 @@
 import { useMemberContext } from '@/contexts/member-context';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useState, useCallback } from 'react';
 import { MemberInviteDialog } from './member-invite-dialog';
 import { PlusIcon } from 'lucide-react';

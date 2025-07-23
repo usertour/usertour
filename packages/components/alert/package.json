@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/alert",
+  "name": "@usertour-packages/alert",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "class-variance-authority": "^0.4.0",
-    "@usertour-ui/ui-utils": "workspace:*"
+    "@usertour-packages/ui-utils": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

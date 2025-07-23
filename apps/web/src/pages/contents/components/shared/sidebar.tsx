@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   BannerIcon,
   ChecklistIcon,
@@ -7,9 +7,9 @@ import {
   LauncherIcon,
   NpsIcon,
   SurveyIcon,
-} from '@usertour-ui/icons';
-import { ContentTypeName } from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/icons';
+import { ContentTypeName } from '@usertour-packages/types';
+import { cn } from '@usertour-packages/ui-utils';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}

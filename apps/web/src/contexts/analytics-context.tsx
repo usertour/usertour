@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { queryContentAnalytics } from '@usertour-ui/gql';
-import { AnalyticsData, AnalyticsQuery } from '@usertour-ui/types';
+import { queryContentAnalytics } from '@usertour-packages/gql';
+import { AnalyticsData, AnalyticsQuery } from '@usertour-packages/types';
 import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';

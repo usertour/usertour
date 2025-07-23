@@ -6,11 +6,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useDeleteContentMutation } from '@usertour-ui/shared-hooks';
-import { Content, ContentDataType } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useDeleteContentMutation } from '@usertour-packages/shared-hooks';
+import { Content, ContentDataType } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useCallback } from 'react';
 

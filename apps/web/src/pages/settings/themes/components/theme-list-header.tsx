@@ -1,6 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { ThemeCreateForm } from './theme-create-form';
 import { PlusIcon } from 'lucide-react';

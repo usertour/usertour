@@ -1,4 +1,4 @@
-import { HelpTooltip } from '@usertour-ui/shared-components';
+import { HelpTooltip } from '@usertour-packages/shared-components';
 import { InputNumber } from './shared/input';
 
 export interface ContentWidthProps {

@@ -1,7 +1,7 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
-import { Calendar } from '@usertour-ui/calendar';
-import { TimeIcon } from '@usertour-ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
+import { Calendar } from '@usertour-packages/calendar';
+import { TimeIcon } from '@usertour-packages/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Select,
   SelectContent,
@@ -9,15 +9,15 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/select';
+import { cn } from '@usertour-packages/ui-utils';
 import { format } from 'date-fns';
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 
-import { Button } from '@usertour-ui/button';
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { getCurrentTimeError } from '@usertour-ui/shared-utils';
+import { Button } from '@usertour-packages/button';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { getCurrentTimeError } from '@usertour-packages/shared-utils';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';

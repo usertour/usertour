@@ -3,17 +3,17 @@ import { PopoverProps } from '@radix-ui/react-popover';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { useState } from 'react';
 
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { locates } from '@usertour-ui/constants';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/command';
+import { locates } from '@usertour-packages/constants';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour-packages/ui-utils';
 
 export type LocateItem = (typeof locates)[0];
 

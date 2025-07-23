@@ -1,6 +1,6 @@
-import * as SharedPopper from '@usertour-ui/sdk';
-import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour-ui/types';
+import * as SharedPopper from '@usertour-packages/sdk';
+import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour-packages/types';
 
 interface ThemePreviewModalProps {
   contents: ContentEditorRoot[];

@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/progress",
+  "name": "@usertour-packages/progress",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.0.3",
-    "@usertour-ui/ui-utils": "workspace:*"
+    "@usertour-packages/ui-utils": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

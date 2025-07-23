@@ -1,7 +1,7 @@
-import { Label } from '@usertour-ui/label';
-import { HelpTooltip } from '@usertour-ui/shared-components';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
-import { Align, AlignType, ContentAlignmentData, Side } from '@usertour-ui/types';
+import { Label } from '@usertour-packages/label';
+import { HelpTooltip } from '@usertour-packages/shared-components';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import { Align, AlignType, ContentAlignmentData, Side } from '@usertour-packages/types';
 import { useState } from 'react';
 import { Alignment } from './shared/alignment';
 import { InputNumber } from './shared/input';

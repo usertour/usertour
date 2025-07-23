@@ -7,9 +7,13 @@ import {
   ChecklistPopperContent,
   ChecklistProgress,
   ChecklistRoot,
-} from '@usertour-ui/sdk/src/checklist';
-import { PopperMadeWith } from '@usertour-ui/sdk/src/popper';
-import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour-ui/types';
+} from '@usertour-packages/sdk/src/checklist';
+import { PopperMadeWith } from '@usertour-packages/sdk/src/popper';
+import {
+  ChecklistData,
+  ChecklistInitialDisplay,
+  ThemeTypesSetting,
+} from '@usertour-packages/types';
 import { useEffect, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
 

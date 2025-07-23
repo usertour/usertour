@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/shared-hooks",
+  "name": "@usertour-packages/shared-hooks",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@apollo/client": "^3.7.17",
-    "@usertour-ui/gql": "workspace:^",
-    "@usertour-ui/types": "workspace:^",
-    "@usertour-ui/ui-utils": "workspace:^",
-    "@usertour-ui/constants": "workspace:^",
+    "@usertour-packages/gql": "workspace:^",
+    "@usertour-packages/types": "workspace:^",
+    "@usertour-packages/ui-utils": "workspace:^",
+    "@usertour-packages/constants": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-use": "^17.4.0"

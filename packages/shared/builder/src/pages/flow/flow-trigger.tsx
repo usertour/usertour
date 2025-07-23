@@ -2,31 +2,36 @@
 
 import { useMutation } from '@apollo/client';
 import { ChevronLeftIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
-import { EXTENSION_CONTENT_SIDEBAR } from '@usertour-ui/constants';
-import { useContentListContext } from '@usertour-ui/contexts';
-import { updateContentStep } from '@usertour-ui/gql';
-import { SpinnerIcon } from '@usertour-ui/icons';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { createValue1 } from '@usertour-ui/shared-editor';
-import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour-ui/shared-utils';
+import { Button } from '@usertour-packages/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { EXTENSION_CONTENT_SIDEBAR } from '@usertour-packages/constants';
+import { useContentListContext } from '@usertour-packages/contexts';
+import { updateContentStep } from '@usertour-packages/gql';
+import { SpinnerIcon } from '@usertour-packages/icons';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { createValue1 } from '@usertour-packages/shared-editor';
+import {
+  defaultStep,
+  getErrorMessage,
+  hasActionError,
+  hasError,
+} from '@usertour-packages/shared-utils';
 import {
   AttributeBizTypes,
   Attribute,
   ContentVersion,
   RulesCondition,
   Step,
-} from '@usertour-ui/types';
-import { cn, cuid } from '@usertour-ui/ui-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/types';
+import { cn, cuid } from '@usertour-packages/ui-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../sidebar/sidebar-mini';
-import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
+import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
 
 const FlowBuilderTriggerHeader = () => {
   const { setCurrentMode, currentStep, currentContent, currentIndex } = useBuilderContext();

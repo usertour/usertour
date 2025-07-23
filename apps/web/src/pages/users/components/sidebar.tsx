@@ -7,10 +7,20 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/templates/admin-sidebar-template';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { Button } from '@usertour-ui/button';
-import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour-ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Segment } from '@usertour-ui/types';
+import { Button } from '@usertour-packages/button';
+import {
+  Archive2LineIcon,
+  Filter2LineIcon,
+  GroupLineIcon,
+  PLUSIcon,
+} from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Segment } from '@usertour-packages/types';
 import { Fragment, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { UserSegmentCreateForm } from './create-form';

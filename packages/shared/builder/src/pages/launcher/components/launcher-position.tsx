@@ -1,7 +1,13 @@
 import { CubeIcon } from '@radix-ui/react-icons';
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
-import { LauncherPositionType } from '@usertour-ui/types';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
+import { LauncherPositionType } from '@usertour-packages/types';
 interface LauncherPositionProps {
   type?: LauncherPositionType;
   onChange: (value: LauncherPositionType) => void;

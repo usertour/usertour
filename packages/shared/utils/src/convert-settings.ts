@@ -1,5 +1,5 @@
-import { ThemeTypesSetting, defaultSettings } from '@usertour-ui/types';
-import { hexToHSLString, hexToRGBStr } from '@usertour-ui/ui-utils';
+import { ThemeTypesSetting, defaultSettings } from '@usertour-packages/types';
+import { hexToHSLString, hexToRGBStr } from '@usertour-packages/ui-utils';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';
 

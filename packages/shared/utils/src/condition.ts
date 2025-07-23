@@ -1,4 +1,4 @@
-import { RulesCondition } from '@usertour-ui/types';
+import { RulesCondition } from '@usertour-packages/types';
 import isEqual from 'fast-deep-equal';
 
 const parseUrl = (url: string) => {

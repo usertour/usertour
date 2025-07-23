@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import {
   ArrowRightIcon,
   EqualIcon,
@@ -7,24 +7,24 @@ import {
   Delete2Icon,
   SpinnerIcon,
   EditIcon,
-} from '@usertour-ui/icons';
+} from '@usertour-packages/icons';
 import {
   IntegrationObjectMappingModel,
   IntegrationObjectMappingItem,
   IntegrationObjectMappingSettings,
-} from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/types';
+import { cn } from '@usertour-packages/ui-utils';
 import { format } from 'date-fns';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
+} from '@usertour-packages/dropdown-menu';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
-import { useDeleteIntegrationObjectMappingMutation } from '@usertour-ui/shared-hooks';
-import { useToast } from '@usertour-ui/use-toast';
+import { useDeleteIntegrationObjectMappingMutation } from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -34,10 +34,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
+} from '@usertour-packages/alert-dialog';
 import { LoadingButton } from '../../../../../components/molecules/loading-button';
 import { ObjectMappingDialog } from './object-mapping-dialog';
-import { Switch } from '@usertour-ui/switch';
+import { Switch } from '@usertour-packages/switch';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />

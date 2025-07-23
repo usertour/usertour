@@ -3,16 +3,16 @@ import {
   AccessToken,
   useDeleteAccessTokenMutation,
   useGetAccessTokenQuery,
-} from '@usertour-ui/shared-hooks';
+} from '@usertour-packages/shared-hooks';
 import { DotsHorizontalIcon, EyeOpenIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { Delete2Icon } from '@usertour-ui/icons';
+} from '@usertour-packages/dropdown-menu';
+import { Delete2Icon } from '@usertour-packages/icons';
 import { useState } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import {
@@ -23,8 +23,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { useToast } from '@usertour-packages/use-toast';
 import { ApiKeyDialog } from './api-key-dialog';
 import { LoadingButton } from '@/components/molecules/loading-button';
 

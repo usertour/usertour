@@ -1,5 +1,5 @@
-import { convertSettings } from '@usertour-ui/shared-utils';
-import { convertToCssVars } from '@usertour-ui/shared-utils';
+import { convertSettings } from '@usertour-packages/shared-utils';
+import { convertToCssVars } from '@usertour-packages/shared-utils';
 import {
   BizCompany,
   ContentDataType,
@@ -10,7 +10,7 @@ import {
   Theme,
   UserTourTypes,
   contentStartReason,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';

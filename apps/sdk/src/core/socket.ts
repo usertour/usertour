@@ -7,8 +7,8 @@ import {
   SDKContent,
   SDKSettingsMode,
   Theme,
-} from '@usertour-ui/types';
-import { UserTourTypes } from '@usertour-ui/types';
+} from '@usertour-packages/types';
+import { UserTourTypes } from '@usertour-packages/types';
 import {
   ManagerOptions,
   Socket as SocketIO,

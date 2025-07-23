@@ -7,17 +7,17 @@ import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from '@usertour-ui/dropdown-menu';
-import { updateSegment } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dropdown-menu';
+import { updateSegment } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 
 interface DataTableViewOptionsProps<TData> {

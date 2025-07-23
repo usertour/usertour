@@ -5,7 +5,7 @@ import {
   RulesCondition,
   Segment,
   Step,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface ContentActionsProviderProps {

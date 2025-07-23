@@ -1,11 +1,18 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
 
 import { Icons } from '@/components/atoms/icons';
 import {
@@ -15,13 +22,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@usertour-ui/card';
-import { Input } from '@usertour-ui/input';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/card';
+import { Input } from '@usertour-packages/input';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useResetUserPasswordByCodeMutation } from '@usertour-ui/shared-hooks';
+import { useResetUserPasswordByCodeMutation } from '@usertour-packages/shared-hooks';
 
 const formSchema = z.object({
   password: z

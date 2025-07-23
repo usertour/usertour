@@ -13,26 +13,26 @@ import {
   BarChart4,
   Waypoints,
 } from 'lucide-react';
-import { ChatIcon, BoxIcon } from '@usertour-ui/icons';
-import { Button } from '@usertour-ui/button';
-import { Switch } from '@usertour-ui/switch';
+import { ChatIcon, BoxIcon } from '@usertour-packages/icons';
+import { Button } from '@usertour-packages/button';
+import { Switch } from '@usertour-packages/switch';
 import { Fragment, useState, useEffect } from 'react';
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour-packages/ui-utils';
 import {
   useCreateCheckoutSessionMutation,
   useCreatePortalSessionMutation,
-} from '@usertour-ui/shared-hooks';
-import { Separator } from '@usertour-ui/separator';
-import { PlanType } from '@usertour-ui/types';
-import { Progress } from '@usertour-ui/progress';
-import { Skeleton } from '@usertour-ui/skeleton';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+} from '@usertour-packages/shared-hooks';
+import { Separator } from '@usertour-packages/separator';
+import { PlanType } from '@usertour-packages/types';
+import { Progress } from '@usertour-packages/progress';
+import { Skeleton } from '@usertour-packages/skeleton';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import {
   HobbySessionLimit,
   ProSessionLimit,
   GrowthSessionLimit,
   BusinessSessionLimit,
-} from '@usertour-ui/constants';
+} from '@usertour-packages/constants';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 // Define plan type

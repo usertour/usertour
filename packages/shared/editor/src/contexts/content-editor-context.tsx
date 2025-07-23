@@ -1,5 +1,5 @@
-import { uuidV4 } from '@usertour-ui/ui-utils';
-import { useToast } from '@usertour-ui/use-toast';
+import { uuidV4 } from '@usertour-packages/ui-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
   ContentEditorColumnElement,

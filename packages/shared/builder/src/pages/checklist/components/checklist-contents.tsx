@@ -27,11 +27,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@usertour-ui/alert-dialog';
-import { Button } from '@usertour-ui/button';
-import { Delete2Icon } from '@usertour-ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { ChecklistItemType } from '@usertour-ui/types';
+} from '@usertour-packages/alert-dialog';
+import { Button } from '@usertour-packages/button';
+import { Delete2Icon } from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { ChecklistItemType } from '@usertour-packages/types';
 import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../../contexts';
 // Add interface for component props

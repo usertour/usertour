@@ -1,12 +1,12 @@
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import {
   ArrowRightIcon,
   EyeNoneIcon,
   ModelIcon,
   SpinnerIcon,
   TooltipIcon,
-} from '@usertour-ui/icons';
-import { Badge } from '@usertour-ui/badge';
+} from '@usertour-packages/icons';
+import { Badge } from '@usertour-packages/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuItem,
   DropdownMenuSelectItem,
-} from '@usertour-ui/dropdown-menu';
-import { getStepError } from '@usertour-ui/shared-utils';
-import { Step, ContentVersion } from '@usertour-ui/types';
+} from '@usertour-packages/dropdown-menu';
+import { getStepError } from '@usertour-packages/shared-utils';
+import { Step, ContentVersion } from '@usertour-packages/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
@@ -30,8 +30,8 @@ import {
 } from './actions-error';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { cn } from '@usertour-ui/ui-utils';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour-packages/ui-utils';
 
 export interface ContentActionsStepProps {
   data?: {

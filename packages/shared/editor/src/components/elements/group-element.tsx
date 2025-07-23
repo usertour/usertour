@@ -1,6 +1,6 @@
 import { ButtonIcon, ImageIcon, TextIcon, VideoIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { PlusIcon3 } from '@usertour-ui/icons';
+import { PlusIcon3 } from '@usertour-packages/icons';
 import { CSSProperties, createContext, useContext, useEffect, useState } from 'react';
 import { Node, Path } from 'slate';
 import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';

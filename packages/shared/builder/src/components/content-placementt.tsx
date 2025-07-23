@@ -1,8 +1,8 @@
 import { Crosshair2Icon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+import { Button } from '@usertour-packages/button';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -11,12 +11,17 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { SelectorDialog } from '@usertour-ui/shared-components';
-import { ContentActions } from '@usertour-ui/shared-editor';
-import { Switch } from '@usertour-ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/select';
+import { SelectorDialog } from '@usertour-packages/shared-components';
+import { ContentActions } from '@usertour-packages/shared-editor';
+import { Switch } from '@usertour-packages/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import {
   Attribute,
   Content,
@@ -25,7 +30,7 @@ import {
   RulesCondition,
   Step,
   StepScreenshot,
-} from '@usertour-ui/types';
+} from '@usertour-packages/types';
 import { ChangeEvent } from 'react';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 

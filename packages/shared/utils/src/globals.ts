@@ -8,7 +8,7 @@
  * to handle the case where the global is not available.
  */
 
-import { UserTourTypes } from '@usertour-ui/types/';
+import { UserTourTypes } from '@usertour-packages/types/';
 
 // eslint-disable-next-line no-restricted-globals
 const win: (UserTourTypes.WindowWithUsertour & typeof globalThis) | undefined =

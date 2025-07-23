@@ -1,6 +1,9 @@
-import { MESSAGE_START_FLOW_WITH_TOKEN, STORAGE_IDENTIFY_ANONYMOUS } from '@usertour-ui/constants';
-import { AssetAttributes } from '@usertour-ui/frame';
-import { autoStartConditions, storage } from '@usertour-ui/shared-utils';
+import {
+  MESSAGE_START_FLOW_WITH_TOKEN,
+  STORAGE_IDENTIFY_ANONYMOUS,
+} from '@usertour-packages/constants';
+import { AssetAttributes } from '@usertour-packages/frame';
+import { autoStartConditions, storage } from '@usertour-packages/shared-utils';
 import {
   BizCompany,
   BizUserInfo,
@@ -14,9 +17,9 @@ import {
   contentEndReason,
   contentStartReason,
   BizSession,
-} from '@usertour-ui/types';
-import { UserTourTypes } from '@usertour-ui/types';
-import { uuidV4 } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/types';
+import { UserTourTypes } from '@usertour-packages/types';
+import { uuidV4 } from '@usertour-packages/ui-utils';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';
 import { ReportEventParams } from '../types/content';

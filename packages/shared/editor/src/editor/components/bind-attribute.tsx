@@ -1,22 +1,22 @@
-import { Switch } from '@usertour-ui/switch';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { Switch } from '@usertour-packages/switch';
+import { Label } from '@usertour-packages/label';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
+import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-packages/types';
 import { AttributeCreateForm } from '../../form/attribute-create-form';
 import { useCallback, useState } from 'react';
-import { useListAttributesQuery } from '@usertour-ui/shared-hooks';
-import { Button } from '@usertour-ui/button';
+import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/command';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour-packages/ui-utils';
 
 interface BindAttributeProps {
   bindToAttribute: boolean;

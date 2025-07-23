@@ -1,6 +1,6 @@
-import { ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
-import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+import { ContentEditorRoot, createValue1 } from '@usertour-packages/shared-editor';
+import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { deepmerge } from 'deepmerge-ts';
 import { isEqual, isUndefined } from 'lodash';
 import {
@@ -15,7 +15,7 @@ import {
 } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
+import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
 
 export interface ChecklistProviderProps {
   children: ReactNode;

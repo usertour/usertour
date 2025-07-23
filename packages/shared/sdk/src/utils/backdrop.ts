@@ -1,4 +1,4 @@
-import { getComputedStyle } from '@usertour-ui/dom';
+import { getComputedStyle } from '@usertour-packages/dom';
 
 import type { Rect, SideObject } from '@floating-ui/dom';
 

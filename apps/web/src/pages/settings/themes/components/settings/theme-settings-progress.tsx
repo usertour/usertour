@@ -1,12 +1,12 @@
 import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
-import { ProgressBarType, ProgressBarPosition } from '@usertour-ui/types';
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
-import { Alert, AlertDescription } from '@usertour-ui/alert';
+import { ProgressBarType, ProgressBarPosition } from '@usertour-packages/types';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
+import { Alert, AlertDescription } from '@usertour-packages/alert';
 import { useThemeSettingsContext } from '../theme-settings-panel';
-import { WarningIcon } from '@usertour-ui/icons';
+import { WarningIcon } from '@usertour-packages/icons';
 
 export const ThemeSettingsProgress = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();

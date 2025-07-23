@@ -3,13 +3,20 @@
 import { Icons } from '@/components/atoms/icons';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { changePassword } from '@usertour-ui/gql';
-import { Input } from '@usertour-ui/input';
-import { Separator } from '@usertour-ui/separator';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+import { Button } from '@usertour-packages/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
+import { changePassword } from '@usertour-packages/gql';
+import { Input } from '@usertour-packages/input';
+import { Separator } from '@usertour-packages/separator';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

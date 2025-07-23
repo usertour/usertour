@@ -1,10 +1,10 @@
-import { CancelIcon } from '@usertour-ui/icons';
-import { TooltipContent } from '@usertour-ui/tooltip';
-import { PlayIcon } from '@usertour-ui/icons';
-import { Tooltip, TooltipTrigger } from '@usertour-ui/tooltip';
-import { TooltipProvider } from '@usertour-ui/tooltip';
-import { BizEvents, BizSession, ChecklistData, ContentVersion } from '@usertour-ui/types';
-import { Event } from '@usertour-ui/types';
+import { CancelIcon } from '@usertour-packages/icons';
+import { TooltipContent } from '@usertour-packages/tooltip';
+import { PlayIcon } from '@usertour-packages/icons';
+import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
+import { TooltipProvider } from '@usertour-packages/tooltip';
+import { BizEvents, BizSession, ChecklistData, ContentVersion } from '@usertour-packages/types';
+import { Event } from '@usertour-packages/types';
 import { formatDistanceStrict } from 'date-fns';
 
 const LauncherProgressColumn = ({

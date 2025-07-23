@@ -1,6 +1,6 @@
-import { Label } from '@usertour-ui//label';
-import { ElementIcon } from '@usertour-ui/icons';
-import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
+import { Label } from '@usertour-packages//label';
+import { ElementIcon } from '@usertour-packages/icons';
+import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import {
   Dispatch,
   SetStateAction,
@@ -10,8 +10,8 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { getElementError } from '@usertour-ui/shared-utils';
-import { ElementSelectorPropsData } from '@usertour-ui/types';
+import { getElementError } from '@usertour-packages/shared-utils';
+import { ElementSelectorPropsData } from '@usertour-packages/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';

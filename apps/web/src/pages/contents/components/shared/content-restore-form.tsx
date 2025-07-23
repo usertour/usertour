@@ -1,7 +1,7 @@
 'use client';
 import { Icons } from '@/components/atoms/icons';
 import { useMutation } from '@apollo/client';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogClose,
@@ -9,11 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { restoreContentVersion } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { ContentVersion } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import { restoreContentVersion } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { ContentVersion } from '@usertour-packages/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 
 interface ContentRestoreFormProps {

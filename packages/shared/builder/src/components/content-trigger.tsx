@@ -1,11 +1,11 @@
-import { Button } from '@usertour-ui/button';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Delete2Icon } from '@usertour-ui/icons';
-import { Label } from '@usertour-ui/label';
-import { Rules, RulesWait } from '@usertour-ui/shared-components';
-import { defaultRulesItems } from '@usertour-ui/shared-components/src/components/rules';
-import { ContentActions } from '@usertour-ui/shared-editor';
-import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour-ui/types';
+import { Button } from '@usertour-packages/button';
+import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
+import { Delete2Icon } from '@usertour-packages/icons';
+import { Label } from '@usertour-packages/label';
+import { Rules, RulesWait } from '@usertour-packages/shared-components';
+import { defaultRulesItems } from '@usertour-packages/shared-components/src/components/rules';
+import { ContentActions } from '@usertour-packages/shared-editor';
+import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour-packages/types';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 
 interface ContentTriggerProps {

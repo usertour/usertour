@@ -1,11 +1,18 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import { ContentEditorElementType } from '@usertour-ui/shared-editor';
-import { useQueryContentQuestionAnalyticsQuery } from '@usertour-ui/shared-hooks';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { ContentEditorElementType } from '@usertour-packages/shared-editor';
+import { useQueryContentQuestionAnalyticsQuery } from '@usertour-packages/shared-hooks';
 import { format } from 'date-fns';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { AnswerCount, ContentQuestionAnalytics } from '@usertour-ui/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { AnswerCount, ContentQuestionAnalytics } from '@usertour-packages/types';
 import { AnalyticsNPS } from './analytics-nps';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { AnalyticsScale } from './analytics-scale';

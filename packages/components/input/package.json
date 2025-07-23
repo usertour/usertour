@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/input",
+  "name": "@usertour-packages/input",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,7 @@
     "build:fast": "tsup src"
   },
   "dependencies": {
-    "@usertour-ui/ui-utils": "workspace:*"
+    "@usertour-packages/ui-utils": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

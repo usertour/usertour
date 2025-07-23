@@ -1,14 +1,14 @@
 import { ChevronDownIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { BackIcon, UnPublishIcon } from '@usertour-ui/icons';
-import { Separator } from '@usertour-ui/separator';
+} from '@usertour-packages/dropdown-menu';
+import { BackIcon, UnPublishIcon } from '@usertour-packages/icons';
+import { Separator } from '@usertour-packages/separator';
 
 export const DropdownMenuButton = () => {
   return (

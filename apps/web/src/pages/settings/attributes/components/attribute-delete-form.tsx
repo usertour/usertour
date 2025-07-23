@@ -1,4 +1,4 @@
-import { Attribute } from '@usertour-ui/types';
+import { Attribute } from '@usertour-packages/types';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -7,10 +7,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
-import { useDeleteAttributeMutation } from '@usertour-ui/shared-hooks';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { useToast } from '@usertour-packages/use-toast';
+import { useDeleteAttributeMutation } from '@usertour-packages/shared-hooks';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const AttributeDeleteForm = (props: {

@@ -1,15 +1,15 @@
 import { CSSProperties, forwardRef, useEffect, useRef, useState, useCallback } from 'react';
-import * as ArrowPrimitive from '@usertour-ui/react-arrow';
-import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
-import { createContext } from '@usertour-ui/react-context';
-import { useSize } from '@usertour-ui/react-use-size';
-import { CloseIcon, UsertourIcon } from '@usertour-ui/icons';
-import { useComposedRefs } from '@usertour-ui/react-compose-refs';
+import * as ArrowPrimitive from '@usertour-packages/react-arrow';
+import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
+import { createContext } from '@usertour-packages/react-context';
+import { useSize } from '@usertour-packages/react-use-size';
+import { CloseIcon, UsertourIcon } from '@usertour-packages/icons';
+import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import type { SideObject, Rect } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
-import { cn } from '@usertour-ui/ui-utils';
-import { Align, ProgressBarType, Side } from '@usertour-ui/types';
+import { cn } from '@usertour-packages/ui-utils';
+import { Align, ProgressBarType, Side } from '@usertour-packages/types';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
 

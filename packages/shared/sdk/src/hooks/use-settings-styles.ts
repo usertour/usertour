@@ -1,6 +1,6 @@
-import { convertSettings, mergeThemeDefaultSettings } from '@usertour-ui/shared-utils';
-import { convertToCssVars } from '@usertour-ui/shared-utils';
-import { ThemeTypesSetting } from '@usertour-ui/types';
+import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/shared-utils';
+import { convertToCssVars } from '@usertour-packages/shared-utils';
+import { ThemeTypesSetting } from '@usertour-packages/types';
 
 export const useSettingsStyles = (settings: ThemeTypesSetting) => {
   const themeSetting = mergeThemeDefaultSettings(settings);

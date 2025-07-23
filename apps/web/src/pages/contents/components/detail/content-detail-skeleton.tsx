@@ -1,4 +1,4 @@
-import { Skeleton } from '@usertour-ui/skeleton';
+import { Skeleton } from '@usertour-packages/skeleton';
 
 // Skeleton for individual step/item in content detail
 export const ContentDetailItemSkeleton = () => {
