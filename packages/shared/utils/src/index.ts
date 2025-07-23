@@ -2,7 +2,6 @@ export * from './convert-settings';
 export { isMatchUrlPattern, conditionsIsSame, isEqual } from './condition';
 export * from './type-utils';
 export * from './content-settings';
-export * from './loader';
 export * from './error';
 export * from './auth';
 export * from './storage';

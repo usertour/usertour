@@ -16,3 +16,10 @@ export const loadStyleSheet = async (url: string, doc: Document) => {
     };
   }).then((isLoaded: boolean) => isLoaded);
 };
+
+export const loadGoogleFontCss = (fontFamily: string, doc: Document) => {
+  if (fontFamily && fontFamily !== 'System font' && fontFamily !== 'Custom font') {
+    const url = `https://fonts.googleapis.com/css2?family=${fontFamily}`;
+    return loadStyleSheet(url, doc);
+  }
+};
