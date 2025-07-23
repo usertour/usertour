@@ -1,4 +1,4 @@
-import { Attribute, ThemeVariation } from '@usertour-packages/types';
+import { Attribute, ThemeVariation } from '@usertour/types';
 import { Button } from '@usertour-packages/button';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';

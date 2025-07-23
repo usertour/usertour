@@ -13,12 +13,7 @@ import {
   ContentEditorClickableElement,
   ContentEditorSerialize,
 } from '@usertour-packages/shared-editor';
-import {
-  BizUserInfo,
-  ChecklistData,
-  ChecklistItemType,
-  ThemeTypesSetting,
-} from '@usertour-packages/types';
+import { BizUserInfo, ChecklistData, ChecklistItemType, ThemeTypesSetting } from '@usertour/types';
 import { useSyncExternalStore } from 'react';
 import { Checklist } from '../core/checklist';
 

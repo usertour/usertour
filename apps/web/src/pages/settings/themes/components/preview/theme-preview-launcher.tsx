@@ -1,9 +1,5 @@
 import { LauncherContainer, LauncherRoot, LauncherView } from '@usertour-packages/sdk/src/launcher';
-import {
-  DEFAULT_LAUNCHER_DATA,
-  LauncherDataType,
-  ThemeTypesSetting,
-} from '@usertour-packages/types';
+import { DEFAULT_LAUNCHER_DATA, LauncherDataType, ThemeTypesSetting } from '@usertour/types';
 
 interface ThemePreviewLauncherProps {
   type: LauncherDataType;

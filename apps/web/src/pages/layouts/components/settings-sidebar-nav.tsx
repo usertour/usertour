@@ -21,7 +21,7 @@ import {
   // PlugIcon,
   KeyIcon,
 } from '@usertour-packages/icons';
-import { TeamMemberRole } from '@usertour-packages/types';
+import { TeamMemberRole } from '@usertour/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants

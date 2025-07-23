@@ -19,7 +19,7 @@ import {
   DropdownMenuSelectItem,
 } from '@usertour-packages/dropdown-menu';
 import { getStepError } from '@usertour-packages/utils';
-import { Step, ContentVersion } from '@usertour-packages/types';
+import { Step, ContentVersion } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';

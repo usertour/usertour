@@ -1,4 +1,4 @@
-import { ThemeTypesSetting, defaultSettings } from '@usertour-packages/types';
+import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
 import { hexToHSLString, hexToRGBStr } from './color';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';

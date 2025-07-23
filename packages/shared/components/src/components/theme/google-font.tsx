@@ -1,4 +1,4 @@
-import { ThemeTypesSetting } from '@usertour-packages/types';
+import { ThemeTypesSetting } from '@usertour/types';
 import { Helmet } from 'react-helmet-async';
 
 export const GoogleFontCss = (props: { settings: ThemeTypesSetting }) => {

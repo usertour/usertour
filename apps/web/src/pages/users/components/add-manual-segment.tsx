@@ -11,7 +11,7 @@ import { UserIcon3 } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback } from 'react';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { getErrorMessage } from '@usertour-packages/utils';
 

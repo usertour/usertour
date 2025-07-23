@@ -31,7 +31,7 @@ import {
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getSegmentError } from '@usertour-packages/utils';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

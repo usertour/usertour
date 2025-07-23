@@ -20,7 +20,7 @@ import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Copy } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { integrations } from '@/utils/integration';
-import { IntegrationModel } from '@usertour-packages/types';
+import { IntegrationModel } from '@usertour/types';
 import { Card, CardDescription } from '@usertour-packages/card';
 import { CardHeader, CardTitle } from '@usertour-packages/card';
 import { CardContent } from '@usertour-packages/card';

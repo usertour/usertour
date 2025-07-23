@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { AnalyticsViewsByTask } from '@usertour-packages/types';
+import { AnalyticsViewsByTask } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 
 export const AnalyticsTasks = () => {

@@ -16,13 +16,8 @@ import type {
   ContentVersion,
   contentStartReason,
   contentEndReason,
-} from '@usertour-packages/types';
-import {
-  AttributeBizTypes,
-  BizEvents,
-  EventAttributes,
-  flowReasonTitleMap,
-} from '@usertour-packages/types';
+} from '@usertour/types';
+import { AttributeBizTypes, BizEvents, EventAttributes, flowReasonTitleMap } from '@usertour/types';
 import {
   ContentEditorElementType,
   extractQuestionData,

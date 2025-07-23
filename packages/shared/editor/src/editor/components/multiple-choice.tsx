@@ -22,7 +22,7 @@ import { EditorError } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-packages/utils';
 import { cn } from '@usertour-packages/utils';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-packages/types';
+import { BizAttributeTypes } from '@usertour/types';
 
 // Constants
 const DEFAULT_BUTTON_TEXT = 'Submit';

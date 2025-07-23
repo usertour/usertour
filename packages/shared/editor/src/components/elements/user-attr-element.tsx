@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Attribute } from '@usertour-packages/types';
+import { Attribute } from '@usertour/types';
 import { ChangeEvent, MouseEvent, useCallback, useEffect, useState } from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';

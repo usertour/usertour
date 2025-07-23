@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { ContentVersion } from '@usertour-packages/types';
+import { ContentVersion } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect } from 'react';
 import { ContentVersionAction } from './content-version-action';

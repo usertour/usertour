@@ -16,7 +16,7 @@ import {
   ContentModalPlacementData,
   Side,
   Theme,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';

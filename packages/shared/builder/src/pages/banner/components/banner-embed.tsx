@@ -2,7 +2,7 @@ import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useThemeListContext } from '@usertour-packages/contexts';
 import { ContentEditor, ContentEditorRoot, createValue1 } from '@usertour-packages/shared-editor';
 import { convertSettings, convertToCssVars } from '@usertour-packages/utils';
-import { Theme, ThemeTypesSetting } from '@usertour-packages/types';
+import { Theme, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';
 import { useAws } from '../../../hooks/use-aws';
 import { useBuilderContext } from '../../../contexts';

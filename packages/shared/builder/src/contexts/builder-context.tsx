@@ -1,5 +1,5 @@
 import { defaultStep, getErrorMessage, isEqual } from '@usertour-packages/utils';
-import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-packages/types';
+import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import {
   ReactNode,
   createContext,

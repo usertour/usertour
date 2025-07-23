@@ -1,5 +1,5 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import { BizUserInfo, ThemeTypesSetting } from '@usertour-packages/types';
+import { BizUserInfo, ThemeTypesSetting } from '@usertour/types';
 import { uuidV4 } from '@usertour-packages/utils';
 import { getUserTourCss } from '../utils/env';
 

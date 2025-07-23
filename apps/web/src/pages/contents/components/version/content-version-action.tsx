@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { PlaneIcon } from '@usertour-packages/icons';
-import { ContentVersion } from '@usertour-packages/types';
+import { ContentVersion } from '@usertour/types';
 import { useState } from 'react';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';

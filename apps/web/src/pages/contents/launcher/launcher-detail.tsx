@@ -3,7 +3,7 @@ import {
   useContentDetailProviderWrapper,
 } from '@/contexts/content-detail-provider';
 import { ContentLoading } from '@/components/molecules/content-loading';
-import { ContentTypeName } from '@usertour-packages/types';
+import { ContentTypeName } from '@usertour/types';
 import { ContentDetailContent } from '../components/detail/content-detail-content';
 import { ContentDetailHeader } from '../components/detail/content-detail-header';
 import { ContentDetailSettings } from '../components/detail/content-detail-settings';

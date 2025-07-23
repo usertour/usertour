@@ -1,7 +1,7 @@
 import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
-import { ProgressBarType, ProgressBarPosition } from '@usertour-packages/types';
+import { ProgressBarType, ProgressBarPosition } from '@usertour/types';
 import { Label } from '@usertour-packages/label';
 import { Switch } from '@usertour-packages/switch';
 import { Alert, AlertDescription } from '@usertour-packages/alert';

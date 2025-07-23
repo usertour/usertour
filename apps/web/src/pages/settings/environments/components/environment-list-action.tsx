@@ -1,5 +1,5 @@
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@usertour-packages/types';
+import { Environment } from '@usertour/types';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {

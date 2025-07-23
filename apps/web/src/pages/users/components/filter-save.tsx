@@ -11,7 +11,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { Button } from '@usertour-packages/button';
 import { conditionsIsSame, getErrorMessage } from '@usertour-packages/utils';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';

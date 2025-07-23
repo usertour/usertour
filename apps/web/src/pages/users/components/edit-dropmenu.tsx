@@ -5,7 +5,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { Delete2Icon } from '@usertour-packages/icons';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { UserSegmentDeleteForm } from './delete-form';
 

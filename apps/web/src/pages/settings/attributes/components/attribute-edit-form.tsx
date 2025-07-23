@@ -1,7 +1,7 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
-import { Attribute } from '@usertour-packages/types';
+import { Attribute } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
@@ -38,7 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour-packages/types';
+import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';

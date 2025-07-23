@@ -4,7 +4,7 @@ import {
   ChecklistInitialDisplay,
   ThemeDetailPreviewType,
   ThemeDetailSelectorType,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 
 export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
   {

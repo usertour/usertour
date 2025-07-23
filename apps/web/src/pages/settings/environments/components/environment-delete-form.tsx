@@ -1,4 +1,4 @@
-import { Environment } from '@usertour-packages/types';
+import { Environment } from '@usertour/types';
 import {
   AlertDialog,
   AlertDialogCancel,

@@ -1,6 +1,6 @@
 import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { defaultSettings } from '@usertour-packages/types';
+import { defaultSettings } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { ThemeEditor } from './theme-editor';
 

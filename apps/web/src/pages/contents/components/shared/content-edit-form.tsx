@@ -28,7 +28,7 @@ import { Input } from '@usertour-packages/input';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { useOpenSelector } from '@usertour-packages/shared-hooks';
 import { getAuthToken, getErrorMessage } from '@usertour-packages/utils';
-import { BuilderType, Content } from '@usertour-packages/types';
+import { BuilderType, Content } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';

@@ -25,7 +25,7 @@ import {
   AttributeBizTypes,
   IntegrationObjectMappingSettings,
   IntegrationObjectMappingModel,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { ObjectMappingPanel } from './object-mapping-panel';
 import { ObjectMappingObjectSelect } from './object-mapping-select';
 import { Label } from '@usertour-packages/label';

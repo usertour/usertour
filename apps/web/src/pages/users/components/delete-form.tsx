@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 

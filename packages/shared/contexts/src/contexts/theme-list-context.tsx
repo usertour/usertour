@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { listThemes } from '@usertour-packages/gql';
-import { Theme } from '@usertour-packages/types';
+import { Theme } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface ThemeListProviderProps {

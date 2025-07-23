@@ -1,7 +1,7 @@
 'use client';
 
 import { MESSAGE_MEASURE_INSTALL, MESSAGE_MEASURE_LISTENER } from '@usertour-packages/constants';
-import { ElementSelectorPropsData, TargetData } from '@usertour-packages/types';
+import { ElementSelectorPropsData, TargetData } from '@usertour/types';
 import { cn, uuidV4 } from '@usertour-packages/utils';
 import { forwardRef, useEffect, useState } from 'react';
 

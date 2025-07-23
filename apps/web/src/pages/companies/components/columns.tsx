@@ -4,7 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@usertour-packages/checkbox';
 
 import { format } from 'date-fns';
-import { BizCompany } from '@usertour-packages/types';
+import { BizCompany } from '@usertour/types';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 

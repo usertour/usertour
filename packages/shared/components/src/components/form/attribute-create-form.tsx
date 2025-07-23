@@ -45,7 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour-packages/types';
+import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';

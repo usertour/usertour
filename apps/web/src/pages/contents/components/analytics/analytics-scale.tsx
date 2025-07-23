@@ -5,7 +5,7 @@ import type {
   Content,
   ContentQuestionAnalytics,
   Question,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-packages/chart';
 import { format } from 'date-fns';

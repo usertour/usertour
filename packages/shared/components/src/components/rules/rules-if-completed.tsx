@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { ContentDataType } from '@usertour-packages/types';
+import { ContentDataType } from '@usertour/types';
 import { useId, useState } from 'react';
 
 interface RulesIfCompletedProps {

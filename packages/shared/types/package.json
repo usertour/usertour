@@ -1,15 +1,29 @@
 {
-  "name": "@usertour-packages/types",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@usertour/types",
+  "version": "0.0.1",
   "type": "module",
-  "main": "src/index.ts",
+  "description": "TypeScript type definitions and enums shared across the UserTour project",
+  "homepage": "https://www.usertour.io",
+  "author": "Usertour, Inc. <support@usertour.io>",
+  "license": "AGPL-3.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
   "scripts": {
     "build": "tsup src --dts",
     "dev": "pnpm build:fast -- --watch",
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
-    "build:fast": "tsup src"
+    "build:fast": "tsup src",
+    "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
     "typescript": "^5.0.2"

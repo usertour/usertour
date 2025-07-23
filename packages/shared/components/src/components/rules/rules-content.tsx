@@ -25,7 +25,7 @@ import {
 } from '@usertour-packages/command';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getContentError } from '@usertour-packages/utils';
-import { ContentDataType } from '@usertour-packages/types';
+import { ContentDataType } from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';

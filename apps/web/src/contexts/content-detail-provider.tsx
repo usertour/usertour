@@ -12,7 +12,7 @@ import { ContentVersionProvider } from './content-version-context';
 import { ContentVersionListProvider } from './content-version-list-context';
 import { SegmentListProvider } from './segment-list-context';
 import { ThemeListProvider } from './theme-list-context';
-import { ContentTypeName } from '@usertour-packages/types';
+import { ContentTypeName } from '@usertour/types';
 
 export interface ContentDetailProviderProps {
   children: ReactNode;

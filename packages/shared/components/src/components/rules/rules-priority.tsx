@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { ContentPriority } from '@usertour-packages/types';
+import { ContentPriority } from '@usertour/types';
 import { useState } from 'react';
 
 const itemsMapping = [

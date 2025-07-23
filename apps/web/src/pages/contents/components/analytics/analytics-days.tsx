@@ -10,7 +10,7 @@ import {
   ChartTooltipContent,
 } from '@usertour-packages/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
-import { ContentDataType } from '@usertour-packages/types';
+import { ContentDataType } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';

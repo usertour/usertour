@@ -1,6 +1,6 @@
-import { LauncherTriggerEvent } from '@usertour-packages/types';
-import { LauncherTriggerElement } from '@usertour-packages/types';
-import { LauncherData } from '@usertour-packages/types';
+import { LauncherTriggerEvent } from '@usertour/types';
+import { LauncherTriggerElement } from '@usertour/types';
+import { LauncherData } from '@usertour/types';
 import { useEffect } from 'react';
 import { off, on } from '../utils/listener';
 

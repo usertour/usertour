@@ -1,6 +1,6 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Attribute } from '@usertour-packages/types';
+import { Attribute } from '@usertour/types';
 import {
   Table,
   TableBody,

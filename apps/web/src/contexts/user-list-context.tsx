@@ -1,7 +1,7 @@
 import { NetworkStatus, useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { queryBizUser } from '@usertour-packages/gql';
-import { BizUser, PageInfo, Pagination } from '@usertour-packages/types';
+import { BizUser, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface UserQuery {

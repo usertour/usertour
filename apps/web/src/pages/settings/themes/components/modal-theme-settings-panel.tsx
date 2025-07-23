@@ -1,4 +1,4 @@
-import { Attribute, ThemeTypesSetting } from '@usertour-packages/types';
+import { Attribute, ThemeTypesSetting } from '@usertour/types';
 import { Button } from '@usertour-packages/button';
 import { OutlineInput } from '@usertour-packages/input';
 import { Delete2Icon } from '@usertour-packages/icons';

@@ -17,7 +17,7 @@ import {
   LauncherTriggerElement,
   RulesCondition,
   ThemeTypesSetting,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Launcher } from '../core/launcher';
 import { useEventHandlers } from '../hooks/use-event-handlers';

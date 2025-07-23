@@ -9,7 +9,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { getErrorMessage } from '@usertour-packages/utils';
 import { useDeleteContentMutation } from '@usertour-packages/shared-hooks';
-import { Content, ContentDataType } from '@usertour-packages/types';
+import { Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useCallback } from 'react';

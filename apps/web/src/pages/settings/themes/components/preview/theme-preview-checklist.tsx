@@ -9,11 +9,7 @@ import {
   ChecklistRoot,
 } from '@usertour-packages/sdk/src/checklist';
 import { PopperMadeWith } from '@usertour-packages/sdk/src/popper';
-import {
-  ChecklistData,
-  ChecklistInitialDisplay,
-  ThemeTypesSetting,
-} from '@usertour-packages/types';
+import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
 

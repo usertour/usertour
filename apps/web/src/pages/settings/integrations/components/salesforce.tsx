@@ -22,7 +22,7 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { DropdownMenu } from '@usertour-packages/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
-import { IntegrationObjectMappingModel } from '@usertour-packages/types';
+import { IntegrationObjectMappingModel } from '@usertour/types';
 import { ObjectMappingReadonly } from './object-mapping/object-mapping-readonly';
 import { ObjectMappingDialog } from './object-mapping/object-mapping-dialog';
 

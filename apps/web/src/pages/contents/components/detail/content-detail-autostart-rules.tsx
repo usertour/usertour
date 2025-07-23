@@ -25,7 +25,7 @@ import {
   Frequency,
   RulesCondition,
   autoStartRulesSetting,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { useCallback, useId, useState, useEffect } from 'react';
 
 export enum ContentDetailAutoStartRulesType {

@@ -17,7 +17,7 @@ import {
   ContentVersion,
   RulesCondition,
   Step,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { cn, cuid } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';

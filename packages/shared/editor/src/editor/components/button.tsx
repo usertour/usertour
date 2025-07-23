@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { RulesCondition } from '@usertour-packages/types';
+import { RulesCondition } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ContentActions } from '../..';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';

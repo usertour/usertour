@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { UserSegmentCreateForm } from './create-form';

@@ -15,7 +15,7 @@ import type { Rect, Placement, Middleware, SideObject } from '@floating-ui/dom';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
-import { Align, Side } from '@usertour-packages/types';
+import { Align, Side } from '@usertour/types';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 
 type Boundary = Element | null;

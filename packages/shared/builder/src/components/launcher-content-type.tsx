@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { LauncherDataType } from '@usertour-packages/types';
+import { LauncherDataType } from '@usertour/types';
 
 interface LauncherTypeProps {
   type: LauncherDataType;

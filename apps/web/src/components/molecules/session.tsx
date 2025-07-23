@@ -3,8 +3,8 @@ import { TooltipContent } from '@usertour-packages/tooltip';
 import { PlayIcon } from '@usertour-packages/icons';
 import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
-import { BizEvents, BizSession, ChecklistData, ContentVersion } from '@usertour-packages/types';
-import { Event } from '@usertour-packages/types';
+import { BizEvents, BizSession, ChecklistData, ContentVersion } from '@usertour/types';
+import { Event } from '@usertour/types';
 import { formatDistanceStrict } from 'date-fns';
 
 const LauncherProgressColumn = ({

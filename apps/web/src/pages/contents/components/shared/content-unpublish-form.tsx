@@ -15,7 +15,7 @@ import {
 } from '@usertour-packages/dialog';
 import { unpublishedContentVersion } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { Content } from '@usertour-packages/types';
+import { Content } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { Checkbox } from '@usertour-packages/checkbox';

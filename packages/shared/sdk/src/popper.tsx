@@ -9,7 +9,7 @@ import type { SideObject, Rect } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
 import { cn } from '@usertour-packages/utils';
-import { Align, ProgressBarType, Side } from '@usertour-packages/types';
+import { Align, ProgressBarType, Side } from '@usertour/types';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
 

@@ -5,7 +5,7 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import { BizSession, ContentDataType } from '@usertour-packages/types';
+import { BizSession, ContentDataType } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {

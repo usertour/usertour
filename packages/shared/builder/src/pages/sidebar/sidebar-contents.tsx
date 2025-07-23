@@ -42,7 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Step } from '@usertour-packages/types';
+import { Step } from '@usertour/types';
 import { forwardRef, useCallback, useState } from 'react';
 
 import { defaultStep } from '@usertour-packages/utils';

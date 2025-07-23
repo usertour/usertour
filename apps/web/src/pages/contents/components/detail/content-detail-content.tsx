@@ -20,7 +20,7 @@ import {
   LauncherDataType,
   Step,
   Theme,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { ContentEditForm } from '../shared/content-edit-form';

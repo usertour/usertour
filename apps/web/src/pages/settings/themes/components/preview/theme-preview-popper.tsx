@@ -9,7 +9,7 @@ import {
   PopperOverlay,
 } from '@usertour-packages/sdk';
 import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
-import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour-packages/types';
+import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { useRef } from 'react';
 import { Rect } from '../theme-editor';
 

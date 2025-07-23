@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { BizCompany, Segment } from '@usertour-packages/types';
+import { BizCompany, Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns, columnsSystem } from '../components/columns';

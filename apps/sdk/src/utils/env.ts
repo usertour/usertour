@@ -1,4 +1,4 @@
-import { UserTourTypes } from '@usertour-packages/types';
+import { UserTourTypes } from '@usertour/types';
 import { window } from './globals';
 
 const getWsUri = () => {

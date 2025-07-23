@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour-p
 import { updateContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { Content } from '@usertour-packages/types';
+import { Content } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';

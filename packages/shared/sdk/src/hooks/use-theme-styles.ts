@@ -1,6 +1,6 @@
 import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/utils';
 import { convertToCssVars } from '@usertour-packages/utils';
-import { Theme, ThemeTypesSetting } from '@usertour-packages/types';
+import { Theme, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useState } from 'react';
 
 export const useThemeStyles = (theme: Theme) => {

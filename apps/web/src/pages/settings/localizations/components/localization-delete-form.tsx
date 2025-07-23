@@ -11,7 +11,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { deleteLocalization } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { Localization } from '@usertour-packages/types';
+import { Localization } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 
 export const LocalizationDeleteForm = (props: {

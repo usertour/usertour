@@ -2,7 +2,7 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
-import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour-packages/types';
+import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour/types';
 import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';

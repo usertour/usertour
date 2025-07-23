@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { listAttributes } from '@usertour-packages/gql';
-import { Attribute } from '@usertour-packages/types';
+import { Attribute } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface AttributeListProviderProps {

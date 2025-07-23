@@ -2,7 +2,7 @@
 import { getApolloClient } from '@/apollo';
 import { Icons } from '@/components/atoms/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { Attribute } from '@usertour-packages/types';
+import { Attribute } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';

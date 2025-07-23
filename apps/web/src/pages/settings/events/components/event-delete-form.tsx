@@ -1,4 +1,4 @@
-import { Event } from '@usertour-packages/types';
+import { Event } from '@usertour/types';
 import {
   AlertDialog,
   AlertDialogCancel,

@@ -1,8 +1,8 @@
 import { Button } from '@usertour-packages/button';
 import { Label } from '@usertour-packages/label';
 import { HelpTooltip } from '@usertour-packages/shared-components';
-import { ModalPosition } from '@usertour-packages/types';
-import { ContentModalPlacementData } from '@usertour-packages/types';
+import { ModalPosition } from '@usertour/types';
+import { ContentModalPlacementData } from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import { useState } from 'react';
 import { InputNumber } from './shared/input';

@@ -14,11 +14,7 @@ import { defaultRulesItems } from '@usertour-packages/shared-components';
 import { ContentActions } from '@usertour-packages/shared-editor';
 import { useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
-import {
-  ChecklistItemType,
-  ContentActionsItemType,
-  RulesCondition,
-} from '@usertour-packages/types';
+import { ChecklistItemType, ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { useId } from 'react';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';

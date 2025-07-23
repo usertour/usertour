@@ -27,7 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { ContentOmbedInfo } from '@usertour-packages/types';
+import { ContentOmbedInfo } from '@usertour/types';
 import { ChangeEvent, useCallback, useMemo, useState, forwardRef } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 /* eslint-disable @next/next/no-img-element */

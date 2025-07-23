@@ -5,7 +5,7 @@ import { Label } from '@usertour-packages/label';
 import { Rules, RulesWait } from '@usertour-packages/shared-components';
 import { defaultRulesItems } from '@usertour-packages/shared-components/src/components/rules';
 import { ContentActions } from '@usertour-packages/shared-editor';
-import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour-packages/types';
+import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 
 interface ContentTriggerProps {

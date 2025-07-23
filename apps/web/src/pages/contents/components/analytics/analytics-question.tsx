@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { AnswerCount, ContentQuestionAnalytics } from '@usertour-packages/types';
+import { AnswerCount, ContentQuestionAnalytics } from '@usertour/types';
 import { AnalyticsNPS } from './analytics-nps';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { AnalyticsScale } from './analytics-scale';

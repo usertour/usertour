@@ -9,7 +9,7 @@ import { ContentLocalizationList } from '../version/content-localization-list';
 import { ContentDetailContent } from './content-detail-content';
 import { ContentDetailHeader } from './content-detail-header';
 import { ContentDetailSettings } from './content-detail-settings';
-import { ContentTypeName } from '@usertour-packages/types';
+import { ContentTypeName } from '@usertour/types';
 
 interface FlowDetailProps {
   contentId: string;

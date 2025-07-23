@@ -10,7 +10,7 @@ import {
   SDKContent,
   Step,
   Theme,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';

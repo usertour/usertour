@@ -24,7 +24,7 @@ import { createContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { useOpenSelector } from '@usertour-packages/shared-hooks';
 import { getAuthToken, getErrorMessage } from '@usertour-packages/utils';
-import { BuilderType, Content, ContentDataType } from '@usertour-packages/types';
+import { BuilderType, Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';

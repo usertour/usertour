@@ -8,7 +8,7 @@ import {
   BizAttributeTypes,
   IntegrationObjectMappingSettings,
   IntegrationObjectMappingItem,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { useState } from 'react';
 import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
 import { cn } from '@usertour-packages/utils';

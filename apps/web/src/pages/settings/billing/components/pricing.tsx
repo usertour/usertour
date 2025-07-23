@@ -23,7 +23,7 @@ import {
   useCreatePortalSessionMutation,
 } from '@usertour-packages/shared-hooks';
 import { Separator } from '@usertour-packages/separator';
-import { PlanType } from '@usertour-packages/types';
+import { PlanType } from '@usertour/types';
 import { Progress } from '@usertour-packages/progress';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { QuestionTooltip } from '@usertour-packages/tooltip';

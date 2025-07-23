@@ -2,7 +2,7 @@
 
 import { Icons } from '@/components/atoms/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { defaultSettings } from '@usertour-packages/types';
+import { defaultSettings } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-packages/button';

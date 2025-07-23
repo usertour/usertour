@@ -28,7 +28,7 @@ import {
   Side,
   Step,
   Theme,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
 

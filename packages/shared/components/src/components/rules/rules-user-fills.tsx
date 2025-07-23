@@ -1,7 +1,7 @@
 import { TextFillIcon } from '@usertour-packages/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { getTextFillError } from '@usertour-packages/utils';
-import { ElementSelectorPropsData } from '@usertour-packages/types';
+import { ElementSelectorPropsData } from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';

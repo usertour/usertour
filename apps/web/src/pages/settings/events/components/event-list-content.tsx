@@ -1,6 +1,6 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { Event } from '@usertour-packages/types';
+import { Event } from '@usertour/types';
 import {
   Table,
   TableBody,

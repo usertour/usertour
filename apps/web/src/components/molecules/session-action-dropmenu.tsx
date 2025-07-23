@@ -24,7 +24,7 @@ import {
   ZoomInIcon,
 } from '@usertour-packages/icons';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/shared-hooks';
-import { BizEvent, BizEvents, BizSession } from '@usertour-packages/types';
+import { BizEvent, BizEvents, BizSession } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

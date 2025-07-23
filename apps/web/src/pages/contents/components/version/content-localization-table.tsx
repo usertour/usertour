@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { VersionOnLocalization } from '@usertour-packages/types';
+import { VersionOnLocalization } from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';

@@ -1,6 +1,6 @@
 import { useThemeListContext } from '@usertour-packages/contexts';
 import { ContentEditorRoot } from '@usertour-packages/shared-editor';
-import { Theme } from '@usertour-packages/types';
+import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBuilderContext, useLauncherContext } from '../../../contexts';

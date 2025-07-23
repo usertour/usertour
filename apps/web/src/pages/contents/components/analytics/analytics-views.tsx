@@ -3,7 +3,7 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour-packages/icons';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { AnalyticsData, ContentDataType } from '@usertour-packages/types';
+import { AnalyticsData, ContentDataType } from '@usertour/types';
 import { AnalyticsViewsSkeleton } from './analytics-skeleton';
 
 interface AnalyticsViewsProps {

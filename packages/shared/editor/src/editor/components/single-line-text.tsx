@@ -10,7 +10,7 @@ import { ContentEditorSingleLineTextElement } from '../../types/editor';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { isEmptyString } from '@usertour-packages/utils';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-packages/types';
+import { BizAttributeTypes } from '@usertour/types';
 
 interface ContentEditorSingleLineTextProps {
   element: ContentEditorSingleLineTextElement;

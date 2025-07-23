@@ -15,7 +15,7 @@ import {
   LauncherData,
   LauncherPositionType,
   Theme,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderContext } from '../../../contexts';
 export interface LauncherContentProps {

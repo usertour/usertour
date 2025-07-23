@@ -8,7 +8,7 @@ import {
   NpsIcon,
   SurveyIcon,
 } from '@usertour-packages/icons';
-import { ContentTypeName } from '@usertour-packages/types';
+import { ContentTypeName } from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 

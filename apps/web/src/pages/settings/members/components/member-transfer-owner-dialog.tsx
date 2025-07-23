@@ -1,6 +1,6 @@
 'use client';
 
-import { TeamMemberRole, type TeamMember } from '@usertour-packages/types';
+import { TeamMemberRole, type TeamMember } from '@usertour/types';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,

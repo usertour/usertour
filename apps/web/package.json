@@ -70,7 +70,7 @@
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
-    "@usertour-packages/types": "workspace:^",
+    "@usertour/types": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour-packages/react-use-rect": "workspace:^",
     "@dnd-kit/core": "^6.1.0",

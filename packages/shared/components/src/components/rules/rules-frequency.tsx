@@ -20,7 +20,7 @@ import {
   RulesFrequencyValue,
   RulesFrequencyValueAtLeast,
   RulesFrequencyValueEvery,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { HelpTooltip } from '../common/help-tooltip';
 

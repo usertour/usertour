@@ -16,7 +16,7 @@ import {
   ElementConditionLogic,
   StringConditionLogic,
   BizSession,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import {
   differenceInDays,
   differenceInHours,

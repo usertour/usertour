@@ -1,4 +1,4 @@
-import { Step } from '@usertour-packages/types';
+import { Step } from '@usertour/types';
 
 export const defaultStep: Step = {
   name: 'step',

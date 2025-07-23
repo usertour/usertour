@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { HelpTooltip } from '@usertour-packages/shared-components';
-import { Theme } from '@usertour-packages/types';
+import { Theme } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 
 interface ContentThemeProps {

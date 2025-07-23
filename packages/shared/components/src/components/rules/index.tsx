@@ -1,5 +1,5 @@
 import { hasError } from '@usertour-packages/utils';
-import { Attribute, Content, RulesCondition, Segment } from '@usertour-packages/types';
+import { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
 import { RulesContext } from './rules-context';
 import { RulesGroup } from './rules-group';
 

@@ -11,7 +11,7 @@ import { Switch } from '@usertour-packages/switch';
 import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { integrations } from '@/utils/integration';
-import { IntegrationModel } from '@usertour-packages/types';
+import { IntegrationModel } from '@usertour/types';
 import { Card, CardDescription } from '@usertour-packages/card';
 import { CardHeader, CardTitle } from '@usertour-packages/card';
 import { CardContent } from '@usertour-packages/card';

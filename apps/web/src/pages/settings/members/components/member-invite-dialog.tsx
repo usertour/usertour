@@ -34,7 +34,7 @@ import {
   useInviteTeamMemberMutation,
 } from '@usertour-packages/shared-hooks';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { PlanType, Subscription, TeamMemberRole } from '@usertour-packages/types';
+import { PlanType, Subscription, TeamMemberRole } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { AlertCircle } from 'lucide-react';
 import * as React from 'react';

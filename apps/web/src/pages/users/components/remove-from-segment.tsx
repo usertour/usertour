@@ -3,7 +3,7 @@ import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BizUserRemoveForm } from './bizuser-remove-form';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;

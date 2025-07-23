@@ -12,7 +12,7 @@ import {
   IntegrationObjectMappingModel,
   IntegrationObjectMappingItem,
   IntegrationObjectMappingSettings,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import { format } from 'date-fns';
 import { Button } from '@usertour-packages/button';

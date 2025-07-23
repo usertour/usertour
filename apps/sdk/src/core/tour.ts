@@ -15,7 +15,7 @@ import {
   StepContentType,
   StepTrigger,
   contentEndReason,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { evalCode } from '@usertour-packages/utils';
 import { TourStore } from '../types/store';
 import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';

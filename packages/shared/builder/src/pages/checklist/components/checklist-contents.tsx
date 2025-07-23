@@ -36,7 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { ChecklistItemType } from '@usertour-packages/types';
+import { ChecklistItemType } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../../contexts';
 // Add interface for component props

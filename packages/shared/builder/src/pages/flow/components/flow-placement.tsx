@@ -3,7 +3,7 @@ import { Button } from '@usertour-packages/button';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
 import { getAuthToken } from '@usertour-packages/utils';
 import { window } from '@usertour-packages/utils';
-import { ElementSelectorPropsData, StepScreenshot } from '@usertour-packages/types';
+import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import {
   ContentPlacementActions,
   ContentPlacementProvider,

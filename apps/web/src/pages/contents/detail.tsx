@@ -1,4 +1,4 @@
-import { ContentTypeName } from '@usertour-packages/types';
+import { ContentTypeName } from '@usertour/types';
 import { useParams } from 'react-router-dom';
 import { BannerDetail } from './banner/detail';
 import { ChecklistDetail } from './checklist/detail';

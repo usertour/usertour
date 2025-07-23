@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { getContentVersion } from '@usertour-packages/gql';
-import { ContentVersion } from '@usertour-packages/types';
+import { ContentVersion } from '@usertour/types';
 import {
   Dispatch,
   ReactNode,

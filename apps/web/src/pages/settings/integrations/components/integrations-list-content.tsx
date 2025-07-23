@@ -15,7 +15,7 @@ import {
   useGetSalesforceAuthUrlQuery,
 } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';
-import { IntegrationModel } from '@usertour-packages/types';
+import { IntegrationModel } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
 import { CircleIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';

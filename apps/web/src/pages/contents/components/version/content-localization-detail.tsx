@@ -22,7 +22,7 @@ import type {
   CustomElement,
 } from '@usertour-packages/shared-editor';
 import { ContentEditorElementType } from '@usertour-packages/shared-editor';
-import type { ContentVersion, Localization, Step } from '@usertour-packages/types';
+import type { ContentVersion, Localization, Step } from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';

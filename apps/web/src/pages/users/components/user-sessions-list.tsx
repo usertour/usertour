@@ -1,5 +1,5 @@
 import { useUserSessionsContext } from '@/contexts/user-sessions-context';
-import { BizSession, ContentDataType, Event } from '@usertour-packages/types';
+import { BizSession, ContentDataType, Event } from '@usertour/types';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import {

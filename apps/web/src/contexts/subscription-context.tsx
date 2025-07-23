@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { getSubscriptionByProjectId, getSubscriptionUsage } from '@usertour-packages/gql';
-import { PlanType, type Subscription } from '@usertour-packages/types';
+import { PlanType, type Subscription } from '@usertour/types';
 import {
   HobbySessionLimit,
   ProSessionLimit,

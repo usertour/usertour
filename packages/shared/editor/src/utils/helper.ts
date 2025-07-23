@@ -9,7 +9,7 @@ import {
   ContentEditorRootElement,
 } from '../types/editor';
 import { isEmptyString } from '@usertour-packages/utils';
-import { Step } from '@usertour-packages/types';
+import { Step } from '@usertour/types';
 import { cuid } from '@usertour-packages/utils';
 
 export const EmptyGroup = {

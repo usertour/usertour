@@ -1,4 +1,4 @@
-import { RulesCondition } from '@usertour-packages/types';
+import { RulesCondition } from '@usertour/types';
 import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
 export interface RulesGroupContextValue {

@@ -1,11 +1,7 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { Separator } from '@usertour-packages/separator';
 import { cn } from '@usertour-packages/utils';
-import {
-  LauncherDataType,
-  ThemeDetailSelectorType,
-  ThemeDetailPreviewType,
-} from '@usertour-packages/types';
+import { LauncherDataType, ThemeDetailSelectorType, ThemeDetailPreviewType } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';
 import { useRect } from '@usertour-packages/react-use-rect';
 import { useDebouncedCallback } from 'use-debounce';
@@ -15,7 +11,7 @@ import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
 import { ContentEditorRoot, createValue6, surveysValue } from '@usertour-packages/shared-editor';
-import { ThemeTypesSetting } from '@usertour-packages/types';
+import { ThemeTypesSetting } from '@usertour/types';
 import { Rect } from './theme-editor';
 
 interface ThemePreviewPanelProps {

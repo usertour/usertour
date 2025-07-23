@@ -1,7 +1,7 @@
-import { ThemeTypesSetting, ThemeVariation } from '@usertour-packages/types';
+import { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useQuery } from '@apollo/client';
 import { getTheme } from '@usertour-packages/gql';
-import { Theme, ThemeDetailSelectorType } from '@usertour-packages/types';
+import { Theme, ThemeDetailSelectorType } from '@usertour/types';
 import {
   Dispatch,
   ReactNode,

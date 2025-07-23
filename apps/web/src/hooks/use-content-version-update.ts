@@ -3,7 +3,7 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useMutation } from '@apollo/client';
 import { createContentVersion, updateContentVersion } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { ContentConfigObject } from '@usertour-packages/types';
+import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';

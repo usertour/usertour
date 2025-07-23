@@ -10,7 +10,7 @@ import {
 import { setDefaultTheme } from '@usertour-packages/gql';
 import { CopyIcon, Delete2Icon } from '@usertour-packages/icons';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { Theme } from '@usertour-packages/types';
+import { Theme } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { ReactNode, useState } from 'react';
 import { ThemeDeleteForm } from './theme-delete-form';

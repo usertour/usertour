@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { querySessionsByExternalId } from '@usertour-packages/gql';
-import { BizSession, PageInfo, Pagination, SessionQuery } from '@usertour-packages/types';
+import { BizSession, PageInfo, Pagination, SessionQuery } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 const defaultPagination = {

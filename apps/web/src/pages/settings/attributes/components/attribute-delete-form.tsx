@@ -1,4 +1,4 @@
-import { Attribute } from '@usertour-packages/types';
+import { Attribute } from '@usertour/types';
 import {
   AlertDialog,
   AlertDialogCancel,

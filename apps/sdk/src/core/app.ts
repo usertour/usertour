@@ -17,8 +17,8 @@ import {
   contentEndReason,
   contentStartReason,
   BizSession,
-} from '@usertour-packages/types';
-import { UserTourTypes } from '@usertour-packages/types';
+} from '@usertour/types';
+import { UserTourTypes } from '@usertour/types';
 import { uuidV4 } from '@usertour-packages/utils';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';

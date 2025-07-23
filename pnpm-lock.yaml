@@ -87,12 +87,12 @@ importers:
       '@usertour-packages/tailwind':
         specifier: workspace:^
         version: link:../../packages/shared/tailwind
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../../packages/shared/types
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../../packages/shared/utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../../packages/shared/types
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -686,15 +686,15 @@ importers:
       '@usertour-packages/tooltip':
         specifier: workspace:^
         version: link:../../packages/components/tooltip
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../../packages/shared/types
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../packages/components/use-toast
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../../packages/shared/utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../../packages/shared/types
       apollo3-cache-persist:
         specifier: ^0.14.1
         version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
@@ -3089,15 +3089,15 @@ importers:
       '@usertour-packages/tooltip':
         specifier: workspace:^
         version: link:../../components/tooltip
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../types
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
       animejs:
         specifier: ^3.2.1
         version: 3.2.2
@@ -3333,15 +3333,15 @@ importers:
       '@usertour-packages/tooltip':
         specifier: workspace:^
         version: link:../../components/tooltip
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../types
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -3403,7 +3403,7 @@ importers:
 
   packages/shared/constants:
     dependencies:
-      '@usertour-packages/types':
+      '@usertour/types':
         specifier: workspace:^
         version: link:../types
       react:
@@ -3413,36 +3413,9 @@ importers:
       '@types/react':
         specifier: ^18.0.37
         version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.1.6))(eslint@8.57.1)(typescript@5.1.6)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.1.6)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
       typescript:
         specifier: ^5.0.2
         version: 5.1.6
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/shared/contexts:
     dependencies:
@@ -3455,7 +3428,7 @@ importers:
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../gql
-      '@usertour-packages/types':
+      '@usertour/types':
         specifier: workspace:^
         version: link:../types
       react:
@@ -3628,15 +3601,15 @@ importers:
       '@usertour-packages/tooltip':
         specifier: workspace:^
         version: link:../../components/tooltip
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../types
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -3820,12 +3793,12 @@ importers:
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../gql
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../types
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -3948,12 +3921,12 @@ importers:
       '@usertour-packages/react-use-size':
         specifier: workspace:^
         version: link:../../radix/use-size
-      '@usertour-packages/types':
-        specifier: workspace:^
-        version: link:../types
       '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -4040,7 +4013,7 @@ importers:
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
-      '@usertour-packages/types':
+      '@usertour/types':
         specifier: workspace:^
         version: link:../types
       chroma-js:

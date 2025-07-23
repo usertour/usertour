@@ -2,7 +2,7 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@usertour-packages/checkbox';
-import { BizUser } from '@usertour-packages/types';
+import { BizUser } from '@usertour/types';
 import { CompanyIcon } from '@usertour-packages/icons';
 
 import { format } from 'date-fns';

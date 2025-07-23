@@ -5,7 +5,7 @@ import {
   ContentVersion,
   RulesCondition,
   Step,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { CSSProperties, ReactNode } from 'react';
 import { UseMeasureRect } from 'react-use/lib/useMeasure';
 import { Descendant } from 'slate';

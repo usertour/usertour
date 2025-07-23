@@ -1,6 +1,6 @@
 import { useQueryInviteListQuery } from '@usertour-packages/shared-hooks';
 import { useQueryTeamMemberListQuery } from '@usertour-packages/shared-hooks';
-import { TeamMember } from '@usertour-packages/types';
+import { TeamMember } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface MemberProviderProps {

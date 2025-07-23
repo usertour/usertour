@@ -3,7 +3,7 @@ import {
   ChecklistItemType,
   ModalPosition,
   ThemeTypesSetting,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import {
   forwardRef,
   useState,

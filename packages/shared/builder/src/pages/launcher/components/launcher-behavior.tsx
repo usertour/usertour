@@ -19,7 +19,7 @@ import {
   LauncherTriggerElement,
   LauncherTriggerEvent,
   RulesCondition,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { useCallback } from 'react';
 import { useBuilderContext, useLauncherContext } from '../../../contexts';
 import { BuilderMode } from '../../../contexts';

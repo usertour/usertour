@@ -10,7 +10,7 @@ import {
   Theme,
   UserTourTypes,
   contentStartReason,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';

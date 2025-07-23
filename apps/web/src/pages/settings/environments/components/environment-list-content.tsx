@@ -1,6 +1,6 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@usertour-packages/types';
+import { Environment } from '@usertour/types';
 import { CopyIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {

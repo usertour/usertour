@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { LauncherPositionType } from '@usertour-packages/types';
+import { LauncherPositionType } from '@usertour/types';
 interface LauncherPositionProps {
   type?: LauncherPositionType;
   onChange: (value: LauncherPositionType) => void;

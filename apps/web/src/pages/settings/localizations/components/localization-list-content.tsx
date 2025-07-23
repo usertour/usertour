@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { Localization } from '@usertour-packages/types';
+import { Localization } from '@usertour/types';
 import { format } from 'date-fns';
 import { LocalizationListAction } from './localization-list-action';
 

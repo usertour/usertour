@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { queryBizCompany } from '@usertour-packages/gql';
-import { BizCompany, PageInfo, Pagination } from '@usertour-packages/types';
+import { BizCompany, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface CompanyQuery {

@@ -3,7 +3,7 @@ import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BizCompanyRemoveForm } from './company-remove-form';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 
 interface RemoveFromSegmentProps {

@@ -1,4 +1,4 @@
-import { Environment, Project } from '@usertour-packages/types';
+import { Environment, Project } from '@usertour/types';
 import { UID_COOKIE } from '@usertour-packages/constants';
 import {
   useGlobalConfigQuery,
@@ -6,7 +6,7 @@ import {
   useLogoutMutation,
 } from '@usertour-packages/shared-hooks';
 import { removeAuthToken } from '@usertour-packages/utils';
-import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour-packages/types';
+import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useCookie } from 'react-use';
 

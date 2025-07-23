@@ -14,7 +14,7 @@ import {
   ContentDataType,
   EventAttributes,
   flowReasonTitleMap,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';

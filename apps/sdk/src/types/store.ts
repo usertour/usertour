@@ -6,7 +6,7 @@ import {
   SDKContent,
   Step,
   ThemeTypesSetting,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 
 // Base store interface
 export interface BaseStore {

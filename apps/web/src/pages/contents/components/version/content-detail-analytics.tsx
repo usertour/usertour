@@ -3,7 +3,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { BizSessionProvider } from '@/contexts/biz-session-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { EventListProvider } from '@/contexts/event-list-context';
-import { ContentDataType } from '@usertour-packages/types';
+import { ContentDataType } from '@usertour/types';
 import { AnalyticsDays } from '../analytics/analytics-days';
 import { AnalyticsHeader } from '../analytics/analytics-header';
 import { AnalyticsSessions } from '../analytics/analytics-sessions';

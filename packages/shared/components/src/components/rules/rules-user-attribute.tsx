@@ -40,7 +40,7 @@ import {
   AttributeDataType,
   RulesUserAttributeData,
   RulesUserAttributeProps,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

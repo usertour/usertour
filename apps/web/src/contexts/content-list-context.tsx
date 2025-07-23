@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { queryContent } from '@usertour-packages/gql';
-import { Content, PageInfo, Pagination } from '@usertour-packages/types';
+import { Content, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 

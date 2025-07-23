@@ -1,5 +1,5 @@
 import { useListEventsQuery } from '@usertour-packages/shared-hooks';
-import { Event } from '@usertour-packages/types';
+import { Event } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface EventListProviderProps {

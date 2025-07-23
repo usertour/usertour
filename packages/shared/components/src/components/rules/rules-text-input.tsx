@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { getTextInputError } from '@usertour-packages/utils';
-import { ElementSelectorPropsData } from '@usertour-packages/types';
+import { ElementSelectorPropsData } from '@usertour/types';
 import {
   ChangeEvent,
   Dispatch,

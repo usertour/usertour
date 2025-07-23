@@ -23,7 +23,7 @@ import {
   Step,
   StepContentType,
   ThemeTypesSetting,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
 import { off, on } from '../utils/listener';

@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Theme } from '@usertour-packages/types';
+import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 
 import { useMutation } from '@apollo/client';

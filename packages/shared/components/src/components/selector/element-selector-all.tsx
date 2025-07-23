@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Content, ElementSelectorPropsData } from '@usertour-packages/types';
+import { Content, ElementSelectorPropsData } from '@usertour/types';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 import { SelectorDialog } from './selector-dialog';
 

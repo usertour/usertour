@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Content } from '@usertour-packages/types';
+import { Content } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useCreateContentVersionMutation } from '@usertour-packages/shared-hooks';

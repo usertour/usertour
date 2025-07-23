@@ -1,4 +1,4 @@
-import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour-packages/types';
+import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour/types';
 import { isEqual } from 'lodash';
 import {
   ReactNode,

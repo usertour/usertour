@@ -10,7 +10,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { deleteBizCompanyOnSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour-packages/utils';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';

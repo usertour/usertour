@@ -12,7 +12,7 @@ import {
 import { Button } from '@usertour-packages/button';
 import { conditionsIsSame, getErrorMessage } from '@usertour-packages/utils';
 import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
-import { Segment } from '@usertour-packages/types';
+import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';

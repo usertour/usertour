@@ -3,7 +3,7 @@ import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour-packages/types';
+import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { AttributeCreateForm } from '../../form/attribute-create-form';
 import { useCallback, useState } from 'react';
 import { useListAttributesQuery } from '@usertour-packages/shared-hooks';

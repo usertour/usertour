@@ -8,7 +8,7 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { MemberListAction } from './member-list-action';
-import type { TeamMember } from '@usertour-packages/types';
+import type { TeamMember } from '@usertour/types';
 import { useMemberContext } from '@/contexts/member-context';
 import { Badge } from '@usertour-packages/badge';
 import { UserAvatar } from '@/components/molecules/user-avatar';

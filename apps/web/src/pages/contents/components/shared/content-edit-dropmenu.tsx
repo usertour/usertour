@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour-packages/icons';
-import { Content } from '@usertour-packages/types';
+import { Content } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';

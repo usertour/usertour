@@ -30,7 +30,7 @@ import {
   RulesCondition,
   Step,
   StepScreenshot,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 import { ChangeEvent } from 'react';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 

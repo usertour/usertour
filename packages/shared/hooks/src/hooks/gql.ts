@@ -94,7 +94,7 @@ import type {
   SessionQuery,
   Event,
   Theme,
-} from '@usertour-packages/types';
+} from '@usertour/types';
 
 type UseContentListQueryProps = {
   query: {

@@ -5,13 +5,7 @@ import { useFloating, offset, shift, limitShift, hide, flip, size } from '@float
 import type { Placement } from '@floating-ui/dom';
 import { UserIcon } from '@usertour-packages/icons';
 import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
-import {
-  Align,
-  LauncherData,
-  LauncherDataType,
-  Side,
-  ThemeTypesSetting,
-} from '@usertour-packages/types';
+import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
 import { cn } from '@usertour-packages/utils';
 import {
   Popper,
