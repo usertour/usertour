@@ -22,7 +22,7 @@ import { LauncherProgressColumn } from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { Button } from '@usertour-packages/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { contentTypesConfig } from '@usertour-packages/shared-editor';

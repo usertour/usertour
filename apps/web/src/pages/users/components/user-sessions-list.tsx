@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { FlowIcon, LauncherIcon, ChecklistIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { ReloadIcon } from '@radix-ui/react-icons';

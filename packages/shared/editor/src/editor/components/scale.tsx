@@ -10,7 +10,7 @@ import { Button } from '@usertour-packages/button';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-packages/utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Constants

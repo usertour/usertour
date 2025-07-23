@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSelectItem,
 } from '@usertour-packages/dropdown-menu';
-import { getStepError } from '@usertour-packages/utils';
+import { getStepError } from '@usertour/helpers';
 import { Step, ContentVersion } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
@@ -31,7 +31,7 @@ import {
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 export interface ContentActionsStepProps {
   data?: {

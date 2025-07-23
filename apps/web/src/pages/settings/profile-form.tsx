@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { Textarea } from '@usertour-packages/textarea';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 
 const profileFormSchema = z.object({

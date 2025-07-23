@@ -1,5 +1,5 @@
 import { Button, type ButtonProps } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { Link } from 'react-router-dom';
 
 export const AdminSidebarContainerTemplate = (props: {

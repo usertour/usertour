@@ -33,7 +33,7 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-packages/gql';

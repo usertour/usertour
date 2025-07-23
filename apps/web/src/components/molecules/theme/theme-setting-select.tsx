@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { HelpTooltip } from '@usertour-packages/shared-components';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 export type ThemeSettingSelectItemsType = {
   value: string;

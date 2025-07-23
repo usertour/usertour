@@ -10,9 +10,9 @@ import { ChecklistRoot } from '@usertour-packages/sdk';
 import { LauncherContainer, LauncherView } from '@usertour-packages/sdk/src/launcher';
 import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { convertSettings, convertToCssVars } from '@usertour-packages/utils';
+import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { ChecklistData, ContentVersion, LauncherData, Step, Theme } from '@usertour/types';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { forwardRef, useEffect, useState } from 'react';
 import { useMeasure } from 'react-use';
 

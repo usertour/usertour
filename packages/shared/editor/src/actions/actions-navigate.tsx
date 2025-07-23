@@ -1,6 +1,6 @@
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { PagesIcon } from '@usertour-packages/icons';
-import { getNavitateError } from '@usertour-packages/utils';
+import { getNavitateError } from '@usertour/helpers';
 import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Descendant } from 'slate';

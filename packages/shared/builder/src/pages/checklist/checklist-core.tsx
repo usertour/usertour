@@ -19,7 +19,7 @@ import {
 } from '@usertour-packages/select';
 import { Switch } from '@usertour-packages/switch';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
-import { uuidV4 } from '@usertour-packages/utils';
+import { uuidV4 } from '@usertour/helpers';
 import { useBuilderContext, useChecklistContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-packages/button';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -19,7 +19,7 @@ import { Checkbox } from '@usertour-packages/checkbox';
 import { Input } from '@usertour-packages/input';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { useSignupMutation } from '@usertour-packages/shared-hooks';
 
 // Form validation schema

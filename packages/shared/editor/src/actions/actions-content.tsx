@@ -10,9 +10,9 @@ import {
 } from '@usertour-packages/command';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getContentError } from '@usertour-packages/utils';
+import { getContentError } from '@usertour/helpers';
 import { Content, ContentDataType, Step } from '@usertour/types';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import {
   Dispatch,
   SetStateAction,

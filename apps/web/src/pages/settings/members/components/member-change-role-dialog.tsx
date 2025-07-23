@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { useChangeTeamMemberRoleMutation } from '@usertour-packages/shared-hooks';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import type { TeamMember } from '@usertour/types';
 import { TeamMemberRole } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';

@@ -15,7 +15,7 @@ import {
 } from '@usertour-packages/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 interface DataTableFacetedFilter<TData, TValue> {
   column?: Column<TData, TValue>;

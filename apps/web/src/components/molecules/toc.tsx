@@ -5,7 +5,7 @@ import * as React from 'react';
 
 import { useMounted } from '@/hooks/use-mounted';
 import { TableOfContents } from '@/lib/toc';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 interface TocProps {
   toc: TableOfContents;

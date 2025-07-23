@@ -2,7 +2,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -10,7 +10,7 @@ import { ContentEditorStarRatingElement } from '../../types/editor';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-packages/utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Star SVG path constant to avoid recreation

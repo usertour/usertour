@@ -5,7 +5,7 @@ import {
   MESSAGE_CRX_SEND_PROXY,
   MESSAGE_START_FLOW_WITH_TOKEN,
 } from '@usertour-packages/constants';
-import { uuidV4 } from '@usertour-packages/utils';
+import { uuidV4 } from '@usertour/helpers';
 import { useCallback, useState } from 'react';
 import { useEvent } from 'react-use';
 

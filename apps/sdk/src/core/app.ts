@@ -3,7 +3,7 @@ import {
   STORAGE_IDENTIFY_ANONYMOUS,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
-import { autoStartConditions, storage } from '@usertour-packages/utils';
+import { autoStartConditions, storage } from '@usertour/helpers';
 import {
   BizCompany,
   BizUserInfo,
@@ -19,7 +19,7 @@ import {
   BizSession,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
-import { uuidV4 } from '@usertour-packages/utils';
+import { uuidV4 } from '@usertour/helpers';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';
 import { ReportEventParams } from '../types/content';

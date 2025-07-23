@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { cn, isDark } from '@usertour-packages/utils';
+import { cn, isDark } from '@usertour/helpers';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 const firstLetterToUpperCase = (word: string) => {

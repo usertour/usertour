@@ -8,7 +8,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 
 import { Icons } from '@/components/atoms/icons';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 
 export type SignUpSuccessProps = {
   registerId: string;

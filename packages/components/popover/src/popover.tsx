@@ -4,7 +4,7 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import type { PopoverProps } from '@radix-ui/react-popover';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 const Popover = PopoverPrimitive.Root;
 

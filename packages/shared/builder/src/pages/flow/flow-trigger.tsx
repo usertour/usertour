@@ -10,7 +10,7 @@ import { updateContentStep } from '@usertour-packages/gql';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { createValue1 } from '@usertour-packages/shared-editor';
-import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour-packages/utils';
+import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour/helpers';
 import {
   AttributeBizTypes,
   Attribute,
@@ -18,7 +18,7 @@ import {
   RulesCondition,
   Step,
 } from '@usertour/types';
-import { cn, cuid } from '@usertour-packages/utils';
+import { cn, cuid } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';

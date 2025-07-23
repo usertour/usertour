@@ -17,7 +17,7 @@ import { updateProjectName } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { Separator } from '@usertour-packages/separator';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

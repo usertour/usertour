@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { deleteLocalization } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { Localization } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 

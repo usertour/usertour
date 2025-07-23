@@ -12,7 +12,7 @@ import {
 } from '@usertour-packages/dialog';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { useRemoveTeamMemberMutation } from '@usertour-packages/shared-hooks';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 

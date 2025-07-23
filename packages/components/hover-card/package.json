@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-hover-card": "^1.0.6",
-    "@usertour-packages/utils": "workspace:*"
+    "@usertour/helpers": "^0.0.1"
   },
   "peerDependencies": {
     "react": "^18.2.0"

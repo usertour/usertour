@@ -10,7 +10,7 @@ import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-packages/chart';
 import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { ArrowRightIcon } from '@usertour-packages/icons';
 import { useUpdateContentMutation } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';

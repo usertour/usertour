@@ -11,7 +11,7 @@ import {
 } from '@usertour/types';
 import { useState } from 'react';
 import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />

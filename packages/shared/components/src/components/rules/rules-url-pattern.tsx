@@ -1,7 +1,7 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
-import { getUrlPatternError } from '@usertour-packages/utils';
+import { getUrlPatternError } from '@usertour/helpers';
 import {
   Tooltip,
   TooltipContent,

@@ -8,7 +8,7 @@ import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { Rules } from '@usertour-packages/shared-components';
-import { conditionsIsSame } from '@usertour-packages/utils';
+import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddCompanyManualSegment } from './add-manual-segment';

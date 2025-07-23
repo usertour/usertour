@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { format } from 'date-fns';
 import {
   Dispatch,
@@ -33,7 +33,7 @@ import {
 } from '@usertour-packages/command';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getUserAttrError } from '@usertour-packages/utils';
+import { getUserAttrError } from '@usertour/helpers';
 import {
   Attribute,
   AttributeBizTypes,

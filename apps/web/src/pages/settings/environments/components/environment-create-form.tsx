@@ -24,7 +24,7 @@ import {
 } from '@usertour-packages/form';
 import { createEnvironments } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { PlanType } from '@usertour/types';
 import * as React from 'react';

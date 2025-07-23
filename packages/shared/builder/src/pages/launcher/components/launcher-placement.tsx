@@ -1,4 +1,4 @@
-import { getAuthToken } from '@usertour-packages/utils';
+import { getAuthToken } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import { useEffect } from 'react';
 import { ContentPlacementProvider } from '../../../components/content-placement';

@@ -1,8 +1,8 @@
 import { computePosition, hide } from '@floating-ui/dom';
 import { PRIORITIES, RulesType, rulesTypes } from '@usertour-packages/constants';
 import { finderV2 } from '@usertour-packages/finder';
-import { isMatchUrlPattern } from '@usertour-packages/utils';
-import { conditionsIsSame } from '@usertour-packages/utils';
+import { isMatchUrlPattern } from '@usertour/helpers';
+import { conditionsIsSame } from '@usertour/helpers';
 import {
   BizEvent,
   BizEvents,

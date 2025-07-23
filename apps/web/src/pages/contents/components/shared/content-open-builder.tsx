@@ -10,7 +10,7 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { createContentVersion } from '@usertour-packages/gql';
 import { Separator } from '@usertour-packages/separator';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useState } from 'react';

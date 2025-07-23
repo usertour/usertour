@@ -4,7 +4,7 @@ import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 const Select = SelectPrimitive.Root;
 

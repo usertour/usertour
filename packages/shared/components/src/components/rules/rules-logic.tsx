@@ -1,6 +1,6 @@
 import { Button } from '@usertour-packages/button';
 import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 

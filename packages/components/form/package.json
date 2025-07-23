@@ -15,7 +15,7 @@
     "@radix-ui/react-label": "^2.0.2",
     "react-hook-form": "^7.44.2",
     "@radix-ui/react-slot": "^1.0.2",
-    "@usertour-packages/utils": "workspace:*",
+    "@usertour/helpers": "^0.0.1",
     "@usertour-packages/label": "workspace:*"
   },
   "peerDependencies": {

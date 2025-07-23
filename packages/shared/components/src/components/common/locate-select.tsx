@@ -13,7 +13,7 @@ import {
 } from '@usertour-packages/command';
 import { locates } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 export type LocateItem = (typeof locates)[0];
 

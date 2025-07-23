@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { deleteBizCompany } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';

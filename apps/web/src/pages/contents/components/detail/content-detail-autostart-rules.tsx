@@ -10,8 +10,8 @@ import {
   RulesWait,
 } from '@usertour-packages/shared-components';
 import { useContentListQuery } from '@usertour-packages/shared-hooks';
-import { deepClone, getAuthToken } from '@usertour-packages/utils';
-import { conditionsIsSame } from '@usertour-packages/utils';
+import { deepClone, getAuthToken } from '@usertour/helpers';
+import { conditionsIsSame } from '@usertour/helpers';
 import { Switch } from '@usertour-packages/switch';
 import {
   Tooltip,

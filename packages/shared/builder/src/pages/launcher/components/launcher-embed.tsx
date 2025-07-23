@@ -7,7 +7,7 @@ import { useBuilderContext, useLauncherContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { LauncherContentMain } from './launcher-content';
 import { PlusIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 
 const centerClasses =
   'w-auto h-6 left-[50%] top-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%]';

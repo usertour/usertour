@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { ArrowRightIcon, CloseCircleIcon, PlusIcon } from '@usertour-packages/icons';
-import { hasActionError } from '@usertour-packages/utils';
+import { hasActionError } from '@usertour/helpers';
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';

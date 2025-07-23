@@ -1,7 +1,7 @@
 import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
 import { BizEvents, EventAttributes, LauncherData } from '@usertour/types';
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
-import { evalCode } from '@usertour-packages/utils';
+import { evalCode } from '@usertour/helpers';
 import { LauncherStore } from '../types/store';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';

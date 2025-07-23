@@ -1,6 +1,6 @@
 'use client';
 
-import { cn, uuidV4 } from '@usertour-packages/utils';
+import { cn, uuidV4 } from '@usertour/helpers';
 import isHotkey from 'is-hotkey';
 import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
 import { Descendant, Text, createEditor } from 'slate';

@@ -4,7 +4,7 @@ import { setContext } from '@apollo/client/link/context';
 /**
  * This file setup the connection to a graphql server
  */
-// import { getAuthToken } from '@usertour-packages/utils';
+// import { getAuthToken } from '@usertour/helpers';
 
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists

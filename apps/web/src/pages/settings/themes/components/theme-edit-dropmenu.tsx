@@ -9,7 +9,7 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { setDefaultTheme } from '@usertour-packages/gql';
 import { CopyIcon, Delete2Icon } from '@usertour-packages/icons';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { ReactNode, useState } from 'react';

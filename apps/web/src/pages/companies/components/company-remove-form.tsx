@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { deleteBizCompanyOnSegment } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';

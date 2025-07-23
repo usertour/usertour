@@ -33,7 +33,7 @@ import {
   useGetSubscriptionByProjectIdQuery,
   useInviteTeamMemberMutation,
 } from '@usertour-packages/shared-hooks';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { PlanType, Subscription, TeamMemberRole } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { AlertCircle } from 'lucide-react';

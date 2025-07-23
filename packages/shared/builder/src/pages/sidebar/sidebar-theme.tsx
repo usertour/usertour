@@ -23,7 +23,7 @@ import { useCallback, useEffect } from 'react';
 
 import { useMutation } from '@apollo/client';
 import { updateContentVersion } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useBuilderContext } from '../../contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';

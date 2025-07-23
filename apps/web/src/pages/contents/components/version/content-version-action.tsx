@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
-import { isPublishedInAllEnvironments } from '@usertour-packages/utils';
+import { isPublishedInAllEnvironments } from '@usertour/helpers';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 
 type ContentVersionActionProps = {

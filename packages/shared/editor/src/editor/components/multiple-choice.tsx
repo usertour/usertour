@@ -19,8 +19,8 @@ import {
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-packages/utils';
-import { cn } from '@usertour-packages/utils';
+import { isEmptyString } from '@usertour/helpers';
+import { cn } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 import { BizAttributeTypes } from '@usertour/types';
 

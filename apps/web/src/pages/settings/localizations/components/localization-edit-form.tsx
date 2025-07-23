@@ -23,7 +23,7 @@ import {
 import { updateLocalization } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { LocateItem, LocateSelect } from '@usertour-packages/shared-components';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import {
   Tooltip,
   TooltipContent,

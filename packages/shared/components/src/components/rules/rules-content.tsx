@@ -3,7 +3,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Label } from '@usertour-packages//label';
 import { ContentIcon } from '@usertour-packages/icons';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import {
   Dispatch,
   SetStateAction,
@@ -24,7 +24,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getContentError } from '@usertour-packages/utils';
+import { getContentError } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

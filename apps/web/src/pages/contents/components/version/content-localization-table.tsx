@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { VersionOnLocalization } from '@usertour/types';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';

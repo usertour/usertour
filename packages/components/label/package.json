@@ -14,7 +14,7 @@
   "dependencies": {
     "@radix-ui/react-label": "^2.0.2",
     "class-variance-authority": "^0.4.0",
-    "@usertour-packages/utils": "workspace:*"
+    "@usertour/helpers": "^0.0.1"
   },
   "peerDependencies": {
     "react": "^18.2.0"

@@ -11,7 +11,7 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { setDefaultLocalization } from '@usertour-packages/gql';
 import { EditIcon } from '@usertour-packages/icons';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { Localization } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';

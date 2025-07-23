@@ -10,14 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { format } from 'date-fns';
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@usertour-packages/button';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getCurrentTimeError } from '@usertour-packages/utils';
+import { getCurrentTimeError } from '@usertour/helpers';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';

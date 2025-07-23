@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import {
   Dispatch,
   SetStateAction,
@@ -30,7 +30,7 @@ import {
 } from '@usertour-packages/command';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getSegmentError } from '@usertour-packages/utils';
+import { getSegmentError } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';

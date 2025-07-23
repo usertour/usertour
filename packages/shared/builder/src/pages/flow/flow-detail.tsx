@@ -17,7 +17,7 @@ import {
   Side,
   Theme,
 } from '@usertour/types';
-import { cn } from '@usertour-packages/utils';
+import { cn } from '@usertour/helpers';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { ContentAlignment } from '../../components/content-alignment';
@@ -35,7 +35,7 @@ import {
 } from '@usertour-packages/contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
 import { ContentEditorRoot, hasMissingRequiredData } from '@usertour-packages/shared-editor';
-import { getErrorMessage } from '@usertour-packages/utils';
+import { getErrorMessage } from '@usertour/helpers';
 import { PlusIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { useToast } from '@usertour-packages/use-toast';
 import { ContentType } from '../../components/content-type';

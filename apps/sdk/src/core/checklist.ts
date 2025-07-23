@@ -8,7 +8,7 @@ import {
   EventAttributes,
   RulesCondition,
 } from '@usertour/types';
-import { evalCode } from '@usertour-packages/utils';
+import { evalCode } from '@usertour/helpers';
 import { checklistIsDimissed } from '../utils/conditions';
 import { BaseContent } from './base-content';
 import {

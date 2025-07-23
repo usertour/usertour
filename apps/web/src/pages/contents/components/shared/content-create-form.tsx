@@ -23,7 +23,7 @@ import {
 import { createContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { useOpenSelector } from '@usertour-packages/shared-hooks';
-import { getAuthToken, getErrorMessage } from '@usertour-packages/utils';
+import { getAuthToken, getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useState } from 'react';
