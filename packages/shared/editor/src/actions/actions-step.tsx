@@ -31,7 +31,7 @@ import {
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 
 export interface ContentActionsStepProps {
   data?: {

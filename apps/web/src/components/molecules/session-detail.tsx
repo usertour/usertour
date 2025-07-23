@@ -10,7 +10,7 @@ import {
 import { Badge } from '@usertour-packages/badge';
 import { BizEvent } from '@usertour-packages/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { QuestionStarRating } from './question';
 
 // Add color utility functions from analytics-nps.tsx

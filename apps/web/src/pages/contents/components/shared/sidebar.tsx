@@ -9,7 +9,7 @@ import {
   SurveyIcon,
 } from '@usertour-packages/icons';
 import { ContentTypeName } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}

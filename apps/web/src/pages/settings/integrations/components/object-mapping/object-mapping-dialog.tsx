@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@usertour-packages/dialog';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import {
   AttributeBizTypes,
   IntegrationObjectMappingSettings,

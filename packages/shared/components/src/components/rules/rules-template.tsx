@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { ReactNode, forwardRef } from 'react';
 
 type TemplateSharedProps = {

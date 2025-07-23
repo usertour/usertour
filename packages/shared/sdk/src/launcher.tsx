@@ -12,7 +12,7 @@ import {
   Side,
   ThemeTypesSetting,
 } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import {
   Popper,
   PopperContent,

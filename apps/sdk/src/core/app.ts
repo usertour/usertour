@@ -19,7 +19,7 @@ import {
   BizSession,
 } from '@usertour-packages/types';
 import { UserTourTypes } from '@usertour-packages/types';
-import { uuidV4 } from '@usertour-packages/ui-utils';
+import { uuidV4 } from '@usertour-packages/utils';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';
 import { ReportEventParams } from '../types/content';

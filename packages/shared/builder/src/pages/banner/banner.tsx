@@ -3,7 +3,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { useRef } from 'react';
 import { useBuilderContext } from '../../contexts';
 import { SidebarFooter } from '../sidebar/sidebar-footer';

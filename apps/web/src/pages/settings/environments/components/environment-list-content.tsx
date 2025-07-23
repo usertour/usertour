@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
 import { useCallback, useState } from 'react';

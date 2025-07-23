@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { Badge } from '@usertour-packages/badge';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState, useMemo } from 'react';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { ArrowRightIcon } from '@usertour-packages/icons';
 import { useUpdateContentMutation } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';

@@ -1,4 +1,4 @@
-export const loadStyleSheet = async (url: string, doc: Document) => {
+const loadStyleSheet = async (url: string, doc: Document) => {
   const sheet = doc.createElement('link');
   sheet.rel = 'stylesheet';
   sheet.href = url;

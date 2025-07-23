@@ -3,7 +3,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Label } from '@usertour-packages//label';
 import { ContentIcon } from '@usertour-packages/icons';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import {
   Dispatch,
   SetStateAction,

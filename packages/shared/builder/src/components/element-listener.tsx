@@ -2,7 +2,7 @@
 
 import { MESSAGE_MEASURE_INSTALL, MESSAGE_MEASURE_LISTENER } from '@usertour-packages/constants';
 import { ElementSelectorPropsData, TargetData } from '@usertour-packages/types';
-import { cn, uuidV4 } from '@usertour-packages/ui-utils';
+import { cn, uuidV4 } from '@usertour-packages/utils';
 import { forwardRef, useEffect, useState } from 'react';
 
 import { PlusIcon } from '@usertour-packages/icons';

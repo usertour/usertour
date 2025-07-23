@@ -1,6 +1,6 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import { BizUserInfo, ThemeTypesSetting } from '@usertour-packages/types';
-import { uuidV4 } from '@usertour-packages/ui-utils';
+import { uuidV4 } from '@usertour-packages/utils';
 import { getUserTourCss } from '../utils/env';
 
 export const SESSION_TIMEOUT_HOURS = 24 * 2; // 2 days

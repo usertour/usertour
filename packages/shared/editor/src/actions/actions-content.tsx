@@ -12,7 +12,7 @@ import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getContentError } from '@usertour-packages/utils';
 import { Content, ContentDataType, Step } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import {
   Dispatch,
   SetStateAction,

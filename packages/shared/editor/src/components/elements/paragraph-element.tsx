@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { RenderElementProps } from 'slate-react';
 
 const ParagraphElement = (props: RenderElementProps & { className?: string }) => {

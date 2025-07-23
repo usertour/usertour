@@ -1,6 +1,6 @@
 import { Input } from '@usertour-packages/input';
 import { HelpTooltip } from '@usertour-packages/shared-components';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { ChangeEvent } from 'react';
 
 type ThemeSettingInputProps = {

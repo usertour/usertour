@@ -58,7 +58,6 @@
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
     "@usertour-packages/types": "workspace:^",
-    "@usertour-packages/ui-utils": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "date-fns": "^2.30.0",
     "deepmerge-ts": "^7.1.3",

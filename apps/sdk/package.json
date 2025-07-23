@@ -30,7 +30,6 @@
     "@usertour-packages/utils": "workspace:^",
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/types": "workspace:^",
-    "@usertour-packages/ui-utils": "workspace:^",
     "date-fns": "^2.30.0",
     "fast-deep-equal": "^3.1.3",
     "deepmerge-ts": "^7.1.3",

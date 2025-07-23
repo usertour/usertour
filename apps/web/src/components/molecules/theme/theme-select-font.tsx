@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverProps, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 
 export interface ThemeSelectFontType {
   id: string;

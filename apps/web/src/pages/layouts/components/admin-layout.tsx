@@ -8,7 +8,7 @@ import { SubscriptionProvider } from '@/contexts/subscription-context';
 import { userTourToken } from '@/utils/env';
 import { Button } from '@usertour-packages/button';
 import { storage } from '@usertour-packages/utils';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';

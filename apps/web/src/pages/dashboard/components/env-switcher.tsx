@@ -15,7 +15,7 @@ import {
   CommandSeparator,
 } from '@usertour-packages/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 

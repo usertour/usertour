@@ -15,7 +15,7 @@ import {
 } from '@usertour-packages/types';
 import { defaultSettings } from '@usertour-packages/types';
 import { useState, useEffect } from 'react';
-import { cuid } from '@usertour-packages/ui-utils';
+import { cuid } from '@usertour-packages/utils';
 import { ModalThemeSettingsPanel } from './modal-theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 

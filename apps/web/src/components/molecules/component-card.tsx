@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { AspectRatio } from '@usertour-packages/aspect-ratio';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 
 export function ComponentCard({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (

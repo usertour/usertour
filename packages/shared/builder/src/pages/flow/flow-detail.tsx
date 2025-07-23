@@ -17,7 +17,7 @@ import {
   Side,
   Theme,
 } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { ContentAlignment } from '../../components/content-alignment';

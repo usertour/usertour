@@ -1,6 +1,6 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import {
   LauncherDataType,
   ThemeDetailSelectorType,

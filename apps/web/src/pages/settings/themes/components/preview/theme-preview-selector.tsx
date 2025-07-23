@@ -12,7 +12,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { ThemeDetailSelectorType } from '@usertour-packages/types';
 import { themeDetailSelectorTypes } from '@/utils/theme';
 

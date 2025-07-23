@@ -23,7 +23,7 @@ import type {
 } from '@usertour-packages/shared-editor';
 import { ContentEditorElementType } from '@usertour-packages/shared-editor';
 import type { ContentVersion, Localization, Step } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
 import { ChangeEvent, ReactNode, useState } from 'react';

@@ -4,7 +4,7 @@ import {
   Attribute,
   ThemeVariation,
 } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { ThemeSettingsDefaultPanel } from './theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 

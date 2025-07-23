@@ -11,7 +11,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 
 interface ObjectMappingFieldSelectProps {
   items: Array<{ value: string; label: string; icon?: React.ReactNode }>;

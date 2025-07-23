@@ -13,7 +13,7 @@ import {
   IntegrationObjectMappingItem,
   IntegrationObjectMappingSettings,
 } from '@usertour-packages/types';
-import { cn } from '@usertour-packages/ui-utils';
+import { cn } from '@usertour-packages/utils';
 import { format } from 'date-fns';
 import { Button } from '@usertour-packages/button';
 import {
