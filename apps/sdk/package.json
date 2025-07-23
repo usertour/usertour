@@ -27,7 +27,7 @@
     "@usertour-packages/react-context": "workspace:^",
     "@usertour-packages/shared-editor": "workspace:^",
     "@usertour-packages/sdk": "workspace:^",
-    "@usertour-packages/shared-utils": "workspace:^",
+    "@usertour-packages/utils": "workspace:^",
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/types": "workspace:^",
     "@usertour-packages/ui-utils": "workspace:^",

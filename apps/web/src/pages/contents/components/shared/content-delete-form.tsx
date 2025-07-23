@@ -7,7 +7,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { useDeleteContentMutation } from '@usertour-packages/shared-hooks';
 import { Content, ContentDataType } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';

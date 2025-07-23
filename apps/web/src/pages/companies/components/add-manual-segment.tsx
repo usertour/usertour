@@ -13,7 +13,7 @@ import { Table } from '@tanstack/react-table';
 import { useCallback } from 'react';
 import { Segment } from '@usertour-packages/types';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 
 interface AddCompanyManualSegmentProps {
   table: Table<any>;

@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@usertour-packages/dialog';
 import { unpublishedContentVersion } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { Content } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';

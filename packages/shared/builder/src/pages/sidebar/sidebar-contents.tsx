@@ -45,7 +45,7 @@ import {
 import { Step } from '@usertour-packages/types';
 import { forwardRef, useCallback, useState } from 'react';
 
-import { defaultStep } from '@usertour-packages/shared-utils';
+import { defaultStep } from '@usertour-packages/utils';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { stepIsReachable } from '../../utils/content-validate';
 

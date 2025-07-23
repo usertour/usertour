@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { Button } from '@usertour-packages/button';
-import { conditionsIsSame, getErrorMessage } from '@usertour-packages/shared-utils';
+import { conditionsIsSame, getErrorMessage } from '@usertour-packages/utils';
 import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
 import { Segment } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';

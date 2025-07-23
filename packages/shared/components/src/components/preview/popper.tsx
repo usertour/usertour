@@ -1,7 +1,7 @@
 import { EyeNoneIcon } from '@usertour-packages/icons';
 import * as SharedPopper from '@usertour-packages/sdk';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { convertSettings, convertToCssVars } from '@usertour-packages/shared-utils';
+import { convertSettings, convertToCssVars } from '@usertour-packages/utils';
 import { ThemeTypesSetting, defaultSettings } from '@usertour-packages/types';
 import { useRef } from 'react';
 

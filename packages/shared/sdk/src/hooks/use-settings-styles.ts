@@ -1,5 +1,5 @@
-import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/shared-utils';
-import { convertToCssVars } from '@usertour-packages/shared-utils';
+import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/utils';
+import { convertToCssVars } from '@usertour-packages/utils';
 import { ThemeTypesSetting } from '@usertour-packages/types';
 
 export const useSettingsStyles = (settings: ThemeTypesSetting) => {

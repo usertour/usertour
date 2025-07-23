@@ -23,7 +23,7 @@ import {
 } from '@usertour-packages/form';
 import { updateTheme } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { Theme } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';

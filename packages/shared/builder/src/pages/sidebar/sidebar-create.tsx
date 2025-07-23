@@ -4,7 +4,7 @@ import { Button } from '@usertour-packages/button';
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
 import { PopperPreview } from '@usertour-packages/shared-components';
 import { getDefaultDataForType } from '@usertour-packages/shared-editor';
-import { defaultStep } from '@usertour-packages/shared-utils';
+import { defaultStep } from '@usertour-packages/utils';
 import { useCallback } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 

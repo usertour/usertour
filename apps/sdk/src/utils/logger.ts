@@ -1,4 +1,4 @@
-import { isUndefined } from '@usertour-packages/shared-utils';
+import { isUndefined } from '@usertour-packages/utils';
 import { window } from './globals';
 
 const debugEnabled = (localStorage.getItem('debug') || '')

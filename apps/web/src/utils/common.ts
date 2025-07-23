@@ -1,4 +1,4 @@
-import { isUndefined } from '@usertour-packages/shared-utils';
+import { isUndefined } from '@usertour-packages/utils';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';

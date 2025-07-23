@@ -24,7 +24,7 @@ import { createContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { useOpenSelector } from '@usertour-packages/shared-hooks';
-import { getAuthToken, getErrorMessage } from '@usertour-packages/shared-utils';
+import { getAuthToken, getErrorMessage } from '@usertour-packages/utils';
 import { BuilderType, Content, ContentDataType } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useState } from 'react';

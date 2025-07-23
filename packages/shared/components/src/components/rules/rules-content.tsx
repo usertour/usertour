@@ -24,7 +24,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getContentError } from '@usertour-packages/shared-utils';
+import { getContentError } from '@usertour-packages/utils';
 import { ContentDataType } from '@usertour-packages/types';
 import { useRulesContext } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

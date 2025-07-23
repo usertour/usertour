@@ -61,7 +61,7 @@
     "@usertour-packages/shared-components": "workspace:^",
     "@usertour-packages/shared-editor": "workspace:^",
     "@usertour-packages/shared-hooks": "workspace:^",
-    "@usertour-packages/shared-utils": "workspace:^",
+    "@usertour-packages/utils": "workspace:^",
     "@usertour-packages/skeleton": "workspace:^",
     "@usertour-packages/slider": "workspace:^",
     "@usertour-packages/storage": "workspace:^",

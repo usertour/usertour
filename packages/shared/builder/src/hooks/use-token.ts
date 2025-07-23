@@ -1,4 +1,4 @@
-import { getAuthToken } from '@usertour-packages/shared-utils';
+import { getAuthToken } from '@usertour-packages/utils';
 import { getAuthToken as getAuthTokenInExtension } from '../utils/storage';
 
 export const useToken = () => {

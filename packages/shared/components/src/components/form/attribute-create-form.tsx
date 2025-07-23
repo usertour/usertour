@@ -38,7 +38,7 @@ import {
   CreateAttributeMutationVariables,
   useCreateAttributeMutation,
 } from '@usertour-packages/shared-hooks';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import {
   Tooltip,
   TooltipContent,

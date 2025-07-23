@@ -1,4 +1,4 @@
-import { defaultStep, getErrorMessage, isEqual } from '@usertour-packages/shared-utils';
+import { defaultStep, getErrorMessage, isEqual } from '@usertour-packages/utils';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-packages/types';
 import {
   ReactNode,

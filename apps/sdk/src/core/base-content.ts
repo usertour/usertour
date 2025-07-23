@@ -1,5 +1,5 @@
-import { convertSettings } from '@usertour-packages/shared-utils';
-import { convertToCssVars } from '@usertour-packages/shared-utils';
+import { convertSettings } from '@usertour-packages/utils';
+import { convertToCssVars } from '@usertour-packages/utils';
 import {
   BizCompany,
   ContentDataType,

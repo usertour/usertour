@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSelectItem,
 } from '@usertour-packages/dropdown-menu';
-import { getStepError } from '@usertour-packages/shared-utils';
+import { getStepError } from '@usertour-packages/utils';
 import { Step, ContentVersion } from '@usertour-packages/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';

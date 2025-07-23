@@ -10,12 +10,7 @@ import { updateContentStep } from '@usertour-packages/gql';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { createValue1 } from '@usertour-packages/shared-editor';
-import {
-  defaultStep,
-  getErrorMessage,
-  hasActionError,
-  hasError,
-} from '@usertour-packages/shared-utils';
+import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour-packages/utils';
 import {
   AttributeBizTypes,
   Attribute,

@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@usertour-packages/dialog';
 import { getContentVersion, publishedContentVersion } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { ContentVersion } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';

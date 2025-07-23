@@ -23,7 +23,7 @@ import {
 import { createSegment } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import {
   Tooltip,
   TooltipContent,

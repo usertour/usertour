@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/shared-utils",
+  "name": "@usertour-packages/utils",
   "private": true,
   "version": "0.0.1",
   "type": "module",

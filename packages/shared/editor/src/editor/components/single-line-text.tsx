@@ -8,7 +8,7 @@ import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorSingleLineTextElement } from '../../types/editor';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-packages/shared-utils';
+import { isEmptyString } from '@usertour-packages/utils';
 import { BindAttribute } from './bind-attribute';
 import { BizAttributeTypes } from '@usertour-packages/types';
 

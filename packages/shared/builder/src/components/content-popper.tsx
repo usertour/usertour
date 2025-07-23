@@ -16,7 +16,7 @@ import {
   ContentEditorElementType,
   ContentEditorRoot,
 } from '@usertour-packages/shared-editor';
-import { loadGoogleFontCss } from '@usertour-packages/shared-utils';
+import { loadGoogleFontCss } from '@usertour-packages/utils';
 import {
   Align,
   Attribute,

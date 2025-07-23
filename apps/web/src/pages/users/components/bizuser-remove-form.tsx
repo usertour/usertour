@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { Segment } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';

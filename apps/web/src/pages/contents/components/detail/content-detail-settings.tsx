@@ -1,6 +1,6 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
-import { buildConfig } from '@usertour-packages/shared-utils';
+import { buildConfig } from '@usertour-packages/utils';
 import { ContentDataType, RulesCondition } from '@usertour-packages/types';
 import { useCallback } from 'react';
 import {

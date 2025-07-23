@@ -5,7 +5,7 @@ import { ArrowLeftIcon, DotsHorizontalIcon, InfoCircledIcon } from '@radix-ui/re
 import { Button } from '@usertour-packages/button';
 import { updateTheme } from '@usertour-packages/gql';
 import { EditIcon } from '@usertour-packages/icons';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';

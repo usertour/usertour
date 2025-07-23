@@ -2,7 +2,7 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useMutation } from '@apollo/client';
 import { createContentVersion, updateContentVersion } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { ContentConfigObject } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';

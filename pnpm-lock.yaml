@@ -84,7 +84,7 @@ importers:
       '@usertour-packages/shared-editor':
         specifier: workspace:^
         version: link:../../packages/shared/editor
-      '@usertour-packages/shared-utils':
+      '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../../packages/shared/utils
       '@usertour-packages/tailwind':
@@ -665,7 +665,7 @@ importers:
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../../packages/shared/hooks
-      '@usertour-packages/shared-utils':
+      '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../../packages/shared/utils
       '@usertour-packages/skeleton':
@@ -3077,7 +3077,7 @@ importers:
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
-      '@usertour-packages/shared-utils':
+      '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
       '@usertour-packages/slider':
@@ -3327,7 +3327,7 @@ importers:
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
-      '@usertour-packages/shared-utils':
+      '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
       '@usertour-packages/slider':
@@ -3637,7 +3637,7 @@ importers:
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
-      '@usertour-packages/shared-utils':
+      '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
       '@usertour-packages/switch':
@@ -3972,7 +3972,7 @@ importers:
       '@usertour-packages/react-use-size':
         specifier: workspace:^
         version: link:../../radix/use-size
-      '@usertour-packages/shared-utils':
+      '@usertour-packages/utils':
         specifier: workspace:^
         version: link:../utils
       '@usertour-packages/types':

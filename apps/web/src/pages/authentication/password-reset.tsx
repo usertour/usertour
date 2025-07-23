@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from '@usertour-packages/card';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';

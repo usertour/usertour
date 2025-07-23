@@ -9,7 +9,7 @@ import { ContentEditorNPSElement } from '../../types/editor';
 import { Button } from '@usertour-packages/button';
 import { EditorError, EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-packages/shared-utils';
+import { isEmptyString } from '@usertour-packages/utils';
 import { BindAttribute } from './bind-attribute';
 
 // Constants

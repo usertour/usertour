@@ -22,7 +22,7 @@ import {
 } from '@usertour-packages/form';
 import { updateEnvironments } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';

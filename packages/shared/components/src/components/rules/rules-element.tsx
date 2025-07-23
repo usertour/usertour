@@ -10,7 +10,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { getElementError } from '@usertour-packages/shared-utils';
+import { getElementError } from '@usertour-packages/utils';
 import { ElementSelectorPropsData } from '@usertour-packages/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';

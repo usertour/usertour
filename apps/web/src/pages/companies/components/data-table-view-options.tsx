@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
 } from '@usertour-packages/dropdown-menu';
 import { updateSegment } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 

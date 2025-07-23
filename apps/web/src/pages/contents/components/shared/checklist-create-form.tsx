@@ -22,7 +22,7 @@ import {
 } from '@usertour-packages/form';
 import { createContent, updateContentVersion } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour-packages/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';

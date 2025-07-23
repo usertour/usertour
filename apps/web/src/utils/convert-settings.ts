@@ -1,1 +1,1 @@
-export * from '@usertour-packages/shared-utils';
+export * from '@usertour-packages/utils';

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { getTextInputError } from '@usertour-packages/shared-utils';
+import { getTextInputError } from '@usertour-packages/utils';
 import { ElementSelectorPropsData } from '@usertour-packages/types';
 import {
   ChangeEvent,

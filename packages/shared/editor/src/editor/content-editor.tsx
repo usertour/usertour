@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
-import { isUndefined } from '@usertour-packages/shared-utils';
+import { isUndefined } from '@usertour-packages/utils';
 import { BizUserInfo } from '@usertour-packages/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

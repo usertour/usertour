@@ -1,5 +1,5 @@
-import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/shared-utils';
-import { convertToCssVars } from '@usertour-packages/shared-utils';
+import { convertSettings, mergeThemeDefaultSettings } from '@usertour-packages/utils';
+import { convertToCssVars } from '@usertour-packages/utils';
 import { Theme, ThemeTypesSetting } from '@usertour-packages/types';
 import { useEffect, useState } from 'react';
 

@@ -33,7 +33,7 @@ import {
 } from '@usertour-packages/command';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getUserAttrError } from '@usertour-packages/shared-utils';
+import { getUserAttrError } from '@usertour-packages/utils';
 import {
   Attribute,
   AttributeBizTypes,

@@ -30,7 +30,7 @@ import { PlusIcon } from '@usertour-packages/icons';
 import { CloseIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour-packages/select';
-import { getErrorMessage } from '@usertour-packages/shared-utils';
+import { getErrorMessage } from '@usertour-packages/utils';
 import {
   Tooltip,
   TooltipContent,

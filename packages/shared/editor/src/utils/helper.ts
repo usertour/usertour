@@ -8,7 +8,7 @@ import {
   ContentEditorRootColumn,
   ContentEditorRootElement,
 } from '../types/editor';
-import { isEmptyString } from '@usertour-packages/shared-utils';
+import { isEmptyString } from '@usertour-packages/utils';
 import { Step } from '@usertour-packages/types';
 import { cuid } from '@usertour-packages/ui-utils';
 

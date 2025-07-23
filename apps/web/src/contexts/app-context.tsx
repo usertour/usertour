@@ -5,7 +5,7 @@ import {
   useGetUserInfoQuery,
   useLogoutMutation,
 } from '@usertour-packages/shared-hooks';
-import { removeAuthToken } from '@usertour-packages/shared-utils';
+import { removeAuthToken } from '@usertour-packages/utils';
 import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour-packages/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useCookie } from 'react-use';

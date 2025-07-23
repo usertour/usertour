@@ -1,4 +1,4 @@
-import { isUrl } from '@usertour-packages/shared-utils';
+import { isUrl } from '@usertour-packages/utils';
 import { Editor } from 'slate';
 import { wrapLink } from './editorHelper';
 

@@ -18,7 +18,7 @@ import {
   UserIcon,
 } from '@usertour-packages/icons';
 import { RulesCondition } from '@usertour-packages/types';
-import { deepClone } from '@usertour-packages/shared-utils';
+import { deepClone } from '@usertour-packages/utils';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { useRulesContext } from './rules-context';

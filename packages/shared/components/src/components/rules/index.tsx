@@ -1,4 +1,4 @@
-import { hasError } from '@usertour-packages/shared-utils';
+import { hasError } from '@usertour-packages/utils';
 import { Attribute, Content, RulesCondition, Segment } from '@usertour-packages/types';
 import { RulesContext } from './rules-context';
 import { RulesGroup } from './rules-group';

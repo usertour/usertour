@@ -3,7 +3,7 @@ import {
   STORAGE_IDENTIFY_ANONYMOUS,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
-import { autoStartConditions, storage } from '@usertour-packages/shared-utils';
+import { autoStartConditions, storage } from '@usertour-packages/utils';
 import {
   BizCompany,
   BizUserInfo,
