@@ -36,6 +36,8 @@ import {
   UpsertUserRequest,
   UpsertUserResponse,
   ContentSession,
+  GetProjectSettingsRequest,
+  GetProjectSettingsResponse,
 } from './web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import { BizEvents } from '@usertour/types';
@@ -1505,5 +1507,43 @@ export class WebSocketService {
       completedSessions: contentSession.completedSessions,
       seenSessions: contentSession.seenSessions,
     };
+  }
+
+  /**
+   * Get project settings for an environment
+   * @param body - Request body containing environment token
+   * @returns Project settings including config and themes
+   */
+  async getProjectSettings(
+    body: GetProjectSettingsRequest,
+    environment: Environment,
+  ): Promise<GetProjectSettingsResponse> {
+    try {
+      // Get config and themes in parallel
+      const [config, themes] = await Promise.all([
+        this.getConfig(body, environment),
+        this.listThemes(body, environment),
+      ]);
+
+      return {
+        config,
+        themes,
+      };
+    } catch (error) {
+      this.logger.error({
+        message: `Error getting project settings: ${error.message}`,
+        stack: error.stack,
+        body,
+      });
+
+      // Return default values on error
+      return {
+        config: {
+          removeBranding: false,
+          planType: 'hobby',
+        },
+        themes: [],
+      };
+    }
   }
 }

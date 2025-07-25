@@ -17,6 +17,7 @@ import {
   contentEndReason,
   contentStartReason,
   BizSession,
+  GetProjectSettingsResponse,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
@@ -382,7 +383,7 @@ export class App extends Evented {
     if (userInfo?.externalId) {
       this.setUser(userInfo);
       await this.fetchAndInitContent();
-      await this.fetchTheme();
+      await this.fetchProjectSettings();
     }
   }
 
@@ -495,8 +496,7 @@ export class App extends Evented {
       return;
     }
     await this.reset();
-    await this.fetchSdkConfig();
-    await this.fetchTheme();
+    await this.fetchProjectSettings();
     await this.fetchAndInitContent();
     await this.startContents();
     await this.startActivityMonitor();
@@ -1076,28 +1076,25 @@ export class App extends Evented {
     }
   }
 
-  async fetchSdkConfig() {
-    const sdkConfig = await this.socket.getConfig(this.startOptions.token);
-    if (sdkConfig) {
-      this.sdkConfig = sdkConfig;
-    }
-  }
-
   /**
-   * Fetches themes from server
+   * Fetches project settings from server
    */
-  async fetchTheme() {
+  async fetchProjectSettings() {
     const { token } = this.startOptions;
+    if (!token) {
+      return;
+    }
     const params = {
       token,
-      userId: this.userInfo!.externalId,
+      userId: this.userInfo?.externalId,
       companyId: this.companyInfo?.externalId,
     };
-    const data = await this.socket.listThemes(params);
+    const data: GetProjectSettingsResponse | null = await this.socket.getProjectSettings(params);
     if (data) {
-      this.themes = data;
+      this.sdkConfig = data.config;
+      this.themes = data.themes;
     } else {
-      logger.error('Failed to fetch themes!');
+      logger.error('Failed to fetch project settings!');
     }
   }
 

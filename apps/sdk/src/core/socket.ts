@@ -3,10 +3,9 @@ import {
   BizSession,
   BizUserInfo,
   ContentSession,
-  SDKConfig,
   SDKContent,
   SDKSettingsMode,
-  Theme,
+  GetProjectSettingsResponse,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import {
@@ -164,31 +163,6 @@ export class Socket extends Evented {
   }
 
   /**
-   * Get SDK configuration
-   * @param token - Authentication token
-   * @returns Promise with SDK configuration
-   */
-  async getConfig(token: string): Promise<SDKConfig> {
-    const response = await this.emitWithTimeout('get-config', { token });
-    return response as SDKConfig;
-  }
-
-  /**
-   * List available themes
-   * @param params - Parameters including authentication token
-   * @returns Promise with array of themes
-   */
-  async listThemes(params: { token: string; userId?: string; companyId?: string }): Promise<
-    Theme[]
-  > {
-    const response = await this.emitWithTimeout('list-themes', params);
-    if (!Array.isArray(response)) {
-      return [];
-    }
-    return response as Theme[];
-  }
-
-  /**
    * Create a new session
    * @param params - Session parameters including userId, token, and contentId
    * @returns Promise with session information
@@ -214,5 +188,19 @@ export class Socket extends Evented {
     eventData: any;
   }): Promise<ContentSession | false> {
     return await this.emitWithTimeout('track-event', params);
+  }
+
+  /**
+   * Get project settings
+   * @param params - Parameters including authentication token, userId, and companyId
+   * @returns Promise with project settings
+   */
+  async getProjectSettings(params: {
+    token: string;
+    userId?: string;
+    companyId?: string;
+  }): Promise<GetProjectSettingsResponse> {
+    const response = await this.emitWithTimeout('get-project-settings', params);
+    return response as GetProjectSettingsResponse;
   }
 }
