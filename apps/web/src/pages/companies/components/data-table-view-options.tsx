@@ -16,9 +16,10 @@ import {
   DropdownMenuSeparator,
 } from '@usertour-packages/dropdown-menu';
 import { updateSegment } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour/helpers';
+import { cn, getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
+import { ScrollArea } from '@usertour-packages/scroll-area';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -54,6 +55,10 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
     [currentSegment],
   );
 
+  const columns = table
+    .getAllColumns()
+    .filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide());
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,14 +75,12 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
       <DropdownMenuContent align="end" className="w-[150px]">
         <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {table
-          .getAllColumns()
-          .filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide())
-          .map((column) => {
+        <ScrollArea className={cn(columns.length > 10 ? 'h-80' : 'h-auto')}>
+          {columns.map((column) => {
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className="capitalize"
+                className="capitalize cursor-pointer"
                 checked={column.getIsVisible()}
                 onCheckedChange={async (value) => {
                   column.toggleVisibility(!!value);
@@ -88,6 +91,7 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
               </DropdownMenuCheckboxItem>
             );
           })}
+        </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
   );
