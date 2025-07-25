@@ -33,6 +33,8 @@ import {
   isSameTour,
   getAutoStartContentSortedByPriority,
   activedContentsRulesConditions,
+  hasAttributesChanged,
+  isSameChecklist,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -49,7 +51,6 @@ import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
 import { checklistIsSeen, flowIsSeen } from '../utils/conditions';
-import { isSameChecklist } from '../utils/content-utils';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -365,6 +366,13 @@ export class App extends Evented {
     if (!this.useCurrentUser()) {
       return;
     }
+
+    // Check if attributes have actually changed
+    if (!hasAttributesChanged(this.userInfo.data, attributes)) {
+      // No changes detected, skip the update
+      return;
+    }
+
     const userId = this.userInfo.externalId;
     const userInfo = await this.socket.upsertUser({
       userId,
@@ -441,6 +449,13 @@ export class App extends Evented {
     ) {
       return;
     }
+
+    // Check if attributes have actually changed
+    if (!hasAttributesChanged(this.companyInfo.data, attributes)) {
+      // No changes detected, skip the update
+      return;
+    }
+
     const userId = this.userInfo.externalId;
     const companyId = this.companyInfo?.externalId;
     const companyInfo = await this.socket.upsertCompany(

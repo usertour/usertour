@@ -622,6 +622,20 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
 };
 
 /**
+ * Checks if attributes have actually changed by comparing current and new attributes
+ * @param currentAttributes - Current attributes object
+ * @param newAttributes - New attributes to merge
+ * @returns True if attributes have changed, false otherwise
+ */
+export const hasAttributesChanged = (
+  currentAttributes: Record<string, any> = {},
+  newAttributes: Record<string, any> = {},
+): boolean => {
+  const mergedAttributes = { ...currentAttributes, ...newAttributes };
+  return !isEqual(currentAttributes, mergedAttributes);
+};
+
+/**
  * Finds a step by cvid
  * @param steps - The steps to search through
  * @param cvid - The cvid to search for
