@@ -1,0 +1,11 @@
+{
+  "name": "@usertour-packages/i18n",
+  "version": "0.0.1",
+  "description": "Usertour product translations",
+  "author": "Usertour, Inc. <support@usertour.io>",
+  "license": "ISC",
+  "exports": {
+    "./en-US/*": "./src/en-US/*.ts",
+    "./zh-Hans/*": "./src/zh-Hans/*.ts"
+  }
+}
