@@ -71,10 +71,12 @@ export class Launcher extends BaseContent<LauncherStore> {
   }
 
   /**
-   * Reports the start event for the launcher
-   * @returns {Promise<void>} A promise that resolves when the event is reported
+   * Handle additional logic after content is shown
+   * @param _isNewSession - Whether this is a new session
    */
-  async reportStartEvent() {}
+  async handleAfterShow(_isNewSession?: boolean) {
+    // Launcher has no additional logic, can be empty implementation
+  }
 
   /**
    * Builds the store data for the launcher

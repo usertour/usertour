@@ -172,6 +172,12 @@ export class Socket extends Evented {
     token: string;
     contentId: string;
     companyId?: string;
+    reason?: string;
+    context?: {
+      pageUrl?: string;
+      viewportWidth?: number;
+      viewportHeight?: number;
+    };
   }): Promise<{ session: BizSession; contentSession: ContentSession } | false> {
     return await this.emitWithTimeout('create-session', params);
   }

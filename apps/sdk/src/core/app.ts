@@ -582,9 +582,10 @@ export class App extends Evented {
   /**
    * Creates a session for a content
    * @param contentId - The content ID to create a session for
+   * @param reason - The reason for starting the content
    * @returns The session ID if successful
    */
-  async createSession(contentId: string): Promise<BizSession | null> {
+  async createSession(contentId: string, reason = 'auto_start'): Promise<BizSession | null> {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;
     const companyId = this.companyInfo?.externalId;
@@ -596,6 +597,12 @@ export class App extends Evented {
       contentId,
       token,
       companyId,
+      reason,
+      context: {
+        pageUrl: window?.location?.href,
+        viewportWidth: window?.innerWidth,
+        viewportHeight: window?.innerHeight,
+      },
     });
     if (result) {
       await this.refreshContentSession(result.contentSession);

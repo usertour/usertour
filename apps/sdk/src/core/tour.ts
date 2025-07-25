@@ -802,18 +802,11 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   /**
-   * Reports the auto start event
-   * @param reason - The reason for the auto start
+   * Handle additional logic after content is shown
+   * @param _isNewSession - Whether this is a new session
    */
-  async reportStartEvent(reason?: string) {
-    await this.reportEventWithSession({
-      eventName: BizEvents.FLOW_STARTED,
-      eventData: {
-        [EventAttributes.FLOW_START_REASON]: reason ?? 'auto_start',
-        [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
-        [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
-      },
-    });
+  async handleAfterShow(_isNewSession?: boolean) {
+    // Tour has no additional logic, can be empty implementation
   }
 
   /**

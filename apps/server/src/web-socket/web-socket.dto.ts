@@ -66,6 +66,12 @@ export interface CreateSessionRequest extends BaseRequest {
   userId: string;
   contentId: string;
   companyId?: string;
+  reason?: string;
+  context?: {
+    pageUrl?: string;
+    viewportWidth?: number;
+    viewportHeight?: number;
+  };
 }
 
 // Track event request

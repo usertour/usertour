@@ -565,13 +565,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Reports the checklist start event and creates a new session.
+   * Handle additional logic after content is shown
+   * @param isNewSession - Whether this is a new session
    */
-  async reportStartEvent(reason?: string) {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {
-      checklist_start_reason: reason ?? 'auto_start',
-    });
-    if (this.defaultIsExpanded()) {
+  async handleAfterShow(isNewSession?: boolean) {
+    // Only handle additional logic for new sessions
+    if (isNewSession && this.defaultIsExpanded()) {
       await this.reportSeenEvent();
     }
   }
