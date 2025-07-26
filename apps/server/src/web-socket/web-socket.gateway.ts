@@ -141,9 +141,9 @@ export class WebSocketGateway {
         return;
       }
 
-      this.server.to(`environment:${environmentId}`).emit('content-changed', {
-        timestamp: new Date(),
-      });
+      // this.server.to(`environment:${environmentId}`).emit('content-changed', {
+      //   timestamp: new Date(),
+      // });
       this.logger.log(`Content change notification sent to environment ${environmentId}`);
     } catch (error) {
       this.logger.error(`Failed to send content change notification: ${error.message}`);
