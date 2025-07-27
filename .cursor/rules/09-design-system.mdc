@@ -1,0 +1,14 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Design System
+
+## Color Palette
+
+- Primary: `#155EEF` - Main brand color for buttons, links, and accents
+- Error: `#F04438` - Used for error states and destructive actions
+- Success: `#12B76A` - Used for success states and confirmations
+- Warning: `#F79009` - Used for warnings and important notifications
+- Info: `#0BA5EC` - Used for informational elements

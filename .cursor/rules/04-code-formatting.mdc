@@ -1,0 +1,43 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Code Formatting Guidelines
+
+This document defines the code formatting standards to ensure consistency and readability.
+
+## Formatting Tools
+
+The project uses Biome for code formatting and linting, and EditorConfig for defining basic editor settings.
+
+## Basic Code Formatting
+
+- Maximum line length of 100 characters
+- Use 2 spaces for indentation, no tabs
+- Use semicolons at the end of statements
+- Include spaces around operators (e.g., `a + b` instead of `a+b`)
+- Always use curly braces for control statements
+- Place opening braces on the same line as their statement
+- No trailing whitespace at the end of lines
+
+## JSX Formatting
+
+- Place each attribute on a new line when a component has multiple attributes
+- Use self-closing tags for elements without children
+- Keep JSX expressions simple, extract complex logic to variables
+- Put closing brackets for multi-line JSX on a new line
+
+## Formatting Commands
+
+```bash
+# Check and fix linting issues
+pnpm check:fix
+
+# Format code
+pnpm format
+```
+
+Always run these commands before submitting changes.
+
+The configuration is defined in [biome.json](mdc:biome.json).

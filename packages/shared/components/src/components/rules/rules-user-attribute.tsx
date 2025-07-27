@@ -1,7 +1,7 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { CloseIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
-import * as Popover from '@radix-ui/react-popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Select,
   SelectContent,
@@ -134,8 +134,8 @@ const RulesAttributeDatePicker = (props: {
   const { date, setDate } = props;
 
   return (
-    <Popover.Popover>
-      <Popover.PopoverTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button
           variant={'outline'}
           className={cn(
@@ -146,13 +146,14 @@ const RulesAttributeDatePicker = (props: {
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? format(date, 'yyyy-MM-dd') : <span>Pick a date</span>}
         </Button>
-      </Popover.PopoverTrigger>
-      <Popover.PopoverContent
-        className="w-auto p-0  z-50"
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto p-0 z-50"
         align="start"
         style={{
           zIndex: EXTENSION_CONTENT_RULES,
         }}
+        withoutPortal
       >
         <Calendar
           mode="single"
@@ -161,8 +162,8 @@ const RulesAttributeDatePicker = (props: {
           onSelect={setDate}
           initialFocus
         />
-      </Popover.PopoverContent>
-    </Popover.Popover>
+      </PopoverContent>
+    </Popover>
   );
 };
 
@@ -200,16 +201,17 @@ const RulesUserAttributeName = () => {
 
   return (
     <div className="flex flex-row">
-      <Popover.Popover open={open} onOpenChange={setOpen}>
-        <Popover.PopoverTrigger asChild>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
           <Button variant="outline" className="flex-1 justify-between ">
             {selectedPreset?.displayName}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
-        </Popover.PopoverTrigger>
-        <Popover.PopoverContent
+        </PopoverTrigger>
+        <PopoverContent
           className="w-[350px] p-0"
           style={{ zIndex: EXTENSION_CONTENT_RULES }}
+          withoutPortal
         >
           <Command filter={handleFilter}>
             <CommandInput placeholder="Search attribute..." />
@@ -291,8 +293,8 @@ const RulesUserAttributeName = () => {
               )}
             </ScrollArea>
           </Command>
-        </Popover.PopoverContent>
-      </Popover.Popover>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };

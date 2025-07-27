@@ -1,0 +1,26 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Language Guidelines
+
+## Chinese for User Communication
+
+- Use Chinese for all user-facing communication
+- Maintain a professional tone in Chinese content
+- English technical terms may be used when necessary in technical discussions
+- Ensure clarity and accuracy in translations
+
+## English for Technical Content
+
+- All code-related content must follow the critical English requirements in [00-language-priority.mdc](mdc:.cursor/rules/00-language-priority.mdc)
+- UI text should default to English with i18n support for Chinese
+
+## Commit Message Standards
+
+- Write in present tense ("add feature" not "added feature")
+- Start with a type: feat, fix, docs, style, refactor, test, chore
+- Keep messages concise but descriptive
+- Format: `type(scope): short description`
+- Example: `feat(auth): implement JWT authentication`

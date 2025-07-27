@@ -1,0 +1,47 @@
+# API Structure
+
+The backend API is organized in a modular structure using NestJS with GraphQL support. Each module contains resolvers, services, guards, and DTOs.
+
+## Main Entry Point
+- [apps/server/src/main.ts](mdc:apps/server/src/main.ts) - Application bootstrap
+- [apps/server/src/app.module.ts](mdc:apps/server/src/app.module.ts) - Root module configuration
+- [apps/server/src/app.resolver.ts](mdc:apps/server/src/app.resolver.ts) - Root GraphQL resolver
+- [apps/server/src/app.controller.ts](mdc:apps/server/src/app.controller.ts) - Root REST controller
+
+## Core Business Modules
+- [apps/server/src/auth](mdc:apps/server/src/auth) - Authentication and authorization (JWT, strategies, guards)
+- [apps/server/src/users](mdc:apps/server/src/users) - User management and profiles
+- [apps/server/src/projects](mdc:apps/server/src/projects) - Project management with access control
+- [apps/server/src/content](mdc:apps/server/src/content) - Content management and operations
+- [apps/server/src/team](mdc:apps/server/src/team) - Team collaboration and membership
+- [apps/server/src/biz](mdc:apps/server/src/biz) - Core business logic and operations
+- [apps/server/src/analytics](mdc:apps/server/src/analytics) - Analytics and data tracking
+- [apps/server/src/subscription](mdc:apps/server/src/subscription) - Subscription and billing management
+- [apps/server/src/integration](mdc:apps/server/src/integration) - Third-party integrations and APIs
+
+## Configuration & Environment Modules
+- [apps/server/src/environments](mdc:apps/server/src/environments) - Environment configuration management
+- [apps/server/src/themes](mdc:apps/server/src/themes) - UI theme and styling management
+- [apps/server/src/attributes](mdc:apps/server/src/attributes) - Dynamic attributes and metadata
+- [apps/server/src/localizations](mdc:apps/server/src/localizations) - Internationalization and localization
+- [apps/server/src/events](mdc:apps/server/src/events) - Event system and event management
+
+## Infrastructure & Utilities
+- [apps/server/src/web-socket](mdc:apps/server/src/web-socket) - Real-time WebSocket communication
+- [apps/server/src/utilities](mdc:apps/server/src/utilities) - Shared utility functions and helpers
+- [apps/server/src/common](mdc:apps/server/src/common) - Common functionality and configurations
+- [apps/server/src/utils](mdc:apps/server/src/utils) - Additional utility functions
+- [apps/server/src/adapters](mdc:apps/server/src/adapters) - External service adapters
+- [apps/server/src/openapi](mdc:apps/server/src/openapi) - OpenAPI documentation and REST endpoints
+
+## Support Modules
+- [apps/server/src/email-templates](mdc:apps/server/src/email-templates) - Email template management
+- [apps/server/src/gql-config.service.ts](mdc:apps/server/src/gql-config.service.ts) - GraphQL configuration service
+
+## Best Practices
+- Follow NestJS module structure with GraphQL resolvers
+- Use dependency injection and guards for authorization
+- Implement proper error handling and validation
+- Document APIs with OpenAPI and GraphQL schema
+- Use WebSocket for real-time features
+- Follow modular architecture for scalability
