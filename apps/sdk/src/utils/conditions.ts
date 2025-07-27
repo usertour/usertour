@@ -117,11 +117,9 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
     return false;
   }
   const el = finderV2(data.elementData, document);
-  if (!el) {
-    return false;
-  }
-  const isPresent = await isVisible(el);
-  const isDisabled = (el as any).disabled ?? false;
+
+  const isPresent = el ? await isVisible(el) : false;
+  const isDisabled = el ? (el as any).disabled : false;
   switch (data.logic) {
     case ElementConditionLogic.PRESENT:
       return isPresent;
