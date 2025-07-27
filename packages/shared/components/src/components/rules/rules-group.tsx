@@ -1,11 +1,11 @@
-import { EXTENSION_CONTENT_RULES, RulesType } from '@usertour-ui/constants';
+import { EXTENSION_CONTENT_RULES, RulesType } from '@usertour-packages/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { PlusIcon, TaskClickedIcon } from '@usertour-ui/icons';
+} from '@usertour-packages/dropdown-menu';
+import { PlusIcon, TaskClickedIcon } from '@usertour-packages/icons';
 import {
   ContentIcon,
   ElementIcon,
@@ -16,9 +16,9 @@ import {
   TextInputIcon,
   TimeIcon,
   UserIcon,
-} from '@usertour-ui/icons';
-import { RulesCondition } from '@usertour-ui/types';
-import { deepClone } from '@usertour-ui/shared-utils';
+} from '@usertour-packages/icons';
+import { RulesCondition } from '@usertour/types';
+import { deepClone } from '@usertour/helpers';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { useRulesContext } from './rules-context';

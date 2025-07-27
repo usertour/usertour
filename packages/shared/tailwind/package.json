@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/tailwind",
+  "name": "@usertour-packages/tailwind",
   "private": true,
   "version": "0.0.0",
   "type": "module",

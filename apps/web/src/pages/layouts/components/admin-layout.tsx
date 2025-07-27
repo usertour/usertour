@@ -6,9 +6,9 @@ import {
 } from '@/contexts/environment-list-context';
 import { SubscriptionProvider } from '@/contexts/subscription-context';
 import { userTourToken } from '@/utils/env';
-import { Button } from '@usertour-ui/button';
-import { storage } from '@usertour-ui/shared-utils';
-import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-packages/button';
+import { storage } from '@usertour/helpers';
+import { cn } from '@usertour/helpers';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';

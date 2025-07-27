@@ -1,16 +1,16 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import type { ContentEditorScaleElement } from '../../types/editor';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Constants

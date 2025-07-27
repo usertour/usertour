@@ -1,16 +1,16 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour-ui/icons';
+} from '@usertour-packages/dropdown-menu';
+import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
 import { useState } from 'react';
-import type { TeamMember } from '@usertour-ui/types';
-import { TeamMemberRole } from '@usertour-ui/types';
+import type { TeamMember } from '@usertour/types';
+import { TeamMemberRole } from '@usertour/types';
 import { CancelInviteDialog } from './member-cancel-dialog';
 import { useAppContext } from '@/contexts/app-context';
 import { useMemberContext } from '@/contexts/member-context';

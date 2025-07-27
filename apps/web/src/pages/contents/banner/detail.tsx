@@ -5,7 +5,7 @@ import { ContentVersionProvider } from '@/contexts/content-version-context';
 import { ContentVersionListProvider } from '@/contexts/content-version-list-context';
 import { SegmentListProvider } from '@/contexts/segment-list-context';
 import { ThemeListProvider } from '@/contexts/theme-list-context';
-import { ContentTypeName } from '@usertour-ui/types';
+import { ContentTypeName } from '@usertour/types';
 import { ContentDetailContent } from '../components/detail/content-detail-content';
 import { ContentDetailHeader } from '../components/detail/content-detail-header';
 import { ContentDetailSettings } from '../components/detail/content-detail-settings';

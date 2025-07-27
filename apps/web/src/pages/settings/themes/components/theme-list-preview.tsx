@@ -1,12 +1,12 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import { ThemeTypesSetting } from '@usertour-ui/types';
+import { ThemeTypesSetting } from '@usertour/types';
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import * as SharedPopper from '@usertour-ui/sdk';
-import { GoogleFontCss } from '@usertour-ui/shared-components';
-import { ContentEditorSerialize, createValue5 } from '@usertour-ui/shared-editor';
-import { Theme } from '@usertour-ui/types';
+import * as SharedPopper from '@usertour-packages/sdk';
+import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
+import { Theme } from '@usertour/types';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';

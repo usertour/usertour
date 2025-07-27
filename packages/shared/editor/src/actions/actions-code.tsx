@@ -1,8 +1,8 @@
 import { javascript } from '@codemirror/lang-javascript';
 import { CodeIcon } from '@radix-ui/react-icons';
 import CodeMirror from '@uiw/react-codemirror';
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
-import { getCodeError } from '@usertour-ui/shared-utils';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
+import { getCodeError } from '@usertour/helpers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';

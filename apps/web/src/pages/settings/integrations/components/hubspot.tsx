@@ -1,20 +1,23 @@
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
 import { useState, useCallback, useEffect } from 'react';
-import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-ui/shared-hooks';
-import { useToast } from '@usertour-ui/use-toast';
+import {
+  useListIntegrationsQuery,
+  useUpdateIntegrationMutation,
+} from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import { Switch } from '@usertour-ui/switch';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { Switch } from '@usertour-packages/switch';
+import { Label } from '@usertour-packages/label';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { integrations } from '@/utils/integration';
-import { IntegrationModel } from '@usertour-ui/types';
-import { Card, CardDescription } from '@usertour-ui/card';
-import { CardHeader, CardTitle } from '@usertour-ui/card';
-import { CardContent } from '@usertour-ui/card';
+import { IntegrationModel } from '@usertour/types';
+import { Card, CardDescription } from '@usertour-packages/card';
+import { CardHeader, CardTitle } from '@usertour-packages/card';
+import { CardContent } from '@usertour-packages/card';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Skeleton } from '@usertour-ui/skeleton';
-import { SpinnerIcon } from '@usertour-ui/icons';
+import { Skeleton } from '@usertour-packages/skeleton';
+import { SpinnerIcon } from '@usertour-packages/icons';
 
 interface HubSpotIntegrationConfig {
   exportEvents?: boolean;

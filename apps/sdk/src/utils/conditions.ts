@@ -1,8 +1,8 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { PRIORITIES, RulesType, rulesTypes } from '@usertour-ui/constants';
-import { finderV2 } from '@usertour-ui/finder';
-import { isMatchUrlPattern } from '@usertour-ui/shared-utils';
-import { conditionsIsSame } from '@usertour-ui/shared-utils';
+import { PRIORITIES, RulesType, rulesTypes } from '@usertour-packages/constants';
+import { finderV2 } from '@usertour-packages/finder';
+import { isMatchUrlPattern } from '@usertour/helpers';
+import { conditionsIsSame } from '@usertour/helpers';
 import {
   BizEvent,
   BizEvents,
@@ -16,7 +16,7 @@ import {
   ElementConditionLogic,
   StringConditionLogic,
   BizSession,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import {
   differenceInDays,
   differenceInHours,
@@ -117,11 +117,9 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
     return false;
   }
   const el = finderV2(data.elementData, document);
-  if (!el) {
-    return false;
-  }
-  const isPresent = await isVisible(el);
-  const isDisabled = (el as any).disabled ?? false;
+
+  const isPresent = el ? await isVisible(el) : false;
+  const isDisabled = el ? (el as any).disabled : false;
   switch (data.logic) {
     case ElementConditionLogic.PRESENT:
       return isPresent;

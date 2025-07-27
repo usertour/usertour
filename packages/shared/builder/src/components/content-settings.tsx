@@ -1,7 +1,7 @@
-import { Label } from '@usertour-ui/label';
-import { HelpTooltip } from '@usertour-ui/shared-components';
-import { Switch } from '@usertour-ui/switch';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { Label } from '@usertour-packages/label';
+import { HelpTooltip } from '@usertour-packages/shared-components';
+import { Switch } from '@usertour-packages/switch';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useState } from 'react';
 
 export type ContentSettingsData = {

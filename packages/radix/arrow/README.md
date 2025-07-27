@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-ui/react-arrow
+$ yarn add @usertour-packages/react-arrow
 # or
-$ npm install @usertour-ui/react-arrow
+$ npm install @usertour-packages/react-arrow
 ```
 
 ## Usage

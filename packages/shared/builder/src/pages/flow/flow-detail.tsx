@@ -1,20 +1,23 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
-import { EXTENSION_CONTENT_SIDEBAR, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour-ui/constants';
-import { OutlineInput } from '@usertour-ui/input';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { Separator } from '@usertour-ui/separator';
+import { Button } from '@usertour-packages/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import {
+  EXTENSION_CONTENT_SIDEBAR,
+  MESSAGE_CRX_OPEN_NEW_TARGET,
+} from '@usertour-packages/constants';
+import { OutlineInput } from '@usertour-packages/input';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { Separator } from '@usertour-packages/separator';
 import {
   Align,
   ContentAlignmentData,
   ContentModalPlacementData,
   Side,
   Theme,
-} from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour/types';
+import { cn } from '@usertour/helpers';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { ContentAlignment } from '../../components/content-alignment';
@@ -29,15 +32,18 @@ import {
   useAttributeListContext,
   useContentListContext,
   useThemeListContext,
-} from '@usertour-ui/contexts';
+} from '@usertour-packages/contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
-import { ContentEditorRoot, hasMissingRequiredData } from '@usertour-ui/shared-editor';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { PlusIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { useToast } from '@usertour-ui/use-toast';
+import { ContentEditorRoot, hasMissingRequiredData } from '@usertour-packages/shared-editor';
+import { getErrorMessage } from '@usertour/helpers';
+import { PlusIcon, SpinnerIcon } from '@usertour-packages/icons';
+import { useToast } from '@usertour-packages/use-toast';
 import { ContentType } from '../../components/content-type';
 import { FlowPlacement } from './components/flow-placement';
-import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour-ui/shared-hooks';
+import {
+  useAddContentStepMutation,
+  useUpdateContentStepMutation,
+} from '@usertour-packages/shared-hooks';
 
 const FlowBuilderDetailHeader = () => {
   const { setCurrentMode, currentStep, currentContent, updateCurrentStep } = useBuilderContext();

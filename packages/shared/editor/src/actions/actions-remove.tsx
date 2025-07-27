@@ -1,5 +1,10 @@
-import { CloseIcon } from '@usertour-ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { CloseIcon } from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 
 type ContentActionsRemoveProps = {

@@ -1,4 +1,4 @@
-import { Slot } from '@usertour-ui/react-slot';
+import { Slot } from '@usertour-packages/react-slot';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 

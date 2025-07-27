@@ -1,4 +1,4 @@
-import { uuidV4 } from '@usertour-ui/ui-utils';
+import { uuidV4 } from '@usertour/helpers';
 import {
   ContentEditorClickableElement,
   ContentEditorElement,
@@ -8,9 +8,9 @@ import {
   ContentEditorRootColumn,
   ContentEditorRootElement,
 } from '../types/editor';
-import { isEmptyString } from '@usertour-ui/shared-utils';
-import { Step } from '@usertour-ui/types';
-import { cuid } from '@usertour-ui/ui-utils';
+import { isEmptyString } from '@usertour/helpers';
+import { Step } from '@usertour/types';
+import { cuid } from '@usertour/helpers';
 
 export const EmptyGroup = {
   element: { type: 'group' },

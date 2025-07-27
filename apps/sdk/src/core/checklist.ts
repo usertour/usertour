@@ -1,4 +1,4 @@
-import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
 import {
   BizEvents,
   ChecklistInitialDisplay,
@@ -7,8 +7,8 @@ import {
   contentEndReason,
   EventAttributes,
   RulesCondition,
-} from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+} from '@usertour/types';
+import { evalCode } from '@usertour/helpers';
 import { checklistIsDimissed } from '../utils/conditions';
 import { BaseContent } from './base-content';
 import {
@@ -565,13 +565,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Reports the checklist start event and creates a new session.
+   * Handle additional logic after content is shown
+   * @param isNewSession - Whether this is a new session
    */
-  async reportStartEvent(reason?: string) {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {
-      checklist_start_reason: reason ?? 'auto_start',
-    });
-    if (this.defaultIsExpanded()) {
+  async handleAfterShow(isNewSession?: boolean) {
+    // Only handle additional logic for new sessions
+    if (isNewSession && this.defaultIsExpanded()) {
       await this.reportSeenEvent();
     }
   }

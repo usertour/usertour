@@ -1,4 +1,4 @@
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour/helpers';
 import { ReactNode } from 'react';
 
 interface LoadingContainerProps {

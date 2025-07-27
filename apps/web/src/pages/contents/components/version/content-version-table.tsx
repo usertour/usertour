@@ -1,7 +1,14 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { ContentVersion } from '@usertour-ui/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { ContentVersion } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect } from 'react';
 import { ContentVersionAction } from './content-version-action';

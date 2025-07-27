@@ -1,9 +1,9 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
-import { ThemeTypesSettingsButton } from '@usertour-ui/types';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
+import { ThemeTypesSettingsButton } from '@usertour/types';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 

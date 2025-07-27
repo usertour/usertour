@@ -1,4 +1,4 @@
-import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from '@usertour-ui/constants';
+import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from '@usertour-packages/constants';
 import { useCallback, useState } from 'react';
 import { useEvent, useInterval } from 'react-use';
 

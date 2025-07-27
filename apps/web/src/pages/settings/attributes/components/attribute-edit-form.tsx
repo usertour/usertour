@@ -1,27 +1,45 @@
 'use client';
 
 import { Icons } from '@/components/atoms/icons';
-import { Attribute } from '@usertour-ui/types';
+import { Attribute } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { updateAttribute } from '@usertour-ui/gql';
-import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
+import { updateAttribute } from '@usertour-packages/gql';
+import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
+import { getErrorMessage } from '@usertour/helpers';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

@@ -1,7 +1,7 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
-import { ThemeTypesSettingsColor } from '@usertour-ui/types';
-import { Separator } from '@usertour-ui/separator';
-import { generateAutoStateColors } from '@usertour-ui/ui-utils';
+import { ThemeTypesSettingsColor } from '@usertour/types';
+import { Separator } from '@usertour-packages/separator';
+import { generateAutoStateColors } from '@usertour/helpers';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBasicColor = () => {

@@ -12,8 +12,8 @@ import {
 } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import * as Toolbar from '@radix-ui/react-toolbar';
-import { cn } from '@usertour-ui/button/src/utils';
-import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour-ui/constants';
+import { cn } from '@usertour-packages/button/src/utils';
+import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
 import {
   H1Icon,
   H2Icon,
@@ -21,9 +21,14 @@ import {
   ListUnOrderIcon,
   MoreIcon,
   UserIcon,
-} from '@usertour-ui/icons';
-import { useComposedRefs } from '@usertour-ui/react-compose-refs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/icons';
+import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useEvent, useMeasure } from 'react-use';
 import { Editor, Element as SlateElement, Transforms } from 'slate';

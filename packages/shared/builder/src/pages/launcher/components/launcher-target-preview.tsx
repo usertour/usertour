@@ -1,5 +1,5 @@
 import { GearIcon } from '@radix-ui/react-icons';
-import { ElementIcon } from '@usertour-ui/icons';
+import { ElementIcon } from '@usertour-packages/icons';
 import { useLauncherContext } from '../../../contexts';
 
 export const LauncherTargetPreview = () => {

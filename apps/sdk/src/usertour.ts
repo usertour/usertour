@@ -1,4 +1,4 @@
-import { SDKSettingsMode, UserTourTypes } from '@usertour-ui/types';
+import { SDKSettingsMode, UserTourTypes } from '@usertour/types';
 import { App } from './core/app';
 import { logger } from './utils/logger';
 import { window } from './utils/globals';

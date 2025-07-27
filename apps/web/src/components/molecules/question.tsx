@@ -1,5 +1,5 @@
 import { cn } from '@/utils/common';
-import { StarButton } from '@usertour-ui/shared-editor';
+import { StarButton } from '@usertour-packages/shared-editor';
 
 interface QuestionStarRatingProps {
   maxLength: number;

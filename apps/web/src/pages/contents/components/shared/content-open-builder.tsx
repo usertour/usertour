@@ -1,18 +1,18 @@
 import { useMutation } from '@apollo/client';
 import { ChevronDownIcon, EnterIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { isInstalledExtension } from '@usertour-ui/builder';
-import { Button } from '@usertour-ui/button';
+import { isInstalledExtension } from '@usertour-packages/builder';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { createContentVersion } from '@usertour-ui/gql';
-import { Separator } from '@usertour-ui/separator';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { BuilderType, Content } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dropdown-menu';
+import { createContentVersion } from '@usertour-packages/gql';
+import { Separator } from '@usertour-packages/separator';
+import { getErrorMessage } from '@usertour/helpers';
+import { BuilderType, Content } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ContentEditForm } from './content-edit-form';

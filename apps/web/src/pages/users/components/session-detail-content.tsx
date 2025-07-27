@@ -6,15 +6,15 @@ import {
   DotsHorizontalIcon,
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuerySessionDetailQuery } from '@usertour-ui/shared-hooks';
-import { Table, TableBody, TableCell, TableRow } from '@usertour-ui/table';
+import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
+import { Table, TableBody, TableCell, TableRow } from '@usertour-packages/table';
 import {
   BizEvent,
   BizEvents,
   ContentDataType,
   EventAttributes,
   flowReasonTitleMap,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
@@ -22,10 +22,10 @@ import { LauncherProgressColumn } from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
-import { cn } from '@usertour-ui/ui-utils';
-import { Button } from '@usertour-ui/button';
+import { cn } from '@usertour/helpers';
+import { Button } from '@usertour-packages/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { contentTypesConfig } from '@usertour-ui/shared-editor';
+import { contentTypesConfig } from '@usertour-packages/shared-editor';
 import { SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
 

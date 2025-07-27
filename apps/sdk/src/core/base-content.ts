@@ -1,5 +1,5 @@
-import { convertSettings } from '@usertour-ui/shared-utils';
-import { convertToCssVars } from '@usertour-ui/shared-utils';
+import { convertSettings } from '@usertour/helpers';
+import { convertToCssVars } from '@usertour/helpers';
 import {
   BizCompany,
   ContentDataType,
@@ -10,7 +10,7 @@ import {
   Theme,
   UserTourTypes,
   contentStartReason,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';
@@ -75,17 +75,15 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    */
   async start(reason?: string, cvid?: string) {
     const reusedSessionId = this.getReusedSessionId();
-    const sessionId = reusedSessionId || (await this.createSessionId());
+    const sessionId = reusedSessionId || (await this.createSessionId(reason));
     if (!sessionId) {
       throw new Error('Failed to create user session.');
     }
     this.sessionId = sessionId;
     this.setStarted(true);
-    // If the session is not reused, trigger the content started event
-    if (!reusedSessionId) {
-      await this.reportStartEvent(reason);
-    }
     await this.show(cvid);
+    // Handle additional logic after content is shown
+    await this.handleAfterShow(!reusedSessionId);
   }
 
   /**
@@ -372,9 +370,9 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   /**
    * Creates a new session ID
    */
-  async createSessionId(): Promise<string | null> {
+  async createSessionId(reason = 'auto_start'): Promise<string | null> {
     const contentId = this.getContent().contentId;
-    const session = await this.getInstance().createSession(contentId);
+    const session = await this.getInstance().createSession(contentId, reason);
     return session ? session.id : null;
   }
 
@@ -616,5 +614,5 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   abstract reset(): void;
   abstract refresh(): void;
   abstract initializeEventListeners(): void;
-  abstract reportStartEvent(reason?: string): Promise<void>;
+  abstract handleAfterShow(isNewSession?: boolean): Promise<void>;
 }

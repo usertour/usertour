@@ -1,6 +1,14 @@
-import { MESSAGE_START_FLOW_WITH_TOKEN, STORAGE_IDENTIFY_ANONYMOUS } from '@usertour-ui/constants';
-import { AssetAttributes } from '@usertour-ui/frame';
-import { autoStartConditions, storage } from '@usertour-ui/shared-utils';
+import {
+  MESSAGE_START_FLOW_WITH_TOKEN,
+  SDK_CSS_LOADED,
+  SDK_CSS_LOADED_FAILED,
+  SDK_DOM_LOADED,
+  SDK_CONTENT_CHANGED,
+  STORAGE_IDENTIFY_ANONYMOUS,
+  SDK_CONTAINER_CREATED,
+} from '@usertour-packages/constants';
+import { AssetAttributes } from '@usertour-packages/frame';
+import { autoStartConditions, storage } from '@usertour/helpers';
 import {
   BizCompany,
   BizUserInfo,
@@ -14,9 +22,10 @@ import {
   contentEndReason,
   contentStartReason,
   BizSession,
-} from '@usertour-ui/types';
-import { UserTourTypes } from '@usertour-ui/types';
-import { uuidV4 } from '@usertour-ui/ui-utils';
+  GetProjectSettingsResponse,
+} from '@usertour/types';
+import { UserTourTypes } from '@usertour/types';
+import { uuidV4 } from '@usertour/helpers';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';
 import { ReportEventParams } from '../types/content';
@@ -30,6 +39,8 @@ import {
   isSameTour,
   getAutoStartContentSortedByPriority,
   activedContentsRulesConditions,
+  hasAttributesChanged,
+  isSameChecklist,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -46,7 +57,6 @@ import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
 import { checklistIsSeen, flowIsSeen } from '../utils/conditions';
-import { isSameChecklist } from '../utils/content-utils';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -174,22 +184,22 @@ export class App extends Evented {
    * Initializes DOM event listeners for the application
    */
   initializeEventListeners() {
-    this.once('dom-loaded', () => {
+    this.once(SDK_DOM_LOADED, () => {
       this.loadCss();
     });
-    this.once('css-loaded', () => {
+    this.once(SDK_CSS_LOADED, () => {
       this.createContainer();
       this.createRoot();
     });
     // refresh data when content changed in the server
-    this.socket.on('content-changed', () => {
+    this.socket.on(SDK_CONTENT_CHANGED, () => {
       this.fetchAndInitContent();
     });
     if (document?.readyState !== 'loading') {
-      this.trigger('dom-loaded');
+      this.trigger(SDK_DOM_LOADED);
     } else if (document) {
       on(document, 'DOMContentLoaded', () => {
-        this.trigger('dom-loaded');
+        this.trigger(SDK_DOM_LOADED);
       });
     }
     if (window) {
@@ -362,6 +372,13 @@ export class App extends Evented {
     if (!this.useCurrentUser()) {
       return;
     }
+
+    // Check if attributes have actually changed
+    if (!hasAttributesChanged(this.userInfo.data, attributes)) {
+      // No changes detected, skip the update
+      return;
+    }
+
     const userId = this.userInfo.externalId;
     const userInfo = await this.socket.upsertUser({
       userId,
@@ -371,7 +388,7 @@ export class App extends Evented {
     if (userInfo?.externalId) {
       this.setUser(userInfo);
       await this.fetchAndInitContent();
-      await this.fetchTheme();
+      await this.fetchProjectSettings();
     }
   }
 
@@ -438,6 +455,13 @@ export class App extends Evented {
     ) {
       return;
     }
+
+    // Check if attributes have actually changed
+    if (!hasAttributesChanged(this.companyInfo.data, attributes)) {
+      // No changes detected, skip the update
+      return;
+    }
+
     const userId = this.userInfo.externalId;
     const companyId = this.companyInfo?.externalId;
     const companyInfo = await this.socket.upsertCompany(
@@ -465,9 +489,9 @@ export class App extends Evented {
     }
     const loadMainCss = await loadCSSResource(cssFile, document);
     if (loadMainCss) {
-      this.trigger('css-loaded');
+      this.trigger(SDK_CSS_LOADED);
     } else {
-      this.trigger('css-loaded-failed');
+      this.trigger(SDK_CSS_LOADED_FAILED);
     }
   }
 
@@ -477,8 +501,7 @@ export class App extends Evented {
       return;
     }
     await this.reset();
-    await this.fetchSdkConfig();
-    await this.fetchTheme();
+    await this.fetchProjectSettings();
     await this.fetchAndInitContent();
     await this.startContents();
     await this.startActivityMonitor();
@@ -564,9 +587,10 @@ export class App extends Evented {
   /**
    * Creates a session for a content
    * @param contentId - The content ID to create a session for
+   * @param reason - The reason for starting the content
    * @returns The session ID if successful
    */
-  async createSession(contentId: string): Promise<BizSession | null> {
+  async createSession(contentId: string, reason = 'auto_start'): Promise<BizSession | null> {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;
     const companyId = this.companyInfo?.externalId;
@@ -578,6 +602,12 @@ export class App extends Evented {
       contentId,
       token,
       companyId,
+      reason,
+      context: {
+        pageUrl: window?.location?.href,
+        viewportWidth: window?.innerWidth,
+        viewportHeight: window?.innerHeight,
+      },
     });
     if (result) {
       await this.refreshContentSession(result.contentSession);
@@ -605,7 +635,7 @@ export class App extends Evented {
     }
 
     this.container = container;
-    this.trigger('container-created');
+    this.trigger(SDK_CONTAINER_CREATED);
   }
 
   /**
@@ -1058,28 +1088,25 @@ export class App extends Evented {
     }
   }
 
-  async fetchSdkConfig() {
-    const sdkConfig = await this.socket.getConfig(this.startOptions.token);
-    if (sdkConfig) {
-      this.sdkConfig = sdkConfig;
-    }
-  }
-
   /**
-   * Fetches themes from server
+   * Fetches project settings from server
    */
-  async fetchTheme() {
+  async fetchProjectSettings() {
     const { token } = this.startOptions;
+    if (!token) {
+      return;
+    }
     const params = {
       token,
-      userId: this.userInfo!.externalId,
+      userId: this.userInfo?.externalId,
       companyId: this.companyInfo?.externalId,
     };
-    const data = await this.socket.listThemes(params);
+    const data: GetProjectSettingsResponse | null = await this.socket.getProjectSettings(params);
     if (data) {
-      this.themes = data;
+      this.sdkConfig = data.config;
+      this.themes = data.themes;
     } else {
-      logger.error('Failed to fetch themes!');
+      logger.error('Failed to fetch project settings!');
     }
   }
 

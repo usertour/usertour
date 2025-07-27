@@ -2,12 +2,7 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import {
-  BizEvents,
-  EventAttributes,
-  UserAttributes,
-  CompanyAttributes,
-} from '@/common/consts/attribute';
+import { EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
 import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
@@ -41,8 +36,11 @@ import {
   UpsertUserRequest,
   UpsertUserResponse,
   ContentSession,
+  GetProjectSettingsRequest,
+  GetProjectSettingsResponse,
 } from './web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
+import { BizEvents } from '@usertour/types';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -1048,7 +1046,13 @@ export class WebSocketService {
     data: CreateSessionRequest,
     environment: Environment,
   ): Promise<BizSession | null> {
-    const { userId: externalUserId, contentId, companyId: externalCompanyId } = data;
+    const {
+      userId: externalUserId,
+      contentId,
+      companyId: externalCompanyId,
+      reason,
+      context,
+    } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
@@ -1079,7 +1083,7 @@ export class WebSocketService {
       return null;
     }
 
-    return await this.prisma.bizSession.create({
+    const session = await this.prisma.bizSession.create({
       data: {
         state: 0,
         progress: 0,
@@ -1091,6 +1095,48 @@ export class WebSocketService {
         bizCompanyId: externalCompanyId ? bizCompany.id : null,
       },
     });
+
+    // Always create start event when session is created
+    const startReason = reason || 'auto_start';
+    const eventName =
+      content.type === ContentType.FLOW ? BizEvents.FLOW_STARTED : BizEvents.CHECKLIST_STARTED;
+
+    // Use trackEvent to ensure consistent event parameters
+    const baseEventData = {
+      [EventAttributes.PAGE_URL]: context?.pageUrl,
+      [EventAttributes.VIEWPORT_WIDTH]: context?.viewportWidth,
+      [EventAttributes.VIEWPORT_HEIGHT]: context?.viewportHeight,
+    };
+
+    const eventData =
+      content.type === ContentType.FLOW
+        ? {
+            ...baseEventData,
+            [EventAttributes.FLOW_START_REASON]: startReason,
+            [EventAttributes.FLOW_VERSION_ID]: version.id,
+            [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+          }
+        : {
+            ...baseEventData,
+            [EventAttributes.CHECKLIST_ID]: content.id,
+            [EventAttributes.CHECKLIST_NAME]: content.name,
+            [EventAttributes.CHECKLIST_START_REASON]: startReason,
+            [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+            [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+          };
+
+    await this.trackEvent(
+      {
+        token: data.token,
+        userId: String(externalUserId),
+        eventName,
+        sessionId: session.id,
+        eventData,
+      },
+      environment,
+    );
+
+    return session;
   }
 
   /**
@@ -1509,5 +1555,43 @@ export class WebSocketService {
       completedSessions: contentSession.completedSessions,
       seenSessions: contentSession.seenSessions,
     };
+  }
+
+  /**
+   * Get project settings for an environment
+   * @param body - Request body containing environment token
+   * @returns Project settings including config and themes
+   */
+  async getProjectSettings(
+    body: GetProjectSettingsRequest,
+    environment: Environment,
+  ): Promise<GetProjectSettingsResponse> {
+    try {
+      // Get config and themes in parallel
+      const [config, themes] = await Promise.all([
+        this.getConfig(body, environment),
+        this.listThemes(body, environment),
+      ]);
+
+      return {
+        config,
+        themes,
+      };
+    } catch (error) {
+      this.logger.error({
+        message: `Error getting project settings: ${error.message}`,
+        stack: error.stack,
+        body,
+      });
+
+      // Return default values on error
+      return {
+        config: {
+          removeBranding: false,
+          planType: 'hobby',
+        },
+        themes: [],
+      };
+    }
   }
 }

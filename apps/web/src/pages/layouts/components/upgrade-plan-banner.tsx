@@ -1,4 +1,4 @@
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useNavigate } from 'react-router-dom';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { useAppContext } from '@/contexts/app-context';

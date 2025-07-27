@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useDeleteBizUserMutation } from '@usertour-ui/shared-hooks';
+import { useDeleteBizUserMutation } from '@usertour-packages/shared-hooks';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -8,9 +8,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 

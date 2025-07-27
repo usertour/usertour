@@ -2,21 +2,34 @@
 
 import { Icons } from '@/components/atoms/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour-ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
-import { useChangeTeamMemberRoleMutation } from '@usertour-ui/shared-hooks';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import type { TeamMember } from '@usertour-ui/types';
-import { TeamMemberRole } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
+import { useChangeTeamMemberRoleMutation } from '@usertour-packages/shared-hooks';
+import { getErrorMessage } from '@usertour/helpers';
+import type { TeamMember } from '@usertour/types';
+import { TeamMemberRole } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

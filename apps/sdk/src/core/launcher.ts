@@ -1,7 +1,7 @@
-import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
-import { BizEvents, EventAttributes, LauncherData } from '@usertour-ui/types';
-import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
+import { BizEvents, EventAttributes, LauncherData } from '@usertour/types';
+import { ContentActionsItemType, RulesCondition } from '@usertour/types';
+import { evalCode } from '@usertour/helpers';
 import { LauncherStore } from '../types/store';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
@@ -71,10 +71,12 @@ export class Launcher extends BaseContent<LauncherStore> {
   }
 
   /**
-   * Reports the start event for the launcher
-   * @returns {Promise<void>} A promise that resolves when the event is reported
+   * Handle additional logic after content is shown
+   * @param _isNewSession - Whether this is a new session
    */
-  async reportStartEvent() {}
+  async handleAfterShow(_isNewSession?: boolean) {
+    // Launcher has no additional logic, can be empty implementation
+  }
 
   /**
    * Builds the store data for the launcher

@@ -72,7 +72,7 @@ import {
   listThemes,
   deleteBizUser,
   deleteBizUserOnSegment,
-} from '@usertour-ui/gql';
+} from '@usertour-packages/gql';
 
 import type {
   Content,
@@ -94,7 +94,7 @@ import type {
   SessionQuery,
   Event,
   Theme,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 
 type UseContentListQueryProps = {
   query: {

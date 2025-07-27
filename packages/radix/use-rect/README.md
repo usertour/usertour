@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-ui/react-use-rect
+$ yarn add @usertour-packages/react-use-rect
 # or
-$ npm install @usertour-ui/react-use-rect
+$ npm install @usertour-packages/react-use-rect
 ```
 
 ## Usage

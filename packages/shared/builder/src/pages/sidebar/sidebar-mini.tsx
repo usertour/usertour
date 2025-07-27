@@ -3,8 +3,8 @@ import {
   DoubleArrowRightIcon,
   SlideLeftIcon,
   SlideRightIcon,
-} from '@usertour-ui/icons';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/icons';
+import { cn } from '@usertour/helpers';
 import anime from 'animejs/lib/anime.es.js';
 import { useEffect, useState } from 'react';
 

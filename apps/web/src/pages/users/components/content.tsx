@@ -1,10 +1,15 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { UserListProvider } from '@/contexts/user-list-context';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { EditIcon } from '@usertour-ui/icons';
-import { Separator } from '@usertour-ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Button } from '@usertour-packages/button';
+import { EditIcon } from '@usertour-packages/icons';
+import { Separator } from '@usertour-packages/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from './data-table';

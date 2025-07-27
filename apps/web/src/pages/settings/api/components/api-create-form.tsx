@@ -1,16 +1,16 @@
 import { useMutation } from '@apollo/client';
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
+} from '@usertour-packages/dialog';
 import { useState } from 'react';
-import { useToast } from '@usertour-ui/use-toast';
-import { CreateAccessToken } from '@usertour-ui/gql';
+import { useToast } from '@usertour-packages/use-toast';
+import { CreateAccessToken } from '@usertour-packages/gql';
 import { useAppContext } from '@/contexts/app-context';
 import { useApiContext } from '@/contexts/api-context';
 import { ApiKeyDialog } from './api-key-dialog';
@@ -25,7 +25,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour-ui/form';
+} from '@usertour-packages/form';
 import { Icons } from '@/components/atoms/icons';
 
 interface ApiCreateFormProps {

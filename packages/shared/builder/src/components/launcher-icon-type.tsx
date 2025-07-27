@@ -1,5 +1,11 @@
-import { IconsList } from '@usertour-ui/sdk';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+import { IconsList } from '@usertour-packages/sdk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
 
 interface LauncherIconTypeProps {
   type: string;

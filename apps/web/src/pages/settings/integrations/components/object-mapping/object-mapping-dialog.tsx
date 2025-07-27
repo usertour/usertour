@@ -1,12 +1,17 @@
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useCallback, useState } from 'react';
 import {
   useGetSalesforceObjectFieldsQuery,
   useUpsertIntegrationObjectMappingMutation,
-} from '@usertour-ui/shared-hooks';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import { SpinnerIcon, SalesforceIcon, UsertourIcon2, ArrowRightLeftIcon } from '@usertour-ui/icons';
+import {
+  SpinnerIcon,
+  SalesforceIcon,
+  UsertourIcon2,
+  ArrowRightLeftIcon,
+} from '@usertour-packages/icons';
 import {
   Dialog,
   DialogContent,
@@ -14,17 +19,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@usertour-ui/dialog';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/dialog';
+import { cn } from '@usertour/helpers';
 import {
   AttributeBizTypes,
   IntegrationObjectMappingSettings,
   IntegrationObjectMappingModel,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { ObjectMappingPanel } from './object-mapping-panel';
 import { ObjectMappingObjectSelect } from './object-mapping-select';
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
 import { InfoIcon } from 'lucide-react';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (

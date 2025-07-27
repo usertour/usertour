@@ -1,6 +1,6 @@
 import { RenderElementProps } from 'slate-react';
 
-import { cn } from '@usertour-ui/button/src/utils';
+import { cn } from '@usertour-packages/button/src/utils';
 
 export const HeadingElement = (
   props: RenderElementProps & { className?: string; headingSize: 1 | 2 | 3 },

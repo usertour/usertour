@@ -1,4 +1,4 @@
-import { ScrollArea } from '@usertour-ui/scroll-area';
+import { ScrollArea } from '@usertour-packages/scroll-area';
 import { useParams } from 'react-router-dom';
 import { AdminLayoutNewContent, AdminNewLayout } from './components/admin-layout';
 import { AdminMainNewNav } from './components/admin-main-nav';

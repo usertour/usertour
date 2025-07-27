@@ -1,8 +1,13 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { Label } from '@usertour-ui/label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { ContentDataType } from '@usertour-ui/types';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { Label } from '@usertour-packages/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { ContentDataType } from '@usertour/types';
 import { useId, useState } from 'react';
 
 interface RulesIfCompletedProps {

@@ -1,4 +1,4 @@
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Popper,
   PopperContent,
@@ -7,9 +7,9 @@ import {
   PopperProgress,
   PopperClose,
   PopperOverlay,
-} from '@usertour-ui/sdk';
-import { ContentEditorSerialize, createValue5 } from '@usertour-ui/shared-editor';
-import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour-ui/types';
+} from '@usertour-packages/sdk';
+import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
+import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { useRef } from 'react';
 import { Rect } from '../theme-editor';
 

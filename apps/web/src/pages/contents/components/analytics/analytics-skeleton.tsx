@@ -1,7 +1,14 @@
-import { Skeleton } from '@usertour-ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { Tabs, TabsContent } from '@usertour-ui/tabs';
+import { Skeleton } from '@usertour-packages/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { Tabs, TabsContent } from '@usertour-packages/tabs';
 
 // AnalyticsHeader skeleton
 export const AnalyticsHeaderSkeleton = () => {

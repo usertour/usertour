@@ -1,12 +1,12 @@
-import { Environment, Project } from '@usertour-ui/types';
-import { UID_COOKIE } from '@usertour-ui/constants';
+import { Environment, Project } from '@usertour/types';
+import { UID_COOKIE } from '@usertour-packages/constants';
 import {
   useGlobalConfigQuery,
   useGetUserInfoQuery,
   useLogoutMutation,
-} from '@usertour-ui/shared-hooks';
-import { removeAuthToken } from '@usertour-ui/shared-utils';
-import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour-ui/types';
+} from '@usertour-packages/shared-hooks';
+import { removeAuthToken } from '@usertour/helpers';
+import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useCookie } from 'react-use';
 

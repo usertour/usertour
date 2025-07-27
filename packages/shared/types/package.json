@@ -1,35 +1,32 @@
 {
-  "name": "@usertour-ui/types",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@usertour/types",
+  "version": "0.0.3",
   "type": "module",
-  "main": "src/index.ts",
+  "description": "TypeScript type definitions and enums shared across the UserTour project",
+  "homepage": "https://www.usertour.io",
+  "author": "Usertour, Inc. <support@usertour.io>",
+  "license": "AGPL-3.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
   "scripts": {
     "build": "tsup src --dts",
     "dev": "pnpm build:fast -- --watch",
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
-    "build:fast": "tsup src"
-  },
-  "dependencies": {
-    "react": "^18.2.0"
-  },
-  "peerDependencies": {
-    "react": "^18.2.0"
+    "build:fast": "tsup src",
+    "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
-    "@types/react": "^18.0.37",
-    "@types/react-dom": "^18.0.11",
-    "@typescript-eslint/eslint-plugin": "^5.59.0",
-    "@typescript-eslint/parser": "^5.59.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "eslint": "^8.38.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.3.4",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.3.9"
+    "typescript": "^5.0.2"
   },
   "tsup": {
     "clean": true,

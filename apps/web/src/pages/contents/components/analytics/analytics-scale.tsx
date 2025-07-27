@@ -1,21 +1,21 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import type {
   AnswerCount,
   AverageByDay,
   Content,
   ContentQuestionAnalytics,
   Question,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour-packages/chart';
 import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
-import { cn } from '@usertour-ui/ui-utils';
-import { ArrowRightIcon } from '@usertour-ui/icons';
-import { useUpdateContentMutation } from '@usertour-ui/shared-hooks';
-import { useToast } from '@usertour-ui/use-toast';
+import { cn } from '@usertour/helpers';
+import { ArrowRightIcon } from '@usertour-packages/icons';
+import { useUpdateContentMutation } from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
-import { ContentEditorElementType } from '@usertour-ui/shared-editor';
+import { ContentEditorElementType } from '@usertour-packages/shared-editor';
 import { QuestionStarRating } from '@/components/molecules/question';
 
 interface AnalyticsScaleProps {

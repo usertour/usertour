@@ -6,12 +6,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Segment } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour/helpers';
+import { Segment } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
-import { useDeleteSegmentMutation } from '@usertour-ui/shared-hooks';
+import { useDeleteSegmentMutation } from '@usertour-packages/shared-hooks';
 
 interface CompanySegmentDeleteFormProps {
   segment: Segment;

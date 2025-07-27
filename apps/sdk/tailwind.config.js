@@ -1,4 +1,4 @@
-import { extendSdk } from '@usertour-ui/tailwind';
+import { extendSdk } from '@usertour-packages/tailwind';
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {

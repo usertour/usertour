@@ -1,12 +1,15 @@
-import { PopperMadeWith } from '@usertour-ui/sdk';
+import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
   LauncherContentWrapper,
   LauncherPopper,
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-ui/sdk/src/launcher';
-import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+} from '@usertour-packages/sdk/src/launcher';
+import {
+  ContentEditorClickableElement,
+  ContentEditorSerialize,
+} from '@usertour-packages/shared-editor';
 import {
   BizUserInfo,
   LauncherActionType,
@@ -14,7 +17,7 @@ import {
   LauncherTriggerElement,
   RulesCondition,
   ThemeTypesSetting,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Launcher } from '../core/launcher';
 import { useEventHandlers } from '../hooks/use-event-handlers';

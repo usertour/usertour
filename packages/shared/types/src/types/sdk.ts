@@ -1,6 +1,7 @@
 import { ContentVersion } from './contents';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
+import { Theme } from './theme';
 
 export type ContentSession = {
   contentId: string;
@@ -64,4 +65,9 @@ export const flowReasonTitleMap = {
 export interface SDKConfig {
   planType: PlanType;
   removeBranding: boolean;
+}
+
+export interface GetProjectSettingsResponse {
+  config: SDKConfig;
+  themes: Theme[];
 }

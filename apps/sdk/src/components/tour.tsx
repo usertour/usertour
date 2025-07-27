@@ -7,8 +7,11 @@ import {
   PopperModalContentPotal,
   PopperOverlay,
   PopperContentPotal,
-} from '@usertour-ui/sdk';
-import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+} from '@usertour-packages/sdk';
+import {
+  ContentEditorClickableElement,
+  ContentEditorSerialize,
+} from '@usertour-packages/shared-editor';
 import {
   Align,
   BizUserInfo,
@@ -20,11 +23,11 @@ import {
   Step,
   StepContentType,
   ThemeTypesSetting,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { Tour as TourCore } from '../core/tour';
 import { off, on } from '../utils/listener';
-import { useSettingsStyles } from '@usertour-ui/sdk';
+import { useSettingsStyles } from '@usertour-packages/sdk';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {

@@ -26,6 +26,8 @@ import {
   ListThemesRequest,
   ContentSession,
   CreateSessionResponse,
+  GetProjectSettingsRequest,
+  GetProjectSettingsResponse,
 } from './web-socket.dto';
 import { Environment, Theme } from '@prisma/client';
 
@@ -119,6 +121,14 @@ export class WebSocketGateway {
   ): Promise<ContentSession | false> {
     await this.service.trackEvent(body, environment);
     return await this.service.getContentSessionBySession(body.userId, body.sessionId, environment);
+  }
+
+  @SubscribeMessage('get-project-settings')
+  async getProjectSettings(
+    @MessageBody() body: GetProjectSettingsRequest,
+    @WebSocketEnvironment() environment: Environment,
+  ): Promise<GetProjectSettingsResponse> {
+    return await this.service.getProjectSettings(body, environment);
   }
 
   /**

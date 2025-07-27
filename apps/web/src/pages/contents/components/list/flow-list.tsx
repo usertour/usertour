@@ -1,8 +1,8 @@
 import { ContentListSkeleton } from '@/components/molecules/skeleton';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { OpenInNewWindowIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { Separator } from '@usertour-ui/separator';
+import { Button } from '@usertour-packages/button';
+import { Separator } from '@usertour-packages/separator';
 import { useState } from 'react';
 import { ContentCreateForm } from '../shared/content-create-form';
 import { EmptyPlaceholder } from '../shared/empty-placeholder';

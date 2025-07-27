@@ -1,7 +1,7 @@
 'use client';
 
-import type { TeamMember } from '@usertour-ui/types';
-import { Button } from '@usertour-ui/button';
+import type { TeamMember } from '@usertour/types';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { SpinnerIcon } from '@usertour-ui/icons';
-import { useRemoveTeamMemberMutation } from '@usertour-ui/shared-hooks';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import { SpinnerIcon } from '@usertour-packages/icons';
+import { useRemoveTeamMemberMutation } from '@usertour-packages/shared-hooks';
+import { getErrorMessage } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 
 interface MemberRemoveDialogProps {

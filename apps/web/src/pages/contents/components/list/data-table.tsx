@@ -16,9 +16,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { getContentVersion } from '@usertour-ui/gql';
-import { CircleIcon } from '@usertour-ui/icons';
-import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-ui/types';
+import { getContentVersion } from '@usertour-packages/gql';
+import { CircleIcon } from '@usertour-packages/icons';
+import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

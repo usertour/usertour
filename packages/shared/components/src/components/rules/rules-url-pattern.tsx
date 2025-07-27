@@ -1,8 +1,13 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { getUrlPatternError } from '@usertour-ui/shared-utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { getUrlPatternError } from '@usertour/helpers';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';

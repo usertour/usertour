@@ -1,26 +1,31 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Label } from '@usertour-ui/label';
+import { Label } from '@usertour-packages/label';
 import {
   Rules,
   RulesFrequency,
   RulesIfCompleted,
   RulesPriority,
   RulesWait,
-} from '@usertour-ui/shared-components';
-import { useContentListQuery } from '@usertour-ui/shared-hooks';
-import { deepClone, getAuthToken } from '@usertour-ui/shared-utils';
-import { conditionsIsSame } from '@usertour-ui/shared-utils';
-import { Switch } from '@usertour-ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/shared-components';
+import { useContentListQuery } from '@usertour-packages/shared-hooks';
+import { deepClone, getAuthToken } from '@usertour/helpers';
+import { conditionsIsSame } from '@usertour/helpers';
+import { Switch } from '@usertour-packages/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import {
   Content,
   ContentPriority,
   Frequency,
   RulesCondition,
   autoStartRulesSetting,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useCallback, useId, useState, useEffect } from 'react';
 
 export enum ContentDetailAutoStartRulesType {
