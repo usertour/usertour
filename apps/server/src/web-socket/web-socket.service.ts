@@ -1096,45 +1096,48 @@ export class WebSocketService {
       },
     });
 
-    // Always create start event when session is created
-    const startReason = reason || 'auto_start';
-    const eventName =
-      content.type === ContentType.FLOW ? BizEvents.FLOW_STARTED : BizEvents.CHECKLIST_STARTED;
+    // If the content is a flow or checklist, create a start event
+    if (content.type === ContentType.FLOW || content.type === ContentType.CHECKLIST) {
+      // Always create start event when session is created
+      const startReason = reason || 'auto_start';
+      const eventName =
+        content.type === ContentType.FLOW ? BizEvents.FLOW_STARTED : BizEvents.CHECKLIST_STARTED;
 
-    // Use trackEvent to ensure consistent event parameters
-    const baseEventData = {
-      [EventAttributes.PAGE_URL]: context?.pageUrl,
-      [EventAttributes.VIEWPORT_WIDTH]: context?.viewportWidth,
-      [EventAttributes.VIEWPORT_HEIGHT]: context?.viewportHeight,
-    };
+      // Use trackEvent to ensure consistent event parameters
+      const baseEventData = {
+        [EventAttributes.PAGE_URL]: context?.pageUrl,
+        [EventAttributes.VIEWPORT_WIDTH]: context?.viewportWidth,
+        [EventAttributes.VIEWPORT_HEIGHT]: context?.viewportHeight,
+      };
 
-    const eventData =
-      content.type === ContentType.FLOW
-        ? {
-            ...baseEventData,
-            [EventAttributes.FLOW_START_REASON]: startReason,
-            [EventAttributes.FLOW_VERSION_ID]: version.id,
-            [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
-          }
-        : {
-            ...baseEventData,
-            [EventAttributes.CHECKLIST_ID]: content.id,
-            [EventAttributes.CHECKLIST_NAME]: content.name,
-            [EventAttributes.CHECKLIST_START_REASON]: startReason,
-            [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-            [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-          };
+      const eventData =
+        content.type === ContentType.FLOW
+          ? {
+              ...baseEventData,
+              [EventAttributes.FLOW_START_REASON]: startReason,
+              [EventAttributes.FLOW_VERSION_ID]: version.id,
+              [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+            }
+          : {
+              ...baseEventData,
+              [EventAttributes.CHECKLIST_ID]: content.id,
+              [EventAttributes.CHECKLIST_NAME]: content.name,
+              [EventAttributes.CHECKLIST_START_REASON]: startReason,
+              [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+              [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+            };
 
-    await this.trackEvent(
-      {
-        token: data.token,
-        userId: String(externalUserId),
-        eventName,
-        sessionId: session.id,
-        eventData,
-      },
-      environment,
-    );
+      await this.trackEvent(
+        {
+          token: data.token,
+          userId: String(externalUserId),
+          eventName,
+          sessionId: session.id,
+          eventData,
+        },
+        environment,
+      );
+    }
 
     return session;
   }
