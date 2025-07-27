@@ -6,6 +6,8 @@ import {
   SDK_CONTENT_CHANGED,
   STORAGE_IDENTIFY_ANONYMOUS,
   SDK_CONTAINER_CREATED,
+  SDK_EVENT_REPORTED,
+  SDK_URL_CHANGED,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { autoStartConditions, storage } from '@usertour/helpers';
@@ -101,6 +103,7 @@ export class App extends Evented {
   private sessionTimeoutHours = SESSION_TIMEOUT_HOURS;
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS;
   private customNavigate: ((url: string) => void) | null = null;
+  private lastUrl: string | undefined;
 
   constructor() {
     super();
@@ -205,6 +208,15 @@ export class App extends Evented {
     if (window) {
       on(window, 'message', this.handlePreviewMessage);
     }
+
+    this.on(SDK_URL_CHANGED, () => {
+      this.startContents();
+      // this.startHighestPriorityTour(contentStartReason.START_CONDITION, true);
+    });
+    this.on(SDK_EVENT_REPORTED, () => {
+      this.startContents();
+      // this.startHighestPriorityTour(contentStartReason.START_CONDITION, true);
+    });
   }
 
   /**
@@ -579,6 +591,7 @@ export class App extends Evented {
       if (contentSession) {
         await this.refreshContentSession(contentSession);
       }
+      this.trigger(SDK_EVENT_REPORTED);
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
@@ -839,7 +852,7 @@ export class App extends Evented {
 
     try {
       // Get auto-start eligible checklists sorted by priority and take the first one
-      const sortedChecklists = getAutoStartContentSortedByPriority(this.checklists);
+      const sortedChecklists = await getAutoStartContentSortedByPriority(this.checklists);
       const highestPriorityChecklist = sortedChecklists[0];
 
       if (!highestPriorityChecklist) {
@@ -867,7 +880,7 @@ export class App extends Evented {
 
     try {
       // Get all auto-start eligible launchers sorted by priority
-      const sortedLaunchers = getAutoStartContentSortedByPriority(this.launchers);
+      const sortedLaunchers = await getAutoStartContentSortedByPriority(this.launchers);
 
       // Early return if no eligible launchers found
       if (!sortedLaunchers.length) {
@@ -1033,8 +1046,10 @@ export class App extends Evented {
     }
 
     try {
+      // const tours = this.tours.filter((tour) => hasDismissed === tour.hasDismissed());
+
       // Get auto-start eligible tours sorted by priority and take the first one
-      const sortedTours = getAutoStartContentSortedByPriority(this.tours);
+      const sortedTours = await getAutoStartContentSortedByPriority(this.tours);
       const highestPriorityTour = sortedTours[0];
 
       if (!highestPriorityTour) {
@@ -1136,6 +1151,23 @@ export class App extends Evented {
   }
 
   /**
+   * Checks if the URL has changed and triggers the URL_CHANGED event if it has
+   */
+  private checkUrlChange(): void {
+    if (!window?.location?.href) {
+      return;
+    }
+
+    const currentUrl = window.location.href;
+
+    if (this.lastUrl !== undefined && this.lastUrl !== currentUrl) {
+      this.trigger(SDK_URL_CHANGED);
+    }
+
+    this.lastUrl = currentUrl;
+  }
+
+  /**
    * Starts the activity monitor to track user interactions
    */
   async startActivityMonitor() {
@@ -1180,6 +1212,9 @@ export class App extends Evented {
         return;
       }
 
+      // Check for URL changes
+      this.checkUrlChange();
+
       // Execute all monitoring tasks in parallel using Promise.all
       await Promise.all([
         ...this.tours.map((tour) => tour.monitor()),
@@ -1187,7 +1222,7 @@ export class App extends Evented {
         ...this.checklists.map((checklist) => checklist.monitor()),
       ]);
 
-      await this.startContents();
+      // await this.startContents();
     } catch (error) {
       logger.error('Error in app monitoring:', error);
     } finally {
@@ -1296,6 +1331,7 @@ export class App extends Evented {
     this.originContents = undefined;
     this.isMonitoring = false;
     this.tours = [];
+    this.lastUrl = undefined;
     await this.closeActiveTour();
     this.closeActiveChecklist();
   }

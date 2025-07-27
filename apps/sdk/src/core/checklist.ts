@@ -41,7 +41,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
       await this.handleItemConditions();
 
       // Update visibility state based on checklist status
-      this.handleVisibilityState();
+      await this.handleVisibilityState();
 
       // Check and update theme settings if needed
       await this.checkAndUpdateThemeSettings();
@@ -79,14 +79,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 2. Manages visibility based on temporary hidden state
    * 3. Triggers first seen event when checklist becomes visible
    */
-  private handleVisibilityState() {
+  private async handleVisibilityState() {
     // Return early if checklist hasn't started or has been dismissed
     if (!this.hasStarted()) {
       return;
     }
 
     // Handle temporarily hidden state
-    if (this.isTemporarilyHidden()) {
+    if (await this.isTemporarilyHidden()) {
       if (this.isOpen()) {
         this.hide();
       }

@@ -472,24 +472,26 @@ const isGreaterThenDuration = (
   }
 };
 
-export const checklistIsDimissed = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
+export const checklistIsDimissed = (latestSession?: BizSession): boolean => {
+  return !!latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
   );
 };
 
-export const flowIsDismissed = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
+export const flowIsDismissed = (latestSession?: BizSession): boolean => {
+  return !!latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.FLOW_ENDED,
+  );
 };
 
-export const flowIsSeen = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
+export const flowIsSeen = (latestSession?: BizSession): boolean => {
+  return !!latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
   );
 };
 
-export const checklistIsSeen = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
+export const checklistIsSeen = (latestSession?: BizSession): boolean => {
+  return !!latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
   );
 };

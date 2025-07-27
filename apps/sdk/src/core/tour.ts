@@ -318,8 +318,8 @@ export class Tour extends BaseContent<TourStore> {
    * Handles when the target element is found
    * @private
    */
-  private handleElementFound(el: Element, step: Step, store: TourStore): void {
-    const openState = !this.isTemporarilyHidden();
+  private async handleElementFound(el: Element, step: Step, store: TourStore): Promise<void> {
+    const openState = !(await this.isTemporarilyHidden());
     const currentStep = this.getCurrentStep();
     if (currentStep?.cvid !== step.cvid) {
       return;
@@ -395,7 +395,7 @@ export class Tour extends BaseContent<TourStore> {
     await this.activeTriggerConditions();
 
     // Set up modal state
-    const openState = !this.isTemporarilyHidden();
+    const openState = !(await this.isTemporarilyHidden());
     this.setStore({
       ...store,
       openState,
@@ -583,7 +583,7 @@ export class Tour extends BaseContent<TourStore> {
     }
 
     // Handle temporarily hidden state
-    if (this.isTemporarilyHidden()) {
+    if (await this.isTemporarilyHidden()) {
       if (openState) {
         this.hide();
       }

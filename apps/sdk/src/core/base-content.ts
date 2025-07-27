@@ -52,7 +52,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {Promise<void>} A promise that resolves when the content is started
    */
   async autoStart(reason?: string) {
-    if (!this.canAutoStart()) {
+    if (!(await this.canAutoStart())) {
       return;
     }
     if (this.hasStarted()) {
@@ -90,8 +90,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Checks if the content can auto start
    * @returns {boolean} True if the content can auto start, false otherwise
    */
-  canAutoStart(): boolean {
-    return !this.hasStarted() && this.isAutoStart() && this.isValid();
+  async canAutoStart(): Promise<boolean> {
+    return !this.hasStarted() && (await this.isAutoStart()) && this.isValid();
   }
 
   /**
@@ -254,8 +254,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Check if the content is auto start
    * @returns {boolean} True if the content is auto start, false otherwise
    */
-  isAutoStart(): boolean {
-    return this.getConfig().isAutoStart();
+  async isAutoStart(): Promise<boolean> {
+    return await this.getConfig().isAutoStart();
   }
 
   /**
@@ -270,8 +270,8 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Check if the content is temporarily hidden
    * @returns {boolean} True if the content is temporarily hidden, false otherwise
    */
-  isTemporarilyHidden() {
-    return this.getConfig().isTemporarilyHidden();
+  async isTemporarilyHidden(): Promise<boolean> {
+    return await this.getConfig().isTemporarilyHidden();
   }
 
   /**

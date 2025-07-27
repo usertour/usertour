@@ -552,15 +552,25 @@ export const checklistHasNewCompletedItems = (
  * @param contentInstances - Array of content instances to search through
  * @returns Array of eligible content instances sorted by priority (highest first), or empty array if none found
  */
-export const getAutoStartContentSortedByPriority = <T extends Tour | Launcher | Checklist>(
+export const getAutoStartContentSortedByPriority = async <T extends Tour | Launcher | Checklist>(
   contentInstances: T[],
-): T[] => {
+): Promise<T[]> => {
   if (!contentInstances.length) {
     return [];
   }
 
-  // Find all instances that can auto-start
-  const eligibleInstances = contentInstances.filter((instance) => instance.canAutoStart());
+  // Check which instances can auto-start
+  const autoStartResults = await Promise.all(
+    contentInstances.map(async (instance) => ({
+      instance,
+      canAutoStart: await instance.canAutoStart(),
+    })),
+  );
+
+  // Filter instances that can auto-start
+  const eligibleInstances = autoStartResults
+    .filter((result) => result.canAutoStart)
+    .map((result) => result.instance);
 
   if (!eligibleInstances.length) {
     return [];

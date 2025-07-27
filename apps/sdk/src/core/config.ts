@@ -70,7 +70,8 @@ export class Config extends Evented {
    * Checks if auto-start is enabled based on rules
    * @returns {boolean} True if auto-start should be activated
    */
-  isAutoStart(): boolean {
+  async isAutoStart(): Promise<boolean> {
+    await this.activeConditions();
     const autoStartRules = this.getAutoStartRules();
     if (!this.isEnabledAutoStartRules()) {
       return false;
@@ -85,7 +86,8 @@ export class Config extends Evented {
    * Checks if the tour should be temporarily hidden based on rules
    * @returns {boolean} True if the tour should be hidden
    */
-  isTemporarilyHidden(): boolean {
+  async isTemporarilyHidden(): Promise<boolean> {
+    await this.activeConditions();
     const hideRules = this.getHideRules();
     if (!this.isEnabledHideRules()) {
       return false;

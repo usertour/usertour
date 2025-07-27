@@ -48,7 +48,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     const openState = store?.openState;
 
     // Hide launcher if it's temporarily hidden or target element is not visible
-    if (this.isTemporarilyHidden() || isHidden) {
+    if ((await this.isTemporarilyHidden()) || isHidden) {
       if (openState) {
         this.hide();
       }
