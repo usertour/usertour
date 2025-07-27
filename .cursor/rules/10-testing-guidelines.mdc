@@ -1,0 +1,50 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Testing Guidelines
+
+Usertour uses various testing approaches to ensure code quality and reliability.
+
+## Test Types
+
+### Unit Tests
+- Test individual functions and components in isolation
+- Focus on verifying specific behaviors and edge cases
+- Use mocks for external dependencies
+
+### Integration Tests
+- Test interactions between different components
+- Verify that different parts of the system work together
+- Use realistic test data
+
+### End-to-End Tests
+- Automated tests that simulate real user behavior
+- Use Cypress for browser-based testing
+- Cover critical user flows
+
+## Testing Best Practices
+
+### Component Testing
+- Test component rendering
+- Test component interactions
+- Verify prop handling and state changes
+- Test error states and edge cases
+
+### API Testing
+- Test endpoint behaviors
+- Verify request validation
+- Test error handling
+- Check authorization logic
+
+### Test Organization
+- Group tests logically by feature/component
+- Use descriptive test names
+- Follow the AAA pattern (Arrange, Act, Assert)
+- Keep tests independent and atomic
+
+### Testing Tools
+- Vitest for unit and integration tests
+- Cypress for end-to-end tests
+- Test utilities from React Testing Library

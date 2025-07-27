@@ -18,9 +18,6 @@
     "baseUrl": "./",
     "rootDir": "./src",
     "sourceRoot": "/",
-    "paths": {
-      "@refly-packages/*": ["../*/src"]
-    },
     "composite": true,
     "noEmit": false,
     "declaration": true,

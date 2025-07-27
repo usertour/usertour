@@ -1,0 +1,40 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Internationalization (i18n) Guidelines
+
+Usertour supports multiple languages through its internationalization system.
+
+## Translation Files
+- [packages/i18n/src/en-US](mdc:packages/i18n/src/en-US) - English translations
+- [packages/i18n/src/zh-Hans](mdc:packages/i18n/src/zh-Hans) - Simplified Chinese translations
+
+## Best Practices
+
+### Adding New Translations
+1. Add new translation keys to both language files
+2. Maintain consistency in naming conventions
+3. Use descriptive keys that reflect the content
+
+### Using Translations in Components
+- Use the translation wrapper component
+- Ensure all user-facing text is translatable
+- Support dynamic content with placeholders
+
+### Translation Component Usage
+```tsx
+import { useTranslation } from 'react-i18next';
+
+function MyComponent() {
+  const { t } = useTranslation();
+  
+  return <div>{t('key.path')}</div>;
+}
+```
+
+### Key Organization
+- Group related keys together
+- Use namespaces for different sections of the application
+- Follow a hierarchical structure for nested components
