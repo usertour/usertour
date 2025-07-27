@@ -1,0 +1,98 @@
+# UI Design Patterns
+
+## Color Usage
+
+### Primary Colors
+- **Primary**: `hsl(250 100% 60%)` - Main brand color for buttons, links, and active states
+- **Primary Hover**: `hsl(250 100% 60%)` - Hover state for primary elements
+- **Primary Foreground**: `hsl(210 40% 98%)` (light) / `hsl(0 0% 98%)` (dark) - Text on primary backgrounds
+
+### Secondary Colors
+- **Secondary**: `hsl(210 40% 96.1%)` (light) / `hsl(215.3 25% 26.7%)` (dark) - Secondary UI elements
+- **Secondary Hover**: `hsl(226.5 100% 93.9%)` (light) / `hsl(215.3 19.3% 34.5%)` (dark) - Hover state for secondary elements
+- **Secondary Foreground**: `hsl(222.2 47.4% 11.2%)` (light) / `hsl(0 0% 98%)` (dark) - Text on secondary backgrounds
+
+### Accent Colors
+- **Accent**: `hsl(226.5 100% 93.9%)` (light) / `hsl(240 3.7% 15.9%)` (dark) - Accent elements and highlights
+- **Accent Hover**: `hsl(229.7 93.5% 81.8%)` - Hover state for accent elements
+- **Accent Foreground**: `hsl(222.2 47.4% 11.2%)` (light) / `hsl(0 0% 98%)` (dark) - Text on accent backgrounds
+
+### Semantic Colors
+- **Success**: `hsl(142.1 70.6% 45.3%)` - Success states and confirmations
+- **Warning**: `hsl(38 92% 50%)` (light) / `hsl(48 96% 89%)` (dark) - Warning states and important notifications
+- **Warning Foreground**: `hsl(48 96% 89%)` (light) / `hsl(38 92% 50%)` (dark) - Text on warning backgrounds
+- **Destructive**: `hsl(0 84.2% 60.2%)` (light) / `hsl(0 72.2% 50.6%)` (dark) - Error states and destructive actions
+- **Destructive Hover**: `hsl(0 84.2% 60.2%)` (light) / `hsl(0 84.2% 60.2%)` (dark) - Hover state for destructive elements
+- **Destructive Foreground**: `hsl(210 40% 98%)` (light) / `hsl(0 85.7% 97.3%)` (dark) - Text on destructive backgrounds
+
+### Background Colors
+- **Background**: `hsl(0 0% 100%)` (light) / `hsl(221.5 46.4% 11%)` (dark) - Main background
+- **Background 400**: `hsl(212.7 26.8% 83.9%)` (light) / `hsl(215 20.2% 65.1%)` (dark) - Light background variant
+- **Background 700**: `hsl(210 40% 96.1%)` (light) / `hsl(215.3 25% 26.7%)` (dark) - Medium background variant
+- **Background 800**: `hsl(210 40% 96.1%)` (light) / `hsl(217.2 33.3% 17.1%)` (dark) - Dark background variant
+- **Background 900**: `hsl(0 0% 100%)` (light) / `hsl(221.5 46.4% 11%)` (dark) - Darkest background variant
+
+### Text Colors
+- **Foreground**: `hsl(222.9 84% 4.9%)` (light) / `hsl(0 0% 98%)` (dark) - Primary text color
+- **Muted Foreground**: `hsl(215.4 16.3% 46.9%)` (light) / `hsl(240 5% 64.9%)` (dark) - Secondary text color
+
+### Chart Colors
+- **Chart 1**: `hsl(221.2 83.2% 53.3%)` - Primary chart color
+- **Chart 2**: `hsl(212 95% 68%)` - Secondary chart color
+- **Chart 3**: `hsl(216 92% 60%)` - Tertiary chart color
+- **Chart 4**: `hsl(210 98% 78%)` - Quaternary chart color
+- **Chart 5**: `hsl(212 97% 87%)` - Quinary chart color
+
+### Usage Guidelines
+- Use primary colors for main CTAs and important actions
+- Use secondary colors for less prominent UI elements
+- Use accent colors for highlights and special elements
+- Use semantic colors appropriately (success for confirmations, destructive for errors)
+- Maintain consistent color usage across light and dark themes
+- Ensure proper contrast ratios for accessibility
+
+## UI Components
+
+### Button Patterns
+
+- Primary buttons should be solid with the primary color
+- Secondary buttons should have a border with transparent or light background
+- Danger buttons should use the error color
+- Use consistent padding, border radius, and hover states for all buttons
+- Follow fixed button sizes based on their importance and context
+- Include appropriate loading states for async actions
+
+### Card Design
+
+- Use consistent border radius (`rounded-lg`) for all cards
+- Apply light shadows (`shadow-sm`) for elevation
+- Maintain consistent padding inside cards (`p-4` or `p-6`)
+- Use subtle borders for card separation
+- Ensure proper spacing between card elements
+
+### Form Elements
+
+- Apply consistent styling to all form inputs
+- Use clear visual indicators for focus, hover, and error states
+- Group related form elements with appropriate spacing
+- Provide clear validation feedback
+- Ensure proper labeling and accessibility
+
+## Layout Principles
+
+- Use a consistent grid system throughout the application
+- Apply proper spacing between elements (8px, 16px, 24px increments)
+- Ensure proper alignment of elements (left, center, or right)
+- Maintain a clear visual hierarchy with proper sizing and spacing
+- Use responsive layouts that work across different device sizes
+
+## Accessibility Best Practices
+
+- Maintain a minimum contrast ratio of 4.5:1 for text
+- Ensure all interactive elements are keyboard accessible
+- Include appropriate ARIA attributes for complex components
+- Provide alternative text for images and icons
+- Support screen readers with semantic HTML elements
+- Include appropriate ARIA attributes for complex components
+- Provide alternative text for images and icons
+- Support screen readers with semantic HTML elements

@@ -1,0 +1,56 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# TypeScript Type Guidelines
+
+## Type Safety Rules
+
+- **Avoid using `any` type** whenever possible - it defeats the purpose of TypeScript
+- When tempted to use `any`, use `unknown` type instead and add proper type guards
+- Always define explicit return types for functions, especially for public APIs
+- Use strict null checking (strictNullChecks) to prevent null/undefined errors
+
+## Type Reuse Patterns
+
+- **Prefer extending existing types** over creating entirely new ones
+- Use TypeScript's utility types to derive new types:
+  - `Partial<T>` for optional versions of types
+  - `Pick<T, K>` to select specific properties
+  - `Omit<T, K>` to exclude specific properties
+  - `Readonly<T>` for immutable versions of types
+  - `Record<K, T>` for dictionary-like objects
+- Use union types and intersection types to combine existing types
+
+## Type Examples
+
+```typescript
+// AVOID creating new types when existing ones can be reused
+// Bad
+interface UserDetails {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// GOOD - Extend existing types
+// Good
+interface User {
+  id: string;
+  name: string;
+}
+
+// Reuse the User type
+type UserWithEmail = User & { email: string };
+
+// Or use utility types
+type PartialUser = Partial<User>;
+type UserIdAndName = Pick<User, 'id' | 'name'>;
+```
+
+## Type Imports
+
+- Always import types explicitly using the `import type` syntax
+- Group type imports separately from value imports
+- Minimize creating local type aliases for imported types

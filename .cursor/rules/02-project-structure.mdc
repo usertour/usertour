@@ -1,0 +1,32 @@
+# Project Structure
+
+Usertour is an open-source user onboarding platform that allows you to create in-app product tours, checklists, and surveys. It's built as a monorepo with a modern architecture.
+
+## Apps Directory
+- [apps/server](mdc:apps/server) - Backend API built with NestJS, handling authentication, user management, project management, and analytics
+- [apps/web](mdc:apps/web) - Frontend web application built with React, providing the main user interface for creating and managing tours
+- [apps/sdk](mdc:apps/sdk) - Usertour.js SDK for integrating tours into client applications
+
+## Packages Directory
+- [packages/components](mdc:packages/components) - Shared UI components library with Radix UI primitives and custom components
+- [packages/radix](mdc:packages/radix) - Radix UI primitive components and utilities
+- [packages/shared](mdc:packages/shared) - Shared utilities, types, hooks, and internationalization resources
+
+## Configuration Files
+- [package.json](mdc:package.json) - Root package configuration and workspace setup
+- [turbo.json](mdc:turbo.json) - Turborepo configuration for monorepo build optimization
+- [biome.json](mdc:biome.json) - Code formatting and linting configuration
+- [docker-compose.yml](mdc:docker-compose.yml) - Docker deployment configuration
+- [pnpm-workspace.yaml](mdc:pnpm-workspace.yaml) - PNPM workspace configuration
+
+## Key Features Supported
+- Multi-environment support (Production, Staging)
+- Version control and change tracking
+- Customizable themes and branding
+- Advanced user targeting and segmentation
+- Analytics and performance metrics
+- Multi-page application support
+- Framework-agnostic SDK integration
+
+## Configuration Files
+- [package.json](mdc:package.json) - Root package configuration
