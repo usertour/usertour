@@ -1,6 +1,11 @@
 import {
   MESSAGE_START_FLOW_WITH_TOKEN,
+  SDK_CSS_LOADED,
+  SDK_CSS_LOADED_FAILED,
+  SDK_DOM_LOADED,
+  SDK_CONTENT_CHANGED,
   STORAGE_IDENTIFY_ANONYMOUS,
+  SDK_CONTAINER_CREATED,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { autoStartConditions, storage } from '@usertour/helpers';
@@ -179,22 +184,22 @@ export class App extends Evented {
    * Initializes DOM event listeners for the application
    */
   initializeEventListeners() {
-    this.once('dom-loaded', () => {
+    this.once(SDK_DOM_LOADED, () => {
       this.loadCss();
     });
-    this.once('css-loaded', () => {
+    this.once(SDK_CSS_LOADED, () => {
       this.createContainer();
       this.createRoot();
     });
     // refresh data when content changed in the server
-    this.socket.on('content-changed', () => {
+    this.socket.on(SDK_CONTENT_CHANGED, () => {
       this.fetchAndInitContent();
     });
     if (document?.readyState !== 'loading') {
-      this.trigger('dom-loaded');
+      this.trigger(SDK_DOM_LOADED);
     } else if (document) {
       on(document, 'DOMContentLoaded', () => {
-        this.trigger('dom-loaded');
+        this.trigger(SDK_DOM_LOADED);
       });
     }
     if (window) {
@@ -484,9 +489,9 @@ export class App extends Evented {
     }
     const loadMainCss = await loadCSSResource(cssFile, document);
     if (loadMainCss) {
-      this.trigger('css-loaded');
+      this.trigger(SDK_CSS_LOADED);
     } else {
-      this.trigger('css-loaded-failed');
+      this.trigger(SDK_CSS_LOADED_FAILED);
     }
   }
 
@@ -630,7 +635,7 @@ export class App extends Evented {
     }
 
     this.container = container;
-    this.trigger('container-created');
+    this.trigger(SDK_CONTAINER_CREATED);
   }
 
   /**
