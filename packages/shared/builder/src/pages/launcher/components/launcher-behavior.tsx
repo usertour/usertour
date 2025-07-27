@@ -1,17 +1,17 @@
 import { ChevronDownIcon, GearIcon } from '@radix-ui/react-icons';
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { useAttributeListContext } from '@usertour-ui/contexts';
-import { useContentListContext } from '@usertour-ui/contexts';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import { useAttributeListContext } from '@usertour-packages/contexts';
+import { useContentListContext } from '@usertour-packages/contexts';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { TooltipIcon } from '@usertour-ui/icons';
-import { ContentActions } from '@usertour-ui/shared-editor';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+} from '@usertour-packages/dropdown-menu';
+import { TooltipIcon } from '@usertour-packages/icons';
+import { ContentActions } from '@usertour-packages/shared-editor';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import {
   ContentActionsItemType,
   LauncherActionType,
@@ -19,7 +19,7 @@ import {
   LauncherTriggerElement,
   LauncherTriggerEvent,
   RulesCondition,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useCallback } from 'react';
 import { useBuilderContext, useLauncherContext } from '../../../contexts';
 import { BuilderMode } from '../../../contexts';

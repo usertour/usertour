@@ -1,9 +1,9 @@
-import { Attribute, ThemeTypesSetting, ThemeVariation } from '@usertour-ui/types';
+import { Attribute, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
-import { GoogleFontCss } from '@usertour-ui/shared-components';
-import { cn } from '@usertour-ui/ui-utils';
+import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { cn } from '@usertour/helpers';
 import { createContext, forwardRef, useContext, useEffect, useState, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';

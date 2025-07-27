@@ -1,5 +1,5 @@
-import { defaultStep, getErrorMessage, isEqual } from '@usertour-ui/shared-utils';
-import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-ui/types';
+import { defaultStep, getErrorMessage, isEqual } from '@usertour/helpers';
+import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import {
   ReactNode,
   createContext,
@@ -10,17 +10,17 @@ import {
   useState,
 } from 'react';
 
-import { useToast } from '@usertour-ui/use-toast';
+import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
-import { getDefaultDataForType } from '@usertour-ui/shared-editor';
-import { createStepCopy } from '@usertour-ui/shared-editor';
+import { getDefaultDataForType } from '@usertour-packages/shared-editor';
+import { createStepCopy } from '@usertour-packages/shared-editor';
 import {
   useGetContentLazyQuery,
   useGetContentVersionLazyQuery,
   useAddContentStepsMutation,
   useAddContentStepMutation,
-} from '@usertour-ui/shared-hooks';
+} from '@usertour-packages/shared-hooks';
 
 export enum BuilderMode {
   ELEMENT_SELECTOR = 'element-selector',

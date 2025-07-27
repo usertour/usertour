@@ -3,9 +3,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { Delete2Icon } from '@usertour-ui/icons';
-import { Segment } from '@usertour-ui/types';
+} from '@usertour-packages/dropdown-menu';
+import { Delete2Icon } from '@usertour-packages/icons';
+import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { CompanySegmentDeleteForm } from './delete-form';
 

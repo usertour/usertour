@@ -20,8 +20,8 @@ import {
   ProjectIcon,
   // PlugIcon,
   KeyIcon,
-} from '@usertour-ui/icons';
-import { TeamMemberRole } from '@usertour-ui/types';
+} from '@usertour-packages/icons';
+import { TeamMemberRole } from '@usertour/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants

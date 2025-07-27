@@ -1,6 +1,6 @@
 /// <reference types="resize-observer-browser" />
 
-import { useLayoutEffect } from '@usertour-ui/react-use-layout-effect';
+import { useLayoutEffect } from '@usertour-packages/react-use-layout-effect';
 import * as React from 'react';
 
 function useSize(element: HTMLElement | null) {

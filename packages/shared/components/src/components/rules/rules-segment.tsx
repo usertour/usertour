@@ -1,6 +1,6 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { SegmentIcon } from '@usertour-ui/icons';
+import { SegmentIcon } from '@usertour-packages/icons';
 import {
   Select,
   SelectContent,
@@ -8,8 +8,8 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/select';
+import { cn } from '@usertour/helpers';
 import {
   Dispatch,
   SetStateAction,
@@ -20,18 +20,18 @@ import {
   useState,
 } from 'react';
 
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { getSegmentError } from '@usertour-ui/shared-utils';
-import { Segment } from '@usertour-ui/types';
+} from '@usertour-packages/command';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { getSegmentError } from '@usertour/helpers';
+import { Segment } from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

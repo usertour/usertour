@@ -1,7 +1,12 @@
 import { ExitIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { CheckedIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Button } from '@usertour-packages/button';
+import { CheckedIcon, SpinnerIcon } from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 
 import { useBuilderContext } from '../../contexts';
 

@@ -2,7 +2,7 @@
 import { Icons } from '@/components/atoms/icons';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation, useQuery } from '@apollo/client';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogClose,
@@ -10,15 +10,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { getContentVersion, publishedContentVersion } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { ContentVersion } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import { getContentVersion, publishedContentVersion } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { ContentVersion } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useCallback } from 'react';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { Label } from '@usertour-ui/label';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { Label } from '@usertour-packages/label';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 
 interface ContentPublishFormProps {

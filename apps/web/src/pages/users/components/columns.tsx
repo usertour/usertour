@@ -1,9 +1,9 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { BizUser } from '@usertour-ui/types';
-import { CompanyIcon } from '@usertour-ui/icons';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { BizUser } from '@usertour/types';
+import { CompanyIcon } from '@usertour-packages/icons';
 
 import { format } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';

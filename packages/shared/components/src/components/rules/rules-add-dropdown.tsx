@@ -3,7 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
+} from '@usertour-packages/dropdown-menu';
 import {
   ContentIcon,
   ElementIcon,
@@ -15,7 +15,7 @@ import {
   TextInputIcon,
   TimeIcon,
   UserIcon,
-} from '@usertour-ui/icons';
+} from '@usertour-packages/icons';
 import { ReactNode } from 'react';
 import { RulesContent } from './rules-content';
 import { RulesCurrentTime } from './rules-current-time';

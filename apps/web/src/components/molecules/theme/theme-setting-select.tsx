@@ -5,9 +5,9 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { HelpTooltip } from '@usertour-ui/shared-components';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/select';
+import { HelpTooltip } from '@usertour-packages/shared-components';
+import { cn } from '@usertour/helpers';
 
 export type ThemeSettingSelectItemsType = {
   value: string;

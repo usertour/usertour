@@ -1,4 +1,4 @@
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { OpenInNewWindowIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import { ApiCreateForm } from './api-create-form';

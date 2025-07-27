@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@usertour-ui/button';
-import { SpinnerIcon } from '@usertour-ui/icons';
+import { Button } from '@usertour-packages/button';
+import { SpinnerIcon } from '@usertour-packages/icons';
 
 // Button component with loading state
 export const LoadingButton = React.forwardRef<

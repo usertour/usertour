@@ -1,9 +1,9 @@
-import { Attribute, ThemeVariation } from '@usertour-ui/types';
-import { Button } from '@usertour-ui/button';
+import { Attribute, ThemeVariation } from '@usertour/types';
+import { Button } from '@usertour-packages/button';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import { SubThemeModal } from './sub-theme-modal';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import {
   DndContext,
   DragEndEvent,

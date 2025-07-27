@@ -1,4 +1,4 @@
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour/helpers';
 import { forwardRef, ReactNode } from 'react';
 import { useRulesContext } from './rules-context';
 import { RulesPopoverTrigger } from './rules-popper';

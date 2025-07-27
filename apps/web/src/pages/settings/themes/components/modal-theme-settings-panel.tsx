@@ -1,13 +1,18 @@
-import { Attribute, ThemeTypesSetting } from '@usertour-ui/types';
-import { Button } from '@usertour-ui/button';
-import { OutlineInput } from '@usertour-ui/input';
-import { Delete2Icon } from '@usertour-ui/icons';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { Rules } from '@usertour-ui/shared-components';
+import { Attribute, ThemeTypesSetting } from '@usertour/types';
+import { Button } from '@usertour-packages/button';
+import { OutlineInput } from '@usertour-packages/input';
+import { Delete2Icon } from '@usertour-packages/icons';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { Rules } from '@usertour-packages/shared-components';
 import { ThemeSettingsPanel, ThemeSettingsAccordionContent } from './theme-settings-panel';
 import { useEffect, useRef, useState } from 'react';
 import isEqual from 'fast-deep-equal';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 
 interface ModalThemeSettingsPanelProps {
   settings: ThemeTypesSetting;

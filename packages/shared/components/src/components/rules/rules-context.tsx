@@ -1,4 +1,4 @@
-import { Attribute, Content, Segment } from '@usertour-ui/types';
+import { Attribute, Content, Segment } from '@usertour/types';
 import { createContext, useContext } from 'react';
 
 // Move interfaces to context file

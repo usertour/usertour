@@ -9,19 +9,19 @@ import {
   size,
   useFloating,
 } from '@floating-ui/react-dom';
-import * as ArrowPrimitive from '@usertour-ui/react-arrow';
-import { useComposedRefs } from '@usertour-ui/react-compose-refs';
-import { createContextScope } from '@usertour-ui/react-context';
-import { Primitive } from '@usertour-ui/react-primitive';
-import { useCallbackRef } from '@usertour-ui/react-use-callback-ref';
-import { useLayoutEffect } from '@usertour-ui/react-use-layout-effect';
-import { useSize } from '@usertour-ui/react-use-size';
+import * as ArrowPrimitive from '@usertour-packages/react-arrow';
+import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { createContextScope } from '@usertour-packages/react-context';
+import { Primitive } from '@usertour-packages/react-primitive';
+import { useCallbackRef } from '@usertour-packages/react-use-callback-ref';
+import { useLayoutEffect } from '@usertour-packages/react-use-layout-effect';
+import { useSize } from '@usertour-packages/react-use-size';
 import * as React from 'react';
 
 import type { Middleware, Placement } from '@floating-ui/react-dom';
-import type { Scope } from '@usertour-ui/react-context';
-import type * as Radix from '@usertour-ui/react-primitive';
-import type { Measurable } from '@usertour-ui/rect';
+import type { Scope } from '@usertour-packages/react-context';
+import type * as Radix from '@usertour-packages/react-primitive';
+import type { Measurable } from '@usertour-packages/rect';
 
 const SIDE_OPTIONS = ['top', 'right', 'bottom', 'left'] as const;
 const ALIGN_OPTIONS = ['start', 'center', 'end'] as const;

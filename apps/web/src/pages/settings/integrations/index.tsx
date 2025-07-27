@@ -1,4 +1,4 @@
-import { Separator } from '@usertour-ui/separator';
+import { Separator } from '@usertour-packages/separator';
 import { SettingsContent } from '../components/content';
 import { IntegrationsListContent } from './components/integrations-list-content';
 import { IntegrationsListHeader } from './components/integrations-list-header';

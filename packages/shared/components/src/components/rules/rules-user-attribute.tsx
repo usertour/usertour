@@ -1,6 +1,6 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { CloseIcon, UserIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
+import { CloseIcon, UserIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
 import * as Popover from '@radix-ui/react-popover';
 import {
   Select,
@@ -9,8 +9,8 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/select';
+import { cn } from '@usertour/helpers';
 import { format } from 'date-fns';
 import {
   Dispatch,
@@ -22,25 +22,25 @@ import {
   useState,
 } from 'react';
 
-import { Button } from '@usertour-ui/button';
-import { Calendar } from '@usertour-ui/calendar';
+import { Button } from '@usertour-packages/button';
+import { Calendar } from '@usertour-packages/calendar';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { getUserAttrError } from '@usertour-ui/shared-utils';
+} from '@usertour-packages/command';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { getUserAttrError } from '@usertour/helpers';
 import {
   Attribute,
   AttributeBizTypes,
   AttributeDataType,
   RulesUserAttributeData,
   RulesUserAttributeProps,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';

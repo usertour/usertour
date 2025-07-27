@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { listLocalizations } from '@usertour-ui/gql';
-import { Localization } from '@usertour-ui/types';
+import { listLocalizations } from '@usertour-packages/gql';
+import { Localization } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface LocalizationListProviderProps {

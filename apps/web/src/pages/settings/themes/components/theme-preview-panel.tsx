@@ -1,21 +1,17 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
-import { Separator } from '@usertour-ui/separator';
-import { cn } from '@usertour-ui/ui-utils';
-import {
-  LauncherDataType,
-  ThemeDetailSelectorType,
-  ThemeDetailPreviewType,
-} from '@usertour-ui/types';
+import { Separator } from '@usertour-packages/separator';
+import { cn } from '@usertour/helpers';
+import { LauncherDataType, ThemeDetailSelectorType, ThemeDetailPreviewType } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';
-import { useRect } from '@usertour-ui/react-use-rect';
+import { useRect } from '@usertour-packages/react-use-rect';
 import { useDebouncedCallback } from 'use-debounce';
 import { ThemePreviewChecklist } from './preview/theme-preview-checklist';
 import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
 import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
-import { ContentEditorRoot, createValue6, surveysValue } from '@usertour-ui/shared-editor';
-import { ThemeTypesSetting } from '@usertour-ui/types';
+import { ContentEditorRoot, createValue6, surveysValue } from '@usertour-packages/shared-editor';
+import { ThemeTypesSetting } from '@usertour/types';
 import { Rect } from './theme-editor';
 
 interface ThemePreviewPanelProps {

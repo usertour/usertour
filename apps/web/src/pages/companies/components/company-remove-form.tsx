@@ -7,11 +7,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { deleteBizCompanyOnSegment } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Segment } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { deleteBizCompanyOnSegment } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { Segment } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 

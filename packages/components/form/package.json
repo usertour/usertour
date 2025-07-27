@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/form",
+  "name": "@usertour-packages/form",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,8 +15,8 @@
     "@radix-ui/react-label": "^2.0.2",
     "react-hook-form": "^7.44.2",
     "@radix-ui/react-slot": "^1.0.2",
-    "@usertour-ui/ui-utils": "workspace:*",
-    "@usertour-ui/label": "workspace:*"
+    "@usertour/helpers": "^0.0.1",
+    "@usertour-packages/label": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

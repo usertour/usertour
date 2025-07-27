@@ -1,4 +1,9 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 
 interface TruncatedTextProps {
   text: string;

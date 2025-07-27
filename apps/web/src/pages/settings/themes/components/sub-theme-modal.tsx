@@ -1,5 +1,10 @@
-import { Button } from '@usertour-ui/button';
-import { Dialog, DialogContentSimple2, DialogTitle, DialogTrigger } from '@usertour-ui/dialog';
+import { Button } from '@usertour-packages/button';
+import {
+  Dialog,
+  DialogContentSimple2,
+  DialogTitle,
+  DialogTrigger,
+} from '@usertour-packages/dialog';
 import { PlusIcon } from '@radix-ui/react-icons';
 import {
   ThemeTypesSetting,
@@ -7,10 +12,10 @@ import {
   ThemeDetailPreviewType,
   ThemeVariation,
   Attribute,
-} from '@usertour-ui/types';
-import { defaultSettings } from '@usertour-ui/types';
+} from '@usertour/types';
+import { defaultSettings } from '@usertour/types';
 import { useState, useEffect } from 'react';
-import { cuid } from '@usertour-ui/ui-utils';
+import { cuid } from '@usertour/helpers';
 import { ModalThemeSettingsPanel } from './modal-theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 

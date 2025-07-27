@@ -1,4 +1,4 @@
-import { ElementSelectorPropsData, StepScreenshot } from '@usertour-ui/types';
+import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import { createContext, useContext } from 'react';
 
 export interface ContentPlacementContextValue {

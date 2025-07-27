@@ -2,12 +2,19 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useContentLocalizationListContext } from '@/contexts/content-localization-list-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { useMutation } from '@apollo/client';
-import { updateVersionLocationData } from '@usertour-ui/gql';
-import { Switch } from '@usertour-ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { VersionOnLocalization } from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
-import { useToast } from '@usertour-ui/use-toast';
+import { updateVersionLocationData } from '@usertour-packages/gql';
+import { Switch } from '@usertour-packages/switch';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { VersionOnLocalization } from '@usertour/types';
+import { cn } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
 

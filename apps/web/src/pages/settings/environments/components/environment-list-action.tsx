@@ -1,15 +1,15 @@
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@usertour-ui/types';
+import { Environment } from '@usertour/types';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour-ui/icons';
+} from '@usertour-packages/dropdown-menu';
+import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
 import { useState } from 'react';
 import { EnvironmentDeleteForm } from './environment-delete-form';
 import { EnvironmentEditForm } from './environment-edit-form';

@@ -1,6 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@usertour-packages/avatar';
 import { getGravatarUrl } from '@/utils/avatar';
-import { cn, getRandomColor } from '@usertour-ui/ui-utils';
+import { cn, getRandomColor } from '@usertour/helpers';
 
 interface UserAvatarProps {
   email: string;

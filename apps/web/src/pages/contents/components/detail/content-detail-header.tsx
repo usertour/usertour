@@ -3,9 +3,9 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ArrowLeftIcon, DotsHorizontalIcon, EnterIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { EditIcon, PlaneIcon, SpinnerIcon } from '@usertour-ui/icons';
-import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-packages/button';
+import { EditIcon, PlaneIcon, SpinnerIcon } from '@usertour-packages/icons';
+import { cn } from '@usertour/helpers';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -13,7 +13,7 @@ import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRenameForm } from '../shared/content-rename-form';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { isPublishedInAllEnvironments } from '@usertour-ui/shared-utils';
+import { isPublishedInAllEnvironments } from '@usertour/helpers';
 import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
 
 const navigations = [

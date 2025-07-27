@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { STATUS_CODES } from 'node:http';
 import { GraphQLError } from 'graphql';
+import * as Sentry from '@sentry/node';
 import { BaseError } from './common/errors';
 
 @Injectable()
@@ -23,6 +24,7 @@ export class GqlConfigService implements GqlOptionsFactory {
       installSubscriptionHandlers: true,
       includeStacktraceInErrorResponses: graphqlConfig.debug,
       playground: graphqlConfig.playgroundEnabled,
+
       formatError: (formattedError, error) => {
         // Log the complete error with context
         this.logger.error({
@@ -37,6 +39,20 @@ export class GqlConfigService implements GqlOptionsFactory {
               }
             : {}),
         });
+
+        // Send to Sentry for unknown errors
+        if (error instanceof GraphQLError && !(error.originalError instanceof BaseError)) {
+          Sentry.captureException(error.originalError || error, {
+            tags: {
+              type: 'graphql',
+              path: error.path?.join('.'),
+            },
+            extra: {
+              locations: error.locations,
+              path: error.path,
+            },
+          });
+        }
 
         // @ts-expect-error allow assign
         formattedError.extensions ??= {};

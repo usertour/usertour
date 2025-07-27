@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   ChecklistIcon,
   CompanyIcon,
@@ -7,12 +7,12 @@ import {
   GroupIcon2,
   LauncherIcon,
   SettingsIcon,
-} from '@usertour-ui/icons';
-import { TooltipContent } from '@usertour-ui/tooltip';
-import { TooltipTrigger } from '@usertour-ui/tooltip';
-import { TooltipProvider } from '@usertour-ui/tooltip';
-import { Tooltip } from '@usertour-ui/tooltip';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/icons';
+import { TooltipContent } from '@usertour-packages/tooltip';
+import { TooltipTrigger } from '@usertour-packages/tooltip';
+import { TooltipProvider } from '@usertour-packages/tooltip';
+import { Tooltip } from '@usertour-packages/tooltip';
+import { cn } from '@usertour/helpers';
 import { Link, useMatches, useParams } from 'react-router-dom';
 import { AdminEnvSwitcher } from './admin-env-switcher';
 import { AdminUserNav } from './admin-user-nav';

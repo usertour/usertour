@@ -1,7 +1,7 @@
 import { AttributeBizType, AttributeDataType } from '@/attributes/models/attribute.model';
 import { InitThemeInput } from '@/themes/dto/theme.input';
 import { Attribute, Prisma } from '@prisma/client';
-import { BizEvents, CompanyAttributes, EventAttributes, UserAttributes } from '../consts/attribute';
+import { BizEvents, EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
 
 export const initializationThemes: InitThemeInput[] = [
   {

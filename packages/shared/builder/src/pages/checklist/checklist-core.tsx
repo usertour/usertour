@@ -1,13 +1,13 @@
 'use client';
 
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { ScrollArea } from '@usertour-ui/scroll-area';
+import { Button } from '@usertour-packages/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { ScrollArea } from '@usertour-packages/scroll-area';
 import {
   Select,
   SelectContent,
@@ -16,10 +16,10 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { Switch } from '@usertour-ui/switch';
-import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour-ui/types';
-import { uuidV4 } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/select';
+import { Switch } from '@usertour-packages/switch';
+import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
+import { uuidV4 } from '@usertour/helpers';
 import { useBuilderContext, useChecklistContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';

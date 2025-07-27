@@ -3,32 +3,27 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
+} from '@usertour-packages/dropdown-menu';
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
-import { getContentVersion, listSessionsDetail } from '@usertour-ui/gql';
+import { getContentVersion, listSessionsDetail } from '@usertour-packages/gql';
 import type {
   BizSession,
   BizEvent,
   ContentVersion,
   contentStartReason,
   contentEndReason,
-} from '@usertour-ui/types';
-import {
-  AttributeBizTypes,
-  BizEvents,
-  EventAttributes,
-  flowReasonTitleMap,
-} from '@usertour-ui/types';
+} from '@usertour/types';
+import { AttributeBizTypes, BizEvents, EventAttributes, flowReasonTitleMap } from '@usertour/types';
 import {
   ContentEditorElementType,
   extractQuestionData,
   contentTypesConfig,
-} from '@usertour-ui/shared-editor';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/shared-editor';
+import { useToast } from '@usertour-packages/use-toast';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';

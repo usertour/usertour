@@ -1,6 +1,11 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Input } from '@usertour-ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Input } from '@usertour-packages/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { ChangeEvent, useState } from 'react';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 

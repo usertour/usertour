@@ -2,14 +2,14 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
+} from '@usertour-packages/dialog';
 import {
   Form,
   FormControl,
@@ -18,18 +18,35 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour-ui/form';
-import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour-ui/select';
+} from '@usertour-packages/form';
+import {
+  CompanyIcon,
+  EventIcon2,
+  SpinnerIcon,
+  UserIcon,
+  UserIcon2,
+} from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
 import {
   CreateAttributeMutationVariables,
   useCreateAttributeMutation,
-} from '@usertour-ui/shared-hooks';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/shared-hooks';
+import { getErrorMessage } from '@usertour/helpers';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

@@ -1,19 +1,19 @@
-import { useToast } from '@usertour-ui/use-toast';
+import { useToast } from '@usertour-packages/use-toast';
 import { useMutation } from '@apollo/client';
-import { createBizCompanyOnSegment } from '@usertour-ui/gql';
+import { createBizCompanyOnSegment } from '@usertour-packages/gql';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { UserIcon3 } from '@usertour-ui/icons';
-import { Button } from '@usertour-ui/button';
+} from '@usertour-packages/dropdown-menu';
+import { UserIcon3 } from '@usertour-packages/icons';
+import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback } from 'react';
-import { Segment } from '@usertour-ui/types';
+import { Segment } from '@usertour/types';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { getErrorMessage } from '@usertour/helpers';
 
 interface AddCompanyManualSegmentProps {
   table: Table<any>;

@@ -1,8 +1,8 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { DeleteIcon, UserIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+import { Button } from '@usertour-packages/button';
+import { DeleteIcon, UserIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -10,9 +10,14 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Attribute } from '@usertour-ui/types';
+} from '@usertour-packages/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Attribute } from '@usertour/types';
 import { ChangeEvent, MouseEvent, useCallback, useEffect, useState } from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';

@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { findManyVersionLocations } from '@usertour-ui/gql';
-import { VersionOnLocalization } from '@usertour-ui/types';
+import { findManyVersionLocations } from '@usertour-packages/gql';
+import { VersionOnLocalization } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 export interface ContentLocalizationListProviderProps {

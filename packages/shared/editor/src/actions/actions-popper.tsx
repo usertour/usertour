@@ -1,6 +1,6 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour/helpers';
 import React from 'react';
 
 const ContentActionsPopover = PopoverPrimitive.Root;

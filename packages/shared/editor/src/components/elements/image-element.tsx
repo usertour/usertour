@@ -1,10 +1,10 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { ImageEditIcon, ImageIcon } from '@usertour-ui/icons';
-import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+import { Button } from '@usertour-packages/button';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { ImageEditIcon, ImageIcon } from '@usertour-packages/icons';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -13,8 +13,13 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import Upload from 'rc-upload';
 import { CSSProperties, useEffect, useState } from 'react';
 /* eslint-disable @next/next/no-img-element */

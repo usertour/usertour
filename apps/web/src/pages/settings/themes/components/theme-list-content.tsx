@@ -1,6 +1,6 @@
 import { ThemeListSkeleton } from '@/components/molecules/skeleton';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import type { Theme } from '@usertour-ui/types';
+import type { Theme } from '@usertour/types';
 import { ThemeListPreview } from './theme-list-preview';
 
 export const ThemeListContent = () => {

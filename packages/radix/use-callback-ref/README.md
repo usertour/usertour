@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-ui/react-use-callback-ref
+$ yarn add @usertour-packages/react-use-callback-ref
 # or
-$ npm install @usertour-ui/react-use-callback-ref
+$ npm install @usertour-packages/react-use-callback-ref
 ```
 
 ## Usage

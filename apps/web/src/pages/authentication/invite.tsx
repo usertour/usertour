@@ -1,13 +1,13 @@
-import { CardContent, CardFooter } from '@usertour-ui/card';
+import { CardContent, CardFooter } from '@usertour-packages/card';
 import { useParams } from 'react-router-dom';
-import { useGetInviteQuery } from '@usertour-ui/shared-hooks';
+import { useGetInviteQuery } from '@usertour-packages/shared-hooks';
 import {
   SignInDivider,
   SignInForm,
   SignInSocialProviders,
   SignInRoot,
 } from './components/sign-in-form';
-import { Card, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Card, CardHeader, CardTitle } from '@usertour-packages/card';
 import {
   RegistrationFormFields,
   RegistrationRoot,

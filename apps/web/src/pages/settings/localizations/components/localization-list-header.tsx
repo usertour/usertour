@@ -1,6 +1,6 @@
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { LocalizationCreateForm } from './localization-create-form';
 

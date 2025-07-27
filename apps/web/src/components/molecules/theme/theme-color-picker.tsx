@@ -1,11 +1,16 @@
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
-import { Button } from '@usertour-ui/button';
-import { TAILWINDCSS_COLORS } from '@usertour-ui/constants';
-import { CheckboxIcon, RemoveColorIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Separator } from '@usertour-ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { cn, isDark } from '@usertour-ui/ui-utils';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { Button } from '@usertour-packages/button';
+import { TAILWINDCSS_COLORS } from '@usertour-packages/constants';
+import { CheckboxIcon, RemoveColorIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Separator } from '@usertour-packages/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { cn, isDark } from '@usertour/helpers';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 const firstLetterToUpperCase = (word: string) => {

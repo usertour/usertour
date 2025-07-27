@@ -1,12 +1,12 @@
 import { forwardRef, useRef, createContext, useContext } from 'react';
-import { useComposedRefs } from '@usertour-ui/react-compose-refs';
+import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
 import { useFloating, offset, shift, limitShift, hide, flip, size } from '@floating-ui/react-dom';
 import type { Placement } from '@floating-ui/dom';
-import { UserIcon } from '@usertour-ui/icons';
+import { UserIcon } from '@usertour-packages/icons';
 import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
-import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
+import { cn } from '@usertour/helpers';
 import {
   Popper,
   PopperContent,

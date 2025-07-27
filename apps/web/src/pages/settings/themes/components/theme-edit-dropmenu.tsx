@@ -6,12 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { setDefaultTheme } from '@usertour-ui/gql';
-import { CopyIcon, Delete2Icon } from '@usertour-ui/icons';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Theme } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dropdown-menu';
+import { setDefaultTheme } from '@usertour-packages/gql';
+import { CopyIcon, Delete2Icon } from '@usertour-packages/icons';
+import { getErrorMessage } from '@usertour/helpers';
+import { Theme } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { ReactNode, useState } from 'react';
 import { ThemeDeleteForm } from './theme-delete-form';
 import { ThemeDuplicateForm } from './theme-duplicate-form';

@@ -3,7 +3,7 @@ import {
   ChecklistItemType,
   ModalPosition,
   ThemeTypesSetting,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import {
   forwardRef,
   useState,
@@ -23,13 +23,13 @@ import {
   PopperContentFrame,
   PopperContentProps,
 } from './popper';
-import { CheckmarkIcon, DropDownIcon } from '@usertour-ui/icons';
-import { useComposedRefs } from '@usertour-ui/react-compose-refs';
+import { CheckmarkIcon, DropDownIcon } from '@usertour-packages/icons';
+import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { computePositionStyle } from './utils/position';
-import { AssetAttributes, Frame, useFrame } from '@usertour-ui/frame';
-import { cn } from '@usertour-ui/ui-utils';
-import { Button } from '@usertour-ui/button';
-import { useSize } from '@usertour-ui/react-use-size';
+import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
+import { cn } from '@usertour/helpers';
+import { Button } from '@usertour-packages/button';
+import { useSize } from '@usertour-packages/react-use-size';
 import {
   canCompleteChecklistItem,
   checklistIsCompleted,

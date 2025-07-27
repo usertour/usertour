@@ -1,8 +1,8 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-ui/button';
-import { EventIcon2 } from '@usertour-ui/icons';
-import { ContentTypeName } from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-packages/button';
+import { EventIcon2 } from '@usertour-packages/icons';
+import { ContentTypeName } from '@usertour/types';
+import { cn } from '@usertour/helpers';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}

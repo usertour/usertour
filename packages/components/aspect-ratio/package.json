@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/aspect-ratio",
+  "name": "@usertour-packages/aspect-ratio",
   "private": true,
   "version": "0.0.0",
   "type": "module",

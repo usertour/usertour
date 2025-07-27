@@ -68,34 +68,20 @@ export interface RulesUserAttributeProps {
   data?: RulesUserAttributeData;
 }
 
-// export enum EventAttributes {
-//   FLOW_ID = "flow_id",
-//   FLOW_NAME = "flow_name",
-//   FLOW_END_REASON = "flow_end_reason",
-//   FLOW_SESSION_ID = "flow_session_id",
-//   FLOW_START_REASON = "flow_start_reason",
-//   FLOW_STEP_ID = "flow_step_id",
-//   FLOW_STEP_NAME = "flow_step_name",
-//   FLOW_STEP_NUMBER = "flow_step_number",
-//   FLOW_STEP_PROGRESS = "flow_step_progress",
-//   FLOW_VERSION_ID = "flow_version_id",
-//   FLOW_VERSION_NUMBER = "flow_version_number",
-// }
+export enum CompanyAttributes {
+  NAME = 'name',
+  FIRST_SEEN_AT = 'first_seen_at',
+  LAST_SEEN_AT = 'last_seen_at',
+  SIGNED_UP_AT = 'signed_up_at',
+}
 
-// export enum CompanyAttributes {
-//   NAME = "name",
-//   FIRST_SEEN_AT = "first_seen_at",
-//   LAST_SEEN_AT = "last_seen_at",
-//   SIGNED_UP_AT = "signed_up_at",
-// }
-
-// export enum UserAttributes {
-//   EMAIL = "email",
-//   NAME = "name",
-//   FIRST_SEEN_AT = "first_seen_at",
-//   LAST_SEEN_AT = "last_seen_at",
-//   SIGNED_UP_AT = "signed_up_at",
-// }
+export enum UserAttributes {
+  EMAIL = 'email',
+  NAME = 'name',
+  FIRST_SEEN_AT = 'first_seen_at',
+  LAST_SEEN_AT = 'last_seen_at',
+  SIGNED_UP_AT = 'signed_up_at',
+}
 
 export enum BizEvents {
   PAGE_VIEWED = 'page_viewed',

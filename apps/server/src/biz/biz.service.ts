@@ -29,7 +29,7 @@ import {
   getAttributeType,
   isNull,
 } from '@/common/attribute/attribute';
-import { BizAttributeTypes } from '@/common/consts/attribute';
+import { BizAttributeTypes } from '@usertour/types';
 import { IntegrationSource } from '@/common/types/integration';
 import isEqual from 'fast-deep-equal';
 

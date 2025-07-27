@@ -5,9 +5,14 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { Input } from '@usertour-ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/dropdown-menu';
+import { Input } from '@usertour-packages/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import {
   ContentDataType,
   Frequency,
@@ -15,7 +20,7 @@ import {
   RulesFrequencyValue,
   RulesFrequencyValueAtLeast,
   RulesFrequencyValueEvery,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { HelpTooltip } from '../common/help-tooltip';
 

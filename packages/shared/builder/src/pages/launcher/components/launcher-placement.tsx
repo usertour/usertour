@@ -1,5 +1,5 @@
-import { getAuthToken } from '@usertour-ui/shared-utils';
-import { ElementSelectorPropsData, StepScreenshot } from '@usertour-ui/types';
+import { getAuthToken } from '@usertour/helpers';
+import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import { useEffect } from 'react';
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';

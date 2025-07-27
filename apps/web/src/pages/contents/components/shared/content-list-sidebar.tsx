@@ -7,7 +7,7 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/templates/admin-sidebar-template';
 import { useContentListContext } from '@/contexts/content-list-context';
-import { FileEditLineIcon, BaseStationLineIcon } from '@usertour-ui/icons';
+import { FileEditLineIcon, BaseStationLineIcon } from '@usertour-packages/icons';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 export function ContentListSidebar() {
