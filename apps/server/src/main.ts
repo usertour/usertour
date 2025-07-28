@@ -9,24 +9,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
 
-// Import Sentry for monitoring
-import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
-
-// Import tracer for OpenTelemetry (uncomment when needed)
-// import tracer from './tracer';
+// Import tracer for OpenTelemetry
+import { startTracer } from './tracer';
 import { setTraceID } from './utils/middleware/set-trace-id';
 
 // import { AllExceptionsFilter } from './common/filter';
-
-// Initialize Sentry
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  integrations: [nodeProfilingIntegration()],
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 1.0, // Capture 100% of the transactions
-  profilesSampleRate: 1.0,
-});
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -42,13 +29,13 @@ async function bootstrap() {
   // Catch all exceptions
   // app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Add Sentry error handlers
+  // Add error handlers
   process.on('uncaughtException', (err) => {
-    Sentry.captureException(err);
+    console.error('Uncaught Exception:', err);
   });
 
   process.on('unhandledRejection', (err) => {
-    Sentry.captureException(err);
+    console.error('Unhandled Rejection:', err);
   });
 
   // Validation
@@ -96,8 +83,8 @@ async function bootstrap() {
   //   }),
   // );
 
-  // Start tracer (uncomment when OTLP_TRACES_ENDPOINT is configured)
-  // tracer.start();
+  // Start tracer
+  startTracer();
 
   await app.listen(configService.get('nest.port'));
   console.log(`Application is running on: ${await app.getUrl()}`);
