@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { STATUS_CODES } from 'node:http';
 import { GraphQLError } from 'graphql';
-import * as Sentry from '@sentry/node';
 import { BaseError } from './common/errors';
 
 @Injectable()
@@ -40,18 +39,9 @@ export class GqlConfigService implements GqlOptionsFactory {
             : {}),
         });
 
-        // Send to Sentry for unknown errors
+        // Log unknown errors
         if (error instanceof GraphQLError && !(error.originalError instanceof BaseError)) {
-          Sentry.captureException(error.originalError || error, {
-            tags: {
-              type: 'graphql',
-              path: error.path?.join('.'),
-            },
-            extra: {
-              locations: error.locations,
-              path: error.path,
-            },
-          });
+          this.logger.error('GraphQL unknown error:', error.originalError || error);
         }
 
         // @ts-expect-error allow assign

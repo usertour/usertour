@@ -27,7 +27,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
-import api from '@opentelemetry/api';
+// import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { IntegrationModule } from './integration/integration.module';
 import { loggingMiddleware } from 'nestjs-prisma';
@@ -57,21 +57,23 @@ import { Logger } from '@nestjs/common';
         ],
       },
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        redact: {
-          paths: ['pid', 'hostname', 'req.headers'],
-          remove: true,
+    LoggerModule.forRootAsync({
+      useFactory: () => ({
+        pinoHttp: {
+          redact: {
+            paths: ['pid', 'hostname', 'req.headers'],
+            remove: true,
+          },
+          autoLogging: false,
+          genReqId: () => undefined,
+          customSuccessObject: (req) => ({
+            env: process.env.NODE_ENV,
+            uid: (req as any).user?.id || 'anonymous',
+          }),
+          level: 'debug',
+          transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
         },
-        autoLogging: false,
-        genReqId: () => api.trace.getSpan(api.context.active())?.spanContext()?.traceId,
-        customSuccessObject: (req) => ({
-          env: process.env.NODE_ENV,
-          uid: (req as any).user?.id || 'anonymous',
-        }),
-        level: 'debug',
-        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
-      },
+      }),
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
