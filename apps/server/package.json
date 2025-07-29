@@ -37,8 +37,7 @@
     "docker:db": "docker-compose -f docker-compose.db.yml up -d",
     "docker:seed": "docker exec -it nest-api npm run seed",
     "docker": "docker-compose up -d",
-    "docker:build": "docker-compose build",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org usertour --project usertour-server ./dist && sentry-cli sourcemaps upload --org usertour --project usertour-server ./dist"
+    "docker:build": "docker-compose build"
   },
   "dependencies": {
     "@apollo/server": "^4.5.0",
