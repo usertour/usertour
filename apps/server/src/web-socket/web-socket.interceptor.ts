@@ -13,18 +13,17 @@ export class WebSocketPerformanceInterceptor implements NestInterceptor {
     const className = context.getClass().name;
     const methodName = handler.name;
 
+    // Create meter once
+    const meter = api.metrics.getMeter('usertour-websocket-interceptor', '1.0.0');
+    const metricName = `websocket_${methodName.toLowerCase()}_duration_milliseconds`;
+
     return next.handle().pipe(
       tap({
         next: () => {
           const endTime = Date.now();
           const duration = endTime - startTime;
 
-          // Create meter and histogram inside next() execution context
-          const meter = api.metrics.getMeter('usertour-websocket-interceptor', '1.0.0');
-
-          // Generate dynamic metric name
-          const metricName = `websocket_${methodName.toLowerCase()}_duration_milliseconds`;
-
+          // Create histogram inside next() execution context
           const durationHistogram = meter.createHistogram(metricName, {
             description: `WebSocket ${methodName} method processing duration`,
             unit: 'ms',
@@ -44,12 +43,7 @@ export class WebSocketPerformanceInterceptor implements NestInterceptor {
           const endTime = Date.now();
           const duration = endTime - startTime;
 
-          // Create meter and histogram inside next() execution context
-          const meter = api.metrics.getMeter('usertour-websocket-interceptor', '1.0.0');
-
-          // Generate dynamic metric name
-          const metricName = `websocket_${methodName.toLowerCase()}_duration_milliseconds`;
-
+          // Create histogram inside next() execution context
           const durationHistogram = meter.createHistogram(metricName, {
             description: `WebSocket ${methodName} method processing duration`,
             unit: 'ms',
