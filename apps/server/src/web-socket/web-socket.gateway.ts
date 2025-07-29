@@ -7,6 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import api from '@opentelemetry/api';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketAuthGuard } from './web-socket.guard';
 import { WebSocketEnvironment } from './web-socket.decorator';
@@ -53,7 +54,40 @@ export class WebSocketGateway {
     @MessageBody() body: ListContentsRequest,
     @WebSocketEnvironment() environment: Environment,
   ): Promise<ContentResponse[]> {
-    return await this.service.listContent(body, environment);
+    const startTime = Date.now();
+    const meter = api.metrics.getMeter('usertour-server', '1.0.0');
+    const durationHistogram = meter.createHistogram('list_content_duration_milliseconds', {
+      description: 'listContent method processing duration in milliseconds',
+      unit: 'ms',
+    });
+
+    try {
+      const result = await this.service.listContent(body, environment);
+
+      const duration = Date.now() - startTime;
+      durationHistogram.record(duration, {
+        method: 'listContent',
+        environment_id: environment.id,
+        status: 'success',
+      });
+
+      this.logger.log(
+        `[METRICS] listContent duration: ${duration}ms, environment: ${environment.id}`,
+      );
+
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      durationHistogram.record(duration, {
+        method: 'listContent',
+        environment_id: environment.id,
+        status: 'error',
+        error_type: error.constructor.name,
+      });
+
+      this.logger.error(`[METRICS] listContent error after ${duration}ms: ${error.message}`);
+      throw error;
+    }
   }
 
   @SubscribeMessage('list-themes')
