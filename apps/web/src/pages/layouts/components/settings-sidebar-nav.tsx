@@ -30,6 +30,11 @@ const OWNER_ROLES = [TeamMemberRole.OWNER] as const;
 // const ADMIN_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER] as const;
 const ICON_CLASS_NAME = 'w-4 h-4';
 
+enum Mode {
+  CLOUD = 'cloud',
+  SELF_HOSTED = 'self-hosted',
+}
+
 // Types
 enum SidebarNavItemType {
   GENERAL = 'general',
@@ -42,6 +47,7 @@ interface SidebarNavItem {
   role: readonly TeamMemberRole[];
   type: SidebarNavItemType;
   icon: React.ReactNode;
+  mode: Mode[];
 }
 
 // Components
@@ -99,6 +105,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <ProjectIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Themes',
@@ -106,6 +113,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <ColorIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Environments',
@@ -113,6 +121,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <BoxIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Attributes',
@@ -120,6 +129,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <AttributeIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Events',
@@ -127,6 +137,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <FlashlightIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Team',
@@ -134,6 +145,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <TeamIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Billing',
@@ -141,6 +153,15 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <BankCardIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD],
+  },
+  {
+    title: 'Subscription',
+    href: '/settings/subscription',
+    role: OWNER_ROLES,
+    type: SidebarNavItemType.GENERAL,
+    icon: <BankCardIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.SELF_HOSTED],
   },
   {
     title: 'Account',
@@ -148,6 +169,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <AccountIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'API',
@@ -155,6 +177,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.DEVELOPER,
     icon: <KeyIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   // {
   //   title: 'Integrations',
@@ -175,7 +198,9 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
 export const SettingsSidebarNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project } = useAppContext();
+  const { project, globalConfig } = useAppContext();
+
+  const isSelfHosted = globalConfig?.isSelfHostedMode;
 
   const filteredItems = sidebarNavItems
     .map((item) => ({
@@ -187,7 +212,11 @@ export const SettingsSidebarNav = () => {
       return projectRole && item.role.includes(projectRole as TeamMemberRole);
     });
 
-  const generalItems = filteredItems.filter((item) => item.type === SidebarNavItemType.GENERAL);
+  const generalItems = filteredItems.filter(
+    (item) =>
+      item.type === SidebarNavItemType.GENERAL &&
+      item.mode.includes(isSelfHosted ? Mode.SELF_HOSTED : Mode.CLOUD),
+  );
   const developerItems = filteredItems.filter((item) => item.type === SidebarNavItemType.DEVELOPER);
 
   const handleNavigate = (href: string) => {

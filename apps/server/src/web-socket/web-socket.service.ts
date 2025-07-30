@@ -123,6 +123,15 @@ export class WebSocketService {
 
     if (validationResult.isValid) {
       const licensePayload = await this.licenseService.getLicensePayload(licenseToken);
+
+      // Check if license projectId matches the current project
+      if (licensePayload?.projectId !== environment.projectId) {
+        this.logger.warn(
+          `License projectId mismatch. Expected: ${environment.projectId}, Got: ${licensePayload?.projectId}`,
+        );
+        return defaultConfig;
+      }
+
       const isBusinessPlan =
         licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
 
