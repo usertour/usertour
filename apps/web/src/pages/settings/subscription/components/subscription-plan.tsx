@@ -11,6 +11,7 @@ import { Skeleton } from '@usertour-packages/skeleton';
 import { CopyIcon, RefreshCcwIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { useToast } from '@usertour-packages/use-toast';
+import { getErrorMessage } from '@usertour/helpers';
 
 const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   // License hooks
@@ -63,10 +64,8 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
         description: 'License has been updated successfully',
       });
     } catch (error) {
-      console.error('Failed to update license:', error);
       toast({
-        title: 'Update failed',
-        description: 'Failed to update license. Please try again.',
+        title: getErrorMessage(error),
         variant: 'destructive',
       });
     }
