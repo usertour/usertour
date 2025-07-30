@@ -47,7 +47,7 @@ interface SidebarNavItem {
   role: readonly TeamMemberRole[];
   type: SidebarNavItemType;
   icon: React.ReactNode;
-  mode: Mode[];
+  mode: readonly Mode[];
 }
 
 // Components
