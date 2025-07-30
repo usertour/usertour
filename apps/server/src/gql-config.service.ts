@@ -41,7 +41,11 @@ export class GqlConfigService implements GqlOptionsFactory {
 
         // Log unknown errors
         if (error instanceof GraphQLError && !(error.originalError instanceof BaseError)) {
-          this.logger.error('GraphQL unknown error:', error.originalError || error);
+          this.logger.error({
+            err: error.originalError || error,
+            msg: 'GraphQL unknown error occurred',
+            context: this.constructor.name,
+          });
         }
 
         // @ts-expect-error allow assign
