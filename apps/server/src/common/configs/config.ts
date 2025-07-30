@@ -41,9 +41,9 @@ const config: Config = {
     password: process.env.Redis_PASS,
   },
   app: {
-    homepageUrl: process.env.APP_HOMEPAGE_URL,
-    apiUrl: process.env.API_URL,
-    docUrl: process.env.DOC_URL,
+    homepageUrl: process.env.APP_HOMEPAGE_URL || '',
+    apiUrl: process.env.API_URL || '',
+    docUrl: process.env.DOC_URL || '',
   },
   aws: {
     s3: {

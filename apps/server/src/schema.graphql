@@ -548,7 +548,7 @@ type Events {
 }
 
 type GlobalConfig {
-  apiUrl: String!
+  apiUrl: String
   enabledBilling: Boolean!
   isSelfHostedMode: Boolean!
 }
