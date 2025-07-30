@@ -21,4 +21,7 @@ export class Project extends BaseModel {
 
   @Field(() => String, { nullable: true })
   subscriptionId?: string;
+
+  @Field(() => String, { nullable: true })
+  license?: string;
 }

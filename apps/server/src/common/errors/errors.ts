@@ -137,6 +137,38 @@ export class TeamMemberLimitError extends BaseError {
   };
 }
 
+export class InvalidLicenseError extends BaseError {
+  code = 'E0016';
+  messageDict = {
+    en: 'Invalid license provided',
+    'zh-CN': '提供的许可证无效',
+  };
+}
+
+export class LicenseExpiredError extends BaseError {
+  code = 'E0017';
+  messageDict = {
+    en: 'License has expired',
+    'zh-CN': '许可证已过期',
+  };
+}
+
+export class LicenseProjectMismatchError extends BaseError {
+  code = 'E0018';
+  messageDict = {
+    en: 'License is not valid for this project',
+    'zh-CN': '许可证不适用于此项目',
+  };
+}
+
+export class LicenseDecodeError extends BaseError {
+  code = 'E0019';
+  messageDict = {
+    en: 'Failed to decode license payload',
+    'zh-CN': '无法解码许可证内容',
+  };
+}
+
 export abstract class OpenAPIError extends BaseError {
   statusCode: HttpStatus;
 }
@@ -307,6 +339,11 @@ const errorMap = {
   E0012: UnsupportedFileTypeError,
   E0013: NoPermissionError,
   E0014: ContentNotPublishedError,
+  E0015: TeamMemberLimitError,
+  E0016: InvalidLicenseError,
+  E0017: LicenseExpiredError,
+  E0018: LicenseProjectMismatchError,
+  E0019: LicenseDecodeError,
   E1000: InvalidApiKeyError,
   E1001: UserNotFoundError,
   E1002: CompanyNotFoundError,

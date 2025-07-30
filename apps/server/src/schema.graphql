@@ -57,7 +57,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -128,7 +128,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON
+  membership: JSON!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -199,7 +199,7 @@ type BizUser {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON
+  membership: JSON!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -263,7 +263,7 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int
+  count: Int!
   success: Boolean!
 }
 
@@ -386,7 +386,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String
+  name: String!
 }
 
 input CreatSegment {
@@ -408,7 +408,7 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   projectId: String!
 }
@@ -640,6 +640,25 @@ A field whose value is a JSON Web Token (JWT): https://jwt.io/introduction.
 """
 scalar JWT
 
+type LicenseInfo {
+  daysRemaining: Int
+  error: String
+  isExpired: Boolean
+  isValid: Boolean
+  license: String
+  payload: LicensePayload
+}
+
+type LicensePayload {
+  exp: Int!
+  features: [String!]!
+  iat: Int!
+  issuer: String!
+  plan: String!
+  projectId: String!
+  sub: String!
+}
+
 type Localization {
   code: String!
 
@@ -728,6 +747,7 @@ type Mutation {
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
+  updateProjectLicense(license: String!, projectId: String!): Project!
   updateProjectName(name: String!, projectId: String!): Project!
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
@@ -763,6 +783,7 @@ type Project {
   customerId: String
   environments: [Environment!]
   id: String!
+  license: String
   logoUrl: String
   name: String!
   subscriptionId: String
@@ -782,6 +803,7 @@ type Query {
   getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getProjectLicenseInfo(projectId: String!): LicenseInfo
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
@@ -1101,7 +1123,7 @@ type User {
   id: ID!
   isOAuthUser: Boolean
   name: String
-  projects: [UserOnProject!]
+  projects: [UserOnProject!]!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

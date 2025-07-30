@@ -46,6 +46,8 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   updateProjectName,
+  getProjectLicenseInfo,
+  updateProjectLicense,
   ListIntegrations,
   UpdateIntegration,
   GetSalesforceAuthUrl,
@@ -904,5 +906,33 @@ export const useDeleteBizUserOnSegmentMutation = () => {
       count: response.data?.deleteBizUserOnSegment?.count ?? 0,
     };
   };
+  return { invoke, loading, error };
+};
+
+// License related hooks
+export const useGetProjectLicenseInfoQuery = (projectId: string) => {
+  const { data, loading, error, refetch } = useQuery(getProjectLicenseInfo, {
+    variables: { projectId },
+    skip: !projectId,
+  });
+
+  return {
+    licenseInfo: data?.getProjectLicenseInfo,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useUpdateProjectLicenseMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectLicense);
+
+  const invoke = async (projectId: string, license: string) => {
+    const response = await mutation({
+      variables: { projectId, license },
+    });
+    return response.data?.updateProjectLicense;
+  };
+
   return { invoke, loading, error };
 };

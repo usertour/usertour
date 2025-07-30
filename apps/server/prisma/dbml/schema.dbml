@@ -79,6 +79,7 @@ Table Project {
   logoUrl String
   customerId String [note: 'Stripe customer ID']
   subscriptionId String [note: 'Stripe subscription ID']
+  license String [note: 'License']
   users UserOnProject [not null]
   environments Environment [not null]
   themes Theme [not null]
