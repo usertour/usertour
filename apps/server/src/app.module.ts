@@ -30,6 +30,7 @@ import { LoggerModule } from 'nestjs-pino';
 // import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { IntegrationModule } from './integration/integration.module';
+import { LicenseModule } from './license/license.module';
 import { loggingMiddleware } from 'nestjs-prisma';
 import { Logger } from '@nestjs/common';
 
@@ -122,6 +123,7 @@ import { Logger } from '@nestjs/common';
     TeamModule,
     SubscriptionModule,
     IntegrationModule,
+    LicenseModule,
     OpenAPIModule,
   ],
   controllers: [AppController],

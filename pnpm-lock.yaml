@@ -334,9 +334,12 @@ importers:
       '@types/mjml':
         specifier: ^4.7.1
         version: 4.7.4
+      '@usertour/helpers':
+        specifier: ^0.0.5
+        version: 0.0.5(typescript@4.9.5)
       '@usertour/types':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.0.4
+        version: 0.0.4
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -3823,9 +3826,12 @@ importers:
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@usertour/types':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.0.4
+        version: 0.0.4
       chroma-js:
         specifier: ^3.1.2
         version: 3.1.2
@@ -3841,6 +3847,9 @@ importers:
       fast-deep-equal:
         specifier: ^3.1.3
         version: 3.1.3
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.2
       tailwind-merge:
         specifier: ^1.13.2
         version: 1.14.0
@@ -8173,6 +8182,9 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
+  '@types/jsonwebtoken@9.0.10':
+    resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
+
   '@types/jsonwebtoken@9.0.5':
     resolution: {integrity: sha512-VRLSGzik+Unrup6BsouBeHsf4d1hOEgYWTm/7Nmw1sXoN1+tRly/Gy/po3yeahnP4jfnQWWAhQAqcNfH7ngOkA==}
 
@@ -8513,14 +8525,17 @@ packages:
   '@usertour/helpers@0.0.1':
     resolution: {integrity: sha512-0NE26/qJDLjb0SWVhbySChBMwNwR7zItkWR67aOLRRqMZUalrHF9kvtAEqXE5shsoBx1/JmF7gr+M6XaPXVt2g==}
 
+  '@usertour/helpers@0.0.5':
+    resolution: {integrity: sha512-blui5ZomZeBDaKbf7WD83X6YWIQJIgamhlUB1EMoJ5VlAydFpqkGz0TmfYlj3gsER/bS0dcSa8mmL49NDqgzwQ==}
+
   '@usertour/types@0.0.1':
     resolution: {integrity: sha512-SAqHFEwcxm8/GXmalCFkMBTCDZBAMmnVoV+lR7exGAbLTEEg+Uf0+KVkkKJiwxqXGXvIE3jb73/ejrTbfU4puw==}
 
-  '@usertour/types@0.0.2':
-    resolution: {integrity: sha512-uThgc1jCUzgXZEnE98PlyHIj5UE3usStrcRP6tGOeyFxgeP/hzCKHxBtXRuMRNrdIqnHWReerrtkB2jrAHrVMQ==}
-
   '@usertour/types@0.0.3':
     resolution: {integrity: sha512-yLgKhpTkRORFhQHh8GfgpT7XkPeu36Lncvj2qAPJbDlhBysLCDk+uDJNbrMtfP0MmbQn+Aek7hGBRwh7q/pw6Q==}
+
+  '@usertour/types@0.0.4':
+    resolution: {integrity: sha512-UzaCNqWjO3YTLZqXbZXGmKemayrBR8EP7FTeP1GyvCmRkk9HK5cxDogbJdh7ZaDT4gBbqCn9sMQN3Adk/P2gYw==}
 
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
@@ -19902,6 +19917,11 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/jsonwebtoken@9.0.10':
+    dependencies:
+      '@types/ms': 0.7.34
+      '@types/node': 20.17.5
+
   '@types/jsonwebtoken@9.0.5':
     dependencies:
       '@types/node': 18.19.63
@@ -20425,11 +20445,27 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@usertour/helpers@0.0.5(typescript@4.9.5)':
+    dependencies:
+      '@paralleldrive/cuid2': 2.2.2
+      '@types/jsonwebtoken': 9.0.10
+      '@usertour/types': 0.0.4
+      chroma-js: 3.1.2
+      class-variance-authority: 0.4.0(typescript@4.9.5)
+      clsx: 1.2.1
+      deepmerge-ts: 7.1.3
+      fast-deep-equal: 3.1.3
+      jsonwebtoken: 9.0.2
+      tailwind-merge: 1.14.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - typescript
+
   '@usertour/types@0.0.1': {}
 
-  '@usertour/types@0.0.2': {}
-
   '@usertour/types@0.0.3': {}
+
+  '@usertour/types@0.0.4': {}
 
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:
@@ -21158,6 +21194,10 @@ snapshots:
       '@types/validator': 13.12.2
       libphonenumber-js: 1.11.12
       validator: 13.12.0
+
+  class-variance-authority@0.4.0(typescript@4.9.5):
+    optionalDependencies:
+      typescript: 4.9.5
 
   class-variance-authority@0.4.0(typescript@5.1.6):
     optionalDependencies:

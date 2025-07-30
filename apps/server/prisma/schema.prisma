@@ -104,6 +104,8 @@ model Project {
   customerId     String?
   /// Stripe subscription ID
   subscriptionId String?
+  /// License
+  license        String?
   users          UserOnProject[]
   environments   Environment[]
   themes         Theme[]
