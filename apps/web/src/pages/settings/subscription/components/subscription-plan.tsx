@@ -8,10 +8,12 @@ import {
 } from '@usertour-packages/shared-hooks';
 import { Separator } from '@usertour-packages/separator';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { CopyIcon, RefreshCcwIcon } from 'lucide-react';
+import { CopyIcon, UploadIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
+import Upload from 'rc-upload';
+import { UploadRequestOption } from 'rc-upload/lib/interface';
 
 const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   // License hooks
@@ -44,31 +46,75 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
     });
   };
 
-  // Handle update license
-  const handleUpdateLicense = async () => {
-    if (!licenseInput.trim()) {
+  // Handle file upload using rc-upload
+  const handleCustomUploadRequest = (option: UploadRequestOption) => {
+    const file = option.file as File;
+
+    // Validate file type
+    if (
+      file.type !== 'text/plain' &&
+      !file.name.endsWith('.txt') &&
+      !file.name.endsWith('.license')
+    ) {
       toast({
-        title: 'License required',
-        description: 'Please enter a license key',
+        title: 'Please select a text file (.txt) or license file (.license)',
         variant: 'destructive',
       });
+      option.onError?.(new Error('Invalid file type'));
       return;
     }
 
-    try {
-      await updateLicense(projectId, licenseInput);
-      refetchLicense();
+    // Validate file size (max 10KB)
+    if (file.size > 10 * 1024) {
       toast({
-        variant: 'success',
-        title: 'License updated',
-        description: 'License has been updated successfully',
-      });
-    } catch (error) {
-      toast({
-        title: getErrorMessage(error),
+        title: 'Please select a file smaller than 10KB',
         variant: 'destructive',
       });
+      option.onError?.(new Error('File too large'));
+      return;
     }
+
+    // Handle async operations
+    const processFile = async () => {
+      try {
+        const content = await file.text();
+        const trimmedContent = content.trim();
+
+        if (!trimmedContent) {
+          toast({
+            title: 'Empty file',
+            variant: 'destructive',
+          });
+          option.onError?.(new Error('Empty file'));
+          return;
+        }
+
+        // Use existing update license logic
+        await updateLicense(projectId, trimmedContent);
+
+        // Only update license input after successful update
+        setLicenseInput(trimmedContent);
+
+        refetchLicense();
+        toast({
+          variant: 'success',
+          title: 'License updated',
+        });
+
+        // Call onSuccess to complete the upload
+        option.onSuccess?.(trimmedContent);
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        toast({
+          title: errorMessage,
+          variant: 'destructive',
+        });
+        option.onError?.(new Error(errorMessage));
+      }
+    };
+
+    // Start processing the file
+    processFile();
   };
 
   return (
@@ -125,51 +171,55 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
           </div>
         </div>
         <Separator />
-        <div className="py-8 flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap gap-2">
-              <h1 className="text-zinc-950/90 dark:text-white/90">License Settings</h1>
-            </div>
-            <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
-              Manage your self-hosted license
-            </h2>
-          </div>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4">
-              {/* Project ID display with copy button */}
-              <div className="flex flex-col gap-2">
-                <div className="text-sm font-medium">Project ID</div>
-                <div className="flex gap-4">
-                  <Input value={projectId} disabled className="flex-1" />
-                  <Button variant="secondary" onClick={handleCopyProjectId} className="h-9">
-                    <CopyIcon className="w-4 h-4 mr-1" />
-                    Copy
-                  </Button>
-                </div>
+        <div className="py-8 flex flex-col gap-8">
+          {/* Project ID display with copy button */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm font-medium">Project ID</div>
+              <div className="text-zinc-950/50 dark:text-white/50 text-sm">
+                The unique , read-only project id.
               </div>
+            </div>
+            <div className="flex gap-4">
+              <Input value={projectId} disabled className="flex-1" />
+              <Button variant="secondary" onClick={handleCopyProjectId} className="h-9">
+                <CopyIcon className="w-4 h-4 mr-1" />
+                Copy
+              </Button>
+            </div>
+          </div>
 
-              {/* License input and update button */}
-              <div className="flex flex-col gap-2">
-                <div className="text-sm font-medium">License</div>
-                <div className="flex flex-col gap-4">
-                  <Textarea
-                    placeholder="License key..."
-                    value={licenseInput}
-                    onChange={(e) => setLicenseInput(e.target.value)}
-                    className="flex-1"
-                    rows={6}
-                  />
-                  <div className="flex gap-4">
-                    <Button
-                      onClick={handleUpdateLicense}
-                      disabled={updateLicenseLoading}
-                      className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
-                    >
-                      <RefreshCcwIcon className="w-4 h-4 mr-1" />
-                      Update License
-                    </Button>
-                  </div>
-                </div>
+          {/* License input and upload button */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm font-medium">Upload License</div>
+              <div className="text-zinc-950/50 dark:text-white/50 text-sm">
+                You can upload your Usertour license to unlock business/enterprise features.
+              </div>
+            </div>
+            <div className="flex flex-col gap-4">
+              <Textarea
+                placeholder="Sensitive - write only"
+                value={licenseInput}
+                onChange={(e) => setLicenseInput(e.target.value)}
+                className="flex-1"
+                rows={6}
+                disabled
+              />
+              <div className="flex gap-4">
+                <Upload
+                  accept=".txt,.license,text/plain"
+                  customRequest={handleCustomUploadRequest}
+                  disabled={updateLicenseLoading}
+                >
+                  <Button
+                    disabled={updateLicenseLoading}
+                    className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
+                  >
+                    <UploadIcon className="w-4 h-4 mr-1" />
+                    Upload License
+                  </Button>
+                </Upload>
               </div>
             </div>
           </div>
