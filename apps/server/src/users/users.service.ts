@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ChangeEmailInput } from './dto/change-email.input';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
-import { ParamsError } from '@/common/errors';
+import { PasswordIncorrect } from '@/common/errors';
 
 @Injectable()
 export class UsersService {
@@ -42,7 +42,7 @@ export class UsersService {
     );
 
     if (!passwordValid) {
-      throw new ParamsError();
+      throw new PasswordIncorrect();
     }
 
     const hashedPassword = await this.passwordService.hashPassword(changePassword.newPassword);
@@ -59,7 +59,7 @@ export class UsersService {
     const passwordValid = await this.passwordService.validatePassword(input.password, userPassword);
 
     if (!passwordValid) {
-      throw new ParamsError();
+      throw new PasswordIncorrect();
     }
 
     return this.prisma.user.update({
