@@ -71,8 +71,15 @@ import { Logger } from '@nestjs/common';
             env: process.env.NODE_ENV,
             uid: (req as any).user?.id || 'anonymous',
           }),
-          level: 'debug',
+          level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
           transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+          // Production JSON format
+          ...(process.env.NODE_ENV === 'production' && {
+            formatters: {
+              level: (label: string) => ({ level: label }),
+            },
+            timestamp: () => `,"time":"${new Date().toISOString()}"`,
+          }),
         },
       }),
     }),
