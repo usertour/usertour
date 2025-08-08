@@ -11,14 +11,7 @@
     "typecheck": "tsc --noEmit",
     "build:fast": "tsup src"
   },
-  "dependencies": {
-    "@usertour/types": "^0.0.1"
-  },
-  "peerDependencies": {
-    "react": "^18.2.0"
-  },
   "devDependencies": {
-    "@types/react": "^18.0.37",
     "typescript": "^5.0.2"
   },
   "tsup": {
