@@ -238,7 +238,7 @@ export class WebSocketService {
    * @returns Array of content
    */
   async listContent(
-    body: ListContentsRequest,
+    body: Pick<ListContentsRequest, 'userId' | 'companyId'>,
     environment: Environment,
   ): Promise<ContentResponse[]> {
     try {
@@ -1657,5 +1657,25 @@ export class WebSocketService {
         themes: [],
       };
     }
+  }
+  async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
+    if (!token) return null;
+    return await this.prisma.environment.findFirst({ where: { token } });
+  }
+
+  async setFlowSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<ContentResponse | null> {
+    const contents = await this.listContent(
+      { userId: externalUserId, companyId: externalCompanyId },
+      environment,
+    );
+    if (contents.length === 0) return null;
+    return contents[0];
+    // const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
+    // if (flows.length === 0) return null;
+    // return flows[0];
   }
 }

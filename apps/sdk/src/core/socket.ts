@@ -20,6 +20,12 @@ import { Evented } from './evented';
 // Configuration options for Socket connection
 interface SocketOptions {
   wsUri: string;
+  /**
+   * Optional Socket.IO namespace, e.g. '/v2'.
+   * If omitted, connects to the root namespace ('/').
+   * Note: This is different from Socket.IO 'path' which controls the HTTP handshake path.
+   */
+  namespace?: string;
   socketConfig?: Partial<ManagerOptions & SocketIOOptions>;
 }
 
@@ -30,6 +36,9 @@ interface SocketOptions {
 export class Socket extends Evented {
   private readonly socket: SocketIO;
   private readonly options: SocketOptions;
+  private inBatch = false;
+  private endBatchTimeout?: number;
+  private readonly BATCH_TIMEOUT = 100; // ms
 
   constructor(options: SocketOptions) {
     super();
@@ -64,7 +73,12 @@ export class Socket extends Evented {
       },
     };
 
-    this.socket = io(baseUri, this.options.socketConfig);
+    // Normalize namespace to ensure it starts with '/' and has no trailing '/'
+    const namespace = (options.namespace ?? '').trim();
+    const normalizedNamespace = namespace ? `/${namespace.replace(/^\/+|\/+$/g, '')}` : '';
+
+    // Connect to namespace while keeping the HTTP handshake path configured via 'path'
+    this.socket = io(`${baseUri}${normalizedNamespace}`, this.options.socketConfig);
     this.setupErrorHandling();
     this.setupContentChangedListener();
   }
@@ -88,7 +102,61 @@ export class Socket extends Evented {
   }
 
   /**
-   * Emit an event and wait for acknowledgment
+   * Send message with batch support (similar to userflow implementation)
+   * @param event - Event name to emit
+   * @param data - Data to send with the event
+   * @param options - Batch options
+   * @returns Promise with the response
+   */
+  async send<T>(
+    event: string,
+    data: any,
+    { batch = false, endBatch = false }: { batch?: boolean; endBatch?: boolean } = {},
+  ): Promise<T> {
+    // Start batch if requested and not already in batch
+    if (batch && !this.inBatch) {
+      this.inBatch = true;
+      await this.emitWithTimeout('begin-batch', {});
+    }
+
+    // Handle batch timeout
+    if (this.inBatch) {
+      // Clear existing timeout
+      if (this.endBatchTimeout) {
+        window.clearTimeout(this.endBatchTimeout);
+      }
+
+      if (endBatch) {
+        // End batch immediately
+        await this.endBatch();
+      } else {
+        // Set timeout to auto-end batch
+        this.endBatchTimeout = window.setTimeout(() => {
+          this.endBatch();
+        }, this.BATCH_TIMEOUT);
+      }
+    }
+
+    // Send the actual message
+    return await this.emitWithTimeout<T>(event, data);
+  }
+
+  /**
+   * End current batch
+   */
+  async endBatch(): Promise<void> {
+    if (this.inBatch) {
+      this.inBatch = false;
+      if (this.endBatchTimeout) {
+        window.clearTimeout(this.endBatchTimeout);
+        this.endBatchTimeout = undefined;
+      }
+      await this.emitWithTimeout('end-batch', {});
+    }
+  }
+
+  /**
+   * Emit an event and wait for acknowledgment (internal method)
    * @param event - Event name to emit
    * @param data - Data to send with the event
    * @returns Promise with the response
@@ -105,14 +173,18 @@ export class Socket extends Evented {
   /**
    * Create or update user information
    * @param params - User parameters including userId, attributes, and token
+   * @param options - Batch options
    * @returns Promise with user information
    */
-  async upsertUser(params: {
-    userId: string;
-    attributes?: UserTourTypes.Attributes;
-    token: string;
-  }): Promise<BizUserInfo | undefined> {
-    const response = await this.emitWithTimeout('upsert-user', params);
+  async upsertUser(
+    params: {
+      userId: string;
+      attributes?: UserTourTypes.Attributes;
+      token: string;
+    },
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<BizUserInfo | undefined> {
+    const response = await this.send('upsert-user', params, options);
     return response as BizUserInfo;
   }
 
@@ -123,6 +195,7 @@ export class Socket extends Evented {
    * @param companyId - Company identifier
    * @param attributes - Optional company attributes
    * @param membership - Optional membership attributes
+   * @param options - Batch options
    * @returns Promise with company information
    */
   async upsertCompany(
@@ -131,14 +204,19 @@ export class Socket extends Evented {
     companyId: string,
     attributes?: UserTourTypes.Attributes,
     membership?: UserTourTypes.Attributes,
+    options?: { batch?: boolean; endBatch?: boolean },
   ): Promise<BizCompany | undefined> {
-    const response = await this.emitWithTimeout('upsert-company', {
-      token,
-      companyId,
-      userId,
-      attributes,
-      membership,
-    });
+    const response = await this.send(
+      'upsert-company',
+      {
+        token,
+        companyId,
+        userId,
+        attributes,
+        membership,
+      },
+      options,
+    );
     return response as BizCompany;
   }
 
@@ -185,15 +263,19 @@ export class Socket extends Evented {
   /**
    * Track an event
    * @param params - Event tracking parameters
+   * @param options - Batch options
    */
-  async trackEvent(params: {
-    userId: string;
-    token: string;
-    eventName: string;
-    sessionId: string;
-    eventData: any;
-  }): Promise<ContentSession | false> {
-    return await this.emitWithTimeout('track-event', params);
+  async trackEvent(
+    params: {
+      userId: string;
+      token: string;
+      eventName: string;
+      sessionId: string;
+      eventData: any;
+    },
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<ContentSession | false> {
+    return await this.send('track-event', params, options);
   }
 
   /**
@@ -208,5 +290,35 @@ export class Socket extends Evented {
   }): Promise<GetProjectSettingsResponse> {
     const response = await this.emitWithTimeout('get-project-settings', params);
     return response as GetProjectSettingsResponse;
+  }
+
+  /**
+   * Disconnect the socket connection
+   */
+  disconnect(): void {
+    this.socket.disconnect();
+  }
+
+  /**
+   * Connect the socket (if disconnected)
+   */
+  connect(): void {
+    this.socket.connect();
+  }
+
+  /**
+   * Check if socket is currently connected
+   * @returns True if connected, false otherwise
+   */
+  isConnected(): boolean {
+    return this.socket.connected;
+  }
+
+  /**
+   * Check if currently in a batch
+   * @returns True if in batch mode, false otherwise
+   */
+  isInBatch(): boolean {
+    return this.inBatch;
   }
 }
