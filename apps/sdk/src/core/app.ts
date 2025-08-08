@@ -358,11 +358,14 @@ export class App extends Evented {
     // Use dedicated initialization method
     await this.initializeSocket(userId, token);
 
-    const userInfo = await this.socket!.upsertUser({
-      userId,
-      attributes,
-      token,
-    });
+    const userInfo = await this.socket!.upsertUser(
+      {
+        userId,
+        attributes,
+        token,
+      },
+      { batch: true },
+    );
     if (!userInfo || !userInfo.externalId) {
       return;
     }
@@ -438,11 +441,14 @@ export class App extends Evented {
     }
 
     const userId = this.userInfo.externalId;
-    const userInfo = await this.socket?.upsertUser({
-      userId,
-      attributes,
-      token,
-    });
+    const userInfo = await this.socket?.upsertUser(
+      {
+        userId,
+        attributes,
+        token,
+      },
+      { batch: true },
+    );
     if (userInfo?.externalId) {
       this.setUser(userInfo);
       await this.fetchAndInitContent();
@@ -491,6 +497,7 @@ export class App extends Evented {
       companyId,
       attributes,
       opts?.membership,
+      { batch: true },
     );
     if (companyInfo?.externalId) {
       this.setCompany(companyInfo);
@@ -528,6 +535,7 @@ export class App extends Evented {
       companyId,
       attributes,
       opts?.membership,
+      { batch: true },
     );
     if (!companyInfo || !companyInfo.externalId) {
       return;

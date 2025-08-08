@@ -1,5 +1,5 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { finderV2 } from '@usertour-packages/finder';
+import { finderV2 } from './finderx';
 import { isMatchUrlPattern, conditionsIsSame } from './condition';
 import {
   BizEvent,

@@ -11,6 +11,5 @@ export * from './content';
 export * from './utils';
 export * from './color';
 export * from './helper';
-export * from './jwt-license-signer';
-export * from './jwt-license-validator';
 export * from './conditions';
+export * from './finderx';
