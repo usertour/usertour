@@ -2,7 +2,7 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import { EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
+import { EventAttributes, UserAttributes, CompanyAttributes, SDKContent } from '@usertour/types';
 import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
@@ -43,6 +43,7 @@ import {
 } from './web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import { BizEvents } from '@usertour/types';
+import { filterAutoStartContent } from '@usertour/helpers';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -1667,15 +1668,14 @@ export class WebSocketService {
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
-  ): Promise<ContentResponse | null> {
+  ): Promise<SDKContent | null> {
     const contents = await this.listContent(
       { userId: externalUserId, companyId: externalCompanyId },
       environment,
     );
     if (contents.length === 0) return null;
-    return contents[0];
-    // const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
-    // if (flows.length === 0) return null;
-    // return flows[0];
+    const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
+    if (flows.length === 0) return null;
+    return flows[0];
   }
 }

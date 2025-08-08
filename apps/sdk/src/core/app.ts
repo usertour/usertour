@@ -54,7 +54,7 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { checklistIsSeen, flowIsSeen } from '../utils/conditions';
+import { checklistIsSeen, flowIsSeen } from '@usertour/helpers';
 
 interface AppStartOptions {
   environmentId?: string;

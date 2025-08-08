@@ -1,5 +1,5 @@
-import { convertSettings } from '@usertour/helpers';
-import { convertToCssVars } from '@usertour/helpers';
+import { convertSettings, isValidContent } from '@usertour/helpers';
+import { convertToCssVars, findLatestEvent } from '@usertour/helpers';
 import {
   BizCompany,
   ContentDataType,
@@ -13,7 +13,6 @@ import {
 } from '@usertour/types';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
-import { findLatestEvent, isValidContent } from '../utils/conditions';
 import { window } from '../utils/globals';
 import { buildNavigateUrl } from '../utils/navigate-utils';
 import { App } from './app';

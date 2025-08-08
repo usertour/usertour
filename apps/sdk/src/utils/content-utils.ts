@@ -17,13 +17,12 @@ import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
 import {
   activedContentRulesConditions,
-  activedRulesConditions,
-  checklistIsDimissed,
-  flowIsDismissed,
-  isActive,
   parseUrlParams,
-  PRIORITIES,
-} from './conditions';
+  flowIsDismissed,
+  checklistIsDimissed,
+  isActive,
+} from '@usertour/helpers';
+import { activedRulesConditions, PRIORITIES } from './conditions';
 import { window } from './globals';
 import {
   canCompleteChecklistItem,
