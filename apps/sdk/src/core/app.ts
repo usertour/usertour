@@ -3,7 +3,6 @@ import {
   SDK_CSS_LOADED,
   SDK_CSS_LOADED_FAILED,
   SDK_DOM_LOADED,
-  SDK_CONTENT_CHANGED,
   STORAGE_IDENTIFY_ANONYMOUS,
   SDK_CONTAINER_CREATED,
 } from '@usertour-packages/constants';
@@ -22,7 +21,6 @@ import {
   contentEndReason,
   contentStartReason,
   BizSession,
-  GetProjectSettingsResponse,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
@@ -67,7 +65,7 @@ interface AppStartOptions {
 }
 
 export class App extends Evented {
-  socket = new Socket({ wsUri: getWsUri() });
+  socket: Socket | undefined;
   activeTour: Tour | undefined;
   activeChecklist: Checklist | undefined;
   startOptions: AppStartOptions = {
@@ -75,6 +73,8 @@ export class App extends Evented {
     token: '',
     mode: SDKSettingsMode.NORMAL,
   };
+  // Track current socket connection auth info for change detection
+  private currentSocketAuth: { userId: string; token: string } | undefined;
   sdkConfig: SDKConfig = {
     planType: PlanType.HOBBY,
     removeBranding: false,
@@ -192,9 +192,9 @@ export class App extends Evented {
       this.createRoot();
     });
     // refresh data when content changed in the server
-    this.socket.on(SDK_CONTENT_CHANGED, () => {
-      this.fetchAndInitContent();
-    });
+    // this.socket.on(SDK_CONTENT_CHANGED, () => {
+    //   this.fetchAndInitContent();
+    // });
     if (document?.readyState !== 'loading') {
       this.trigger(SDK_DOM_LOADED);
     } else if (document) {
@@ -291,6 +291,60 @@ export class App extends Evented {
   }
 
   /**
+   * Initialize Socket connection with given credentials
+   * @param userId - External user ID
+   * @param token - Authentication token
+   */
+  private async initializeSocket(userId: string, token: string): Promise<void> {
+    // Check if Socket connection needs to be recreated
+    if (this.shouldRecreateSocket(userId, token)) {
+      await this.disconnectSocket();
+    }
+
+    if (!this.socket) {
+      this.socket = new Socket({
+        wsUri: getWsUri(),
+        namespace: '/v2',
+        socketConfig: {
+          auth: {
+            token,
+            externalUserId: userId,
+          },
+        },
+      });
+
+      // Store current connection auth info for comparison
+      this.currentSocketAuth = { userId, token };
+    }
+  }
+
+  /**
+   * Check if Socket connection needs to be recreated due to credential changes
+   * @param userId - New user ID
+   * @param token - New token
+   * @returns True if socket should be recreated
+   */
+  private shouldRecreateSocket(userId: string, token: string): boolean {
+    if (!this.socket || !this.currentSocketAuth) {
+      return false;
+    }
+
+    // Recreate if userId or token has changed
+    return this.currentSocketAuth.userId !== userId || this.currentSocketAuth.token !== token;
+  }
+
+  /**
+   * Disconnect and cleanup Socket connection
+   */
+  private async disconnectSocket(): Promise<void> {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = undefined;
+      this.currentSocketAuth = undefined;
+    }
+  }
+
+  /**
    * Identifies a user with the given ID and attributes
    * @param userId - External user ID
    * @param attributes - Optional user attributes
@@ -300,7 +354,11 @@ export class App extends Evented {
     if (!token || !this.useCurrentUser()) {
       return;
     }
-    const userInfo = await this.socket.upsertUser({
+
+    // Use dedicated initialization method
+    await this.initializeSocket(userId, token);
+
+    const userInfo = await this.socket!.upsertUser({
       userId,
       attributes,
       token,
@@ -308,11 +366,11 @@ export class App extends Evented {
     if (!userInfo || !userInfo.externalId) {
       return;
     }
-    //reset
+
+    // Reset current state and start with new user
     this.setUser(undefined);
     this.setCompany(undefined);
     this.reset();
-    //start
     this.setUser(userInfo);
     this.start();
   }
@@ -380,7 +438,7 @@ export class App extends Evented {
     }
 
     const userId = this.userInfo.externalId;
-    const userInfo = await this.socket.upsertUser({
+    const userInfo = await this.socket?.upsertUser({
       userId,
       attributes,
       token,
@@ -427,7 +485,7 @@ export class App extends Evented {
       return;
     }
     const userId = this.userInfo.externalId;
-    const companyInfo = await this.socket.upsertCompany(
+    const companyInfo = await this.socket?.upsertCompany(
       token,
       userId,
       companyId,
@@ -464,7 +522,7 @@ export class App extends Evented {
 
     const userId = this.userInfo.externalId;
     const companyId = this.companyInfo?.externalId;
-    const companyInfo = await this.socket.upsertCompany(
+    const companyInfo = await this.socket?.upsertCompany(
       token,
       userId,
       companyId,
@@ -568,7 +626,7 @@ export class App extends Evented {
         return;
       }
 
-      const contentSession = await this.socket.trackEvent({
+      const contentSession = await this.socket?.trackEvent({
         userId: event.userId,
         token,
         sessionId,
@@ -597,7 +655,7 @@ export class App extends Evented {
     if (!userId || !token) {
       return null;
     }
-    const result = await this.socket.createSession({
+    const result = await this.socket?.createSession({
       userId,
       contentId,
       token,
@@ -668,7 +726,7 @@ export class App extends Evented {
     };
 
     // Fetch content data
-    const data = await this.socket.listContents(params);
+    const data = await this.socket?.listContents(params);
 
     // Validate response and mode
     if (!data || this.startOptions.mode !== mode) {
@@ -1101,7 +1159,7 @@ export class App extends Evented {
       userId: this.userInfo?.externalId,
       companyId: this.companyInfo?.externalId,
     };
-    const data: GetProjectSettingsResponse | null = await this.socket.getProjectSettings(params);
+    const data = await this.socket?.getProjectSettings(params);
     if (data) {
       this.sdkConfig = data.config;
       this.themes = data.themes;

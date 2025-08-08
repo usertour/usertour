@@ -20,6 +20,12 @@ import { Evented } from './evented';
 // Configuration options for Socket connection
 interface SocketOptions {
   wsUri: string;
+  /**
+   * Optional Socket.IO namespace, e.g. '/v2'.
+   * If omitted, connects to the root namespace ('/').
+   * Note: This is different from Socket.IO 'path' which controls the HTTP handshake path.
+   */
+  namespace?: string;
   socketConfig?: Partial<ManagerOptions & SocketIOOptions>;
 }
 
@@ -64,7 +70,12 @@ export class Socket extends Evented {
       },
     };
 
-    this.socket = io(baseUri, this.options.socketConfig);
+    // Normalize namespace to ensure it starts with '/' and has no trailing '/'
+    const namespace = (options.namespace ?? '').trim();
+    const normalizedNamespace = namespace ? `/${namespace.replace(/^\/+|\/+$/g, '')}` : '';
+
+    // Connect to namespace while keeping the HTTP handshake path configured via 'path'
+    this.socket = io(`${baseUri}${normalizedNamespace}`, this.options.socketConfig);
     this.setupErrorHandling();
     this.setupContentChangedListener();
   }
@@ -208,5 +219,27 @@ export class Socket extends Evented {
   }): Promise<GetProjectSettingsResponse> {
     const response = await this.emitWithTimeout('get-project-settings', params);
     return response as GetProjectSettingsResponse;
+  }
+
+  /**
+   * Disconnect the socket connection
+   */
+  disconnect(): void {
+    this.socket.disconnect();
+  }
+
+  /**
+   * Connect the socket (if disconnected)
+   */
+  connect(): void {
+    this.socket.connect();
+  }
+
+  /**
+   * Check if socket is currently connected
+   * @returns True if connected, false otherwise
+   */
+  isConnected(): boolean {
+    return this.socket.connected;
   }
 }
