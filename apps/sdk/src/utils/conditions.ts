@@ -431,21 +431,10 @@ export const findLatestEvent = (bizEvents: BizEvent[]) => {
   return lastEvent;
 };
 
-export const completeEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_COMPLETED,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_ACTIVATED,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_COMPLETED,
-};
 const showEventMapping = {
   [ContentDataType.FLOW]: BizEvents.FLOW_STEP_SEEN,
   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_SEEN,
   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_SEEN,
-};
-
-export const isDismissedEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
 };
 
 const isGreaterThenDuration = (
