@@ -71,7 +71,7 @@
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
-    "@usertour/types": "^0.0.1",
+    "@usertour/types": "^0.0.6",
     "@usertour-packages/use-toast": "workspace:^",
     "animejs": "^3.2.1",
     "apollo3-cache-persist": "^0.14.1",

@@ -1,5 +1,4 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { PRIORITIES, RulesType, rulesTypes } from '@usertour-packages/constants';
 import { finderV2 } from '@usertour-packages/finder';
 import { isMatchUrlPattern } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
@@ -16,6 +15,8 @@ import {
   ElementConditionLogic,
   StringConditionLogic,
   BizSession,
+  ContentPriority,
+  RulesType,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -27,6 +28,16 @@ import {
 } from 'date-fns';
 import { document, location } from '../utils/globals';
 import { off, on } from './listener';
+
+export const PRIORITIES = [
+  ContentPriority.HIGHEST,
+  ContentPriority.HIGH,
+  ContentPriority.MEDIUM,
+  ContentPriority.LOW,
+  ContentPriority.LOWEST,
+];
+
+export const rulesTypes: RulesType[] = Object.values(RulesType);
 
 const isActiveRulesByCurrentPage = (rules: RulesCondition) => {
   const { excludes, includes } = rules.data;

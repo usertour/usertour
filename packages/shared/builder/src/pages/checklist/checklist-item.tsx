@@ -3,7 +3,7 @@
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { EXTENSION_SELECT, RulesType } from '@usertour-packages/constants';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
@@ -14,7 +14,12 @@ import { defaultRulesItems } from '@usertour-packages/shared-components';
 import { ContentActions } from '@usertour-packages/shared-editor';
 import { useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
-import { ChecklistItemType, ContentActionsItemType, RulesCondition } from '@usertour/types';
+import {
+  ChecklistItemType,
+  ContentActionsItemType,
+  RulesCondition,
+  RulesType,
+} from '@usertour/types';
 import { useId } from 'react';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';

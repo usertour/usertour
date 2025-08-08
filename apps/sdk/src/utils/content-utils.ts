@@ -10,6 +10,7 @@ import {
   SDKContent,
   Step,
   Theme,
+  RulesType,
 } from '@usertour/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
@@ -21,9 +22,9 @@ import {
   flowIsDismissed,
   isActive,
   parseUrlParams,
+  PRIORITIES,
 } from './conditions';
 import { window } from './globals';
-import { PRIORITIES, RulesType } from '@usertour-packages/constants';
 import {
   canCompleteChecklistItem,
   checklistCompletedItemsCount,

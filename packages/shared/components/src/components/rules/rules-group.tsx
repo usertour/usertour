@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_RULES, RulesType } from '@usertour-packages/constants';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import {
   TimeIcon,
   UserIcon,
 } from '@usertour-packages/icons';
-import { RulesCondition } from '@usertour/types';
+import { RulesCondition, RulesType } from '@usertour/types';
 import { deepClone } from '@usertour/helpers';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
