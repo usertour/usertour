@@ -84,7 +84,15 @@ export class WebSocketGatewayV2 {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
-    return Boolean(await this.service.upsertBizCompanies(body, environment));
+    const result = await this.service.upsertBizCompanies(body, environment);
+
+    // Store company info in socket data for future use
+    if (result) {
+      client.data.externalCompanyId = body.companyId;
+      client.data.companyInfo = result;
+    }
+
+    return Boolean(result);
   }
 
   @SubscribeMessage('track-event')

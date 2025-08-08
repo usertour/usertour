@@ -1663,4 +1663,10 @@ export class WebSocketService {
     if (!token) return null;
     return await this.prisma.environment.findFirst({ where: { token } });
   }
+
+  async setFlowSession(body: ListContentsRequest, environment: Environment): Promise<void> {
+    const contents = await this.listContent(body, environment);
+    const flows = contents.filter((content) => content.type === ContentType.FLOW);
+    if (flows.length === 0) return;
+  }
 }
