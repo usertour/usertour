@@ -5,7 +5,7 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import autoBind from '../utils/auto-bind';
-import { activedRulesConditions, isActive } from '../utils/conditions';
+import { activedRulesConditions, isActive } from '@usertour/helpers';
 import { Evented } from './evented';
 
 /**

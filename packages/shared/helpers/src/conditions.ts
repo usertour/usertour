@@ -1,7 +1,6 @@
 import { computePosition, hide } from '@floating-ui/dom';
 import { finderV2 } from '@usertour-packages/finder';
-import { isMatchUrlPattern } from '@usertour/helpers';
-import { conditionsIsSame } from '@usertour/helpers';
+import { isMatchUrlPattern, conditionsIsSame } from './condition';
 import {
   BizEvent,
   BizEvents,
@@ -26,7 +25,7 @@ import {
   isAfter,
   isBefore,
 } from 'date-fns';
-import { document, location } from '../utils/globals';
+import { document, location } from './globals';
 import { off, on } from './listener';
 
 const rulesTypes = Object.values(RulesType);

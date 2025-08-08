@@ -23,7 +23,7 @@ import {
   isActive,
   parseUrlParams,
   PRIORITIES,
-} from './conditions';
+} from '@usertour/helpers';
 import { window } from './globals';
 import {
   canCompleteChecklistItem,

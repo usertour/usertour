@@ -16,9 +16,8 @@ import {
   StepTrigger,
   contentEndReason,
 } from '@usertour/types';
-import { evalCode } from '@usertour/helpers';
+import { evalCode, activedRulesConditions, flowIsDismissed, isActive } from '@usertour/helpers';
 import { TourStore } from '../types/store';
-import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
 import { BaseContent } from './base-content';

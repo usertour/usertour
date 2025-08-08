@@ -1,7 +1,7 @@
 import { isVisibleNode } from '@usertour-packages/dom';
 import { finderV2 } from '@usertour-packages/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { isVisible } from '../utils/conditions';
+import { isVisible } from '@usertour/helpers';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
 import { Evented } from './evented';
