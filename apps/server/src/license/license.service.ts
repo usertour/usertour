@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { JWTLicenseValidator } from '@usertour/helpers';
+import { JWTLicenseValidator } from '@usertour/license';
 import type {
   JWTLicenseValidationOptions,
   JWTLicenseValidationResult,

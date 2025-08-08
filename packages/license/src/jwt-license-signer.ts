@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import jwt from 'jsonwebtoken';
-import type { JWTLicensePayload } from '@usertour/types';
+import type { JWTLicensePayload } from './types';
 
 export interface JWTLicenseSignerOptions {
   /** RSA private key path */

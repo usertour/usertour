@@ -3,7 +3,7 @@ import type {
   JWTLicensePayload,
   JWTLicenseValidationResult,
   JWTLicenseValidationOptions,
-} from '@usertour/types';
+} from './types';
 
 /**
  * JWT License validator
@@ -55,7 +55,7 @@ export const JWTLicenseValidator = {
         isExpired: false,
         hasFeature,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof jwt.JsonWebTokenError) {
         return {
           isValid: false,
