@@ -1758,14 +1758,13 @@ export class WebSocketV2Service {
     reason: string,
     environment: Environment,
   ): Promise<boolean> {
-    let session = await this.getCachedCurrentSession(sessionId);
-    if (!session) {
-      session = await this.getContentSession(environment, sessionId);
-      if (!session) return false;
-    }
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!bizSession) return false;
     const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
       where: {
-        bizSessionId: sessionId,
+        bizSessionId: bizSession.id,
         event: {
           codeName: BizEvents.FLOW_STEP_SEEN,
         },
@@ -1773,7 +1772,7 @@ export class WebSocketV2Service {
       include: { event: true },
       orderBy: { createdAt: 'desc' },
     });
-    const seenData = latestStepSeenEvent.data as any;
+    const seenData = (latestStepSeenEvent?.data as any) ?? {};
 
     const eventData: Record<string, any> = deepmerge(seenData, {
       [EventAttributes.FLOW_END_REASON]: reason,
@@ -1783,7 +1782,7 @@ export class WebSocketV2Service {
       {
         userId: String(externalUserId),
         eventName: BizEvents.FLOW_ENDED,
-        sessionId: session.id,
+        sessionId: bizSession.id,
         eventData,
       },
       environment,
