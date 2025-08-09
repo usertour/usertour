@@ -18,6 +18,7 @@ import {
   UpsertUserResponse,
 } from '../web-socket.dto';
 import { WebSocketV2Service } from './web-socket-v2.service';
+import { StartFlowRequest } from './web-socket-v2.dto';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -86,7 +87,11 @@ export class WebSocketV2Gateway {
    * @param client - WebSocket client connection
    * @returns true if session exists or was created successfully
    */
-  private async setFlowSession(client: Socket): Promise<boolean> {
+  private async setFlowSession(
+    client: Socket,
+    contentId?: string,
+    stepIndex?: number,
+  ): Promise<boolean> {
     // Return early if flow session already exists
     if (client.data.flowSessionId) {
       return true;
@@ -99,6 +104,8 @@ export class WebSocketV2Gateway {
       client.data.environment,
       client.data.externalUserId,
       client.data.externalCompanyId,
+      contentId,
+      stepIndex,
     );
 
     // Cache the session ID for future requests
@@ -112,7 +119,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('upsert-user')
   async upsertBizUsers(
-    @MessageBody() body: Omit<UpsertUserRequest, 'token'>,
+    @MessageBody() body: UpsertUserRequest,
     @ConnectedSocket() client: Socket,
   ): Promise<UpsertUserResponse> {
     const environment = client.data.environment;
@@ -123,7 +130,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
-    @MessageBody() body: Omit<UpsertCompanyRequest, 'token'>,
+    @MessageBody() body: UpsertCompanyRequest,
     @ConnectedSocket() client: Socket,
   ): Promise<UpsertCompanyResponse> {
     const environment = client.data.environment;
@@ -139,9 +146,17 @@ export class WebSocketV2Gateway {
     return result;
   }
 
+  @SubscribeMessage('start-flow')
+  async startFlow(
+    @MessageBody() body: StartFlowRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.setFlowSession(client, body.contentId, body.stepIndex);
+  }
+
   @SubscribeMessage('track-event')
   async trackEvent(
-    @MessageBody() body: Omit<TrackEventRequest, 'token'>,
+    @MessageBody() body: TrackEventRequest,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;

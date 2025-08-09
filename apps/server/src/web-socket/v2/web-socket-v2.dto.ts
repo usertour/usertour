@@ -1,32 +1,24 @@
 import { BizCompany, BizUser, Theme } from '@/common/types/schema';
 
-// Base request interface with token
-export interface BaseRequest {
-  token: string;
-}
-
-// Config request and response
-export interface ConfigRequest extends BaseRequest {}
-
 export interface ConfigResponse {
   removeBranding: boolean;
   planType: string;
 }
 
 // List contents request
-export interface ListContentsRequest extends BaseRequest {
+export interface ListContentsRequest {
   userId?: string;
   companyId?: string;
 }
 
 // List themes request
-export interface ListThemesRequest extends BaseRequest {
+export interface ListThemesRequest {
   userId?: string;
   companyId?: string;
 }
 
 // Get project settings request and response
-export interface GetProjectSettingsRequest extends BaseRequest {
+export interface GetProjectSettingsRequest {
   userId?: string;
   companyId?: string;
 }
@@ -37,13 +29,13 @@ export interface GetProjectSettingsResponse {
 }
 
 // Upsert user request
-export interface UpsertUserRequest extends BaseRequest {
+export interface UpsertUserRequest {
   userId: string;
   attributes?: Record<string, any>;
 }
 
 // Upsert company request
-export interface UpsertCompanyRequest extends BaseRequest {
+export interface UpsertCompanyRequest {
   companyId: string;
   userId: string;
   attributes?: Record<string, any>;
@@ -51,7 +43,7 @@ export interface UpsertCompanyRequest extends BaseRequest {
 }
 
 // Create session request
-export interface CreateSessionRequest extends BaseRequest {
+export interface CreateSessionRequest {
   userId: string;
   contentId: string;
   companyId?: string;
@@ -64,7 +56,7 @@ export interface CreateSessionRequest extends BaseRequest {
 }
 
 // Track event request
-export interface TrackEventRequest extends BaseRequest {
+export interface TrackEventRequest {
   userId: string;
   eventName: string;
   sessionId: string;
@@ -75,6 +67,11 @@ export interface TrackEventRequest extends BaseRequest {
 export interface IdentityRequest {
   data: number;
 }
+
+export type StartFlowRequest = {
+  contentId: string;
+  stepIndex?: number;
+};
 
 // Response types
 export type UpsertUserResponse = BizUser | null;

@@ -49,6 +49,7 @@ import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
 import { UnionContent, UnionContentSession } from '@/common/types/content';
+import { isUndefined } from '@usertour/helpers';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -242,7 +243,8 @@ export class WebSocketV2Service {
 
   /**
    * List content for a user with optimized performance
-   * @param body - The body containing the token, user ID, and company ID
+   * @param body - The request body
+   * @param environment - The environment
    * @returns Array of content
    */
   async listContent(
@@ -1003,7 +1005,8 @@ export class WebSocketV2Service {
 
   /**
    * List themes for an environment
-   * @param token - The token of the environment
+   * @param body - The request body
+   * @param environment - The environment
    * @returns Array of themes
    */
   async listThemes(body: ListThemesRequest, environment: Environment): Promise<Theme[]> {
@@ -1079,7 +1082,7 @@ export class WebSocketV2Service {
    * @returns The upserted business users
    */
   async upsertBizUsers(
-    data: Omit<UpsertUserRequest, 'token'>,
+    data: UpsertUserRequest,
     environment: Environment,
   ): Promise<UpsertUserResponse> {
     const { userId, attributes } = data;
@@ -1092,7 +1095,7 @@ export class WebSocketV2Service {
    * @returns The upserted business companies
    */
   async upsertBizCompanies(
-    data: Omit<UpsertCompanyRequest, 'token'>,
+    data: UpsertCompanyRequest,
     environment: Environment,
   ): Promise<UpsertCompanyResponse> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
@@ -1112,7 +1115,7 @@ export class WebSocketV2Service {
    * @returns The created session
    */
   async createSession(
-    data: Omit<CreateSessionRequest, 'token'>,
+    data: CreateSessionRequest,
     environment: Environment,
   ): Promise<BizSession | null> {
     const {
@@ -1294,10 +1297,7 @@ export class WebSocketV2Service {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(
-    data: Omit<TrackEventRequest, 'token'>,
-    environment: Environment,
-  ): Promise<BizEvent | false> {
+  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
@@ -1666,26 +1666,33 @@ export class WebSocketV2Service {
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
+    contentId?: string,
+    stepIndex?: number,
   ): Promise<SDKContentSession | null> {
     const contents = await this.listContent(
       { userId: externalUserId, companyId: externalCompanyId },
       environment,
     );
     if (contents.length === 0) return null;
-    const flows = filterAutoStartContent(contents, ContentDataType.FLOW);
-    if (flows.length === 0) return null;
-    const flow = flows[0];
-
+    let content: UnionContent;
+    if (contentId) {
+      content = contents.find((c) => c.id === contentId);
+      if (!content) return null;
+    } else {
+      const flows = filterAutoStartContent(contents, ContentDataType.FLOW);
+      if (flows.length === 0) return null;
+      content = flows[0];
+    }
     let sessionId: string;
     let stepIndexInSession = 0;
-    if (flow.latestSession && !flowIsDismissed(flow.latestSession)) {
-      sessionId = flow.latestSession.id;
-      stepIndexInSession = findLatestStepNumber(flow.latestSession.bizEvent);
+    if (content.latestSession && !flowIsDismissed(content.latestSession)) {
+      sessionId = content.latestSession.id;
+      stepIndexInSession = Math.max(findLatestStepNumber(content.latestSession.bizEvent), 0);
     } else {
       const session = await this.createSession(
         {
           userId: externalUserId,
-          contentId: flow.contentId,
+          contentId: content.id,
           companyId: externalCompanyId,
           reason: 'auto_start',
           context: {},
@@ -1696,17 +1703,18 @@ export class WebSocketV2Service {
       sessionId = session.id;
     }
 
-    const steps = flow.steps;
-    const currentStep = steps[stepIndexInSession >= 0 ? stepIndexInSession : 0];
+    const steps = content.steps;
+    const currentStepIndex = isUndefined(stepIndex) ? stepIndexInSession : stepIndex;
+    const currentStep = steps[currentStepIndex ?? 0];
     const config = await this.getConfig(environment);
 
     return {
       id: sessionId,
       type: ContentDataType.FLOW,
       content: {
-        id: flow.contentId,
-        name: flow.name,
-        type: flow.type as ContentDataType,
+        id: content.id,
+        name: content.name,
+        type: content.type as ContentDataType,
         project: {
           id: environment.projectId,
           removeBranding: config.removeBranding,
@@ -1715,10 +1723,10 @@ export class WebSocketV2Service {
       draftMode: false,
       data: [],
       version: {
-        id: flow.id,
-        config: flow.config,
-        data: flow.data,
-        steps: flow.steps as unknown as SDKStep[],
+        id: content.id,
+        config: content.config,
+        data: content.data,
+        steps: content.steps as unknown as SDKStep[],
       },
       currentStep: {
         cvid: currentStep.cvid,
