@@ -341,8 +341,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       '@usertour/types':
-        specifier: ^0.0.4
-        version: 0.0.4
+        specifier: ^0.0.6
+        version: 0.0.6
       argon2:
         specifier: ^0.41.1
         version: 0.41.1

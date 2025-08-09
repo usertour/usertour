@@ -43,7 +43,7 @@ import {
 } from './web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import { BizEvents } from '@usertour/types';
-import { filterAutoStartContent } from '@usertour/helpers';
+import { filterAutoStartContent } from '@/utils/conditions';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
