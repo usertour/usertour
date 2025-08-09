@@ -21,6 +21,7 @@ import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
+  AnswerQuestionRequest,
   ConfigResponse,
   CreateSessionRequest,
   GoToStepRequest,
@@ -1848,6 +1849,41 @@ export class WebSocketV2Service {
       );
     }
 
+    return true;
+  }
+
+  async answerQuestion(request: AnswerQuestionRequest, environment: Environment): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: request.sessionId },
+      include: { bizUser: true },
+    });
+    if (!bizSession) return false;
+
+    const eventData: any = {
+      [EventAttributes.QUESTION_CVID]: request.questionCvid,
+      [EventAttributes.QUESTION_NAME]: request.questionName,
+      [EventAttributes.QUESTION_TYPE]: request.questionType,
+    };
+
+    if (!isUndefined(request.listAnswer)) {
+      eventData[EventAttributes.LIST_ANSWER] = request.listAnswer;
+    }
+    if (!isUndefined(request.numberAnswer)) {
+      eventData[EventAttributes.NUMBER_ANSWER] = request.numberAnswer;
+    }
+    if (!isUndefined(request.textAnswer)) {
+      eventData[EventAttributes.TEXT_ANSWER] = request.textAnswer;
+    }
+
+    await this.trackEvent(
+      {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.QUESTION_ANSWERED,
+        sessionId: bizSession.id,
+        eventData,
+      },
+      environment,
+    );
     return true;
   }
 }

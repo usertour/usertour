@@ -83,6 +83,16 @@ export type GoToStepRequest = {
   stepId: string;
 };
 
+export type AnswerQuestionRequest = {
+  questionCvid: string;
+  questionName: string;
+  questionType: string;
+  sessionId: string;
+  listAnswer?: string[];
+  numberAnswer?: number;
+  textAnswer?: string;
+};
+
 // Response types
 export type UpsertUserResponse = BizUser | null;
 
