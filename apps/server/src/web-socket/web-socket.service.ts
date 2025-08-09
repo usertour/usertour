@@ -1105,7 +1105,7 @@ export class WebSocketService {
    * @returns The created session
    */
   async createSession(
-    data: CreateSessionRequest,
+    data: Omit<CreateSessionRequest, 'token'>,
     environment: Environment,
   ): Promise<BizSession | null> {
     const {
@@ -1679,6 +1679,24 @@ export class WebSocketService {
     if (contents.length === 0) return null;
     const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
     if (flows.length === 0) return null;
-    return flows[0];
+    const flow = flows[0];
+
+    const session = await this.createSession(
+      {
+        userId: externalUserId,
+        contentId: flow.contentId,
+        companyId: externalCompanyId,
+        reason: 'auto_start',
+        context: {},
+      },
+      environment,
+    );
+    if (!session) return null;
+    const contentSession = await this.getContentSessionBySession(
+      externalUserId,
+      session.id,
+      environment,
+    );
+    return { ...flow, ...contentSession } as unknown as SDKContent;
   }
 }

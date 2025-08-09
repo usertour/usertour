@@ -73,13 +73,16 @@ export class WebSocketGatewayV2 {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
+    if (client.data.flowSessionId) {
+      return true;
+    }
     const externalUserId = client.data.externalUserId;
     const flowSession = await this.service.setFlowSession(
       client.data.environment,
       client.data.externalUserId,
       client.data.externalCompanyId,
     );
-
+    client.data.flowSessionId = flowSession?.latestSession.id;
     this.server.to(`user:${externalUserId}`).emit('set-flow-session', flowSession);
     return true;
   }
