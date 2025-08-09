@@ -104,7 +104,7 @@ export class WebSocketGatewayV2 {
   }
 
   @SubscribeMessage('track-event')
-  async sendEvent(
+  async trackEvent(
     @MessageBody() body: TrackEventRequest,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
