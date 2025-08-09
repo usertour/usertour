@@ -1677,8 +1677,10 @@ export class WebSocketV2Service {
     const flow = flows[0];
 
     let sessionId: string;
+    let stepIndexInSession = 0;
     if (flow.latestSession && !flowIsDismissed(flow.latestSession)) {
       sessionId = flow.latestSession.id;
+      stepIndexInSession = findLatestStepNumber(flow.latestSession.bizEvent);
     } else {
       const session = await this.createSession(
         {
@@ -1694,17 +1696,8 @@ export class WebSocketV2Service {
       sessionId = session.id;
     }
 
-    // Batch fetch latest sessions for all contents using distinct
-    const sessionWithEvents = await this.prisma.bizSession.findUnique({
-      where: {
-        id: sessionId,
-        deleted: false,
-      },
-      include: { bizEvent: { include: { event: true } } },
-    });
-    const latestStepNumber = findLatestStepNumber(sessionWithEvents.bizEvent);
     const steps = flow.steps;
-    const currentStep = steps[latestStepNumber >= 0 ? latestStepNumber : 0];
+    const currentStep = steps[stepIndexInSession >= 0 ? stepIndexInSession : 0];
     const config = await this.getConfig(environment);
 
     return {
