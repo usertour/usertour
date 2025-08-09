@@ -50,6 +50,7 @@ import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
 import { UnionContent, UnionContentSession } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
+import { deepmerge } from 'deepmerge-ts';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -1662,7 +1663,19 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
-  async setFlowSession(
+  async cacheCurrentSession(session: SDKContentSession): Promise<void> {
+    const key = `current_session:${session.id}`;
+    await this.redisService.setex(key, 60 * 60 * 24, JSON.stringify(session));
+  }
+
+  async getCachedCurrentSession(sessionId: string): Promise<SDKContentSession | null> {
+    const key = `current_session:${sessionId}`;
+    const value = await this.redisService.get(key);
+    if (!value) return null;
+    return JSON.parse(value);
+  }
+
+  async getContentSession(
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
@@ -1708,7 +1721,7 @@ export class WebSocketV2Service {
     const currentStep = steps[currentStepIndex ?? 0];
     const config = await this.getConfig(environment);
 
-    return {
+    const session = {
       id: sessionId,
       type: ContentDataType.FLOW,
       content: {
@@ -1733,5 +1746,47 @@ export class WebSocketV2Service {
         id: currentStep.id,
       },
     };
+
+    await this.cacheCurrentSession(session);
+
+    return session;
+  }
+
+  async endFlow(
+    externalUserId: string,
+    sessionId: string,
+    reason: string,
+    environment: Environment,
+  ): Promise<boolean> {
+    let session = await this.getCachedCurrentSession(sessionId);
+    if (!session) {
+      session = await this.getContentSession(environment, sessionId);
+      if (!session) return false;
+    }
+    const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
+      where: {
+        bizSessionId: sessionId,
+        event: {
+          codeName: BizEvents.FLOW_STEP_SEEN,
+        },
+      },
+      include: { event: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const seenData = latestStepSeenEvent.data as any;
+
+    const eventData: Record<string, any> = deepmerge(seenData, {
+      [EventAttributes.FLOW_END_REASON]: reason,
+    });
+
+    await this.trackEvent(
+      {
+        userId: String(externalUserId),
+        eventName: BizEvents.FLOW_ENDED,
+        sessionId: session.id,
+        eventData,
+      },
+      environment,
+    );
   }
 }

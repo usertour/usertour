@@ -81,6 +81,7 @@
     "@types/mjml": "^4.7.1",
     "@usertour/helpers": "^0.0.14",
     "@usertour/license": "^0.0.1",
+    "deepmerge-ts": "^7.1.3",
     "@usertour/types": "^0.0.6",
     "argon2": "^0.41.1",
     "axios": "^1.6.2",

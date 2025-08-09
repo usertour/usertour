@@ -18,7 +18,7 @@ import {
   UpsertUserResponse,
 } from '../web-socket.dto';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { StartFlowRequest } from './web-socket-v2.dto';
+import { EndFlowRequest, StartFlowRequest } from './web-socket-v2.dto';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -100,7 +100,7 @@ export class WebSocketV2Gateway {
     const externalUserId = client.data.externalUserId;
 
     // Create new flow session
-    const flowSession = await this.service.setFlowSession(
+    const flowSession = await this.service.getContentSession(
       client.data.environment,
       client.data.externalUserId,
       client.data.externalCompanyId,
@@ -152,6 +152,20 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.setFlowSession(client, body.contentId, body.stepIndex);
+  }
+
+  @SubscribeMessage('end-flow')
+  async endFlow(
+    @MessageBody() body: EndFlowRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    const environment = client.data.environment;
+    return await this.service.endFlow(
+      client.data.externalUserId,
+      body.sessionId,
+      body.reason,
+      environment,
+    );
   }
 
   @SubscribeMessage('track-event')

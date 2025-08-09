@@ -73,6 +73,11 @@ export type StartFlowRequest = {
   stepIndex?: number;
 };
 
+export type EndFlowRequest = {
+  sessionId: string;
+  reason: string;
+};
+
 // Response types
 export type UpsertUserResponse = BizUser | null;
 
