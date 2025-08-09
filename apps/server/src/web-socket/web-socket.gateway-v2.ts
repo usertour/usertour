@@ -73,17 +73,35 @@ export class WebSocketGatewayV2 {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
+    return await this.setFlowSession(client);
+  }
+
+  /**
+   * Set flow session for the client, creating if not exists
+   * @param client - WebSocket client connection
+   * @returns true if session exists or was created successfully
+   */
+  private async setFlowSession(client: Socket): Promise<boolean> {
+    // Return early if flow session already exists
     if (client.data.flowSessionId) {
       return true;
     }
+
     const externalUserId = client.data.externalUserId;
+
+    // Create new flow session
     const flowSession = await this.service.setFlowSession(
       client.data.environment,
       client.data.externalUserId,
       client.data.externalCompanyId,
     );
+
+    // Cache the session ID for future requests
     client.data.flowSessionId = flowSession?.latestSession.id;
+
+    // Notify the client about the new flow session
     this.server.to(`user:${externalUserId}`).emit('set-flow-session', flowSession);
+
     return true;
   }
 
