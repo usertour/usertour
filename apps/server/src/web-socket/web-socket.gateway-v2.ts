@@ -11,12 +11,12 @@ import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError } from '@/common/errors';
 import {
-  TrackEventRequestV2,
-  UpsertCompanyRequestV2,
-  UpsertUserRequestV2,
-  UpsertUserResponseV2,
-  UpsertCompanyResponseV2,
-} from './web-socket-v2.dto';
+  TrackEventRequest,
+  UpsertCompanyRequest,
+  UpsertCompanyResponse,
+  UpsertUserRequest,
+  UpsertUserResponse,
+} from './web-socket.dto';
 import { WebSocketService } from './web-socket.service';
 
 @WsGateway({ namespace: '/v2' })
@@ -86,35 +86,23 @@ export class WebSocketGatewayV2 {
 
   @SubscribeMessage('upsert-user')
   async upsertBizUsers(
-    @MessageBody() body: UpsertUserRequestV2,
+    @MessageBody() body: Omit<UpsertUserRequest, 'token'>,
     @ConnectedSocket() client: Socket,
-  ): Promise<UpsertUserResponseV2> {
+  ): Promise<UpsertUserResponse> {
     const environment = client.data.environment;
     this.logger.log(`Upserting user ${body.userId} in environment ${environment.id}`);
 
-    // Convert V2 request to V1 format for service compatibility
-    const v1Request = {
-      ...body,
-      token: client.handshake?.auth?.token || '',
-    };
-
-    return await this.service.upsertBizUsers(v1Request, environment);
+    return await this.service.upsertBizUsers(body, environment);
   }
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
-    @MessageBody() body: UpsertCompanyRequestV2,
+    @MessageBody() body: Omit<UpsertCompanyRequest, 'token'>,
     @ConnectedSocket() client: Socket,
-  ): Promise<UpsertCompanyResponseV2> {
+  ): Promise<UpsertCompanyResponse> {
     const environment = client.data.environment;
 
-    // Convert V2 request to V1 format for service compatibility
-    const v1Request = {
-      ...body,
-      token: client.handshake?.auth?.token || '',
-    };
-
-    const result = await this.service.upsertBizCompanies(v1Request, environment);
+    const result = await this.service.upsertBizCompanies(body, environment);
 
     // Store company info in socket data for future use
     if (result) {
@@ -127,17 +115,10 @@ export class WebSocketGatewayV2 {
 
   @SubscribeMessage('track-event')
   async trackEvent(
-    @MessageBody() body: TrackEventRequestV2,
+    @MessageBody() body: Omit<TrackEventRequest, 'token'>,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
-
-    // Convert V2 request to V1 format for service compatibility
-    const v1Request = {
-      ...body,
-      token: client.handshake?.auth?.token || '',
-    };
-
-    return Boolean(await this.service.trackEvent(v1Request, environment));
+    return Boolean(await this.service.trackEvent(body, environment));
   }
 }

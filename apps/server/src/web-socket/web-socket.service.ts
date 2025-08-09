@@ -1072,7 +1072,7 @@ export class WebSocketService {
    * @returns The upserted business users
    */
   async upsertBizUsers(
-    data: UpsertUserRequest,
+    data: Omit<UpsertUserRequest, 'token'>,
     environment: Environment,
   ): Promise<UpsertUserResponse> {
     const { userId, attributes } = data;
@@ -1085,7 +1085,7 @@ export class WebSocketService {
    * @returns The upserted business companies
    */
   async upsertBizCompanies(
-    data: UpsertCompanyRequest,
+    data: Omit<UpsertCompanyRequest, 'token'>,
     environment: Environment,
   ): Promise<UpsertCompanyResponse> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
@@ -1191,7 +1191,6 @@ export class WebSocketService {
 
       await this.trackEvent(
         {
-          token: data.token,
           userId: String(externalUserId),
           eventName,
           sessionId: session.id,
@@ -1286,7 +1285,10 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
+  async trackEvent(
+    data: Omit<TrackEventRequest, 'token'>,
+    environment: Environment,
+  ): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
