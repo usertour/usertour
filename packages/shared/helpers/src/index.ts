@@ -1,5 +1,4 @@
 export * from './convert-settings';
-export { isMatchUrlPattern, conditionsIsSame, isEqual } from './condition';
 export * from './type-utils';
 export * from './content-settings';
 export * from './error';
@@ -24,4 +23,7 @@ export {
   activedRulesConditions,
   findLatestEvent,
   isActive,
+  isMatchUrlPattern,
+  conditionsIsSame,
+  isEqual,
 } from './conditions';
