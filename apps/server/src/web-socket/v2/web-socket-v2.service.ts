@@ -30,7 +30,6 @@ import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
-  ConfigRequest,
   ConfigResponse,
   ContentResponse,
   CreateSessionRequest,
@@ -82,11 +81,11 @@ export class WebSocketV2Service {
   ) {}
 
   /**
-   * Get configuration settings based on environment token
-   * @param body - Request body containing environment token
+   * Get configuration settings based on environment
+   * @param environment - Environment context
    * @returns Configuration object with plan type and branding settings
    */
-  async getConfig(body: ConfigRequest, environment: Environment): Promise<ConfigResponse> {
+  async getConfig(environment: Environment): Promise<ConfigResponse> {
     try {
       const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
 
@@ -99,7 +98,6 @@ export class WebSocketV2Service {
       this.logger.error({
         message: `Error getting config: ${error.message}`,
         stack: error.stack,
-        body,
       });
       return {
         removeBranding: false,
@@ -1643,7 +1641,7 @@ export class WebSocketV2Service {
     try {
       // Get config and themes in parallel
       const [config, themes] = await Promise.all([
-        this.getConfig(body, environment),
+        this.getConfig(environment),
         this.listThemes(body, environment),
       ]);
 
@@ -1711,12 +1709,7 @@ export class WebSocketV2Service {
     const latestStepNumber = findLatestStepNumber(sessionWithEvents.bizEvent);
     const steps = flow.steps;
     const currentStep = steps[latestStepNumber >= 0 ? latestStepNumber : 0];
-    const config = await this.getConfig(
-      {
-        token: environment.token,
-      },
-      environment,
-    );
+    const config = await this.getConfig(environment);
 
     return {
       id: session.id,
