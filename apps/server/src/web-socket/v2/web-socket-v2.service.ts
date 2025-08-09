@@ -2,15 +2,6 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import {
-  EventAttributes,
-  UserAttributes,
-  CompanyAttributes,
-  SDKContent,
-  ContentDataType,
-} from '@usertour/types';
-import { ContentType } from '@/content/models/content.model';
-import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -31,7 +22,6 @@ import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
   ConfigResponse,
-  ContentResponse,
   CreateSessionRequest,
   ListContentsRequest,
   ListThemesRequest,
@@ -45,12 +35,23 @@ import {
   GetProjectSettingsResponse,
 } from '../web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
-import { BizEvents } from '@usertour/types';
+import {
+  EventAttributes,
+  UserAttributes,
+  CompanyAttributes,
+  BizEvents,
+  ContentConfigObject,
+  RulesCondition,
+  ChecklistData,
+  ContentDataType,
+  Step as SDKStep,
+} from '@usertour/types';
 import { findLatestStepNumber } from '@/utils/content-utils';
-import { filterAutoStartContent } from '@/utils/conditions';
+import { filterAutoStartContent, flowIsDismissed } from '@/utils/conditions';
 import { SDKContentSession } from './web-socket-v2.dto';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
+import { UnionContent } from '@/common/types/content';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -209,6 +210,8 @@ export class WebSocketV2Service {
           enabledHideRules: false,
           autoStartRules: [],
           hideRules: [],
+          autoStartRulesSetting: {},
+          hideRulesSetting: {},
         };
 
     const autoStartRules =
@@ -248,7 +251,7 @@ export class WebSocketV2Service {
   async listContent(
     body: Pick<ListContentsRequest, 'userId' | 'companyId'>,
     environment: Environment,
-  ): Promise<ContentResponse[]> {
+  ): Promise<UnionContent[]> {
     try {
       const { userId: externalUserId, companyId: externalCompanyId } = body;
       const environmentId = environment.id;
@@ -898,11 +901,11 @@ export class WebSocketV2Service {
    */
   async getDismissedSessions(content: Content, bizUserId: string): Promise<number> {
     let codeName = '';
-    if (content.type === ContentType.FLOW) {
+    if (content.type === ContentDataType.FLOW) {
       codeName = BizEvents.FLOW_ENDED;
-    } else if (content.type === ContentType.LAUNCHER) {
+    } else if (content.type === ContentDataType.LAUNCHER) {
       codeName = BizEvents.LAUNCHER_DISMISSED;
-    } else if (content.type === ContentType.CHECKLIST) {
+    } else if (content.type === ContentDataType.CHECKLIST) {
       codeName = BizEvents.CHECKLIST_DISMISSED;
     }
     return await this.prisma.bizSession.count({
@@ -929,11 +932,11 @@ export class WebSocketV2Service {
    */
   async getCompletedSessions(content: Content, bizUserId: string): Promise<number> {
     let codeName = '';
-    if (content.type === ContentType.FLOW) {
+    if (content.type === ContentDataType.FLOW) {
       codeName = BizEvents.FLOW_COMPLETED;
-    } else if (content.type === ContentType.LAUNCHER) {
+    } else if (content.type === ContentDataType.LAUNCHER) {
       codeName = BizEvents.LAUNCHER_ACTIVATED;
-    } else if (content.type === ContentType.CHECKLIST) {
+    } else if (content.type === ContentDataType.CHECKLIST) {
       codeName = BizEvents.CHECKLIST_COMPLETED;
     }
     return await this.prisma.bizSession.count({
@@ -1166,11 +1169,13 @@ export class WebSocketV2Service {
     });
 
     // If the content is a flow or checklist, create a start event
-    if (content.type === ContentType.FLOW || content.type === ContentType.CHECKLIST) {
+    if (content.type === ContentDataType.FLOW || content.type === ContentDataType.CHECKLIST) {
       // Always create start event when session is created
       const startReason = reason || 'auto_start';
       const eventName =
-        content.type === ContentType.FLOW ? BizEvents.FLOW_STARTED : BizEvents.CHECKLIST_STARTED;
+        content.type === ContentDataType.FLOW
+          ? BizEvents.FLOW_STARTED
+          : BizEvents.CHECKLIST_STARTED;
 
       // Use trackEvent to ensure consistent event parameters
       const baseEventData = {
@@ -1180,7 +1185,7 @@ export class WebSocketV2Service {
       };
 
       const eventData =
-        content.type === ContentType.FLOW
+        content.type === ContentDataType.FLOW
           ? {
               ...baseEventData,
               [EventAttributes.FLOW_START_REASON]: startReason,
@@ -1411,7 +1416,7 @@ export class WebSocketV2Service {
       },
       userProperties: bizUser.data as Record<string, any>,
     };
-    if (bizSession.content.type === ContentType.FLOW) {
+    if (bizSession.content.type === ContentDataType.FLOW) {
       trackEventData.eventProperties = {
         ...trackEventData.eventProperties,
         [EventAttributes.FLOW_ID]: bizSession.content.id,
@@ -1596,7 +1601,7 @@ export class WebSocketV2Service {
     attributes: Attribute[],
     contentSession: ContentSession,
     externalCompanyId?: string,
-  ): Promise<ContentResponse> {
+  ): Promise<UnionContent> {
     if (!version) {
       return null;
     }
@@ -1604,7 +1609,7 @@ export class WebSocketV2Service {
     // Process config and data in parallel
     const [config, processedData, processedSteps] = await Promise.all([
       this.getProcessedConfig(version, environment, attributes, bizUser, externalCompanyId),
-      content.type === ContentType.CHECKLIST
+      content.type === ContentDataType.CHECKLIST
         ? this.activedChecklistConditions(
             version.data as unknown as ChecklistData,
             environment,
@@ -1621,7 +1626,7 @@ export class WebSocketV2Service {
       data: processedData as any,
       steps: processedSteps,
       config,
-      type: content.type as ContentType,
+      type: content.type as ContentDataType,
       name: content.name,
       latestSession: contentSession.latestSession,
       totalSessions: contentSession.totalSessions,
@@ -1708,28 +1713,32 @@ export class WebSocketV2Service {
       environment,
     );
     if (contents.length === 0) return null;
-    const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
+    const flows = filterAutoStartContent(contents, ContentDataType.FLOW);
     if (flows.length === 0) return null;
     const flow = flows[0];
 
-    // const userClientContext = await this.getUserClientContext(environment, externalUserId);
-
-    const session = await this.createSession(
-      {
-        userId: externalUserId,
-        contentId: flow.contentId,
-        companyId: externalCompanyId,
-        reason: 'auto_start',
-        context: {},
-      },
-      environment,
-    );
-    if (!session) return null;
+    let sessionId: string;
+    if (flow.latestSession && !flowIsDismissed(flow.latestSession)) {
+      sessionId = flow.latestSession.id;
+    } else {
+      const session = await this.createSession(
+        {
+          userId: externalUserId,
+          contentId: flow.contentId,
+          companyId: externalCompanyId,
+          reason: 'auto_start',
+          context: {},
+        },
+        environment,
+      );
+      if (!session) return null;
+      sessionId = session.id;
+    }
 
     // Batch fetch latest sessions for all contents using distinct
     const sessionWithEvents = await this.prisma.bizSession.findUnique({
       where: {
-        id: session.id,
+        id: sessionId,
         deleted: false,
       },
       include: { bizEvent: { include: { event: true } } },
@@ -1740,7 +1749,7 @@ export class WebSocketV2Service {
     const config = await this.getConfig(environment);
 
     return {
-      id: session.id,
+      id: sessionId,
       type: ContentDataType.FLOW,
       content: {
         id: flow.contentId,
@@ -1751,16 +1760,18 @@ export class WebSocketV2Service {
           removeBranding: config.removeBranding,
         },
       },
+      draftMode: false,
+      data: [],
       version: {
         id: flow.id,
         config: flow.config,
         data: flow.data,
-        steps: flow.steps,
+        steps: flow.steps as unknown as SDKStep[],
       },
       currentStep: {
         cvid: currentStep.cvid,
         id: currentStep.id,
       },
-    } as SDKContentSession;
+    };
   }
 }

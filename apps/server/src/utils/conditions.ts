@@ -1,14 +1,10 @@
 import {
-  BizEvent,
   BizEvents,
   ContentDataType,
   ContentConditionLogic,
-  ContentSession,
   Frequency,
   FrequencyUnits,
   RulesCondition,
-  SDKContent,
-  BizSession,
   ContentPriority,
   RulesType,
 } from '@usertour/types';
@@ -21,6 +17,8 @@ import {
   isBefore,
 } from 'date-fns';
 import isEqual from 'fast-deep-equal';
+import { UnionContent, UnionContentSession } from '@/common/types/content';
+import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -55,7 +53,7 @@ export const isActiveRulesByCurrentTime = (rules: RulesCondition) => {
 
 const isActivedContentRulesCondition = (
   rules: RulesCondition,
-  contentSession: ContentSession,
+  contentSession: UnionContentSession,
 ): boolean => {
   const { contentId, logic } = rules.data;
   const { latestSession, seenSessions, completedSessions } = contentSession;
@@ -128,7 +126,7 @@ export const activedRulesConditions = async (
 
 export const activedContentRulesConditions = async (
   conditions: RulesCondition[],
-  contents: SDKContent[],
+  contents: UnionContent[],
 ) => {
   const rulesCondition: RulesCondition[] = [...conditions];
   for (let j = 0; j < rulesCondition.length; j++) {
@@ -158,8 +156,8 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const activedContentCondition = async (contents: SDKContent[]) => {
-  const _contents = JSON.parse(JSON.stringify(contents)) as SDKContent[];
+export const activedContentCondition = async (contents: UnionContent[]) => {
+  const _contents = JSON.parse(JSON.stringify(contents)) as UnionContent[];
   for (let index = 0; index < _contents.length; index++) {
     const content = _contents[index];
     const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = content.config;
@@ -187,7 +185,7 @@ export const isActive = (autoStartRules: RulesCondition[]): boolean => {
   return operator === 'and' ? actives.length === autoStartRules.length : actives.length > 0;
 };
 
-export const isActiveContent = (content: SDKContent) => {
+export const isActiveContent = (content: UnionContent) => {
   const { enabledAutoStartRules, autoStartRules } = content.config;
   if (!enabledAutoStartRules || !isActive(autoStartRules)) {
     return false;
@@ -195,7 +193,7 @@ export const isActiveContent = (content: SDKContent) => {
   return true;
 };
 
-const priorityCompare = (a: SDKContent, b: SDKContent) => {
+const priorityCompare = (a: UnionContent, b: UnionContent) => {
   const a1 = a?.config?.autoStartRulesSetting?.priority;
   const a2 = b?.config?.autoStartRulesSetting?.priority;
   if (!a1 || !a2) {
@@ -212,7 +210,7 @@ const priorityCompare = (a: SDKContent, b: SDKContent) => {
   return 0;
 };
 
-export const filterAutoStartContent = (contents: SDKContent[], type: string) => {
+export const filterAutoStartContent = (contents: UnionContent[], type: string) => {
   return contents
     .filter((content) => {
       const isActive = isActiveContent(content);
@@ -222,7 +220,7 @@ export const filterAutoStartContent = (contents: SDKContent[], type: string) => 
     .sort(priorityCompare);
 };
 
-export const isHasActivedContents = (source: SDKContent[], dest: SDKContent[]) => {
+export const isHasActivedContents = (source: UnionContent[], dest: UnionContent[]) => {
   for (let index = 0; index < source.length; index++) {
     const content1 = source[index];
     const content2 = dest.find((c) => c.id === content1.id);
@@ -236,7 +234,7 @@ export const isHasActivedContents = (source: SDKContent[], dest: SDKContent[]) =
   return false;
 };
 
-export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
+export const isSameContents = (source: UnionContent[], dest: UnionContent[]) => {
   if (!source || !dest || source.length !== dest.length) {
     return false;
   }
@@ -254,11 +252,11 @@ export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
 };
 
 const getLatestEvent = (
-  currentContent: SDKContent,
-  contents: SDKContent[],
+  currentContent: UnionContent,
+  contents: UnionContent[],
   eventCodeName: string,
 ) => {
-  const bizEvents: BizEvent[] = [];
+  const bizEvents: BizEventWithEvent[] = [];
   const contentId = currentContent.id;
   const contentType = currentContent.type;
   for (let index = 0; index < contents.length; index++) {
@@ -274,7 +272,7 @@ const getLatestEvent = (
   return findLatestEvent(bizEvents);
 };
 
-export const findLatestEvent = (bizEvents: BizEvent[]) => {
+export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
   const initialValue = bizEvents[0];
   const lastEvent = bizEvents.reduce(
     (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
@@ -338,29 +336,29 @@ const isGreaterThenDuration = (
   }
 };
 
-export const checklistIsDimissed = (latestSession?: BizSession) => {
+export const checklistIsDimissed = (latestSession?: BizSessionWithEvents) => {
   return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
   );
 };
 
-export const flowIsDismissed = (latestSession?: BizSession) => {
+export const flowIsDismissed = (latestSession?: BizSessionWithEvents) => {
   return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
 };
 
-export const flowIsSeen = (latestSession?: BizSession) => {
+export const flowIsSeen = (latestSession?: BizSessionWithEvents) => {
   return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
   );
 };
 
-export const checklistIsSeen = (latestSession?: BizSession) => {
+export const checklistIsSeen = (latestSession?: BizSessionWithEvents) => {
   return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
   );
 };
 
-export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
+export const isValidContent = (content: UnionContent, contents: UnionContent[]) => {
   const now = new Date();
   if (content.type === ContentDataType.FLOW) {
     // if the content is a flow, it must have a steps
@@ -427,7 +425,7 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const showEvents = contentEvents?.filter(
     (e) =>
       e?.event?.codeName === showEventName &&
-      (contentType === ContentDataType.FLOW ? e?.data?.flow_step_number === 0 : true),
+      (contentType === ContentDataType.FLOW ? (e?.data as any)?.flow_step_number === 0 : true),
   );
   if (!showEvents || showEvents.length === 0) {
     return true;

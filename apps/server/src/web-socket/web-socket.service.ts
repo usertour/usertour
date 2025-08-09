@@ -2,14 +2,7 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import {
-  EventAttributes,
-  UserAttributes,
-  CompanyAttributes,
-  SDKContent,
-  ContentDataType,
-} from '@usertour/types';
-import { ContentType } from '@/content/models/content.model';
+import { EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
@@ -47,10 +40,8 @@ import {
 } from './web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import { BizEvents } from '@usertour/types';
-import { findLatestStepNumber } from '@/utils/content-utils';
-import { filterAutoStartContent } from '@/utils/conditions';
-import { SDKContentSession } from './v2/web-socket-v2.dto';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
+import { ContentType } from '@/content/models/content.model';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -1667,79 +1658,5 @@ export class WebSocketService {
         themes: [],
       };
     }
-  }
-
-  async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
-    if (!token) return null;
-    return await this.prisma.environment.findFirst({ where: { token } });
-  }
-
-  async setFlowSession(
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<SDKContentSession | null> {
-    const contents = await this.listContent(
-      { userId: externalUserId, companyId: externalCompanyId },
-      environment,
-    );
-    if (contents.length === 0) return null;
-    const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
-    if (flows.length === 0) return null;
-    const flow = flows[0];
-
-    const session = await this.createSession(
-      {
-        userId: externalUserId,
-        contentId: flow.contentId,
-        companyId: externalCompanyId,
-        reason: 'auto_start',
-        context: {},
-      },
-      environment,
-    );
-    if (!session) return null;
-
-    // Batch fetch latest sessions for all contents using distinct
-    const sessionWithEvents = await this.prisma.bizSession.findUnique({
-      where: {
-        id: session.id,
-        deleted: false,
-      },
-      include: { bizEvent: { include: { event: true } } },
-    });
-    const latestStepNumber = findLatestStepNumber(sessionWithEvents.bizEvent);
-    const steps = flow.steps;
-    const currentStep = steps[latestStepNumber >= 0 ? latestStepNumber : 0];
-    const config = await this.getConfig(
-      {
-        token: environment.token,
-      },
-      environment,
-    );
-
-    return {
-      id: session.id,
-      type: ContentDataType.FLOW,
-      content: {
-        id: flow.contentId,
-        name: flow.name,
-        type: flow.type as ContentDataType,
-        project: {
-          id: environment.projectId,
-          removeBranding: config.removeBranding,
-        },
-      },
-      version: {
-        id: flow.id,
-        config: flow.config,
-        data: flow.data,
-        steps: flow.steps,
-      },
-      currentStep: {
-        cvid: currentStep.cvid,
-        id: currentStep.id,
-      },
-    } as SDKContentSession;
   }
 }
