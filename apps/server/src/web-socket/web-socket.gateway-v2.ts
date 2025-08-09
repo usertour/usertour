@@ -1,4 +1,4 @@
-import { Logger, UseInterceptors } from '@nestjs/common';
+import { Logger, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   WebSocketGateway as WsGateway,
   WebSocketServer,
@@ -8,11 +8,19 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
-import { TrackEventRequest, UpsertCompanyRequest } from './web-socket.dto';
-import { UpsertUserRequest } from './web-socket.dto';
+import { WebSocketV2Guard } from './web-socket-v2.guard';
+import { SDKAuthenticationError } from '@/common/errors';
+import {
+  TrackEventRequestV2,
+  UpsertCompanyRequestV2,
+  UpsertUserRequestV2,
+  UpsertUserResponseV2,
+  UpsertCompanyResponseV2,
+} from './web-socket-v2.dto';
 import { WebSocketService } from './web-socket.service';
 
 @WsGateway({ namespace: '/v2' })
+@UseGuards(WebSocketV2Guard)
 @UseInterceptors(WebSocketPerformanceInterceptor)
 export class WebSocketGatewayV2 {
   @WebSocketServer()
@@ -22,7 +30,7 @@ export class WebSocketGatewayV2 {
 
   constructor(private readonly service: WebSocketService) {}
 
-  // Connection middleware: validate token and prepare rooms on handshake
+  // Connection-level authentication - runs during handshake
   async afterInit(server: Server): Promise<void> {
     this.server = server;
 
@@ -33,25 +41,27 @@ export class WebSocketGatewayV2 {
         const token = String(auth.token ?? '');
 
         if (!externalUserId || !token) {
-          return next(new Error('Missing auth params'));
+          return next(new SDKAuthenticationError());
         }
 
         const environment = await this.service.fetchEnvironmentByToken(token);
         if (!environment) {
-          return next(new Error('Invalid environment'));
+          return next(new SDKAuthenticationError());
         }
 
-        const envId = environment.id;
+        // Store validated data in socket
         socket.data.externalUserId = externalUserId;
-        socket.data.envId = envId;
+        socket.data.envId = environment.id;
         socket.data.environment = environment;
 
+        // Join user room for targeted messaging
         await socket.join(`user:${externalUserId}`);
 
+        this.logger.log(`Socket ${socket.id} authenticated for user ${externalUserId}`);
         return next();
       } catch (error: unknown) {
         this.logger.error(`Auth error: ${(error as Error)?.message ?? 'Unknown error'}`);
-        return next(new Error('Auth error'));
+        return next(new SDKAuthenticationError());
       }
     });
   }
@@ -76,23 +86,35 @@ export class WebSocketGatewayV2 {
 
   @SubscribeMessage('upsert-user')
   async upsertBizUsers(
-    @MessageBody() body: UpsertUserRequest,
+    @MessageBody() body: UpsertUserRequestV2,
     @ConnectedSocket() client: Socket,
-  ): Promise<boolean> {
+  ): Promise<UpsertUserResponseV2> {
     const environment = client.data.environment;
-    this.logger.log(
-      `Upserting user ${body.userId} in environment ${environment.id} with token ${body.token}`,
-    );
-    return Boolean(await this.service.upsertBizUsers(body, environment));
+    this.logger.log(`Upserting user ${body.userId} in environment ${environment.id}`);
+
+    // Convert V2 request to V1 format for service compatibility
+    const v1Request = {
+      ...body,
+      token: client.handshake?.auth?.token || '',
+    };
+
+    return await this.service.upsertBizUsers(v1Request, environment);
   }
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
-    @MessageBody() body: UpsertCompanyRequest,
+    @MessageBody() body: UpsertCompanyRequestV2,
     @ConnectedSocket() client: Socket,
-  ): Promise<boolean> {
+  ): Promise<UpsertCompanyResponseV2> {
     const environment = client.data.environment;
-    const result = await this.service.upsertBizCompanies(body, environment);
+
+    // Convert V2 request to V1 format for service compatibility
+    const v1Request = {
+      ...body,
+      token: client.handshake?.auth?.token || '',
+    };
+
+    const result = await this.service.upsertBizCompanies(v1Request, environment);
 
     // Store company info in socket data for future use
     if (result) {
@@ -100,15 +122,22 @@ export class WebSocketGatewayV2 {
       client.data.companyInfo = result;
     }
 
-    return Boolean(result);
+    return result;
   }
 
   @SubscribeMessage('track-event')
   async trackEvent(
-    @MessageBody() body: TrackEventRequest,
+    @MessageBody() body: TrackEventRequestV2,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
-    return Boolean(await this.service.trackEvent(body, environment));
+
+    // Convert V2 request to V1 format for service compatibility
+    const v1Request = {
+      ...body,
+      token: client.handshake?.auth?.token || '',
+    };
+
+    return Boolean(await this.service.trackEvent(v1Request, environment));
   }
 }

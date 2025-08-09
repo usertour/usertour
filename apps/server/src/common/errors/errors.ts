@@ -323,6 +323,14 @@ export class ValidationError extends OpenAPIError {
   }
 }
 
+export class SDKAuthenticationError extends BaseError {
+  code = 'E1018';
+  messageDict = {
+    en: 'SDK authentication failed',
+    'zh-CN': 'SDK 认证失败',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -360,6 +368,7 @@ const errorMap = {
   E1015: InvalidScopeError,
   E1016: InvalidOrderByError,
   E1017: ValidationError,
+  E1018: SDKAuthenticationError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
