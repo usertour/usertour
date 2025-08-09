@@ -23,6 +23,7 @@ import { LicenseService } from '@/license/license.service';
 import {
   ConfigResponse,
   CreateSessionRequest,
+  GoToStepRequest,
   ListContentsRequest,
   ListThemesRequest,
   TrackEventRequest,
@@ -42,6 +43,7 @@ import {
   ChecklistData,
   ContentDataType,
   Step as SDKStep,
+  StepSettings,
 } from '@usertour/types';
 import { findLatestStepNumber } from '@/utils/content-utils';
 import { filterAutoStartContent, flowIsDismissed } from '@/utils/conditions';
@@ -1787,5 +1789,65 @@ export class WebSocketV2Service {
       },
       environment,
     );
+  }
+
+  async goToStep(request: GoToStepRequest, environment: Environment): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: request.sessionId },
+      include: { bizUser: true },
+    });
+    if (!bizSession) return false;
+    const step = await this.prisma.step.findUnique({
+      where: { id: request.stepId },
+    });
+    if (!step) return false;
+    const version = await this.prisma.version.findUnique({
+      where: { id: step.versionId },
+      include: { steps: true },
+    });
+    if (!version) return false;
+    const stepIndex = version.steps.findIndex((s) => s.id === step.id);
+    if (stepIndex === -1) return false;
+
+    const total = version.steps.length;
+    const progress = Math.round(((stepIndex + 1) / total) * 100);
+
+    const isExplicitCompletionStep = (step.setting as StepSettings).explicitCompletionStep;
+    const isComplete = isExplicitCompletionStep
+      ? isExplicitCompletionStep
+      : stepIndex + 1 === total;
+
+    const eventData = {
+      [EventAttributes.FLOW_VERSION_ID]: version.id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
+      [EventAttributes.FLOW_STEP_CVID]: step.cvid,
+      [EventAttributes.FLOW_STEP_NAME]: step.name,
+      [EventAttributes.FLOW_STEP_PROGRESS]: Math.round(progress),
+    };
+
+    await this.trackEvent(
+      {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.FLOW_STEP_SEEN,
+        sessionId: bizSession.id,
+        eventData,
+      },
+      environment,
+    );
+
+    if (isComplete) {
+      await this.trackEvent(
+        {
+          userId: String(bizSession.bizUser.externalId),
+          eventName: BizEvents.FLOW_COMPLETED,
+          sessionId: bizSession.id,
+          eventData,
+        },
+        environment,
+      );
+    }
+
+    return true;
   }
 }

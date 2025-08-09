@@ -18,7 +18,7 @@ import {
   UpsertUserResponse,
 } from '../web-socket.dto';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { EndFlowRequest, StartFlowRequest } from './web-socket-v2.dto';
+import { EndFlowRequest, GoToStepRequest, StartFlowRequest } from './web-socket-v2.dto';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -166,6 +166,13 @@ export class WebSocketV2Gateway {
       body.reason,
       environment,
     );
+  }
+
+  async goToStep(
+    @MessageBody() body: GoToStepRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.goToStep(body, client.data.environment);
   }
 
   @SubscribeMessage('track-event')
