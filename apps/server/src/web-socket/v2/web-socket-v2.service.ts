@@ -1759,7 +1759,7 @@ export class WebSocketV2Service {
       },
     });
 
-    await this.cacheCurrentSession(session);
+    // await this.cacheCurrentSession(session);
 
     return session;
   }
