@@ -21,6 +21,7 @@ import {
   contentEndReason,
   contentStartReason,
   BizSession,
+  EventAttributes,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
@@ -309,6 +310,11 @@ export class App extends Evented {
           auth: {
             token,
             externalUserId: userId,
+            clientContext: {
+              [EventAttributes.PAGE_URL]: window?.location?.href,
+              [EventAttributes.VIEWPORT_WIDTH]: window?.innerWidth,
+              [EventAttributes.VIEWPORT_HEIGHT]: window?.innerHeight,
+            },
           },
         },
       });

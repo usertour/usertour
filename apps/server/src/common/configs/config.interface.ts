@@ -36,6 +36,7 @@ export interface Config {
   redis: {
     host: string;
     port: number;
+    username: string;
     password: string;
   };
   app: {

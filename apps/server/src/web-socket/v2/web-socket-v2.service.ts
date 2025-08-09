@@ -50,6 +50,7 @@ import { findLatestStepNumber } from '@/utils/content-utils';
 import { filterAutoStartContent } from '@/utils/conditions';
 import { SDKContentSession } from './web-socket-v2.dto';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
+import { RedisService } from '@/shared/redis.service';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -78,6 +79,7 @@ export class WebSocketV2Service {
     private integrationService: IntegrationService,
     private configService: ConfigService,
     private licenseService: LicenseService,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -1672,6 +1674,30 @@ export class WebSocketV2Service {
     return await this.prisma.environment.findFirst({ where: { token } });
   }
 
+  async updateUserClientContext(
+    environment: Environment,
+    externalUserId: string,
+    clientContext: Record<string, any>,
+    externalCompanyId?: string,
+  ): Promise<void> {
+    const key = `user_context:${environment.id}:${externalUserId}`;
+    await this.redisService.setex(
+      key,
+      60 * 60 * 24,
+      JSON.stringify({ externalUserId, externalCompanyId, clientContext }),
+    );
+  }
+
+  async getUserClientContext(
+    environment: Environment,
+    externalUserId: string,
+  ): Promise<Record<string, any> | null> {
+    const key = `user_context:${environment.id}:${externalUserId}`;
+    const value = await this.redisService.get(key);
+    if (!value) return null;
+    return JSON.parse(value);
+  }
+
   async setFlowSession(
     environment: Environment,
     externalUserId: string,
@@ -1685,6 +1711,8 @@ export class WebSocketV2Service {
     const flows = filterAutoStartContent(contents as unknown as SDKContent[], ContentType.FLOW);
     if (flows.length === 0) return null;
     const flow = flows[0];
+
+    // const userClientContext = await this.getUserClientContext(environment, externalUserId);
 
     const session = await this.createSession(
       {

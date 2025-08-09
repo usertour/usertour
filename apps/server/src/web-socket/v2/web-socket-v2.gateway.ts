@@ -39,6 +39,7 @@ export class WebSocketV2Gateway {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
         const externalUserId = String(auth.externalUserId ?? '');
         const token = String(auth.token ?? '');
+        const clientContext = auth.clientContext as Record<string, any>;
 
         if (!externalUserId || !token) {
           return next(new SDKAuthenticationError());
@@ -47,6 +48,10 @@ export class WebSocketV2Gateway {
         const environment = await this.service.fetchEnvironmentByToken(token);
         if (!environment) {
           return next(new SDKAuthenticationError());
+        }
+
+        if (clientContext) {
+          await this.service.updateUserClientContext(environment, externalUserId, clientContext);
         }
 
         // Store validated data in socket

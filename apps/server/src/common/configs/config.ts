@@ -38,6 +38,7 @@ const config: Config = {
   redis: {
     host: process.env.Redis_HOST,
     port: process.env.Redis_PORT ? Number.parseInt(process.env.Redis_PORT) : 6379,
+    username: process.env.Redis_USER,
     password: process.env.Redis_PASS,
   },
   app: {

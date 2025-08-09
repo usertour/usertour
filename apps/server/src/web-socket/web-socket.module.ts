@@ -7,9 +7,10 @@ import { IntegrationModule } from '@/integration/integration.module';
 import { LicenseModule } from '@/license/license.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
+import { SharedModule } from '@/shared/shared.module';
 
 @Module({
-  imports: [BizModule, IntegrationModule, LicenseModule],
+  imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
   providers: [
     WebSocketGateway,
     WebSocketService,

@@ -31,6 +31,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { IntegrationModule } from './integration/integration.module';
 import { LicenseModule } from './license/license.module';
+import { SharedModule } from './shared/shared.module';
 import { loggingMiddleware } from 'nestjs-prisma';
 import { Logger } from '@nestjs/common';
 
@@ -125,6 +126,7 @@ import { Logger } from '@nestjs/common';
     IntegrationModule,
     LicenseModule,
     OpenAPIModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],
