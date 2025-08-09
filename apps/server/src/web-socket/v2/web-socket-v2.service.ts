@@ -52,7 +52,7 @@ import { filterAutoStartContent, flowIsDismissed } from '@/utils/conditions';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
-import { UnionContent, UnionContentSession } from '@/common/types/content';
+import { UnionContentVersion, UnionContentSession } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 
@@ -255,7 +255,7 @@ export class WebSocketV2Service {
   async listContent(
     body: Pick<ListContentsRequest, 'userId' | 'companyId'>,
     environment: Environment,
-  ): Promise<UnionContent[]> {
+  ): Promise<UnionContentVersion[]> {
     try {
       const { userId: externalUserId, companyId: externalCompanyId } = body;
       const environmentId = environment.id;
@@ -1603,7 +1603,7 @@ export class WebSocketV2Service {
     attributes: Attribute[],
     contentSession: UnionContentSession,
     externalCompanyId?: string,
-  ): Promise<UnionContent> {
+  ): Promise<UnionContentVersion> {
     if (!version) {
       return null;
     }
@@ -1686,30 +1686,30 @@ export class WebSocketV2Service {
     contentId?: string,
     stepIndex?: number,
   ): Promise<SDKContentSession | null> {
-    const contents = await this.listContent(
+    const contentVersions = await this.listContent(
       { userId: externalUserId, companyId: externalCompanyId },
       environment,
     );
-    if (contents.length === 0) return null;
-    let content: UnionContent;
+    if (contentVersions.length === 0) return null;
+    let contentVersion: UnionContentVersion;
     if (contentId) {
-      content = contents.find((c) => c.id === contentId);
-      if (!content) return null;
+      contentVersion = contentVersions.find((c) => c.id === contentId);
+      if (!contentVersion) return null;
     } else {
-      const flows = filterAutoStartContent(contents, ContentDataType.FLOW);
+      const flows = filterAutoStartContent(contentVersions, ContentDataType.FLOW);
       if (flows.length === 0) return null;
-      content = flows[0];
+      contentVersion = flows[0];
     }
     let sessionId: string;
     let stepIndexInSession = 0;
-    if (content.latestSession && !flowIsDismissed(content.latestSession)) {
-      sessionId = content.latestSession.id;
-      stepIndexInSession = Math.max(findLatestStepNumber(content.latestSession.bizEvent), 0);
+    if (contentVersion.latestSession && !flowIsDismissed(contentVersion.latestSession)) {
+      sessionId = contentVersion.latestSession.id;
+      stepIndexInSession = Math.max(findLatestStepNumber(contentVersion.latestSession.bizEvent), 0);
     } else {
       const session = await this.createSession(
         {
           userId: externalUserId,
-          contentId: content.id,
+          contentId: contentVersion.id,
           companyId: externalCompanyId,
           reason: 'auto_start',
           context: {},
@@ -1720,7 +1720,7 @@ export class WebSocketV2Service {
       sessionId = session.id;
     }
 
-    const steps = content.steps;
+    const steps = contentVersion.steps;
     const currentStepIndex = isUndefined(stepIndex) ? stepIndexInSession : stepIndex;
     const currentStep = steps[currentStepIndex ?? 0];
     const config = await this.getConfig(environment);
@@ -1729,9 +1729,9 @@ export class WebSocketV2Service {
       id: sessionId,
       type: ContentDataType.FLOW,
       content: {
-        id: content.id,
-        name: content.name,
-        type: content.type as ContentDataType,
+        id: contentVersion.contentId,
+        name: contentVersion.name,
+        type: contentVersion.type as ContentDataType,
         project: {
           id: environment.projectId,
           removeBranding: config.removeBranding,
@@ -1740,10 +1740,10 @@ export class WebSocketV2Service {
       draftMode: false,
       data: [],
       version: {
-        id: content.id,
-        config: content.config,
-        data: content.data,
-        steps: content.steps as unknown as SDKStep[],
+        id: contentVersion.id,
+        config: contentVersion.config,
+        data: contentVersion.data,
+        steps: contentVersion.steps as unknown as SDKStep[],
       },
       currentStep: {
         cvid: currentStep.cvid,

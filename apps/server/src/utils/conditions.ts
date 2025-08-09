@@ -17,7 +17,7 @@ import {
   isBefore,
 } from 'date-fns';
 import isEqual from 'fast-deep-equal';
-import { UnionContent, UnionContentSession } from '@/common/types/content';
+import { UnionContentVersion, UnionContentSession } from '@/common/types/content';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 
 export const PRIORITIES = [
@@ -126,7 +126,7 @@ export const activedRulesConditions = async (
 
 export const activedContentRulesConditions = async (
   conditions: RulesCondition[],
-  contents: UnionContent[],
+  contents: UnionContentVersion[],
 ) => {
   const rulesCondition: RulesCondition[] = [...conditions];
   for (let j = 0; j < rulesCondition.length; j++) {
@@ -156,8 +156,8 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const activedContentCondition = async (contents: UnionContent[]) => {
-  const _contents = JSON.parse(JSON.stringify(contents)) as UnionContent[];
+export const activedContentCondition = async (contents: UnionContentVersion[]) => {
+  const _contents = JSON.parse(JSON.stringify(contents)) as UnionContentVersion[];
   for (let index = 0; index < _contents.length; index++) {
     const content = _contents[index];
     const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = content.config;
@@ -185,7 +185,7 @@ export const isActive = (autoStartRules: RulesCondition[]): boolean => {
   return operator === 'and' ? actives.length === autoStartRules.length : actives.length > 0;
 };
 
-export const isActiveContent = (content: UnionContent) => {
+export const isActiveContent = (content: UnionContentVersion) => {
   const { enabledAutoStartRules, autoStartRules } = content.config;
   if (!enabledAutoStartRules || !isActive(autoStartRules)) {
     return false;
@@ -193,7 +193,7 @@ export const isActiveContent = (content: UnionContent) => {
   return true;
 };
 
-const priorityCompare = (a: UnionContent, b: UnionContent) => {
+const priorityCompare = (a: UnionContentVersion, b: UnionContentVersion) => {
   const a1 = a?.config?.autoStartRulesSetting?.priority;
   const a2 = b?.config?.autoStartRulesSetting?.priority;
   if (!a1 || !a2) {
@@ -210,7 +210,7 @@ const priorityCompare = (a: UnionContent, b: UnionContent) => {
   return 0;
 };
 
-export const filterAutoStartContent = (contents: UnionContent[], type: string) => {
+export const filterAutoStartContent = (contents: UnionContentVersion[], type: string) => {
   return contents
     .filter((content) => {
       const isActive = isActiveContent(content);
@@ -220,7 +220,10 @@ export const filterAutoStartContent = (contents: UnionContent[], type: string) =
     .sort(priorityCompare);
 };
 
-export const isHasActivedContents = (source: UnionContent[], dest: UnionContent[]) => {
+export const isHasActivedContents = (
+  source: UnionContentVersion[],
+  dest: UnionContentVersion[],
+) => {
   for (let index = 0; index < source.length; index++) {
     const content1 = source[index];
     const content2 = dest.find((c) => c.id === content1.id);
@@ -234,7 +237,7 @@ export const isHasActivedContents = (source: UnionContent[], dest: UnionContent[
   return false;
 };
 
-export const isSameContents = (source: UnionContent[], dest: UnionContent[]) => {
+export const isSameContents = (source: UnionContentVersion[], dest: UnionContentVersion[]) => {
   if (!source || !dest || source.length !== dest.length) {
     return false;
   }
@@ -252,8 +255,8 @@ export const isSameContents = (source: UnionContent[], dest: UnionContent[]) => 
 };
 
 const getLatestEvent = (
-  currentContent: UnionContent,
-  contents: UnionContent[],
+  currentContent: UnionContentVersion,
+  contents: UnionContentVersion[],
   eventCodeName: string,
 ) => {
   const bizEvents: BizEventWithEvent[] = [];
@@ -358,7 +361,7 @@ export const checklistIsSeen = (latestSession?: BizSessionWithEvents) => {
   );
 };
 
-export const isValidContent = (content: UnionContent, contents: UnionContent[]) => {
+export const isValidContent = (content: UnionContentVersion, contents: UnionContentVersion[]) => {
   const now = new Date();
   if (content.type === ContentDataType.FLOW) {
     // if the content is a flow, it must have a steps

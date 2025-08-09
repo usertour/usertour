@@ -10,7 +10,7 @@ export type UnionContentSession = {
   seenSessions: number;
 };
 
-export type UnionContent = Omit<Version, 'data' | 'steps' | 'config'> &
+export type UnionContentVersion = Omit<Version, 'data' | 'steps' | 'config'> &
   Omit<UnionContentSession, 'contentId'> & {
     type: ContentDataType;
     name: string;
