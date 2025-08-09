@@ -30,10 +30,7 @@ import {
   UpsertCompanyResponse,
   UpsertUserRequest,
   UpsertUserResponse,
-  ContentSession,
-  GetProjectSettingsRequest,
-  GetProjectSettingsResponse,
-} from '../web-socket.dto';
+} from './web-socket-v2.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import {
   EventAttributes,
@@ -48,10 +45,10 @@ import {
 } from '@usertour/types';
 import { findLatestStepNumber } from '@/utils/content-utils';
 import { filterAutoStartContent, flowIsDismissed } from '@/utils/conditions';
-import { SDKContentSession } from './web-socket-v2.dto';
+import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
-import { UnionContent } from '@/common/types/content';
+import { UnionContent, UnionContentSession } from '@/common/types/content';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -1443,7 +1440,7 @@ export class WebSocketV2Service {
     externalUserId: string,
     sessionId: string,
     environment: Environment,
-  ): Promise<ContentSession | false> {
+  ): Promise<UnionContentSession | false> {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId: environment.id },
     });
@@ -1468,8 +1465,8 @@ export class WebSocketV2Service {
   private async getBatchContentSession(
     contentIds: string[],
     bizUserId: string,
-  ): Promise<Map<string, ContentSession>> {
-    const contentSessionMap = new Map<string, ContentSession>();
+  ): Promise<Map<string, UnionContentSession>> {
+    const contentSessionMap = new Map<string, UnionContentSession>();
 
     // Batch fetch latest sessions for all contents using distinct
     const latestSessions = await this.prisma.bizSession.findMany({
@@ -1599,7 +1596,7 @@ export class WebSocketV2Service {
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
-    contentSession: ContentSession,
+    contentSession: UnionContentSession,
     externalCompanyId?: string,
   ): Promise<UnionContent> {
     if (!version) {
@@ -1634,44 +1631,6 @@ export class WebSocketV2Service {
       completedSessions: contentSession.completedSessions,
       seenSessions: contentSession.seenSessions,
     };
-  }
-
-  /**
-   * Get project settings for an environment
-   * @param body - Request body containing environment token
-   * @returns Project settings including config and themes
-   */
-  async getProjectSettings(
-    body: GetProjectSettingsRequest,
-    environment: Environment,
-  ): Promise<GetProjectSettingsResponse> {
-    try {
-      // Get config and themes in parallel
-      const [config, themes] = await Promise.all([
-        this.getConfig(environment),
-        this.listThemes(body, environment),
-      ]);
-
-      return {
-        config,
-        themes,
-      };
-    } catch (error) {
-      this.logger.error({
-        message: `Error getting project settings: ${error.message}`,
-        stack: error.stack,
-        body,
-      });
-
-      // Return default values on error
-      return {
-        config: {
-          removeBranding: false,
-          planType: 'hobby',
-        },
-        themes: [],
-      };
-    }
   }
 
   async fetchEnvironmentByToken(token: string): Promise<Environment | null> {

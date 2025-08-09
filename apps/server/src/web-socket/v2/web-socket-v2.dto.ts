@@ -1,27 +1,82 @@
-import {
-  ChecklistData,
-  Content,
-  ContentDataType,
-  ContentVersion,
-  Step,
-  Theme,
-} from '@usertour/types';
+import { BizCompany, BizUser, Theme } from '@/common/types/schema';
 
-export type SDKContentSession = {
-  id: string;
-  type: ContentDataType;
-  draftMode: boolean;
-  data: any[];
-  content: Pick<Content, 'id' | 'name' | 'type'> & {
-    project: {
-      id: string;
-      removeBranding: boolean;
-    };
+// Base request interface with token
+export interface BaseRequest {
+  token: string;
+}
+
+// Config request and response
+export interface ConfigRequest extends BaseRequest {}
+
+export interface ConfigResponse {
+  removeBranding: boolean;
+  planType: string;
+}
+
+// List contents request
+export interface ListContentsRequest extends BaseRequest {
+  userId?: string;
+  companyId?: string;
+}
+
+// List themes request
+export interface ListThemesRequest extends BaseRequest {
+  userId?: string;
+  companyId?: string;
+}
+
+// Get project settings request and response
+export interface GetProjectSettingsRequest extends BaseRequest {
+  userId?: string;
+  companyId?: string;
+}
+
+export interface GetProjectSettingsResponse {
+  config: ConfigResponse;
+  themes: Theme[];
+}
+
+// Upsert user request
+export interface UpsertUserRequest extends BaseRequest {
+  userId: string;
+  attributes?: Record<string, any>;
+}
+
+// Upsert company request
+export interface UpsertCompanyRequest extends BaseRequest {
+  companyId: string;
+  userId: string;
+  attributes?: Record<string, any>;
+  membership?: Record<string, any>;
+}
+
+// Create session request
+export interface CreateSessionRequest extends BaseRequest {
+  userId: string;
+  contentId: string;
+  companyId?: string;
+  reason?: string;
+  context?: {
+    pageUrl?: string;
+    viewportWidth?: number;
+    viewportHeight?: number;
   };
-  expandPending?: boolean;
-  currentStep?: Pick<Step, 'id' | 'cvid'>;
-  version: Pick<ContentVersion, 'id' | 'steps' | 'config' | 'data'> & {
-    theme?: Pick<Theme, 'settings'>;
-    checklist?: ChecklistData;
-  };
-};
+}
+
+// Track event request
+export interface TrackEventRequest extends BaseRequest {
+  userId: string;
+  eventName: string;
+  sessionId: string;
+  eventData: Record<string, any>;
+}
+
+// Identity request (for testing)
+export interface IdentityRequest {
+  data: number;
+}
+
+// Response types
+export type UpsertUserResponse = BizUser | null;
+
+export type UpsertCompanyResponse = BizCompany | null;
