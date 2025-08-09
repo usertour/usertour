@@ -22,6 +22,7 @@ import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
   AnswerQuestionRequest,
+  ClickChecklistTaskRequest,
   ConfigResponse,
   CreateSessionRequest,
   GoToStepRequest,
@@ -1884,6 +1885,57 @@ export class WebSocketV2Service {
       },
       environment,
     );
+    return true;
+  }
+
+  async clickChecklistTask(
+    request: ClickChecklistTaskRequest,
+    environment: Environment,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: request.sessionId },
+      include: { bizUser: true },
+    });
+    if (!bizSession) return false;
+    const content = await this.prisma.content.findUnique({
+      where: { id: bizSession.contentId },
+      include: { contentOnEnvironments: true },
+    });
+    if (!content) return false;
+    const versionId = getPublishedVersionId(content, environment.id);
+    if (!versionId) return false;
+    const version = await this.prisma.version.findUnique({
+      where: { id: versionId },
+      include: { steps: true },
+    });
+    if (!version) return false;
+    const step = version.steps.find((s) =>
+      (s.data as unknown as ChecklistData)?.items?.find((item) => item.id === request.taskId),
+    );
+    if (!step) return false;
+    const checklistData = step.data as unknown as ChecklistData;
+    const checklistItem = checklistData.items.find((item) => item.id === request.taskId);
+    if (!checklistItem) return false;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+      [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
+      [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
+    };
+
+    await this.trackEvent(
+      {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.CHECKLIST_TASK_CLICKED,
+        sessionId: bizSession.id,
+        eventData,
+      },
+      environment,
+    );
+
     return true;
   }
 }

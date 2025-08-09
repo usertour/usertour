@@ -20,6 +20,7 @@ import {
 import { WebSocketV2Service } from './web-socket-v2.service';
 import {
   AnswerQuestionRequest,
+  ClickChecklistTaskRequest,
   EndFlowRequest,
   GoToStepRequest,
   StartFlowRequest,
@@ -173,6 +174,7 @@ export class WebSocketV2Gateway {
     );
   }
 
+  @SubscribeMessage('go-to-step')
   async goToStep(
     @MessageBody() body: GoToStepRequest,
     @ConnectedSocket() client: Socket,
@@ -180,11 +182,20 @@ export class WebSocketV2Gateway {
     return await this.service.goToStep(body, client.data.environment);
   }
 
+  @SubscribeMessage('answer-question')
   async answerQuestion(
     @MessageBody() body: AnswerQuestionRequest,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.answerQuestion(body, client.data.environment);
+  }
+
+  @SubscribeMessage('click-checklist-task')
+  async clickChecklistTask(
+    @MessageBody() body: ClickChecklistTaskRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.clickChecklistTask(body, client.data.environment);
   }
 
   @SubscribeMessage('track-event')

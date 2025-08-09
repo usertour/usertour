@@ -10,3 +10,7 @@ export type Step = Prisma.Step;
 export type Version = Prisma.Version;
 export type Theme = Prisma.Theme;
 export type Content = Prisma.Content;
+export type ContentOnEnvironment = Prisma.ContentOnEnvironment;
+export type ContentWithContentOnEnvironments = Content & {
+  contentOnEnvironments: ContentOnEnvironment[];
+};

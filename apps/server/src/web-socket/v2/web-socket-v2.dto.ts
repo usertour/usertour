@@ -93,6 +93,11 @@ export type AnswerQuestionRequest = {
   textAnswer?: string;
 };
 
+export type ClickChecklistTaskRequest = {
+  sessionId: string;
+  taskId: string;
+};
+
 // Response types
 export type UpsertUserResponse = BizUser | null;
 

@@ -1,11 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
-import { Prisma } from '@prisma/client';
-
-type ContentWithContentOnEnvironments = Prisma.ContentGetPayload<{
-  include: {
-    contentOnEnvironments: true;
-  };
-}>;
+import { ContentWithContentOnEnvironments } from '@/common/types/schema';
 
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
