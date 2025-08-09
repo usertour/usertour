@@ -106,7 +106,7 @@ export class WebSocketV2Gateway {
     const externalUserId = client.data.externalUserId;
 
     // Create new flow session
-    const flowSession = await this.service.getContentSession(
+    const flowSession = await this.service.setFlowSession(
       client.data.environment,
       client.data.externalUserId,
       client.data.externalCompanyId,

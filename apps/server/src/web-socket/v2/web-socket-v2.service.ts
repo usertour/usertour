@@ -1679,7 +1679,7 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
-  async getContentSession(
+  async setFlowSession(
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
@@ -1751,6 +1751,14 @@ export class WebSocketV2Service {
       },
     };
 
+    // Update session version to the latest version
+    await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: {
+        versionId: session.version.id,
+      },
+    });
+
     await this.cacheCurrentSession(session);
 
     return session;
@@ -1796,18 +1804,12 @@ export class WebSocketV2Service {
   async goToStep(request: GoToStepRequest, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: request.sessionId },
-      include: { bizUser: true },
+      include: { bizUser: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
-    const step = await this.prisma.step.findUnique({
-      where: { id: request.stepId },
-    });
+    const version = bizSession.version;
+    const step = version.steps.find((s) => s.id === request.stepId);
     if (!step) return false;
-    const version = await this.prisma.version.findUnique({
-      where: { id: step.versionId },
-      include: { steps: true },
-    });
-    if (!version) return false;
     const stepIndex = version.steps.findIndex((s) => s.id === step.id);
     if (stepIndex === -1) return false;
 
@@ -1894,21 +1896,11 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: request.sessionId },
-      include: { bizUser: true },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
-    const content = await this.prisma.content.findUnique({
-      where: { id: bizSession.contentId },
-      include: { contentOnEnvironments: true },
-    });
-    if (!content) return false;
-    const versionId = getPublishedVersionId(content, environment.id);
-    if (!versionId) return false;
-    const version = await this.prisma.version.findUnique({
-      where: { id: versionId },
-      include: { steps: true },
-    });
-    if (!version) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
     const step = version.steps.find((s) =>
       (s.data as unknown as ChecklistData)?.items?.find((item) => item.id === request.taskId),
     );
