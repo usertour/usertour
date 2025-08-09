@@ -1,15 +1,14 @@
-import { ContentType } from '@/content/models/content.model';
-import { ContentConfigObject } from '@/content/models/version.model';
 import {
   BizCompany,
-  BizEvent,
   BizSession,
   BizUser,
   Step,
   Version,
-  Event,
   Theme,
-} from '@prisma/client';
+  BizSessionWithEvents,
+} from '@/common/types/schema';
+import { ContentType } from '@/content/models/content.model';
+import { ContentConfigObject } from '@/content/models/version.model';
 
 // Base request interface with token
 export interface BaseRequest {
@@ -107,9 +106,6 @@ export type ContentSession = {
 };
 
 export type TrackEventResponse = ContentSession;
-
-export type BizEventWithEvent = BizEvent & { event: Event };
-export type BizSessionWithEvents = BizSession & { bizEvent: BizEventWithEvent[] };
 
 export type ContentResponse = Version & {
   type: ContentType;

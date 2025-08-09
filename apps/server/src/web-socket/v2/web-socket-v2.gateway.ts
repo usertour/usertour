@@ -7,7 +7,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
+import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError } from '@/common/errors';
 import {
@@ -16,19 +16,19 @@ import {
   UpsertCompanyResponse,
   UpsertUserRequest,
   UpsertUserResponse,
-} from './web-socket.dto';
-import { WebSocketService } from './web-socket.service';
+} from '../web-socket.dto';
+import { WebSocketV2Service } from './web-socket-v2.service';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
 @UseInterceptors(WebSocketPerformanceInterceptor)
-export class WebSocketGatewayV2 {
+export class WebSocketV2Gateway {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(WebSocketGatewayV2.name);
+  private readonly logger = new Logger(WebSocketV2Gateway.name);
 
-  constructor(private readonly service: WebSocketService) {}
+  constructor(private readonly service: WebSocketV2Service) {}
 
   // Connection-level authentication - runs during handshake
   async afterInit(server: Server): Promise<void> {
@@ -97,7 +97,7 @@ export class WebSocketGatewayV2 {
     );
 
     // Cache the session ID for future requests
-    client.data.flowSessionId = flowSession?.latestSession.id;
+    client.data.flowSessionId = flowSession.id;
 
     // Notify the client about the new flow session
     this.server.to(`user:${externalUserId}`).emit('set-flow-session', flowSession);

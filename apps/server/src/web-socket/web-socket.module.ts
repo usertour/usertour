@@ -5,7 +5,8 @@ import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import { BizModule } from '@/biz/biz.module';
 import { IntegrationModule } from '@/integration/integration.module';
 import { LicenseModule } from '@/license/license.module';
-import { WebSocketGatewayV2 } from './web-socket.gateway-v2';
+import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
+import { WebSocketV2Service } from './v2/web-socket-v2.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule],
@@ -13,8 +14,9 @@ import { WebSocketGatewayV2 } from './web-socket.gateway-v2';
     WebSocketGateway,
     WebSocketService,
     WebSocketPerformanceInterceptor,
-    WebSocketGatewayV2,
+    WebSocketV2Gateway,
+    WebSocketV2Service,
   ],
-  exports: [WebSocketGateway, WebSocketGatewayV2],
+  exports: [WebSocketGateway, WebSocketV2Gateway],
 })
 export class WebSocketModule {}

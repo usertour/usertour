@@ -44,12 +44,12 @@ import {
   ContentSession,
   GetProjectSettingsRequest,
   GetProjectSettingsResponse,
-} from './web-socket.dto';
+} from '../web-socket.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import { BizEvents } from '@usertour/types';
 import { findLatestStepNumber } from '@/utils/content-utils';
 import { filterAutoStartContent } from '@/utils/conditions';
-import { SDKContentSession } from './v2/web-socket-v2.dto';
+import { SDKContentSession } from './web-socket-v2.dto';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 
 const EVENT_CODE_MAP = {
@@ -71,8 +71,8 @@ interface SegmentDataItem {
 }
 
 @Injectable()
-export class WebSocketService {
-  private readonly logger = new Logger(WebSocketService.name);
+export class WebSocketV2Service {
+  private readonly logger = new Logger(WebSocketV2Service.name);
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
