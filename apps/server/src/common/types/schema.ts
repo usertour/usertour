@@ -14,3 +14,7 @@ export type ContentOnEnvironment = Prisma.ContentOnEnvironment;
 export type ContentWithContentOnEnvironments = Content & {
   contentOnEnvironments: ContentOnEnvironment[];
 };
+export type VersionWithStepsAndContent = Version & {
+  steps: Step[];
+  content: Content;
+};

@@ -17,7 +17,7 @@ import {
   isBefore,
 } from 'date-fns';
 import isEqual from 'fast-deep-equal';
-import { UnionContentVersion, UnionContentSession } from '@/common/types/content';
+import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { BizEventWithEvent } from '@/common/types/schema';
 import { BizSessionWithEvents } from '@/common/types/schema';
 import { isUndefined } from '@usertour/helpers';
@@ -55,7 +55,7 @@ export const isActiveRulesByCurrentTime = (rules: RulesCondition) => {
 
 const isActivedContentRulesCondition = (
   rules: RulesCondition,
-  contentSession: UnionContentSession,
+  contentSession: CustomContentSession,
 ): boolean => {
   const { contentId, logic } = rules.data;
   const { latestSession, seenSessions, completedSessions } = contentSession;
@@ -128,7 +128,7 @@ export const activedRulesConditions = async (
 
 export const activedContentRulesConditions = async (
   conditions: RulesCondition[],
-  contents: UnionContentVersion[],
+  contents: CustomContentVersion[],
 ) => {
   const rulesCondition: RulesCondition[] = [...conditions];
   for (let j = 0; j < rulesCondition.length; j++) {
@@ -137,15 +137,7 @@ export const activedContentRulesConditions = async (
       if (rules.type === RulesType.CONTENT) {
         const content = contents.find((c) => c.contentId === rules.data.contentId);
         if (content) {
-          const contentSession = {
-            contentId: content.contentId,
-            latestSession: content.latestSession,
-            totalSessions: content.totalSessions,
-            dismissedSessions: content.dismissedSessions,
-            completedSessions: content.completedSessions,
-            seenSessions: content.seenSessions,
-          };
-          rulesCondition[j].actived = isActivedContentRulesCondition(rules, contentSession);
+          rulesCondition[j].actived = isActivedContentRulesCondition(rules, content.session);
         }
       }
     } else if (rules.conditions) {
@@ -158,17 +150,19 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const activedContentCondition = async (contents: UnionContentVersion[]) => {
-  const _contents = JSON.parse(JSON.stringify(contents)) as UnionContentVersion[];
+export const activedContentCondition = async (contents: CustomContentVersion[]) => {
+  const _contents = JSON.parse(JSON.stringify(contents)) as CustomContentVersion[];
   for (let index = 0; index < _contents.length; index++) {
     const content = _contents[index];
-    const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = content.config;
+    const config = content.config;
+    const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = config;
     if (enabledAutoStartRules && autoStartRules && autoStartRules.length > 0) {
-      content.config.autoStartRules = await activedRulesConditions(autoStartRules);
+      config.autoStartRules = await activedRulesConditions(autoStartRules);
     }
     if (enabledHideRules && hideRules && hideRules.length > 0) {
-      content.config.hideRules = await activedRulesConditions(hideRules);
+      config.hideRules = await activedRulesConditions(hideRules);
     }
+    content.config = config;
   }
   return _contents;
 };
@@ -187,15 +181,16 @@ export const isActive = (autoStartRules: RulesCondition[]): boolean => {
   return operator === 'and' ? actives.length === autoStartRules.length : actives.length > 0;
 };
 
-export const isActiveContent = (content: UnionContentVersion) => {
-  const { enabledAutoStartRules, autoStartRules } = content.config;
+export const isActiveContent = (content: CustomContentVersion) => {
+  const config = content.config;
+  const { enabledAutoStartRules, autoStartRules } = config;
   if (!enabledAutoStartRules || !isActive(autoStartRules)) {
     return false;
   }
   return true;
 };
 
-const priorityCompare = (a: UnionContentVersion, b: UnionContentVersion) => {
+const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
   const a1 = a?.config?.autoStartRulesSetting?.priority;
   const a2 = b?.config?.autoStartRulesSetting?.priority;
   if (!a1 || !a2) {
@@ -213,8 +208,8 @@ const priorityCompare = (a: UnionContentVersion, b: UnionContentVersion) => {
 };
 
 export const isHasActivedContents = (
-  source: UnionContentVersion[],
-  dest: UnionContentVersion[],
+  source: CustomContentVersion[],
+  dest: CustomContentVersion[],
 ) => {
   for (let index = 0; index < source.length; index++) {
     const content1 = source[index];
@@ -229,7 +224,7 @@ export const isHasActivedContents = (
   return false;
 };
 
-export const isSameContents = (source: UnionContentVersion[], dest: UnionContentVersion[]) => {
+export const isSameContents = (source: CustomContentVersion[], dest: CustomContentVersion[]) => {
   if (!source || !dest || source.length !== dest.length) {
     return false;
   }
@@ -239,7 +234,9 @@ export const isSameContents = (source: UnionContentVersion[], dest: UnionContent
     if (!content2) {
       return false;
     }
-    if (!conditionsIsSame(content1.config.autoStartRules, content2.config.autoStartRules)) {
+    const config1 = content1.config;
+    const config2 = content2.config;
+    if (!conditionsIsSame(config1.autoStartRules, config2.autoStartRules)) {
       return false;
     }
   }
@@ -247,19 +244,19 @@ export const isSameContents = (source: UnionContentVersion[], dest: UnionContent
 };
 
 const getLatestEvent = (
-  currentContent: UnionContentVersion,
-  contents: UnionContentVersion[],
+  currentContent: CustomContentVersion,
+  contents: CustomContentVersion[],
   eventCodeName: string,
 ) => {
   const bizEvents: BizEventWithEvent[] = [];
   const contentId = currentContent.id;
-  const contentType = currentContent.type;
+  const contentType = currentContent.content.type;
   for (let index = 0; index < contents.length; index++) {
     const content = contents[index];
-    if (content.id === contentId || content.type !== contentType) {
+    if (content.id === contentId || content.content.type !== contentType) {
       continue;
     }
-    const sessionBizEvents = content.latestSession?.bizEvent;
+    const sessionBizEvents = content.session.latestSession?.bizEvent;
     if (sessionBizEvents && sessionBizEvents.length > 0) {
       bizEvents.push(...sessionBizEvents.filter((e) => e?.event?.codeName === eventCodeName));
     }
@@ -281,22 +278,22 @@ export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
   return lastEvent;
 };
 
-export const completeEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_COMPLETED,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_ACTIVATED,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_COMPLETED,
-};
+// const completeEventMapping = {
+//   [ContentDataType.FLOW]: BizEvents.FLOW_COMPLETED,
+//   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_ACTIVATED,
+//   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_COMPLETED,
+// };
 const showEventMapping = {
   [ContentDataType.FLOW]: BizEvents.FLOW_STEP_SEEN,
   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_SEEN,
   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_SEEN,
 };
 
-export const isDismissedEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
-};
+// const isDismissedEventMapping = {
+//   [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
+//   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
+//   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
+// };
 
 const isGreaterThenDuration = (
   dateLeft: Date,
@@ -331,9 +328,9 @@ const isGreaterThenDuration = (
   }
 };
 
-export const isValidContent = (content: UnionContentVersion, contents: UnionContentVersion[]) => {
+export const isValidContent = (content: CustomContentVersion, contents: CustomContentVersion[]) => {
   const now = new Date();
-  if (content.type === ContentDataType.FLOW) {
+  if (content.content.type === ContentDataType.FLOW) {
     // if the content is a flow, it must have a steps
     if (!content.steps || content.steps.length === 0) {
       return false;
@@ -350,8 +347,8 @@ export const isValidContent = (content: UnionContentVersion, contents: UnionCont
   }
 
   const { frequency, startIfNotComplete } = content.config.autoStartRulesSetting;
-  const completedSessions = content.completedSessions;
-  const dismissedSessions = content.dismissedSessions;
+  const completedSessions = content.session.completedSessions;
+  const dismissedSessions = content.session.dismissedSessions;
 
   // if the content is completed, it will not be shown again when startIfNotComplete is true
   if (startIfNotComplete && completedSessions > 0) {
@@ -363,14 +360,14 @@ export const isValidContent = (content: UnionContentVersion, contents: UnionCont
     return true;
   }
 
-  const contentType = content.type as
+  const contentType = content.content.type as
     | ContentDataType.FLOW
     | ContentDataType.LAUNCHER
     | ContentDataType.CHECKLIST;
 
   const lastEventName = showEventMapping[contentType];
   const lastEvent = getLatestEvent(content, contents, lastEventName);
-  const contentEvents = content.latestSession?.bizEvent;
+  const contentEvents = content.session.latestSession?.bizEvent;
 
   if (
     lastEvent &&
@@ -660,29 +657,29 @@ export const checklistIsSeen = (latestSession?: BizSessionWithEvents) => {
   );
 };
 
-export const filterAutoStartContent = (contents: UnionContentVersion[], type: string) => {
+export const filterAutoStartContent = (contents: CustomContentVersion[], type: string) => {
   return contents
     .filter((content) => {
       const isActive = isActiveContent(content);
       const isValid = isValidContent(content, contents);
-      return content.type === type && isActive && isValid;
+      return content.content.type === type && isActive && isValid;
     })
     .sort(priorityCompare);
 };
 
 export const findLatestActivatedContentVersion = (
-  contentVersions: UnionContentVersion[],
+  contentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-): UnionContentVersion | undefined => {
+): CustomContentVersion | undefined => {
   const activeContentVersions = contentVersions.filter((contentVersion) => {
     if (contentType === ContentDataType.CHECKLIST) {
-      return !checklistIsDimissed(contentVersion.latestSession);
+      return !checklistIsDimissed(contentVersion.session.latestSession);
     }
-    return !flowIsDismissed(contentVersion.latestSession);
+    return !flowIsDismissed(contentVersion.session.latestSession);
   });
 
   const contentVersionsWithValidSession = activeContentVersions.filter(
-    (contentVersion) => contentVersion.latestSession?.createdAt,
+    (contentVersion) => contentVersion.session.latestSession?.createdAt,
   );
 
   if (!contentVersionsWithValidSession.length) {
@@ -691,15 +688,15 @@ export const findLatestActivatedContentVersion = (
 
   return contentVersionsWithValidSession.sort(
     (a, b) =>
-      new Date(b.latestSession?.createdAt).getTime() -
-      new Date(a.latestSession?.createdAt).getTime(),
+      new Date(b.session.latestSession?.createdAt).getTime() -
+      new Date(a.session.latestSession?.createdAt).getTime(),
   )[0];
 };
 
 export const findLatestActivedAutoStartContent = (
-  contentVersions: UnionContentVersion[],
+  contentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-): UnionContentVersion | undefined => {
+): CustomContentVersion | undefined => {
   return findLatestActivatedContentVersion(
     filterAutoStartContent(contentVersions, contentType),
     contentType,
@@ -707,9 +704,9 @@ export const findLatestActivedAutoStartContent = (
 };
 
 export const findContentVersionByContentId = (
-  contentVersions: UnionContentVersion[],
+  contentVersions: CustomContentVersion[],
   contentId: string,
-): UnionContentVersion | undefined => {
+): CustomContentVersion | undefined => {
   return contentVersions.find((contentVersion) => contentVersion.contentId === contentId);
 };
 

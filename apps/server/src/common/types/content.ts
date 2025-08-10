@@ -1,7 +1,7 @@
-import { ContentConfigObject, ContentDataType } from '@usertour/types';
-import { BizSessionWithEvents, Step, Version } from './schema';
+import { BizSessionWithEvents, VersionWithStepsAndContent } from './schema';
+import { ContentConfigObject } from '@usertour/types';
 
-export type UnionContentSession = {
+export type CustomContentSession = {
   contentId: string;
   latestSession?: BizSessionWithEvents;
   totalSessions: number;
@@ -10,11 +10,7 @@ export type UnionContentSession = {
   seenSessions: number;
 };
 
-export type UnionContentVersion = Omit<Version, 'data' | 'steps' | 'config'> &
-  Omit<UnionContentSession, 'contentId'> & {
-    type: ContentDataType;
-    name: string;
-    data: any;
-    steps: Step[];
-    config: ContentConfigObject;
-  };
+export type CustomContentVersion = Omit<VersionWithStepsAndContent, 'config'> & {
+  session: CustomContentSession;
+  config: ContentConfigObject;
+};

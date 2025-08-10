@@ -58,7 +58,7 @@ import {
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
-import { UnionContentVersion, UnionContentSession } from '@/common/types/content';
+import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 
@@ -261,7 +261,7 @@ export class WebSocketV2Service {
   async listContent(
     body: Pick<ListContentsRequest, 'userId' | 'companyId'>,
     environment: Environment,
-  ): Promise<UnionContentVersion[]> {
+  ): Promise<CustomContentVersion[]> {
     try {
       const { userId: externalUserId, companyId: externalCompanyId } = body;
       const environmentId = environment.id;
@@ -1451,7 +1451,7 @@ export class WebSocketV2Service {
     externalUserId: string,
     sessionId: string,
     environment: Environment,
-  ): Promise<UnionContentSession | false> {
+  ): Promise<CustomContentSession | false> {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId: environment.id },
     });
@@ -1476,8 +1476,8 @@ export class WebSocketV2Service {
   private async getBatchContentSession(
     contentIds: string[],
     bizUserId: string,
-  ): Promise<Map<string, UnionContentSession>> {
-    const contentSessionMap = new Map<string, UnionContentSession>();
+  ): Promise<Map<string, CustomContentSession>> {
+    const contentSessionMap = new Map<string, CustomContentSession>();
 
     // Batch fetch latest sessions for all contents using distinct
     const latestSessions = await this.prisma.bizSession.findMany({
@@ -1607,9 +1607,9 @@ export class WebSocketV2Service {
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
-    contentSession: UnionContentSession,
+    contentSession: CustomContentSession,
     externalCompanyId?: string,
-  ): Promise<UnionContentVersion> {
+  ): Promise<CustomContentVersion> {
     if (!version) {
       return null;
     }
@@ -1634,13 +1634,8 @@ export class WebSocketV2Service {
       data: processedData as any,
       steps: processedSteps,
       config,
-      type: content.type as ContentDataType,
-      name: content.name,
-      latestSession: contentSession.latestSession,
-      totalSessions: contentSession.totalSessions,
-      dismissedSessions: contentSession.dismissedSessions,
-      completedSessions: contentSession.completedSessions,
-      seenSessions: contentSession.seenSessions,
+      content: content,
+      session: contentSession,
     };
   }
 
@@ -1720,7 +1715,7 @@ export class WebSocketV2Service {
       : findLatestActivedAutoStartContent(contentVersions, contentType);
     if (!contentVersion) return null;
 
-    let sessionId = findLatestSessionId(contentVersion.latestSession, contentType);
+    let sessionId = findLatestSessionId(contentVersion.session.latestSession, contentType);
     if (!sessionId) {
       const session = await this.createSession(
         {
@@ -1743,8 +1738,8 @@ export class WebSocketV2Service {
       type: contentType,
       content: {
         id: contentVersion.contentId,
-        name: contentVersion.name,
-        type: contentVersion.type as ContentDataType,
+        name: contentVersion.content.name,
+        type: contentVersion.content.type as ContentDataType,
         project: {
           id: environment.projectId,
           removeBranding: config.removeBranding,
@@ -1754,7 +1749,7 @@ export class WebSocketV2Service {
       data: [],
       version: {
         id: contentVersion.id,
-        config: contentVersion.config,
+        config: contentVersion.config as ContentConfigObject,
         data: [],
       },
     };
@@ -1763,7 +1758,7 @@ export class WebSocketV2Service {
     } else if (contentType === ContentDataType.FLOW) {
       const steps = contentVersion.steps;
       const currentStepIndex = isUndefined(stepIndex)
-        ? Math.max(findLatestStepNumber(contentVersion.latestSession.bizEvent), 0)
+        ? Math.max(findLatestStepNumber(contentVersion.session.latestSession.bizEvent), 0)
         : stepIndex;
       const currentStep = steps[currentStepIndex];
       session.version.steps = contentVersion.steps as unknown as SDKStep[];
