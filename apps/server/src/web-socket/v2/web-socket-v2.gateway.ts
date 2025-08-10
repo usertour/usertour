@@ -12,17 +12,17 @@ import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import {
-  TrackEventRequest,
-  UpsertCompanyRequest,
-  UpsertUserRequest,
-  AnswerQuestionRequest,
-  ClickChecklistTaskRequest,
-  EndFlowRequest,
-  GoToStepRequest,
-  HideChecklistRequest,
-  ShowChecklistRequest,
-  StartFlowRequest,
-  UpdateClientContextRequest,
+  TrackEventDto,
+  UpsertCompanyDto,
+  UpsertUserDto,
+  AnswerQuestionDto,
+  ClickChecklistTaskDto,
+  EndFlowDto,
+  GoToStepDto,
+  HideChecklistDto,
+  ShowChecklistDto,
+  UpdateClientContextDto,
+  StartFlowDto,
 } from './web-socket-v2.dto';
 import { ContentDataType } from '@usertour/types';
 
@@ -149,7 +149,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('upsert-user')
   async upsertBizUsers(
-    @MessageBody() body: UpsertUserRequest,
+    @MessageBody() body: UpsertUserDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
@@ -161,7 +161,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
-    @MessageBody() body: UpsertCompanyRequest,
+    @MessageBody() body: UpsertCompanyDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
@@ -179,7 +179,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('start-flow')
   async startFlow(
-    @MessageBody() body: StartFlowRequest,
+    @MessageBody() body: StartFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.setFlowSession(client, body.contentId, body.stepIndex);
@@ -187,7 +187,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-flow')
   async endFlow(
-    @MessageBody() body: EndFlowRequest,
+    @MessageBody() body: EndFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
@@ -206,7 +206,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('go-to-step')
   async goToStep(
-    @MessageBody() body: GoToStepRequest,
+    @MessageBody() body: GoToStepDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.goToStep(body, client.data.environment);
@@ -214,7 +214,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('answer-question')
   async answerQuestion(
-    @MessageBody() body: AnswerQuestionRequest,
+    @MessageBody() body: AnswerQuestionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.answerQuestion(body, client.data.environment);
@@ -222,7 +222,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('click-checklist-task')
   async clickChecklistTask(
-    @MessageBody() body: ClickChecklistTaskRequest,
+    @MessageBody() body: ClickChecklistTaskDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.clickChecklistTask(body, client.data.environment);
@@ -230,7 +230,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('hide-checklist')
   async hideChecklist(
-    @MessageBody() body: HideChecklistRequest,
+    @MessageBody() body: HideChecklistDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.hideChecklist(body, client.data.environment);
@@ -238,7 +238,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('show-checklist')
   async showChecklist(
-    @MessageBody() body: ShowChecklistRequest,
+    @MessageBody() body: ShowChecklistDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.showChecklist(body, client.data.environment);
@@ -246,7 +246,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('update-client-context')
   async updateClientContext(
-    @MessageBody() body: UpdateClientContextRequest,
+    @MessageBody() body: UpdateClientContextDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const externalUserId = client.data.externalUserId;
@@ -264,7 +264,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('track-event')
   async trackEvent(
-    @MessageBody() body: TrackEventRequest,
+    @MessageBody() body: TrackEventDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;

@@ -21,16 +21,16 @@ import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
-  AnswerQuestionRequest,
-  ClickChecklistTaskRequest,
   ProjectConfig,
-  CreateSessionRequest,
-  GoToStepRequest,
-  HideChecklistRequest,
-  ShowChecklistRequest,
-  TrackEventRequest,
-  UpsertCompanyRequest,
-  UpsertUserRequest,
+  CreateSessionDto,
+  UpsertUserDto,
+  UpsertCompanyDto,
+  TrackEventDto,
+  GoToStepDto,
+  AnswerQuestionDto,
+  ClickChecklistTaskDto,
+  HideChecklistDto,
+  ShowChecklistDto,
 } from './web-socket-v2.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import {
@@ -1092,7 +1092,7 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(data: UpsertUserRequest, environment: Environment): Promise<boolean> {
+  async upsertBizUsers(data: UpsertUserDto, environment: Environment): Promise<boolean> {
     const { userId, attributes } = data;
     await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
     return true;
@@ -1103,7 +1103,7 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(data: UpsertCompanyRequest, environment: Environment): Promise<boolean> {
+  async upsertBizCompanies(data: UpsertCompanyDto, environment: Environment): Promise<boolean> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
     await this.bizService.upsertBizCompanies(
       this.prisma,
@@ -1122,7 +1122,7 @@ export class WebSocketV2Service {
    * @returns The created session
    */
   async createSession(
-    data: CreateSessionRequest,
+    data: CreateSessionDto,
     environment: Environment,
   ): Promise<BizSession | null> {
     const {
@@ -1304,7 +1304,7 @@ export class WebSocketV2Service {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
+  async trackEvent(data: TrackEventDto, environment: Environment): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
@@ -1640,7 +1640,7 @@ export class WebSocketV2Service {
     return await this.prisma.environment.findFirst({ where: { token } });
   }
 
-  async trackEventV2(data: TrackEventRequest, environment: Environment): Promise<boolean> {
+  async trackEventV2(data: TrackEventDto, environment: Environment): Promise<boolean> {
     const clientContext = await this.getUserClientContext(environment, data.userId);
     const newData = clientContext
       ? {
@@ -1817,14 +1817,14 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async goToStep(request: GoToStepRequest, environment: Environment): Promise<boolean> {
+  async goToStep(params: GoToStepDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: request.sessionId },
+      where: { id: params.sessionId },
       include: { bizUser: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
     const version = bizSession.version;
-    const step = version.steps.find((s) => s.id === request.stepId);
+    const step = version.steps.find((s) => s.id === params.stepId);
     if (!step) return false;
     const stepIndex = version.steps.findIndex((s) => s.id === step.id);
     if (stepIndex === -1) return false;
@@ -1871,27 +1871,27 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async answerQuestion(request: AnswerQuestionRequest, environment: Environment): Promise<boolean> {
+  async answerQuestion(params: AnswerQuestionDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: request.sessionId },
+      where: { id: params.sessionId },
       include: { bizUser: true },
     });
     if (!bizSession) return false;
 
     const eventData: any = {
-      [EventAttributes.QUESTION_CVID]: request.questionCvid,
-      [EventAttributes.QUESTION_NAME]: request.questionName,
-      [EventAttributes.QUESTION_TYPE]: request.questionType,
+      [EventAttributes.QUESTION_CVID]: params.questionCvid,
+      [EventAttributes.QUESTION_NAME]: params.questionName,
+      [EventAttributes.QUESTION_TYPE]: params.questionType,
     };
 
-    if (!isUndefined(request.listAnswer)) {
-      eventData[EventAttributes.LIST_ANSWER] = request.listAnswer;
+    if (!isUndefined(params.listAnswer)) {
+      eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
     }
-    if (!isUndefined(request.numberAnswer)) {
-      eventData[EventAttributes.NUMBER_ANSWER] = request.numberAnswer;
+    if (!isUndefined(params.numberAnswer)) {
+      eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
     }
-    if (!isUndefined(request.textAnswer)) {
-      eventData[EventAttributes.TEXT_ANSWER] = request.textAnswer;
+    if (!isUndefined(params.textAnswer)) {
+      eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
     }
 
     await this.trackEventV2(
@@ -1907,22 +1907,22 @@ export class WebSocketV2Service {
   }
 
   async clickChecklistTask(
-    request: ClickChecklistTaskRequest,
+    params: ClickChecklistTaskDto,
     environment: Environment,
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: request.sessionId },
+      where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
     const content = bizSession.content;
     const version = bizSession.version;
     const step = version.steps.find((s) =>
-      (s.data as unknown as ChecklistData)?.items?.find((item) => item.id === request.taskId),
+      (s.data as unknown as ChecklistData)?.items?.find((item) => item.id === params.taskId),
     );
     if (!step) return false;
     const checklistData = step.data as unknown as ChecklistData;
-    const checklistItem = checklistData.items.find((item) => item.id === request.taskId);
+    const checklistItem = checklistData.items.find((item) => item.id === params.taskId);
     if (!checklistItem) return false;
 
     const eventData = {
@@ -1947,9 +1947,9 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async hideChecklist(request: HideChecklistRequest, environment: Environment): Promise<boolean> {
+  async hideChecklist(params: HideChecklistDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: request.sessionId },
+      where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
@@ -1976,9 +1976,9 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async showChecklist(request: ShowChecklistRequest, environment: Environment): Promise<boolean> {
+  async showChecklist(params: ShowChecklistDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: request.sessionId },
+      where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;

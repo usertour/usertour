@@ -4,21 +4,21 @@ export type ProjectConfig = {
 };
 
 // Upsert user request
-export interface UpsertUserRequest {
+export type UpsertUserDto = {
   userId: string;
   attributes?: Record<string, any>;
-}
+};
 
 // Upsert company request
-export interface UpsertCompanyRequest {
+export type UpsertCompanyDto = {
   companyId: string;
   userId: string;
   attributes?: Record<string, any>;
   membership?: Record<string, any>;
-}
+};
 
 // Create session request
-export interface CreateSessionRequest {
+export type CreateSessionDto = {
   userId: string;
   contentId: string;
   companyId?: string;
@@ -28,37 +28,37 @@ export interface CreateSessionRequest {
     viewportWidth?: number;
     viewportHeight?: number;
   };
-}
+};
 
 // Track event request
-export interface TrackEventRequest {
+export type TrackEventDto = {
   userId: string;
   eventName: string;
   sessionId: string;
   eventData: Record<string, any>;
-}
+};
 
 // Identity request (for testing)
-export interface IdentityRequest {
+export type IdentityDto = {
   data: number;
-}
+};
 
-export type StartFlowRequest = {
+export type StartFlowDto = {
   contentId: string;
   stepIndex?: number;
 };
 
-export type EndFlowRequest = {
+export type EndFlowDto = {
   sessionId: string;
   reason: string;
 };
 
-export type GoToStepRequest = {
+export type GoToStepDto = {
   sessionId: string;
   stepId: string;
 };
 
-export type AnswerQuestionRequest = {
+export type AnswerQuestionDto = {
   questionCvid: string;
   questionName: string;
   questionType: string;
@@ -68,20 +68,20 @@ export type AnswerQuestionRequest = {
   textAnswer?: string;
 };
 
-export type ClickChecklistTaskRequest = {
+export type ClickChecklistTaskDto = {
   sessionId: string;
   taskId: string;
 };
 
-export type HideChecklistRequest = {
+export type HideChecklistDto = {
   sessionId: string;
 };
 
-export type ShowChecklistRequest = {
+export type ShowChecklistDto = {
   sessionId: string;
 };
 
-export type UpdateClientContextRequest = {
+export type UpdateClientContextDto = {
   pageUrl: string;
   viewportWidth: number;
   viewportHeight: number;
