@@ -47,6 +47,7 @@ import { document, window } from '../utils/globals';
 import { on } from '../utils/listener';
 import { loadCSSResource } from '../utils/loader';
 import { logger } from '../utils/logger';
+import { ERROR_MESSAGES } from '../utils/error';
 import { getValidMessage, sendPreviewSuccessMessage } from '../utils/postmessage';
 import { Checklist } from './checklist';
 import { createMockUser, DEFAULT_TARGET_MISSING_SECONDS, SESSION_TIMEOUT_HOURS } from './common';
@@ -56,6 +57,8 @@ import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
 import { checklistIsSeen, flowIsSeen } from '@usertour/helpers';
+import { WebSocketEvents, WebSocketNameSpaces } from '../utils/websocket';
+import { SDKContentSession } from '../types/sdk';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -305,7 +308,7 @@ export class App extends Evented {
     if (!this.socket) {
       this.socket = new Socket({
         wsUri: getWsUri(),
-        namespace: '/v2',
+        namespace: WebSocketNameSpaces.V2,
         socketConfig: {
           auth: {
             token,
@@ -322,6 +325,22 @@ export class App extends Evented {
       // Store current connection auth info for comparison
       this.currentSocketAuth = { userId, token };
     }
+    this.socket.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
+      this.setFlowSession(session as SDKContentSession);
+    });
+    this.socket.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
+      this.setChecklistSession(session as SDKContentSession);
+    });
+  }
+
+  setFlowSession(session: SDKContentSession) {
+    console.log('setFlowSession', session as SDKContentSession);
+    //
+  }
+
+  setChecklistSession(session: SDKContentSession) {
+    console.log('setChecklistSession', session as SDKContentSession);
+    //
   }
 
   /**
@@ -355,7 +374,7 @@ export class App extends Evented {
    * @param userId - External user ID
    * @param attributes - Optional user attributes
    */
-  async identify(userId: string, attributes?: UserTourTypes.Attributes) {
+  async identify(userId: string, attributes?: UserTourTypes.Attributes): Promise<void> {
     const { token } = this.startOptions;
     if (!token || !this.useCurrentUser()) {
       return;
@@ -364,7 +383,7 @@ export class App extends Evented {
     // Use dedicated initialization method
     await this.initializeSocket(userId, token);
 
-    const userInfo = await this.socket!.upsertUser(
+    const result = await this.socket!.upsertUser(
       {
         userId,
         attributes,
@@ -372,23 +391,18 @@ export class App extends Evented {
       },
       { batch: true },
     );
-    if (!userInfo || !userInfo.externalId) {
-      return;
+    if (!result) {
+      throw new Error(ERROR_MESSAGES.FAILED_TO_IDENTIFY_USER);
     }
 
-    // Reset current state and start with new user
-    this.setUser(undefined);
-    this.setCompany(undefined);
     this.reset();
-    this.setUser(userInfo);
-    this.start();
   }
 
   /**
    * Creates and identifies an anonymous user
    * @param attributes - Optional user attributes
    */
-  async identifyAnonymous(attributes?: UserTourTypes.Attributes) {
+  async identifyAnonymous(attributes?: UserTourTypes.Attributes): Promise<void> {
     const key = STORAGE_IDENTIFY_ANONYMOUS;
     const storageData = storage.getLocalStorage(key) as { userId: string } | undefined;
     let userId = '';
@@ -431,7 +445,7 @@ export class App extends Evented {
    * Updates user attributes
    * @param attributes - New user attributes to update
    */
-  async updateUser(attributes: UserTourTypes.Attributes) {
+  async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
     const { token } = this.startOptions;
     if (!token || !this.userInfo?.externalId) {
       return;
@@ -447,7 +461,7 @@ export class App extends Evented {
     }
 
     const userId = this.userInfo.externalId;
-    const userInfo = await this.socket?.upsertUser(
+    const result = await this.socket?.upsertUser(
       {
         userId,
         attributes,
@@ -455,10 +469,8 @@ export class App extends Evented {
       },
       { batch: true },
     );
-    if (userInfo?.externalId) {
-      this.setUser(userInfo);
-      await this.fetchAndInitContent();
-      await this.fetchProjectSettings();
+    if (!result) {
+      throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_USER);
     }
   }
 
@@ -488,7 +500,7 @@ export class App extends Evented {
     companyId: string,
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
-  ) {
+  ): Promise<void> {
     const { token } = this.startOptions;
     if (!token || !this.userInfo?.externalId) {
       return;
@@ -497,7 +509,7 @@ export class App extends Evented {
       return;
     }
     const userId = this.userInfo.externalId;
-    const companyInfo = await this.socket?.upsertCompany(
+    const result = await this.socket?.upsertCompany(
       token,
       userId,
       companyId,
@@ -505,9 +517,8 @@ export class App extends Evented {
       opts?.membership,
       { batch: true },
     );
-    if (companyInfo?.externalId) {
-      this.setCompany(companyInfo);
-      this.fetchAndInitContent();
+    if (!result) {
+      throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_COMPANY);
     }
   }
 
@@ -516,7 +527,10 @@ export class App extends Evented {
    * @param attributes - Optional company attributes to update
    * @param opts - Optional group settings
    */
-  async updateGroup(attributes?: UserTourTypes.Attributes, opts?: UserTourTypes.GroupOptions) {
+  async updateGroup(
+    attributes?: UserTourTypes.Attributes,
+    opts?: UserTourTypes.GroupOptions,
+  ): Promise<void> {
     const { token } = this.startOptions;
     if (
       !token ||
@@ -535,7 +549,7 @@ export class App extends Evented {
 
     const userId = this.userInfo.externalId;
     const companyId = this.companyInfo?.externalId;
-    const companyInfo = await this.socket?.upsertCompany(
+    const result = await this.socket?.upsertCompany(
       token,
       userId,
       companyId,
@@ -543,11 +557,9 @@ export class App extends Evented {
       opts?.membership,
       { batch: true },
     );
-    if (!companyInfo || !companyInfo.externalId) {
-      return;
+    if (!result) {
+      throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_COMPANY);
     }
-    this.setCompany(companyInfo);
-    this.fetchAndInitContent();
   }
 
   /**

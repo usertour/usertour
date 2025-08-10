@@ -1,7 +1,5 @@
 import {
-  BizCompany,
   BizSession,
-  BizUserInfo,
   ContentSession,
   SDKContent,
   SDKSettingsMode,
@@ -16,6 +14,7 @@ import {
 } from 'socket.io-client';
 import autoBind from '../utils/auto-bind';
 import { Evented } from './evented';
+import { SDKContentSession } from '../types/sdk';
 
 // Configuration options for Socket connection
 interface SocketOptions {
@@ -80,7 +79,7 @@ export class Socket extends Evented {
     // Connect to namespace while keeping the HTTP handshake path configured via 'path'
     this.socket = io(`${baseUri}${normalizedNamespace}`, this.options.socketConfig);
     this.setupErrorHandling();
-    this.setupContentChangedListener();
+    this.setupEventListener();
   }
 
   /**
@@ -95,9 +94,12 @@ export class Socket extends Evented {
   /**
    * Setup content changed listener
    */
-  private setupContentChangedListener(): void {
-    this.socket.on('content-changed', () => {
-      this.trigger('content-changed');
+  private setupEventListener(): void {
+    this.socket.on('set-flow-session', (message: SDKContentSession) => {
+      this.trigger('set-flow-session', message);
+    });
+    this.socket.on('set-checklist-session', (message: SDKContentSession) => {
+      this.trigger('set-checklist-session', message);
     });
   }
 
@@ -183,9 +185,8 @@ export class Socket extends Evented {
       token: string;
     },
     options?: { batch?: boolean; endBatch?: boolean },
-  ): Promise<BizUserInfo | undefined> {
-    const response = await this.send('upsert-user', params, options);
-    return response as BizUserInfo;
+  ): Promise<boolean> {
+    return await this.send('upsert-user', params, options);
   }
 
   /**
@@ -205,8 +206,8 @@ export class Socket extends Evented {
     attributes?: UserTourTypes.Attributes,
     membership?: UserTourTypes.Attributes,
     options?: { batch?: boolean; endBatch?: boolean },
-  ): Promise<BizCompany | undefined> {
-    const response = await this.send(
+  ): Promise<boolean> {
+    return await this.send(
       'upsert-company',
       {
         token,
@@ -217,7 +218,6 @@ export class Socket extends Evented {
       },
       options,
     );
-    return response as BizCompany;
   }
 
   /**
