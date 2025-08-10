@@ -2057,7 +2057,7 @@ export class WebSocketV2Service {
       version: {
         id: contentVersion.id,
         config: contentVersion.config,
-        data: contentVersion.data,
+        data: [],
         checklist: contentVersion.data as unknown as ChecklistData,
       },
     };

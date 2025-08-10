@@ -88,7 +88,9 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    return await this.setFlowSession(client);
+    await this.setFlowSession(client);
+    await this.setChecklistSession(client);
+    return true;
   }
 
   /**
@@ -122,6 +124,26 @@ export class WebSocketV2Gateway {
 
     // Notify the client about the new flow session
     this.server.to(`user:${externalUserId}`).emit('set-flow-session', flowSession);
+
+    return true;
+  }
+
+  private async setChecklistSession(client: Socket): Promise<boolean> {
+    if (client.data.checklistSessionId) {
+      return true;
+    }
+
+    const externalUserId = client.data.externalUserId;
+
+    const checklistSession = await this.service.setChecklistSession(
+      client.data.environment,
+      client.data.externalUserId,
+      client.data.externalCompanyId,
+    );
+
+    client.data.checklistSessionId = checklistSession.id;
+
+    this.server.to(`user:${externalUserId}`).emit('set-checklist-session', checklistSession);
 
     return true;
   }
