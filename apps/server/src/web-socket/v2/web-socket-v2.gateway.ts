@@ -10,15 +10,11 @@ import { Server, Socket } from 'socket.io';
 import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError } from '@/common/errors';
+import { WebSocketV2Service } from './web-socket-v2.service';
 import {
   TrackEventRequest,
   UpsertCompanyRequest,
-  UpsertCompanyResponse,
   UpsertUserRequest,
-  UpsertUserResponse,
-} from '../web-socket.dto';
-import { WebSocketV2Service } from './web-socket-v2.service';
-import {
   AnswerQuestionRequest,
   ClickChecklistTaskRequest,
   EndFlowRequest,
@@ -155,18 +151,19 @@ export class WebSocketV2Gateway {
   async upsertBizUsers(
     @MessageBody() body: UpsertUserRequest,
     @ConnectedSocket() client: Socket,
-  ): Promise<UpsertUserResponse> {
+  ): Promise<boolean> {
     const environment = client.data.environment;
     this.logger.log(`Upserting user ${body.userId} in environment ${environment.id}`);
 
-    return await this.service.upsertBizUsers(body, environment);
+    await this.service.upsertBizUsers(body, environment);
+    return true;
   }
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
     @MessageBody() body: UpsertCompanyRequest,
     @ConnectedSocket() client: Socket,
-  ): Promise<UpsertCompanyResponse> {
+  ): Promise<boolean> {
     const environment = client.data.environment;
 
     const result = await this.service.upsertBizCompanies(body, environment);
@@ -177,7 +174,7 @@ export class WebSocketV2Gateway {
       client.data.companyInfo = result;
     }
 
-    return result;
+    return true;
   }
 
   @SubscribeMessage('start-flow')

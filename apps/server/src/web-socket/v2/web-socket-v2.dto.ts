@@ -1,4 +1,4 @@
-import { BizCompany, BizUser, Theme } from '@/common/types/schema';
+import { Theme } from '@/common/types/schema';
 
 export interface ConfigResponse {
   removeBranding: boolean;
@@ -111,8 +111,3 @@ export type UpdateClientContextRequest = {
   viewportWidth: number;
   viewportHeight: number;
 };
-
-// Response types
-export type UpsertUserResponse = BizUser | null;
-
-export type UpsertCompanyResponse = BizCompany | null;

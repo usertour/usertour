@@ -32,9 +32,7 @@ import {
   ShowChecklistRequest,
   TrackEventRequest,
   UpsertCompanyRequest,
-  UpsertCompanyResponse,
   UpsertUserRequest,
-  UpsertUserResponse,
 } from './web-socket-v2.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import {
@@ -1092,12 +1090,10 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(
-    data: UpsertUserRequest,
-    environment: Environment,
-  ): Promise<UpsertUserResponse> {
+  async upsertBizUsers(data: UpsertUserRequest, environment: Environment): Promise<boolean> {
     const { userId, attributes } = data;
-    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
+    await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
+    return true;
   }
 
   /**
@@ -1105,12 +1101,9 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(
-    data: UpsertCompanyRequest,
-    environment: Environment,
-  ): Promise<UpsertCompanyResponse> {
+  async upsertBizCompanies(data: UpsertCompanyRequest, environment: Environment): Promise<boolean> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
-    return await this.bizService.upsertBizCompanies(
+    await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
       externalUserId,
@@ -1118,6 +1111,7 @@ export class WebSocketV2Service {
       environment.id,
       membership,
     );
+    return true;
   }
 
   /**
