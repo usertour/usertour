@@ -1,4 +1,4 @@
-import autoBind from '../utils/auto-bind';
+import { autoBind } from '@/utils';
 import isEqual from 'fast-deep-equal';
 
 /**

@@ -3,7 +3,6 @@ import { convertToCssVars, findLatestEvent } from '@usertour/helpers';
 import {
   BizCompany,
   ContentDataType,
-  EventAttributes,
   SDKConfig,
   SDKContent,
   Step,
@@ -11,23 +10,19 @@ import {
   UserTourTypes,
   contentStartReason,
 } from '@usertour/types';
-import { ReportEventParams } from '../types/content';
-import autoBind from '../utils/auto-bind';
-import { window } from '../utils/globals';
-import { buildNavigateUrl } from '../utils/navigate-utils';
-import { App } from './app';
-import { getAssets } from './common';
-import { Config } from './config';
-import { Evented } from './evented';
-import { ExternalStore } from './store';
+import { autoBind, window } from '@/utils';
+import { UsertourCore } from '@/core/usertour-core';
+import { getAssets } from '@/core/common';
+import { Config } from '@/core/config';
+import { Evented } from '@/core/evented';
+import { ExternalStore } from '@/core/store';
 import { differenceInHours } from 'date-fns';
-import { logger } from '../utils/logger';
-import { BaseStore } from '../types/store';
-import { getActivedTheme } from '../utils/content-utils';
+import { logger, getActivedTheme, buildNavigateUrl } from '@/utils';
+import { BaseStore } from '@/types';
 import isEqual from 'fast-deep-equal';
 
 export abstract class BaseContent<T extends BaseStore = any> extends Evented {
-  private readonly instance: App;
+  private readonly instance: UsertourCore;
   private content: SDKContent;
   private readonly store: ExternalStore<T>;
   private readonly config: Config;
@@ -35,7 +30,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private isStarted = false;
   private sessionId = '';
   private currentStep?: Step | null;
-  constructor(instance: App, content: SDKContent, defaultStore?: T) {
+  constructor(instance: UsertourCore, content: SDKContent, defaultStore?: T) {
     super();
     autoBind(this);
     this.store = new ExternalStore<T>(defaultStore);
@@ -320,7 +315,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {Promise<void>} A promise that resolves when the tour is started
    */
   startTour(contentId: string | undefined, reason: string, cvid?: string) {
-    return this.getInstance().startTour(contentId, reason, { cvid });
+    console.log('startTour', contentId, reason, cvid);
   }
 
   /**
@@ -330,7 +325,7 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * @returns {Promise<void>} A promise that resolves when the checklist is started
    */
   startChecklist(contentId: string | undefined, reason: string) {
-    return this.getInstance().startChecklist(contentId, reason);
+    console.log('startChecklist', contentId, reason);
   }
 
   /**
@@ -370,9 +365,11 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    * Creates a new session ID
    */
   async createSessionId(reason = 'auto_start'): Promise<string | null> {
-    const contentId = this.getContent().contentId;
-    const session = await this.getInstance().createSession(contentId, reason);
-    return session ? session.id : null;
+    console.log('createSessionId', reason);
+    return null;
+    // const contentId = this.getContent().contentId;
+    // const session = await this.getInstance().createSession(contentId, reason);
+    // return session ? session.id : null;
   }
 
   /**
@@ -404,78 +401,10 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   }
 
   /**
-   * Reports an event with the given parameters
-   * @param event - The event to report
-   * @param options - The options for the event
-   * @returns {Promise<void>} A promise that resolves when the event is reported
-   */
-  private async reportEvent(event: Partial<ReportEventParams>) {
-    const userInfo = this.getUserInfo();
-    const content = this.getContent();
-    const { externalId: userId } = userInfo || {};
-    const { contentId } = content;
-    const { eventName, eventData, sessionId } = event;
-
-    // Early return if required fields are missing
-    if (!userId || !contentId || !eventName || !eventData) {
-      return;
-    }
-
-    const reportEvent: ReportEventParams = {
-      eventData: {
-        ...eventData,
-        [EventAttributes.PAGE_URL]: window?.location?.href,
-        [EventAttributes.VIEWPORT_WIDTH]: window?.innerWidth,
-        [EventAttributes.VIEWPORT_HEIGHT]: window?.innerHeight,
-      },
-      eventName,
-      contentId,
-      userId,
-      sessionId,
-    };
-
-    return await this.getInstance().reportEvent(reportEvent);
-  }
-
-  async reportEventWithSession(event: Partial<ReportEventParams>) {
-    const sessionId = event.sessionId || this.getSessionId();
-    if (!sessionId) {
-      return;
-    }
-    await this.reportEvent({
-      ...event,
-      sessionId,
-    });
-  }
-
-  /**
    * Get the company information
    */
   getCompanyInfo(): BizCompany | undefined {
     return this.getInstance().companyInfo;
-  }
-
-  /**
-   * Unsets the active tour
-   */
-  unsetActiveTour(): void {
-    this.getInstance().unsetActiveTour();
-  }
-
-  /**
-   * Unsets the active checklist
-   * @returns {Promise<void>} A promise that resolves when the active checklist is unset
-   */
-  unsetActiveChecklist() {
-    return this.getInstance().unsetActiveChecklist();
-  }
-
-  /**
-   * Get the active checklist
-   * @returns {Object} The active checklist
-   */
-  getActiveChecklist() {
-    return this.getInstance().activeChecklist;
   }
 
   /**

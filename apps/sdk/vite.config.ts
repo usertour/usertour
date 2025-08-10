@@ -62,6 +62,11 @@ export default defineConfig(({ command }) => {
 
   const defaultConfig: UserConfigExport = {
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src'),
+      },
+    },
     define: {
       USERTOUR_APP_VERSION: JSON.stringify(version),
       USERTOUR_APP_MAIN_CSS: JSON.stringify(css1),
@@ -82,6 +87,11 @@ export default defineConfig(({ command }) => {
 
   const devConfig: UserConfigExport = {
     plugins: [react(), mkcert()],
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src'),
+      },
+    },
     define: {
       ...defaultConfig.define,
     },

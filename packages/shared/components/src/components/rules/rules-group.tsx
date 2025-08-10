@@ -18,7 +18,7 @@ import {
   UserIcon,
 } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
-import { deepClone } from '@usertour/helpers';
+import { cuid, deepClone } from '@usertour/helpers';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { useRulesContext } from './rules-context';
@@ -187,9 +187,9 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const handleOnSelect = useCallback(
     (type: string) => {
       if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [] }]);
+        setNewConditions([...conditions, { type, data: {}, conditions: [], id: cuid() }]);
       } else {
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType }]);
+        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: cuid() }]);
       }
     },
     [conditionType, conditions],

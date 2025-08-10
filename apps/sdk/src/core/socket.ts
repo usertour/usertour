@@ -1,20 +1,26 @@
 import {
-  BizSession,
-  ContentSession,
-  SDKContent,
-  SDKSettingsMode,
-  GetProjectSettingsResponse,
-} from '@usertour/types';
-import { UserTourTypes } from '@usertour/types';
-import {
   ManagerOptions,
   Socket as SocketIO,
   SocketOptions as SocketIOOptions,
   io,
 } from 'socket.io-client';
-import autoBind from '../utils/auto-bind';
+import { autoBind } from '@/utils';
 import { Evented } from './evented';
 import { SDKContentSession } from '../types/sdk';
+import {
+  UpdateClientContextDto,
+  AnswerQuestionDto,
+  ClickChecklistTaskDto,
+  EndFlowDto,
+  GoToStepDto,
+  HideChecklistDto,
+  ShowChecklistDto,
+  StartFlowDto,
+  TrackEventDto,
+  UpsertCompanyDto,
+  UpsertUserDto,
+  TooltipTargetMissingDto,
+} from '@/types/web-socket';
 
 // Configuration options for Socket connection
 interface SocketOptions {
@@ -78,23 +84,17 @@ export class Socket extends Evented {
 
     // Connect to namespace while keeping the HTTP handshake path configured via 'path'
     this.socket = io(`${baseUri}${normalizedNamespace}`, this.options.socketConfig);
-    this.setupErrorHandling();
-    this.setupEventListener();
-  }
 
-  /**
-   * Setup error handling for socket events
-   */
-  private setupErrorHandling(): void {
-    this.socket.on('connect_error', (error) => {
-      this.trigger('error', error);
-    });
+    this.setupEventListener();
   }
 
   /**
    * Setup content changed listener
    */
   private setupEventListener(): void {
+    this.socket.on('connect_error', (error) => {
+      this.trigger('error', error);
+    });
     this.socket.on('set-flow-session', (message: SDKContentSession) => {
       this.trigger('set-flow-session', message);
     });
@@ -179,11 +179,7 @@ export class Socket extends Evented {
    * @returns Promise with user information
    */
   async upsertUser(
-    params: {
-      userId: string;
-      attributes?: UserTourTypes.Attributes;
-      token: string;
-    },
+    params: UpsertUserDto,
     options?: { batch?: boolean; endBatch?: boolean },
   ): Promise<boolean> {
     return await this.send('upsert-user', params, options);
@@ -191,73 +187,14 @@ export class Socket extends Evented {
 
   /**
    * Create or update company information
-   * @param token - Authentication token
-   * @param userId - User identifier
-   * @param companyId - Company identifier
-   * @param attributes - Optional company attributes
-   * @param membership - Optional membership attributes
    * @param options - Batch options
    * @returns Promise with company information
    */
   async upsertCompany(
-    token: string,
-    userId: string,
-    companyId: string,
-    attributes?: UserTourTypes.Attributes,
-    membership?: UserTourTypes.Attributes,
+    params: UpsertCompanyDto,
     options?: { batch?: boolean; endBatch?: boolean },
   ): Promise<boolean> {
-    return await this.send(
-      'upsert-company',
-      {
-        token,
-        companyId,
-        userId,
-        attributes,
-        membership,
-      },
-      options,
-    );
-  }
-
-  /**
-   * List available contents
-   * @param params - Parameters for content listing
-   * @returns Promise with array of contents
-   */
-  async listContents(params: {
-    token: string;
-    mode: SDKSettingsMode;
-    userId?: string;
-    contentId?: string;
-    versionId?: string;
-    companyId?: string;
-  }): Promise<SDKContent[]> {
-    const response = await this.emitWithTimeout('list-contents', params);
-    if (!Array.isArray(response)) {
-      return [];
-    }
-    return response as SDKContent[];
-  }
-
-  /**
-   * Create a new session
-   * @param params - Session parameters including userId, token, and contentId
-   * @returns Promise with session information
-   */
-  async createSession(params: {
-    userId: string;
-    token: string;
-    contentId: string;
-    companyId?: string;
-    reason?: string;
-    context?: {
-      pageUrl?: string;
-      viewportWidth?: number;
-      viewportHeight?: number;
-    };
-  }): Promise<{ session: BizSession; contentSession: ContentSession } | false> {
-    return await this.emitWithTimeout('create-session', params);
+    return await this.send('upsert-company', params, options);
   }
 
   /**
@@ -266,30 +203,125 @@ export class Socket extends Evented {
    * @param options - Batch options
    */
   async trackEvent(
-    params: {
-      userId: string;
-      token: string;
-      eventName: string;
-      sessionId: string;
-      eventData: any;
-    },
+    params: TrackEventDto,
     options?: { batch?: boolean; endBatch?: boolean },
-  ): Promise<ContentSession | false> {
+  ): Promise<boolean> {
     return await this.send('track-event', params, options);
   }
 
   /**
-   * Get project settings
-   * @param params - Parameters including authentication token, userId, and companyId
-   * @returns Promise with project settings
+   * Start a flow with optional step index
+   * @param contentId - Content ID to start
+   * @param stepIndex - Optional step index to start from
+   * @param options - Batch options
    */
-  async getProjectSettings(params: {
-    token: string;
-    userId?: string;
-    companyId?: string;
-  }): Promise<GetProjectSettingsResponse> {
-    const response = await this.emitWithTimeout('get-project-settings', params);
-    return response as GetProjectSettingsResponse;
+  async startFlow(
+    params: StartFlowDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('start-flow', params, options);
+  }
+
+  /**
+   * End a flow session
+   * @param sessionId - Session ID to end
+   * @param reason - Reason for ending the flow
+   * @param options - Batch options
+   */
+  async endFlow(
+    params: EndFlowDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('end-flow', params, options);
+  }
+
+  /**
+   * Go to a specific step in a flow
+   * @param sessionId - Session ID
+   * @param stepId - Step ID to navigate to
+   * @param options - Batch options
+   */
+  async goToStep(
+    params: GoToStepDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('go-to-step', params, options);
+  }
+
+  /**
+   * Answer a question in a flow
+   * @param questionCvid - Question content version ID
+   * @param questionName - Question name
+   * @param questionType - Question type
+   * @param sessionId - Session ID
+   * @param listAnswer - Answer for list type questions
+   * @param numberAnswer - Answer for number type questions
+   * @param textAnswer - Answer for text type questions
+   * @param options - Batch options
+   */
+  async answerQuestion(
+    params: AnswerQuestionDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('answer-question', params, options);
+  }
+
+  /**
+   * Click a checklist task
+   * @param sessionId - Session ID
+   * @param taskId - Task ID to click
+   * @param options - Batch options
+   */
+  async clickChecklistTask(
+    params: ClickChecklistTaskDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('click-checklist-task', params, options);
+  }
+
+  /**
+   * Hide checklist
+   * @param sessionId - Session ID
+   * @param options - Batch options
+   */
+  async hideChecklist(
+    params: HideChecklistDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('hide-checklist', params, options);
+  }
+
+  /**
+   * Show checklist
+   * @param sessionId - Session ID
+   * @param options - Batch options
+   */
+  async showChecklist(
+    params: ShowChecklistDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('show-checklist', params, options);
+  }
+
+  /**
+   * Update client context (viewport, page URL, etc.)
+   * @param pageUrl - Current page URL
+   * @param viewportWidth - Viewport width
+   * @param viewportHeight - Viewport height
+   * @param options - Batch options
+   */
+  async updateClientContext(
+    params: UpdateClientContextDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('update-client-context', params, options);
+  }
+
+  async reportTooltipTargetMissing(
+    params: TooltipTargetMissingDto,
+    options?: { batch?: boolean; endBatch?: boolean },
+  ): Promise<boolean> {
+    return await this.send('report-tooltip-target-missing', params, options);
   }
 
   /**

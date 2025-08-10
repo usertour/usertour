@@ -4,9 +4,8 @@ import {
   RulesCondition,
   autoStartRulesSetting,
 } from '@usertour/types';
-import autoBind from '../utils/auto-bind';
-import { activedRulesConditions } from '../utils/conditions';
-import { Evented } from './evented';
+import { autoBind, activedRulesConditions } from '@/utils';
+import { Evented } from '@/core/evented';
 import { isActive } from '@usertour/helpers';
 
 /**

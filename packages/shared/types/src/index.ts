@@ -18,3 +18,4 @@ export * from './types/team';
 export * from './types/subscription';
 export * from './types/integrations';
 export * from './types/jwt-license.types';
+export * from './types/web-socket';

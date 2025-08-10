@@ -25,8 +25,8 @@ import {
   ThemeTypesSetting,
 } from '@usertour/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
-import { Tour as TourCore } from '../core/tour';
-import { off, on } from '../utils/listener';
+import { UsertourTour } from '@/core/usertour-tour';
+import { off, on } from '@/utils';
 import { useSettingsStyles } from '@usertour-packages/sdk';
 
 // Base props that are shared between TourPopper and TourModal
@@ -64,7 +64,7 @@ type PopperContentProps = {
 };
 
 // Custom hook to extract store state
-const useTourStore = (tour: TourCore) => {
+const useTourStore = (tour: UsertourTour) => {
   const store = useSyncExternalStore(tour.getStore().subscribe, tour.getStore().getSnapshot);
 
   if (!store) {
@@ -306,7 +306,7 @@ const TourModal = (props: TourModalProps) => {
   );
 };
 
-export const TourWidget = (props: { tour: TourCore }) => {
+export const TourWidget = (props: { tour: UsertourTour }) => {
   const { tour } = props;
   const storeData = useTourStore(tour);
 

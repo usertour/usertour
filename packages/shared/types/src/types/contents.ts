@@ -118,6 +118,7 @@ export type ContentConfig = {
 };
 
 export type RulesCondition = {
+  id?: string;
   type: string;
   data: any;
   operators?: 'and' | 'or';

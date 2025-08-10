@@ -1,7 +1,6 @@
 import { SDKSettingsMode, UserTourTypes } from '@usertour/types';
-import { App } from './core/app';
-import { logger } from './utils/logger';
-import { window } from './utils/globals';
+import { UsertourCore } from './core/usertour-core';
+import { logger, window } from '@/utils';
 
 const w: UserTourTypes.WindowWithUsertour = typeof window === 'undefined' ? ({} as any) : window;
 
@@ -49,7 +48,7 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
 }
 
 if (w.usertour === undefined || w.usertour?._stubbed) {
-  const app = new App();
+  const app = new UsertourCore();
   const usertour = Object.assign(
     w.usertour || {},
     (() => {

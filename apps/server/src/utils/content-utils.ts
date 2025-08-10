@@ -697,10 +697,15 @@ export const findLatestActivedAutoStartContent = (
   contentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ): CustomContentVersion | undefined => {
-  return findLatestActivatedContentVersion(
-    filterAutoStartContent(contentVersions, contentType),
+  const autoStartContentVersions = filterAutoStartContent(contentVersions, contentType);
+  const latestActivatedContentVersion = findLatestActivatedContentVersion(
+    autoStartContentVersions,
     contentType,
   );
+  if (latestActivatedContentVersion) {
+    return latestActivatedContentVersion;
+  }
+  return autoStartContentVersions[0];
 };
 
 export const findContentVersionByContentId = (

@@ -23,6 +23,7 @@ import {
   ShowChecklistDto,
   UpdateClientContextDto,
   StartFlowDto,
+  TooltipTargetMissingDto,
 } from './web-socket-v2.dto';
 import { ContentDataType } from '@usertour/types';
 import { getExternalUserRoom } from '@/utils/ws-utils';
@@ -88,7 +89,7 @@ export class WebSocketV2Gateway {
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
     await this.setFlowSession(client);
-    await this.setChecklistSession(client);
+    // await this.setChecklistSession(client);
     return true;
   }
 
@@ -120,6 +121,9 @@ export class WebSocketV2Gateway {
       stepIndex,
     );
 
+    if (!flowSession) {
+      return false;
+    }
     // Cache the session ID for future requests
     client.data.flowSessionId = flowSession.id;
 
@@ -274,6 +278,17 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return Boolean(await this.service.trackEvent(trackEventDto, client.data.environment));
+  }
+
+  @SubscribeMessage('report-tooltip-target-missing')
+  async reportTooltipTargetMissing(
+    @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.reportTooltipTargetMissing(
+      reportTooltipTargetMissingDto,
+      client.data.environment,
+    );
   }
 
   /**

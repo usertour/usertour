@@ -1,9 +1,7 @@
 import { isVisibleNode } from '@usertour-packages/dom';
 import { finderV2 } from '@usertour-packages/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { isVisible } from '../utils/conditions';
-import { AppEvents } from '../utils/event';
-import { document } from '../utils/globals';
+import { isVisible, AppEvents, document } from '@/utils';
 import { Evented } from './evented';
 import { DEFAULT_TARGET_MISSING_SECONDS } from './common';
 

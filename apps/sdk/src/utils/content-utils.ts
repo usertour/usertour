@@ -6,23 +6,18 @@ import {
   ChecklistInitialDisplay,
   ChecklistItemType,
   ContentDataType,
-  contentEndReason,
   SDKContent,
   Step,
   Theme,
   RulesType,
 } from '@usertour/types';
-import { Checklist } from '../core/checklist';
-import { Launcher } from '../core/launcher';
-import { Tour } from '../core/tour';
 import {
   activedContentRulesConditions,
   parseUrlParams,
-  flowIsDismissed,
   checklistIsDimissed,
   isActive,
 } from '@usertour/helpers';
-import { activedRulesConditions, PRIORITIES } from './conditions';
+import { activedRulesConditions } from './conditions';
 import { window } from './globals';
 import {
   canCompleteChecklistItem,
@@ -33,134 +28,14 @@ import { BaseStore } from '../types/store';
 import isEqual from 'fast-deep-equal';
 
 /**
- * Compares two contents based on their priority
- * @param contentA - First content to compare
- * @param contentB - Second content to compare
- * @returns Comparison result (-1, 0, or 1)
- */
-export const compareContentPriorities = (
-  contentA: Tour | Launcher | Checklist,
-  contentB: Tour | Launcher | Checklist,
-): number => {
-  const priorityA = PRIORITIES.indexOf(contentA.getConfigPriority());
-  const priorityB = PRIORITIES.indexOf(contentB.getConfigPriority());
-
-  return priorityA === priorityB ? 0 : priorityA < priorityB ? -1 : 1;
-};
-
-/**
- * Initialize or update content items based on the provided contents
- * @param contents All available contents
- * @param currentItems Current existing items
- * @param contentType Type of content to filter
- * @param createItem Factory function to create new items
- * @returns Updated array of items
- */
-export function initializeContentItems<T extends Tour | Launcher | Checklist>(
-  contents: SDKContent[],
-  currentItems: T[],
-  contentType: ContentDataType,
-  createItem: (content: SDKContent) => T,
-): T[] {
-  // Filter relevant contents
-  const filteredContents = contents.filter((content) => content.type === contentType);
-
-  // Create contentId map for quick lookup
-  const contentIdMap = new Set(filteredContents.map((content) => content.contentId));
-
-  // Remove items that no longer exist
-  const validItems = currentItems.filter((item) => {
-    const contentId = item.getContent().contentId;
-    if (!contentIdMap.has(contentId)) {
-      if (contentType === ContentDataType.LAUNCHER) {
-        item.close(contentEndReason.UNPUBLISHED_CONTENT);
-      } else {
-        item.close(contentEndReason.UNPUBLISHED_CONTENT);
-      }
-      return false;
-    }
-    return true;
-  });
-
-  // Create map of existing items
-  const existingItemsMap = new Map(validItems.map((item) => [item.getContent().contentId, item]));
-
-  // Update or create items
-  return filteredContents.map((content) => {
-    const existingItem = existingItemsMap.get(content.contentId);
-    if (existingItem) {
-      if (existingItem.isEqual(content)) {
-        return existingItem;
-      }
-      existingItem.setContent(content);
-      existingItem.refresh();
-      return existingItem;
-    }
-    return createItem(content);
-  });
-}
-
-/**
  * Finds the usertour ID from the URL
  * @returns The usertour ID or null if no URL is available
  */
-const findUsertourIdFromUrl = (): string | null => {
+export const findUsertourIdFromUrl = (): string | null => {
   if (!window) {
     return null;
   }
   return parseUrlParams(window.location.href, 'usertour');
-};
-
-/**
- * Finds the most recently activated tour based on latestSession.createdAt
- * @param tours Array of tours to search through
- * @returns The most recently activated tour or undefined if no tours exist
- */
-export const findLatestActivatedTour = (tours: Tour[]): Tour | undefined => {
-  const toursWithValidSession = tours.filter((tour) => tour.getContent().latestSession?.createdAt);
-
-  if (!toursWithValidSession.length) {
-    return undefined;
-  }
-
-  return toursWithValidSession.sort(
-    (a, b) =>
-      new Date(b.getContent().latestSession!.createdAt).getTime() -
-      new Date(a.getContent().latestSession!.createdAt).getTime(),
-  )[0];
-};
-
-/**
- * Finds the latest activated tour and cvid from the session
- * @param tours Array of tours to search through
- * @returns The latest activated tour and cvid if the tour is not dismissed, undefined otherwise
- */
-export const findLatestActivatedTourAndCvid = (
-  tours: Tour[],
-  contentId?: string,
-): { latestActivatedTour: Tour; cvid: string } | undefined => {
-  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent().latestSession));
-  const latestActivatedTour = contentId
-    ? activeTours.find((tour) => tour.getContent().contentId === contentId)
-    : findLatestActivatedTour(activeTours);
-  // if the tour is dismissed, return null
-  if (!latestActivatedTour) {
-    return undefined;
-  }
-  // if the tour is not dismissed, return the latest step cvid
-  const content = latestActivatedTour.getContent();
-  const latestStepNumber = findLatestStepNumber(content.latestSession?.bizEvent);
-
-  // Find the next step after the latest seen step
-  const steps = content.steps || [];
-  const cvid = steps[latestStepNumber >= 0 ? latestStepNumber : 0]?.cvid;
-  if (cvid) {
-    return {
-      latestActivatedTour,
-      cvid,
-    };
-  }
-  return undefined;
 };
 
 /**
@@ -182,68 +57,6 @@ export const findLatestStepNumber = (bizEvents: any[] | undefined): number => {
   }
 
   return stepSeenEvents[0].data.flow_step_number;
-};
-
-/**
- * Finds a tour from the URL
- * @param tours Array of tours to search through
- * @returns The tour from the URL or undefined if no tour exists
- */
-export const findTourFromUrl = (tours: Tour[]): Tour | undefined => {
-  const contentId = findUsertourIdFromUrl();
-  if (!contentId) {
-    return undefined;
-  }
-  return tours.find((tour) => tour.getContent().contentId === contentId);
-};
-
-/**
- * Finds the most recently activated checklist based on latestSession.createdAt
- * @param checklists Array of checklists to search through
- * @returns The most recently activated checklist or undefined if no checklists exist
- */
-export const findLatestActivatedChecklist = (checklists: Checklist[]): Checklist | undefined => {
-  const activeChecklists = checklists.filter(
-    (checklist) => !checklistIsDimissed(checklist.getContent().latestSession),
-  );
-
-  const checklistsWithValidSession = activeChecklists.filter(
-    (checklist) => checklist.getContent().latestSession?.createdAt,
-  );
-
-  if (!checklistsWithValidSession.length) {
-    return undefined;
-  }
-
-  return checklistsWithValidSession.sort(
-    (a, b) =>
-      new Date(b.getContent().latestSession!.createdAt).getTime() -
-      new Date(a.getContent().latestSession!.createdAt).getTime(),
-  )[0];
-};
-
-/**
- * Finds a checklist from the URL
- * @param checklists Array of checklists to search through
- * @returns The checklist from the URL or undefined if no checklist exists
- */
-export const findChecklistFromUrl = (checklists: Checklist[]): Checklist | undefined => {
-  const contentId = findUsertourIdFromUrl();
-  if (!contentId) {
-    return undefined;
-  }
-  return checklists.find((checklist) => checklist.getContent().contentId === contentId);
-};
-
-/**
- * Finds the latest valid checklist from the session
- * @param checklists Array of checklists to search through
- * @returns The latest valid checklist or undefined if no checklists exist
- */
-export const findLatestValidActivatedChecklist = (
-  checklists: Checklist[],
-): Checklist | undefined => {
-  return findLatestActivatedChecklist(checklists);
 };
 
 /**
@@ -545,58 +358,6 @@ export const checklistHasNewCompletedItems = (
   }
 
   return false;
-};
-
-/**
- * Gets auto-start eligible content items sorted by priority
- * @param contentInstances - Array of content instances to search through
- * @returns Array of eligible content instances sorted by priority (highest first), or empty array if none found
- */
-export const getAutoStartContentSortedByPriority = <T extends Tour | Launcher | Checklist>(
-  contentInstances: T[],
-): T[] => {
-  if (!contentInstances.length) {
-    return [];
-  }
-
-  // Find all instances that can auto-start
-  const eligibleInstances = contentInstances.filter((instance) => instance.canAutoStart());
-
-  if (!eligibleInstances.length) {
-    return [];
-  }
-
-  // Sort instances by priority (highest priority first)
-  return eligibleInstances.sort((a, b) => compareContentPriorities(a, b));
-};
-
-/**
- * Checks if two tours are the same
- * @param tour1 - The first tour
- * @param tour2 - The second tour
- * @returns True if the tours are the same, false otherwise
- */
-export const isSameTour = (tour1: Tour | undefined, tour2: Tour | undefined): boolean => {
-  if (!tour1 || !tour2) {
-    return false;
-  }
-  return tour1.getContent().contentId === tour2.getContent().contentId;
-};
-
-/**
- * Checks if two checklists are the same
- * @param checklist1 - The first checklist
- * @param checklist2 - The second checklist
- * @returns True if the checklists are the same, false otherwise
- */
-export const isSameChecklist = (
-  checklist1: Checklist | undefined,
-  checklist2: Checklist | undefined,
-): boolean => {
-  if (!checklist1 || !checklist2) {
-    return false;
-  }
-  return checklist1.getContent().contentId === checklist2.getContent().contentId;
 };
 
 /**

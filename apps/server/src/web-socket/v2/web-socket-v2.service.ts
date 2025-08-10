@@ -31,6 +31,7 @@ import {
   ClickChecklistTaskDto,
   HideChecklistDto,
   ShowChecklistDto,
+  TooltipTargetMissingDto,
 } from './web-socket-v2.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import {
@@ -1710,6 +1711,7 @@ export class WebSocketV2Service {
     const contentVersion = contentId
       ? findContentVersionByContentId(contentVersions, contentId)
       : findLatestActivedAutoStartContent(contentVersions, contentType);
+    this.logger.log(`contentVersion: ${JSON.stringify(contentVersion)}`);
     if (!contentVersion) return null;
 
     let sessionId = findLatestSessionId(contentVersion.session.latestSession, contentType);
@@ -1717,7 +1719,7 @@ export class WebSocketV2Service {
       const session = await this.createSession(
         {
           userId: externalUserId,
-          contentId: contentVersion.id,
+          contentId: contentVersion.content.id,
           companyId: externalCompanyId,
           reason: 'auto_start',
           context: {},
@@ -1750,12 +1752,13 @@ export class WebSocketV2Service {
         data: [],
       },
     };
+    const latestSession = contentVersion.session?.latestSession;
     if (contentType === ContentDataType.CHECKLIST) {
       session.version.checklist = contentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
       const steps = contentVersion.steps;
       const currentStepIndex = isUndefined(stepIndex)
-        ? Math.max(findLatestStepNumber(contentVersion.session.latestSession.bizEvent), 0)
+        ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
         : stepIndex;
       const currentStep = steps[currentStepIndex];
       session.version.steps = contentVersion.steps as unknown as SDKStep[];
@@ -1774,7 +1777,6 @@ export class WebSocketV2Service {
     });
 
     // await this.cacheCurrentSession(session);
-
     return session;
   }
 
@@ -1996,6 +1998,46 @@ export class WebSocketV2Service {
       {
         userId: String(bizSession.bizUser.externalId),
         eventName: BizEvents.CHECKLIST_SEEN,
+        sessionId: bizSession.id,
+        eventData,
+      },
+      environment,
+    );
+
+    return true;
+  }
+
+  async reportTooltipTargetMissing(
+    params: TooltipTargetMissingDto,
+    environment: Environment,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: params.sessionId },
+      include: { bizUser: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const version = bizSession.version;
+    const step = version.steps.find((s) => s.id === params.stepId);
+    if (!step) return false;
+    const stepIndex = version.steps.findIndex((s) => s.id === step.id);
+    if (stepIndex === -1) return false;
+
+    const total = version.steps.length;
+    const progress = Math.round(((stepIndex + 1) / total) * 100);
+
+    const eventData = {
+      [EventAttributes.FLOW_VERSION_ID]: version.id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
+      [EventAttributes.FLOW_STEP_CVID]: step.cvid,
+      [EventAttributes.FLOW_STEP_NAME]: step.name,
+      [EventAttributes.FLOW_STEP_PROGRESS]: progress,
+    };
+
+    await this.trackEventV2(
+      {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.TOOLTIP_TARGET_MISSING,
         sessionId: bizSession.id,
         eventData,
       },
