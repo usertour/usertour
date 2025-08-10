@@ -45,6 +45,7 @@ import {
   ContentDataType,
   Step as SDKStep,
   StepSettings,
+  ThemeTypesSetting,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -1711,7 +1712,6 @@ export class WebSocketV2Service {
     const contentVersion = contentId
       ? findContentVersionByContentId(contentVersions, contentId)
       : findLatestActivedAutoStartContent(contentVersions, contentType);
-    this.logger.log(`contentVersion: ${JSON.stringify(contentVersion)}`);
     if (!contentVersion) return null;
 
     let sessionId = findLatestSessionId(contentVersion.session.latestSession, contentType);
@@ -1731,6 +1731,8 @@ export class WebSocketV2Service {
     }
 
     const config = await this.getConfig(environment);
+    const themes = await this.fetchThemes(environment, externalUserId, externalCompanyId);
+    const versionTheme = themes.find((theme) => theme.id === contentVersion.themeId);
 
     const session: SDKContentSession = {
       id: sessionId,
@@ -1749,6 +1751,9 @@ export class WebSocketV2Service {
       version: {
         id: contentVersion.id,
         config: contentVersion.config,
+        theme: {
+          settings: versionTheme.settings as ThemeTypesSetting,
+        },
         data: [],
       },
     };

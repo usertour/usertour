@@ -45,6 +45,7 @@ export class UsertourTour extends Evented {
     this.store = new ExternalStore<TourStore>(undefined);
     this.session = session;
     this.instance = instance;
+    this.steps = session.version.steps;
   }
 
   /**
@@ -99,7 +100,6 @@ export class UsertourTour extends Evented {
     }
     const zIndex = this.instance.getBaseZIndex() ?? 0;
     const sdkConfig = this.instance.getSdkConfig();
-    const userInfo = this.instance.getUserInfo();
 
     // Combine all store data with proper defaults
     return {
@@ -108,7 +108,7 @@ export class UsertourTour extends Evented {
       assets: getAssets(themeSettings),
       globalStyle: convertToCssVars(convertSettings(themeSettings)),
       themeSettings: themeSettings,
-      userInfo: userInfo,
+      userAttributes: {},
       openState: false,
       currentStep, // Add current step
       zIndex: zIndex + 200,

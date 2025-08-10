@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
 import { isUndefined } from '@usertour/helpers';
-import { BizUserInfo } from '@usertour/types';
+import { UserTourTypes } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Descendant } from 'slate';
@@ -128,15 +128,15 @@ export const contentEditorElements = [
   },
 ];
 
-const getLinkUrl = (value: Descendant[], userInfo: BizUserInfo) => {
+const getLinkUrl = (value: Descendant[], userAttributes: UserTourTypes.Attributes) => {
   let url = '';
   try {
     for (const v of value) {
       if ('children' in v) {
         for (const vc of v.children) {
           if ('type' in vc && vc.type === 'user-attribute') {
-            if (userInfo) {
-              url += userInfo.data[vc.attrCode] || vc.fallback;
+            if (userAttributes) {
+              url += userAttributes[vc.attrCode] || vc.fallback;
             }
           } else if ('text' in vc) {
             url += vc.text;
@@ -148,25 +148,31 @@ const getLinkUrl = (value: Descendant[], userInfo: BizUserInfo) => {
   return url;
 };
 
-const replaceUserAttrForElement = (data: Descendant[], userInfo: BizUserInfo) => {
+const replaceUserAttrForElement = (
+  data: Descendant[],
+  userAttributes: UserTourTypes.Attributes,
+) => {
   return data.map((v: any) => {
     if (v.children) {
-      v.children = replaceUserAttrForElement(v.children, userInfo);
+      v.children = replaceUserAttrForElement(v.children, userAttributes);
     }
-    if (v.type === 'user-attribute' && userInfo.data) {
-      const value = userInfo.data[v.attrCode] || v.fallback;
+    if (v.type === 'user-attribute' && userAttributes) {
+      const value = userAttributes[v.attrCode] || v.fallback;
       if (!isUndefined(value)) {
         v.value = String(value);
       }
     }
-    if (v.type === 'link' && userInfo.data) {
-      v.url = v.data ? getLinkUrl(v.data, userInfo) : '';
+    if (v.type === 'link' && userAttributes) {
+      v.url = v.data ? getLinkUrl(v.data, userAttributes) : '';
     }
     return v;
   });
 };
 
-export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: BizUserInfo) => {
+export const replaceUserAttr = (
+  editorContents: ContentEditorRoot[],
+  userAttributes: UserTourTypes.Attributes,
+) => {
   return editorContents.map((editorContent: ContentEditorRoot) => {
     if (!editorContent.children) {
       return editorContent;
@@ -185,7 +191,7 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
                 ...element,
                 element: {
                   ...element.element,
-                  data: replaceUserAttrForElement(element.element.data, userInfo),
+                  data: replaceUserAttrForElement(element.element.data, userAttributes),
                 },
               };
             }
@@ -199,11 +205,11 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
 
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];
-  userInfo?: BizUserInfo;
+  userAttributes?: UserTourTypes.Attributes;
   onClick?: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 }) => {
-  const { contents, onClick, userInfo } = props;
-  const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;
+  const { contents, onClick, userAttributes } = props;
+  const editorContents = userAttributes ? replaceUserAttr(contents, userAttributes) : contents;
 
   return (
     <>

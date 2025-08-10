@@ -14,7 +14,6 @@ import {
 } from '@usertour-packages/shared-editor';
 import {
   Align,
-  BizUserInfo,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
@@ -23,6 +22,7 @@ import {
   Step,
   StepContentType,
   ThemeTypesSetting,
+  UserTourTypes,
 } from '@usertour/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { UsertourTour } from '@/core/usertour-tour';
@@ -36,7 +36,7 @@ type TourBaseProps = {
   globalStyle: string;
   currentStep: Step;
   assets: any;
-  userInfo: BizUserInfo;
+  userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
   totalSteps: number;
   sdkConfig: SDKConfig;
@@ -54,7 +54,7 @@ type TourModalProps = TourBaseProps;
 
 type PopperContentProps = {
   currentStep: Step;
-  userInfo: BizUserInfo;
+  userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
   totalSteps: number;
   themeSettings: ThemeTypesSetting;
@@ -72,7 +72,7 @@ const useTourStore = (tour: UsertourTour) => {
   }
 
   const {
-    userInfo,
+    userAttributes,
     currentStep,
     triggerRef,
     openState,
@@ -85,12 +85,12 @@ const useTourStore = (tour: UsertourTour) => {
     totalSteps,
   } = store;
 
-  if (!userInfo || !currentStep || !openState) {
+  if (!currentStep || !openState) {
     return null;
   }
 
   return {
-    userInfo,
+    userAttributes,
     currentStep,
     triggerRef,
     openState,
@@ -108,7 +108,7 @@ const useTourStore = (tour: UsertourTour) => {
 const PopperContent = (props: PopperContentProps) => {
   const {
     currentStep,
-    userInfo,
+    userAttributes,
     currentStepIndex,
     totalSteps,
     themeSettings,
@@ -145,7 +145,7 @@ const PopperContent = (props: PopperContentProps) => {
       <ContentEditorSerialize
         contents={currentStep.data}
         onClick={handleOnClick}
-        userInfo={userInfo}
+        userAttributes={userAttributes}
       />
       {!sdkConfig.removeBranding && <PopperMadeWith />}
       {showBottomProgress && (
@@ -188,7 +188,7 @@ const TourPopper = (props: TourPopperProps) => {
     themeSettings,
     triggerRef,
     assets,
-    userInfo,
+    userAttributes,
     currentStepIndex,
     totalSteps,
     sdkConfig,
@@ -247,7 +247,7 @@ const TourPopper = (props: TourPopperProps) => {
       >
         <PopperContent
           currentStep={currentStep}
-          userInfo={userInfo}
+          userAttributes={userAttributes}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           themeSettings={themeSettings}
@@ -267,7 +267,7 @@ const TourModal = (props: TourModalProps) => {
     globalStyle,
     currentStep,
     assets,
-    userInfo,
+    userAttributes,
     currentStepIndex,
     totalSteps,
     themeSettings,
@@ -293,7 +293,7 @@ const TourModal = (props: TourModalProps) => {
       >
         <PopperContent
           currentStep={currentStep}
-          userInfo={userInfo}
+          userAttributes={userAttributes}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           themeSettings={themeSettings}
