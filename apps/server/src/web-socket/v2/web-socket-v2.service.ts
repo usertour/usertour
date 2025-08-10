@@ -1743,7 +1743,7 @@ export class WebSocketV2Service {
       data: [],
       version: {
         id: contentVersion.id,
-        config: contentVersion.config as ContentConfigObject,
+        config: contentVersion.config,
         data: [],
       },
     };
