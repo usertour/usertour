@@ -149,28 +149,28 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('upsert-user')
   async upsertBizUsers(
-    @MessageBody() body: UpsertUserDto,
+    @MessageBody() upsertUserDto: UpsertUserDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
-    this.logger.log(`Upserting user ${body.userId} in environment ${environment.id}`);
+    this.logger.log(`Upserting user ${upsertUserDto.userId} in environment ${environment.id}`);
 
-    await this.service.upsertBizUsers(body, environment);
+    await this.service.upsertBizUsers(upsertUserDto, environment);
     return true;
   }
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
-    @MessageBody() body: UpsertCompanyDto,
+    @MessageBody() upsertCompanyDto: UpsertCompanyDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
 
-    const result = await this.service.upsertBizCompanies(body, environment);
+    const result = await this.service.upsertBizCompanies(upsertCompanyDto, environment);
 
     // Store company info in socket data for future use
     if (result) {
-      client.data.externalCompanyId = body.companyId;
+      client.data.externalCompanyId = upsertCompanyDto.companyId;
       client.data.companyInfo = result;
     }
 
@@ -179,74 +179,74 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('start-flow')
   async startFlow(
-    @MessageBody() body: StartFlowDto,
+    @MessageBody() startFlowDto: StartFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.setFlowSession(client, body.contentId, body.stepIndex);
+    return await this.setFlowSession(client, startFlowDto.contentId, startFlowDto.stepIndex);
   }
 
   @SubscribeMessage('end-flow')
   async endFlow(
-    @MessageBody() body: EndFlowDto,
+    @MessageBody() endFlowDto: EndFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
     await this.service.endFlow(
       client.data.externalUserId,
-      body.sessionId,
-      body.reason,
+      endFlowDto.sessionId,
+      endFlowDto.reason,
       environment,
     );
 
     // Unset session ID if it matches the ended session
-    this.unsetContentSessionId(client, body.sessionId);
+    this.unsetContentSessionId(client, endFlowDto.sessionId);
 
     return true;
   }
 
   @SubscribeMessage('go-to-step')
   async goToStep(
-    @MessageBody() body: GoToStepDto,
+    @MessageBody() goToStepDto: GoToStepDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.goToStep(body, client.data.environment);
+    return await this.service.goToStep(goToStepDto, client.data.environment);
   }
 
   @SubscribeMessage('answer-question')
   async answerQuestion(
-    @MessageBody() body: AnswerQuestionDto,
+    @MessageBody() answerQuestionDto: AnswerQuestionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.answerQuestion(body, client.data.environment);
+    return await this.service.answerQuestion(answerQuestionDto, client.data.environment);
   }
 
   @SubscribeMessage('click-checklist-task')
   async clickChecklistTask(
-    @MessageBody() body: ClickChecklistTaskDto,
+    @MessageBody() clickChecklistTaskDto: ClickChecklistTaskDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.clickChecklistTask(body, client.data.environment);
+    return await this.service.clickChecklistTask(clickChecklistTaskDto, client.data.environment);
   }
 
   @SubscribeMessage('hide-checklist')
   async hideChecklist(
-    @MessageBody() body: HideChecklistDto,
+    @MessageBody() hideChecklistDto: HideChecklistDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.hideChecklist(body, client.data.environment);
+    return await this.service.hideChecklist(hideChecklistDto, client.data.environment);
   }
 
   @SubscribeMessage('show-checklist')
   async showChecklist(
-    @MessageBody() body: ShowChecklistDto,
+    @MessageBody() showChecklistDto: ShowChecklistDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.showChecklist(body, client.data.environment);
+    return await this.service.showChecklist(showChecklistDto, client.data.environment);
   }
 
   @SubscribeMessage('update-client-context')
   async updateClientContext(
-    @MessageBody() body: UpdateClientContextDto,
+    @MessageBody() updateClientContextDto: UpdateClientContextDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const externalUserId = client.data.externalUserId;
@@ -256,7 +256,7 @@ export class WebSocketV2Gateway {
     await this.service.updateUserClientContext(
       environment,
       externalUserId,
-      body,
+      updateClientContextDto,
       externalCompanyId,
     );
     return true;
@@ -264,11 +264,10 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('track-event')
   async trackEvent(
-    @MessageBody() body: TrackEventDto,
+    @MessageBody() trackEventDto: TrackEventDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    const environment = client.data.environment;
-    return Boolean(await this.service.trackEvent(body, environment));
+    return Boolean(await this.service.trackEvent(trackEventDto, client.data.environment));
   }
 
   /**
