@@ -49,8 +49,12 @@ import {
   Step as SDKStep,
   StepSettings,
 } from '@usertour/types';
-import { findLatestStepNumber } from '@/utils/content-utils';
-import { filterAutoStartContent, flowIsDismissed } from '@/utils/conditions';
+import {
+  findLatestStepNumber,
+  findLatestActivedAutoStartContent,
+  findContentVersionByContentId,
+  findLatestSessionId,
+} from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
@@ -1710,21 +1714,13 @@ export class WebSocketV2Service {
       environment,
     );
     if (contentVersions.length === 0) return null;
-    let contentVersion: UnionContentVersion;
-    if (contentId) {
-      contentVersion = contentVersions.find((c) => c.id === contentId);
-      if (!contentVersion) return null;
-    } else {
-      const flows = filterAutoStartContent(contentVersions, ContentDataType.FLOW);
-      if (flows.length === 0) return null;
-      contentVersion = flows[0];
-    }
-    let sessionId: string;
-    let stepIndexInSession = 0;
-    if (contentVersion.latestSession && !flowIsDismissed(contentVersion.latestSession)) {
-      sessionId = contentVersion.latestSession.id;
-      stepIndexInSession = Math.max(findLatestStepNumber(contentVersion.latestSession.bizEvent), 0);
-    } else {
+    const contentVersion = contentId
+      ? findContentVersionByContentId(contentVersions, contentId)
+      : findLatestActivedAutoStartContent(contentVersions, ContentDataType.FLOW);
+    if (!contentVersion) return null;
+
+    let sessionId = findLatestSessionId(contentVersion.latestSession, ContentDataType.FLOW);
+    if (!sessionId) {
       const session = await this.createSession(
         {
           userId: externalUserId,
@@ -1740,8 +1736,10 @@ export class WebSocketV2Service {
     }
 
     const steps = contentVersion.steps;
-    const currentStepIndex = isUndefined(stepIndex) ? stepIndexInSession : stepIndex;
-    const currentStep = steps[currentStepIndex ?? 0];
+    const currentStepIndex = isUndefined(stepIndex)
+      ? Math.max(findLatestStepNumber(contentVersion.latestSession.bizEvent), 0)
+      : stepIndex;
+    const currentStep = steps[currentStepIndex];
     const config = await this.getConfig(environment);
 
     const session = {
@@ -2006,5 +2004,74 @@ export class WebSocketV2Service {
     );
 
     return true;
+  }
+
+  async setChecklistSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+    contentId?: string,
+  ): Promise<SDKContentSession | null> {
+    const contentVersions = await this.listContent(
+      { userId: externalUserId, companyId: externalCompanyId },
+      environment,
+    );
+    if (contentVersions.length === 0) return null;
+    const contentVersion = contentId
+      ? findContentVersionByContentId(contentVersions, contentId)
+      : findLatestActivedAutoStartContent(contentVersions, ContentDataType.CHECKLIST);
+
+    if (!contentVersion) return null;
+    let sessionId = findLatestSessionId(contentVersion.latestSession, ContentDataType.CHECKLIST);
+    if (!sessionId) {
+      const session = await this.createSession(
+        {
+          userId: externalUserId,
+          contentId: contentVersion.id,
+          companyId: externalCompanyId,
+          reason: 'auto_start',
+          context: {},
+        },
+        environment,
+      );
+      if (!session) return null;
+      sessionId = session.id;
+    }
+
+    const config = await this.getConfig(environment);
+
+    const session = {
+      id: sessionId,
+      type: ContentDataType.FLOW,
+      content: {
+        id: contentVersion.contentId,
+        name: contentVersion.name,
+        type: contentVersion.type as ContentDataType,
+        project: {
+          id: environment.projectId,
+          removeBranding: config.removeBranding,
+        },
+      },
+      draftMode: false,
+      data: [],
+      version: {
+        id: contentVersion.id,
+        config: contentVersion.config,
+        data: contentVersion.data,
+        checklist: contentVersion.data as unknown as ChecklistData,
+      },
+    };
+
+    // Update session version to the latest version
+    await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: {
+        versionId: session.version.id,
+      },
+    });
+
+    // await this.cacheCurrentSession(session);
+
+    return session;
   }
 }
