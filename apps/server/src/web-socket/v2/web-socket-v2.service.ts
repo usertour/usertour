@@ -26,8 +26,10 @@ import {
   ConfigResponse,
   CreateSessionRequest,
   GoToStepRequest,
+  HideChecklistRequest,
   ListContentsRequest,
   ListThemesRequest,
+  ShowChecklistRequest,
   TrackEventRequest,
   UpsertCompanyRequest,
   UpsertCompanyResponse,
@@ -1643,6 +1645,23 @@ export class WebSocketV2Service {
     return await this.prisma.environment.findFirst({ where: { token } });
   }
 
+  async trackEventV2(data: TrackEventRequest, environment: Environment): Promise<boolean> {
+    const clientContext = await this.getUserClientContext(environment, data.userId);
+    const newData = clientContext
+      ? {
+          ...data,
+          eventData: {
+            [EventAttributes.PAGE_URL]: clientContext.pageUrl,
+            [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
+            [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+            ...data.eventData,
+          },
+        }
+      : data;
+    await this.trackEvent(newData, environment);
+    return true;
+  }
+
   async updateUserClientContext(
     environment: Environment,
     externalUserId: string,
@@ -1790,7 +1809,7 @@ export class WebSocketV2Service {
       [EventAttributes.FLOW_END_REASON]: reason,
     });
 
-    await this.trackEvent(
+    await this.trackEventV2(
       {
         userId: String(externalUserId),
         eventName: BizEvents.FLOW_ENDED,
@@ -1830,7 +1849,7 @@ export class WebSocketV2Service {
       [EventAttributes.FLOW_STEP_PROGRESS]: Math.round(progress),
     };
 
-    await this.trackEvent(
+    await this.trackEventV2(
       {
         userId: String(bizSession.bizUser.externalId),
         eventName: BizEvents.FLOW_STEP_SEEN,
@@ -1841,7 +1860,7 @@ export class WebSocketV2Service {
     );
 
     if (isComplete) {
-      await this.trackEvent(
+      await this.trackEventV2(
         {
           userId: String(bizSession.bizUser.externalId),
           eventName: BizEvents.FLOW_COMPLETED,
@@ -1878,7 +1897,7 @@ export class WebSocketV2Service {
       eventData[EventAttributes.TEXT_ANSWER] = request.textAnswer;
     }
 
-    await this.trackEvent(
+    await this.trackEventV2(
       {
         userId: String(bizSession.bizUser.externalId),
         eventName: BizEvents.QUESTION_ANSWERED,
@@ -1918,10 +1937,68 @@ export class WebSocketV2Service {
       [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
     };
 
-    await this.trackEvent(
+    await this.trackEventV2(
       {
         userId: String(bizSession.bizUser.externalId),
         eventName: BizEvents.CHECKLIST_TASK_CLICKED,
+        sessionId: bizSession.id,
+        eventData,
+      },
+      environment,
+    );
+
+    return true;
+  }
+
+  async hideChecklist(request: HideChecklistRequest, environment: Environment): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: request.sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+    };
+
+    await this.trackEventV2(
+      {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.CHECKLIST_HIDDEN,
+        sessionId: bizSession.id,
+        eventData,
+      },
+      environment,
+    );
+
+    return true;
+  }
+
+  async showChecklist(request: ShowChecklistRequest, environment: Environment): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: request.sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+    };
+
+    await this.trackEventV2(
+      {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.CHECKLIST_SEEN,
         sessionId: bizSession.id,
         eventData,
       },

@@ -98,6 +98,20 @@ export type ClickChecklistTaskRequest = {
   taskId: string;
 };
 
+export type HideChecklistRequest = {
+  sessionId: string;
+};
+
+export type ShowChecklistRequest = {
+  sessionId: string;
+};
+
+export type UpdateClientContextRequest = {
+  pageUrl: string;
+  viewportWidth: number;
+  viewportHeight: number;
+};
+
 // Response types
 export type UpsertUserResponse = BizUser | null;
 

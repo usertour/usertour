@@ -23,7 +23,10 @@ import {
   ClickChecklistTaskRequest,
   EndFlowRequest,
   GoToStepRequest,
+  HideChecklistRequest,
+  ShowChecklistRequest,
   StartFlowRequest,
+  UpdateClientContextRequest,
 } from './web-socket-v2.dto';
 
 @WsGateway({ namespace: '/v2' })
@@ -196,6 +199,40 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.clickChecklistTask(body, client.data.environment);
+  }
+
+  @SubscribeMessage('hide-checklist')
+  async hideChecklist(
+    @MessageBody() body: HideChecklistRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.hideChecklist(body, client.data.environment);
+  }
+
+  @SubscribeMessage('show-checklist')
+  async showChecklist(
+    @MessageBody() body: ShowChecklistRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.showChecklist(body, client.data.environment);
+  }
+
+  @SubscribeMessage('update-client-context')
+  async updateClientContext(
+    @MessageBody() body: UpdateClientContextRequest,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    const externalUserId = client.data.externalUserId;
+    const environment = client.data.environment;
+    const externalCompanyId = client.data.externalCompanyId;
+
+    await this.service.updateUserClientContext(
+      environment,
+      externalUserId,
+      body,
+      externalCompanyId,
+    );
+    return true;
   }
 
   @SubscribeMessage('track-event')
