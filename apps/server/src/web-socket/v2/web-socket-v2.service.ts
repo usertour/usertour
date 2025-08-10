@@ -1816,6 +1816,8 @@ export class WebSocketV2Service {
       },
       environment,
     );
+
+    return true;
   }
 
   async goToStep(request: GoToStepRequest, environment: Environment): Promise<boolean> {

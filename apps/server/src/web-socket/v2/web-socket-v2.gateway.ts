@@ -194,12 +194,17 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     const environment = client.data.environment;
-    return await this.service.endFlow(
+    await this.service.endFlow(
       client.data.externalUserId,
       body.sessionId,
       body.reason,
       environment,
     );
+
+    // Clear session IDs if they match the ended session
+    this.clearSessionIds(client, body.sessionId);
+
+    return true;
   }
 
   @SubscribeMessage('go-to-step')
@@ -267,5 +272,19 @@ export class WebSocketV2Gateway {
   ): Promise<boolean> {
     const environment = client.data.environment;
     return Boolean(await this.service.trackEvent(body, environment));
+  }
+
+  /**
+   * Clear client session IDs if they match the provided session ID
+   */
+  private clearSessionIds(client: Socket, sessionId: string): void {
+    const sessionKeys = ['flowSessionId', 'checklistSessionId'] as const;
+
+    for (const key of sessionKeys) {
+      if (client.data[key] === sessionId) {
+        client.data[key] = null;
+        break;
+      }
+    }
   }
 }
