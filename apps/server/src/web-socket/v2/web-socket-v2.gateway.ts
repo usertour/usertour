@@ -25,6 +25,7 @@ import {
   StartFlowDto,
 } from './web-socket-v2.dto';
 import { ContentDataType } from '@usertour/types';
+import { getExternalUserRoom } from '@/utils/ws-utils';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -66,8 +67,9 @@ export class WebSocketV2Gateway {
         socket.data.envId = environment.id;
         socket.data.environment = environment;
 
+        const room = getExternalUserRoom(environment.id, externalUserId);
         // Join user room for targeted messaging
-        await socket.join(`user:${externalUserId}`);
+        await socket.join(room);
 
         this.logger.log(`Socket ${socket.id} authenticated for user ${externalUserId}`);
         return next();
@@ -106,11 +108,12 @@ export class WebSocketV2Gateway {
     }
 
     const externalUserId = client.data.externalUserId;
+    const environment = client.data.environment;
 
     // Create new flow session
     const flowSession = await this.service.setContentSession(
-      client.data.environment,
-      client.data.externalUserId,
+      environment,
+      externalUserId,
       ContentDataType.FLOW,
       client.data.externalCompanyId,
       contentId,
@@ -120,8 +123,9 @@ export class WebSocketV2Gateway {
     // Cache the session ID for future requests
     client.data.flowSessionId = flowSession.id;
 
+    const room = getExternalUserRoom(environment.id, externalUserId);
     // Notify the client about the new flow session
-    this.server.to(`user:${externalUserId}`).emit('set-flow-session', flowSession);
+    this.server.to(room).emit('set-flow-session', flowSession);
 
     return true;
   }
@@ -132,9 +136,10 @@ export class WebSocketV2Gateway {
     }
 
     const externalUserId = client.data.externalUserId;
+    const environment = client.data.environment;
 
     const checklistSession = await this.service.setContentSession(
-      client.data.environment,
+      environment,
       client.data.externalUserId,
       ContentDataType.CHECKLIST,
       client.data.externalCompanyId,
@@ -142,7 +147,8 @@ export class WebSocketV2Gateway {
 
     client.data.checklistSessionId = checklistSession.id;
 
-    this.server.to(`user:${externalUserId}`).emit('set-checklist-session', checklistSession);
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    this.server.to(room).emit('set-checklist-session', checklistSession);
 
     return true;
   }
