@@ -1702,9 +1702,10 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
-  async setFlowSession(
+  async setContentSession(
     environment: Environment,
     externalUserId: string,
+    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
     externalCompanyId?: string,
     contentId?: string,
     stepIndex?: number,
@@ -1716,10 +1717,10 @@ export class WebSocketV2Service {
     if (contentVersions.length === 0) return null;
     const contentVersion = contentId
       ? findContentVersionByContentId(contentVersions, contentId)
-      : findLatestActivedAutoStartContent(contentVersions, ContentDataType.FLOW);
+      : findLatestActivedAutoStartContent(contentVersions, contentType);
     if (!contentVersion) return null;
 
-    let sessionId = findLatestSessionId(contentVersion.latestSession, ContentDataType.FLOW);
+    let sessionId = findLatestSessionId(contentVersion.latestSession, contentType);
     if (!sessionId) {
       const session = await this.createSession(
         {
@@ -1735,16 +1736,11 @@ export class WebSocketV2Service {
       sessionId = session.id;
     }
 
-    const steps = contentVersion.steps;
-    const currentStepIndex = isUndefined(stepIndex)
-      ? Math.max(findLatestStepNumber(contentVersion.latestSession.bizEvent), 0)
-      : stepIndex;
-    const currentStep = steps[currentStepIndex];
     const config = await this.getConfig(environment);
 
-    const session = {
+    const session: SDKContentSession = {
       id: sessionId,
-      type: ContentDataType.FLOW,
+      type: contentType,
       content: {
         id: contentVersion.contentId,
         name: contentVersion.name,
@@ -1759,14 +1755,23 @@ export class WebSocketV2Service {
       version: {
         id: contentVersion.id,
         config: contentVersion.config,
-        data: contentVersion.data,
-        steps: contentVersion.steps as unknown as SDKStep[],
-      },
-      currentStep: {
-        cvid: currentStep.cvid,
-        id: currentStep.id,
+        data: [],
       },
     };
+    if (contentType === ContentDataType.CHECKLIST) {
+      session.version.checklist = contentVersion.data as unknown as ChecklistData;
+    } else if (contentType === ContentDataType.FLOW) {
+      const steps = contentVersion.steps;
+      const currentStepIndex = isUndefined(stepIndex)
+        ? Math.max(findLatestStepNumber(contentVersion.latestSession.bizEvent), 0)
+        : stepIndex;
+      const currentStep = steps[currentStepIndex];
+      session.version.steps = contentVersion.steps as unknown as SDKStep[];
+      session.currentStep = {
+        cvid: currentStep.cvid,
+        id: currentStep.id,
+      };
+    }
 
     // Update session version to the latest version
     await this.prisma.bizSession.update({
@@ -2004,74 +2009,5 @@ export class WebSocketV2Service {
     );
 
     return true;
-  }
-
-  async setChecklistSession(
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-    contentId?: string,
-  ): Promise<SDKContentSession | null> {
-    const contentVersions = await this.listContent(
-      { userId: externalUserId, companyId: externalCompanyId },
-      environment,
-    );
-    if (contentVersions.length === 0) return null;
-    const contentVersion = contentId
-      ? findContentVersionByContentId(contentVersions, contentId)
-      : findLatestActivedAutoStartContent(contentVersions, ContentDataType.CHECKLIST);
-
-    if (!contentVersion) return null;
-    let sessionId = findLatestSessionId(contentVersion.latestSession, ContentDataType.CHECKLIST);
-    if (!sessionId) {
-      const session = await this.createSession(
-        {
-          userId: externalUserId,
-          contentId: contentVersion.id,
-          companyId: externalCompanyId,
-          reason: 'auto_start',
-          context: {},
-        },
-        environment,
-      );
-      if (!session) return null;
-      sessionId = session.id;
-    }
-
-    const config = await this.getConfig(environment);
-
-    const session = {
-      id: sessionId,
-      type: ContentDataType.FLOW,
-      content: {
-        id: contentVersion.contentId,
-        name: contentVersion.name,
-        type: contentVersion.type as ContentDataType,
-        project: {
-          id: environment.projectId,
-          removeBranding: config.removeBranding,
-        },
-      },
-      draftMode: false,
-      data: [],
-      version: {
-        id: contentVersion.id,
-        config: contentVersion.config,
-        data: [],
-        checklist: contentVersion.data as unknown as ChecklistData,
-      },
-    };
-
-    // Update session version to the latest version
-    await this.prisma.bizSession.update({
-      where: { id: sessionId },
-      data: {
-        versionId: session.version.id,
-      },
-    });
-
-    // await this.cacheCurrentSession(session);
-
-    return session;
   }
 }

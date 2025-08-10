@@ -28,6 +28,7 @@ import {
   StartFlowRequest,
   UpdateClientContextRequest,
 } from './web-socket-v2.dto';
+import { ContentDataType } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -111,9 +112,10 @@ export class WebSocketV2Gateway {
     const externalUserId = client.data.externalUserId;
 
     // Create new flow session
-    const flowSession = await this.service.setFlowSession(
+    const flowSession = await this.service.setContentSession(
       client.data.environment,
       client.data.externalUserId,
+      ContentDataType.FLOW,
       client.data.externalCompanyId,
       contentId,
       stepIndex,
@@ -135,9 +137,10 @@ export class WebSocketV2Gateway {
 
     const externalUserId = client.data.externalUserId;
 
-    const checklistSession = await this.service.setChecklistSession(
+    const checklistSession = await this.service.setContentSession(
       client.data.environment,
       client.data.externalUserId,
+      ContentDataType.CHECKLIST,
       client.data.externalCompanyId,
     );
 
