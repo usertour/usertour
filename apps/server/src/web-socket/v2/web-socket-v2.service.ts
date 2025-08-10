@@ -23,11 +23,10 @@ import { LicenseService } from '@/license/license.service';
 import {
   AnswerQuestionRequest,
   ClickChecklistTaskRequest,
-  ConfigResponse,
+  ProjectConfig,
   CreateSessionRequest,
   GoToStepRequest,
   HideChecklistRequest,
-  ListThemesRequest,
   ShowChecklistRequest,
   TrackEventRequest,
   UpsertCompanyRequest,
@@ -94,7 +93,7 @@ export class WebSocketV2Service {
    * @param environment - Environment context
    * @returns Configuration object with plan type and branding settings
    */
-  async getConfig(environment: Environment): Promise<ConfigResponse> {
+  async getConfig(environment: Environment): Promise<ProjectConfig> {
     try {
       const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
 
@@ -119,8 +118,8 @@ export class WebSocketV2Service {
    * Get configuration for self-hosted mode using license validation
    * @returns Configuration object with plan type and branding settings
    */
-  private async getSelfHostedConfig(environment: Environment): Promise<ConfigResponse> {
-    const defaultConfig: ConfigResponse = {
+  private async getSelfHostedConfig(environment: Environment): Promise<ProjectConfig> {
+    const defaultConfig: ProjectConfig = {
       removeBranding: false,
       planType: 'hobby',
     };
@@ -164,8 +163,8 @@ export class WebSocketV2Service {
    * @param environment - Environment context
    * @returns Configuration object with plan type and branding settings
    */
-  private async getCloudConfig(environment: Environment): Promise<ConfigResponse> {
-    const defaultConfig: ConfigResponse = {
+  private async getCloudConfig(environment: Environment): Promise<ProjectConfig> {
+    const defaultConfig: ProjectConfig = {
       removeBranding: false,
       planType: 'hobby',
     };
@@ -1012,13 +1011,17 @@ export class WebSocketV2Service {
   }
 
   /**
-   * List themes for an environment
-   * @param body - The request body
+   * Fetch themes for a user with optimized performance
    * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
    * @returns Array of themes
    */
-  async listThemes(body: ListThemesRequest, environment: Environment): Promise<Theme[]> {
-    const { userId: externalUserId, companyId: externalCompanyId } = body;
+  async fetchThemes(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<Theme[]> {
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId: environment.id },
     });

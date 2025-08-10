@@ -1,32 +1,7 @@
-import { Theme } from '@/common/types/schema';
-
-export interface ConfigResponse {
+export type ProjectConfig = {
   removeBranding: boolean;
   planType: string;
-}
-
-// List contents request
-export interface ListContentsRequest {
-  userId?: string;
-  companyId?: string;
-}
-
-// List themes request
-export interface ListThemesRequest {
-  userId?: string;
-  companyId?: string;
-}
-
-// Get project settings request and response
-export interface GetProjectSettingsRequest {
-  userId?: string;
-  companyId?: string;
-}
-
-export interface GetProjectSettingsResponse {
-  config: ConfigResponse;
-  themes: Theme[];
-}
+};
 
 // Upsert user request
 export interface UpsertUserRequest {
