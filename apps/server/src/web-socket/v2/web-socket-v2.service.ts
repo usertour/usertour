@@ -27,7 +27,6 @@ import {
   CreateSessionRequest,
   GoToStepRequest,
   HideChecklistRequest,
-  ListContentsRequest,
   ListThemesRequest,
   ShowChecklistRequest,
   TrackEventRequest,
@@ -251,17 +250,18 @@ export class WebSocketV2Service {
   }
 
   /**
-   * List content for a user with optimized performance
-   * @param body - The request body
+   * Fetch custom content versions for a user with optimized performance
    * @param environment - The environment
-   * @returns Array of content
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns Array of custom content versions
    */
-  async listContent(
-    body: Pick<ListContentsRequest, 'userId' | 'companyId'>,
+  async fetchCustomContentVersions(
     environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
   ): Promise<CustomContentVersion[]> {
     try {
-      const { userId: externalUserId, companyId: externalCompanyId } = body;
       const environmentId = environment.id;
 
       // Step 1: Get content list
@@ -345,9 +345,8 @@ export class WebSocketV2Service {
       return processedContents.filter(Boolean);
     } catch (error) {
       this.logger.error({
-        message: `Error in listContent: ${error.message}`,
+        message: `Error in fetchCustomContentVersions: ${error.message}`,
         stack: error.stack,
-        body,
       });
       return [];
     }
@@ -1699,9 +1698,10 @@ export class WebSocketV2Service {
     contentId?: string,
     stepIndex?: number,
   ): Promise<SDKContentSession | null> {
-    const contentVersions = await this.listContent(
-      { userId: externalUserId, companyId: externalCompanyId },
+    const contentVersions = await this.fetchCustomContentVersions(
       environment,
+      externalUserId,
+      externalCompanyId,
     );
     if (contentVersions.length === 0) return null;
     const contentVersion = contentId
