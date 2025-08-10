@@ -201,8 +201,8 @@ export class WebSocketV2Gateway {
       environment,
     );
 
-    // Clear session IDs if they match the ended session
-    this.clearSessionIds(client, body.sessionId);
+    // Unset session ID if it matches the ended session
+    this.unsetContentSessionId(client, body.sessionId);
 
     return true;
   }
@@ -277,7 +277,7 @@ export class WebSocketV2Gateway {
   /**
    * Clear client session IDs if they match the provided session ID
    */
-  private clearSessionIds(client: Socket, sessionId: string): void {
+  private unsetContentSessionId(client: Socket, sessionId: string): void {
     const sessionKeys = ['flowSessionId', 'checklistSessionId'] as const;
 
     for (const key of sessionKeys) {
