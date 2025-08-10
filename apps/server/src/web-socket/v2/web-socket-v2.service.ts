@@ -1800,7 +1800,7 @@ export class WebSocketV2Service {
     });
     const seenData = (latestStepSeenEvent?.data as any) ?? {};
 
-    const eventData: Record<string, any> = deepmerge(seenData, {
+    const eventData: Record<string, any> = deepmerge({}, seenData, {
       [EventAttributes.FLOW_END_REASON]: reason,
     });
 
