@@ -24,13 +24,11 @@ import { TourStore } from '@/types/store';
 import { ElementWatcher } from '@/core/element-watcher';
 import { ExternalStore } from '@/core/store';
 import { Evented } from '@/core/evented';
-import { autoBind, AppEvents, document, activedRulesConditions } from '@/utils';
+import { autoBind, AppEvents, document, activedRulesConditions, logger } from '@/utils';
 import { getAssets } from '@/core/common';
-
 import { UsertourCore } from './usertour-core';
 import { AnswerQuestionDto } from '@/types/web-socket';
 import { Session } from './session';
-import { logger } from '@/utils/logger';
 
 export class UsertourTour extends Evented {
   // Constants
