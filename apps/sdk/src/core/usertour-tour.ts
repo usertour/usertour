@@ -55,17 +55,17 @@ export class UsertourTour extends Evented {
   }
 
   /**
-   * Gets the session ID
-   */
-  private getSessionId(): string {
-    return this.session.getSessionId();
-  }
-
-  /**
    * Gets the tour ID
    */
   getId(): string {
     return this.id;
+  }
+
+  /**
+   * Gets the session ID
+   */
+  private getSessionId(): string {
+    return this.session.getSessionId();
   }
 
   /**
@@ -201,7 +201,7 @@ export class UsertourTour extends Evented {
    * @param currentStep - The step to display as a tooltip
    * @throws Will close the tour if validation fails or target is missing
    */
-  async showPopper(currentStep: Step): Promise<void> {
+  private async showPopper(currentStep: Step): Promise<void> {
     // Validate step and target
     if (!this.canShowPopper(currentStep)) {
       logger.error('Step cannot be shown', { step: currentStep });
@@ -337,7 +337,7 @@ export class UsertourTour extends Evented {
    *
    * @param currentStep - The step to be displayed as a modal
    */
-  async showModal(currentStep: Step) {
+  private async showModal(currentStep: Step) {
     // Build store data and get step information
     const store = this.buildStoreData();
     if (!store) {
@@ -368,7 +368,7 @@ export class UsertourTour extends Evented {
    * 2. Reporting the completion event if it's the last step
    *
    */
-  async showHidden(currentStep: Step) {
+  private async showHidden(currentStep: Step) {
     await this.reportStepSeen(currentStep);
   }
 
@@ -486,7 +486,7 @@ export class UsertourTour extends Evented {
    * @param element - The question element that was answered
    * @param value - The value of the answer
    */
-  async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
+  private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
     const { data, type } = element;
     const { cvid } = data;
     const eventData: AnswerQuestionDto = {
@@ -525,7 +525,7 @@ export class UsertourTour extends Evented {
    *
    * @returns {Promise<void>}
    */
-  async processTriggers(): Promise<void> {
+  private async processTriggers(): Promise<void> {
     const currentStep = this.currentStep;
 
     // Early return if no triggers to process
@@ -603,7 +603,7 @@ export class UsertourTour extends Evented {
    * @param currentStep - The current step
    * @returns Store data with step info
    */
-  getCurrentStepInfo(currentStep: Step) {
+  private getCurrentStepInfo(currentStep: Step) {
     const steps = this.getSteps();
     // Early return for edge cases
     if (!steps.length) {
