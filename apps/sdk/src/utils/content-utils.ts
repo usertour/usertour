@@ -374,7 +374,7 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
 
   // Direct property comparison for better performance
   return (
-    !isEqual(currentStore.userInfo, previousStore.userInfo) ||
+    !isEqual(currentStore.userAttributes, previousStore.userAttributes) ||
     !isEqual(currentStore.assets, previousStore.assets) ||
     !isEqual(currentStore.globalStyle, previousStore.globalStyle) ||
     !isEqual(currentStore.themeSettings, previousStore.themeSettings) ||

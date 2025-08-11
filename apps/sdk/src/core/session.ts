@@ -20,6 +20,17 @@ export class Session {
   }
 
   /**
+   * Gets the step by cvid
+   */
+  getStepByCvid(cvid: string): Step | undefined {
+    const steps = this.getSteps();
+    if (!steps.length) {
+      return undefined;
+    }
+    return steps.find((step) => step.cvid === cvid);
+  }
+
+  /**
    * Gets the content ID from session
    */
   getContentId(): string {

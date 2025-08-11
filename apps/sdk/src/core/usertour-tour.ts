@@ -24,7 +24,7 @@ import { TourStore } from '@/types/store';
 import { ElementWatcher } from '@/core/element-watcher';
 import { ExternalStore } from '@/core/store';
 import { Evented } from '@/core/evented';
-import { autoBind, AppEvents, getStepByCvid, document, activedRulesConditions } from '@/utils';
+import { autoBind, AppEvents, document, activedRulesConditions } from '@/utils';
 import { getAssets } from '@/core/common';
 
 import { UsertourCore } from './usertour-core';
@@ -74,6 +74,14 @@ export class UsertourTour extends Evented {
    */
   private getSteps(): Step[] {
     return this.session.getSteps();
+  }
+
+  /**
+   * Gets the step by cvid from session
+   * @private
+   */
+  private getStepByCvid(cvid: string): Step | undefined {
+    return this.session.getStepByCvid(cvid);
   }
 
   /**
@@ -133,7 +141,7 @@ export class UsertourTour extends Evented {
     const steps = this.getSteps();
     if (!steps.length) return null;
 
-    const step = cvid ? getStepByCvid(steps, cvid) : steps[0];
+    const step = cvid ? this.getStepByCvid(cvid) : steps[0];
     return step?.cvid ? step : null;
   }
 
