@@ -281,7 +281,7 @@ export class UsertourTour extends Evented {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    const { progress, index, total } = this.getCurrentStepInfo(step);
+    const stepInfo = this.getCurrentStepInfo(step);
 
     // Scroll element into view if tour is visible
     smoothScroll(el, { block: 'center' });
@@ -289,9 +289,7 @@ export class UsertourTour extends Evented {
     // Update store
     this.store.setData({
       ...store,
-      progress,
-      currentStepIndex: index,
-      totalSteps: total,
+      ...stepInfo,
       triggerRef: el,
       openState: true,
     });
@@ -340,7 +338,7 @@ export class UsertourTour extends Evented {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    const { progress, index, total } = this.getCurrentStepInfo(currentStep);
+    const stepInfo = this.getCurrentStepInfo(currentStep);
 
     // Report that the step has been seen
     await this.reportStepSeen(currentStep);
@@ -351,10 +349,8 @@ export class UsertourTour extends Evented {
     // Set up modal state
     this.store.setData({
       ...store,
+      ...stepInfo,
       openState: true,
-      progress,
-      currentStepIndex: index, // Convert to 0-based index
-      totalSteps: total,
     });
   }
 
@@ -596,15 +592,19 @@ export class UsertourTour extends Evented {
   }
 
   /**
-   * Get the current step info
+   * Get the current step info for store data
    * @param currentStep - The current step
-   * @returns The current step info
+   * @returns Store data with step info
    */
   getCurrentStepInfo(currentStep: Step) {
     const steps = this.getSteps();
     // Early return for edge cases
     if (!steps.length) {
-      return { total: 0, index: 0, progress: 0 };
+      return {
+        totalSteps: 0,
+        currentStepIndex: 0,
+        progress: 0,
+      };
     }
 
     const total = steps.length;
@@ -612,7 +612,11 @@ export class UsertourTour extends Evented {
     const validIndex = index === -1 ? 0 : index;
     const progress = Math.round(((validIndex + 1) / total) * 100);
 
-    return { total, index: validIndex, progress };
+    return {
+      totalSteps: total,
+      currentStepIndex: validIndex,
+      progress,
+    };
   }
 
   /**
