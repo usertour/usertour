@@ -30,6 +30,7 @@ import { getAssets } from '@/core/common';
 import { UsertourCore } from './usertour-core';
 import { AnswerQuestionDto } from '@/types/web-socket';
 import { Session } from './session';
+import { logger } from '@/utils/logger';
 
 export class UsertourTour extends Evented {
   // Constants
@@ -82,7 +83,8 @@ export class UsertourTour extends Evented {
   private getThemeSettings() {
     const themeSettings = this.session.getThemeSettings();
     if (!themeSettings) {
-      throw new Error('Theme settings not found');
+      logger.error('Theme settings not found');
+      return null;
     }
     return themeSettings;
   }
@@ -140,8 +142,11 @@ export class UsertourTour extends Evented {
    *
    * @returns {TourStore} The complete store data object
    */
-  private buildStoreData(): TourStore {
+  private buildStoreData(): TourStore | null {
     const themeSettings = this.getThemeSettings();
+    if (!themeSettings) {
+      return null;
+    }
 
     // Combine all store data with proper defaults
     return {
@@ -208,6 +213,10 @@ export class UsertourTour extends Evented {
 
     // Set up element watcher
     const store = this.buildStoreData();
+    if (!store) {
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
     this.setupElementWatcher(currentStep, store);
   }
 
@@ -327,6 +336,10 @@ export class UsertourTour extends Evented {
   async showModal(currentStep: Step) {
     // Build store data and get step information
     const store = this.buildStoreData();
+    if (!store) {
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
     const { progress, index, total } = this.getCurrentStepInfo(currentStep);
 
     // Report that the step has been seen
