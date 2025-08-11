@@ -406,12 +406,13 @@ export class UsertourTour extends Evented {
       (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
     );
 
+    // Execute other actions first, then navigation actions
     await this.executeActions(otherActions);
-    await this.executeNavigations(pageNavigateActions);
+    await this.executeActions(pageNavigateActions);
   }
 
   /**
-   * Executes non-navigation actions
+   * Executes all actions in sequence
    * @private
    */
   private async executeActions(actions: RulesCondition[]) {
@@ -438,16 +439,9 @@ export class UsertourTour extends Evented {
       case ContentActionsItemType.JAVASCRIPT_EVALUATE:
         evalCode(action.data.value);
         break;
-    }
-  }
-
-  /**
-   * Executes navigation actions
-   * @private
-   */
-  private async executeNavigations(actions: RulesCondition[]) {
-    for (const action of actions) {
-      this.instance.handleNavigate(action.data);
+      case ContentActionsItemType.PAGE_NAVIGATE:
+        this.instance.handleNavigate(action.data);
+        break;
     }
   }
 
