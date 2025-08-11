@@ -1,5 +1,5 @@
 import { autoBind } from '@/utils';
-import isEqual from 'fast-deep-equal';
+import { isEqual } from '@usertour/helpers';
 
 /**
  * A generic store class that manages state and notifies subscribers of changes

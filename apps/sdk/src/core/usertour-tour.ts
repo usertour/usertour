@@ -11,6 +11,7 @@ import {
   Step,
   StepContentType,
   StepTrigger,
+  ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
 import {
@@ -19,6 +20,7 @@ import {
   evalCode,
   isActive,
   isUndefined,
+  isEqual,
 } from '@usertour/helpers';
 import { TourStore } from '@/types/store';
 import { ElementWatcher } from '@/core/element-watcher';
@@ -29,6 +31,7 @@ import { getAssets } from '@/core/common';
 import { UsertourCore } from './usertour-core';
 import { AnswerQuestionDto } from '@/types/web-socket';
 import { Session } from './session';
+import { getActivedThemeSettings } from '@/utils/helper';
 
 export class UsertourTour extends Evented {
   // Constants
@@ -50,6 +53,21 @@ export class UsertourTour extends Evented {
     this.instance = instance;
     this.store = new ExternalStore<TourStore>(undefined);
     this.id = this.getSessionId();
+  }
+
+  async monitor(): Promise<void> {
+    try {
+      // Check if the current step is visible
+      await this.checkTooltipVisibility();
+      // Process triggers
+      await this.processTriggers();
+      // Check and update theme settings if needed
+      await this.checkAndUpdateThemeSettings();
+    } catch (error) {
+      logger.error('Error in tour monitoring:', error);
+      // Optionally handle the error or rethrow
+      throw error;
+    }
   }
 
   /**
@@ -86,13 +104,47 @@ export class UsertourTour extends Evented {
    * Gets theme settings from session
    * @private
    */
-  private getThemeSettings() {
-    const themeSettings = this.session.getThemeSettings();
+  private getVersionThemeSettings() {
+    return this.session.getVersionThemeSettings();
+  }
+
+  /**
+   * Gets theme variations from session
+   * @private
+   */
+  private getVersionThemeVariations() {
+    return this.session.getVersionThemeVariations();
+  }
+
+  /**
+   * Open the tour
+   */
+  private open() {
+    this.store.update({ openState: true });
+  }
+
+  /**
+   * Hide the tour
+   */
+  private hide() {
+    this.store.update({ openState: false });
+  }
+
+  /**
+   * Gets theme settings from session
+   * @private
+   */
+  private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
+    const themeSettings = this.getVersionThemeSettings();
+    const themeVariations = this.getVersionThemeVariations();
     if (!themeSettings) {
       logger.error('Theme settings not found');
       return null;
     }
-    return themeSettings;
+    if (!themeVariations) {
+      return themeSettings;
+    }
+    return await getActivedThemeSettings(themeSettings, themeVariations);
   }
 
   /**
@@ -150,8 +202,8 @@ export class UsertourTour extends Evented {
    *
    * @returns {TourStore} The complete store data object
    */
-  private buildStoreData(): TourStore | null {
-    const themeSettings = this.getThemeSettings();
+  private async buildStoreData(): Promise<TourStore | null> {
+    const themeSettings = await this.getThemeSettings();
     if (!themeSettings) {
       return null;
     }
@@ -222,7 +274,7 @@ export class UsertourTour extends Evented {
     await this.processTriggers();
 
     // Set up element watcher
-    const store = this.buildStoreData();
+    const store = await this.buildStoreData();
     if (!store) {
       logger.error('Store not found', { step: currentStep });
       await this.close(contentEndReason.SYSTEM_CLOSED);
@@ -282,6 +334,67 @@ export class UsertourTour extends Evented {
     });
     // Start watching
     this.watcher.findElement();
+  }
+
+  /**
+   * Checks and updates the visibility of a tooltip step
+   * @private
+   */
+  private async checkTooltipVisibility(): Promise<void> {
+    const store = this.getStore().getSnapshot();
+    if (!store) {
+      return;
+    }
+    const { triggerRef, currentStep, openState } = store;
+
+    // Early return if not a tooltip or missing required data
+    if (
+      !triggerRef ||
+      !this.watcher ||
+      !currentStep?.cvid ||
+      currentStep.type !== StepContentType.TOOLTIP
+    ) {
+      return;
+    }
+
+    // Check element visibility
+    const { isHidden, isTimeout } = await this.watcher.checkVisibility();
+
+    // Update visibility state
+    if (!isHidden) {
+      if (!openState) {
+        this.open();
+      }
+      return;
+    }
+
+    // Handle timeout or hidden state
+    if (isTimeout) {
+      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+    } else {
+      this.hide();
+    }
+  }
+
+  /**
+   * Checks if theme has changed and updates theme settings if needed
+   */
+  protected async checkAndUpdateThemeSettings() {
+    const themeSettings = await this.getThemeSettings();
+    if (!themeSettings) {
+      return;
+    }
+
+    // Get current theme settings from store
+    const currentStore = this.getStore()?.getSnapshot();
+    const currentThemeSettings = currentStore?.themeSettings;
+
+    // Check if theme settings have changed using isEqual for deep comparison
+    if (!isEqual(currentThemeSettings, themeSettings)) {
+      this.store.update({
+        themeSettings,
+      });
+    }
   }
 
   /**
@@ -345,7 +458,7 @@ export class UsertourTour extends Evented {
    */
   private async showModal(currentStep: Step) {
     // Build store data and get step information
-    const store = this.buildStoreData();
+    const store = await this.buildStoreData();
     if (!store) {
       logger.error('Store not found', { step: currentStep });
       await this.close(contentEndReason.SYSTEM_CLOSED);

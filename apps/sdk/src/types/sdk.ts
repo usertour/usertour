@@ -21,7 +21,7 @@ export type SDKContentSession = {
   expandPending?: boolean;
   currentStep?: Pick<Step, 'id' | 'cvid'>;
   version: Pick<ContentVersion, 'id' | 'steps' | 'config' | 'data'> & {
-    theme?: Pick<Theme, 'settings'>;
+    theme?: Pick<Theme, 'settings' | 'variations'>;
     checklist?: ChecklistData;
   };
 };

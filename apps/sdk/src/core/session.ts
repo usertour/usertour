@@ -1,4 +1,4 @@
-import { Step } from '@usertour/types';
+import { Step, ThemeVariation } from '@usertour/types';
 import { SDKContentSession } from '@/types/sdk';
 
 /**
@@ -78,8 +78,15 @@ export class Session {
   /**
    * Gets theme settings from session
    */
-  getThemeSettings() {
+  getVersionThemeSettings() {
     return this.session.version.theme?.settings;
+  }
+
+  /**
+   * Gets theme variations from session
+   */
+  getVersionThemeVariations(): ThemeVariation[] | undefined {
+    return this.session.version.theme?.variations;
   }
 
   /**
