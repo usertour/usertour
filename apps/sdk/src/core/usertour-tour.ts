@@ -42,6 +42,7 @@ export class UsertourTour extends Evented {
   private store: ExternalStore<TourStore>;
   private readonly session: Session;
   private readonly instance: UsertourCore;
+  private readonly id: string;
 
   constructor(instance: UsertourCore, session: Session) {
     super();
@@ -49,13 +50,21 @@ export class UsertourTour extends Evented {
     this.session = session;
     this.instance = instance;
     this.store = new ExternalStore<TourStore>(undefined);
+    this.id = this.getSessionId();
   }
 
   /**
    * Gets the session ID
    */
-  getSessionId(): string {
+  private getSessionId(): string {
     return this.session.getSessionId();
+  }
+
+  /**
+   * Gets the tour ID
+   */
+  getId(): string {
+    return this.id;
   }
 
   /**

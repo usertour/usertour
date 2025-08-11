@@ -29,7 +29,7 @@ const App = ({ toursStore }: AppProps) => {
     <React.StrictMode>
       <React.Suspense fallback={null}>
         {tours?.map((tour) => (
-          <WIDGETS.Tour tour={tour} key={tour.getSessionId()} />
+          <WIDGETS.Tour tour={tour} key={tour.getId()} />
         ))}
       </React.Suspense>
     </React.StrictMode>
