@@ -31,6 +31,7 @@ import { Evented } from '@/core/evented';
 import { Socket } from '@/core/socket';
 import { ExternalStore } from '@/core/store';
 import { UsertourTour } from '@/core/usertour-tour';
+import { Session } from '@/core/session';
 import {
   autoBind,
   getMainCss,
@@ -357,7 +358,7 @@ export class UsertourCore extends Evented {
   }
 
   setFlowSession(session: SDKContentSession) {
-    const tour = new UsertourTour(this, session);
+    const tour = new UsertourTour(this, new Session(session));
     if (this.tours.length > 0) {
       for (const tour of this.tours) {
         tour.destroy();

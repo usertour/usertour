@@ -26,33 +26,56 @@ import { ExternalStore } from '@/core/store';
 import { Evented } from '@/core/evented';
 import { autoBind, AppEvents, getStepByCvid, document, activedRulesConditions } from '@/utils';
 import { getAssets } from '@/core/common';
-import { SDKContentSession } from '@/types/sdk';
+
 import { UsertourCore } from './usertour-core';
 import { AnswerQuestionDto } from '@/types/web-socket';
+import { Session } from './session';
 
 export class UsertourTour extends Evented {
+  // Constants
+  private static readonly Z_INDEX_OFFSET = 200;
+  private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
+
   private watcher: ElementWatcher | null = null;
   private triggerTimeouts: NodeJS.Timeout[] = []; // Store timeout IDs
   private currentStep?: Step | null;
-  private steps?: Step[];
   private store: ExternalStore<TourStore>;
-  private session: SDKContentSession;
+  private readonly session: Session;
   private readonly instance: UsertourCore;
 
-  constructor(instance: UsertourCore, session: SDKContentSession) {
+  constructor(instance: UsertourCore, session: Session) {
     super();
     autoBind(this);
-    this.store = new ExternalStore<TourStore>(undefined);
     this.session = session;
     this.instance = instance;
-    this.steps = session.version.steps;
+    this.store = new ExternalStore<TourStore>(undefined);
   }
 
   /**
-   * Get the session id
+   * Gets the session ID
    */
   getSessionId(): string {
-    return this.session.id;
+    return this.session.getSessionId();
+  }
+
+  /**
+   * Gets the steps array from session
+   * @private
+   */
+  private getSteps(): Step[] {
+    return this.session.getSteps();
+  }
+
+  /**
+   * Gets theme settings from session
+   * @private
+   */
+  private getThemeSettings() {
+    const themeSettings = this.session.getThemeSettings();
+    if (!themeSettings) {
+      throw new Error('Theme settings not found');
+    }
+    return themeSettings;
   }
 
   /**
@@ -61,18 +84,15 @@ export class UsertourTour extends Evented {
    * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
    */
   async show(cvid?: string): Promise<void> {
-    // Validate content is valid
-    if (!this.steps || !this.steps.length) {
+    // Early return if tour cannot start
+    if (!this.hasSteps()) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
 
-    const steps = this.steps;
     // Find the target step
-    const currentStep = cvid ? getStepByCvid(steps, cvid) : steps[0];
-
-    // If no valid step found, close the tour
-    if (!currentStep?.cvid) {
+    const currentStep = this.findTargetStep(cvid);
+    if (!currentStep) {
       await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
@@ -85,6 +105,26 @@ export class UsertourTour extends Evented {
   }
 
   /**
+   * Checks if the tour has steps
+   * @private
+   */
+  private hasSteps(): boolean {
+    return Boolean(this.getSteps().length);
+  }
+
+  /**
+   * Finds the target step by cvid or returns the first step
+   * @private
+   */
+  private findTargetStep(cvid?: string): Step | null {
+    const steps = this.getSteps();
+    if (!steps.length) return null;
+
+    const step = cvid ? getStepByCvid(steps, cvid) : steps[0];
+    return step?.cvid ? step : null;
+  }
+
+  /**
    * Builds the store data for the tour
    * This method combines the base store info with the current step data
    * and sets default values for required fields
@@ -92,27 +132,29 @@ export class UsertourTour extends Evented {
    * @returns {TourStore} The complete store data object
    */
   private buildStoreData(): TourStore {
-    // Get base store information
-    const currentStep = this.currentStep;
-    const themeSettings = this.session.version.theme?.settings;
-    if (!themeSettings) {
-      throw new Error('Theme settings not found');
-    }
-    const zIndex = this.instance.getBaseZIndex() ?? 0;
-    const sdkConfig = this.instance.getSdkConfig();
+    const themeSettings = this.getThemeSettings();
 
     // Combine all store data with proper defaults
     return {
       triggerRef: null, // Reset trigger reference
-      sdkConfig: sdkConfig,
+      sdkConfig: this.instance.getSdkConfig(),
       assets: getAssets(themeSettings),
       globalStyle: convertToCssVars(convertSettings(themeSettings)),
       themeSettings: themeSettings,
       userAttributes: {},
       openState: false,
-      currentStep, // Add current step
-      zIndex: zIndex + 200,
+      currentStep: this.currentStep,
+      zIndex: this.getCalculatedZIndex(),
     } as TourStore;
+  }
+
+  /**
+   * Calculates the z-index for the tour
+   * @private
+   */
+  private getCalculatedZIndex(): number {
+    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
+    return baseZIndex + UsertourTour.Z_INDEX_OFFSET;
   }
 
   /**
@@ -144,16 +186,16 @@ export class UsertourTour extends Evented {
    */
   async showPopper(currentStep: Step): Promise<void> {
     // Validate step and target
-    if (!this.isValidPopperStep(currentStep)) {
+    if (!this.canShowPopper(currentStep)) {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
 
     // Report step seen event
-    await this.reportStepEvents(currentStep);
+    await this.reportStepSeen(currentStep);
 
-    // Activate trigger conditions
-    await this.activeTriggerConditions();
+    // Process trigger conditions
+    await this.processTriggers();
 
     // Set up element watcher
     const store = this.buildStoreData();
@@ -161,10 +203,10 @@ export class UsertourTour extends Evented {
   }
 
   /**
-   * Validates if a step can be displayed as a popper
+   * Checks if a popper step can be shown
    * @private
    */
-  private isValidPopperStep(step: Step): boolean {
+  private canShowPopper(step: Step): boolean {
     return Boolean(step?.target && step.cvid === this.currentStep?.cvid && document);
   }
 
@@ -259,7 +301,7 @@ export class UsertourTour extends Evented {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    await this.reportTooltipTargetMissingEvent(step);
+    await this.reportTargetMissing(step);
     await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
 
@@ -279,10 +321,10 @@ export class UsertourTour extends Evented {
     const { progress, index, total } = this.getCurrentStepInfo(currentStep);
 
     // Report that the step has been seen
-    await this.reportStepEvents(currentStep);
+    await this.reportStepSeen(currentStep);
 
-    // Activate trigger conditions
-    await this.activeTriggerConditions();
+    // Process trigger conditions
+    await this.processTriggers();
 
     // Set up modal state
     this.store.setData({
@@ -302,7 +344,7 @@ export class UsertourTour extends Evented {
    *
    */
   async showHidden(currentStep: Step) {
-    await this.reportStepEvents(currentStep);
+    await this.reportStepSeen(currentStep);
   }
 
   /**
@@ -331,7 +373,7 @@ export class UsertourTour extends Evented {
    * @param actions - The actions to be handled
    */
   async handleActions(actions: RulesCondition[]) {
-    // Split actions into two groups
+    // Separate actions by type
     const pageNavigateActions = actions.filter(
       (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
     );
@@ -339,21 +381,47 @@ export class UsertourTour extends Evented {
       (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
     );
 
-    // Execute non-PAGE_NAVIGATE actions first
-    for (const action of otherActions) {
-      if (action.type === ContentActionsItemType.STEP_GOTO) {
-        await this.show(action.data.stepCvid);
-      } else if (action.type === ContentActionsItemType.FLOW_START) {
-        await this.instance.startTour(action.data.contentId, action.data.stepCvid);
-      } else if (action.type === ContentActionsItemType.FLOW_DISMIS) {
-        await this.handleClose(contentEndReason.USER_CLOSED);
-      } else if (action.type === ContentActionsItemType.JAVASCRIPT_EVALUATE) {
-        evalCode(action.data.value);
-      }
-    }
+    await this.executeActions(otherActions);
+    await this.executeNavigations(pageNavigateActions);
+  }
 
-    // Execute PAGE_NAVIGATE actions last
-    for (const action of pageNavigateActions) {
+  /**
+   * Executes non-navigation actions
+   * @private
+   */
+  private async executeActions(actions: RulesCondition[]) {
+    for (const action of actions) {
+      await this.executeAction(action);
+    }
+  }
+
+  /**
+   * Executes a single action
+   * @private
+   */
+  private async executeAction(action: RulesCondition) {
+    switch (action.type) {
+      case ContentActionsItemType.STEP_GOTO:
+        await this.show(action.data.stepCvid);
+        break;
+      case ContentActionsItemType.FLOW_START:
+        await this.instance.startTour(action.data.contentId, action.data.stepCvid);
+        break;
+      case ContentActionsItemType.FLOW_DISMIS:
+        await this.handleClose(contentEndReason.USER_CLOSED);
+        break;
+      case ContentActionsItemType.JAVASCRIPT_EVALUATE:
+        evalCode(action.data.value);
+        break;
+    }
+  }
+
+  /**
+   * Executes navigation actions
+   * @private
+   */
+  private async executeNavigations(actions: RulesCondition[]) {
+    for (const action of actions) {
       this.instance.handleNavigate(action.data);
     }
   }
@@ -400,7 +468,7 @@ export class UsertourTour extends Evented {
       questionCvid: cvid,
       questionName: data.name,
       questionType: type,
-      sessionId: this.session.id,
+      sessionId: this.getSessionId(),
     };
     if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
       if (element.data.allowMultiple) {
@@ -424,7 +492,7 @@ export class UsertourTour extends Evented {
   }
 
   /**
-   * Activates and processes trigger conditions for the current step
+   * Processes trigger conditions for the current step
    * This method:
    * 1. Processes each trigger's conditions
    * 2. Executes actions for triggers with met conditions
@@ -432,7 +500,7 @@ export class UsertourTour extends Evented {
    *
    * @returns {Promise<void>}
    */
-  async activeTriggerConditions(): Promise<void> {
+  async processTriggers(): Promise<void> {
     const currentStep = this.currentStep;
 
     // Early return if no triggers to process
@@ -441,19 +509,19 @@ export class UsertourTour extends Evented {
     }
 
     // Process triggers and collect remaining ones
-    const remainingTriggers = await this.processTriggers(currentStep.trigger);
+    const remainingTriggers = await this.processStepTriggers(currentStep.trigger);
 
     // Update step with remaining triggers if step hasn't changed
-    await this.updateStepWithRemainingTriggers(currentStep, remainingTriggers);
+    await this.updateStepTriggers(currentStep, remainingTriggers);
   }
 
   /**
    * Processes a list of triggers and executes actions for those with met conditions
    * @private
    */
-  private async processTriggers(triggers: StepTrigger[]): Promise<StepTrigger[]> {
+  private async processStepTriggers(triggers: StepTrigger[]): Promise<StepTrigger[]> {
     const remainingTriggers: StepTrigger[] = [];
-    const MAX_WAIT_TIME = 300; // Maximum wait time in seconds
+    const MAX_WAIT_TIME = UsertourTour.MAX_WAIT_TIME;
     for (const trigger of triggers) {
       const { conditions, ...rest } = trigger;
       const activatedConditions = await activedRulesConditions(conditions);
@@ -488,7 +556,7 @@ export class UsertourTour extends Evented {
    * Updates the current step with remaining triggers if the step hasn't changed
    * @private
    */
-  private async updateStepWithRemainingTriggers(
+  private async updateStepTriggers(
     originalStep: Step,
     remainingTriggers: StepTrigger[],
   ): Promise<void> {
@@ -511,12 +579,18 @@ export class UsertourTour extends Evented {
    * @returns The current step info
    */
   getCurrentStepInfo(currentStep: Step) {
-    const steps = this.steps;
-    const total = steps?.length ?? 0;
-    const index = steps?.findIndex((step) => step.cvid === currentStep.cvid) ?? 0;
-    const progress = Math.round(((index + 1) / total) * 100);
+    const steps = this.getSteps();
+    // Early return for edge cases
+    if (!steps.length) {
+      return { total: 0, index: 0, progress: 0 };
+    }
 
-    return { total, index, progress };
+    const total = steps.length;
+    const index = steps.findIndex((step) => step.cvid === currentStep.cvid);
+    const validIndex = index === -1 ? 0 : index;
+    const progress = Math.round(((validIndex + 1) / total) * 100);
+
+    return { total, index: validIndex, progress };
   }
 
   /**
@@ -526,7 +600,7 @@ export class UsertourTour extends Evented {
   private async reportCloseEvent(reason: contentEndReason) {
     await this.instance.socket?.endFlow(
       {
-        sessionId: this.session.id,
+        sessionId: this.getSessionId(),
         reason,
       },
       { batch: true },
@@ -535,12 +609,12 @@ export class UsertourTour extends Evented {
 
   /**
    * Reports the tooltip target missing event
-   * @param currentStep - The current step where target is missing
+   * @param step - The step where target is missing
    */
-  private async reportTooltipTargetMissingEvent(step: Step) {
+  private async reportTargetMissing(step: Step) {
     await this.instance.socket?.reportTooltipTargetMissing(
       {
-        sessionId: this.session.id,
+        sessionId: this.getSessionId(),
         stepId: String(step.id),
       },
       { batch: true },
@@ -548,13 +622,13 @@ export class UsertourTour extends Evented {
   }
 
   /**
-   * Reports the step events
+   * Reports step seen event
    * @param step - The step to report
    */
-  private async reportStepEvents(step: Step) {
+  private async reportStepSeen(step: Step) {
     await this.instance.socket?.goToStep(
       {
-        sessionId: this.session.id,
+        sessionId: this.getSessionId(),
         stepId: String(step.id),
       },
       { batch: true },
