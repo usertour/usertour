@@ -97,6 +97,7 @@ export class UsertourTour extends Evented {
   async show(cvid?: string): Promise<void> {
     // Early return if tour cannot start
     if (!this.hasSteps()) {
+      logger.error('No steps found', { steps: this.getSteps() });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
@@ -104,6 +105,7 @@ export class UsertourTour extends Evented {
     // Find the target step
     const currentStep = this.findTargetStep(cvid);
     if (!currentStep) {
+      logger.error('currentStep not found', { cvid });
       await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
@@ -183,7 +185,8 @@ export class UsertourTour extends Evented {
     } else if (step.type === StepContentType.HIDDEN) {
       await this.showHidden(step);
     } else {
-      this.close(contentEndReason.SYSTEM_CLOSED);
+      logger.error('Step type not found', { step });
+      await this.close(contentEndReason.SYSTEM_CLOSED);
     }
   }
 
@@ -201,6 +204,7 @@ export class UsertourTour extends Evented {
   async showPopper(currentStep: Step): Promise<void> {
     // Validate step and target
     if (!this.canShowPopper(currentStep)) {
+      logger.error('Step cannot be shown', { step: currentStep });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
@@ -214,6 +218,7 @@ export class UsertourTour extends Evented {
     // Set up element watcher
     const store = this.buildStoreData();
     if (!store) {
+      logger.error('Store not found', { step: currentStep });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
@@ -241,6 +246,7 @@ export class UsertourTour extends Evented {
 
     // Create new watcher
     if (!step.target) {
+      logger.error('Step target not found', { step });
       this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
@@ -335,6 +341,7 @@ export class UsertourTour extends Evented {
     // Build store data and get step information
     const store = this.buildStoreData();
     if (!store) {
+      logger.error('Store not found', { step: currentStep });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
