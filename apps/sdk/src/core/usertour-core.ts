@@ -22,6 +22,7 @@ import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
+import { timerManager } from '@/utils/timer-manager';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourSocket } from '@/core/usertour-socket';
@@ -78,14 +79,15 @@ export class UsertourCore extends Evented {
   private root: ReactDOM.Root | undefined;
   private isMonitoring = false;
   private readonly MONITOR_INTERVAL = 200;
-  private lastCheck = 0;
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
+  private readonly id: string;
 
   constructor() {
     super();
     autoBind(this);
     this.socketService = new UsertourSocket();
+    this.id = uuidV4();
     this.initializeEventListeners();
   }
 
@@ -631,32 +633,21 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Starts the activity monitor to track user interactions
+   * Starts the activity monitor using unified timer management
    */
   async startActivityMonitor() {
-    let rafId: number;
-
-    const handleUserActivity = async () => {
-      if (this.stopLoop) return;
-
-      const now = Date.now();
-      if (now - this.lastCheck >= this.MONITOR_INTERVAL) {
-        this.lastCheck = now;
+    // Use timer manager for efficient monitoring
+    timerManager.addTask(
+      `${this.id}-monitor`,
+      async () => {
+        if (this.stopLoop) {
+          timerManager.removeTask(`${this.id}-monitor`);
+          return;
+        }
         await this.executeMonitor();
-      }
-    };
-
-    const monitor = () => {
-      if (this.stopLoop) {
-        cancelAnimationFrame(rafId);
-        return;
-      }
-      handleUserActivity();
-      rafId = requestAnimationFrame(monitor);
-    };
-
-    monitor();
-    handleUserActivity();
+      },
+      this.MONITOR_INTERVAL,
+    );
   }
 
   private async executeMonitor(): Promise<void> {
@@ -686,7 +677,10 @@ export class UsertourCore extends Evented {
   /**
    * Starts all content items (tours, launchers, checklists)
    */
-  async startContents() {}
+  async startContents() {
+    // Tours will manage their own monitoring tasks
+    // This method can be used for other content types in the future
+  }
 
   /**
    * Initializes all content types
@@ -723,6 +717,10 @@ export class UsertourCore extends Evented {
   async endAll() {
     this.userInfo = undefined;
     this.companyInfo = undefined;
+
+    // Stop all timer manager tasks for this core instance
+    timerManager.removeTask(`${this.id}-monitor`);
+
     await this.reset();
     this.stopLoop = true;
   }

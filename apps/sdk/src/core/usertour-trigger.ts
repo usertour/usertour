@@ -1,6 +1,7 @@
 import { StepTrigger, RulesCondition } from '@usertour/types';
-import { isActive } from '@usertour/helpers';
+import { isActive, uuidV4 } from '@usertour/helpers';
 import { activedRulesConditions } from '@/core/usertour-helper';
+import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
 
 /**
@@ -11,8 +12,9 @@ export class UsertourTrigger {
   private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
 
   private triggers: StepTrigger[] = [];
-  private timeouts: NodeJS.Timeout[] = [];
   private readonly actionExecutor: (actions: RulesCondition[]) => Promise<void>;
+  private readonly id: string; // Unique identifier for this trigger
+  private activeTimeouts: Set<string> = new Set(); // Track active timeout keys
 
   constructor(
     triggers: StepTrigger[],
@@ -21,6 +23,7 @@ export class UsertourTrigger {
     autoBind(this);
     this.triggers = [...triggers]; // Copy to avoid modifying original
     this.actionExecutor = actionExecutor;
+    this.id = uuidV4();
   }
 
   /**
@@ -32,7 +35,8 @@ export class UsertourTrigger {
 
     const remainingTriggers: StepTrigger[] = [];
 
-    for (const trigger of this.triggers) {
+    for (let i = 0; i < this.triggers.length; i++) {
+      const trigger = this.triggers[i];
       const { conditions, ...rest } = trigger;
       const activatedConditions = await activedRulesConditions(conditions);
 
@@ -47,14 +51,22 @@ export class UsertourTrigger {
         const waitTime = Math.min(trigger.wait ?? 0, UsertourTrigger.MAX_WAIT_TIME);
 
         if (waitTime > 0) {
-          // Execute with delay
-          const timeoutId = setTimeout(async () => {
-            await this.actionExecutor(trigger.actions);
-            // Remove timeout from tracking
-            this.timeouts = this.timeouts.filter((id) => id !== timeoutId);
-          }, waitTime * 1000);
+          // Execute with delay using timer manager
+          const triggerId = trigger.id || `trigger-${i}`;
+          const timeoutKey = `${this.id}-${triggerId}`;
 
-          this.timeouts.push(timeoutId);
+          // Track the timeout key for cleanup
+          this.activeTimeouts.add(timeoutKey);
+
+          timerManager.setTimeout(
+            timeoutKey,
+            async () => {
+              await this.actionExecutor(trigger.actions);
+              // Remove from tracking after execution
+              this.activeTimeouts.delete(timeoutKey);
+            },
+            waitTime * 1000,
+          );
         } else {
           // Execute immediately
           await this.actionExecutor(trigger.actions);
@@ -94,9 +106,11 @@ export class UsertourTrigger {
    * Clears all triggers and timeouts
    */
   destroy(): void {
-    // Clear all timeouts
-    this.timeouts.forEach(clearTimeout);
-    this.timeouts = [];
+    // Clear all active timeouts
+    for (const timeoutKey of this.activeTimeouts) {
+      timerManager.clearTimeout(timeoutKey);
+    }
+    this.activeTimeouts.clear();
 
     // Clear triggers
     this.triggers = [];

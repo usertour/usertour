@@ -1,10 +1,22 @@
 import { ExternalStore } from '@/utils/store';
 import { Evented } from '@/utils/evented';
+import { timerManager } from '@/utils/timer-manager';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
 import { contentEndReason, Step, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
+import { uuidV4 } from '@usertour/helpers';
+
+/**
+ * Options for component initialization
+ */
+interface ComponentOptions {
+  /** Whether to start monitoring automatically (default: true) */
+  autoStartMonitoring?: boolean;
+  /** Monitoring interval in milliseconds (default: 200) */
+  monitoringInterval?: number;
+}
 
 /**
  * Abstract base class for all Usertour components (Tour, Launcher, Checklist)
@@ -17,27 +29,59 @@ export abstract class UsertourComponent<TStore> extends Evented {
   protected readonly socketService: UsertourSocket;
   protected readonly id: string;
   private store: ExternalStore<TStore>;
+  private readonly options: ComponentOptions;
 
-  constructor(instance: UsertourCore, session: UsertourSession) {
+  constructor(instance: UsertourCore, session: UsertourSession, options: ComponentOptions = {}) {
     super();
     autoBind(this);
     this.instance = instance;
     this.session = session;
+    this.options = {
+      autoStartMonitoring: true,
+      monitoringInterval: 200,
+      ...options,
+    };
 
     // Get shared SocketService from core instance
     this.socketService = instance.getSocketService();
 
-    this.id = this.getSessionId();
+    this.id = uuidV4();
     this.store = new ExternalStore<TStore>(undefined);
+
+    // Start checking automatically when component is created (if enabled)
+    if (this.options.autoStartMonitoring) {
+      this.startChecking(this.options.monitoringInterval);
+    }
   }
 
   // Abstract methods that subclasses must implement
   abstract show(params?: any): Promise<void>;
   abstract buildStoreData(): Promise<TStore | null>;
-  abstract monitor(): Promise<void>;
+  abstract check(): Promise<void>;
   abstract destroy(): void;
   abstract reset(): void;
   abstract close(reason?: contentEndReason): Promise<void>;
+
+  /**
+   * Starts checking for this component
+   * @param interval - Checking interval in milliseconds
+   */
+  protected startChecking(interval = 200): void {
+    timerManager.addTask(
+      `component-${this.id}-check`,
+      async () => {
+        await this.check();
+      },
+      interval,
+    );
+  }
+
+  /**
+   * Stops checking for this component
+   */
+  protected stopChecking(): void {
+    timerManager.removeTask(`component-${this.id}-check`);
+  }
 
   /**
    * Gets the component ID

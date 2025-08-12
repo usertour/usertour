@@ -3,11 +3,13 @@ import { finderV2 } from '@usertour-packages/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
 import { isVisible } from '@/core/usertour-helper';
+import { timerManager } from '@/utils/timer-manager';
 import {
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
   ELEMENT_CHANGED,
 } from '@usertour-packages/constants';
+import { uuidV4 } from '@usertour/helpers';
 
 /**
  * Interface to track element visibility state
@@ -30,14 +32,15 @@ const DEFAULT_TARGET_MISSING_SECONDS = 6;
  */
 export class UsertourElementWatcher extends Evented {
   private target: ElementSelectorPropsData; // Target element selector data
-  private timer: NodeJS.Timeout | null = null; // Timer for retry mechanism
   private element: Element | null = null; // Reference to the found element
   private checker: CheckContentIsVisible | null = null; // Visibility state tracker
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
+  private readonly id: string; // Unique identifier for this watcher
 
   constructor(target: ElementSelectorPropsData) {
     super();
     this.target = target;
+    this.id = uuidV4();
   }
 
   /**
@@ -53,7 +56,7 @@ export class UsertourElementWatcher extends Evented {
    * @param retryTimes Current number of retry attempts
    */
   findElement(retryTimes = 0): void {
-    this.clearTimer();
+    timerManager.clearTimeout(`${this.id}-retry`);
 
     if (retryTimes >= RETRY_LIMIT || retryTimes * RETRY_DELAY > this.targetMissingSeconds * 1000) {
       this.trigger(ELEMENT_FOUND_TIMEOUT);
@@ -119,9 +122,13 @@ export class UsertourElementWatcher extends Evented {
    * @param retryTimes Current number of retry attempts
    */
   private scheduleRetry(retryTimes: number) {
-    this.timer = setTimeout(() => {
-      this.findElement(retryTimes + 1);
-    }, RETRY_DELAY);
+    timerManager.setTimeout(
+      `${this.id}-retry`,
+      () => {
+        this.findElement(retryTimes + 1);
+      },
+      RETRY_DELAY,
+    );
   }
 
   /**
@@ -129,7 +136,7 @@ export class UsertourElementWatcher extends Evented {
    * Useful when SPA navigation occurs and we want to start fresh
    */
   reset(): void {
-    this.clearTimer();
+    timerManager.clearTimeout(`${this.id}-retry`);
     this.element = null;
     this.checker = null;
   }
@@ -139,16 +146,6 @@ export class UsertourElementWatcher extends Evented {
    */
   destroy() {
     this.reset();
-  }
-
-  /**
-   * Clears the current retry timer
-   */
-  private clearTimer(): void {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
   }
 
   /**

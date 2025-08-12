@@ -37,16 +37,19 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private stepTrigger: UsertourTrigger | null = null;
   private currentStep?: Step | null;
 
-  async monitor(): Promise<void> {
+  /**
+   * Checks the tour
+   */
+  async check(): Promise<void> {
     try {
       // Check if the current step is visible
       await this.checkTooltipVisibility();
       // Process triggers
-      await this.stepTrigger?.process();
+      await this.checkTrigger();
       // Check and update theme settings if needed
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
-      logger.error('Error in tour monitoring:', error);
+      logger.error('Error in tour checking:', error);
       // Optionally handle the error or rethrow
       throw error;
     }
@@ -301,7 +304,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Checks if theme has changed and updates theme settings if needed
    */
-  protected async checkAndUpdateThemeSettings() {
+  private async checkAndUpdateThemeSettings() {
     const themeSettings = await this.getThemeSettings();
     if (!themeSettings) {
       return;
@@ -316,6 +319,15 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       this.updateStore({
         themeSettings,
       });
+    }
+  }
+
+  /**
+   * Checks and processes the trigger for the current step
+   */
+  private async checkTrigger(): Promise<void> {
+    if (this.stepTrigger) {
+      await this.stepTrigger.process();
     }
   }
 
@@ -612,6 +624,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Destroys the tour
    */
   destroy() {
+    // Stop checking (inherited from UsertourComponent)
+    this.stopChecking();
+
     // Reset the tour (includes trigger cleanup)
     this.reset();
     // Destroy the element watcher
