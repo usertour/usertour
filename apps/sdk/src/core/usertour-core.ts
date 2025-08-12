@@ -22,7 +22,6 @@ import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
-import { timerManager } from '@/utils/timer-manager';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourSocket } from '@/core/usertour-socket';
@@ -63,17 +62,13 @@ export class UsertourCore extends Evented {
   };
   tours: UsertourTour[] = [];
   container?: HTMLDivElement;
-  originContents?: SDKContent[];
   assets: AssetAttributes[] = [];
   userInfo: BizUserInfo | undefined;
   companyInfo: BizCompany | undefined;
   themes: Theme[] | undefined;
-  stopLoop = false;
   toursStore = new ExternalStore<UsertourTour[]>([]);
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
-  private isMonitoring = false;
-  private readonly MONITOR_INTERVAL = 200;
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
@@ -537,7 +532,7 @@ export class UsertourCore extends Evented {
     if (!userInfo) {
       return;
     }
-    await this.reset();
+    this.reset();
   }
 
   getSdkConfig() {
@@ -642,10 +637,9 @@ export class UsertourCore extends Evented {
   /**
    * Resets the application state
    */
-  async reset() {
-    this.stopLoop = false;
-    this.originContents = undefined;
-    this.isMonitoring = false;
+  reset() {
+    this.userInfo = undefined;
+    this.companyInfo = undefined;
     this.tours = [];
   }
 
@@ -653,13 +647,10 @@ export class UsertourCore extends Evented {
    * Ends all active content and resets the application
    */
   async endAll() {
-    this.userInfo = undefined;
-    this.companyInfo = undefined;
+    for (const tour of this.tours) {
+      tour.destroy();
+    }
 
-    // Stop all timer manager tasks for this core instance
-    timerManager.removeTask(`${this.id}-monitor`);
-
-    await this.reset();
-    this.stopLoop = true;
+    this.reset();
   }
 }

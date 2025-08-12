@@ -615,9 +615,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     this.currentStep = undefined;
     this.setStoreData(undefined);
 
-    // Clean up trigger
-    this.stepTrigger?.destroy();
     this.stepTrigger = null;
+    this.watcher = null;
   }
 
   /**
@@ -626,13 +625,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   destroy() {
     // Stop checking (inherited from UsertourComponent)
     this.stopChecking();
-
+    this.stepTrigger?.destroy();
+    // Destroy the element watcher
+    this.watcher?.destroy();
     // Reset the tour (includes trigger cleanup)
     this.reset();
-    // Destroy the element watcher
-    if (this.watcher) {
-      this.watcher.destroy();
-      this.watcher = null;
-    }
   }
 }
