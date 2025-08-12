@@ -5,7 +5,7 @@ import { SDKContentSession } from '@/types/sdk';
  * Session data access class
  * Provides common getter methods for session data
  */
-export class Session {
+export class UsertourSession {
   protected readonly session: SDKContentSession;
 
   constructor(session: SDKContentSession) {

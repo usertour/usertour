@@ -4,15 +4,15 @@ import {
   RulesCondition,
   autoStartRulesSetting,
 } from '@usertour/types';
-import { autoBind, activedRulesConditions } from '@/utils';
-import { Evented } from '@/core/evented';
+import { autoBind, Evented } from '@/utils';
 import { isActive } from '@usertour/helpers';
+import { activedRulesConditions } from '@/core/usertour-helper';
 
 /**
  * Config class manages the configuration settings for UserTour content
  * Extends Evented to support event handling functionality
  */
-export class Config extends Evented {
+export class UsertourConfig extends Evented {
   private config: ContentConfigObject;
   constructor(config: ContentConfigObject) {
     super();

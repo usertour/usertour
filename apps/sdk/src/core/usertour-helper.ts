@@ -1,7 +1,5 @@
 import { computePosition, hide } from '@floating-ui/dom';
 import { finderV2 } from '@usertour-packages/finder';
-import { isMatchUrlPattern } from '@usertour/helpers';
-import { conditionsIsSame } from '@usertour/helpers';
 import {
   BizEvent,
   BizEvents,
@@ -17,6 +15,7 @@ import {
   BizSession,
   RulesType,
   ContentPriority,
+  BizUserInfo,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -26,8 +25,8 @@ import {
   isAfter,
   isBefore,
 } from 'date-fns';
-import { document, location } from '../utils/globals';
-import { off, on } from './listener';
+import { document, location, off, on, logger } from '@/utils';
+import { isEqual, uuidV4, isMatchUrlPattern, conditionsIsSame } from '@usertour/helpers';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -646,4 +645,73 @@ export const wait = (seconds: number): Promise<void> => {
       reject(error);
     }
   });
+};
+
+interface UserInfo {
+  data: Record<string, string>;
+}
+
+export function buildNavigateUrl(value: any[], userInfo?: UserInfo): string {
+  let url = '';
+
+  try {
+    for (const v of value) {
+      for (const vc of v.children) {
+        if (vc.type === 'user-attribute') {
+          if (userInfo) {
+            url += userInfo.data[vc.attrCode] || vc.fallback;
+          }
+        } else {
+          url += vc.text;
+        }
+      }
+    }
+
+    return url;
+  } catch (error) {
+    logger.error('Build navigate URL error: ', error);
+    return '';
+  }
+}
+
+/**
+ * Checks if attributes have actually changed by comparing current and new attributes
+ * @param currentAttributes - Current attributes object
+ * @param newAttributes - New attributes to merge
+ * @returns True if attributes have changed, false otherwise
+ */
+export const hasAttributesChanged = (
+  currentAttributes: Record<string, any> = {},
+  newAttributes: Record<string, any> = {},
+): boolean => {
+  const mergedAttributes = { ...currentAttributes, ...newAttributes };
+  return !isEqual(currentAttributes, mergedAttributes);
+};
+
+export const createMockUser = (userId?: string): BizUserInfo => {
+  const now = new Date().toISOString();
+  return {
+    externalId: userId ?? uuidV4(),
+    id: uuidV4(),
+    createdAt: now,
+    updatedAt: now,
+    bizCompanyId: uuidV4(),
+    deleted: false,
+    data: {
+      male: true,
+      sdsdd: 13,
+      registerAt: '2024-03-29T16:05:45.000Z',
+      userNamedddd: 'usertour-test',
+    },
+  };
+};
+
+export const extensionIsRunning = () => {
+  const el = document?.querySelector('#usertour-iframe-container') as HTMLIFrameElement;
+
+  if (!el) {
+    return false;
+  }
+
+  return el?.dataset?.started === 'true';
 };

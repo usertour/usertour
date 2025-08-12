@@ -1,9 +1,9 @@
 import { isVisibleNode } from '@usertour-packages/dom';
 import { finderV2 } from '@usertour-packages/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { isVisible, AppEvents, document } from '@/utils';
-import { Evented } from './evented';
-import { DEFAULT_TARGET_MISSING_SECONDS } from './common';
+import { document, Evented } from '@/utils';
+import { isVisible } from '@/core/usertour-helper';
+import { ELEMENT_FOUND, ELEMENT_FOUND_TIMEOUT, ELEMENT_CHANGED } from '@/core/usertour-const';
 
 /**
  * Interface to track element visibility state
@@ -18,12 +18,13 @@ type CheckContentIsVisible = {
 // Constants for element watching configuration
 const RETRY_LIMIT = 30; // Maximum number of retry attempts
 const RETRY_DELAY = 200; // Delay between retries in milliseconds
+const DEFAULT_TARGET_MISSING_SECONDS = 6;
 
 /**
  * ElementWatcher class for monitoring DOM elements
  * Handles element finding, visibility checking, and timeout management
  */
-export class ElementWatcher extends Evented {
+export class UsertourElementWatcher extends Evented {
   private target: ElementSelectorPropsData; // Target element selector data
   private timer: NodeJS.Timeout | null = null; // Timer for retry mechanism
   private element: Element | null = null; // Reference to the found element
@@ -51,7 +52,7 @@ export class ElementWatcher extends Evented {
     this.clearTimer();
 
     if (retryTimes >= RETRY_LIMIT || retryTimes * RETRY_DELAY > this.targetMissingSeconds * 1000) {
-      this.trigger(AppEvents.ELEMENT_FOUND_TIMEOUT);
+      this.trigger(ELEMENT_FOUND_TIMEOUT);
       return;
     }
 
@@ -67,7 +68,7 @@ export class ElementWatcher extends Evented {
     }
 
     this.element = el;
-    this.trigger(AppEvents.ELEMENT_FOUND, el);
+    this.trigger(ELEMENT_FOUND, el);
   }
 
   /**
@@ -87,7 +88,7 @@ export class ElementWatcher extends Evented {
       if (el) {
         // Found a new element that matches our selector
         this.element = el;
-        this.trigger(AppEvents.ELEMENT_CHANGED, el);
+        this.trigger(ELEMENT_CHANGED, el);
       }
     }
 

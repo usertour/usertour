@@ -145,9 +145,6 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
         setBaseZIndex: (baseZIndex: number) => {
           app.setBaseZIndex(baseZIndex);
         },
-        setSessionTimeout: (hours: number) => {
-          app.setSessionTimeout(hours);
-        },
         setTargetMissingSeconds: (seconds: number) => {
           app.setTargetMissingSeconds(seconds);
         },

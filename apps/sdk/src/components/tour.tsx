@@ -65,7 +65,7 @@ type PopperContentProps = {
 
 // Custom hook to extract store state
 const useTourStore = (tour: UsertourTour) => {
-  const store = useSyncExternalStore(tour.getStore().subscribe, tour.getStore().getSnapshot);
+  const store = useSyncExternalStore(tour.subscribe, tour.getSnapshot);
 
   if (!store) {
     return null;

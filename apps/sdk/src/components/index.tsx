@@ -1,6 +1,6 @@
 import React, { useSyncExternalStore } from 'react';
 import ReactDOM from 'react-dom/client';
-import { ExternalStore } from '../core/store';
+import { ExternalStore } from '../utils/store';
 import { UsertourTour } from '../core/usertour-tour';
 import '../index.css';
 

@@ -14,46 +14,25 @@ import {
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
-import {
-  convertSettings,
-  convertToCssVars,
-  evalCode,
-  isActive,
-  isUndefined,
-  isEqual,
-} from '@usertour/helpers';
+import { evalCode, isActive, isUndefined, isEqual } from '@usertour/helpers';
 import { TourStore } from '@/types/store';
-import { ElementWatcher } from '@/core/element-watcher';
-import { ExternalStore } from '@/core/store';
-import { Evented } from '@/core/evented';
-import { autoBind, AppEvents, document, activedRulesConditions, logger } from '@/utils';
-import { getAssets } from '@/core/common';
-import { UsertourCore } from './usertour-core';
+import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
+import { UsertourComponent } from '@/core/usertour-component';
+import { UsertourTheme } from '@/core/usertour-theme';
+import { document, logger } from '@/utils';
 import { AnswerQuestionDto } from '@/types/web-socket';
-import { Session } from './session';
-import { getActivedThemeSettings } from '@/utils/helper';
+import { activedRulesConditions } from '@/core/usertour-helper';
+import { ELEMENT_FOUND, ELEMENT_FOUND_TIMEOUT, ELEMENT_CHANGED } from '@/core/usertour-const';
 
-export class UsertourTour extends Evented {
-  // Constants
-  private static readonly Z_INDEX_OFFSET = 200;
+export class UsertourTour extends UsertourComponent<TourStore> {
+  // Tour-specific constants
   private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
+  private static readonly Z_INDEX_OFFSET = 200;
 
-  private watcher: ElementWatcher | null = null;
-  private triggerTimeouts: NodeJS.Timeout[] = []; // Store timeout IDs
+  // Tour-specific properties
+  private watcher: UsertourElementWatcher | null = null;
+  private triggerTimeouts: NodeJS.Timeout[] = [];
   private currentStep?: Step | null;
-  private store: ExternalStore<TourStore>;
-  private readonly session: Session;
-  private readonly instance: UsertourCore;
-  private readonly id: string;
-
-  constructor(instance: UsertourCore, session: Session) {
-    super();
-    autoBind(this);
-    this.session = session;
-    this.instance = instance;
-    this.store = new ExternalStore<TourStore>(undefined);
-    this.id = this.getSessionId();
-  }
 
   async monitor(): Promise<void> {
     try {
@@ -71,66 +50,6 @@ export class UsertourTour extends Evented {
   }
 
   /**
-   * Gets the tour ID
-   */
-  getId(): string {
-    return this.id;
-  }
-
-  /**
-   * Gets the session ID
-   */
-  private getSessionId(): string {
-    return this.session.getSessionId();
-  }
-
-  /**
-   * Gets the steps array from session
-   * @private
-   */
-  private getSteps(): Step[] {
-    return this.session.getSteps();
-  }
-
-  /**
-   * Gets the step by cvid from session
-   * @private
-   */
-  private getStepByCvid(cvid: string): Step | undefined {
-    return this.session.getStepByCvid(cvid);
-  }
-
-  /**
-   * Gets theme settings from session
-   * @private
-   */
-  private getVersionThemeSettings() {
-    return this.session.getVersionThemeSettings();
-  }
-
-  /**
-   * Gets theme variations from session
-   * @private
-   */
-  private getVersionThemeVariations() {
-    return this.session.getVersionThemeVariations();
-  }
-
-  /**
-   * Open the tour
-   */
-  private open() {
-    this.store.update({ openState: true });
-  }
-
-  /**
-   * Hide the tour
-   */
-  private hide() {
-    this.store.update({ openState: false });
-  }
-
-  /**
    * Gets theme settings from session
    * @private
    */
@@ -144,7 +63,7 @@ export class UsertourTour extends Evented {
     if (!themeVariations) {
       return themeSettings;
     }
-    return await getActivedThemeSettings(themeSettings, themeVariations);
+    return await UsertourTheme.getThemeSettings(themeSettings, themeVariations);
   }
 
   /**
@@ -202,19 +121,19 @@ export class UsertourTour extends Evented {
    *
    * @returns {TourStore} The complete store data object
    */
-  private async buildStoreData(): Promise<TourStore | null> {
+  async buildStoreData(): Promise<TourStore | null> {
     const themeSettings = await this.getThemeSettings();
     if (!themeSettings) {
       return null;
     }
 
+    const themeData = UsertourTheme.createThemeData(themeSettings);
+
     // Combine all store data with proper defaults
     return {
       triggerRef: null, // Reset trigger reference
       sdkConfig: this.instance.getSdkConfig(),
-      assets: getAssets(themeSettings),
-      globalStyle: convertToCssVars(convertSettings(themeSettings)),
-      themeSettings: themeSettings,
+      ...themeData,
       userAttributes: {},
       openState: false,
       currentStep: this.currentStep,
@@ -308,26 +227,26 @@ export class UsertourTour extends Evented {
       this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
-    this.watcher = new ElementWatcher(step.target);
+    this.watcher = new UsertourElementWatcher(step.target);
     const targetMissingSeconds = this.instance.getTargetMissingSeconds();
     if (!isUndefined(targetMissingSeconds)) {
       this.watcher.setTargetMissingSeconds(targetMissingSeconds);
     }
 
     // Handle element found
-    this.watcher.once(AppEvents.ELEMENT_FOUND, (el) => {
+    this.watcher.once(ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
         this.handleElementFound(el, step, store);
       }
     });
 
     // Handle element not found
-    this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, async () => {
+    this.watcher.once(ELEMENT_FOUND_TIMEOUT, async () => {
       await this.handleElementNotFound(step);
     });
 
     // Handle element changed
-    this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
+    this.watcher.on(ELEMENT_CHANGED, (el) => {
       if (el instanceof Element) {
         this.handleElementChanged(el, step, store);
       }
@@ -626,7 +545,7 @@ export class UsertourTour extends Evented {
     ) {
       eventData.textAnswer = value;
     }
-    await this.instance.socket?.answerQuestion(eventData, { batch: true });
+    await this.socketService.answerQuestion(eventData, { batch: true });
   }
 
   /**
@@ -744,7 +663,7 @@ export class UsertourTour extends Evented {
    * @param reason - The reason for the close
    */
   private async reportCloseEvent(reason: contentEndReason) {
-    await this.instance.socket?.endFlow(
+    await this.socketService.endFlow(
       {
         sessionId: this.getSessionId(),
         reason,
@@ -758,7 +677,7 @@ export class UsertourTour extends Evented {
    * @param step - The step where target is missing
    */
   private async reportTargetMissing(step: Step) {
-    await this.instance.socket?.reportTooltipTargetMissing(
+    await this.socketService.reportTooltipTargetMissing(
       {
         sessionId: this.getSessionId(),
         stepId: String(step.id),
@@ -772,7 +691,7 @@ export class UsertourTour extends Evented {
    * @param step - The step to report
    */
   private async reportStepSeen(step: Step) {
-    await this.instance.socket?.goToStep(
+    await this.socketService.goToStep(
       {
         sessionId: this.getSessionId(),
         stepId: String(step.id),

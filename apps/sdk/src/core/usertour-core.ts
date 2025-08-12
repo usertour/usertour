@@ -16,41 +16,35 @@ import {
   SDKContent,
   SDKSettingsMode,
   Theme,
-  EventAttributes,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
-import {
-  createMockUser,
-  DEFAULT_TARGET_MISSING_SECONDS,
-  SESSION_TIMEOUT_HOURS,
-} from '@/core/common';
-import { Evented } from '@/core/evented';
-import { Socket } from '@/core/socket';
-import { ExternalStore } from '@/core/store';
+import { Evented } from '@/utils/evented';
+import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
-import { Session } from '@/core/session';
+import { UsertourSession } from '@/core/usertour-session';
+import { UsertourSocket } from '@/core/usertour-socket';
 import {
   autoBind,
-  getMainCss,
-  getWsUri,
   document,
   window,
   on,
   loadCSSResource,
   logger,
-  ERROR_MESSAGES,
   getValidMessage,
   sendPreviewSuccessMessage,
-  hasAttributesChanged,
-  buildNavigateUrl,
-  extensionIsRunning,
-  WebSocketEvents,
-  WebSocketNameSpaces,
 } from '@/utils';
 import { SDKContentSession } from '@/types';
+import { hasAttributesChanged } from '@/core/usertour-helper';
+import {
+  WebSocketEventsSetChecklistSession,
+  WebSocketEventsSetFlowSession,
+  ERROR_MESSAGES,
+} from './usertour-const';
+import { buildNavigateUrl, createMockUser, extensionIsRunning } from '@/core/usertour-helper';
+import { getMainCss, getWsUri } from '@/core/usertour-env';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -61,15 +55,14 @@ interface AppStartOptions {
 }
 
 export class UsertourCore extends Evented {
-  socket: Socket | undefined;
+  socketService: UsertourSocket;
   activeTour: UsertourTour | undefined;
   startOptions: AppStartOptions = {
     environmentId: '',
     token: '',
     mode: SDKSettingsMode.NORMAL,
   };
-  // Track current socket connection auth info for change detection
-  private currentSocketAuth: { userId: string; token: string } | undefined;
+
   sdkConfig: SDKConfig = {
     planType: PlanType.HOBBY,
     removeBranding: false,
@@ -88,13 +81,13 @@ export class UsertourCore extends Evented {
   private isMonitoring = false;
   private readonly MONITOR_INTERVAL = 200;
   private lastCheck = 0;
-  private sessionTimeoutHours = SESSION_TIMEOUT_HOURS;
-  private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS;
+  private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
 
   constructor() {
     super();
     autoBind(this);
+    this.socketService = new UsertourSocket();
     this.initializeEventListeners();
   }
 
@@ -112,26 +105,6 @@ export class UsertourCore extends Evented {
    */
   getBaseZIndex() {
     return this.baseZIndex;
-  }
-
-  /**
-   * Sets the session timeout in hours
-   * @param hours - Number of hours before a session times out
-   * @throws {Error} If hours is greater than 720 (30 days)
-   */
-  setSessionTimeout(hours: number) {
-    if (hours > 24 * 30) {
-      throw new Error('Session timeout cannot exceed 30 days (720 hours)');
-    }
-    this.sessionTimeoutHours = hours;
-  }
-
-  /**
-   * Gets the current session timeout in hours
-   * @returns The current session timeout in hours
-   */
-  getSessionTimeout(): number {
-    return this.sessionTimeoutHours;
   }
 
   /**
@@ -324,41 +297,24 @@ export class UsertourCore extends Evented {
    * @param token - Authentication token
    */
   private async initializeSocket(userId: string, token: string): Promise<void> {
-    // Check if Socket connection needs to be recreated
-    if (this.shouldRecreateSocket(userId, token)) {
-      await this.disconnectSocket();
-    }
+    // Initialize SocketService with connection parameters
+    await this.socketService.initialize({
+      userId,
+      token,
+      wsUri: getWsUri(),
+    });
 
-    if (!this.socket) {
-      this.socket = new Socket({
-        wsUri: getWsUri(),
-        namespace: WebSocketNameSpaces.V2,
-        socketConfig: {
-          auth: {
-            token,
-            externalUserId: userId,
-            clientContext: {
-              [EventAttributes.PAGE_URL]: window?.location?.href,
-              [EventAttributes.VIEWPORT_WIDTH]: window?.innerWidth,
-              [EventAttributes.VIEWPORT_HEIGHT]: window?.innerHeight,
-            },
-          },
-        },
-      });
-
-      // Store current connection auth info for comparison
-      this.currentSocketAuth = { userId, token };
-    }
-    this.socket.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
+    // Set up event listeners on UsertourSocket (which extends Evented)
+    this.socketService.on(WebSocketEventsSetFlowSession, (session: unknown) => {
       this.setFlowSession(session as SDKContentSession);
     });
-    this.socket.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
+    this.socketService.on(WebSocketEventsSetChecklistSession, (session: unknown) => {
       this.setChecklistSession(session as SDKContentSession);
     });
   }
 
   setFlowSession(session: SDKContentSession) {
-    const tour = new UsertourTour(this, new Session(session));
+    const tour = new UsertourTour(this, new UsertourSession(session));
     if (this.tours.length > 0) {
       for (const tour of this.tours) {
         tour.destroy();
@@ -377,32 +333,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Check if Socket connection needs to be recreated due to credential changes
-   * @param userId - New user ID
-   * @param token - New token
-   * @returns True if socket should be recreated
-   */
-  private shouldRecreateSocket(userId: string, token: string): boolean {
-    if (!this.socket || !this.currentSocketAuth) {
-      return false;
-    }
-
-    // Recreate if userId or token has changed
-    return this.currentSocketAuth.userId !== userId || this.currentSocketAuth.token !== token;
-  }
-
-  /**
-   * Disconnect and cleanup Socket connection
-   */
-  private async disconnectSocket(): Promise<void> {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = undefined;
-      this.currentSocketAuth = undefined;
-    }
-  }
-
-  /**
    * Identifies a user with the given ID and attributes
    * @param userId - External user ID
    * @param attributes - Optional user attributes
@@ -416,7 +346,7 @@ export class UsertourCore extends Evented {
     // Use dedicated initialization method
     await this.initializeSocket(userId, token);
 
-    const result = await this.socket!.upsertUser(
+    const result = await this.socketService.upsertUser(
       {
         userId,
         attributes,
@@ -488,7 +418,7 @@ export class UsertourCore extends Evented {
     }
 
     const userId = this.userInfo.externalId;
-    const result = await this.socket?.upsertUser(
+    const result = await this.socketService.upsertUser(
       {
         userId,
         attributes,
@@ -535,7 +465,7 @@ export class UsertourCore extends Evented {
       return;
     }
     const userId = this.userInfo.externalId;
-    const result = await this.socket?.upsertCompany(
+    const result = await this.socketService.upsertCompany(
       {
         userId,
         companyId,
@@ -576,7 +506,7 @@ export class UsertourCore extends Evented {
 
     const userId = this.userInfo.externalId;
     const companyId = this.companyInfo?.externalId;
-    const result = await this.socket?.upsertCompany(
+    const result = await this.socketService.upsertCompany(
       {
         userId,
         companyId,
@@ -619,6 +549,13 @@ export class UsertourCore extends Evented {
 
   getSdkConfig() {
     return this.sdkConfig;
+  }
+
+  /**
+   * Gets the shared SocketService instance
+   */
+  getSocketService(): UsertourSocket {
+    return this.socketService;
   }
 
   /**
