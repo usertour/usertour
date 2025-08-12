@@ -106,14 +106,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Checks if the tour has steps
-   * @private
-   */
-  private hasSteps(): boolean {
-    return Boolean(this.getSteps().length);
-  }
-
-  /**
    * Finds the target step by cvid or returns the first step
    * @private
    */

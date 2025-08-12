@@ -143,4 +143,11 @@ export abstract class UsertourComponent<TStore> extends Evented {
   protected getVersionThemeVariations(): ThemeVariation[] | undefined {
     return this.session.getVersionThemeVariations();
   }
+
+  /**
+   * Checks if the component has any steps
+   */
+  protected hasSteps(): boolean {
+    return Boolean(this.getSteps().length);
+  }
 }
