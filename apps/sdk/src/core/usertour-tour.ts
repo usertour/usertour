@@ -10,18 +10,18 @@ import {
   RulesCondition,
   Step,
   StepContentType,
-  StepTrigger,
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
-import { evalCode, isActive, isUndefined, isEqual } from '@usertour/helpers';
+import { evalCode, isUndefined, isEqual } from '@usertour/helpers';
 import { TourStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
+import { UsertourTrigger } from '@/core/usertour-trigger';
 import { document, logger } from '@/utils';
 import { AnswerQuestionDto } from '@/types/websocket';
-import { activedRulesConditions } from '@/core/usertour-helper';
+
 import {
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
@@ -30,12 +30,11 @@ import {
 
 export class UsertourTour extends UsertourComponent<TourStore> {
   // Tour-specific constants
-  private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
   private static readonly Z_INDEX_OFFSET = 200;
 
   // Tour-specific properties
   private watcher: UsertourElementWatcher | null = null;
-  private triggerTimeouts: NodeJS.Timeout[] = [];
+  private stepTrigger: UsertourTrigger | null = null;
   private currentStep?: Step | null;
 
   async monitor(): Promise<void> {
@@ -43,7 +42,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       // Check if the current step is visible
       await this.checkTooltipVisibility();
       // Process triggers
-      await this.processTriggers();
+      await this.stepTrigger?.process();
       // Check and update theme settings if needed
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
@@ -94,6 +93,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Reset tour state and set new step
     this.reset();
     this.currentStep = currentStep;
+
+    // Create trigger for this step if it has triggers
+    if (currentStep.trigger?.length) {
+      this.stepTrigger = new UsertourTrigger(currentStep.trigger, (actions) =>
+        this.handleActions(actions),
+      );
+    }
+
     // Display step based on its type
     await this.displayStep(currentStep);
   }
@@ -194,7 +201,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     await this.reportStepSeen(currentStep);
 
     // Process trigger conditions
-    await this.processTriggers();
+    await this.stepTrigger?.process();
 
     // Set up element watcher
     const store = await this.buildStoreData();
@@ -393,7 +400,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     await this.reportStepSeen(currentStep);
 
     // Process trigger conditions
-    await this.processTriggers();
+    await this.stepTrigger?.process();
 
     // Set up modal state
     this.setStoreData({
@@ -553,88 +560,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Processes trigger conditions for the current step
-   * This method:
-   * 1. Processes each trigger's conditions
-   * 2. Executes actions for triggers with met conditions
-   * 3. Updates the step with remaining triggers
-   *
-   * @returns {Promise<void>}
-   */
-  private async processTriggers(): Promise<void> {
-    const currentStep = this.currentStep;
-
-    // Early return if no triggers to process
-    if (!currentStep?.trigger?.length) {
-      return;
-    }
-
-    // Process triggers and collect remaining ones
-    const remainingTriggers = await this.processStepTriggers(currentStep.trigger);
-
-    // Update step with remaining triggers if step hasn't changed
-    await this.updateStepTriggers(currentStep, remainingTriggers);
-  }
-
-  /**
-   * Processes a list of triggers and executes actions for those with met conditions
-   * @private
-   */
-  private async processStepTriggers(triggers: StepTrigger[]): Promise<StepTrigger[]> {
-    const remainingTriggers: StepTrigger[] = [];
-    const MAX_WAIT_TIME = UsertourTour.MAX_WAIT_TIME;
-    for (const trigger of triggers) {
-      const { conditions, ...rest } = trigger;
-      const activatedConditions = await activedRulesConditions(conditions);
-
-      if (!isActive(activatedConditions)) {
-        remainingTriggers.push({
-          ...rest,
-          conditions: activatedConditions,
-        });
-      } else {
-        const waitTime = Math.min(trigger.wait ?? 0, MAX_WAIT_TIME);
-        if (waitTime > 0) {
-          const timeoutId = setTimeout(() => {
-            // Execute actions immediately when conditions are met
-            this.handleActions(trigger.actions);
-            // Remove the timeout ID from the array after execution
-            this.triggerTimeouts = this.triggerTimeouts.filter((id) => id !== timeoutId);
-          }, waitTime * 1000);
-          // Store the timeout ID
-          this.triggerTimeouts.push(timeoutId);
-        } else {
-          // Execute actions immediately when conditions are met
-          await this.handleActions(trigger.actions);
-        }
-      }
-    }
-
-    return remainingTriggers;
-  }
-
-  /**
-   * Updates the current step with remaining triggers if the step hasn't changed
-   * @private
-   */
-  private async updateStepTriggers(
-    originalStep: Step,
-    remainingTriggers: StepTrigger[],
-  ): Promise<void> {
-    const newCurrentStep = this.currentStep;
-
-    // Only update if the step hasn't changed
-    if (!newCurrentStep || originalStep.cvid !== newCurrentStep.cvid) {
-      return;
-    }
-
-    this.currentStep = {
-      ...newCurrentStep,
-      trigger: remainingTriggers,
-    };
-  }
-
-  /**
    * Get the current step info for store data
    * @param currentStep - The current step
    * @returns Store data with step info
@@ -710,19 +635,17 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   reset() {
     this.currentStep = undefined;
     this.setStoreData(undefined);
+
+    // Clean up trigger
+    this.stepTrigger?.destroy();
+    this.stepTrigger = null;
   }
 
   /**
    * Destroys the tour
    */
   destroy() {
-    // Clear all pending timeouts
-    for (const timeoutId of this.triggerTimeouts) {
-      clearTimeout(timeoutId);
-    }
-    this.triggerTimeouts = [];
-
-    // Reset the tour
+    // Reset the tour (includes trigger cleanup)
     this.reset();
     // Destroy the element watcher
     if (this.watcher) {
