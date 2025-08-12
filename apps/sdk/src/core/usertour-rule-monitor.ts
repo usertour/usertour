@@ -182,9 +182,6 @@ export class UsertourRuleMonitor extends Evented {
 
       // Log for debugging
       logger.info(`Rule ${state}:`, eventData);
-
-      // Mock implementation - can be overridden
-      console.log(`Rule ${state}:`, eventData);
     } catch (error) {
       logger.error(`Error reporting rule ${state}:`, error);
     }
