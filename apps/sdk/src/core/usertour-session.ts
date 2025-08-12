@@ -6,9 +6,17 @@ import { SDKContentSession } from '@/types/sdk';
  * Provides common getter methods for session data
  */
 export class UsertourSession {
-  protected readonly session: SDKContentSession;
+  private session: SDKContentSession;
 
   constructor(session: SDKContentSession) {
+    this.session = session;
+  }
+
+  /**
+   * Updates the session data
+   * @param session - New session data to update
+   */
+  update(session: SDKContentSession): void {
     this.session = session;
   }
 

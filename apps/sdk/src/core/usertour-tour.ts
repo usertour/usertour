@@ -264,7 +264,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async checkTooltipVisibility(): Promise<void> {
-    const store = this.getStore().getSnapshot();
+    const store = this.getStoreData();
     if (!store) {
       return;
     }
@@ -309,12 +309,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     // Get current theme settings from store
-    const currentStore = this.getStore()?.getSnapshot();
+    const currentStore = this.getStoreData();
     const currentThemeSettings = currentStore?.themeSettings;
 
     // Check if theme settings have changed using isEqual for deep comparison
     if (!isEqual(currentThemeSettings, themeSettings)) {
-      this.store.update({
+      this.updateStore({
         themeSettings,
       });
     }
@@ -335,7 +335,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     smoothScroll(el, { block: 'center' });
 
     // Update store
-    this.store.setData({
+    this.setStoreData({
       ...store,
       ...stepInfo,
       triggerRef: el,
@@ -350,7 +350,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     // Update store
-    this.store.setData({
+    this.setStoreData({
       ...store,
       triggerRef: el,
     });
@@ -396,7 +396,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     await this.processTriggers();
 
     // Set up modal state
-    this.store.setData({
+    this.setStoreData({
       ...store,
       ...stepInfo,
       openState: true,
@@ -705,18 +705,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Get the store
-   */
-  getStore() {
-    return this.store;
-  }
-
-  /**
    * Resets the tour
    */
   reset() {
     this.currentStep = undefined;
-    this.store.setData(undefined);
+    this.setStoreData(undefined);
   }
 
   /**

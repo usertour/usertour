@@ -16,7 +16,7 @@ export abstract class UsertourComponent<TStore> extends Evented {
   protected readonly session: UsertourSession;
   protected readonly socketService: UsertourSocket;
   protected readonly id: string;
-  protected store: ExternalStore<TStore>;
+  private store: ExternalStore<TStore>;
 
   constructor(instance: UsertourCore, session: UsertourSession) {
     super();
@@ -54,13 +54,6 @@ export abstract class UsertourComponent<TStore> extends Evented {
   }
 
   /**
-   * Gets the store instance
-   */
-  getStore(): ExternalStore<TStore> {
-    return this.store;
-  }
-
-  /**
    * Subscribe to store changes - for external components
    */
   subscribe = (callback: () => void): (() => void) => {
@@ -81,17 +74,45 @@ export abstract class UsertourComponent<TStore> extends Evented {
   };
 
   /**
+   * Updates the store with new data
+   */
+  protected updateStore(data: Partial<TStore>): void {
+    this.store.update(data);
+  }
+
+  /**
+   * Sets the complete store data
+   */
+  protected setStoreData(data: TStore | undefined): void {
+    this.store.setData(data);
+  }
+
+  /**
+   * Gets the current store data
+   */
+  protected getStoreData(): TStore | undefined {
+    return this.store.getSnapshot();
+  }
+
+  /**
+   * Checks if store has data
+   */
+  protected hasStoreData(): boolean {
+    return this.store.getSnapshot() !== undefined;
+  }
+
+  /**
    * Opens the component
    */
   protected open(): void {
-    this.store.update({ openState: true } as unknown as Partial<TStore>);
+    this.updateStore({ openState: true } as unknown as Partial<TStore>);
   }
 
   /**
    * Hides the component
    */
   protected hide(): void {
-    this.store.update({ openState: false } as unknown as Partial<TStore>);
+    this.updateStore({ openState: false } as unknown as Partial<TStore>);
   }
 
   // Session method wrappers
