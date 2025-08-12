@@ -17,11 +17,12 @@ interface RuleMonitorOptions {
 }
 
 /**
- * Event data for rule activation
+ * Event data for rule state change
  */
-interface RuleActivationEvent {
+interface RuleStateChangeEvent {
   rule: RulesCondition;
   timestamp: number;
+  state: 'activated' | 'deactivated';
 }
 
 /**
@@ -30,9 +31,10 @@ interface RuleActivationEvent {
  */
 export class UsertourRuleMonitor extends Evented {
   private rules: RulesCondition[] = [];
-  private reportedRules: Set<string> = new Set();
+  private activeRules: Set<string> = new Set(); // Track currently active rules
   private readonly id: string;
   private readonly options: RuleMonitorOptions;
+  private intervalId: string | null = null;
 
   constructor(options: RuleMonitorOptions = {}) {
     super();
@@ -81,7 +83,7 @@ export class UsertourRuleMonitor extends Evented {
    */
   clearRules(): void {
     this.rules = [];
-    this.reportedRules.clear();
+    this.activeRules.clear();
   }
 
   /**
@@ -95,8 +97,13 @@ export class UsertourRuleMonitor extends Evented {
    * Starts monitoring
    */
   start(): void {
-    timerManager.addTask(
-      `${this.id}-monitor`,
+    if (this.intervalId) {
+      this.stop();
+    }
+
+    this.intervalId = `${this.id}-monitor`;
+    timerManager.setInterval(
+      this.intervalId,
       async () => {
         await this.checkRules();
       },
@@ -108,7 +115,10 @@ export class UsertourRuleMonitor extends Evented {
    * Stops monitoring
    */
   stop(): void {
-    timerManager.removeTask(`${this.id}-monitor`);
+    if (this.intervalId) {
+      timerManager.clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 
   /**
@@ -118,23 +128,33 @@ export class UsertourRuleMonitor extends Evented {
     if (this.rules.length === 0) return;
 
     try {
-      // Process all rules to get their active state
+      // Process all rules to get their active state in one batch
       const activatedRules = await activedRulesConditions(this.rules);
 
-      // Check which rules are active
-      for (let i = 0; i < activatedRules.length; i++) {
-        const rule = activatedRules[i];
+      // Check which rules are active in one batch
+      const activeRules = activatedRules.filter((rule) => isActive([rule]));
 
-        // Check if rule is active
-        if (isActive([rule])) {
-          // Report if not already reported
-          if (!this.reportedRules.has(rule.id)) {
-            await this.reportActiveRule(rule);
-            this.reportedRules.add(rule.id);
+      // Check for state changes
+      const currentActiveRuleIds = new Set<string>();
+
+      for (const rule of activeRules) {
+        currentActiveRuleIds.add(rule.id);
+
+        // Check if rule just became active
+        if (!this.activeRules.has(rule.id)) {
+          await this.reportRuleStateChange(rule, 'activated');
+          this.activeRules.add(rule.id);
+        }
+      }
+
+      // Check for rules that became inactive
+      for (const activeRuleId of this.activeRules) {
+        if (!currentActiveRuleIds.has(activeRuleId)) {
+          const rule = this.rules.find((r) => r.id === activeRuleId);
+          if (rule) {
+            await this.reportRuleStateChange(rule, 'deactivated');
           }
-        } else {
-          // Remove from reported set if no longer active
-          this.reportedRules.delete(rule.id);
+          this.activeRules.delete(activeRuleId);
         }
       }
     } catch (error) {
@@ -143,26 +163,30 @@ export class UsertourRuleMonitor extends Evented {
   }
 
   /**
-   * Reports an active rule
+   * Reports a rule state change
    * This method can be overridden or extended for custom reporting logic
    */
-  protected async reportActiveRule(rule: RulesCondition): Promise<void> {
+  protected async reportRuleStateChange(
+    rule: RulesCondition,
+    state: 'activated' | 'deactivated',
+  ): Promise<void> {
     try {
-      const eventData: RuleActivationEvent = {
+      const eventData: RuleStateChangeEvent = {
         rule,
         timestamp: Date.now(),
+        state,
       };
 
       // Emit event for external listeners
-      this.trigger('rule-activated', eventData);
+      this.trigger('rule-state-changed', eventData);
 
       // Log for debugging
-      logger.info('Rule activated:', eventData);
+      logger.info(`Rule ${state}:`, eventData);
 
       // Mock implementation - can be overridden
-      console.log('Reporting active rule:', eventData);
+      console.log(`Rule ${state}:`, eventData);
     } catch (error) {
-      logger.error('Error reporting active rule:', error);
+      logger.error(`Error reporting rule ${state}:`, error);
     }
   }
 
@@ -179,12 +203,12 @@ export class UsertourRuleMonitor extends Evented {
    */
   getStats(): {
     totalRules: number;
-    reportedRules: number;
+    activeRules: number;
     isMonitoring: boolean;
   } {
     return {
       totalRules: this.rules.length,
-      reportedRules: this.reportedRules.size,
+      activeRules: this.activeRules.size,
       isMonitoring: true, // TODO: Add actual monitoring state tracking
     };
   }

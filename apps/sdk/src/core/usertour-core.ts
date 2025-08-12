@@ -34,6 +34,7 @@ import {
   logger,
   getValidMessage,
   sendPreviewSuccessMessage,
+  timerManager,
 } from '@/utils';
 import { buildNavigateUrl, hasAttributesChanged, createMockUser } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
@@ -642,6 +643,7 @@ export class UsertourCore extends Evented {
     this.userInfo = undefined;
     this.companyInfo = undefined;
     this.tours = [];
+    timerManager.clear();
   }
 
   /**
@@ -668,10 +670,10 @@ export class UsertourCore extends Evented {
 
     this.ruleMonitor = new UsertourRuleMonitor(options);
 
-    // Listen for rule activation events
-    this.ruleMonitor.on('rule-activated', (eventData) => {
-      // Handle rule activation - can be extended for custom logic
-      logger.info('Rule activated in core:', eventData);
+    // Listen for rule state change events
+    this.ruleMonitor.on('rule-state-changed', (eventData) => {
+      // Handle rule state changes - can be extended for custom logic
+      logger.info('Rule state changed in core:', eventData);
     });
 
     return this.ruleMonitor;
