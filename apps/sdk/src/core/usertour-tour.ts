@@ -519,7 +519,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       await this.reportQuestionAnswer(el, value);
     }
     if (element?.data?.actions) {
-      await this.handleActions(element.data.actions);
+      await this.handleActions(element.data.actions as RulesCondition[]);
     }
   }
 
