@@ -36,12 +36,7 @@ import {
   getValidMessage,
   sendPreviewSuccessMessage,
 } from '@/utils';
-import {
-  buildNavigateUrl,
-  hasAttributesChanged,
-  createMockUser,
-  extensionIsRunning,
-} from '@/core/usertour-helper';
+import { buildNavigateUrl, hasAttributesChanged, createMockUser } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents, ErrorMessages, SDKContentSession } from '@/types';
 
@@ -543,8 +538,6 @@ export class UsertourCore extends Evented {
       return;
     }
     await this.reset();
-    await this.startContents();
-    await this.startActivityMonitor();
   }
 
   getSdkConfig() {
@@ -631,61 +624,6 @@ export class UsertourCore extends Evented {
   isReady() {
     return this.container && this.root && this.userInfo?.externalId;
   }
-
-  /**
-   * Starts the activity monitor using unified timer management
-   */
-  async startActivityMonitor() {
-    // Use timer manager for efficient monitoring
-    timerManager.addTask(
-      `${this.id}-monitor`,
-      async () => {
-        if (this.stopLoop) {
-          timerManager.removeTask(`${this.id}-monitor`);
-          return;
-        }
-        await this.executeMonitor();
-      },
-      this.MONITOR_INTERVAL,
-    );
-  }
-
-  private async executeMonitor(): Promise<void> {
-    if (this.isMonitoring) {
-      return;
-    }
-
-    try {
-      this.isMonitoring = true;
-
-      if (!this.originContents) {
-        return;
-      }
-      if (extensionIsRunning()) {
-        this.endAll();
-        return;
-      }
-
-      await this.startContents();
-    } catch (error) {
-      logger.error('Error in app monitoring:', error);
-    } finally {
-      this.isMonitoring = false;
-    }
-  }
-
-  /**
-   * Starts all content items (tours, launchers, checklists)
-   */
-  async startContents() {
-    // Tours will manage their own monitoring tasks
-    // This method can be used for other content types in the future
-  }
-
-  /**
-   * Initializes all content types
-   */
-  private initContents() {}
 
   /**
    * Synchronizes all stores with current data
