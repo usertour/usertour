@@ -22,7 +22,11 @@ import { UsertourTheme } from '@/core/usertour-theme';
 import { document, logger } from '@/utils';
 import { AnswerQuestionDto } from '@/types/websocket';
 import { activedRulesConditions } from '@/core/usertour-helper';
-import { ELEMENT_FOUND, ELEMENT_FOUND_TIMEOUT, ELEMENT_CHANGED } from '@/core/usertour-const';
+import {
+  ELEMENT_FOUND,
+  ELEMENT_FOUND_TIMEOUT,
+  ELEMENT_CHANGED,
+} from '@usertour-packages/constants';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
   // Tour-specific constants

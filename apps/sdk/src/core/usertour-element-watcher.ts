@@ -3,7 +3,11 @@ import { finderV2 } from '@usertour-packages/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
 import { isVisible } from '@/core/usertour-helper';
-import { ELEMENT_FOUND, ELEMENT_FOUND_TIMEOUT, ELEMENT_CHANGED } from '@/core/usertour-const';
+import {
+  ELEMENT_FOUND,
+  ELEMENT_FOUND_TIMEOUT,
+  ELEMENT_CHANGED,
+} from '@usertour-packages/constants';
 
 /**
  * Interface to track element visibility state

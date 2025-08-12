@@ -16,8 +16,8 @@ import {
 import { Socket, Evented, window } from '@/utils';
 import { SDKContentSession } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
-import { WEBSOCKET_NAMESPACES_V2 } from './usertour-const';
 import { WebSocketEvents } from '@/types';
+import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
 
 // Batch options interface for consistency
 export interface BatchOptions {
