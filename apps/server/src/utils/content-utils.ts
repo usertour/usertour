@@ -16,7 +16,6 @@ import {
   isAfter,
   isBefore,
 } from 'date-fns';
-import isEqual from 'fast-deep-equal';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { BizEventWithEvent } from '@/common/types/schema';
 import { BizSessionWithEvents } from '@/common/types/schema';
@@ -222,25 +221,6 @@ export const isHasActivedContents = (
     }
   }
   return false;
-};
-
-export const isSameContents = (source: CustomContentVersion[], dest: CustomContentVersion[]) => {
-  if (!source || !dest || source.length !== dest.length) {
-    return false;
-  }
-  for (let index = 0; index < source.length; index++) {
-    const content1 = source[index];
-    const content2 = dest.find((c) => c.id === content1.id);
-    if (!content2) {
-      return false;
-    }
-    const config1 = content1.config;
-    const config2 = content2.config;
-    if (!conditionsIsSame(config1.autoStartRules, config2.autoStartRules)) {
-      return false;
-    }
-  }
-  return true;
 };
 
 const getLatestEvent = (
@@ -544,61 +524,6 @@ export const isMatchUrlPattern = (_url: string, includes: string[], excludes: st
         })
       : false;
   return isMatchIncludesConditions && !isMatchExcludesConditions;
-};
-
-const compareConditionsItem = (item1: RulesCondition, item2: RulesCondition) => {
-  const { data = {}, ...others1 } = item1;
-  const { data: data2 = {}, ...others2 } = item2;
-  if (!isEqual(others2, others1)) {
-    return false;
-  }
-  for (const key in data) {
-    if (!isEqual(data[key], data2[key])) {
-      return false;
-    }
-  }
-  return true;
-};
-
-export const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
-  const r1 = [...rr1];
-  const r2 = [...rr2];
-  if (r1.length === 0 && r2.length === 0) {
-    return true;
-  }
-  if (r1.length !== r2.length) {
-    return false;
-  }
-  const group1 = r1.filter((item) => item.type === 'group');
-  const group2 = r2.filter((item) => item.type === 'group');
-  if (group1.length !== group2.length) {
-    return false;
-  }
-  for (let index = 0; index < r1.length; index++) {
-    const item1 = r1[index];
-    const item2 = r2[index];
-    if (!item1 || !item2) {
-      return false;
-    }
-    if (item1.type === 'group') {
-      if (!item2.conditions) {
-        return false;
-      }
-      const c1 = item1.conditions as RulesCondition[];
-      const c2 = item2.conditions as RulesCondition[];
-      if (item1.operators !== item2.operators) {
-        return false;
-      }
-      if (!conditionsIsSame(c1, c2)) {
-        return false;
-      }
-    } else {
-      if (!compareConditionsItem(item1, item2)) {
-        return false;
-      }
-    }
-  }
-  return true;
 };
 
 /**
