@@ -18,6 +18,11 @@ import {
   BizUserInfo,
 } from '@usertour/types';
 import {
+  ContentEditorQuestionElement,
+  ContentEditorElementType,
+} from '@usertour-packages/shared-editor';
+import { AnswerQuestionDto } from '@/types/websocket';
+import {
   differenceInDays,
   differenceInHours,
   differenceInMinutes,
@@ -714,4 +719,48 @@ export const extensionIsRunning = () => {
   }
 
   return el?.dataset?.started === 'true';
+};
+
+/**
+ * Creates event data for question answer reporting
+ * Handles different question types and formats the data appropriately
+ *
+ * @param element - The question element that was answered
+ * @param value - The value of the answer
+ * @returns Formatted event data for question answer (without sessionId)
+ */
+export const createQuestionAnswerEventData = (
+  element: ContentEditorQuestionElement,
+  value: any,
+): Omit<AnswerQuestionDto, 'sessionId'> => {
+  const { data, type } = element;
+  const { cvid } = data;
+
+  const eventData: Omit<AnswerQuestionDto, 'sessionId'> = {
+    questionCvid: cvid,
+    questionName: data.name,
+    questionType: type,
+  };
+
+  // Handle different question types
+  if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
+    if (element.data.allowMultiple) {
+      eventData.listAnswer = value as string[];
+    } else {
+      eventData.textAnswer = value;
+    }
+  } else if (
+    element.type === ContentEditorElementType.SCALE ||
+    element.type === ContentEditorElementType.NPS ||
+    element.type === ContentEditorElementType.STAR_RATING
+  ) {
+    eventData.numberAnswer = value;
+  } else if (
+    element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
+    element.type === ContentEditorElementType.MULTI_LINE_TEXT
+  ) {
+    eventData.textAnswer = value;
+  }
+
+  return eventData;
 };

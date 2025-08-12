@@ -1,7 +1,6 @@
 import { smoothScroll } from '@usertour-packages/dom';
 import {
   ContentEditorClickableElement,
-  ContentEditorElementType,
   ContentEditorQuestionElement,
   isQuestionElement,
 } from '@usertour-packages/shared-editor';
@@ -20,7 +19,8 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { document, logger } from '@/utils';
-import { AnswerQuestionDto } from '@/types/websocket';
+
+import { createQuestionAnswerEventData } from '@/core/usertour-helper';
 
 import {
   ELEMENT_FOUND,
@@ -530,32 +530,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param value - The value of the answer
    */
   private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
-    const { data, type } = element;
-    const { cvid } = data;
-    const eventData: AnswerQuestionDto = {
-      questionCvid: cvid,
-      questionName: data.name,
-      questionType: type,
+    const eventData = {
+      ...createQuestionAnswerEventData(element, value),
       sessionId: this.getSessionId(),
     };
-    if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
-      if (element.data.allowMultiple) {
-        eventData.listAnswer = value as string[];
-      } else {
-        eventData.textAnswer = value;
-      }
-    } else if (
-      element.type === ContentEditorElementType.SCALE ||
-      element.type === ContentEditorElementType.NPS ||
-      element.type === ContentEditorElementType.STAR_RATING
-    ) {
-      eventData.numberAnswer = value;
-    } else if (
-      element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
-      element.type === ContentEditorElementType.MULTI_LINE_TEXT
-    ) {
-      eventData.textAnswer = value;
-    }
     await this.socketService.answerQuestion(eventData, { batch: true });
   }
 
