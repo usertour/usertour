@@ -727,19 +727,22 @@ export const extensionIsRunning = () => {
  *
  * @param element - The question element that was answered
  * @param value - The value of the answer
- * @returns Formatted event data for question answer (without sessionId)
+ * @param sessionId - The session ID
+ * @returns Formatted event data for question answer
  */
 export const createQuestionAnswerEventData = (
   element: ContentEditorQuestionElement,
   value: any,
-): Omit<AnswerQuestionDto, 'sessionId'> => {
+  sessionId: string,
+): AnswerQuestionDto => {
   const { data, type } = element;
   const { cvid } = data;
 
-  const eventData: Omit<AnswerQuestionDto, 'sessionId'> = {
+  const eventData: AnswerQuestionDto = {
     questionCvid: cvid,
     questionName: data.name,
     questionType: type,
+    sessionId,
   };
 
   // Handle different question types

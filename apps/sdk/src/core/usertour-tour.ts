@@ -530,10 +530,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param value - The value of the answer
    */
   private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
-    const eventData = {
-      ...createQuestionAnswerEventData(element, value),
-      sessionId: this.getSessionId(),
-    };
+    const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
     await this.socketService.answerQuestion(eventData, { batch: true });
   }
 
