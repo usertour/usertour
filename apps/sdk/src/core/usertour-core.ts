@@ -15,7 +15,6 @@ import {
   SDKConfig,
   SDKContent,
   SDKSettingsMode,
-  Theme,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import ReactDOM from 'react-dom/client';
@@ -55,7 +54,6 @@ export class UsertourCore extends Evented {
     token: '',
     mode: SDKSettingsMode.NORMAL,
   };
-
   sdkConfig: SDKConfig = {
     planType: PlanType.HOBBY,
     removeBranding: false,
@@ -65,7 +63,6 @@ export class UsertourCore extends Evented {
   assets: AssetAttributes[] = [];
   userInfo: BizUserInfo | undefined;
   companyInfo: BizCompany | undefined;
-  themes: Theme[] | undefined;
   toursStore = new ExternalStore<UsertourTour[]>([]);
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
