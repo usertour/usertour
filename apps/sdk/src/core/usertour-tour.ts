@@ -20,7 +20,7 @@ import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { document, logger } from '@/utils';
-import { AnswerQuestionDto } from '@/types/web-socket';
+import { AnswerQuestionDto } from '@/types/websocket';
 import { activedRulesConditions } from '@/core/usertour-helper';
 import { ELEMENT_FOUND, ELEMENT_FOUND_TIMEOUT, ELEMENT_CHANGED } from '@/core/usertour-const';
 

@@ -12,11 +12,12 @@ import {
   ShowChecklistDto,
   UpdateClientContextDto,
   TooltipTargetMissingDto,
-} from '@/types/web-socket';
+} from '@/types/websocket';
 import { Socket, Evented, window } from '@/utils';
 import { SDKContentSession } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
-import { WebSocketNameSpacesV2 } from './usertour-const';
+import { WEBSOCKET_NAMESPACES_V2 } from './usertour-const';
+import { WebSocketEvents } from '@/types';
 
 // Batch options interface for consistency
 export interface BatchOptions {
@@ -100,7 +101,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
    * Initialize Socket connection with given credentials
    */
   async initialize(options: SocketInitOptions): Promise<void> {
-    const { userId, token, wsUri = getWsUri(), namespace = WebSocketNameSpacesV2 } = options;
+    const { userId, token, wsUri = getWsUri(), namespace = WEBSOCKET_NAMESPACES_V2 } = options;
 
     // Check if Socket connection needs to be recreated
     if (this.shouldRecreateSocket(userId, token)) {
@@ -140,13 +141,13 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     if (!this.socket) return;
 
     // Listen for flow session events from Socket.IO
-    this.socket.on('set-flow-session', (message: unknown) => {
-      this.trigger('set-flow-session', message as SDKContentSession);
+    this.socket.on(WebSocketEvents.SET_FLOW_SESSION, (message: unknown) => {
+      this.trigger(WebSocketEvents.SET_FLOW_SESSION, message as SDKContentSession);
     });
 
     // Listen for checklist session events from Socket.IO
-    this.socket.on('set-checklist-session', (message: unknown) => {
-      this.trigger('set-checklist-session', message as SDKContentSession);
+    this.socket.on(WebSocketEvents.SET_CHECKLIST_SESSION, (message: unknown) => {
+      this.trigger(WebSocketEvents.SET_CHECKLIST_SESSION, message as SDKContentSession);
     });
   }
 
@@ -165,40 +166,40 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   // User and Company operations
   async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('upsert-user', params, options);
+    return await this.socket.send(WebSocketEvents.UPSERT_USER, params, options);
   }
 
   async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('upsert-company', params, options);
+    return await this.socket.send(WebSocketEvents.UPSERT_COMPANY, params, options);
   }
 
   // Event tracking
   async trackEvent(params: TrackEventDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('track-event', params, options);
+    return await this.socket.send(WebSocketEvents.TRACK_EVENT, params, options);
   }
 
   // Flow operations
   async startFlow(params: StartFlowDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('start-flow', params, options);
+    return await this.socket.send(WebSocketEvents.START_FLOW, params, options);
   }
 
   async endFlow(params: EndFlowDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('end-flow', params, options);
+    return await this.socket.send(WebSocketEvents.END_FLOW, params, options);
   }
 
   async goToStep(params: GoToStepDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('go-to-step', params, options);
+    return await this.socket.send(WebSocketEvents.GO_TO_STEP, params, options);
   }
 
   // Question operations
   async answerQuestion(params: AnswerQuestionDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('answer-question', params, options);
+    return await this.socket.send(WebSocketEvents.ANSWER_QUESTION, params, options);
   }
 
   // Checklist operations
@@ -207,17 +208,17 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     options?: BatchOptions,
   ): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('click-checklist-task', params, options);
+    return await this.socket.send(WebSocketEvents.CLICK_CHECKLIST_TASK, params, options);
   }
 
   async hideChecklist(params: HideChecklistDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('hide-checklist', params, options);
+    return await this.socket.send(WebSocketEvents.HIDE_CHECKLIST, params, options);
   }
 
   async showChecklist(params: ShowChecklistDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('show-checklist', params, options);
+    return await this.socket.send(WebSocketEvents.SHOW_CHECKLIST, params, options);
   }
 
   // Context and reporting
@@ -226,7 +227,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     options?: BatchOptions,
   ): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('update-client-context', params, options);
+    return await this.socket.send(WebSocketEvents.UPDATE_CLIENT_CONTEXT, params, options);
   }
 
   async reportTooltipTargetMissing(
@@ -234,7 +235,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     options?: BatchOptions,
   ): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send('report-tooltip-target-missing', params, options);
+    return await this.socket.send(WebSocketEvents.REPORT_TOOLTIP_TARGET_MISSING, params, options);
   }
 
   // Convenience methods for common operations

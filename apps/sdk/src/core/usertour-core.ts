@@ -38,13 +38,9 @@ import {
 } from '@/utils';
 import { SDKContentSession } from '@/types';
 import { hasAttributesChanged } from '@/core/usertour-helper';
-import {
-  WebSocketEventsSetChecklistSession,
-  WebSocketEventsSetFlowSession,
-  ERROR_MESSAGES,
-} from './usertour-const';
 import { buildNavigateUrl, createMockUser, extensionIsRunning } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
+import { WebSocketEvents, ErrorMessages } from '@/types';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -305,10 +301,10 @@ export class UsertourCore extends Evented {
     });
 
     // Set up event listeners on UsertourSocket (which extends Evented)
-    this.socketService.on(WebSocketEventsSetFlowSession, (session: unknown) => {
+    this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
       this.setFlowSession(session as SDKContentSession);
     });
-    this.socketService.on(WebSocketEventsSetChecklistSession, (session: unknown) => {
+    this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
       this.setChecklistSession(session as SDKContentSession);
     });
   }
@@ -354,7 +350,7 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result) {
-      throw new Error(ERROR_MESSAGES.FAILED_TO_IDENTIFY_USER);
+      throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
 
     this.reset();
@@ -426,7 +422,7 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result) {
-      throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_USER);
+      throw new Error(ErrorMessages.FAILED_TO_UPDATE_USER);
     }
   }
 
@@ -475,7 +471,7 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result) {
-      throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_COMPANY);
+      throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
   }
 
@@ -516,7 +512,7 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result) {
-      throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_COMPANY);
+      throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
   }
 
