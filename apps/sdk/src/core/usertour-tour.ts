@@ -45,7 +45,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       // Check if the current step is visible
       await this.checkTooltipVisibility();
       // Process triggers
-      await this.checkTrigger();
+      await this.checkAndProcessTrigger();
       // Check and update theme settings if needed
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
@@ -325,7 +325,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Checks and processes the trigger for the current step
    */
-  private async checkTrigger(): Promise<void> {
+  private async checkAndProcessTrigger(): Promise<void> {
     if (this.stepTrigger) {
       await this.stepTrigger.process();
     }
