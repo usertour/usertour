@@ -24,6 +24,7 @@ import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourSocket } from '@/core/usertour-socket';
+import { UsertourRuleMonitor } from '@/core/usertour-rule-monitor';
 import {
   autoBind,
   document,
@@ -69,6 +70,9 @@ export class UsertourCore extends Evented {
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
+
+  // Rule monitoring
+  private ruleMonitor: UsertourRuleMonitor | null = null;
 
   constructor() {
     super();
@@ -644,10 +648,49 @@ export class UsertourCore extends Evented {
    * Ends all active content and resets the application
    */
   async endAll() {
+    // Destroy rule monitor
+    this.destroyRuleMonitor();
+
     for (const tour of this.tours) {
       tour.destroy();
     }
 
     this.reset();
+  }
+
+  /**
+   * Creates and initializes rule monitor
+   */
+  createRuleMonitor(options?: { autoStart?: boolean; interval?: number }): UsertourRuleMonitor {
+    if (this.ruleMonitor) {
+      this.ruleMonitor.destroy();
+    }
+
+    this.ruleMonitor = new UsertourRuleMonitor(options);
+
+    // Listen for rule activation events
+    this.ruleMonitor.on('rule-activated', (eventData) => {
+      // Handle rule activation - can be extended for custom logic
+      logger.info('Rule activated in core:', eventData);
+    });
+
+    return this.ruleMonitor;
+  }
+
+  /**
+   * Gets the current rule monitor instance
+   */
+  getRuleMonitor(): UsertourRuleMonitor | null {
+    return this.ruleMonitor;
+  }
+
+  /**
+   * Destroys the rule monitor
+   */
+  destroyRuleMonitor(): void {
+    if (this.ruleMonitor) {
+      this.ruleMonitor.destroy();
+      this.ruleMonitor = null;
+    }
   }
 }

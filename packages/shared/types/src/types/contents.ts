@@ -12,7 +12,7 @@ export type StepScreenshot = {
 };
 
 export type StepTrigger = {
-  id?: string;
+  id: string;
   actions: RulesCondition[];
   conditions: RulesCondition[];
   wait?: number;
@@ -118,7 +118,7 @@ export type ContentConfig = {
 };
 
 export type RulesCondition = {
-  id?: string;
+  id: string;
   type: string;
   data: any;
   operators?: 'and' | 'or';
