@@ -1,6 +1,6 @@
 import { StepTrigger, RulesCondition } from '@usertour/types';
-import { isActive, uuidV4 } from '@usertour/helpers';
-import { activedRulesConditions } from '@/core/usertour-helper';
+import { uuidV4 } from '@usertour/helpers';
+import { activedRulesConditions, isActive } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
 

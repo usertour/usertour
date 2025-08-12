@@ -1,13 +1,9 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
-import {
-  activedRulesConditions,
-  convertSettings,
-  convertToCssVars,
-  isActive,
-} from '@usertour/helpers';
+import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { logger } from '@/utils';
 import { getUserTourCss } from '@/core/usertour-env';
+import { activedRulesConditions, isActive } from '@/core/usertour-helper';
 
 const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
   const { fontFamily } = themeSettings.font;

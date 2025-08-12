@@ -5,8 +5,7 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import { autoBind, Evented } from '@/utils';
-import { isActive } from '@usertour/helpers';
-import { activedRulesConditions } from '@/core/usertour-helper';
+import { activedRulesConditions, isActive } from '@/core/usertour-helper';
 
 /**
  * Config class manages the configuration settings for UserTour content
