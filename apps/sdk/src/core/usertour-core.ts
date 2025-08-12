@@ -7,7 +7,7 @@ import {
   SDK_CONTAINER_CREATED,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
-import { storage } from '@usertour/helpers';
+import { storage, uuidV4 } from '@usertour/helpers';
 import {
   BizCompany,
   BizUserInfo,
@@ -18,7 +18,6 @@ import {
   Theme,
 } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
 import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
 import { Evented } from '@/utils/evented';
@@ -36,11 +35,14 @@ import {
   getValidMessage,
   sendPreviewSuccessMessage,
 } from '@/utils';
-import { SDKContentSession } from '@/types';
-import { hasAttributesChanged } from '@/core/usertour-helper';
-import { buildNavigateUrl, createMockUser, extensionIsRunning } from '@/core/usertour-helper';
+import {
+  buildNavigateUrl,
+  hasAttributesChanged,
+  createMockUser,
+  extensionIsRunning,
+} from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
-import { WebSocketEvents, ErrorMessages } from '@/types';
+import { WebSocketEvents, ErrorMessages, SDKContentSession } from '@/types';
 
 interface AppStartOptions {
   environmentId?: string;
