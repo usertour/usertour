@@ -76,10 +76,10 @@ const isConditionsActived = (conditions: RulesCondition[]): boolean => {
  * @param allowedTypes - Array of RulesType to filter by
  * @returns Filtered conditions array
  */
-function filterConditionsByType(
+const filterConditionsByType = (
   conditions: RulesCondition[],
   allowedTypes: RulesType[],
-): RulesCondition[] {
+): RulesCondition[] => {
   return conditions
     .filter((condition) => {
       // If it's a group, recursively filter its conditions
@@ -103,6 +103,6 @@ function filterConditionsByType(
 
       return condition;
     });
-}
+};
 
 export { isEqual, conditionsIsSame, filterConditionsByType, isConditionsActived };
