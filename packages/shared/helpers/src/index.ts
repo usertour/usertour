@@ -9,4 +9,4 @@ export * from './content';
 export * from './utils';
 export * from './color';
 export * from './helper';
-export { isMatchUrlPattern, conditionsIsSame, isEqual } from './conditions';
+export * from './conditions/';
