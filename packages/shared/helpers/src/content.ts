@@ -63,18 +63,6 @@ export const defaultContentConfig: ContentConfigObject = {
   hideRulesSetting,
 };
 
-export const autoStartConditions: ContentConfigObject = {
-  ...defaultContentConfig,
-  enabledAutoStartRules: true,
-  autoStartRules: [
-    {
-      data: { excludes: [], includes: ['/*'] },
-      type: 'current-page',
-      operators: 'and',
-    },
-  ],
-};
-
 export const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
   return {
     ...defaultContentConfig,
