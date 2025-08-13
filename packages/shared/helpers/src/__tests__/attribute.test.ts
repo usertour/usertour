@@ -49,6 +49,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "is" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-1',
           type: 'condition',
           operators: 'and',
           data: {
@@ -64,6 +65,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "not" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-2',
           type: 'condition',
           operators: 'and',
           data: {
@@ -79,6 +81,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "contains" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-3',
           type: 'condition',
           operators: 'and',
           data: {
@@ -94,6 +97,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "notContain" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-4',
           type: 'condition',
           operators: 'and',
           data: {
@@ -109,6 +113,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "startsWith" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-5',
           type: 'condition',
           operators: 'and',
           data: {
@@ -124,6 +129,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "endsWith" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-6',
           type: 'condition',
           operators: 'and',
           data: {
@@ -139,6 +145,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "empty" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-7',
           type: 'condition',
           operators: 'and',
           data: {
@@ -153,6 +160,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "any" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-8',
           type: 'condition',
           operators: 'and',
           data: {
@@ -169,6 +177,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "is" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-9',
           type: 'condition',
           operators: 'and',
           data: {
@@ -184,6 +193,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "not" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-10',
           type: 'condition',
           operators: 'and',
           data: {
@@ -199,6 +209,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "isLessThan" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-11',
           type: 'condition',
           operators: 'and',
           data: {
@@ -214,6 +225,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "isLessThanOrEqualTo" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-12',
           type: 'condition',
           operators: 'and',
           data: {
@@ -229,6 +241,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "isGreaterThan" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-13',
           type: 'condition',
           operators: 'and',
           data: {
@@ -244,6 +257,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "isGreaterThanOrEqualTo" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-14',
           type: 'condition',
           operators: 'and',
           data: {
@@ -259,6 +273,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "between" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-15',
           type: 'condition',
           operators: 'and',
           data: {
@@ -275,6 +290,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "empty" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-16',
           type: 'condition',
           operators: 'and',
           data: {
@@ -289,6 +305,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "any" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-17',
           type: 'condition',
           operators: 'and',
           data: {
@@ -305,6 +322,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "true" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-18',
           type: 'condition',
           operators: 'and',
           data: {
@@ -319,6 +337,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "false" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-19',
           type: 'condition',
           operators: 'and',
           data: {
@@ -333,6 +352,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "empty" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-20',
           type: 'condition',
           operators: 'and',
           data: {
@@ -347,6 +367,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "any" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-21',
           type: 'condition',
           operators: 'and',
           data: {
@@ -363,6 +384,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "includesAtLeastOne" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-22',
           type: 'condition',
           operators: 'and',
           data: {
@@ -378,6 +400,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "includesAll" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-23',
           type: 'condition',
           operators: 'and',
           data: {
@@ -393,6 +416,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "notIncludesAtLeastOne" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-24',
           type: 'condition',
           operators: 'and',
           data: {
@@ -408,6 +432,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "notIncludesAll" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-25',
           type: 'condition',
           operators: 'and',
           data: {
@@ -423,6 +448,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "empty" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-26',
           type: 'condition',
           operators: 'and',
           data: {
@@ -437,6 +463,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "any" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-27',
           type: 'condition',
           operators: 'and',
           data: {
@@ -453,6 +480,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "lessThan" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-28',
           type: 'condition',
           operators: 'and',
           data: {
@@ -468,6 +496,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "exactly" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-29',
           type: 'condition',
           operators: 'and',
           data: {
@@ -484,6 +513,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "moreThan" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-30',
           type: 'condition',
           operators: 'and',
           data: {
@@ -499,6 +529,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "before" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-31',
           type: 'condition',
           operators: 'and',
           data: {
@@ -514,6 +545,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "on" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-32',
           type: 'condition',
           operators: 'and',
           data: {
@@ -529,6 +561,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "after" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-33',
           type: 'condition',
           operators: 'and',
           data: {
@@ -544,6 +577,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "empty" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-34',
           type: 'condition',
           operators: 'and',
           data: {
@@ -558,6 +592,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate "any" condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-35',
           type: 'condition',
           operators: 'and',
           data: {
@@ -574,11 +609,13 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate AND condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-36',
           type: 'group',
           operators: 'and',
           data: {},
           conditions: [
             {
+              id: 'condition-36-1',
               type: 'condition',
               operators: 'and',
               data: {
@@ -588,6 +625,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
               },
             },
             {
+              id: 'condition-36-2',
               type: 'condition',
               operators: 'and',
               data: {
@@ -605,11 +643,13 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate OR condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-37',
           type: 'group',
           operators: 'or',
           data: {},
           conditions: [
             {
+              id: 'condition-37-1',
               type: 'condition',
               operators: 'or',
               data: {
@@ -619,6 +659,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
               },
             },
             {
+              id: 'condition-37-2',
               type: 'condition',
               operators: 'or',
               data: {
@@ -636,11 +677,13 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should evaluate mixed AND/OR condition correctly', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-38',
           type: 'group',
           operators: 'and',
           data: {},
           conditions: [
             {
+              id: 'condition-38-1',
               type: 'condition',
               operators: 'and',
               data: {
@@ -650,11 +693,13 @@ describe('Attribute Filter - Complete Test Suite', () => {
               },
             },
             {
+              id: 'condition-38-2',
               type: 'group',
               operators: 'or',
               data: {},
               conditions: [
                 {
+                  id: 'condition-38-2-1',
                   type: 'condition',
                   operators: 'or',
                   data: {
@@ -664,6 +709,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
                   },
                 },
                 {
+                  id: 'condition-38-2-2',
                   type: 'condition',
                   operators: 'or',
                   data: {
@@ -693,6 +739,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should handle missing attribute', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-39',
           type: 'condition',
           operators: 'and',
           data: {
@@ -713,6 +760,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
 
       const condition: RulesCondition[] = [
         {
+          id: 'condition-40',
           type: 'condition',
           operators: 'and',
           data: {
@@ -738,6 +786,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
 
       const condition: RulesCondition[] = [
         {
+          id: 'condition-41',
           type: 'condition',
           operators: 'and',
           data: {
@@ -753,6 +802,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should handle invalid logic', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-42',
           type: 'condition',
           operators: 'and',
           data: {
@@ -768,6 +818,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should handle missing data in condition', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-43',
           type: 'condition',
           operators: 'and',
           data: undefined,
@@ -779,6 +830,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
     test('should handle missing attrId in condition', () => {
       const condition: RulesCondition[] = [
         {
+          id: 'condition-44',
           type: 'condition',
           operators: 'and',
           data: {

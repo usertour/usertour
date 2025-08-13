@@ -26,18 +26,18 @@ export function evaluateFilterConditions(
     return true; // No conditions means always true
   }
 
-  const result = evaluateConditionsGroup(conditions, attributes, userAttributes);
+  const result = evaluateAttributeConditionsGroup(conditions, attributes, userAttributes);
   return evaluateFilterResult(result);
 }
 
 /**
- * Evaluate a group of conditions with AND/OR logic
- * @param conditions - Filter conditions
+ * Evaluate a group of attribute conditions with AND/OR logic
+ * @param conditions - Attribute filter conditions
  * @param attributes - Available attributes
  * @param context - Filter context with user attributes
  * @returns Evaluation result structure with AND/OR logic
  */
-function evaluateConditionsGroup(
+function evaluateAttributeConditionsGroup(
   conditions: RulesCondition[],
   attributes: SimpleAttribute[],
   userAttributes: UserTourTypes.Attributes,
@@ -53,8 +53,8 @@ function evaluateConditionsGroup(
     const { operators } = condition;
     const item =
       condition.type !== 'group'
-        ? evaluateSingleCondition(condition, attributes, userAttributes)
-        : evaluateConditionsGroup(condition.conditions || [], attributes, userAttributes);
+        ? evaluateAttributeCondition(condition, attributes, userAttributes)
+        : evaluateAttributeConditionsGroup(condition.conditions || [], attributes, userAttributes);
 
     if (!item) {
       continue;
@@ -83,13 +83,13 @@ function evaluateConditionsGroup(
 }
 
 /**
- * Evaluate a single condition
- * @param condition - Single filter condition
+ * Evaluate a single attribute condition
+ * @param condition - Single attribute filter condition
  * @param attributes - Available attributes
  * @param context - Filter context with user attributes
  * @returns Evaluation result (boolean or complex structure)
  */
-function evaluateSingleCondition(
+export function evaluateAttributeCondition(
   condition: RulesCondition,
   attributes: SimpleAttribute[],
   userAttributes: UserTourTypes.Attributes,

@@ -1,18 +1,18 @@
 {
   "name": "@usertour/types",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "description": "TypeScript type definitions and enums shared across the UserTour project",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc. <support@usertour.io>",
   "license": "AGPL-3.0",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
   },
@@ -31,6 +31,9 @@
   "tsup": {
     "clean": true,
     "target": "es2019",
-    "format": ["cjs", "esm"]
+    "format": ["cjs", "esm"],
+    "entry": ["src/index.ts"],
+    "outDir": "dist",
+    "dts": true
   }
 }

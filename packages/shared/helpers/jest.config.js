@@ -12,12 +12,8 @@ const config = {
       },
     ],
   },
-  moduleNameMapper: {
-    '^@usertour/(.*)$': '<rootDir>/../$1/src',
-  },
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/__tests__/**'],
   extensionsToTreatAsEsm: ['.ts'],
-  transformIgnorePatterns: ['node_modules/(?!(@usertour)/)'],
 };
 
 export default config;

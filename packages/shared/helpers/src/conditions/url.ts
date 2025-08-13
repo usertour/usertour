@@ -1,3 +1,5 @@
+import { RulesCondition } from '@usertour/types';
+
 const parseUrl = (url: string) => {
   const urlPatterns = url.match(/^(([a-z\d]+):\/\/)?([^/?#]+)?(\/[^?#]*)?(\?([^#]*))?(#.*)?$/i);
   if (!urlPatterns) {
@@ -46,7 +48,7 @@ const parsePattern = (pattern: string) => {
   return new RegExp(`^${_scheme}://${_domain}(:\\d+)?${_path}${_query}${_fragment}$`);
 };
 
-const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[]) => {
+export const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[]) => {
   const isMatchIncludesConditions =
     includes.length > 0
       ? includes.some((_include) => {
@@ -70,4 +72,7 @@ const isMatchUrlPattern = (_url: string, includes: string[], excludes: string[])
   return isMatchIncludesConditions && !isMatchExcludesConditions;
 };
 
-export { isMatchUrlPattern };
+export const evaluateUrlCondition = (rules: RulesCondition, url: string) => {
+  const { excludes, includes } = rules.data;
+  return isMatchUrlPattern(url, includes, excludes);
+};
