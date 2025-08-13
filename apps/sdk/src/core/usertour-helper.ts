@@ -28,10 +28,15 @@ import {
   differenceInMinutes,
   differenceInSeconds,
   isAfter,
-  isBefore,
 } from 'date-fns';
 import { document, location, off, on, logger } from '@/utils';
-import { isEqual, uuidV4, isMatchUrlPattern, conditionsIsSame } from '@usertour/helpers';
+import {
+  isEqual,
+  uuidV4,
+  conditionsIsSame,
+  evaluateUrlCondition,
+  evaluateTimeCondition,
+} from '@usertour/helpers';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -41,27 +46,6 @@ export const PRIORITIES = [
   ContentPriority.LOWEST,
 ];
 export const rulesTypes: RulesType[] = Object.values(RulesType);
-
-const isActiveRulesByCurrentPage = (rules: RulesCondition) => {
-  const { excludes, includes } = rules.data;
-  if (location) {
-    const href = location.href;
-    return isMatchUrlPattern(href, includes, excludes);
-  }
-  return false;
-};
-
-const isActiveRulesByCurrentTime = (rules: RulesCondition) => {
-  const { endDate, endDateHour, endDateMinute, startDate, startDateHour, startDateMinute } =
-    rules.data;
-  const startTime = new Date(`${startDate} ${startDateHour}:${startDateMinute}:00`);
-  const endTime = new Date(`${endDate} ${endDateHour}:${endDateMinute}:00`);
-  const now = new Date();
-  if (!endDate) {
-    return isAfter(now, startTime);
-  }
-  return isAfter(now, startTime) && isBefore(now, endTime);
-};
 
 const isActivedContentRulesCondition = (
   rules: RulesCondition,
@@ -234,11 +218,12 @@ const isActiveRules = async (rules: RulesCondition) => {
   if (!isValidRulesType(rules.type)) {
     return true;
   }
+
   switch (rules.type) {
     case RulesType.CURRENT_PAGE:
-      return isActiveRulesByCurrentPage(rules);
+      return evaluateUrlCondition(rules, location?.href ?? '');
     case RulesType.TIME:
-      return isActiveRulesByCurrentTime(rules);
+      return evaluateTimeCondition(rules);
     case RulesType.ELEMENT:
       return await isActiveRulesByElement(rules);
     case RulesType.TEXT_INPUT:
