@@ -3,6 +3,8 @@ export {
   conditionsIsSame,
   filterConditionsByType,
   isConditionsActived,
+  evaluateRule,
+  activedRulesConditions,
 } from './condition';
 export { isMatchUrlPattern, evaluateUrlCondition } from './url';
 export { evaluateTimeCondition } from './time';

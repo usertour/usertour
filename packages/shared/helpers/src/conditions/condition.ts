@@ -141,5 +141,6 @@ export {
   conditionsIsSame,
   filterConditionsByType,
   isConditionsActived,
+  evaluateRule,
   activedRulesConditions,
 };
