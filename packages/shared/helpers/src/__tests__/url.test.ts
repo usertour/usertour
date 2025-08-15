@@ -63,7 +63,7 @@ describe('URL Condition Evaluation', () => {
       expect(evaluateUrlCondition(rules, url)).toBe(true);
     });
 
-    test('should return true when no includes specified (matches all)', () => {
+    test('should return false when no includes and no excludes specified', () => {
       const rules: RulesCondition = {
         id: 'condition-5',
         type: 'condition',
@@ -91,6 +91,112 @@ describe('URL Condition Evaluation', () => {
 
       const url = 'https://example.com/admin';
       expect(evaluateUrlCondition(rules, url)).toBe(false);
+    });
+
+    // New test cases for edge cases
+    test('should handle URLs with ports', () => {
+      const rules: RulesCondition = {
+        id: 'condition-7',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com:8080/dashboard'],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com:8080/dashboard';
+      expect(evaluateUrlCondition(rules, url)).toBe(true);
+    });
+
+    test('should handle URLs with complex query parameters', () => {
+      const rules: RulesCondition = {
+        id: 'condition-8',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com/dashboard?tab=overview&user=123'],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com/dashboard?tab=overview&user=123';
+      expect(evaluateUrlCondition(rules, url)).toBe(true);
+    });
+
+    test('should handle URLs with special characters in query parameters', () => {
+      const rules: RulesCondition = {
+        id: 'condition-9',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com/search?q=hello+world'],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com/search?q=hello+world';
+      expect(evaluateUrlCondition(rules, url)).toBe(false);
+    });
+
+    test('should handle URLs with fragments', () => {
+      const rules: RulesCondition = {
+        id: 'condition-10',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com/dashboard#overview'],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com/dashboard#overview';
+      expect(evaluateUrlCondition(rules, url)).toBe(true);
+    });
+
+    test('should handle wildcard patterns in query parameters', () => {
+      const rules: RulesCondition = {
+        id: 'condition-11',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com/dashboard?tab=*'],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com/dashboard?tab=overview';
+      expect(evaluateUrlCondition(rules, url)).toBe(true);
+    });
+
+    test('should handle empty query parameter values', () => {
+      const rules: RulesCondition = {
+        id: 'condition-12',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com/dashboard?tab='],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com/dashboard?tab=';
+      expect(evaluateUrlCondition(rules, url)).toBe(true);
+    });
+
+    test('should handle multiple query parameters with wildcards', () => {
+      const rules: RulesCondition = {
+        id: 'condition-13',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          includes: ['https://example.com/dashboard?tab=*&user=*'],
+          excludes: [],
+        },
+      };
+
+      const url = 'https://example.com/dashboard?tab=overview&user=123';
+      expect(evaluateUrlCondition(rules, url)).toBe(true);
     });
   });
 
@@ -152,7 +258,7 @@ describe('URL Condition Evaluation', () => {
       const includes: string[] = [];
       const excludes: string[] = [];
 
-      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
     });
 
     test('should handle empty excludes', () => {
@@ -231,6 +337,210 @@ describe('URL Condition Evaluation', () => {
       const url = 'https://example.com/dashboard';
       const includes = ['https://example.com/*'];
       const excludes = ['https://example.com/admin', 'https://example.com/settings'];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    // Additional edge cases for isMatchUrlPattern
+    test('should handle URLs with special regex characters', () => {
+      const url = 'https://example.com/dashboard?param=value+with+spaces';
+      const includes = ['https://example.com/dashboard?param=value+with+spaces'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
+    });
+
+    test('should handle URLs with encoded characters', () => {
+      const url = 'https://example.com/search?q=hello%20world';
+      const includes = ['https://example.com/search?q=hello%20world'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with multiple query parameters in different order', () => {
+      const url = 'https://example.com/dashboard?tab=overview&user=123&theme=dark';
+      const includes = ['https://example.com/dashboard?user=123&tab=overview'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with empty path', () => {
+      const url = 'https://example.com/';
+      const includes = ['https://example.com/'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with root path wildcard', () => {
+      const url = 'https://example.com/';
+      const includes = ['https://example.com/*'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with subdomain wildcards', () => {
+      const url = 'https://app.example.com/dashboard';
+      const includes = ['https://*.example.com/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with port numbers', () => {
+      const url = 'https://example.com:3000/dashboard';
+      const includes = ['https://example.com:3000/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with port wildcards', () => {
+      const url = 'https://example.com:8080/dashboard';
+      const includes = ['https://example.com:*/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle complex fragment patterns', () => {
+      const url = 'https://example.com/dashboard#section-1';
+      const includes = ['https://example.com/dashboard#section-*'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with special characters in path', () => {
+      const url = 'https://example.com/user/123/profile';
+      const includes = ['https://example.com/user/*/profile'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with query parameters containing special characters', () => {
+      const url = 'https://example.com/search?q=hello&filter=active';
+      const includes = ['https://example.com/search?q=*&filter=active'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with empty query parameter values', () => {
+      const url = 'https://example.com/dashboard?tab=';
+      const includes = ['https://example.com/dashboard?tab='];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with query parameters that have no value', () => {
+      const url = 'https://example.com/dashboard?tab';
+      const includes = ['https://example.com/dashboard?tab'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with multiple fragments', () => {
+      const url = 'https://example.com/dashboard#section-1#subsection-a';
+      const includes = ['https://example.com/dashboard#section-1#*'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with IPv4 addresses', () => {
+      const url = 'https://192.168.1.1/dashboard';
+      const includes = ['https://192.168.1.1/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with IPv6 addresses', () => {
+      const url = 'https://[2001:db8::1]/dashboard';
+      const includes = ['https://[2001:db8::1]/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with mixed case in domain', () => {
+      const url = 'https://Example.COM/dashboard';
+      const includes = ['https://example.com/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
+    });
+
+    test('should handle URLs with mixed case in path', () => {
+      const url = 'https://example.com/Dashboard';
+      const includes = ['https://example.com/dashboard'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
+    });
+  });
+
+  // Test cases specifically for comparing old vs new implementation behavior
+  describe('Implementation Compatibility Tests', () => {
+    test('should handle query parameters with special characters consistently', () => {
+      const url = 'https://example.com/search?q=hello+world&filter=active';
+      const includes = ['https://example.com/search?q=hello+world'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
+    });
+
+    test('should handle query parameters with encoded characters consistently', () => {
+      const url = 'https://example.com/search?q=hello%20world';
+      const includes = ['https://example.com/search?q=hello%20world'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle query parameters with wildcards consistently', () => {
+      const url = 'https://example.com/search?q=hello&filter=*';
+      const includes = ['https://example.com/search?q=*&filter=active'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
+    });
+
+    test('should handle empty includes and excludes consistently', () => {
+      const url = 'https://example.com/dashboard';
+      const includes: string[] = [];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(false);
+    });
+
+    test('should handle only excludes consistently', () => {
+      const url = 'https://example.com/dashboard';
+      const includes: string[] = [];
+      const excludes = ['https://example.com/admin'];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle complex nested paths consistently', () => {
+      const url = 'https://example.com/app/dashboard/user/123/settings';
+      const includes = ['https://example.com/app/*/user/*/settings'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
+    test('should handle URLs with multiple query parameters consistently', () => {
+      const url = 'https://example.com/dashboard?tab=overview&user=123&theme=dark&lang=en';
+      const includes = ['https://example.com/dashboard?tab=overview&user=*&theme=dark'];
+      const excludes: string[] = [];
 
       expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
     });

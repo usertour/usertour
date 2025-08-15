@@ -1,5 +1,5 @@
 import { oEmbedProviders } from '@/common/ombed/ombed';
-import { isMatchUrlPattern } from '@/common/ombed/url';
+import { isMatchUrlPattern } from '@usertour/helpers';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { HttpService } from '@nestjs/axios';
