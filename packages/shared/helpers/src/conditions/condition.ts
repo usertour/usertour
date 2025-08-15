@@ -1,9 +1,4 @@
-import {
-  RulesCondition,
-  RulesEvaluationOptions,
-  RulesType,
-  RulesTypeControl,
-} from '@usertour/types';
+import { RulesCondition, RulesEvaluationOptions, RulesType } from '@usertour/types';
 import isEqual from 'fast-deep-equal';
 import { evaluateUrlCondition } from './url';
 import { evaluateTimeCondition } from './time';
@@ -94,16 +89,16 @@ const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): bo
   if (activatedIds?.includes(ruleId)) return true;
   if (deactivatedIds?.includes(ruleId)) return false;
 
-  // Check if evaluation is enabled for this rule type
-  // Default is disabled, only enabled when explicitly set to true
-  if (typeControl[rule.type as keyof RulesTypeControl] !== true) {
-    return rule.actived || false;
-  }
-
   // Check if custom evaluator is provided for this rule type
   const customEvaluator = customEvaluators?.[rule.type as RulesType];
   if (customEvaluator) {
     return customEvaluator(rule, options);
+  }
+
+  // Check if evaluation is enabled for this rule type
+  // Default is disabled, only enabled when explicitly set to true
+  if (typeControl[rule.type as RulesType] !== true) {
+    return rule.actived || false;
   }
 
   // Perform normal evaluation based on rule type
