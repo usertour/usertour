@@ -16,6 +16,7 @@ import {
   RulesType,
   ContentPriority,
   BizUserInfo,
+  RulesTypeControl,
 } from '@usertour/types';
 import {
   ContentEditorQuestionElement,
@@ -235,17 +236,15 @@ const isActiveRules = async (rules: RulesCondition) => {
   }
 };
 
-type RewriteRulesCondition = Partial<Record<RulesType, boolean>>;
-
 export const activedRulesConditions = async (
   conditions: RulesCondition[],
-  rewrite?: RewriteRulesCondition,
+  rewrite?: RulesTypeControl,
 ) => {
   const rulesCondition: RulesCondition[] = [...conditions];
   for (let j = 0; j < rulesCondition.length; j++) {
     const rules = rulesCondition[j];
     if (rules.type !== 'group') {
-      if (rewrite?.[rules.type as keyof RewriteRulesCondition]) {
+      if (rewrite?.[rules.type as keyof RulesTypeControl]) {
         rulesCondition[j].actived = true;
       } else {
         rulesCondition[j].actived = await isActiveRules(rules);
