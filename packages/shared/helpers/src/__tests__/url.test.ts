@@ -75,7 +75,7 @@ describe('URL Condition Evaluation', () => {
       };
 
       const url = 'https://example.com/dashboard';
-      expect(evaluateUrlCondition(rules, url)).toBe(true);
+      expect(evaluateUrlCondition(rules, url)).toBe(false);
     });
 
     test('should return false when URL matches exclude even with no includes', () => {

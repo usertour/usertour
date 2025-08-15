@@ -594,13 +594,8 @@ describe('activedRulesConditions', () => {
       },
     };
 
-    console.log('URL condition:', urlCondition);
-    console.log('Options:', options);
-
     const result = activedRulesConditions([urlCondition], options);
 
-    console.log('Debug result:', result[0]);
-    console.log('Expected actived: false, Got:', result[0].actived);
     expect(result[0].actived).toBe(false);
   });
 });
