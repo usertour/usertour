@@ -84,22 +84,10 @@ export interface ClientContext {
 
 /**
  * Control which rule types to evaluate
+ * Default behavior: all rule types are disabled unless explicitly enabled
+ * Set to true to enable evaluation for specific rule types
  */
-export interface RulesTypeControl {
-  [RulesType.CURRENT_PAGE]?: boolean;
-  [RulesType.TIME]?: boolean;
-  [RulesType.USER_ATTR]?: boolean;
-  [RulesType.COMPANY_ATTR]?: boolean;
-  [RulesType.EVENT]?: boolean;
-  [RulesType.SEGMENT]?: boolean;
-  [RulesType.CONTENT]?: boolean;
-  [RulesType.ELEMENT]?: boolean;
-  [RulesType.TEXT_INPUT]?: boolean;
-  [RulesType.TEXT_FILL]?: boolean;
-  [RulesType.GROUP]?: boolean;
-  [RulesType.WAIT]?: boolean;
-  [RulesType.TASK_IS_CLICKED]?: boolean;
-}
+export type RulesTypeControl = Partial<Record<RulesType, boolean>>;
 
 /**
  * Simplified attribute type with only required fields
