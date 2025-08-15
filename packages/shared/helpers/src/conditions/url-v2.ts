@@ -1,9 +1,4 @@
 /**
- * URL utility functions for Userflow
- * Extracted from flow-condition-types.v1.iodExphr.js
- */
-
-/**
  * Parsed URL components interface
  */
 interface ParsedUrl {
@@ -80,7 +75,6 @@ function processUrlPattern(
 function urlPatternToRegex(pattern: string): RegExp | null {
   const parsed = parseUrl(pattern);
   if (!parsed) {
-    console.error('Userflow: Invalid URL pattern:', pattern);
     return null;
   }
 
