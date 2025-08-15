@@ -93,12 +93,12 @@ export type RulesTypeControl = Partial<Record<RulesType, boolean>>;
  * Custom evaluation function for specific rule types
  * @param rule - The rule condition to evaluate
  * @param options - The evaluation options
- * @returns boolean - Whether the rule condition is satisfied
+ * @returns boolean | Promise<boolean> - Whether the rule condition is satisfied
  */
 export type CustomRuleEvaluator = (
   rule: RulesCondition,
   options: RulesEvaluationOptions,
-) => boolean;
+) => boolean | Promise<boolean>;
 
 /**
  * Custom evaluators for specific rule types

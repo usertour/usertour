@@ -81,7 +81,10 @@ const filterConditionsByType = (
  *   deactivatedIds: ['rule-3']
  * });
  */
-const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): boolean => {
+const evaluateRule = async (
+  rule: RulesCondition,
+  options: RulesEvaluationOptions,
+): Promise<boolean> => {
   const { typeControl = {}, activatedIds, deactivatedIds, customEvaluators } = options;
   const ruleId = rule.id;
 
@@ -92,7 +95,10 @@ const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): bo
   // Check if custom evaluator is provided for this rule type
   const customEvaluator = customEvaluators?.[rule.type as RulesType];
   if (customEvaluator) {
-    return customEvaluator(rule, options);
+    const result = customEvaluator(rule, options);
+    return typeof result === 'object' && result !== null && 'then' in result
+      ? await result
+      : result;
   }
 
   // Check if evaluation is enabled for this rule type
@@ -119,23 +125,27 @@ const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): bo
   }
 };
 
-const activedRulesConditions = (
+const activedRulesConditions = async (
   conditions: RulesCondition[],
   options: RulesEvaluationOptions = {},
-): RulesCondition[] => {
-  return conditions.map((rule): RulesCondition => {
-    if (rule.type === 'group' && rule.conditions) {
-      return {
-        ...rule,
-        conditions: activedRulesConditions(rule.conditions, options),
-      };
-    }
+): Promise<RulesCondition[]> => {
+  const results: RulesCondition[] = [];
 
-    return {
-      ...rule,
-      actived: evaluateRule(rule, options),
-    };
-  });
+  for (const rule of conditions) {
+    if (rule.type === 'group' && rule.conditions) {
+      results.push({
+        ...rule,
+        conditions: await activedRulesConditions(rule.conditions, options),
+      });
+    } else {
+      results.push({
+        ...rule,
+        actived: await evaluateRule(rule, options),
+      });
+    }
+  }
+
+  return results;
 };
 
 export {
