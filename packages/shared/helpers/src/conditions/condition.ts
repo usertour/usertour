@@ -1,5 +1,8 @@
-import { RulesCondition, RulesType } from '@usertour/types';
+import { RulesCondition, RulesType, UserTourTypes } from '@usertour/types';
 import isEqual from 'fast-deep-equal';
+import { evaluateUrlCondition } from './url';
+import { evaluateTimeCondition } from './time';
+import { evaluateAttributeCondition, SimpleAttribute } from './attribute';
 
 const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
   return isEqual(rr1, rr2);
@@ -54,4 +57,124 @@ const filterConditionsByType = (
     });
 };
 
-export { isEqual, conditionsIsSame, filterConditionsByType, isConditionsActived };
+/**
+ * Client context information for condition evaluation
+ */
+interface ClientContext {
+  page_url: string;
+  viewport_width: number;
+  viewport_height: number;
+}
+
+/**
+ * Control which rule types to evaluate
+ */
+interface RulesTypeControl {
+  [RulesType.CURRENT_PAGE]?: boolean;
+  [RulesType.TIME]?: boolean;
+  [RulesType.USER_ATTR]?: boolean;
+  [RulesType.COMPANY_ATTR]?: boolean;
+  [RulesType.EVENT]?: boolean;
+  [RulesType.SEGMENT]?: boolean;
+  [RulesType.CONTENT]?: boolean;
+  [RulesType.ELEMENT]?: boolean;
+  [RulesType.TEXT_INPUT]?: boolean;
+  [RulesType.TEXT_FILL]?: boolean;
+  [RulesType.GROUP]?: boolean;
+  [RulesType.WAIT]?: boolean;
+  [RulesType.TASK_IS_CLICKED]?: boolean;
+}
+
+/**
+ * Options for evaluating rules conditions
+ */
+interface RulesEvaluationOptions {
+  clientContext?: ClientContext;
+  attributes?: SimpleAttribute[];
+  userAttributes?: UserTourTypes.Attributes;
+  typeControl?: RulesTypeControl;
+  activatedIds?: string[];
+  deactivatedIds?: string[];
+}
+
+/**
+ * Evaluate and activate rules conditions with enhanced context and type control
+ *
+ * @param conditions - Array of rules conditions to evaluate
+ * @param options - Evaluation options including context, type control, and ID overrides
+ *
+ * @example
+ * const result = await activedRulesConditions(conditions, {
+ *   clientContext: {
+ *     page_url: 'https://example.com',
+ *     viewport_width: 1920,
+ *     viewport_height: 1080
+ *   },
+ *   attributes: userAttributes,
+ *   userAttributes: userData,
+ *   typeControl: {
+ *     [RulesType.CURRENT_PAGE]: true,
+ *     [RulesType.TIME]: false,
+ *     [RulesType.USER_ATTR]: true
+ *   },
+ *   activatedIds: ['rule-1', 'rule-2'],
+ *   deactivatedIds: ['rule-3']
+ * });
+ */
+const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): boolean => {
+  const { typeControl = {}, activatedIds, deactivatedIds } = options;
+  const ruleId = rule.id;
+
+  // Check ID-based overrides first
+  if (activatedIds?.includes(ruleId)) return true;
+  if (deactivatedIds?.includes(ruleId)) return false;
+
+  // Check if evaluation is disabled for this rule type
+  if (typeControl[rule.type as keyof RulesTypeControl] === false) {
+    return rule.actived || false;
+  }
+
+  // Perform normal evaluation based on rule type
+  switch (rule.type) {
+    case RulesType.CURRENT_PAGE:
+      return evaluateUrlCondition(rule, options.clientContext?.page_url || '');
+    case RulesType.TIME:
+      return evaluateTimeCondition(rule);
+    case RulesType.USER_ATTR:
+    case RulesType.COMPANY_ATTR:
+      return evaluateAttributeCondition(
+        rule,
+        options.attributes || [],
+        options.userAttributes || {},
+      );
+    default:
+      return rule.actived || false;
+  }
+};
+
+const activedRulesConditions = (
+  conditions: RulesCondition[],
+  options: RulesEvaluationOptions = {},
+): RulesCondition[] => {
+  return conditions.map((rule): RulesCondition => {
+    if (rule.type === 'group' && rule.conditions) {
+      return {
+        ...rule,
+        conditions: activedRulesConditions(rule.conditions, options),
+      };
+    }
+
+    return {
+      ...rule,
+      actived: evaluateRule(rule, options),
+    };
+  });
+};
+
+export {
+  isEqual,
+  conditionsIsSame,
+  filterConditionsByType,
+  isConditionsActived,
+  activedRulesConditions,
+};
