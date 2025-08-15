@@ -1,4 +1,4 @@
-import { ContentVersion, RulesType } from './contents';
+import { ContentVersion, RulesType, RulesCondition } from './contents';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
 import { Theme } from './theme';
@@ -90,6 +90,23 @@ export interface ClientContext {
 export type RulesTypeControl = Partial<Record<RulesType, boolean>>;
 
 /**
+ * Custom evaluation function for specific rule types
+ * @param rule - The rule condition to evaluate
+ * @param options - The evaluation options
+ * @returns boolean - Whether the rule condition is satisfied
+ */
+export type CustomRuleEvaluator = (
+  rule: RulesCondition,
+  options: RulesEvaluationOptions,
+) => boolean;
+
+/**
+ * Custom evaluators for specific rule types
+ * Override default evaluation logic for specific rule types
+ */
+export type CustomRuleEvaluators = Partial<Record<RulesType, CustomRuleEvaluator>>;
+
+/**
  * Simplified attribute type with only required fields
  */
 export interface SimpleAttribute {
@@ -108,4 +125,5 @@ export interface RulesEvaluationOptions {
   typeControl?: RulesTypeControl;
   activatedIds?: string[];
   deactivatedIds?: string[];
+  customEvaluators?: CustomRuleEvaluators;
 }

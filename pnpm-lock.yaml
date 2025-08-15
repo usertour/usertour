@@ -3857,8 +3857,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       '@usertour/types':
-        specifier: ^0.0.11
-        version: 0.0.11
+        specifier: ^0.0.13
+        version: 0.0.13
       chroma-js:
         specifier: ^3.1.2
         version: 3.1.2
@@ -8577,6 +8577,9 @@ packages:
 
   '@usertour/types@0.0.12':
     resolution: {integrity: sha512-fjSwGEQrndCHCqVH1YrJuoMAEgw5nahsBzH6333sq5I/fyHIhHl91TcTcJ7E1m30/SgW+uK1eAeAi6JLM9HkMQ==}
+
+  '@usertour/types@0.0.13':
+    resolution: {integrity: sha512-W3+vUPGPGSbWK1xhjCJknKkm9sBORuaEc1BIpZ2sp0H50p8QcHCdCvYQgaaUXtrdo6D1kM+mNaw2teSV9veoGw==}
 
   '@usertour/types@0.0.4':
     resolution: {integrity: sha512-UzaCNqWjO3YTLZqXbZXGmKemayrBR8EP7FTeP1GyvCmRkk9HK5cxDogbJdh7ZaDT4gBbqCn9sMQN3Adk/P2gYw==}
@@ -20568,6 +20571,8 @@ snapshots:
   '@usertour/types@0.0.11': {}
 
   '@usertour/types@0.0.12': {}
+
+  '@usertour/types@0.0.13': {}
 
   '@usertour/types@0.0.4': {}
 

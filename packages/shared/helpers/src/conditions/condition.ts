@@ -87,7 +87,7 @@ const filterConditionsByType = (
  * });
  */
 const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): boolean => {
-  const { typeControl = {}, activatedIds, deactivatedIds } = options;
+  const { typeControl = {}, activatedIds, deactivatedIds, customEvaluators } = options;
   const ruleId = rule.id;
 
   // Check ID-based overrides first
@@ -98,6 +98,12 @@ const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): bo
   // Default is disabled, only enabled when explicitly set to true
   if (typeControl[rule.type as keyof RulesTypeControl] !== true) {
     return rule.actived || false;
+  }
+
+  // Check if custom evaluator is provided for this rule type
+  const customEvaluator = customEvaluators?.[rule.type as RulesType];
+  if (customEvaluator) {
+    return customEvaluator(rule, options);
   }
 
   // Perform normal evaluation based on rule type
