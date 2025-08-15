@@ -1,5 +1,5 @@
-import { BizAttributeTypes, UserTourTypes, RulesCondition } from '@usertour/types';
-import { evaluateFilterConditions, SimpleAttribute } from '../conditions/attribute';
+import { BizAttributeTypes, UserTourTypes, RulesCondition, SimpleAttribute } from '@usertour/types';
+import { evaluateFilterConditions } from '../conditions/attribute';
 
 // Test data setup
 const testAttributes: SimpleAttribute[] = [
