@@ -94,8 +94,9 @@ const evaluateRule = (rule: RulesCondition, options: RulesEvaluationOptions): bo
   if (activatedIds?.includes(ruleId)) return true;
   if (deactivatedIds?.includes(ruleId)) return false;
 
-  // Check if evaluation is disabled for this rule type
-  if (typeControl[rule.type as keyof RulesTypeControl] === false) {
+  // Check if evaluation is enabled for this rule type
+  // Default is disabled, only enabled when explicitly set to true
+  if (typeControl[rule.type as keyof RulesTypeControl] !== true) {
     return rule.actived || false;
   }
 

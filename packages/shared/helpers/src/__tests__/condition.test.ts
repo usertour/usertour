@@ -303,6 +303,18 @@ describe('activedRulesConditions', () => {
     expect(result[1].actived).toBe(false);
   });
 
+  test('should disable all rule types by default when typeControl is empty', () => {
+    const result = activedRulesConditions(mockConditions, {
+      ...mockOptions,
+      typeControl: {},
+    });
+
+    expect(result[0].actived).toBe(false); // current-page disabled by default
+    expect(result[1].actived).toBe(false); // time disabled by default
+    expect(result[2].actived).toBe(false); // user-attr disabled by default
+    expect(result[3].actived).toBe(true); // element keeps original state
+  });
+
   test('should force activate rules by ID', () => {
     const result = activedRulesConditions(mockConditions, {
       ...mockOptions,
@@ -311,7 +323,7 @@ describe('activedRulesConditions', () => {
 
     expect(result[0].actived).toBe(true); // rule-1 forced activated
     expect(result[1].actived).toBe(true); // rule-2 forced activated
-    expect(result[2].actived).toBe(true); // rule-3 evaluated normally (attribute matches)
+    expect(result[2].actived).toBe(false); // rule-3 disabled by default
     expect(result[3].actived).toBe(true); // rule-4 keeps original state
   });
 
@@ -322,8 +334,8 @@ describe('activedRulesConditions', () => {
     });
 
     expect(result[0].actived).toBe(false); // rule-1 forced deactivated
-    expect(result[1].actived).toBe(true); // rule-2 evaluated normally (time condition matches)
-    expect(result[2].actived).toBe(true); // rule-3 evaluated normally (attribute matches)
+    expect(result[1].actived).toBe(false); // rule-2 disabled by default
+    expect(result[2].actived).toBe(false); // rule-3 disabled by default
     expect(result[3].actived).toBe(false); // rule-4 forced deactivated
   });
 
@@ -337,7 +349,7 @@ describe('activedRulesConditions', () => {
     expect(result[0].actived).toBe(true); // activatedIds takes precedence
   });
 
-  test('should disable evaluation for specific rule types', () => {
+  test('should disable evaluation for specific rule types by default', () => {
     const result = activedRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
@@ -348,25 +360,40 @@ describe('activedRulesConditions', () => {
 
     expect(result[0].actived).toBe(false); // rule-1 keeps original state (disabled)
     expect(result[1].actived).toBe(false); // rule-2 keeps original state (disabled)
-    expect(result[2].actived).toBe(true); // rule-3 evaluated normally
+    expect(result[2].actived).toBe(false); // rule-3 disabled by default
     expect(result[3].actived).toBe(true); // rule-4 keeps original state
   });
 
-  test('should evaluate URL conditions correctly', () => {
-    const result = activedRulesConditions(mockConditions, mockOptions);
+  test('should evaluate URL conditions correctly when enabled', () => {
+    const result = activedRulesConditions(mockConditions, {
+      ...mockOptions,
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
+      },
+    });
 
     expect(result[0].actived).toBe(false); // URL doesn't match
   });
 
-  test('should evaluate time conditions correctly', () => {
-    const result = activedRulesConditions(mockConditions, mockOptions);
+  test('should evaluate time conditions correctly when enabled', () => {
+    const result = activedRulesConditions(mockConditions, {
+      ...mockOptions,
+      typeControl: {
+        [RulesType.TIME]: true,
+      },
+    });
 
     // Time evaluation depends on current time, so we test the structure
     expect(typeof result[1].actived).toBe('boolean');
   });
 
-  test('should evaluate attribute conditions correctly', () => {
-    const result = activedRulesConditions(mockConditions, mockOptions);
+  test('should evaluate attribute conditions correctly when enabled', () => {
+    const result = activedRulesConditions(mockConditions, {
+      ...mockOptions,
+      typeControl: {
+        [RulesType.USER_ATTR]: true,
+      },
+    });
 
     expect(result[2].actived).toBe(true); // Attribute matches
   });
@@ -491,7 +518,7 @@ describe('activedRulesConditions', () => {
     expect(result[0].actived).toBe(false); // Should handle gracefully
   });
 
-  test('should handle mixed rule types with different evaluation results', () => {
+  test('should handle mixed rule types with different evaluation results when enabled', () => {
     const mixedConditions: RulesCondition[] = [
       {
         id: 'url-rule',
@@ -523,7 +550,13 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = activedRulesConditions(mixedConditions, mockOptions);
+    const result = activedRulesConditions(mixedConditions, {
+      ...mockOptions,
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
+        [RulesType.USER_ATTR]: true,
+      },
+    });
 
     expect(result[0].actived).toBe(false); // URL doesn't match
     expect(result[1].actived).toBe(true); // Attribute matches
@@ -535,20 +568,41 @@ describe('activedRulesConditions', () => {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: false,
-        // Other types not specified, should evaluate normally
+        // Other types not specified, should be disabled by default
       },
     });
 
     expect(result[0].actived).toBe(false); // Disabled
+    expect(result[1].actived).toBe(false); // Disabled by default
+    expect(result[2].actived).toBe(false); // Disabled by default
+    expect(result[3].actived).toBe(true); // Keeps original state
+  });
+
+  test('should enable evaluation for explicitly enabled rule types', () => {
+    const result = activedRulesConditions(mockConditions, {
+      ...mockOptions,
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
+        [RulesType.TIME]: true,
+        [RulesType.USER_ATTR]: true,
+      },
+    });
+
+    expect(result[0].actived).toBe(false); // Evaluated normally (URL doesn't match)
     expect(result[1].actived).toBe(true); // Evaluated normally (time condition matches)
     expect(result[2].actived).toBe(true); // Evaluated normally (attribute matches)
     expect(result[3].actived).toBe(true); // Keeps original state
   });
 
-  test('should handle missing clientContext gracefully', () => {
+  test('should handle missing clientContext gracefully when enabled', () => {
     const result = activedRulesConditions(mockConditions, {
       attributes: mockOptions.attributes,
       userAttributes: mockOptions.userAttributes,
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
+        [RulesType.TIME]: true,
+        [RulesType.USER_ATTR]: true,
+      },
     });
 
     // Should still work with default clientContext
@@ -556,25 +610,31 @@ describe('activedRulesConditions', () => {
     expect(typeof result[0].actived).toBe('boolean');
   });
 
-  test('should handle missing attributes gracefully', () => {
+  test('should handle missing attributes gracefully when enabled', () => {
     const result = activedRulesConditions(mockConditions, {
       clientContext: mockOptions.clientContext,
       userAttributes: mockOptions.userAttributes,
+      typeControl: {
+        [RulesType.USER_ATTR]: true,
+      },
     });
 
     expect(result[2].actived).toBe(false); // Should handle missing attributes gracefully
   });
 
-  test('should handle missing userAttributes gracefully', () => {
+  test('should handle missing userAttributes gracefully when enabled', () => {
     const result = activedRulesConditions(mockConditions, {
       clientContext: mockOptions.clientContext,
       attributes: mockOptions.attributes,
+      typeControl: {
+        [RulesType.USER_ATTR]: true,
+      },
     });
 
     expect(result[2].actived).toBe(false); // Should handle missing userAttributes gracefully
   });
 
-  test('debug: should test URL evaluation directly', () => {
+  test('debug: should test URL evaluation directly when enabled', () => {
     const urlCondition: RulesCondition = {
       id: 'debug-rule',
       type: 'current-page',
@@ -591,6 +651,9 @@ describe('activedRulesConditions', () => {
         page_url: 'https://example.com',
         viewport_width: 1920,
         viewport_height: 1080,
+      },
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
       },
     };
 
