@@ -1,14 +1,5 @@
-import { BizAttributeTypes, UserTourTypes, RulesCondition } from '@usertour/types';
+import { BizAttributeTypes, UserTourTypes, RulesCondition, SimpleAttribute } from '@usertour/types';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
-
-/**
- * Simplified attribute type with only required fields
- */
-export interface SimpleAttribute {
-  id: string;
-  codeName: string;
-  dataType: number;
-}
 
 /**
  * Evaluate filter conditions and return boolean result

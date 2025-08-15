@@ -1,8 +1,13 @@
-import { RulesCondition, RulesType, UserTourTypes } from '@usertour/types';
+import {
+  RulesCondition,
+  RulesEvaluationOptions,
+  RulesType,
+  RulesTypeControl,
+} from '@usertour/types';
 import isEqual from 'fast-deep-equal';
 import { evaluateUrlCondition } from './url';
 import { evaluateTimeCondition } from './time';
-import { evaluateAttributeCondition, SimpleAttribute } from './attribute';
+import { evaluateAttributeCondition } from './attribute';
 
 const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
   return isEqual(rr1, rr2);
@@ -56,46 +61,6 @@ const filterConditionsByType = (
       return condition;
     });
 };
-
-/**
- * Client context information for condition evaluation
- */
-interface ClientContext {
-  page_url: string;
-  viewport_width: number;
-  viewport_height: number;
-}
-
-/**
- * Control which rule types to evaluate
- */
-interface RulesTypeControl {
-  [RulesType.CURRENT_PAGE]?: boolean;
-  [RulesType.TIME]?: boolean;
-  [RulesType.USER_ATTR]?: boolean;
-  [RulesType.COMPANY_ATTR]?: boolean;
-  [RulesType.EVENT]?: boolean;
-  [RulesType.SEGMENT]?: boolean;
-  [RulesType.CONTENT]?: boolean;
-  [RulesType.ELEMENT]?: boolean;
-  [RulesType.TEXT_INPUT]?: boolean;
-  [RulesType.TEXT_FILL]?: boolean;
-  [RulesType.GROUP]?: boolean;
-  [RulesType.WAIT]?: boolean;
-  [RulesType.TASK_IS_CLICKED]?: boolean;
-}
-
-/**
- * Options for evaluating rules conditions
- */
-interface RulesEvaluationOptions {
-  clientContext?: ClientContext;
-  attributes?: SimpleAttribute[];
-  userAttributes?: UserTourTypes.Attributes;
-  typeControl?: RulesTypeControl;
-  activatedIds?: string[];
-  deactivatedIds?: string[];
-}
 
 /**
  * Evaluate and activate rules conditions with enhanced context and type control

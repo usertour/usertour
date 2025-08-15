@@ -1,7 +1,8 @@
-import { ContentVersion } from './contents';
+import { ContentVersion, RulesType } from './contents';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
 import { Theme } from './theme';
+import { Attributes } from './usertour';
 
 export type ContentSession = {
   contentId: string;
@@ -70,4 +71,53 @@ export interface SDKConfig {
 export interface GetProjectSettingsResponse {
   config: SDKConfig;
   themes: Theme[];
+}
+
+/**
+ * Client context information for condition evaluation
+ */
+export interface ClientContext {
+  page_url: string;
+  viewport_width: number;
+  viewport_height: number;
+}
+
+/**
+ * Control which rule types to evaluate
+ */
+export interface RulesTypeControl {
+  [RulesType.CURRENT_PAGE]?: boolean;
+  [RulesType.TIME]?: boolean;
+  [RulesType.USER_ATTR]?: boolean;
+  [RulesType.COMPANY_ATTR]?: boolean;
+  [RulesType.EVENT]?: boolean;
+  [RulesType.SEGMENT]?: boolean;
+  [RulesType.CONTENT]?: boolean;
+  [RulesType.ELEMENT]?: boolean;
+  [RulesType.TEXT_INPUT]?: boolean;
+  [RulesType.TEXT_FILL]?: boolean;
+  [RulesType.GROUP]?: boolean;
+  [RulesType.WAIT]?: boolean;
+  [RulesType.TASK_IS_CLICKED]?: boolean;
+}
+
+/**
+ * Simplified attribute type with only required fields
+ */
+export interface SimpleAttribute {
+  id: string;
+  codeName: string;
+  dataType: number;
+}
+
+/**
+ * Options for evaluating rules conditions
+ */
+export interface RulesEvaluationOptions {
+  clientContext?: ClientContext;
+  attributes?: SimpleAttribute[];
+  userAttributes?: Attributes;
+  typeControl?: RulesTypeControl;
+  activatedIds?: string[];
+  deactivatedIds?: string[];
 }
