@@ -88,11 +88,11 @@ importers:
         specifier: workspace:^
         version: link:../../packages/shared/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.22
-        version: 0.0.22(typescript@5.1.6)
+        specifier: ^0.0.24
+        version: 0.0.24(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.12
-        version: 0.0.12
+        specifier: ^0.0.13
+        version: 0.0.13
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -335,14 +335,14 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.22
-        version: 0.0.22(typescript@4.9.5)
+        specifier: ^0.0.24
+        version: 0.0.24(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.1
         version: 0.0.1
       '@usertour/types':
-        specifier: ^0.0.12
-        version: 0.0.12
+        specifier: ^0.0.13
+        version: 0.0.13
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -8566,17 +8566,11 @@ packages:
   '@usertour/helpers@0.0.11':
     resolution: {integrity: sha512-NQCfWKzn6UvuzGAU43wFjsKUnnDciZQizLpyt+7uty4FtLh+Sl3NmeD2hWccwWCwq4mBGqGALNDwBJfsl5+0yA==}
 
-  '@usertour/helpers@0.0.22':
-    resolution: {integrity: sha512-N6c3ab1K/oGWy+yVquBN2Bzq70FETYrYp059oqWcwnXnSMnqhKqa1pWUKjGo2nNm7XRIVXgAyiNZ4fln+X/mwg==}
+  '@usertour/helpers@0.0.24':
+    resolution: {integrity: sha512-V8AzRt/giUDpuUURFnSIFn89Y5qL/KWdef9ay6xKCltm4IODyolEpaj8HAAqqsc1Udz7wv0Ok6yDXQICJeEqpg==}
 
   '@usertour/license@0.0.1':
     resolution: {integrity: sha512-FGzPpdCQa13fjU65d3YYhgtI0trG+u04ahJbJH9IWc4U/AqXR0nbaA27vrDHq8oKMRwkl7/XpOhxpf2HtuvcTw==}
-
-  '@usertour/types@0.0.11':
-    resolution: {integrity: sha512-JOHnOeLm3gz2YMGZh5Yriairt/FAXXBHe290OHqdK4qVNRClz/XEb6bQM6zxampJFowkapwXagHrrVGQBf8E1w==}
-
-  '@usertour/types@0.0.12':
-    resolution: {integrity: sha512-fjSwGEQrndCHCqVH1YrJuoMAEgw5nahsBzH6333sq5I/fyHIhHl91TcTcJ7E1m30/SgW+uK1eAeAi6JLM9HkMQ==}
 
   '@usertour/types@0.0.13':
     resolution: {integrity: sha512-W3+vUPGPGSbWK1xhjCJknKkm9sBORuaEc1BIpZ2sp0H50p8QcHCdCvYQgaaUXtrdo6D1kM+mNaw2teSV9veoGw==}
@@ -20534,10 +20528,10 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.22(typescript@4.9.5)':
+  '@usertour/helpers@0.0.24(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.11
+      '@usertour/types': 0.0.13
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@4.9.5)
       clsx: 1.2.1
@@ -20549,10 +20543,10 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.22(typescript@5.1.6)':
+  '@usertour/helpers@0.0.24(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.11
+      '@usertour/types': 0.0.13
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@5.1.6)
       clsx: 1.2.1
@@ -20567,10 +20561,6 @@ snapshots:
   '@usertour/license@0.0.1':
     dependencies:
       jsonwebtoken: 9.0.2
-
-  '@usertour/types@0.0.11': {}
-
-  '@usertour/types@0.0.12': {}
 
   '@usertour/types@0.0.13': {}
 
