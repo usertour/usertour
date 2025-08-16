@@ -1,6 +1,6 @@
 {
   "name": "@usertour/helpers",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "type": "module",
   "description": "Utility functions and helpers shared across the UserTour project",
   "homepage": "https://www.usertour.io",

@@ -7,7 +7,6 @@ import {
   RulesCondition,
   ContentPriority,
   RulesType,
-  RulesTypeControl,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -15,11 +14,10 @@ import {
   differenceInMinutes,
   differenceInSeconds,
   isAfter,
-  isBefore,
 } from 'date-fns';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
-import { isUndefined, isMatchUrlPattern } from '@usertour/helpers';
+import { isUndefined, isConditionsActived } from '@usertour/helpers';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -28,29 +26,6 @@ export const PRIORITIES = [
   ContentPriority.LOW,
   ContentPriority.LOWEST,
 ];
-
-export const rulesTypes: RulesType[] = Object.values(RulesType);
-
-export const isActiveRulesByCurrentPage = (rules: RulesCondition) => {
-  const { excludes, includes } = rules.data;
-  if (location) {
-    const href = location.href;
-    return isMatchUrlPattern(href, includes, excludes);
-  }
-  return false;
-};
-
-export const isActiveRulesByCurrentTime = (rules: RulesCondition) => {
-  const { endDate, endDateHour, endDateMinute, startDate, startDateHour, startDateMinute } =
-    rules.data;
-  const startTime = new Date(`${startDate} ${startDateHour}:${startDateMinute}:00`);
-  const endTime = new Date(`${endDate} ${endDateHour}:${endDateMinute}:00`);
-  const now = new Date();
-  if (!endDate) {
-    return isAfter(now, startTime);
-  }
-  return isAfter(now, startTime) && isBefore(now, endTime);
-};
 
 const isActivedContentRulesCondition = (
   rules: RulesCondition,
@@ -85,44 +60,6 @@ const isActivedContentRulesCondition = (
   return false;
 };
 
-const isValidRulesType = (type: string) => {
-  return rulesTypes.includes(type as RulesType);
-};
-
-const isActiveRules = async (rules: RulesCondition) => {
-  if (!isValidRulesType(rules.type)) {
-    return true;
-  }
-  switch (rules.type) {
-    case RulesType.CURRENT_PAGE:
-      return isActiveRulesByCurrentPage(rules);
-    case RulesType.TIME:
-      return isActiveRulesByCurrentTime(rules);
-    default:
-      return rules.actived;
-  }
-};
-
-export const activedRulesConditions = async (
-  conditions: RulesCondition[],
-  rewrite?: RulesTypeControl,
-) => {
-  const rulesCondition: RulesCondition[] = [...conditions];
-  for (let j = 0; j < rulesCondition.length; j++) {
-    const rules = rulesCondition[j];
-    if (rules.type !== 'group') {
-      if (rewrite?.[rules.type as keyof RulesTypeControl]) {
-        rulesCondition[j].actived = true;
-      } else {
-        rulesCondition[j].actived = await isActiveRules(rules);
-      }
-    } else if (rules.conditions) {
-      rulesCondition[j].conditions = await activedRulesConditions(rules.conditions);
-    }
-  }
-  return rulesCondition;
-};
-
 export const activedContentRulesConditions = async (
   conditions: RulesCondition[],
   contents: CustomContentVersion[],
@@ -147,24 +84,10 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const isActive = (autoStartRules: RulesCondition[]): boolean => {
-  if (!autoStartRules || autoStartRules.length === 0) {
-    return false;
-  }
-  const operator = autoStartRules[0].operators;
-  const actives = autoStartRules.filter((rule: RulesCondition) => {
-    if (!rule.conditions) {
-      return rule.actived;
-    }
-    return isActive(rule.conditions);
-  });
-  return operator === 'and' ? actives.length === autoStartRules.length : actives.length > 0;
-};
-
 export const isActiveContent = (content: CustomContentVersion) => {
   const config = content.config;
   const { enabledAutoStartRules, autoStartRules } = config;
-  if (!enabledAutoStartRules || !isActive(autoStartRules)) {
+  if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
     return false;
   }
   return true;
@@ -222,22 +145,11 @@ export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
   return lastEvent;
 };
 
-// const completeEventMapping = {
-//   [ContentDataType.FLOW]: BizEvents.FLOW_COMPLETED,
-//   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_ACTIVATED,
-//   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_COMPLETED,
-// };
 const showEventMapping = {
   [ContentDataType.FLOW]: BizEvents.FLOW_STEP_SEEN,
   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_SEEN,
   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_SEEN,
 };
-
-// const isDismissedEventMapping = {
-//   [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
-//   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
-//   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
-// };
 
 const isGreaterThenDuration = (
   dateLeft: Date,
@@ -361,61 +273,6 @@ export const isValidContent = (content: CustomContentVersion, contents: CustomCo
     }
   }
   return true;
-};
-
-export const parseUrlParams = (url: string, paramName: string): string | null => {
-  if (!url || !paramName) {
-    return null;
-  }
-
-  try {
-    const urlObj = new URL(url);
-
-    // 1. Check traditional query string
-    const searchParams = new URLSearchParams(urlObj.search);
-    if (searchParams.has(paramName)) {
-      return searchParams.get(paramName);
-    }
-
-    // 2. Check hash part
-    if (urlObj.hash) {
-      // Handle both #/path?param=value and #?param=value formats
-      const hashSearch = urlObj.hash.split('?')[1];
-      if (hashSearch) {
-        const hashParams = new URLSearchParams(hashSearch);
-        if (hashParams.has(paramName)) {
-          return hashParams.get(paramName);
-        }
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error parsing URL:', error);
-    return null;
-  }
-};
-
-export const wait = (seconds: number): Promise<void> => {
-  if (typeof seconds !== 'number' || Number.isNaN(seconds)) {
-    return Promise.reject(new Error('Invalid wait time: must be a number'));
-  }
-
-  if (seconds < 0) {
-    return Promise.reject(new Error('Invalid wait time: cannot be negative'));
-  }
-
-  if (seconds === 0) {
-    return Promise.resolve();
-  }
-
-  return new Promise<void>((resolve, reject) => {
-    try {
-      setTimeout(resolve, seconds * 1000);
-    } catch (error) {
-      reject(error);
-    }
-  });
 };
 
 /**
