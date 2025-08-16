@@ -295,20 +295,6 @@ export const filterAutoStartContent = (contents: SDKContent[], type: string) => 
     .sort(priorityCompare);
 };
 
-export const isHasActivedContents = (source: SDKContent[], dest: SDKContent[]) => {
-  for (let index = 0; index < source.length; index++) {
-    const content1 = source[index];
-    const content2 = dest.find((c) => c.id === content1.id);
-    if (!content2) {
-      return true;
-    }
-    if (isActiveContent(content1) !== isActiveContent(content2)) {
-      return true;
-    }
-  }
-  return false;
-};
-
 export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
   if (!source || !dest || source.length !== dest.length) {
     return false;

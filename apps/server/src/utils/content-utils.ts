@@ -187,23 +187,6 @@ const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
   return 0;
 };
 
-export const isHasActivedContents = (
-  source: CustomContentVersion[],
-  dest: CustomContentVersion[],
-) => {
-  for (let index = 0; index < source.length; index++) {
-    const content1 = source[index];
-    const content2 = dest.find((c) => c.id === content1.id);
-    if (!content2) {
-      return true;
-    }
-    if (isActiveContent(content1) !== isActiveContent(content2)) {
-      return true;
-    }
-  }
-  return false;
-};
-
 const getLatestEvent = (
   currentContent: CustomContentVersion,
   contents: CustomContentVersion[],
