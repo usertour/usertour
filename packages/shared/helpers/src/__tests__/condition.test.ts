@@ -2,7 +2,7 @@ import { RulesCondition, RulesType, RulesEvaluationOptions } from '@usertour/typ
 import {
   filterConditionsByType,
   isConditionsActived,
-  activedRulesConditions,
+  evaluateRulesConditions,
 } from '../conditions/condition';
 
 describe('filterConditionsByType', () => {
@@ -217,7 +217,7 @@ describe('isConditionsActived', () => {
   });
 });
 
-describe('activedRulesConditions', () => {
+describe('evaluateRulesConditions', () => {
   const mockConditions: RulesCondition[] = [
     {
       id: 'rule-1',
@@ -296,7 +296,7 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = await activedRulesConditions(conditions);
+    const result = await evaluateRulesConditions(conditions);
 
     expect(result).toHaveLength(2);
     expect(result[0].actived).toBe(true);
@@ -304,7 +304,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should disable all rule types by default when typeControl is empty', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {},
     });
@@ -316,7 +316,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should force activate rules by ID', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       activatedIds: ['rule-1', 'rule-2'],
     });
@@ -328,7 +328,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should force deactivate rules by ID', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       deactivatedIds: ['rule-1', 'rule-4'],
     });
@@ -340,7 +340,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should prioritize activatedIds over deactivatedIds', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       activatedIds: ['rule-1'],
       deactivatedIds: ['rule-1'],
@@ -350,7 +350,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should disable evaluation for specific rule types by default', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: false,
@@ -365,7 +365,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should evaluate URL conditions correctly when enabled', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: true,
@@ -376,7 +376,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should evaluate time conditions correctly when enabled', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.TIME]: true,
@@ -388,7 +388,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should evaluate attribute conditions correctly when enabled', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.USER_ATTR]: true,
@@ -409,7 +409,7 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = await activedRulesConditions(conditions, {
+    const result = await evaluateRulesConditions(conditions, {
       activatedIds: ['non-existent'],
       deactivatedIds: ['non-existent'],
     });
@@ -447,7 +447,7 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = await activedRulesConditions(nestedConditions, {
+    const result = await evaluateRulesConditions(nestedConditions, {
       ...mockOptions,
       activatedIds: ['rule-1'],
     });
@@ -490,7 +490,7 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = await activedRulesConditions(deepNestedConditions, {
+    const result = await evaluateRulesConditions(deepNestedConditions, {
       ...mockOptions,
       activatedIds: ['rule-1'],
     });
@@ -499,7 +499,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should handle empty conditions array', async () => {
-    const result = await activedRulesConditions([]);
+    const result = await evaluateRulesConditions([]);
     expect(result).toEqual([]);
   });
 
@@ -514,7 +514,7 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = await activedRulesConditions(conditions, mockOptions);
+    const result = await evaluateRulesConditions(conditions, mockOptions);
     expect(result[0].actived).toBe(false); // Should handle gracefully
   });
 
@@ -550,7 +550,7 @@ describe('activedRulesConditions', () => {
       },
     ];
 
-    const result = await activedRulesConditions(mixedConditions, {
+    const result = await evaluateRulesConditions(mixedConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: true,
@@ -564,7 +564,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should handle type control with partial configuration', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: false,
@@ -579,7 +579,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should enable evaluation for explicitly enabled rule types', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: true,
@@ -606,7 +606,7 @@ describe('activedRulesConditions', () => {
       },
     };
 
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       ...mockOptions,
       typeControl: {
         [RulesType.CURRENT_PAGE]: true,
@@ -622,7 +622,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should handle missing clientContext gracefully when enabled', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       attributes: mockOptions.attributes,
       userAttributes: mockOptions.userAttributes,
       typeControl: {
@@ -638,7 +638,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should handle missing attributes gracefully when enabled', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       clientContext: mockOptions.clientContext,
       userAttributes: mockOptions.userAttributes,
       typeControl: {
@@ -650,7 +650,7 @@ describe('activedRulesConditions', () => {
   });
 
   test('should handle missing userAttributes gracefully when enabled', async () => {
-    const result = await activedRulesConditions(mockConditions, {
+    const result = await evaluateRulesConditions(mockConditions, {
       clientContext: mockOptions.clientContext,
       attributes: mockOptions.attributes,
       typeControl: {
@@ -684,7 +684,7 @@ describe('activedRulesConditions', () => {
       },
     };
 
-    const result = await activedRulesConditions([urlCondition], options);
+    const result = await evaluateRulesConditions([urlCondition], options);
 
     expect(result[0].actived).toBe(false);
   });

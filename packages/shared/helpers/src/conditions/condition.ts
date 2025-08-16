@@ -64,7 +64,7 @@ const filterConditionsByType = (
  * @param options - Evaluation options including context, type control, and ID overrides
  *
  * @example
- * const result = await activedRulesConditions(conditions, {
+ * const result = await evaluateRulesConditions(conditions, {
  *   clientContext: {
  *     page_url: 'https://example.com',
  *     viewport_width: 1920,
@@ -125,7 +125,7 @@ const evaluateRule = async (
   }
 };
 
-const activedRulesConditions = async (
+const evaluateRulesConditions = async (
   conditions: RulesCondition[],
   options: RulesEvaluationOptions = {},
 ): Promise<RulesCondition[]> => {
@@ -135,7 +135,7 @@ const activedRulesConditions = async (
     if (rule.type === 'group' && rule.conditions) {
       results.push({
         ...rule,
-        conditions: await activedRulesConditions(rule.conditions, options),
+        conditions: await evaluateRulesConditions(rule.conditions, options),
       });
     } else {
       results.push({
@@ -154,5 +154,5 @@ export {
   filterConditionsByType,
   isConditionsActived,
   evaluateRule,
-  activedRulesConditions,
+  evaluateRulesConditions,
 };

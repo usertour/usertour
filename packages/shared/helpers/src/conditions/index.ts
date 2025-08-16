@@ -4,7 +4,7 @@ export {
   filterConditionsByType,
   isConditionsActived,
   evaluateRule,
-  activedRulesConditions,
+  evaluateRulesConditions,
 } from './condition';
 export { isMatchUrlPattern, evaluateUrlCondition } from './url';
 export { evaluateTimeCondition } from './time';
