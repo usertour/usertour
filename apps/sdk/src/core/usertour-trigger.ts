@@ -1,6 +1,6 @@
 import { StepTrigger, RulesCondition } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
-import { activedRulesConditions, isActive } from '@/core/usertour-helper';
+import { uuidV4, isConditionsActived } from '@usertour/helpers';
+import { activedRulesConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
 
@@ -40,7 +40,7 @@ export class UsertourTrigger {
       const { conditions, ...rest } = trigger;
       const activatedConditions = await activedRulesConditions(conditions);
 
-      if (!isActive(activatedConditions)) {
+      if (!isConditionsActived(activatedConditions)) {
         // Conditions not met, keep for next check
         remainingTriggers.push({
           ...rest,

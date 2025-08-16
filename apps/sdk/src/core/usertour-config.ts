@@ -5,7 +5,8 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import { autoBind, Evented } from '@/utils';
-import { activedRulesConditions, isActive } from '@/core/usertour-helper';
+import { activedRulesConditions } from '@/core/usertour-helper';
+import { isConditionsActived } from '@usertour/helpers';
 
 /**
  * Config class manages the configuration settings for UserTour content
@@ -77,7 +78,7 @@ export class UsertourConfig extends Evented {
     if (!autoStartRules || autoStartRules.length === 0) {
       return true;
     }
-    return isActive(autoStartRules);
+    return isConditionsActived(autoStartRules);
   }
 
   /**
@@ -92,7 +93,7 @@ export class UsertourConfig extends Evented {
     if (!hideRules || hideRules.length === 0) {
       return false;
     }
-    return isActive(hideRules);
+    return isConditionsActived(hideRules);
   }
 
   /**

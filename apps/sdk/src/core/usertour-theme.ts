@@ -3,7 +3,8 @@ import { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { logger } from '@/utils';
 import { getUserTourCss } from '@/core/usertour-env';
-import { activedRulesConditions, isActive } from '@/core/usertour-helper';
+import { activedRulesConditions } from '@/core/usertour-helper';
+import { isConditionsActived } from '@usertour/helpers';
 
 const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
   const { fontFamily } = themeSettings.font;
@@ -58,7 +59,7 @@ export const UsertourTheme = {
     const activeVariations = [];
     for (const item of themeVariations) {
       const activatedConditions = await activedRulesConditions(item.conditions);
-      if (isActive(activatedConditions)) {
+      if (isConditionsActived(activatedConditions)) {
         activeVariations.push(item);
       }
     }

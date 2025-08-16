@@ -37,6 +37,7 @@ import {
   conditionsIsSame,
   evaluateUrlCondition,
   evaluateTimeCondition,
+  isConditionsActived,
 } from '@usertour/helpers';
 
 export const PRIORITIES = [
@@ -303,23 +304,9 @@ export const activedContentCondition = async (contents: SDKContent[]) => {
   return _contents;
 };
 
-export const isActive = (autoStartRules: RulesCondition[]): boolean => {
-  if (!autoStartRules || autoStartRules.length === 0) {
-    return false;
-  }
-  const operator = autoStartRules[0].operators;
-  const actives = autoStartRules.filter((rule: RulesCondition) => {
-    if (!rule.conditions) {
-      return rule.actived;
-    }
-    return isActive(rule.conditions);
-  });
-  return operator === 'and' ? actives.length === autoStartRules.length : actives.length > 0;
-};
-
 export const isActiveContent = (content: SDKContent) => {
   const { enabledAutoStartRules, autoStartRules } = content.config;
-  if (!enabledAutoStartRules || !isActive(autoStartRules)) {
+  if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
     return false;
   }
   return true;

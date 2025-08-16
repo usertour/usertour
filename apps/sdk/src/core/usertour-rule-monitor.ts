@@ -1,10 +1,10 @@
 import { RulesCondition } from '@usertour/types';
-import { activedRulesConditions, isActive } from '@/core/usertour-helper';
+import { activedRulesConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
-import { uuidV4 } from '@usertour/helpers';
+import { uuidV4, isConditionsActived } from '@usertour/helpers';
 
 /**
  * Options for rule monitoring
@@ -132,7 +132,7 @@ export class UsertourRuleMonitor extends Evented {
       const activatedRules = await activedRulesConditions(this.rules);
 
       // Check which rules are active in one batch
-      const activeRules = activatedRules.filter((rule) => isActive([rule]));
+      const activeRules = activatedRules.filter((rule) => isConditionsActived([rule]));
 
       // Check for state changes
       const currentActiveRuleIds = new Set<string>();
