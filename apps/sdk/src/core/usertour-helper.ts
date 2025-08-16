@@ -16,7 +16,6 @@ import {
   RulesType,
   ContentPriority,
   BizUserInfo,
-  RulesTypeControl,
 } from '@usertour/types';
 import {
   ContentEditorQuestionElement,
@@ -35,9 +34,8 @@ import {
   isEqual,
   uuidV4,
   conditionsIsSame,
-  evaluateUrlCondition,
-  evaluateTimeCondition,
   isConditionsActived,
+  evaluateRulesConditions,
 } from '@usertour/helpers';
 
 export const PRIORITIES = [
@@ -47,7 +45,6 @@ export const PRIORITIES = [
   ContentPriority.LOW,
   ContentPriority.LOWEST,
 ];
-export const rulesTypes: RulesType[] = Object.values(RulesType);
 
 const isActivedContentRulesCondition = (
   rules: RulesCondition,
@@ -212,49 +209,23 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
   return false;
 };
 
-const isValidRulesType = (type: string) => {
-  return rulesTypes.includes(type as RulesType);
-};
-
-const isActiveRules = async (rules: RulesCondition) => {
-  if (!isValidRulesType(rules.type)) {
-    return true;
-  }
-
-  switch (rules.type) {
-    case RulesType.CURRENT_PAGE:
-      return evaluateUrlCondition(rules, location?.href ?? '');
-    case RulesType.TIME:
-      return evaluateTimeCondition(rules);
-    case RulesType.ELEMENT:
-      return await isActiveRulesByElement(rules);
-    case RulesType.TEXT_INPUT:
-      return await isActiveRulesByTextInput(rules);
-    case RulesType.TEXT_FILL:
-      return await isActiveRulesByTextFill(rules);
-    default:
-      return rules.actived;
-  }
-};
-
-export const activedRulesConditions = async (
-  conditions: RulesCondition[],
-  rewrite?: RulesTypeControl,
-) => {
-  const rulesCondition: RulesCondition[] = [...conditions];
-  for (let j = 0; j < rulesCondition.length; j++) {
-    const rules = rulesCondition[j];
-    if (rules.type !== 'group') {
-      if (rewrite?.[rules.type as keyof RulesTypeControl]) {
-        rulesCondition[j].actived = true;
-      } else {
-        rulesCondition[j].actived = await isActiveRules(rules);
-      }
-    } else if (rules.conditions) {
-      rulesCondition[j].conditions = await activedRulesConditions(rules.conditions);
-    }
-  }
-  return rulesCondition;
+export const activedRulesConditions = async (conditions: RulesCondition[]) => {
+  return await evaluateRulesConditions(conditions, {
+    clientContext: {
+      page_url: location?.href ?? '',
+      viewport_width: window.innerWidth,
+      viewport_height: window.innerHeight,
+    },
+    typeControl: {
+      [RulesType.CURRENT_PAGE]: true,
+      [RulesType.TIME]: true,
+    },
+    customEvaluators: {
+      [RulesType.ELEMENT]: isActiveRulesByElement,
+      [RulesType.TEXT_INPUT]: isActiveRulesByTextInput,
+      [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
+    },
+  });
 };
 
 export const activedContentRulesConditions = async (

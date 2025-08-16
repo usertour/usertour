@@ -88,8 +88,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/shared/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.25
-        version: 0.0.25(typescript@5.1.6)
+        specifier: ^0.0.26
+        version: 0.0.26(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.14
         version: 0.0.14
@@ -8569,8 +8569,8 @@ packages:
   '@usertour/helpers@0.0.24':
     resolution: {integrity: sha512-V8AzRt/giUDpuUURFnSIFn89Y5qL/KWdef9ay6xKCltm4IODyolEpaj8HAAqqsc1Udz7wv0Ok6yDXQICJeEqpg==}
 
-  '@usertour/helpers@0.0.25':
-    resolution: {integrity: sha512-wzlUg5nst0eRX5MFqgT4ATMg1BOnPatQ7alKL2pOx+ukMuDhO9m8N4mqO01OBUF+rBN4uo+HNg3Pw15rN6xm8A==}
+  '@usertour/helpers@0.0.26':
+    resolution: {integrity: sha512-fdPJIJlfkubrYVTle2ZXpQOfudrEpVvyrx2h/tl8rysALRn+0dr/p35L9ztwynVxrp3iLw81/1uZOp7cK5hvjw==}
 
   '@usertour/license@0.0.1':
     resolution: {integrity: sha512-FGzPpdCQa13fjU65d3YYhgtI0trG+u04ahJbJH9IWc4U/AqXR0nbaA27vrDHq8oKMRwkl7/XpOhxpf2HtuvcTw==}
@@ -20549,7 +20549,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.25(typescript@5.1.6)':
+  '@usertour/helpers@0.0.26(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.14

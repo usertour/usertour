@@ -82,20 +82,20 @@ const filterConditionsByType = (
  * });
  */
 const evaluateRule = async (
-  rule: RulesCondition,
+  condition: RulesCondition,
   options: RulesEvaluationOptions,
 ): Promise<boolean> => {
   const { typeControl = {}, activatedIds, deactivatedIds, customEvaluators } = options;
-  const ruleId = rule.id;
+  const conditionId = condition.id;
 
   // Check ID-based overrides first
-  if (activatedIds?.includes(ruleId)) return true;
-  if (deactivatedIds?.includes(ruleId)) return false;
+  if (activatedIds?.includes(conditionId)) return true;
+  if (deactivatedIds?.includes(conditionId)) return false;
 
   // Check if custom evaluator is provided for this rule type
-  const customEvaluator = customEvaluators?.[rule.type as RulesType];
+  const customEvaluator = customEvaluators?.[condition.type as RulesType];
   if (customEvaluator) {
-    const result = customEvaluator(rule, options);
+    const result = customEvaluator(condition, options);
     return typeof result === 'object' && result !== null && 'then' in result
       ? await result
       : result;
@@ -103,25 +103,25 @@ const evaluateRule = async (
 
   // Check if evaluation is enabled for this rule type
   // Default is disabled, only enabled when explicitly set to true
-  if (typeControl[rule.type as RulesType] !== true) {
-    return rule.actived || false;
+  if (typeControl[condition.type as RulesType] !== true) {
+    return condition.actived || false;
   }
 
   // Perform normal evaluation based on rule type
-  switch (rule.type) {
+  switch (condition.type) {
     case RulesType.CURRENT_PAGE:
-      return evaluateUrlCondition(rule, options.clientContext?.page_url || '');
+      return evaluateUrlCondition(condition, options.clientContext?.page_url || '');
     case RulesType.TIME:
-      return evaluateTimeCondition(rule);
+      return evaluateTimeCondition(condition);
     case RulesType.USER_ATTR:
     case RulesType.COMPANY_ATTR:
       return evaluateAttributeCondition(
-        rule,
+        condition,
         options.attributes || [],
         options.userAttributes || {},
       );
     default:
-      return rule.actived || false;
+      return condition.actived || false;
   }
 };
 
@@ -131,16 +131,16 @@ const evaluateRulesConditions = async (
 ): Promise<RulesCondition[]> => {
   const results: RulesCondition[] = [];
 
-  for (const rule of conditions) {
-    if (rule.type === 'group' && rule.conditions) {
+  for (const condition of conditions) {
+    if (condition.type === 'group' && condition.conditions) {
       results.push({
-        ...rule,
-        conditions: await evaluateRulesConditions(rule.conditions, options),
+        ...condition,
+        conditions: await evaluateRulesConditions(condition.conditions, options),
       });
     } else {
       results.push({
-        ...rule,
-        actived: await evaluateRule(rule, options),
+        ...condition,
+        actived: await evaluateRule(condition, options),
       });
     }
   }
