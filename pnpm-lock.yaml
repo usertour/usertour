@@ -335,8 +335,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.24
-        version: 0.0.24(typescript@4.9.5)
+        specifier: ^0.0.26
+        version: 0.0.26(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.1
         version: 0.0.1
@@ -8565,9 +8565,6 @@ packages:
 
   '@usertour/helpers@0.0.11':
     resolution: {integrity: sha512-NQCfWKzn6UvuzGAU43wFjsKUnnDciZQizLpyt+7uty4FtLh+Sl3NmeD2hWccwWCwq4mBGqGALNDwBJfsl5+0yA==}
-
-  '@usertour/helpers@0.0.24':
-    resolution: {integrity: sha512-V8AzRt/giUDpuUURFnSIFn89Y5qL/KWdef9ay6xKCltm4IODyolEpaj8HAAqqsc1Udz7wv0Ok6yDXQICJeEqpg==}
 
   '@usertour/helpers@0.0.26':
     resolution: {integrity: sha512-fdPJIJlfkubrYVTle2ZXpQOfudrEpVvyrx2h/tl8rysALRn+0dr/p35L9ztwynVxrp3iLw81/1uZOp7cK5hvjw==}
@@ -20534,10 +20531,10 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.24(typescript@4.9.5)':
+  '@usertour/helpers@0.0.26(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.13
+      '@usertour/types': 0.0.14
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@4.9.5)
       clsx: 1.2.1

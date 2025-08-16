@@ -29,7 +29,7 @@ import {
   differenceInSeconds,
   isAfter,
 } from 'date-fns';
-import { document, location, off, on, logger } from '@/utils';
+import { document, location, off, on, logger, window } from '@/utils';
 import {
   isEqual,
   uuidV4,
@@ -213,8 +213,8 @@ export const activedRulesConditions = async (conditions: RulesCondition[]) => {
   return await evaluateRulesConditions(conditions, {
     clientContext: {
       page_url: location?.href ?? '',
-      viewport_width: window.innerWidth,
-      viewport_height: window.innerHeight,
+      viewport_width: window?.innerWidth ?? 0,
+      viewport_height: window?.innerHeight ?? 0,
     },
     typeControl: {
       [RulesType.CURRENT_PAGE]: true,
