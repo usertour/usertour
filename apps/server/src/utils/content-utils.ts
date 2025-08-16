@@ -147,23 +147,6 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const activedContentCondition = async (contents: CustomContentVersion[]) => {
-  const _contents = JSON.parse(JSON.stringify(contents)) as CustomContentVersion[];
-  for (let index = 0; index < _contents.length; index++) {
-    const content = _contents[index];
-    const config = content.config;
-    const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = config;
-    if (enabledAutoStartRules && autoStartRules && autoStartRules.length > 0) {
-      config.autoStartRules = await activedRulesConditions(autoStartRules);
-    }
-    if (enabledHideRules && hideRules && hideRules.length > 0) {
-      config.hideRules = await activedRulesConditions(hideRules);
-    }
-    content.config = config;
-  }
-  return _contents;
-};
-
 export const isActive = (autoStartRules: RulesCondition[]): boolean => {
   if (!autoStartRules || autoStartRules.length === 0) {
     return false;

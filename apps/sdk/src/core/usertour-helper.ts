@@ -289,21 +289,6 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const activedContentCondition = async (contents: SDKContent[]) => {
-  const _contents = JSON.parse(JSON.stringify(contents)) as SDKContent[];
-  for (let index = 0; index < _contents.length; index++) {
-    const content = _contents[index];
-    const { enabledAutoStartRules, autoStartRules, hideRules, enabledHideRules } = content.config;
-    if (enabledAutoStartRules && autoStartRules && autoStartRules.length > 0) {
-      content.config.autoStartRules = await activedRulesConditions(autoStartRules);
-    }
-    if (enabledHideRules && hideRules && hideRules.length > 0) {
-      content.config.hideRules = await activedRulesConditions(hideRules);
-    }
-  }
-  return _contents;
-};
-
 export const isActiveContent = (content: SDKContent) => {
   const { enabledAutoStartRules, autoStartRules } = content.config;
   if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
