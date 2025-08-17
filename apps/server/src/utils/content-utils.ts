@@ -1,10 +1,8 @@
 import {
   BizEvents,
   ContentDataType,
-  ContentConditionLogic,
   Frequency,
   FrequencyUnits,
-  RulesCondition,
   ContentPriority,
   RulesType,
 } from '@usertour/types';
@@ -15,9 +13,9 @@ import {
   differenceInSeconds,
   isAfter,
 } from 'date-fns';
-import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
+import { CustomContentVersion } from '@/common/types/content';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
-import { isUndefined, isConditionsActived } from '@usertour/helpers';
+import { isUndefined, isConditionsActived, filterConditionsByType } from '@usertour/helpers';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -26,63 +24,6 @@ export const PRIORITIES = [
   ContentPriority.LOW,
   ContentPriority.LOWEST,
 ];
-
-const isActivedContentRulesCondition = (
-  rules: RulesCondition,
-  contentSession: CustomContentSession,
-): boolean => {
-  const { contentId, logic } = rules.data;
-  const { latestSession, seenSessions, completedSessions } = contentSession;
-
-  if (!contentId || !logic || contentId !== contentSession.contentId) {
-    return false;
-  }
-
-  // Special handling for actived/unactived logic
-  if (logic === ContentConditionLogic.ACTIVED || logic === ContentConditionLogic.UNACTIVED) {
-    if (!latestSession) {
-      return logic === ContentConditionLogic.UNACTIVED;
-    }
-    const isActived = !(flowIsDismissed(latestSession) || checklistIsDimissed(latestSession));
-    return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
-  }
-
-  const isSeen = seenSessions > 0;
-  const isCompleted = completedSessions > 0;
-  if (logic === ContentConditionLogic.SEEN || logic === ContentConditionLogic.UNSEEN) {
-    return logic === ContentConditionLogic.SEEN ? isSeen : !isSeen;
-  }
-
-  if (logic === ContentConditionLogic.COMPLETED || logic === ContentConditionLogic.UNCOMPLETED) {
-    return logic === ContentConditionLogic.COMPLETED ? isCompleted : !isCompleted;
-  }
-
-  return false;
-};
-
-export const activedContentRulesConditions = async (
-  conditions: RulesCondition[],
-  contents: CustomContentVersion[],
-) => {
-  const rulesCondition: RulesCondition[] = [...conditions];
-  for (let j = 0; j < rulesCondition.length; j++) {
-    const rules = rulesCondition[j];
-    if (rules.type !== 'group') {
-      if (rules.type === RulesType.CONTENT) {
-        const content = contents.find((c) => c.contentId === rules.data.contentId);
-        if (content) {
-          rulesCondition[j].actived = isActivedContentRulesCondition(rules, content.session);
-        }
-      }
-    } else if (rules.conditions) {
-      rulesCondition[j].conditions = await activedContentRulesConditions(
-        rules.conditions,
-        contents,
-      );
-    }
-  }
-  return rulesCondition;
-};
 
 export const isActiveContent = (customContentVersion: CustomContentVersion) => {
   const config = customContentVersion.config;
@@ -442,4 +383,51 @@ export const findActivatedCustomContentVersion = (
   }
   // if the latest activated content version is not found, return the first available auto-start content version
   return filterAvailableAutoStartContentVersions(customContentVersions, contentType)?.[0];
+};
+
+/**
+ * Finds activated custom content versions by filtering conditions with specific types
+ * @param customContentVersions - The custom content versions
+ * @param contentType - The content type
+ * @returns Array of activated custom content versions
+ */
+export const findActivatedCustomContentVersionsByConditionTypes = (
+  customContentVersions: CustomContentVersion[],
+  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+): CustomContentVersion[] => {
+  // Define the condition types to filter by
+  const allowedConditionTypes = [
+    RulesType.USER_ATTR,
+    RulesType.COMPANY_ATTR,
+    RulesType.SEGMENT,
+    RulesType.CONTENT,
+  ];
+
+  return customContentVersions
+    .filter((customContentVersion) => {
+      // Check if content type matches
+      if (customContentVersion.content.type !== contentType) {
+        return false;
+      }
+
+      // Check if auto-start rules are enabled
+      if (!customContentVersion.config.enabledAutoStartRules) {
+        return false;
+      }
+
+      // Filter conditions by allowed types
+      const filteredConditions = filterConditionsByType(
+        customContentVersion.config.autoStartRules,
+        allowedConditionTypes,
+      );
+
+      // Check if filtered conditions are activated
+      if (!isConditionsActived(filteredConditions)) {
+        return false;
+      }
+
+      // Additional validation using existing isValidContent function
+      return isValidContent(customContentVersion, customContentVersions);
+    })
+    .sort(priorityCompare);
 };

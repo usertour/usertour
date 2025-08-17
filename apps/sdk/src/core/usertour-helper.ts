@@ -4,8 +4,6 @@ import {
   BizEvent,
   BizEvents,
   ContentDataType,
-  ContentConditionLogic,
-  ContentSession,
   Frequency,
   FrequencyUnits,
   RulesCondition,
@@ -45,39 +43,6 @@ export const PRIORITIES = [
   ContentPriority.LOW,
   ContentPriority.LOWEST,
 ];
-
-const isActivedContentRulesCondition = (
-  rules: RulesCondition,
-  contentSession: ContentSession,
-): boolean => {
-  const { contentId, logic } = rules.data;
-  const { latestSession, seenSessions, completedSessions } = contentSession;
-
-  if (!contentId || !logic || contentId !== contentSession.contentId) {
-    return false;
-  }
-
-  // Special handling for actived/unactived logic
-  if (logic === ContentConditionLogic.ACTIVED || logic === ContentConditionLogic.UNACTIVED) {
-    if (!latestSession) {
-      return logic === ContentConditionLogic.UNACTIVED;
-    }
-    const isActived = !(flowIsDismissed(latestSession) || checklistIsDimissed(latestSession));
-    return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
-  }
-
-  const isSeen = seenSessions > 0;
-  const isCompleted = completedSessions > 0;
-  if (logic === ContentConditionLogic.SEEN || logic === ContentConditionLogic.UNSEEN) {
-    return logic === ContentConditionLogic.SEEN ? isSeen : !isSeen;
-  }
-
-  if (logic === ContentConditionLogic.COMPLETED || logic === ContentConditionLogic.UNCOMPLETED) {
-    return logic === ContentConditionLogic.COMPLETED ? isCompleted : !isCompleted;
-  }
-
-  return false;
-};
 
 export const isVisible = async (el: HTMLElement) => {
   if (!document?.body) {
@@ -226,38 +191,6 @@ export const activedRulesConditions = async (conditions: RulesCondition[]) => {
       [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
     },
   });
-};
-
-export const activedContentRulesConditions = async (
-  conditions: RulesCondition[],
-  contents: SDKContent[],
-) => {
-  const rulesCondition: RulesCondition[] = [...conditions];
-  for (let j = 0; j < rulesCondition.length; j++) {
-    const rules = rulesCondition[j];
-    if (rules.type !== 'group') {
-      if (rules.type === RulesType.CONTENT) {
-        const content = contents.find((c) => c.contentId === rules.data.contentId);
-        if (content) {
-          const contentSession = {
-            contentId: content.contentId,
-            latestSession: content.latestSession,
-            totalSessions: content.totalSessions,
-            dismissedSessions: content.dismissedSessions,
-            completedSessions: content.completedSessions,
-            seenSessions: content.seenSessions,
-          };
-          rulesCondition[j].actived = isActivedContentRulesCondition(rules, contentSession);
-        }
-      }
-    } else if (rules.conditions) {
-      rulesCondition[j].conditions = await activedContentRulesConditions(
-        rules.conditions,
-        contents,
-      );
-    }
-  }
-  return rulesCondition;
 };
 
 export const isActiveContent = (content: SDKContent) => {

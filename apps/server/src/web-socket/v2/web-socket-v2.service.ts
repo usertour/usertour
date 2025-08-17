@@ -46,11 +46,14 @@ import {
   Step as SDKStep,
   StepSettings,
   ThemeTypesSetting,
+  ContentConditionLogic,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
   findActivatedCustomContentVersion,
   findAvailableSessionId,
+  flowIsDismissed,
+  checklistIsDimissed,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -58,15 +61,6 @@ import { RedisService } from '@/shared/redis.service';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
-
-const EVENT_CODE_MAP = {
-  seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
-  unseen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: false },
-  completed: { eventCodeName: BizEvents.FLOW_COMPLETED, expectResult: true },
-  uncompleted: { eventCodeName: BizEvents.FLOW_COMPLETED, expectResult: false },
-  actived: { eventCodeName: BizEvents.FLOW_STARTED, expectResult: true },
-  unactived: { eventCodeName: BizEvents.FLOW_STARTED, expectResult: false },
-} as const;
 
 interface SegmentDataItem {
   data: {
@@ -833,42 +827,47 @@ export class WebSocketV2Service {
       return false;
     }
 
-    const eventCodeMap = EVENT_CODE_MAP[logic];
-    if (!eventCodeMap) {
-      return false;
-    }
-
-    const { eventCodeName, expectResult } = eventCodeMap;
-
     // Special handling for actived/unactived logic
-    if (logic === 'actived' || logic === 'unactived') {
+    if (logic === ContentConditionLogic.ACTIVED || logic === ContentConditionLogic.UNACTIVED) {
       const latestSession = await this.getLatestSession(contentId, bizUser.id);
       if (!latestSession) {
-        return logic === 'unactived';
+        return logic === ContentConditionLogic.UNACTIVED;
       }
-      const hasEndedEvent = latestSession.bizEvent?.find(
-        (event) => event.event.codeName === BizEvents.FLOW_ENDED,
-      );
-      const isActived = !hasEndedEvent;
-      return logic === 'actived' ? isActived : !isActived;
+      const isActived = !(flowIsDismissed(latestSession) || checklistIsDimissed(latestSession));
+      return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
     }
 
-    // Handle other logic types
-    const session = await this.prisma.bizSession.findFirst({
-      where: {
-        bizUserId: bizUser.id,
-        contentId,
-        bizEvent: {
-          some: {
-            event: {
-              codeName: eventCodeName,
-            },
-          },
-        },
-      },
-    });
+    if (logic === ContentConditionLogic.SEEN || logic === ContentConditionLogic.UNSEEN) {
+      const isSeen = await this.hasBizEvent(contentId, bizUser.id, BizEvents.FLOW_STEP_SEEN);
+      return logic === ContentConditionLogic.SEEN ? isSeen : !isSeen;
+    }
 
-    return session ? expectResult : !expectResult;
+    if (logic === ContentConditionLogic.COMPLETED || logic === ContentConditionLogic.UNCOMPLETED) {
+      const isCompleted = await this.hasBizEvent(contentId, bizUser.id, BizEvents.FLOW_COMPLETED);
+      return logic === ContentConditionLogic.COMPLETED ? isCompleted : !isCompleted;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if the user has a biz event
+   * @param contentId - The ID of the content
+   * @param bizUserId - The ID of the business user
+   * @param eventCodeName - The code name of the event
+   * @returns boolean indicating if the user has the event
+   */
+  async hasBizEvent(contentId: string, bizUserId: string, eventCodeName: string): Promise<boolean> {
+    return Boolean(
+      await this.prisma.bizSession.findFirst({
+        where: {
+          contentId,
+          bizUserId,
+          deleted: false,
+          bizEvent: { some: { event: { codeName: eventCodeName } } },
+        },
+      }),
+    );
   }
 
   /**
