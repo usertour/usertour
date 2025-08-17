@@ -5,6 +5,7 @@ import {
   FrequencyUnits,
   ContentPriority,
   RulesType,
+  RulesEvaluationOptions,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -15,7 +16,12 @@ import {
 } from 'date-fns';
 import { CustomContentVersion } from '@/common/types/content';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
-import { isUndefined, isConditionsActived, filterConditionsByType } from '@usertour/helpers';
+import {
+  isUndefined,
+  isConditionsActived,
+  filterConditionsByType,
+  evaluateRulesConditions,
+} from '@usertour/helpers';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -360,42 +366,77 @@ export const findActivatedCustomContentVersion = (
 };
 
 /**
- * Finds activated custom content versions by filtering conditions with specific types
+ * Filters activated custom content versions that do not have client-side conditions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
- * @returns Array of activated custom content versions
+ * @returns Array of activated custom content versions without client conditions
  */
-export const findActivatedCustomContentVersionsByConditionTypes = (
+export const filterActivatedContentWithoutClientConditions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ): CustomContentVersion[] => {
   // Define the condition types to filter by
-  const allowedConditionTypes = [RulesType.USER_ATTR, RulesType.SEGMENT, RulesType.CONTENT];
+  const allowedConditionTypes = [
+    RulesType.USER_ATTR,
+    RulesType.SEGMENT,
+    RulesType.CONTENT,
+    RulesType.TIME,
+    RulesType.CURRENT_PAGE,
+  ];
 
-  return customContentVersions
-    .filter((customContentVersion) => {
-      // Check if content type matches
-      if (customContentVersion.content.type !== contentType) {
-        return false;
-      }
+  return customContentVersions.filter((customContentVersion) => {
+    // Check if content type matches
+    if (customContentVersion.content.type !== contentType) {
+      return false;
+    }
 
-      // Check if auto-start rules are enabled
-      if (!customContentVersion.config.enabledAutoStartRules) {
-        return false;
-      }
+    // Check if auto-start rules are enabled
+    if (!customContentVersion.config.enabledAutoStartRules) {
+      return false;
+    }
 
-      // Filter conditions by allowed types
-      const filteredConditions = filterConditionsByType(
-        customContentVersion.config.autoStartRules,
-        allowedConditionTypes,
-      );
+    if (!isAllowedByAutoStartRulesSetting(customContentVersion, customContentVersions)) {
+      return false;
+    }
 
-      // Check if filtered conditions are activated
-      if (!isConditionsActived(filteredConditions)) {
-        return false;
-      }
+    // Filter conditions by allowed types
+    const filteredConditions = filterConditionsByType(
+      customContentVersion.config.autoStartRules,
+      allowedConditionTypes,
+    );
 
-      return true;
-    })
-    .sort(priorityCompare);
+    // Check if filtered conditions are activated
+    if (!isConditionsActived(filteredConditions)) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
+/**
+ * Evaluates the custom content versions
+ * @param customContentVersions - The custom content versions
+ * @param options - The options
+ * @returns The evaluated custom content versions
+ */
+export const evaluateCustomContentVersion = async (
+  customContentVersions: CustomContentVersion[],
+  options: RulesEvaluationOptions,
+): Promise<CustomContentVersion[]> => {
+  return await Promise.all(
+    customContentVersions.map(async (customContentVersion) => {
+      return {
+        ...customContentVersion,
+        config: {
+          ...customContentVersion.config,
+          autoStartRules: await evaluateRulesConditions(
+            customContentVersion.config.autoStartRules,
+            options,
+          ),
+          hideRules: await evaluateRulesConditions(customContentVersion.config.hideRules, options),
+        },
+      };
+    }),
+  );
 };
