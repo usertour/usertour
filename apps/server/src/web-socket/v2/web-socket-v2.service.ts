@@ -54,6 +54,7 @@ import {
   findAvailableSessionId,
   flowIsDismissed,
   checklistIsDimissed,
+  evaluateCustomContentVersion,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -1695,14 +1696,13 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
-  async setContentSession(
+  async findActivatedCustomContentVersion(
     environment: Environment,
     externalUserId: string,
     contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
     externalCompanyId?: string,
     contentId?: string,
-    stepIndex?: number,
-  ): Promise<SDKContentSession | null> {
+  ): Promise<CustomContentVersion | null> {
     const contentVersions = await this.fetchCustomContentVersions(
       environment,
       externalUserId,
@@ -1711,10 +1711,36 @@ export class WebSocketV2Service {
     const filteredContentVersions = contentVersions.filter(
       (contentVersion) => contentVersion.content.type === contentType,
     );
-    if (filteredContentVersions.length === 0) return null;
+    const evaluatedContentVersions = await evaluateCustomContentVersion(filteredContentVersions, {
+      clientContext: {
+        page_url: '',
+        viewport_width: 0,
+        viewport_height: 0,
+      },
+    });
+    if (evaluatedContentVersions.length === 0) return null;
     const contentVersion = findActivatedCustomContentVersion(
-      filteredContentVersions,
+      evaluatedContentVersions,
       contentType,
+      contentId,
+    );
+    if (!contentVersion) return null;
+    return contentVersion;
+  }
+
+  async setContentSession(
+    environment: Environment,
+    externalUserId: string,
+    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+    externalCompanyId?: string,
+    contentId?: string,
+    stepIndex?: number,
+  ): Promise<SDKContentSession | null> {
+    const contentVersion = await this.findActivatedCustomContentVersion(
+      environment,
+      externalUserId,
+      contentType,
+      externalCompanyId,
       contentId,
     );
     if (!contentVersion) return null;
