@@ -348,44 +348,38 @@ export const filterAutoStartContent = (
 };
 
 export const findLatestActivatedContentVersion = (
-  contentVersions: CustomContentVersion[],
+  customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ): CustomContentVersion | undefined => {
-  const activeContentVersions = contentVersions.filter((contentVersion) => {
-    if (contentType === ContentDataType.CHECKLIST) {
-      return !checklistIsDimissed(contentVersion.session.latestSession);
-    }
-    return !flowIsDismissed(contentVersion.session.latestSession);
-  });
-
-  const contentVersionsWithValidSession = activeContentVersions.filter(
-    (contentVersion) => contentVersion.session.latestSession?.createdAt,
-  );
-
-  if (!contentVersionsWithValidSession.length) {
-    return undefined;
-  }
-
-  return contentVersionsWithValidSession.sort(
-    (a, b) =>
-      new Date(b.session.latestSession?.createdAt).getTime() -
-      new Date(a.session.latestSession?.createdAt).getTime(),
-  )[0];
+  return customContentVersions
+    .filter((customContentVersion) => {
+      const isNotDismissed =
+        contentType === ContentDataType.CHECKLIST
+          ? !checklistIsDimissed(customContentVersion.session.latestSession)
+          : !flowIsDismissed(customContentVersion.session.latestSession);
+      return isNotDismissed && customContentVersion.session.latestSession?.createdAt;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.session.latestSession!.createdAt).getTime() -
+        new Date(a.session.latestSession!.createdAt).getTime(),
+    )?.[0];
 };
 
 export const findLatestActivedAutoStartContent = (
-  contentVersions: CustomContentVersion[],
+  customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ): CustomContentVersion | undefined => {
-  const autoStartContentVersions = filterAutoStartContent(contentVersions, contentType);
+  // if the latest activated content version is found, return it
   const latestActivatedContentVersion = findLatestActivatedContentVersion(
-    autoStartContentVersions,
+    customContentVersions,
     contentType,
   );
   if (latestActivatedContentVersion) {
     return latestActivatedContentVersion;
   }
-  return autoStartContentVersions[0];
+  // if the latest activated content version is not found, return the first auto start content version
+  return filterAutoStartContent(customContentVersions, contentType)?.[0];
 };
 
 export const findContentVersionByContentId = (
