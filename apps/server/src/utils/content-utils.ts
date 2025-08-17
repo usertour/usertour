@@ -366,10 +366,18 @@ export const findLatestActivatedContentVersion = (
     )?.[0];
 };
 
-export const findLatestActivedAutoStartContent = (
+export const findActivatedCustomContentVersion = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  contentId?: string,
 ): CustomContentVersion | undefined => {
+  if (contentId) {
+    const contentVersion = findContentVersionByContentId(customContentVersions, contentId);
+    if (contentVersion) {
+      return contentVersion;
+    }
+  }
+
   // if the latest activated content version is found, return it
   const latestActivatedContentVersion = findLatestActivatedContentVersion(
     customContentVersions,

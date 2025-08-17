@@ -49,8 +49,7 @@ import {
 } from '@usertour/types';
 import {
   findLatestStepNumber,
-  findLatestActivedAutoStartContent,
-  findContentVersionByContentId,
+  findActivatedCustomContentVersion,
   findLatestSessionId,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
@@ -1709,9 +1708,11 @@ export class WebSocketV2Service {
       externalCompanyId,
     );
     if (contentVersions.length === 0) return null;
-    const contentVersion = contentId
-      ? findContentVersionByContentId(contentVersions, contentId)
-      : findLatestActivedAutoStartContent(contentVersions, contentType);
+    const contentVersion = findActivatedCustomContentVersion(
+      contentVersions,
+      contentType,
+      contentId,
+    );
     if (!contentVersion) return null;
 
     let sessionId = findLatestSessionId(contentVersion.session.latestSession, contentType);
