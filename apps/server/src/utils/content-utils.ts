@@ -347,7 +347,13 @@ export const filterAutoStartContent = (
     .sort(priorityCompare);
 };
 
-export const findLatestActivatedContentVersion = (
+/**
+ * Finds the latest activated custom content version
+ * @param customContentVersions - The custom content versions
+ * @param contentType - The content type
+ * @returns The latest activated custom content version
+ */
+export const findLatestActivatedCustomContentVersion = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ): CustomContentVersion | undefined => {
@@ -366,6 +372,13 @@ export const findLatestActivatedContentVersion = (
     )?.[0];
 };
 
+/**
+ * Finds the activated custom content version
+ * @param customContentVersions - The custom content versions
+ * @param contentType - The content type
+ * @param contentId - The content ID
+ * @returns The activated custom content version
+ */
 export const findActivatedCustomContentVersion = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
@@ -379,7 +392,7 @@ export const findActivatedCustomContentVersion = (
   }
 
   // if the latest activated content version is found, return it
-  const latestActivatedContentVersion = findLatestActivatedContentVersion(
+  const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
     customContentVersions,
     contentType,
   );
