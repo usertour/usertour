@@ -373,6 +373,19 @@ export const findLatestActivatedCustomContentVersion = (
 };
 
 /**
+ * Finds the custom content version by content ID
+ * @param customContentVersions - The custom content versions
+ * @param contentId - The content ID
+ * @returns The custom content version
+ */
+export const findCustomContentVersionByContentId = (
+  customContentVersions: CustomContentVersion[],
+  contentId: string,
+): CustomContentVersion | undefined => {
+  return customContentVersions.find((contentVersion) => contentVersion.contentId === contentId);
+};
+
+/**
  * Finds the activated custom content version
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -385,7 +398,7 @@ export const findActivatedCustomContentVersion = (
   contentId?: string,
 ): CustomContentVersion | undefined => {
   if (contentId) {
-    const contentVersion = findContentVersionByContentId(customContentVersions, contentId);
+    const contentVersion = findCustomContentVersionByContentId(customContentVersions, contentId);
     if (contentVersion) {
       return contentVersion;
     }
@@ -401,13 +414,6 @@ export const findActivatedCustomContentVersion = (
   }
   // if the latest activated content version is not found, return the first auto start content version
   return filterAutoStartContent(customContentVersions, contentType)?.[0];
-};
-
-export const findContentVersionByContentId = (
-  contentVersions: CustomContentVersion[],
-  contentId: string,
-): CustomContentVersion | undefined => {
-  return contentVersions.find((contentVersion) => contentVersion.contentId === contentId);
 };
 
 export const findLatestSessionId = (
