@@ -50,7 +50,7 @@ import {
 import {
   findLatestStepNumber,
   findActivatedCustomContentVersion,
-  findLatestSessionId,
+  findAvailableSessionId,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -1715,7 +1715,7 @@ export class WebSocketV2Service {
     );
     if (!contentVersion) return null;
 
-    let sessionId = findLatestSessionId(contentVersion.session.latestSession, contentType);
+    let sessionId = findAvailableSessionId(contentVersion.session.latestSession, contentType);
     if (!sessionId) {
       const session = await this.createSession(
         {

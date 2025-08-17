@@ -334,6 +334,12 @@ export const checklistIsSeen = (latestSession?: BizSessionWithEvents) => {
   );
 };
 
+/**
+ * Filters the auto start content
+ * @param customContentVersions - The custom content versions
+ * @param contentType - The content type
+ * @returns The auto start content
+ */
 export const filterAutoStartContent = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
@@ -348,6 +354,28 @@ export const filterAutoStartContent = (
 };
 
 /**
+ * Finds the available session ID
+ * @param latestSession - The latest session
+ * @param contentType - The content type
+ * @returns The available session ID
+ */
+export const findAvailableSessionId = (
+  latestSession: BizSessionWithEvents,
+  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+) => {
+  if (contentType === ContentDataType.CHECKLIST) {
+    if (latestSession && !checklistIsDimissed(latestSession)) {
+      return latestSession.id;
+    }
+  } else {
+    if (latestSession && !flowIsDismissed(latestSession)) {
+      return latestSession.id;
+    }
+  }
+  return undefined;
+};
+
+/**
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -359,11 +387,11 @@ export const findLatestActivatedCustomContentVersion = (
 ): CustomContentVersion | undefined => {
   return customContentVersions
     .filter((customContentVersion) => {
-      const isNotDismissed =
-        contentType === ContentDataType.CHECKLIST
-          ? !checklistIsDimissed(customContentVersion.session.latestSession)
-          : !flowIsDismissed(customContentVersion.session.latestSession);
-      return isNotDismissed && customContentVersion.session.latestSession?.createdAt;
+      const hasAvailableSession = findAvailableSessionId(
+        customContentVersion.session.latestSession,
+        contentType,
+      );
+      return hasAvailableSession && customContentVersion.session.latestSession?.createdAt;
     })
     .sort(
       (a, b) =>
@@ -414,20 +442,4 @@ export const findActivatedCustomContentVersion = (
   }
   // if the latest activated content version is not found, return the first auto start content version
   return filterAutoStartContent(customContentVersions, contentType)?.[0];
-};
-
-export const findLatestSessionId = (
-  latestSession: BizSessionWithEvents,
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-) => {
-  if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && !checklistIsDimissed(latestSession)) {
-      return latestSession.id;
-    }
-  } else {
-    if (latestSession && !flowIsDismissed(latestSession)) {
-      return latestSession.id;
-    }
-  }
-  return undefined;
 };
