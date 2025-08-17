@@ -125,26 +125,11 @@ const isGreaterThenDuration = (
   }
 };
 
-export const isValidContent = (
+export const isAllowedByAutoStartRulesSetting = (
   customContentVersion: CustomContentVersion,
   customContentVersions: CustomContentVersion[],
 ) => {
   const now = new Date();
-  if (customContentVersion.content.type === ContentDataType.FLOW) {
-    // if the content is a flow, it must have a steps
-    if (!customContentVersion.steps || customContentVersion.steps.length === 0) {
-      return false;
-    }
-  } else {
-    // if the content is not a flow, it must have a data
-    if (!customContentVersion.data) {
-      return false;
-    }
-  }
-  // if the autoStartRulesSetting is not set, the content will be shown
-  if (!customContentVersion.config.autoStartRulesSetting) {
-    return true;
-  }
 
   const { frequency, startIfNotComplete } = customContentVersion.config.autoStartRulesSetting;
   const completedSessions = customContentVersion.session.completedSessions;
@@ -225,7 +210,7 @@ export const isValidContent = (
  * @returns The latest step number or -1 if no steps were seen
  */
 export const findLatestStepNumber = (bizEvents: BizEventWithEvent[] | undefined): number => {
-  if (!bizEvents?.length) {
+  if (!bizEvents?.length || flowIsDismissed(bizEvents)) {
     return -1;
   }
   const latestStepSeenEvent = findLatestStepSeenEvent(bizEvents);
@@ -253,26 +238,12 @@ export const findLatestStepSeenEvent = (
   return stepSeenEvents[0] ?? null;
 };
 
-export const checklistIsDimissed = (latestSession?: BizSessionWithEvents) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
-  );
+export const checklistIsDimissed = (bizEvents: BizEventWithEvent[] | undefined) => {
+  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
 };
 
-export const flowIsDismissed = (latestSession?: BizSessionWithEvents) => {
-  return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
-};
-
-export const flowIsSeen = (latestSession?: BizSessionWithEvents) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
-  );
-};
-
-export const checklistIsSeen = (latestSession?: BizSessionWithEvents) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
-  );
+export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
+  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
 };
 
 /**
@@ -288,8 +259,11 @@ export const filterAvailableAutoStartContentVersions = (
   return customContentVersions
     .filter((customContentVersion) => {
       const isAutoStart = isAutoStartContent(customContentVersion);
-      const isValid = isValidContent(customContentVersion, customContentVersions);
-      return customContentVersion.content.type === contentType && isAutoStart && isValid;
+      const isAllowed = isAllowedByAutoStartRulesSetting(
+        customContentVersion,
+        customContentVersions,
+      );
+      return customContentVersion.content.type === contentType && isAutoStart && isAllowed;
     })
     .sort(priorityCompare);
 };
@@ -305,11 +279,11 @@ export const findAvailableSessionId = (
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ) => {
   if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && !checklistIsDimissed(latestSession)) {
+    if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
       return latestSession.id;
     }
-  } else {
-    if (latestSession && !flowIsDismissed(latestSession)) {
+  } else if (contentType === ContentDataType.FLOW) {
+    if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
       return latestSession.id;
     }
   }
@@ -421,8 +395,7 @@ export const findActivatedCustomContentVersionsByConditionTypes = (
         return false;
       }
 
-      // Additional validation using existing isValidContent function
-      return isValidContent(customContentVersion, customContentVersions);
+      return true;
     })
     .sort(priorityCompare);
 };

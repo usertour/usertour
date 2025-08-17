@@ -833,7 +833,9 @@ export class WebSocketV2Service {
       if (!latestSession) {
         return logic === ContentConditionLogic.UNACTIVED;
       }
-      const isActived = !(flowIsDismissed(latestSession) || checklistIsDimissed(latestSession));
+      const isActived = !(
+        flowIsDismissed(latestSession.bizEvent) || checklistIsDimissed(latestSession.bizEvent)
+      );
       return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
     }
 
@@ -1706,9 +1708,12 @@ export class WebSocketV2Service {
       externalUserId,
       externalCompanyId,
     );
-    if (contentVersions.length === 0) return null;
+    const filteredContentVersions = contentVersions.filter(
+      (contentVersion) => contentVersion.content.type === contentType,
+    );
+    if (filteredContentVersions.length === 0) return null;
     const contentVersion = findActivatedCustomContentVersion(
-      contentVersions,
+      filteredContentVersions,
       contentType,
       contentId,
     );
