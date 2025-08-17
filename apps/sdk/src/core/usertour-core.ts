@@ -305,18 +305,67 @@ export class UsertourCore extends Evented {
     });
   }
 
+  /**
+   * Sets the flow session and manages tour lifecycle
+   * @param session - The SDK content session to set
+   */
   setFlowSession(session: SDKContentSession) {
-    const tour = new UsertourTour(this, new UsertourSession(session));
-    if (this.tours.length > 0) {
-      for (const tour of this.tours) {
-        tour.destroy();
-      }
+    if (!session?.content?.id) {
+      logger.warn('Invalid session data provided to setFlowSession');
+      return;
     }
-    this.tours = [tour];
+
+    const contentId = session.content.id;
+
+    // Find existing tour for this content
+    const existingTour = this.tours.find((tour) => tour.getContentId() === contentId);
+
+    // Destroy all other tours to ensure single tour focus
+    this.destroyOtherTours(contentId);
+
+    // Update or create tour
+    const targetTour = this.updateOrCreateTour(existingTour, session);
+
+    // Sync store and show tour
     this.syncToursStore();
-    for (const tour of this.tours) {
-      tour.show();
+    targetTour?.show(session.currentStep?.cvid);
+  }
+
+  /**
+   * Destroys all tours except the one with the specified content ID
+   * @param keepContentId - The content ID of the tour to keep
+   */
+  private destroyOtherTours(keepContentId: string): void {
+    const toursToDestroy = this.tours.filter((tour) => tour.getContentId() !== keepContentId);
+
+    // Destroy other tours - let errors bubble up for critical failures
+    for (const tour of toursToDestroy) {
+      tour.destroy();
     }
+
+    // Keep only the tour with the specified content ID
+    this.tours = this.tours.filter((tour) => tour.getContentId() === keepContentId);
+  }
+
+  /**
+   * Updates existing tour or creates a new one
+   * @param existingTour - The existing tour if found
+   * @param session - The session data
+   * @returns The target tour or undefined if creation fails
+   */
+  private updateOrCreateTour(
+    existingTour: UsertourTour | undefined,
+    session: SDKContentSession,
+  ): UsertourTour | undefined {
+    if (existingTour) {
+      existingTour.updateSession(session);
+      return existingTour;
+    }
+
+    // Create new tour - let constructor errors bubble up
+    const newTour = new UsertourTour(this, new UsertourSession(session));
+    this.tours.push(newTour);
+    return newTour;
   }
 
   setChecklistSession(session: SDKContentSession) {

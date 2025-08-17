@@ -7,6 +7,7 @@ import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
 import { contentEndReason, Step, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
+import { SDKContentSession } from '@/types/sdk';
 
 /**
  * Options for component initialization
@@ -93,8 +94,16 @@ export abstract class UsertourComponent<TStore> extends Evented {
   /**
    * Gets the session ID
    */
-  protected getSessionId(): string {
+  getSessionId(): string {
     return this.session.getSessionId();
+  }
+
+  /**
+   * Updates the session
+   * @param session - The new session data
+   */
+  updateSession(session: SDKContentSession) {
+    this.session.update(session);
   }
 
   /**
@@ -150,6 +159,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected open(): void {
     this.updateStore({ openState: true } as unknown as Partial<TStore>);
+  }
+
+  /**
+   * Gets the content ID
+   */
+  getContentId(): string {
+    return this.session.getContentId();
   }
 
   /**
