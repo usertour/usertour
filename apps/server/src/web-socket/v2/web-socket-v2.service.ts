@@ -67,7 +67,7 @@ interface SegmentDataItem {
     logic: string;
     attrId: string;
   };
-  type: 'company-attr' | 'user-attr' | 'membership-attr';
+  type: 'user-attr';
   operators: 'and' | 'or';
 }
 

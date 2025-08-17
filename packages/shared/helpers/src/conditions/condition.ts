@@ -114,7 +114,6 @@ const evaluateRule = async (
     case RulesType.TIME:
       return evaluateTimeCondition(condition);
     case RulesType.USER_ATTR:
-    case RulesType.COMPANY_ATTR:
       return evaluateAttributeCondition(
         condition,
         options.attributes || [],

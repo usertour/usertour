@@ -396,12 +396,7 @@ export const findActivatedCustomContentVersionsByConditionTypes = (
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
 ): CustomContentVersion[] => {
   // Define the condition types to filter by
-  const allowedConditionTypes = [
-    RulesType.USER_ATTR,
-    RulesType.COMPANY_ATTR,
-    RulesType.SEGMENT,
-    RulesType.CONTENT,
-  ];
+  const allowedConditionTypes = [RulesType.USER_ATTR, RulesType.SEGMENT, RulesType.CONTENT];
 
   return customContentVersions
     .filter((customContentVersion) => {

@@ -297,7 +297,6 @@ export enum StringConditionLogic {
 // Enum for better type safety and IDE support
 export enum RulesType {
   USER_ATTR = 'user-attr',
-  COMPANY_ATTR = 'company-attr',
   CURRENT_PAGE = 'current-page',
   EVENT = 'event',
   SEGMENT = 'segment',

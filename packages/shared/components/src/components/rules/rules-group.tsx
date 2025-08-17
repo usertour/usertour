@@ -44,12 +44,6 @@ export const RULES_ITEMS = [
     RulesElement: RulesUserAttribute,
   },
   {
-    type: RulesType.COMPANY_ATTR,
-    text: 'Company attribute',
-    IconElement: UserIcon,
-    RulesElement: RulesUserAttribute,
-  },
-  {
     type: RulesType.CURRENT_PAGE,
     text: 'Current page(Url)',
     IconElement: PagesIcon,
