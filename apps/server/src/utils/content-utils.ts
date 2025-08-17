@@ -84,8 +84,8 @@ export const activedContentRulesConditions = async (
   return rulesCondition;
 };
 
-export const isActiveContent = (content: CustomContentVersion) => {
-  const config = content.config;
+export const isActiveContent = (customContentVersion: CustomContentVersion) => {
+  const config = customContentVersion.config;
   const { enabledAutoStartRules, autoStartRules } = config;
   if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
     return false;
@@ -184,27 +184,30 @@ const isGreaterThenDuration = (
   }
 };
 
-export const isValidContent = (content: CustomContentVersion, contents: CustomContentVersion[]) => {
+export const isValidContent = (
+  customContentVersion: CustomContentVersion,
+  customContentVersions: CustomContentVersion[],
+) => {
   const now = new Date();
-  if (content.content.type === ContentDataType.FLOW) {
+  if (customContentVersion.content.type === ContentDataType.FLOW) {
     // if the content is a flow, it must have a steps
-    if (!content.steps || content.steps.length === 0) {
+    if (!customContentVersion.steps || customContentVersion.steps.length === 0) {
       return false;
     }
   } else {
     // if the content is not a flow, it must have a data
-    if (!content.data) {
+    if (!customContentVersion.data) {
       return false;
     }
   }
   // if the autoStartRulesSetting is not set, the content will be shown
-  if (!content.config.autoStartRulesSetting) {
+  if (!customContentVersion.config.autoStartRulesSetting) {
     return true;
   }
 
-  const { frequency, startIfNotComplete } = content.config.autoStartRulesSetting;
-  const completedSessions = content.session.completedSessions;
-  const dismissedSessions = content.session.dismissedSessions;
+  const { frequency, startIfNotComplete } = customContentVersion.config.autoStartRulesSetting;
+  const completedSessions = customContentVersion.session.completedSessions;
+  const dismissedSessions = customContentVersion.session.dismissedSessions;
 
   // if the content is completed, it will not be shown again when startIfNotComplete is true
   if (startIfNotComplete && completedSessions > 0) {
@@ -216,14 +219,14 @@ export const isValidContent = (content: CustomContentVersion, contents: CustomCo
     return true;
   }
 
-  const contentType = content.content.type as
+  const contentType = customContentVersion.content.type as
     | ContentDataType.FLOW
     | ContentDataType.LAUNCHER
     | ContentDataType.CHECKLIST;
 
   const lastEventName = showEventMapping[contentType];
-  const lastEvent = getLatestEvent(content, contents, lastEventName);
-  const contentEvents = content.session.latestSession?.bizEvent;
+  const lastEvent = getLatestEvent(customContentVersion, customContentVersions, lastEventName);
+  const contentEvents = customContentVersion.session.latestSession?.bizEvent;
 
   if (
     lastEvent &&
@@ -331,12 +334,15 @@ export const checklistIsSeen = (latestSession?: BizSessionWithEvents) => {
   );
 };
 
-export const filterAutoStartContent = (contents: CustomContentVersion[], type: string) => {
-  return contents
-    .filter((content) => {
-      const isActive = isActiveContent(content);
-      const isValid = isValidContent(content, contents);
-      return content.content.type === type && isActive && isValid;
+export const filterAutoStartContent = (
+  customContentVersions: CustomContentVersion[],
+  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+) => {
+  return customContentVersions
+    .filter((customContentVersion) => {
+      const isActive = isActiveContent(customContentVersion);
+      const isValid = isValidContent(customContentVersion, customContentVersions);
+      return customContentVersion.content.type === contentType && isActive && isValid;
     })
     .sort(priorityCompare);
 };
