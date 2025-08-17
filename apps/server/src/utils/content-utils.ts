@@ -25,7 +25,7 @@ export const PRIORITIES = [
   ContentPriority.LOWEST,
 ];
 
-export const isActiveContent = (customContentVersion: CustomContentVersion) => {
+export const isAutoStartContent = (customContentVersion: CustomContentVersion) => {
   const config = customContentVersion.config;
   const { enabledAutoStartRules, autoStartRules } = config;
   if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
@@ -287,9 +287,9 @@ export const filterAvailableAutoStartContentVersions = (
 ) => {
   return customContentVersions
     .filter((customContentVersion) => {
-      const isActive = isActiveContent(customContentVersion);
+      const isAutoStart = isAutoStartContent(customContentVersion);
       const isValid = isValidContent(customContentVersion, customContentVersions);
-      return customContentVersion.content.type === contentType && isActive && isValid;
+      return customContentVersion.content.type === contentType && isAutoStart && isValid;
     })
     .sort(priorityCompare);
 };
