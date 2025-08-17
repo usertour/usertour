@@ -91,8 +91,8 @@ importers:
         specifier: ^0.0.27
         version: 0.0.27(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.14
-        version: 0.0.14
+        specifier: ^0.0.15
+        version: 0.0.15
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -341,8 +341,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       '@usertour/types':
-        specifier: ^0.0.13
-        version: 0.0.13
+        specifier: ^0.0.15
+        version: 0.0.15
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -8572,11 +8572,11 @@ packages:
   '@usertour/license@0.0.1':
     resolution: {integrity: sha512-FGzPpdCQa13fjU65d3YYhgtI0trG+u04ahJbJH9IWc4U/AqXR0nbaA27vrDHq8oKMRwkl7/XpOhxpf2HtuvcTw==}
 
-  '@usertour/types@0.0.13':
-    resolution: {integrity: sha512-W3+vUPGPGSbWK1xhjCJknKkm9sBORuaEc1BIpZ2sp0H50p8QcHCdCvYQgaaUXtrdo6D1kM+mNaw2teSV9veoGw==}
-
   '@usertour/types@0.0.14':
     resolution: {integrity: sha512-7j4EXsAQII+IMCzt/TnhEB7+mWru4qs7feNS2XNoG2qkBpJvtq1NYYosQbNJRtbdIofbKZAK6T91vDLHcTHD5g==}
+
+  '@usertour/types@0.0.15':
+    resolution: {integrity: sha512-aRny08VYki1hqzNHjDgMk2Y0VeQY51GAbYhj/P6YPwraPA54hiws2LdX6oeE1g1YaXilDuM8jk6andzkkqpLDg==}
 
   '@usertour/types@0.0.4':
     resolution: {integrity: sha512-UzaCNqWjO3YTLZqXbZXGmKemayrBR8EP7FTeP1GyvCmRkk9HK5cxDogbJdh7ZaDT4gBbqCn9sMQN3Adk/P2gYw==}
@@ -20565,9 +20565,9 @@ snapshots:
     dependencies:
       jsonwebtoken: 9.0.2
 
-  '@usertour/types@0.0.13': {}
-
   '@usertour/types@0.0.14': {}
+
+  '@usertour/types@0.0.15': {}
 
   '@usertour/types@0.0.4': {}
 
