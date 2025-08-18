@@ -25,9 +25,7 @@ import {
   StartFlowDto,
   TooltipTargetMissingDto,
 } from './web-socket-v2.dto';
-import { ContentDataType } from '@usertour/types';
 import { getExternalUserRoom } from '@/utils/ws-utils';
-import { findActivatedCustomContentVersion } from '@/utils/content-utils';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -89,8 +87,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    await this.setFlowSession(client);
-    // await this.setChecklistSession(client);
+    await this.service.setFlowSession(this.server, client);
     return true;
   }
 
@@ -129,7 +126,11 @@ export class WebSocketV2Gateway {
     @MessageBody() startFlowDto: StartFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.setFlowSession(client, startFlowDto.contentId, startFlowDto.stepIndex);
+    const options = {
+      contentId: startFlowDto.contentId,
+      stepIndex: startFlowDto.stepIndex,
+    };
+    return await this.service.setFlowSession(this.server, client, options);
   }
 
   @SubscribeMessage('end-flow')
@@ -240,95 +241,5 @@ export class WebSocketV2Gateway {
         break;
       }
     }
-  }
-
-  /**
-   * Set flow session for the client, creating if not exists
-   * @param client - WebSocket client connection
-   * @returns true if session exists or was created successfully
-   */
-  private async setFlowSession(
-    client: Socket,
-    contentId?: string,
-    stepIndex?: number,
-  ): Promise<boolean> {
-    // Return early if flow session already exists
-    if (client.data.flowSessionId) {
-      return true;
-    }
-
-    const externalUserId = client.data.externalUserId;
-    const environment = client.data.environment;
-    const externalCompanyId = client.data.externalCompanyId;
-    const contentType = ContentDataType.FLOW;
-
-    const evaluatedContentVersions =
-      await this.service.findActivatedCustomContentVersionByEvaluated(
-        environment,
-        externalUserId,
-        contentType,
-        externalCompanyId,
-      );
-
-    const contentVersion = findActivatedCustomContentVersion(
-      evaluatedContentVersions,
-      contentType,
-      contentId,
-    );
-
-    if (!contentVersion) {
-      this.service.trackClientConditions(
-        this.server,
-        environment,
-        externalUserId,
-        evaluatedContentVersions,
-      );
-      return false;
-    }
-
-    // Create new flow session
-    const contentSession = await this.service.createContentSession(
-      contentVersion,
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      stepIndex,
-    );
-
-    if (!contentSession) {
-      return false;
-    }
-    // Cache the session ID for future requests
-    client.data.flowSessionId = contentSession.id;
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    // Notify the client about the new flow session
-    this.server.to(room).emit('set-flow-session', contentSession);
-
-    return true;
-  }
-
-  private async setChecklistSession(client: Socket): Promise<boolean> {
-    if (client.data.checklistSessionId) {
-      return true;
-    }
-
-    // const externalUserId = client.data.externalUserId;
-    // const environment = client.data.environment;
-
-    // const checklistSession = await this.service.createContentSession(
-    //   environment,
-    //   client.data.externalUserId,
-    //   ContentDataType.CHECKLIST,
-    //   client.data.externalCompanyId,
-    // );
-
-    // client.data.checklistSessionId = checklistSession.id;
-
-    // const room = getExternalUserRoom(environment.id, externalUserId);
-    // this.server.to(room).emit('set-checklist-session', checklistSession);
-
-    return true;
   }
 }

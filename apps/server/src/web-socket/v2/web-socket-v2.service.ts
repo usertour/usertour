@@ -58,6 +58,7 @@ import {
   extractTrackConditions,
   ConditionExtractionMode,
   filterActivatedContentWithoutClientConditions,
+  findActivatedCustomContentVersion,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -65,7 +66,7 @@ import { RedisService } from '@/shared/redis.service';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { getExternalUserRoom } from '@/utils/ws-utils';
 
 interface SegmentDataItem {
@@ -1689,13 +1690,13 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
-  async cacheCurrentSession(session: SDKContentSession): Promise<void> {
-    const key = `current_session:${session.id}`;
+  async cacheCurrentSession(userId: string, session: SDKContentSession): Promise<void> {
+    const key = `current_flow_session:${userId}`;
     await this.redisService.setex(key, 60 * 60 * 24, JSON.stringify(session));
   }
 
-  async getCachedCurrentSession(sessionId: string): Promise<SDKContentSession | null> {
-    const key = `current_session:${sessionId}`;
+  async getCachedCurrentSession(userId: string): Promise<SDKContentSession | null> {
+    const key = `current_flow_session:${userId}`;
     const value = await this.redisService.get(key);
     if (!value) return null;
     return JSON.parse(value);
@@ -2066,6 +2067,64 @@ export class WebSocketV2Service {
       },
       environment,
     );
+
+    return true;
+  }
+
+  async setFlowSession(
+    server: Server,
+    client: Socket,
+    options?: { contentId?: string; stepIndex?: number },
+  ) {
+    const { contentId, stepIndex } = options ?? {};
+    const contentType = ContentDataType.FLOW;
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+    const externalCompanyId = client.data.externalCompanyId;
+
+    if (client.data.flowSessionId) {
+      return true;
+    }
+
+    const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
+      environment,
+      externalUserId,
+      contentType,
+      externalCompanyId,
+    );
+
+    const contentVersion = findActivatedCustomContentVersion(
+      evaluatedContentVersions,
+      contentType,
+      contentId,
+    );
+
+    if (!contentVersion) {
+      this.trackClientConditions(server, environment, externalUserId, evaluatedContentVersions);
+      return false;
+    }
+
+    // Create new flow session
+    const contentSession = await this.createContentSession(
+      contentVersion,
+      environment,
+      externalUserId,
+      contentType,
+      externalCompanyId,
+      stepIndex,
+    );
+
+    if (!contentSession) {
+      return false;
+    }
+    // Cache the session ID for future requests
+    client.data.flowSessionId = contentSession.id;
+
+    await this.cacheCurrentSession(externalUserId, contentSession);
+
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    // Notify the client about the new flow session
+    server.to(room).emit('set-flow-session', contentSession);
 
     return true;
   }
