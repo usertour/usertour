@@ -157,20 +157,20 @@ export class WebSocketV2Gateway {
       return true;
     }
 
-    const externalUserId = client.data.externalUserId;
-    const environment = client.data.environment;
+    // const externalUserId = client.data.externalUserId;
+    // const environment = client.data.environment;
 
-    const checklistSession = await this.service.createContentSession(
-      environment,
-      client.data.externalUserId,
-      ContentDataType.CHECKLIST,
-      client.data.externalCompanyId,
-    );
+    // const checklistSession = await this.service.createContentSession(
+    //   environment,
+    //   client.data.externalUserId,
+    //   ContentDataType.CHECKLIST,
+    //   client.data.externalCompanyId,
+    // );
 
-    client.data.checklistSessionId = checklistSession.id;
+    // client.data.checklistSessionId = checklistSession.id;
 
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    this.server.to(room).emit('set-checklist-session', checklistSession);
+    // const room = getExternalUserRoom(environment.id, externalUserId);
+    // this.server.to(room).emit('set-checklist-session', checklistSession);
 
     return true;
   }
