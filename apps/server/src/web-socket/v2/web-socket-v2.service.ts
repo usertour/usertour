@@ -2100,7 +2100,7 @@ export class WebSocketV2Service {
     );
 
     if (!contentVersion) {
-      this.trackClientConditions(server, environment, externalUserId, evaluatedContentVersions);
+      this.trackClientConditions(server, client, evaluatedContentVersions);
       return false;
     }
 
@@ -2129,10 +2129,11 @@ export class WebSocketV2Service {
 
   async trackClientConditions(
     server: Server,
-    environment: Environment,
-    externalUserId: string,
+    client: Socket,
     customContentVersions: CustomContentVersion[],
   ) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
     const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
