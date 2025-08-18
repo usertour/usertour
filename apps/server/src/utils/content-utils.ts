@@ -455,3 +455,74 @@ export const regenerateConditionIds = (conditions: RulesCondition[]): RulesCondi
     conditions: condition.conditions ? regenerateConditionIds(condition.conditions) : undefined,
   }));
 };
+
+/**
+ * Recursively extracts all nested conditions from a RulesCondition array, filtering by specific types
+ * @param conditions - Array of rules conditions to flatten
+ * @param allowedTypes - Array of allowed condition types to filter by
+ * @returns Flattened array of all conditions including nested ones, filtered by allowed types
+ */
+const flattenConditions = (
+  conditions: RulesCondition[],
+  allowedTypes: RulesType[],
+): RulesCondition[] => {
+  const allConditions: RulesCondition[] = [];
+
+  for (const condition of conditions) {
+    // Only include conditions of specific types
+    if (allowedTypes.includes(condition.type as RulesType)) {
+      allConditions.push(condition);
+    }
+
+    // Recursively extract nested conditions
+    if (condition.conditions && condition.conditions.length > 0) {
+      allConditions.push(...flattenConditions(condition.conditions, allowedTypes));
+    }
+  }
+
+  return allConditions;
+};
+
+/**
+ * Extracts all conditions from custom content versions grouped by content version
+ * @param customContentVersions - The custom content versions
+ * @param contentType - The content type
+ * @param allowedTypes - Array of allowed condition types to filter by (defaults to ELEMENT, TEXT_INPUT, TEXT_FILL)
+ * @returns Array of content versions with their autoStartRules and hideRules conditions
+ */
+export const extractConditions = (
+  customContentVersions: CustomContentVersion[],
+  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
+): {
+  customContentVersion: CustomContentVersion;
+  autoStartRulesConditions: RulesCondition[];
+  hideRulesConditions: RulesCondition[];
+}[] => {
+  const result: {
+    customContentVersion: CustomContentVersion;
+    autoStartRulesConditions: RulesCondition[];
+    hideRulesConditions: RulesCondition[];
+  }[] = [];
+
+  for (const customContentVersion of customContentVersions) {
+    // Check if content type matches
+    if (customContentVersion.content.type !== contentType) {
+      continue;
+    }
+
+    result.push({
+      customContentVersion,
+      autoStartRulesConditions: flattenConditions(
+        customContentVersion.config.autoStartRules || [],
+        allowedTypes,
+      ),
+      hideRulesConditions: flattenConditions(
+        customContentVersion.config.hideRules || [],
+        allowedTypes,
+      ),
+    });
+  }
+
+  return result;
+};
