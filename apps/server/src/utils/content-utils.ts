@@ -526,28 +526,3 @@ export const extractConditions = (
 
   return result;
 };
-
-export const findActivatedCustomContentVersionByEvaluated = async (
-  customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-  contentId?: string,
-): Promise<CustomContentVersion | null> => {
-  const filteredContentVersions = customContentVersions.filter(
-    (contentVersion) => contentVersion.content.type === contentType,
-  );
-  const evaluatedContentVersions = await evaluateCustomContentVersion(filteredContentVersions, {
-    clientContext: {
-      page_url: '',
-      viewport_width: 0,
-      viewport_height: 0,
-    },
-  });
-  if (evaluatedContentVersions.length === 0) return null;
-  const contentVersion = findActivatedCustomContentVersion(
-    evaluatedContentVersions,
-    contentType,
-    contentId,
-  );
-  if (!contentVersion) return null;
-  return contentVersion;
-};
