@@ -27,6 +27,7 @@ import {
 } from './web-socket-v2.dto';
 import { ContentDataType } from '@usertour/types';
 import { getExternalUserRoom } from '@/utils/ws-utils';
+import { findActivatedCustomContentVersion } from '@/utils/content-utils';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -110,26 +111,43 @@ export class WebSocketV2Gateway {
 
     const externalUserId = client.data.externalUserId;
     const environment = client.data.environment;
+    const externalCompanyId = client.data.externalCompanyId;
+    const contentType = ContentDataType.FLOW;
+
+    const evaluatedContentVersions =
+      await this.service.findActivatedCustomContentVersionByEvaluated(
+        environment,
+        externalUserId,
+        contentType,
+        externalCompanyId,
+      );
+
+    const contentVersion = findActivatedCustomContentVersion(
+      evaluatedContentVersions,
+      contentType,
+      contentId,
+    );
+    if (!contentVersion) return false;
 
     // Create new flow session
-    const flowSession = await this.service.setContentSession(
+    const contentSession = await this.service.createContentSession(
+      contentVersion,
       environment,
       externalUserId,
-      ContentDataType.FLOW,
-      client.data.externalCompanyId,
-      contentId,
+      contentType,
+      externalCompanyId,
       stepIndex,
     );
 
-    if (!flowSession) {
+    if (!contentSession) {
       return false;
     }
     // Cache the session ID for future requests
-    client.data.flowSessionId = flowSession.id;
+    client.data.flowSessionId = contentSession.id;
 
     const room = getExternalUserRoom(environment.id, externalUserId);
     // Notify the client about the new flow session
-    this.server.to(room).emit('set-flow-session', flowSession);
+    this.server.to(room).emit('set-flow-session', contentSession);
 
     return true;
   }
@@ -142,7 +160,7 @@ export class WebSocketV2Gateway {
     const externalUserId = client.data.externalUserId;
     const environment = client.data.environment;
 
-    const checklistSession = await this.service.setContentSession(
+    const checklistSession = await this.service.createContentSession(
       environment,
       client.data.externalUserId,
       ContentDataType.CHECKLIST,

@@ -50,7 +50,6 @@ import {
 } from '@usertour/types';
 import {
   findLatestStepNumber,
-  findActivatedCustomContentVersion,
   findAvailableSessionId,
   flowIsDismissed,
   checklistIsDimissed,
@@ -1696,13 +1695,12 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
-  async findActivatedCustomContentVersion(
+  async findActivatedCustomContentVersionByEvaluated(
     environment: Environment,
     externalUserId: string,
     contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
     externalCompanyId?: string,
-    contentId?: string,
-  ): Promise<CustomContentVersion | null> {
+  ): Promise<CustomContentVersion[]> {
     const contentVersions = await this.fetchCustomContentVersions(
       environment,
       externalUserId,
@@ -1711,40 +1709,23 @@ export class WebSocketV2Service {
     const filteredContentVersions = contentVersions.filter(
       (contentVersion) => contentVersion.content.type === contentType,
     );
-    const evaluatedContentVersions = await evaluateCustomContentVersion(filteredContentVersions, {
+    return await evaluateCustomContentVersion(filteredContentVersions, {
       clientContext: {
         page_url: '',
         viewport_width: 0,
         viewport_height: 0,
       },
     });
-    if (evaluatedContentVersions.length === 0) return null;
-    const contentVersion = findActivatedCustomContentVersion(
-      evaluatedContentVersions,
-      contentType,
-      contentId,
-    );
-    if (!contentVersion) return null;
-    return contentVersion;
   }
 
-  async setContentSession(
+  async createContentSession(
+    contentVersion: CustomContentVersion,
     environment: Environment,
     externalUserId: string,
     contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
     externalCompanyId?: string,
-    contentId?: string,
     stepIndex?: number,
   ): Promise<SDKContentSession | null> {
-    const contentVersion = await this.findActivatedCustomContentVersion(
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      contentId,
-    );
-    if (!contentVersion) return null;
-
     let sessionId = findAvailableSessionId(contentVersion.session.latestSession, contentType);
     if (!sessionId) {
       const session = await this.createSession(
