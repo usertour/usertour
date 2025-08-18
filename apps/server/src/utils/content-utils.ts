@@ -24,6 +24,7 @@ import {
   evaluateRulesConditions,
   cuid,
 } from '@usertour/helpers';
+import { TrackCondition } from '@/common/types/sdk';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -484,44 +485,59 @@ const flattenConditions = (
 };
 
 /**
- * Extracts all conditions from custom content versions grouped by content version
- * @param customContentVersions - The custom content versions
- * @param contentType - The content type
- * @param allowedTypes - Array of allowed condition types to filter by (defaults to ELEMENT, TEXT_INPUT, TEXT_FILL)
- * @returns Array of content versions with their autoStartRules and hideRules conditions
+ * Enum for condition extraction mode
  */
-export const extractConditions = (
+export enum ConditionExtractionMode {
+  AUTO_START_ONLY = 'auto_start_only',
+  HIDE_ONLY = 'hide_only',
+  BOTH = 'both',
+}
+
+/**
+ * Extracts all track conditions from custom content versions grouped by content version
+ * @param customContentVersions - The custom content versions
+ * @param allowedTypes - Array of allowed condition types to filter by (defaults to ELEMENT, TEXT_INPUT, TEXT_FILL)
+ * @param extractionMode - Mode to control which conditions to extract (defaults to BOTH)
+ * @returns Array of track conditions based on the extraction mode
+ */
+export const extractTrackConditions = (
   customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
   allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
-): {
-  customContentVersion: CustomContentVersion;
-  autoStartRulesConditions: RulesCondition[];
-  hideRulesConditions: RulesCondition[];
-}[] => {
-  const result: {
-    customContentVersion: CustomContentVersion;
-    autoStartRulesConditions: RulesCondition[];
-    hideRulesConditions: RulesCondition[];
-  }[] = [];
+  extractionMode: ConditionExtractionMode = ConditionExtractionMode.BOTH,
+): TrackCondition[] => {
+  const result: TrackCondition[] = [];
 
   for (const customContentVersion of customContentVersions) {
-    // Check if content type matches
-    if (customContentVersion.content.type !== contentType) {
-      continue;
+    const conditions: RulesCondition[] = [];
+
+    // Extract conditions based on the specified mode
+    if (
+      extractionMode === ConditionExtractionMode.AUTO_START_ONLY ||
+      extractionMode === ConditionExtractionMode.BOTH
+    ) {
+      const autoStartConditions = flattenConditions(
+        customContentVersion.config.autoStartRules,
+        allowedTypes,
+      );
+      conditions.push(...autoStartConditions);
     }
 
-    result.push({
-      customContentVersion,
-      autoStartRulesConditions: flattenConditions(
-        customContentVersion.config.autoStartRules || [],
-        allowedTypes,
-      ),
-      hideRulesConditions: flattenConditions(
-        customContentVersion.config.hideRules || [],
-        allowedTypes,
-      ),
-    });
+    if (
+      extractionMode === ConditionExtractionMode.HIDE_ONLY ||
+      extractionMode === ConditionExtractionMode.BOTH
+    ) {
+      const hideConditions = flattenConditions(customContentVersion.config.hideRules, allowedTypes);
+      conditions.push(...hideConditions);
+    }
+
+    for (const condition of conditions) {
+      result.push({
+        contentId: customContentVersion.contentId,
+        contentType: customContentVersion.content.type as ContentDataType,
+        versionId: customContentVersion.id,
+        condition,
+      });
+    }
   }
 
   return result;

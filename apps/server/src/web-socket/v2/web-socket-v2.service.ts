@@ -47,6 +47,7 @@ import {
   StepSettings,
   ThemeTypesSetting,
   ContentConditionLogic,
+  RulesType,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -54,6 +55,9 @@ import {
   flowIsDismissed,
   checklistIsDimissed,
   evaluateCustomContentVersion,
+  extractTrackConditions,
+  ConditionExtractionMode,
+  filterActivatedContentWithoutClientConditions,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -61,6 +65,8 @@ import { RedisService } from '@/shared/redis.service';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
+import { Server } from 'socket.io';
+import { getExternalUserRoom } from '@/utils/ws-utils';
 
 interface SegmentDataItem {
   data: {
@@ -2062,5 +2068,26 @@ export class WebSocketV2Service {
     );
 
     return true;
+  }
+
+  async trackClientConditions(
+    server: Server,
+    environment: Environment,
+    externalUserId: string,
+    customContentVersions: CustomContentVersion[],
+  ) {
+    const trackCustomContentVersions: CustomContentVersion[] =
+      filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
+    const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+    const conditions = extractTrackConditions(
+      trackCustomContentVersions,
+      allowedTypes,
+      ConditionExtractionMode.AUTO_START_ONLY,
+    );
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    for (const condition of conditions) {
+      // Emit track client condition to the client
+      server.to(room).emit('track-client-condition', condition);
+    }
   }
 }

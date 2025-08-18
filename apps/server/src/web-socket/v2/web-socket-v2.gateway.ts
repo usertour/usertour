@@ -275,7 +275,16 @@ export class WebSocketV2Gateway {
       contentType,
       contentId,
     );
-    if (!contentVersion) return false;
+
+    if (!contentVersion) {
+      this.service.trackClientConditions(
+        this.server,
+        environment,
+        externalUserId,
+        evaluatedContentVersions,
+      );
+      return false;
+    }
 
     // Create new flow session
     const contentSession = await this.service.createContentSession(

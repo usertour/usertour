@@ -3,6 +3,7 @@ import {
   Content,
   ContentDataType,
   ContentVersion,
+  RulesCondition,
   Step,
   Theme,
 } from '@usertour/types';
@@ -24,4 +25,11 @@ export type SDKContentSession = {
     theme?: Pick<Theme, 'settings'>;
     checklist?: ChecklistData;
   };
+};
+
+export type TrackCondition = {
+  contentId: string;
+  contentType: ContentDataType;
+  versionId: string;
+  condition: RulesCondition;
 };
