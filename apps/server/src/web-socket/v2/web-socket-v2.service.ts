@@ -59,6 +59,8 @@ import {
   ConditionExtractionMode,
   filterActivatedContentWithoutClientConditions,
   findActivatedCustomContentVersion,
+  updateTrackConditions,
+  flattenHiddenConditions,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -1705,7 +1707,7 @@ export class WebSocketV2Service {
   async findActivatedCustomContentVersionByEvaluated(
     environment: Environment,
     externalUserId: string,
-    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+    contentTypes: ContentDataType[],
     externalCompanyId?: string,
   ): Promise<CustomContentVersion[]> {
     const contentVersions = await this.fetchCustomContentVersions(
@@ -1713,8 +1715,8 @@ export class WebSocketV2Service {
       externalUserId,
       externalCompanyId,
     );
-    const filteredContentVersions = contentVersions.filter(
-      (contentVersion) => contentVersion.content.type === contentType,
+    const filteredContentVersions = contentVersions.filter((contentVersion) =>
+      contentTypes.includes(contentVersion.content.type as ContentDataType),
     );
     return await evaluateCustomContentVersion(filteredContentVersions, {
       clientContext: {
@@ -2082,14 +2084,14 @@ export class WebSocketV2Service {
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
 
-    if (client.data.flowSessionId) {
+    if (client.data.flowSession) {
       return true;
     }
 
     const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
       environment,
       externalUserId,
-      contentType,
+      [contentType],
       externalCompanyId,
     );
 
@@ -2100,7 +2102,6 @@ export class WebSocketV2Service {
     );
 
     if (!contentVersion) {
-      this.trackClientConditions(server, client, evaluatedContentVersions);
       return false;
     }
 
@@ -2117,8 +2118,8 @@ export class WebSocketV2Service {
     if (!contentSession) {
       return false;
     }
-    // Cache the session ID for future requests
-    client.data.flowSessionId = contentSession.id;
+    // Cache the session in the client session
+    client.data.flowSession = contentSession;
 
     const room = getExternalUserRoom(environment.id, externalUserId);
     // Notify the client about the new flow session
@@ -2127,13 +2128,17 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async trackClientConditions(
-    server: Server,
-    client: Socket,
-    customContentVersions: CustomContentVersion[],
-  ) {
+  async trackClientConditions(server: Server, client: Socket, contentTypes: ContentDataType[]) {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
+    const externalCompanyId = client.data.externalCompanyId;
+    const flowSession = client.data?.flowSession as SDKContentSession;
+    const customContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
+      environment,
+      externalUserId,
+      contentTypes,
+      externalCompanyId,
+    );
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
     const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
@@ -2142,9 +2147,41 @@ export class WebSocketV2Service {
       allowedTypes,
       ConditionExtractionMode.AUTO_START_ONLY,
     );
+
+    const hiddenConditions = flattenHiddenConditions(flowSession, allowedTypes);
+
+    const trackConditions = conditions.filter(
+      (condition) => condition.contentId !== flowSession?.content?.id,
+    );
+
+    // Convert hiddenConditions to TrackCondition format for consistency
+    const hiddenConditionsAsTrackConditions = hiddenConditions.map((condition) => ({
+      contentId: flowSession.content.id,
+      contentType: flowSession.content.type as ContentDataType,
+      versionId: flowSession.version.id,
+      condition,
+    }));
+
+    const newConditions = [...trackConditions, ...hiddenConditionsAsTrackConditions];
+    const existingTrackConditions = client.data.trackConditions || [];
     const room = getExternalUserRoom(environment.id, externalUserId);
-    for (const condition of conditions) {
-      // Emit track client condition to the client
+
+    // Use the utility function to update track conditions
+    const { activeConditions, conditionsToUntrack } = updateTrackConditions(
+      newConditions,
+      existingTrackConditions,
+    );
+
+    // Emit untrack-client-condition for conditions that no longer exist
+    for (const condition of conditionsToUntrack) {
+      server.to(room).emit('untrack-client-condition', condition);
+    }
+
+    // Update client data with the new conditions
+    client.data.trackConditions = activeConditions;
+
+    // Emit track client condition for all current conditions
+    for (const condition of activeConditions) {
       server.to(room).emit('track-client-condition', condition);
     }
   }
