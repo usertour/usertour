@@ -2120,8 +2120,6 @@ export class WebSocketV2Service {
     // Cache the session ID for future requests
     client.data.flowSessionId = contentSession.id;
 
-    await this.cacheCurrentSession(externalUserId, contentSession);
-
     const room = getExternalUserRoom(environment.id, externalUserId);
     // Notify the client about the new flow session
     server.to(room).emit('set-flow-session', contentSession);
