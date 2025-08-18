@@ -60,7 +60,7 @@ import {
   filterActivatedContentWithoutClientConditions,
   findActivatedCustomContentVersion,
   updateTrackConditions,
-  flattenHiddenConditions,
+  extractAvailableHiddenTrackConditions,
 } from '@/utils/content-utils';
 import { SDKContentSession } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2148,21 +2148,14 @@ export class WebSocketV2Service {
       ConditionExtractionMode.AUTO_START_ONLY,
     );
 
-    const hiddenConditions = flattenHiddenConditions(flowSession, allowedTypes);
-
+    // Filter out conditions that are for the current flow session
     const trackConditions = conditions.filter(
       (condition) => condition.contentId !== flowSession?.content?.id,
     );
+    // Flatten the hidden conditions from the flow session
+    const hiddenTrackConditions = extractAvailableHiddenTrackConditions(flowSession, allowedTypes);
 
-    // Convert hiddenConditions to TrackCondition format for consistency
-    const hiddenConditionsAsTrackConditions = hiddenConditions.map((condition) => ({
-      contentId: flowSession.content.id,
-      contentType: flowSession.content.type as ContentDataType,
-      versionId: flowSession.version.id,
-      condition,
-    }));
-
-    const newConditions = [...trackConditions, ...hiddenConditionsAsTrackConditions];
+    const newConditions = [...trackConditions, ...hiddenTrackConditions];
     const existingTrackConditions = client.data.trackConditions || [];
     const room = getExternalUserRoom(environment.id, externalUserId);
 

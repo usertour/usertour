@@ -611,15 +611,25 @@ export const updateTrackConditions = (
  * @param allowedTypes - The allowed types
  * @returns The flattened hidden conditions
  */
-export const flattenHiddenConditions = (
+export const extractAvailableHiddenTrackConditions = (
   contentSession: SDKContentSession,
   allowedTypes: RulesType[],
-): RulesCondition[] => {
+): TrackCondition[] => {
   const config = contentSession?.version?.config;
   if (!config?.enabledHideRules) {
     return [];
   }
-  return flattenConditions(config.hideRules, allowedTypes);
+  const result: TrackCondition[] = [];
+  const conditions = flattenConditions(config.hideRules, allowedTypes);
+  for (const condition of conditions) {
+    result.push({
+      contentId: contentSession.content.id,
+      contentType: contentSession.content.type as ContentDataType,
+      versionId: contentSession.version.id,
+      condition,
+    });
+  }
+  return result;
 };
 
 /**
@@ -628,13 +638,23 @@ export const flattenHiddenConditions = (
  * @param allowedTypes - The allowed types
  * @returns The flattened auto-start conditions
  */
-export const flattenAutoStartConditions = (
+export const extractAvailableAutoStartTrackConditions = (
   contentSession: SDKContentSession,
   allowedTypes: RulesType[],
-): RulesCondition[] => {
+): TrackCondition[] => {
   const config = contentSession?.version?.config;
   if (!config?.enabledAutoStartRules) {
     return [];
   }
-  return flattenConditions(config.autoStartRules, allowedTypes);
+  const result: TrackCondition[] = [];
+  const conditions = flattenConditions(config.autoStartRules, allowedTypes);
+  for (const condition of conditions) {
+    result.push({
+      contentId: contentSession.content.id,
+      contentType: contentSession.content.type as ContentDataType,
+      versionId: contentSession.version.id,
+      condition,
+    });
+  }
+  return result;
 };
