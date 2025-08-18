@@ -10,6 +10,8 @@ import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
+import { regenerateConditionIds } from '@/utils/content-utils';
+import { ContentConfigObject } from '@usertour/types';
 
 @Injectable()
 export class ContentService {
@@ -212,11 +214,19 @@ export class ContentService {
           },
         );
 
+        const editedConfig = (config || editedVersion.config) as ContentConfigObject;
+
+        const newConfig = {
+          ...editedConfig,
+          autoStartRules: regenerateConditionIds(editedConfig.autoStartRules),
+          hideRules: regenerateConditionIds(editedConfig.hideRules),
+        };
+
         const version = await tx.version.create({
           data: {
             sequence: editedVersion.sequence + 1,
             contentId: content.id,
-            config: config || editedVersion.config || {},
+            config: newConfig,
             data: data || editedVersion.data || {},
             themeId: themeId || editedVersion.themeId || undefined,
             steps: { create: steps.length > 0 ? [...steps] : [...oldSteps] },
@@ -445,11 +455,19 @@ export class ContentService {
           },
         });
 
+        const config = editedVersion.config as ContentConfigObject;
+
+        const newConfig = {
+          ...config,
+          autoStartRules: regenerateConditionIds(config.autoStartRules),
+          hideRules: regenerateConditionIds(config.hideRules),
+        };
+
         const version = await tx.version.create({
           data: {
             sequence: 0,
             contentId: content.id,
-            config: editedVersion.config,
+            config: newConfig,
             data: editedVersion.data,
             themeId: editedVersion.themeId,
             steps: { create: [...steps] },

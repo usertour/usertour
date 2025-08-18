@@ -13,6 +13,7 @@ import { ContentVersionListProvider } from './content-version-list-context';
 import { SegmentListProvider } from './segment-list-context';
 import { ThemeListProvider } from './theme-list-context';
 import { ContentTypeName } from '@usertour/types';
+import { ContentLoading } from '@/components/molecules/content-loading';
 
 export interface ContentDetailProviderProps {
   children: ReactNode;
@@ -69,6 +70,10 @@ function ContentDetailContent({ children }: { children: ReactNode }) {
 export function ContentDetailProviderWrapper(props: ContentDetailProviderProps): JSX.Element {
   const { children, contentId, contentType } = props;
   const { project, environment } = useAppContext();
+
+  if (!environment?.id) {
+    return <ContentLoading />;
+  }
 
   return (
     <SegmentListProvider environmentId={environment?.id} bizType={['COMPANY', 'USER']}>

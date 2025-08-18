@@ -6,6 +6,7 @@ import {
   ContentPriority,
   RulesType,
   RulesEvaluationOptions,
+  RulesCondition,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -21,6 +22,7 @@ import {
   isConditionsActived,
   filterConditionsByType,
   evaluateRulesConditions,
+  cuid,
 } from '@usertour/helpers';
 
 export const PRIORITIES = [
@@ -439,4 +441,17 @@ export const evaluateCustomContentVersion = async (
       };
     }),
   );
+};
+
+/**
+ * Regenerates IDs for each item in RulesCondition array using cuid
+ * @param conditions - Array of rules conditions to process
+ * @returns Array of rules conditions with new IDs
+ */
+export const regenerateConditionIds = (conditions: RulesCondition[]): RulesCondition[] => {
+  return conditions.map((condition) => ({
+    ...condition,
+    id: cuid(),
+    conditions: condition.conditions ? regenerateConditionIds(condition.conditions) : undefined,
+  }));
 };
