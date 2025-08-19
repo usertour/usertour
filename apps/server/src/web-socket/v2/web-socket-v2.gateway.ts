@@ -24,6 +24,7 @@ import {
   UpdateClientContextDto,
   StartFlowDto,
   TooltipTargetMissingDto,
+  ToggleClientConditionDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom } from '@/utils/ws-utils';
 
@@ -226,6 +227,19 @@ export class WebSocketV2Gateway {
     return await this.service.reportTooltipTargetMissing(
       reportTooltipTargetMissingDto,
       client.data.environment,
+    );
+  }
+
+  @SubscribeMessage('toggle-client-condition')
+  async toggleClientCondition(
+    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.toggleClientCondition(
+      this.server,
+      client,
+      toggleClientConditionDto.conditionId,
+      toggleClientConditionDto.isActive,
     );
   }
 

@@ -2249,4 +2249,63 @@ export class WebSocketV2Service {
       server.to(room).emit('track-client-condition', condition);
     }
   }
+
+  /**
+   * Toggle the isActive status of a specific client condition by condition ID
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param conditionId - The ID of the condition to toggle
+   * @param isActive - The new active status
+   */
+  async toggleClientCondition(
+    server: Server,
+    client: Socket,
+    conditionId: string,
+    isActive: boolean,
+  ) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    const existingConditions = client.data.trackConditions || [];
+
+    // Check if condition exists
+    const conditionExists = existingConditions.some(
+      (condition: ActiveTrackCondition) => condition.condition.id === conditionId,
+    );
+
+    if (!conditionExists) {
+      this.logger.warn(`Condition with ID ${conditionId} not found for user ${externalUserId}`);
+      return false;
+    }
+
+    // Update conditions using map
+    const updatedConditions = existingConditions.map((condition: ActiveTrackCondition) => {
+      if (condition.condition.id === conditionId) {
+        return {
+          ...condition,
+          isActive,
+          lastUpdated: new Date().toISOString(),
+        };
+      }
+      return condition;
+    });
+
+    // Update client data
+    client.data.trackConditions = updatedConditions;
+
+    // Find the updated condition to emit
+    const updatedCondition = updatedConditions.find(
+      (condition: ActiveTrackCondition) => condition.condition.id === conditionId,
+    );
+
+    // Emit the updated condition to the client
+    server.to(room).emit('untrack-client-condition', updatedCondition);
+
+    this.logger.log(
+      `Updated condition ${conditionId} isActive status to ${isActive} for user ${externalUserId}`,
+    );
+
+    return true;
+  }
 }
