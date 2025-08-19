@@ -2156,15 +2156,12 @@ export class WebSocketV2Service {
     server: Server,
     client: Socket,
     customContentVersion: CustomContentVersion,
+    extralMode: ConditionExtractionMode = ConditionExtractionMode.BOTH,
   ) {
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions([customContentVersion], ContentDataType.FLOW);
     const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
-    const conditions = extractTrackConditions(
-      trackCustomContentVersions,
-      allowedTypes,
-      ConditionExtractionMode.BOTH,
-    );
+    const conditions = extractTrackConditions(trackCustomContentVersions, allowedTypes, extralMode);
     await this.trackClientConditions(server, client, conditions);
     return true;
   }
@@ -2173,15 +2170,12 @@ export class WebSocketV2Service {
     server: Server,
     client: Socket,
     customContentVersions: CustomContentVersion[],
+    extralMode: ConditionExtractionMode = ConditionExtractionMode.AUTO_START_ONLY,
   ) {
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
     const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
-    const conditions = extractTrackConditions(
-      trackCustomContentVersions,
-      allowedTypes,
-      ConditionExtractionMode.AUTO_START_ONLY,
-    );
+    const conditions = extractTrackConditions(trackCustomContentVersions, allowedTypes, extralMode);
     await this.trackClientConditions(server, client, conditions);
     return true;
   }
