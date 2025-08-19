@@ -58,11 +58,11 @@ import {
   extractTrackConditions,
   ConditionExtractionMode,
   filterActivatedContentWithoutClientConditions,
-  findActivatedCustomContentVersion,
-  updateTrackConditions,
-  extractAvailableHiddenTrackConditions,
+  findCustomContentVersionByContentId,
+  findLatestActivatedCustomContentVersion,
+  filterAvailableAutoStartContentVersions,
 } from '@/utils/content-utils';
-import { SDKContentSession } from '@/common/types/sdk';
+import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
@@ -78,6 +78,14 @@ interface SegmentDataItem {
   };
   type: 'user-attr';
   operators: 'and' | 'or';
+}
+
+/**
+ * Interface for active track condition with tracking state
+ */
+interface ActiveTrackCondition extends TrackCondition {
+  isActive: boolean;
+  lastUpdated: string;
 }
 
 @Injectable()
@@ -2095,13 +2103,29 @@ export class WebSocketV2Service {
       externalCompanyId,
     );
 
-    const contentVersion = findActivatedCustomContentVersion(
-      evaluatedContentVersions,
-      contentType,
-      contentId,
-    );
+    let contentVersion: CustomContentVersion | undefined;
+    if (contentId) {
+      contentVersion = findCustomContentVersionByContentId(evaluatedContentVersions, contentId);
+    }
 
     if (!contentVersion) {
+      // if the latest activated content version is found, return it
+      contentVersion = findLatestActivatedCustomContentVersion(
+        evaluatedContentVersions,
+        contentType,
+      );
+    }
+
+    if (!contentVersion) {
+      // if the latest activated content version is not found, return the first available auto-start content version
+      contentVersion = filterAvailableAutoStartContentVersions(
+        evaluatedContentVersions,
+        contentType,
+      )?.[0];
+    }
+
+    if (!contentVersion) {
+      await this.trackMultipleContentClientConditions(server, client, evaluatedContentVersions);
       return false;
     }
 
@@ -2128,17 +2152,28 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async trackClientConditions(server: Server, client: Socket, contentTypes: ContentDataType[]) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-    const externalCompanyId = client.data.externalCompanyId;
-    const flowSession = client.data?.flowSession as SDKContentSession;
-    const customContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
-      environment,
-      externalUserId,
-      contentTypes,
-      externalCompanyId,
+  async trackSingleContentClientConditions(
+    server: Server,
+    client: Socket,
+    customContentVersion: CustomContentVersion,
+  ) {
+    const trackCustomContentVersions: CustomContentVersion[] =
+      filterActivatedContentWithoutClientConditions([customContentVersion], ContentDataType.FLOW);
+    const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+    const conditions = extractTrackConditions(
+      trackCustomContentVersions,
+      allowedTypes,
+      ConditionExtractionMode.BOTH,
     );
+    await this.trackClientConditions(server, client, conditions);
+    return true;
+  }
+
+  async trackMultipleContentClientConditions(
+    server: Server,
+    client: Socket,
+    customContentVersions: CustomContentVersion[],
+  ) {
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
     const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
@@ -2147,22 +2182,50 @@ export class WebSocketV2Service {
       allowedTypes,
       ConditionExtractionMode.AUTO_START_ONLY,
     );
+    await this.trackClientConditions(server, client, conditions);
+    return true;
+  }
 
-    // Filter out conditions that are for the current flow session
-    const trackConditions = conditions.filter(
-      (condition) => condition.contentId !== flowSession?.content?.id,
-    );
-    // Flatten the hidden conditions from the flow session
-    const hiddenTrackConditions = extractAvailableHiddenTrackConditions(flowSession, allowedTypes);
+  /**
+   * Track the client conditions for the given content types
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param conditions - The conditions to track
+   */
+  async trackClientConditions(server: Server, client: Socket, conditions: TrackCondition[]) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
 
-    const newConditions = [...trackConditions, ...hiddenTrackConditions];
-    const existingTrackConditions = client.data.trackConditions || [];
     const room = getExternalUserRoom(environment.id, externalUserId);
+    const existingConditions = client.data.trackConditions || [];
 
-    // Use the utility function to update track conditions
-    const { activeConditions, conditionsToUntrack } = updateTrackConditions(
-      newConditions,
-      existingTrackConditions,
+    // Update new conditions with existing isActive values
+    const trackConditions: ActiveTrackCondition[] = conditions.map((condition: TrackCondition) => {
+      const existingCondition = existingConditions.find(
+        (existing: ActiveTrackCondition) => existing.condition.id === condition.condition.id,
+      );
+
+      if (existingCondition) {
+        return {
+          ...condition,
+          isActive: existingCondition.isActive,
+          lastUpdated: existingCondition.lastUpdated,
+        };
+      }
+
+      return {
+        ...condition,
+        isActive: false,
+        lastUpdated: new Date().toISOString(),
+      };
+    });
+
+    // Find conditions that exist in existing conditions but not in new conditions
+    const conditionsToUntrack = existingConditions.filter(
+      (existingCondition: ActiveTrackCondition) =>
+        !conditions.find(
+          (newCondition) => newCondition.condition.id === existingCondition.condition.id,
+        ),
     );
 
     // Emit untrack-client-condition for conditions that no longer exist
@@ -2171,10 +2234,10 @@ export class WebSocketV2Service {
     }
 
     // Update client data with the new conditions
-    client.data.trackConditions = activeConditions;
+    client.data.trackConditions = trackConditions;
 
     // Emit track client condition for all current conditions
-    for (const condition of activeConditions) {
+    for (const condition of trackConditions) {
       server.to(room).emit('track-client-condition', condition);
     }
   }

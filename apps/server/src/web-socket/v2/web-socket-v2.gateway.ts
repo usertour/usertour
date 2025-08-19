@@ -26,7 +26,6 @@ import {
   TooltipTargetMissingDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom } from '@/utils/ws-utils';
-import { ContentDataType } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -88,10 +87,6 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    await this.service.trackClientConditions(this.server, client, [
-      ContentDataType.CHECKLIST,
-      ContentDataType.FLOW,
-    ]);
     await this.service.setFlowSession(this.server, client);
     return true;
   }

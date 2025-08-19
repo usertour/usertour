@@ -24,7 +24,7 @@ import {
   evaluateRulesConditions,
   cuid,
 } from '@usertour/helpers';
-import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
+import { TrackCondition } from '@/common/types/sdk';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -540,121 +540,5 @@ export const extractTrackConditions = (
     }
   }
 
-  return result;
-};
-
-/**
- * Interface for active track condition with tracking state
- */
-export interface ActiveTrackCondition extends TrackCondition {
-  isActive: boolean;
-  lastUpdated: string;
-}
-
-/**
- * Interface for the result of updating track conditions
- */
-export interface TrackConditionsUpdateResult {
-  activeConditions: ActiveTrackCondition[];
-  conditionsToUntrack: ActiveTrackCondition[];
-}
-
-/**
- * Updates track conditions by merging existing conditions with new ones
- * Preserves isTrue state from existing conditions and identifies conditions to untrack
- * @param newConditions - Array of new track conditions
- * @param existingConditions - Array of existing track conditions with state
- * @returns Object containing updated conditions and conditions to untrack
- */
-export const updateTrackConditions = (
-  newConditions: TrackCondition[],
-  existingConditions: ActiveTrackCondition[] = [],
-): TrackConditionsUpdateResult => {
-  // Update new conditions with existing isActive values
-  const activeConditions: ActiveTrackCondition[] = newConditions.map((condition) => {
-    const existingCondition = existingConditions.find(
-      (existing) => existing.condition.id === condition.condition.id,
-    );
-
-    if (existingCondition) {
-      return {
-        ...condition,
-        isActive: existingCondition.isActive,
-        lastUpdated: existingCondition.lastUpdated,
-      };
-    }
-
-    return {
-      ...condition,
-      isActive: false,
-      lastUpdated: new Date().toISOString(),
-    };
-  });
-
-  // Find conditions that exist in existing conditions but not in new conditions
-  const conditionsToUntrack = existingConditions.filter(
-    (existingCondition) =>
-      !newConditions.find(
-        (newCondition) => newCondition.condition.id === existingCondition.condition.id,
-      ),
-  );
-
-  return {
-    activeConditions,
-    conditionsToUntrack,
-  };
-};
-
-/**
- * Flattens the hidden conditions from the content session
- * @param contentSession - The content session
- * @param allowedTypes - The allowed types
- * @returns The flattened hidden conditions
- */
-export const extractAvailableHiddenTrackConditions = (
-  contentSession: SDKContentSession,
-  allowedTypes: RulesType[],
-): TrackCondition[] => {
-  const config = contentSession?.version?.config;
-  if (!config?.enabledHideRules) {
-    return [];
-  }
-  const result: TrackCondition[] = [];
-  const conditions = flattenConditions(config.hideRules, allowedTypes);
-  for (const condition of conditions) {
-    result.push({
-      contentId: contentSession.content.id,
-      contentType: contentSession.content.type as ContentDataType,
-      versionId: contentSession.version.id,
-      condition,
-    });
-  }
-  return result;
-};
-
-/**
- * Flattens the auto-start conditions from the content session
- * @param contentSession - The content session
- * @param allowedTypes - The allowed types
- * @returns The flattened auto-start conditions
- */
-export const extractAvailableAutoStartTrackConditions = (
-  contentSession: SDKContentSession,
-  allowedTypes: RulesType[],
-): TrackCondition[] => {
-  const config = contentSession?.version?.config;
-  if (!config?.enabledAutoStartRules) {
-    return [];
-  }
-  const result: TrackCondition[] = [];
-  const conditions = flattenConditions(config.autoStartRules, allowedTypes);
-  for (const condition of conditions) {
-    result.push({
-      contentId: contentSession.content.id,
-      contentType: contentSession.content.type as ContentDataType,
-      versionId: contentSession.version.id,
-      condition,
-    });
-  }
   return result;
 };
