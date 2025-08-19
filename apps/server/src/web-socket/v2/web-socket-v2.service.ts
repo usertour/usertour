@@ -2152,6 +2152,13 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Track the client conditions for the given content version
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param customContentVersion - The content version to track
+   * @param extralMode - The extraction mode for the conditions (defaults to BOTH)
+   */
   async trackSingleContentClientConditions(
     server: Server,
     client: Socket,
@@ -2166,6 +2173,13 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Track the client conditions for the given content versions
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param customContentVersions - The content versions to track
+   * @param extralMode - The extraction mode for the conditions (defaults to AUTO_START_ONLY)
+   */
   async trackMultipleContentClientConditions(
     server: Server,
     client: Socket,
