@@ -88,7 +88,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    await this.service.setFlowSession(this.server, client);
+    await this.service.startContent(this.server, client);
     return true;
   }
 
@@ -131,7 +131,7 @@ export class WebSocketV2Gateway {
       contentId: startFlowDto.contentId,
       stepIndex: startFlowDto.stepIndex,
     };
-    return await this.service.setFlowSession(this.server, client, options);
+    return await this.service.startContent(this.server, client, options);
   }
 
   @SubscribeMessage('end-flow')

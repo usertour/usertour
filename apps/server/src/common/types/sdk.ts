@@ -33,3 +33,8 @@ export type TrackCondition = {
   versionId: string;
   condition: RulesCondition;
 };
+
+export type StartContentOptions = {
+  contentId?: string;
+  stepIndex?: number;
+};

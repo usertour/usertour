@@ -63,7 +63,7 @@ import {
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
 } from '@/utils/content-utils';
-import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
+import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
@@ -1740,7 +1740,7 @@ export class WebSocketV2Service {
     contentVersion: CustomContentVersion,
     environment: Environment,
     externalUserId: string,
-    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+    contentType: ContentDataType,
     externalCompanyId?: string,
     stepIndex?: number,
   ): Promise<SDKContentSession | null> {
@@ -2082,88 +2082,57 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async findActivatedCustomContentVersionAndTrackConditions(
-    customContentVersions: CustomContentVersion[],
-    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-    contentId?: string,
-  ): Promise<{
-    activatedContentVersion: CustomContentVersion | undefined;
-    trackConditions: TrackCondition[];
-  }> {
-    const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
-
-    // if the contentId is provided, return the content version and track conditions
-    if (contentId) {
-      const foundContentVersion = findCustomContentVersionByContentId(
-        customContentVersions,
-        contentId,
-      );
-      if (foundContentVersion) {
-        const foundTrackConditions = extractTrackConditions(
-          [foundContentVersion],
-          clientConditionTypes,
-          ConditionExtractionMode.HIDE_ONLY,
-        );
-
-        return {
-          activatedContentVersion: foundContentVersion,
-          trackConditions: foundTrackConditions,
-        };
-      }
-    }
-
-    // if the latest activated content version is found, return it
-    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
-      customContentVersions,
-      contentType,
-    );
-    if (latestActivatedContentVersion) {
-      if (!isActivedHideRules(latestActivatedContentVersion)) {
-        return {
-          activatedContentVersion: latestActivatedContentVersion,
-          trackConditions: [],
-        };
-      }
-    }
-
-    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
-      customContentVersions,
-      contentType,
-    )?.[0];
-    if (autoStartContentVersion) {
-      if (!isActivedHideRules(autoStartContentVersion)) {
-        return {
-          activatedContentVersion: autoStartContentVersion,
-          trackConditions: [],
-        };
-      }
-    }
-
-    const trackCustomContentVersions: CustomContentVersion[] =
-      filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
-    const trackConditions = extractTrackConditions(
-      trackCustomContentVersions,
-      clientConditionTypes,
-      ConditionExtractionMode.BOTH,
-    );
-
-    return {
-      activatedContentVersion: undefined,
-      trackConditions,
-    };
-  }
-
-  async setFlowSession(
+  async processContent(
     server: Server,
     client: Socket,
-    options?: { contentId?: string; stepIndex?: number },
+    customContentVersion: CustomContentVersion,
+    options?: StartContentOptions,
   ) {
-    const { contentId, stepIndex } = options ?? {};
+    const { stepIndex } = options ?? {};
+    const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+    const externalCompanyId = client.data.externalCompanyId;
+
+    const contentType = customContentVersion.content.type as ContentDataType;
+    const contentSession = await this.createContentSession(
+      customContentVersion,
+      environment,
+      externalUserId,
+      contentType,
+      externalCompanyId,
+      stepIndex,
+    );
+    if (!contentSession) {
+      return false;
+    }
+    await this.setContentSession(server, client, contentSession);
+    //this.forceGoToStep
+    const clientTrackConditions = extractTrackConditions(
+      [customContentVersion],
+      clientConditionTypes,
+      ConditionExtractionMode.HIDE_ONLY,
+    );
+    if (clientTrackConditions.length > 0) {
+      await this.trackClientConditions(server, client, clientTrackConditions);
+    }
+    if (isActivedHideRules(customContentVersion)) {
+      return false;
+    }
+    return true;
+  }
+
+  async startContent(server: Server, client: Socket, options?: StartContentOptions) {
+    const { contentId } = options ?? {};
     const contentType = ContentDataType.FLOW;
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
-    const flowSession = client.data.flowSession;
+    const flowSession = await this.getContentSession(client, ContentDataType.FLOW);
+
+    if (flowSession) {
+      return true;
+    }
 
     const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
       environment,
@@ -2171,51 +2140,69 @@ export class WebSocketV2Service {
       [contentType],
       externalCompanyId,
     );
-    const sessionContentVersion = evaluatedContentVersions.find(
-      (version) => version.contentId === flowSession.content.id,
+
+    const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+
+    const foundContentVersion = findCustomContentVersionByContentId(
+      evaluatedContentVersions,
+      contentId,
     );
 
-    const { activatedContentVersion, trackConditions } =
-      await this.findActivatedCustomContentVersionAndTrackConditions(
-        evaluatedContentVersions,
-        contentType,
-        contentId,
+    if (foundContentVersion) {
+      const isStartByContentId = await this.processContent(
+        server,
+        client,
+        foundContentVersion,
+        options,
       );
 
-    if (sessionContentVersion) {
-      if (!activatedContentVersion && isActivedHideRules(sessionContentVersion)) {
-        this.unsetContentSession(server, client, contentType, flowSession.id);
+      if (isStartByContentId) {
+        return true;
       }
-      return true;
     }
 
+    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
+      evaluatedContentVersions,
+      contentType,
+    );
+    if (latestActivatedContentVersion) {
+      const isStartByLatestActivatedContentVersion = await this.processContent(
+        server,
+        client,
+        latestActivatedContentVersion,
+        options,
+      );
+      if (isStartByLatestActivatedContentVersion) {
+        return true;
+      }
+    }
+
+    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
+      evaluatedContentVersions,
+      contentType,
+    )?.[0];
+    if (autoStartContentVersion) {
+      const isStartByAutoStartContentVersion = await this.processContent(
+        server,
+        client,
+        autoStartContentVersion,
+        options,
+      );
+      if (isStartByAutoStartContentVersion) {
+        return true;
+      }
+    }
+
+    const trackCustomContentVersions: CustomContentVersion[] =
+      filterActivatedContentWithoutClientConditions(evaluatedContentVersions, ContentDataType.FLOW);
+    const trackConditions = extractTrackConditions(
+      trackCustomContentVersions,
+      clientConditionTypes,
+      ConditionExtractionMode.BOTH,
+    );
     if (trackConditions.length > 0) {
       await this.trackClientConditions(server, client, trackConditions);
     }
-
-    if (!activatedContentVersion) {
-      return false;
-    }
-
-    // Create new flow session
-    const contentSession = await this.createContentSession(
-      activatedContentVersion,
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      stepIndex,
-    );
-
-    if (!contentSession) {
-      return false;
-    }
-    // Cache the session in the client session
-    client.data.flowSession = contentSession;
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    // Notify the client about the new flow session
-    server.to(room).emit('set-flow-session', contentSession);
 
     return true;
   }
@@ -2254,26 +2241,49 @@ export class WebSocketV2Service {
       };
     });
 
-    // Find conditions that exist in existing conditions but not in new conditions
-    const conditionsToUntrack = existingConditions.filter(
-      (existingCondition: ActiveTrackCondition) =>
-        !conditions.find(
-          (newCondition) => newCondition.condition.id === existingCondition.condition.id,
-        ),
-    );
-
-    // Emit untrack-client-condition for conditions that no longer exist
-    for (const condition of conditionsToUntrack) {
-      server.to(room).emit('untrack-client-condition', condition);
-    }
-
-    // Update client data with the new conditions
     client.data.trackConditions = trackConditions;
 
-    // Emit track client condition for all current conditions
     for (const condition of trackConditions) {
       server.to(room).emit('track-client-condition', condition);
     }
+  }
+
+  /**
+   * Set the content session for the client
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param session - The session to set
+   */
+  async setContentSession(server: Server, client: Socket, session: SDKContentSession) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    const contentType = session.content.type as ContentDataType;
+    if (contentType === ContentDataType.FLOW) {
+      client.data.flowSession = session;
+      server.to(room).emit('set-flow-session', session);
+    } else {
+      client.data.checklistSession = session;
+      server.to(room).emit('set-checklist-session', session);
+    }
+  }
+
+  /**
+   * Get the content session for the client
+   * @param client - The client instance
+   * @returns The content session
+   */
+  async getContentSession(
+    client: Socket,
+    contentType: ContentDataType,
+  ): Promise<SDKContentSession | null> {
+    if (contentType === ContentDataType.FLOW) {
+      return client.data.flowSession;
+    }
+    if (contentType === ContentDataType.CHECKLIST) {
+      return client.data.checklistSession;
+    }
+    return null;
   }
 
   /**

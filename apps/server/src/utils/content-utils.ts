@@ -334,7 +334,7 @@ export const filterAvailableAutoStartContentVersions = (
  */
 export const findAvailableSessionId = (
   latestSession: BizSessionWithEvents,
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  contentType: ContentDataType,
 ) => {
   if (contentType === ContentDataType.CHECKLIST) {
     if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
@@ -590,4 +590,34 @@ export const extractTrackConditions = (
   }
 
   return result;
+};
+
+export const findActivatedCustomContentVersionByContentId = (
+  customContentVersions: CustomContentVersion[],
+  contentId: string,
+): {
+  activatedContentVersion: CustomContentVersion | undefined;
+  trackConditions: TrackCondition[];
+} => {
+  const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+
+  // if the contentId is provided, return the content version and track conditions
+  const foundContentVersion = findCustomContentVersionByContentId(customContentVersions, contentId);
+  if (foundContentVersion) {
+    const foundTrackConditions = extractTrackConditions(
+      [foundContentVersion],
+      clientConditionTypes,
+      ConditionExtractionMode.HIDE_ONLY,
+    );
+
+    return {
+      activatedContentVersion: foundContentVersion,
+      trackConditions: foundTrackConditions,
+    };
+  }
+
+  return {
+    activatedContentVersion: undefined,
+    trackConditions: [],
+  };
 };
