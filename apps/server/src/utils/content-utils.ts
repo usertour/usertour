@@ -564,19 +564,26 @@ export const extractTrackConditions = (
       extractionMode === ConditionExtractionMode.AUTO_START_ONLY ||
       extractionMode === ConditionExtractionMode.BOTH
     ) {
-      const autoStartConditions = flattenConditions(
-        customContentVersion.config.autoStartRules,
-        allowedTypes,
-      );
-      conditions.push(...autoStartConditions);
+      if (isEnabledAutoStartRules(customContentVersion)) {
+        const autoStartConditions = flattenConditions(
+          customContentVersion.config.autoStartRules,
+          allowedTypes,
+        );
+        conditions.push(...autoStartConditions);
+      }
     }
 
     if (
       extractionMode === ConditionExtractionMode.HIDE_ONLY ||
       extractionMode === ConditionExtractionMode.BOTH
     ) {
-      const hideConditions = flattenConditions(customContentVersion.config.hideRules, allowedTypes);
-      conditions.push(...hideConditions);
+      if (isEnabledHideRules(customContentVersion)) {
+        const hideConditions = flattenConditions(
+          customContentVersion.config.hideRules,
+          allowedTypes,
+        );
+        conditions.push(...hideConditions);
+      }
     }
 
     for (const condition of conditions) {
@@ -590,36 +597,6 @@ export const extractTrackConditions = (
   }
 
   return result;
-};
-
-export const findActivatedCustomContentVersionByContentId = (
-  customContentVersions: CustomContentVersion[],
-  contentId: string,
-): {
-  activatedContentVersion: CustomContentVersion | undefined;
-  trackConditions: TrackCondition[];
-} => {
-  const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
-
-  // if the contentId is provided, return the content version and track conditions
-  const foundContentVersion = findCustomContentVersionByContentId(customContentVersions, contentId);
-  if (foundContentVersion) {
-    const foundTrackConditions = extractTrackConditions(
-      [foundContentVersion],
-      clientConditionTypes,
-      ConditionExtractionMode.HIDE_ONLY,
-    );
-
-    return {
-      activatedContentVersion: foundContentVersion,
-      trackConditions: foundTrackConditions,
-    };
-  }
-
-  return {
-    activatedContentVersion: undefined,
-    trackConditions: [],
-  };
 };
 
 /**
