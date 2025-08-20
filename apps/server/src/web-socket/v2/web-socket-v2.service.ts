@@ -61,6 +61,7 @@ import {
   findCustomContentVersionByContentId,
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
+  isActivedHideRules,
 } from '@/utils/content-utils';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2081,6 +2082,88 @@ export class WebSocketV2Service {
     return true;
   }
 
+  async findActivatedCustomContentVersionAndTrackConditions(
+    customContentVersions: CustomContentVersion[],
+    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+    contentId?: string,
+  ): Promise<{
+    activatedContentVersion: CustomContentVersion | undefined;
+    trackConditions: TrackCondition[];
+  }> {
+    const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+
+    if (contentId) {
+      const foundContentVersion = findCustomContentVersionByContentId(
+        customContentVersions,
+        contentId,
+      );
+      if (foundContentVersion) {
+        const trackConditions = extractTrackConditions(
+          [foundContentVersion],
+          allowedTypes,
+          ConditionExtractionMode.HIDE_ONLY,
+        );
+
+        if (!isActivedHideRules(foundContentVersion)) {
+          return {
+            activatedContentVersion: foundContentVersion,
+            trackConditions,
+          };
+        }
+      }
+    }
+
+    // if the latest activated content version is found, return it
+    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
+      customContentVersions,
+      contentType,
+    );
+    if (latestActivatedContentVersion) {
+      const trackConditions = extractTrackConditions(
+        [latestActivatedContentVersion],
+        allowedTypes,
+        ConditionExtractionMode.HIDE_ONLY,
+      );
+      if (!isActivedHideRules(latestActivatedContentVersion)) {
+        return {
+          activatedContentVersion: latestActivatedContentVersion,
+          trackConditions,
+        };
+      }
+    }
+
+    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
+      customContentVersions,
+      contentType,
+    )?.[0];
+    if (autoStartContentVersion) {
+      const trackConditions = extractTrackConditions(
+        [autoStartContentVersion],
+        allowedTypes,
+        ConditionExtractionMode.HIDE_ONLY,
+      );
+      if (!isActivedHideRules(autoStartContentVersion)) {
+        return {
+          activatedContentVersion: autoStartContentVersion,
+          trackConditions,
+        };
+      }
+    }
+
+    const trackCustomContentVersions: CustomContentVersion[] =
+      filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
+    const trackConditions = extractTrackConditions(
+      trackCustomContentVersions,
+      allowedTypes,
+      ConditionExtractionMode.BOTH,
+    );
+
+    return {
+      activatedContentVersion: undefined,
+      trackConditions,
+    };
+  }
+
   async setFlowSession(
     server: Server,
     client: Socket,
@@ -2103,35 +2186,24 @@ export class WebSocketV2Service {
       externalCompanyId,
     );
 
-    let contentVersion: CustomContentVersion | undefined;
-    if (contentId) {
-      contentVersion = findCustomContentVersionByContentId(evaluatedContentVersions, contentId);
-    }
-
-    if (!contentVersion) {
-      // if the latest activated content version is found, return it
-      contentVersion = findLatestActivatedCustomContentVersion(
+    const { activatedContentVersion, trackConditions } =
+      await this.findActivatedCustomContentVersionAndTrackConditions(
         evaluatedContentVersions,
         contentType,
+        contentId,
       );
+
+    if (trackConditions.length > 0) {
+      await this.trackClientConditions(server, client, trackConditions);
     }
 
-    if (!contentVersion) {
-      // if the latest activated content version is not found, return the first available auto-start content version
-      contentVersion = filterAvailableAutoStartContentVersions(
-        evaluatedContentVersions,
-        contentType,
-      )?.[0];
-    }
-
-    if (!contentVersion) {
-      await this.trackMultipleContentClientConditions(server, client, evaluatedContentVersions);
+    if (!activatedContentVersion) {
       return false;
     }
 
     // Create new flow session
     const contentSession = await this.createContentSession(
-      contentVersion,
+      activatedContentVersion,
       environment,
       externalUserId,
       contentType,
