@@ -62,6 +62,7 @@ import {
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
   isEnabledHideRules,
+  isActivedHideRules,
 } from '@/utils/content-utils';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2163,10 +2164,7 @@ export class WebSocketV2Service {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
-
-    if (client.data.flowSession) {
-      return true;
-    }
+    const flowSession = client.data.flowSession;
 
     const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
       environment,
@@ -2174,6 +2172,13 @@ export class WebSocketV2Service {
       [contentType],
       externalCompanyId,
     );
+    const sessionContentVersion = evaluatedContentVersions.find(
+      (version) => version.contentId === flowSession.content.id,
+    );
+
+    if (sessionContentVersion && !isActivedHideRules(sessionContentVersion)) {
+      return true;
+    }
 
     const { activatedContentVersion, trackConditions } =
       await this.findActivatedCustomContentVersionAndTrackConditions(
