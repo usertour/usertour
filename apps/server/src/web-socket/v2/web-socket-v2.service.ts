@@ -2126,7 +2126,7 @@ export class WebSocketV2Service {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
-    const flowSession = await this.getContentSession(client, ContentDataType.FLOW);
+    const flowSession = this.getContentSession(client, ContentDataType.FLOW);
 
     if (flowSession) {
       return true;
@@ -2227,10 +2227,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @returns The content session
    */
-  async getContentSession(
-    client: Socket,
-    contentType: ContentDataType,
-  ): Promise<SDKContentSession | null> {
+  getContentSession(client: Socket, contentType: ContentDataType): SDKContentSession | null {
     if (contentType === ContentDataType.FLOW) {
       return client.data.flowSession;
     }
