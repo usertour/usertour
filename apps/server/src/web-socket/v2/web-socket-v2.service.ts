@@ -2287,6 +2287,32 @@ export class WebSocketV2Service {
   }
 
   /**
+   * Unset the content session for the client
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param contentType - The content type to unset
+   * @param sessionId - The ID of the session to unset
+   */
+  async unsetContentSession(
+    server: Server,
+    client: Socket,
+    contentType: ContentDataType,
+    sessionId: string,
+  ) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    if (contentType === ContentDataType.FLOW) {
+      server.to(room).emit('unset-flow-session', { sessionId });
+      client.data.flowSession = null;
+    } else {
+      server.to(room).emit('unset-checklist-session', { sessionId });
+      client.data.checklistSession = null;
+    }
+  }
+
+  /**
    * Toggle the isActive status of a specific client condition by condition ID
    * @param server - The server instance
    * @param client - The client instance
@@ -2343,18 +2369,5 @@ export class WebSocketV2Service {
     );
 
     return true;
-  }
-
-  async unsetContentSession(
-    server: Server,
-    client: Socket,
-    contentType: ContentDataType,
-    sessionId: string,
-  ) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    server.to(room).emit('unset-content-session', { contentType, sessionId });
   }
 }
