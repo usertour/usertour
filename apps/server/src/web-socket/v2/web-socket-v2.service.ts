@@ -61,6 +61,7 @@ import {
   findCustomContentVersionByContentId,
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
+  isEnabledHideRules,
 } from '@/utils/content-utils';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2117,15 +2118,12 @@ export class WebSocketV2Service {
       contentType,
     );
     if (latestActivatedContentVersion) {
-      const extractedTrackConditions = extractTrackConditions(
-        [latestActivatedContentVersion],
-        clientConditionTypes,
-        ConditionExtractionMode.HIDE_ONLY,
-      );
-      return {
-        activatedContentVersion: latestActivatedContentVersion,
-        trackConditions: extractedTrackConditions,
-      };
+      if (!isEnabledHideRules(latestActivatedContentVersion)) {
+        return {
+          activatedContentVersion: latestActivatedContentVersion,
+          trackConditions: [],
+        };
+      }
     }
 
     const autoStartContentVersion = filterAvailableAutoStartContentVersions(
@@ -2133,15 +2131,12 @@ export class WebSocketV2Service {
       contentType,
     )?.[0];
     if (autoStartContentVersion) {
-      const extractedTrackConditions = extractTrackConditions(
-        [autoStartContentVersion],
-        clientConditionTypes,
-        ConditionExtractionMode.HIDE_ONLY,
-      );
-      return {
-        activatedContentVersion: autoStartContentVersion,
-        trackConditions: extractedTrackConditions,
-      };
+      if (!isEnabledHideRules(autoStartContentVersion)) {
+        return {
+          activatedContentVersion: autoStartContentVersion,
+          trackConditions: [],
+        };
+      }
     }
 
     const trackCustomContentVersions: CustomContentVersion[] =

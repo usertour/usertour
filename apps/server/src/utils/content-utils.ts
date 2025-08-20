@@ -40,9 +40,8 @@ export const PRIORITIES = [
  * @returns True if the auto-start rules are activated, false otherwise
  */
 export const isActivedAutoStartRules = (customContentVersion: CustomContentVersion) => {
-  const config = customContentVersion.config;
-  const { enabledAutoStartRules, autoStartRules } = config;
-  if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
+  const { autoStartRules } = customContentVersion.config;
+  if (!isEnabledAutoStartRules(customContentVersion) || !isConditionsActived(autoStartRules)) {
     return false;
   }
   return true;
@@ -54,9 +53,34 @@ export const isActivedAutoStartRules = (customContentVersion: CustomContentVersi
  * @returns True if the hide rules are activated, false otherwise
  */
 export const isActivedHideRules = (customContentVersion: CustomContentVersion) => {
-  const config = customContentVersion.config;
-  const { enabledHideRules, hideRules } = config;
-  if (!enabledHideRules || !isConditionsActived(hideRules)) {
+  const { hideRules } = customContentVersion.config;
+  if (!isEnabledHideRules(customContentVersion) || !isConditionsActived(hideRules)) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Checks if the hide rules are enabled for a custom content version
+ * @param customContentVersion - The custom content version to check
+ * @returns True if the hide rules are enabled, false otherwise
+ */
+export const isEnabledHideRules = (customContentVersion: CustomContentVersion) => {
+  const { enabledHideRules, hideRules } = customContentVersion.config;
+  if (!enabledHideRules || hideRules.length === 0) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Checks if the auto-start rules are enabled for a custom content version
+ * @param customContentVersion - The custom content version to check
+ * @returns True if the auto-start rules are enabled, false otherwise
+ */
+export const isEnabledAutoStartRules = (customContentVersion: CustomContentVersion) => {
+  const { enabledAutoStartRules, autoStartRules } = customContentVersion.config;
+  if (!enabledAutoStartRules || autoStartRules.length === 0) {
     return false;
   }
   return true;
