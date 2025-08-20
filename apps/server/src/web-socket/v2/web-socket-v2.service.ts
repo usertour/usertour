@@ -2208,47 +2208,6 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Track the client conditions for the given content types
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param conditions - The conditions to track
-   */
-  async trackClientConditions(server: Server, client: Socket, conditions: TrackCondition[]) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    const existingConditions = client.data.trackConditions || [];
-
-    // Update new conditions with existing isActive values
-    const trackConditions: ActiveTrackCondition[] = conditions.map((condition: TrackCondition) => {
-      const existingCondition = existingConditions.find(
-        (existing: ActiveTrackCondition) => existing.condition.id === condition.condition.id,
-      );
-
-      if (existingCondition) {
-        return {
-          ...condition,
-          isActive: existingCondition.isActive,
-          lastUpdated: existingCondition.lastUpdated,
-        };
-      }
-
-      return {
-        ...condition,
-        isActive: false,
-        lastUpdated: new Date().toISOString(),
-      };
-    });
-
-    client.data.trackConditions = trackConditions;
-
-    for (const condition of trackConditions) {
-      server.to(room).emit('track-client-condition', condition);
-    }
-  }
-
-  /**
    * Set the content session for the client
    * @param server - The server instance
    * @param client - The client instance
@@ -2309,6 +2268,47 @@ export class WebSocketV2Service {
     } else {
       server.to(room).emit('unset-checklist-session', { sessionId });
       client.data.checklistSession = null;
+    }
+  }
+
+  /**
+   * Track the client conditions for the given content types
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param conditions - The conditions to track
+   */
+  async trackClientConditions(server: Server, client: Socket, conditions: TrackCondition[]) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    const existingConditions = client.data.trackConditions || [];
+
+    // Update new conditions with existing isActive values
+    const trackConditions: ActiveTrackCondition[] = conditions.map((condition: TrackCondition) => {
+      const existingCondition = existingConditions.find(
+        (existing: ActiveTrackCondition) => existing.condition.id === condition.condition.id,
+      );
+
+      if (existingCondition) {
+        return {
+          ...condition,
+          isActive: existingCondition.isActive,
+          lastUpdated: existingCondition.lastUpdated,
+        };
+      }
+
+      return {
+        ...condition,
+        isActive: false,
+        lastUpdated: new Date().toISOString(),
+      };
+    });
+
+    client.data.trackConditions = trackConditions;
+
+    for (const condition of trackConditions) {
+      server.to(room).emit('track-client-condition', condition);
     }
   }
 
