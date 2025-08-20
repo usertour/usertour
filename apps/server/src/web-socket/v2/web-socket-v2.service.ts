@@ -2099,13 +2099,13 @@ export class WebSocketV2Service {
     if (!contentSession) {
       return false;
     }
+    await this.setContentSession(server, client, contentSession);
     // Update session version to the latest version
     await this.prisma.bizSession.update({
       where: { id: sessionId },
       data: { versionId },
     });
 
-    await this.setContentSession(server, client, contentSession);
     //this.forceGoToStep
     const clientTrackConditions = extractClientTrackConditions(
       [customContentVersion],
