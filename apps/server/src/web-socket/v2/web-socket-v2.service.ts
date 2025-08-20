@@ -2060,6 +2060,7 @@ export class WebSocketV2Service {
     server: Server,
     client: Socket,
     customContentVersion: CustomContentVersion,
+    isCreateSession: boolean,
     options?: StartContentOptions,
   ) {
     const { stepIndex } = options ?? {};
@@ -2073,7 +2074,10 @@ export class WebSocketV2Service {
     const versionId = customContentVersion.id;
 
     let sessionId = findAvailableSessionId(session.latestSession, contentType);
-    if (!sessionId) {
+    if (!isCreateSession && !sessionId) {
+      return false;
+    }
+    if (isCreateSession) {
       const session = await this.createSession(
         {
           userId: externalUserId,
@@ -2149,6 +2153,7 @@ export class WebSocketV2Service {
         server,
         client,
         foundContentVersion,
+        true,
         options,
       );
 
@@ -2166,6 +2171,7 @@ export class WebSocketV2Service {
         server,
         client,
         latestActivatedContentVersion,
+        false,
         options,
       );
       if (isStartByLatestActivatedContentVersion) {
@@ -2182,6 +2188,7 @@ export class WebSocketV2Service {
         server,
         client,
         autoStartContentVersion,
+        true,
         options,
       );
       if (isStartByAutoStartContentVersion) {
