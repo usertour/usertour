@@ -47,7 +47,6 @@ import {
   StepSettings,
   ThemeTypesSetting,
   ContentConditionLogic,
-  RulesType,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -55,13 +54,13 @@ import {
   flowIsDismissed,
   checklistIsDimissed,
   evaluateCustomContentVersion,
-  extractTrackConditions,
   ConditionExtractionMode,
   filterActivatedContentWithoutClientConditions,
   findCustomContentVersionByContentId,
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
+  extractClientTrackConditions,
 } from '@/utils/content-utils';
 import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2064,7 +2063,6 @@ export class WebSocketV2Service {
     options?: StartContentOptions,
   ) {
     const { stepIndex } = options ?? {};
-    const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
@@ -2109,9 +2107,8 @@ export class WebSocketV2Service {
 
     await this.setContentSession(server, client, contentSession);
     //this.forceGoToStep
-    const clientTrackConditions = extractTrackConditions(
+    const clientTrackConditions = extractClientTrackConditions(
       [customContentVersion],
-      clientConditionTypes,
       ConditionExtractionMode.HIDE_ONLY,
     );
     if (clientTrackConditions.length > 0) {
@@ -2141,8 +2138,6 @@ export class WebSocketV2Service {
       [contentType],
       externalCompanyId,
     );
-
-    const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
 
     const foundContentVersion = findCustomContentVersionByContentId(
       evaluatedContentVersions,
@@ -2196,9 +2191,8 @@ export class WebSocketV2Service {
 
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, ContentDataType.FLOW);
-    const trackConditions = extractTrackConditions(
+    const trackConditions = extractClientTrackConditions(
       trackCustomContentVersions,
-      clientConditionTypes,
       ConditionExtractionMode.BOTH,
     );
     if (trackConditions.length > 0) {

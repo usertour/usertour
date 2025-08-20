@@ -621,3 +621,17 @@ export const findActivatedCustomContentVersionByContentId = (
     trackConditions: [],
   };
 };
+
+/**
+ * Extracts client track conditions from custom content versions
+ * @param customContentVersions - The custom content versions
+ * @param extractionMode - The extraction mode
+ * @returns The client track conditions
+ */
+export const extractClientTrackConditions = (
+  customContentVersions: CustomContentVersion[],
+  extractionMode: ConditionExtractionMode = ConditionExtractionMode.BOTH,
+): TrackCondition[] => {
+  const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+  return extractTrackConditions(customContentVersions, clientConditionTypes, extractionMode);
+};
