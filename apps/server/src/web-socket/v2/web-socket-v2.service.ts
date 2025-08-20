@@ -61,7 +61,6 @@ import {
   findCustomContentVersionByContentId,
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
-  isEnabledHideRules,
   isActivedHideRules,
 } from '@/utils/content-utils';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
@@ -2119,7 +2118,7 @@ export class WebSocketV2Service {
       contentType,
     );
     if (latestActivatedContentVersion) {
-      if (!isEnabledHideRules(latestActivatedContentVersion)) {
+      if (!isActivedHideRules(latestActivatedContentVersion)) {
         return {
           activatedContentVersion: latestActivatedContentVersion,
           trackConditions: [],
@@ -2132,7 +2131,7 @@ export class WebSocketV2Service {
       contentType,
     )?.[0];
     if (autoStartContentVersion) {
-      if (!isEnabledHideRules(autoStartContentVersion)) {
+      if (!isActivedHideRules(autoStartContentVersion)) {
         return {
           activatedContentVersion: autoStartContentVersion,
           trackConditions: [],
