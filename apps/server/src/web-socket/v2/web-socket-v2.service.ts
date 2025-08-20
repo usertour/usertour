@@ -2082,7 +2082,7 @@ export class WebSocketV2Service {
     return true;
   }
 
-  async processContent(
+  async processContentStart(
     server: Server,
     client: Socket,
     customContentVersion: CustomContentVersion,
@@ -2149,7 +2149,7 @@ export class WebSocketV2Service {
     );
 
     if (foundContentVersion) {
-      const isStartByContentId = await this.processContent(
+      const isStartByContentId = await this.processContentStart(
         server,
         client,
         foundContentVersion,
@@ -2166,7 +2166,7 @@ export class WebSocketV2Service {
       contentType,
     );
     if (latestActivatedContentVersion) {
-      const isStartByLatestActivatedContentVersion = await this.processContent(
+      const isStartByLatestActivatedContentVersion = await this.processContentStart(
         server,
         client,
         latestActivatedContentVersion,
@@ -2182,7 +2182,7 @@ export class WebSocketV2Service {
       contentType,
     )?.[0];
     if (autoStartContentVersion) {
-      const isStartByAutoStartContentVersion = await this.processContent(
+      const isStartByAutoStartContentVersion = await this.processContentStart(
         server,
         client,
         autoStartContentVersion,
