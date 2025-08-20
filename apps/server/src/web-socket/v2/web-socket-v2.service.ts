@@ -61,7 +61,6 @@ import {
   findCustomContentVersionByContentId,
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
-  isActivedHideRules,
 } from '@/utils/content-utils';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2090,26 +2089,25 @@ export class WebSocketV2Service {
     activatedContentVersion: CustomContentVersion | undefined;
     trackConditions: TrackCondition[];
   }> {
-    const allowedTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
+    const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
 
+    // if the contentId is provided, return the content version and track conditions
     if (contentId) {
       const foundContentVersion = findCustomContentVersionByContentId(
         customContentVersions,
         contentId,
       );
       if (foundContentVersion) {
-        const trackConditions = extractTrackConditions(
+        const foundTrackConditions = extractTrackConditions(
           [foundContentVersion],
-          allowedTypes,
+          clientConditionTypes,
           ConditionExtractionMode.HIDE_ONLY,
         );
 
-        if (!isActivedHideRules(foundContentVersion)) {
-          return {
-            activatedContentVersion: foundContentVersion,
-            trackConditions,
-          };
-        }
+        return {
+          activatedContentVersion: foundContentVersion,
+          trackConditions: foundTrackConditions,
+        };
       }
     }
 
@@ -2119,17 +2117,15 @@ export class WebSocketV2Service {
       contentType,
     );
     if (latestActivatedContentVersion) {
-      const trackConditions = extractTrackConditions(
+      const extractedTrackConditions = extractTrackConditions(
         [latestActivatedContentVersion],
-        allowedTypes,
+        clientConditionTypes,
         ConditionExtractionMode.HIDE_ONLY,
       );
-      if (!isActivedHideRules(latestActivatedContentVersion)) {
-        return {
-          activatedContentVersion: latestActivatedContentVersion,
-          trackConditions,
-        };
-      }
+      return {
+        activatedContentVersion: latestActivatedContentVersion,
+        trackConditions: extractedTrackConditions,
+      };
     }
 
     const autoStartContentVersion = filterAvailableAutoStartContentVersions(
@@ -2137,24 +2133,22 @@ export class WebSocketV2Service {
       contentType,
     )?.[0];
     if (autoStartContentVersion) {
-      const trackConditions = extractTrackConditions(
+      const extractedTrackConditions = extractTrackConditions(
         [autoStartContentVersion],
-        allowedTypes,
+        clientConditionTypes,
         ConditionExtractionMode.HIDE_ONLY,
       );
-      if (!isActivedHideRules(autoStartContentVersion)) {
-        return {
-          activatedContentVersion: autoStartContentVersion,
-          trackConditions,
-        };
-      }
+      return {
+        activatedContentVersion: autoStartContentVersion,
+        trackConditions: extractedTrackConditions,
+      };
     }
 
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(customContentVersions, ContentDataType.FLOW);
     const trackConditions = extractTrackConditions(
       trackCustomContentVersions,
-      allowedTypes,
+      clientConditionTypes,
       ConditionExtractionMode.BOTH,
     );
 
