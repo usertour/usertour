@@ -2175,16 +2175,19 @@ export class WebSocketV2Service {
       (version) => version.contentId === flowSession.content.id,
     );
 
-    if (sessionContentVersion && !isActivedHideRules(sessionContentVersion)) {
-      return true;
-    }
-
     const { activatedContentVersion, trackConditions } =
       await this.findActivatedCustomContentVersionAndTrackConditions(
         evaluatedContentVersions,
         contentType,
         contentId,
       );
+
+    if (sessionContentVersion) {
+      if (!activatedContentVersion && isActivedHideRules(sessionContentVersion)) {
+        this.unsetContentSession(server, client, contentType, flowSession.id);
+      }
+      return true;
+    }
 
     if (trackConditions.length > 0) {
       await this.trackClientConditions(server, client, trackConditions);
@@ -2330,5 +2333,18 @@ export class WebSocketV2Service {
     );
 
     return true;
+  }
+
+  async unsetContentSession(
+    server: Server,
+    client: Socket,
+    contentType: ContentDataType,
+    sessionId: string,
+  ) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    server.to(room).emit('unset-content-session', { contentType, sessionId });
   }
 }
