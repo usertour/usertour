@@ -1736,7 +1736,8 @@ export class WebSocketV2Service {
     });
   }
 
-  async createContentSession(
+  async createSDKContentSession(
+    sessionId: string,
     contentVersion: CustomContentVersion,
     environment: Environment,
     externalUserId: string,
@@ -1744,22 +1745,6 @@ export class WebSocketV2Service {
     externalCompanyId?: string,
     stepIndex?: number,
   ): Promise<SDKContentSession | null> {
-    let sessionId = findAvailableSessionId(contentVersion.session.latestSession, contentType);
-    if (!sessionId) {
-      const session = await this.createSession(
-        {
-          userId: externalUserId,
-          contentId: contentVersion.content.id,
-          companyId: externalCompanyId,
-          reason: 'auto_start',
-          context: {},
-        },
-        environment,
-      );
-      if (!session) return null;
-      sessionId = session.id;
-    }
-
     const config = await this.getConfig(environment);
     const themes = await this.fetchThemes(environment, externalUserId, externalCompanyId);
     const versionTheme = themes.find((theme) => theme.id === contentVersion.themeId);
@@ -1802,16 +1787,6 @@ export class WebSocketV2Service {
         id: currentStep.id,
       };
     }
-
-    // Update session version to the latest version
-    await this.prisma.bizSession.update({
-      where: { id: sessionId },
-      data: {
-        versionId: session.version.id,
-      },
-    });
-
-    // await this.cacheCurrentSession(session);
     return session;
   }
 
@@ -2095,7 +2070,27 @@ export class WebSocketV2Service {
     const externalCompanyId = client.data.externalCompanyId;
 
     const contentType = customContentVersion.content.type as ContentDataType;
-    const contentSession = await this.createContentSession(
+    const session = customContentVersion.session;
+    const content = customContentVersion.content;
+    const versionId = customContentVersion.id;
+
+    let sessionId = findAvailableSessionId(session.latestSession, contentType);
+    if (!sessionId) {
+      const session = await this.createSession(
+        {
+          userId: externalUserId,
+          contentId: content.id,
+          companyId: externalCompanyId,
+          reason: 'auto_start',
+          context: {},
+        },
+        environment,
+      );
+      if (!session) return false;
+      sessionId = session.id;
+    }
+    const contentSession = await this.createSDKContentSession(
+      sessionId,
       customContentVersion,
       environment,
       externalUserId,
@@ -2106,6 +2101,12 @@ export class WebSocketV2Service {
     if (!contentSession) {
       return false;
     }
+    // Update session version to the latest version
+    await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { versionId },
+    });
+
     await this.setContentSession(server, client, contentSession);
     //this.forceGoToStep
     const clientTrackConditions = extractTrackConditions(
