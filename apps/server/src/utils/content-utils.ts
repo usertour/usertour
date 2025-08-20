@@ -34,7 +34,12 @@ export const PRIORITIES = [
   ContentPriority.LOWEST,
 ];
 
-export const isAutoStartContent = (customContentVersion: CustomContentVersion) => {
+/**
+ * Checks if the auto-start rules are activated for a custom content version
+ * @param customContentVersion - The custom content version to check
+ * @returns True if the auto-start rules are activated, false otherwise
+ */
+export const isActivedAutoStartRules = (customContentVersion: CustomContentVersion) => {
   const config = customContentVersion.config;
   const { enabledAutoStartRules, autoStartRules } = config;
   if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
@@ -43,6 +48,26 @@ export const isAutoStartContent = (customContentVersion: CustomContentVersion) =
   return true;
 };
 
+/**
+ * Checks if the hide rules are activated for a custom content version
+ * @param customContentVersion - The custom content version to check
+ * @returns True if the hide rules are activated, false otherwise
+ */
+export const isActivedHideRules = (customContentVersion: CustomContentVersion) => {
+  const config = customContentVersion.config;
+  const { enabledHideRules, hideRules } = config;
+  if (!enabledHideRules || !isConditionsActived(hideRules)) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Compares two custom content versions based on their priority
+ * @param a - The first custom content version
+ * @param b - The second custom content version
+ * @returns 1 if a is greater than b, -1 if a is less than b, 0 if they are equal
+ */
 const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
   const a1 = a?.config?.autoStartRulesSetting?.priority;
   const a2 = b?.config?.autoStartRulesSetting?.priority;
@@ -267,7 +292,7 @@ export const filterAvailableAutoStartContentVersions = (
 ) => {
   return customContentVersions
     .filter((customContentVersion) => {
-      const isAutoStart = isAutoStartContent(customContentVersion);
+      const isAutoStart = isActivedAutoStartRules(customContentVersion);
       const isAllowed = isAllowedByAutoStartRulesSetting(
         customContentVersion,
         customContentVersions,
