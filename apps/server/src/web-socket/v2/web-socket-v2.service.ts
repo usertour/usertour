@@ -1144,13 +1144,7 @@ export class WebSocketV2Service {
     data: CreateSessionDto,
     environment: Environment,
   ): Promise<BizSession | null> {
-    const {
-      userId: externalUserId,
-      contentId,
-      companyId: externalCompanyId,
-      reason,
-      context = {},
-    } = data;
+    const { userId: externalUserId, contentId, companyId: externalCompanyId, reason } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
@@ -1203,21 +1197,14 @@ export class WebSocketV2Service {
           ? BizEvents.FLOW_STARTED
           : BizEvents.CHECKLIST_STARTED;
 
-      // Use trackEvent to ensure consistent event parameters
-      const baseEventData = {
-        ...context,
-      };
-
       const eventData =
         content.type === ContentDataType.FLOW
           ? {
-              ...baseEventData,
               [EventAttributes.FLOW_START_REASON]: startReason,
               [EventAttributes.FLOW_VERSION_ID]: version.id,
               [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
             }
           : {
-              ...baseEventData,
               [EventAttributes.CHECKLIST_ID]: content.id,
               [EventAttributes.CHECKLIST_NAME]: content.name,
               [EventAttributes.CHECKLIST_START_REASON]: startReason,
@@ -1225,7 +1212,7 @@ export class WebSocketV2Service {
               [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
             };
 
-      await this.trackEvent(
+      await this.trackEventV2(
         {
           userId: String(externalUserId),
           eventName,
@@ -2243,8 +2230,6 @@ export class WebSocketV2Service {
     const externalCompanyId = client.data.externalCompanyId;
     const contentType = customContentVersion.content.type as ContentDataType;
     const versionId = customContentVersion.id;
-    const userClientContext = await this.getUserClientContext(environment, externalUserId);
-    const context = userClientContext?.clientContext ?? {};
 
     let sessionId: string;
 
@@ -2257,7 +2242,6 @@ export class WebSocketV2Service {
           contentId: content.id,
           companyId: externalCompanyId,
           reason: 'auto_start',
-          context,
         },
         environment,
       );

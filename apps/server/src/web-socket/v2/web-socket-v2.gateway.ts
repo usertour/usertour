@@ -217,7 +217,7 @@ export class WebSocketV2Gateway {
     @MessageBody() trackEventDto: TrackEventDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return Boolean(await this.service.trackEvent(trackEventDto, client.data.environment));
+    return Boolean(await this.service.trackEventV2(trackEventDto, client.data.environment));
   }
 
   @SubscribeMessage('report-tooltip-target-missing')
