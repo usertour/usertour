@@ -2222,60 +2222,7 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // Check if hide rules are active early
-    if (isActivedHideRules(foundContentVersion)) {
-      return false;
-    }
-
-    const { stepIndex } = options ?? {};
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-    const externalCompanyId = client.data.externalCompanyId;
-    const contentType = foundContentVersion.content.type as ContentDataType;
-    const content = foundContentVersion.content;
-    const versionId = foundContentVersion.id;
-
-    // Create new session for contentId strategy
-    const newSession = await this.createSession(
-      {
-        userId: externalUserId,
-        contentId: content.id,
-        companyId: externalCompanyId,
-        reason: 'auto_start',
-        context: {},
-      },
-      environment,
-    );
-
-    if (!newSession) {
-      return false;
-    }
-
-    const success = await this.createAndSetContentSession(
-      server,
-      client,
-      newSession.id,
-      foundContentVersion,
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      stepIndex,
-      versionId,
-    );
-
-    if (success) {
-      const clientTrackConditions = extractClientTrackConditions(
-        [foundContentVersion],
-        ConditionExtractionMode.HIDE_ONLY,
-      );
-
-      if (clientTrackConditions.length > 0) {
-        await this.trackClientConditions(server, client, clientTrackConditions);
-      }
-    }
-
-    return success;
+    return await this.processContentVersion(server, client, foundContentVersion, options, true);
   }
 
   /**
@@ -2297,50 +2244,13 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // Check if hide rules are active early
-    if (isActivedHideRules(latestActivatedContentVersion)) {
-      return false;
-    }
-
-    const { stepIndex } = options ?? {};
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-    const externalCompanyId = client.data.externalCompanyId;
-    const contentDataType = latestActivatedContentVersion.content.type as ContentDataType;
-    const session = latestActivatedContentVersion.session;
-    const versionId = latestActivatedContentVersion.id;
-
-    // Find existing session for latest activated strategy
-    const sessionId = findAvailableSessionId(session.latestSession, contentType);
-    if (!sessionId) {
-      return false;
-    }
-
-    const success = await this.createAndSetContentSession(
+    return await this.processContentVersion(
       server,
       client,
-      sessionId,
       latestActivatedContentVersion,
-      environment,
-      externalUserId,
-      contentDataType,
-      externalCompanyId,
-      stepIndex,
-      versionId,
+      options,
+      false,
     );
-
-    if (success) {
-      const clientTrackConditions = extractClientTrackConditions(
-        [latestActivatedContentVersion],
-        ConditionExtractionMode.HIDE_ONLY,
-      );
-
-      if (clientTrackConditions.length > 0) {
-        await this.trackClientConditions(server, client, clientTrackConditions);
-      }
-    }
-
-    return success;
   }
 
   /**
@@ -2362,8 +2272,21 @@ export class WebSocketV2Service {
       return false;
     }
 
+    return await this.processContentVersion(server, client, autoStartContentVersion, options, true);
+  }
+
+  /**
+   * Process content version with common logic
+   */
+  private async processContentVersion(
+    server: Server,
+    client: Socket,
+    customContentVersion: CustomContentVersion,
+    options?: StartContentOptions,
+    createNewSession = false,
+  ): Promise<boolean> {
     // Check if hide rules are active early
-    if (isActivedHideRules(autoStartContentVersion)) {
+    if (isActivedHideRules(customContentVersion)) {
       return false;
     }
 
@@ -2371,34 +2294,48 @@ export class WebSocketV2Service {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
-    const contentDataType = autoStartContentVersion.content.type as ContentDataType;
-    const content = autoStartContentVersion.content;
-    const versionId = autoStartContentVersion.id;
+    const contentType = customContentVersion.content.type as ContentDataType;
+    const versionId = customContentVersion.id;
 
-    // Create new session for auto-start strategy
-    const newSession = await this.createSession(
-      {
-        userId: externalUserId,
-        contentId: content.id,
-        companyId: externalCompanyId,
-        reason: 'auto_start',
-        context: {},
-      },
-      environment,
-    );
+    let sessionId: string;
 
-    if (!newSession) {
-      return false;
+    if (createNewSession) {
+      // Create new session
+      const content = customContentVersion.content;
+      const newSession = await this.createSession(
+        {
+          userId: externalUserId,
+          contentId: content.id,
+          companyId: externalCompanyId,
+          reason: 'auto_start',
+          context: {},
+        },
+        environment,
+      );
+
+      if (!newSession) {
+        return false;
+      }
+
+      sessionId = newSession.id;
+    } else {
+      // Find existing session
+      const session = customContentVersion.session;
+      sessionId = findAvailableSessionId(session.latestSession, contentType);
+
+      if (!sessionId) {
+        return false;
+      }
     }
 
     const success = await this.createAndSetContentSession(
       server,
       client,
-      newSession.id,
-      autoStartContentVersion,
+      sessionId,
+      customContentVersion,
       environment,
       externalUserId,
-      contentDataType,
+      contentType,
       externalCompanyId,
       stepIndex,
       versionId,
@@ -2406,7 +2343,7 @@ export class WebSocketV2Service {
 
     if (success) {
       const clientTrackConditions = extractClientTrackConditions(
-        [autoStartContentVersion],
+        [customContentVersion],
         ConditionExtractionMode.HIDE_ONLY,
       );
 
