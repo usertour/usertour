@@ -27,6 +27,7 @@ import {
   ToggleClientConditionDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom } from '@/utils/ws-utils';
+import { ContentDataType } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -88,7 +89,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    await this.service.startContent(this.server, client);
+    await this.service.startContent(this.server, client, ContentDataType.FLOW);
     return true;
   }
 
@@ -131,7 +132,7 @@ export class WebSocketV2Gateway {
       contentId: startFlowDto.contentId,
       stepIndex: startFlowDto.stepIndex,
     };
-    return await this.service.startContent(this.server, client, options);
+    return await this.service.startContent(this.server, client, ContentDataType.FLOW, options);
   }
 
   @SubscribeMessage('end-flow')

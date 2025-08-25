@@ -425,7 +425,7 @@ export const findActivatedCustomContentVersion = (
  */
 export const filterActivatedContentWithoutClientConditions = (
   customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  contentType: ContentDataType,
 ): CustomContentVersion[] => {
   // Define the condition types to filter by
   const allowedConditionTypes = [
