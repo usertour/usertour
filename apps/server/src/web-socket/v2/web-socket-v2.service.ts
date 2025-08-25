@@ -2131,7 +2131,7 @@ export class WebSocketV2Service {
     );
 
     // Try to start content with different strategies
-    const contentStarted = await this.tryStartContentWithStrategies(
+    const contentStarted = await this.tryStartContent(
       server,
       client,
       evaluatedContentVersions,
@@ -2162,7 +2162,7 @@ export class WebSocketV2Service {
   /**
    * Try to start content using different strategies in priority order
    */
-  private async tryStartContentWithStrategies(
+  private async tryStartContent(
     server: Server,
     client: Socket,
     evaluatedContentVersions: CustomContentVersion[],
@@ -2173,106 +2173,57 @@ export class WebSocketV2Service {
 
     // Strategy 1: Try to start by specific contentId
     if (contentId) {
-      const started = await this.tryStartByContentId(
-        server,
-        client,
+      const foundContentVersion = findCustomContentVersionByContentId(
         evaluatedContentVersions,
         contentId,
+      );
+
+      if (foundContentVersion) {
+        const started = await this.processContentVersion(
+          server,
+          client,
+          foundContentVersion,
+          options,
+          true,
+        );
+        if (started) return true;
+      }
+    }
+
+    // Strategy 2: Try to start with latest activated content version
+    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
+      evaluatedContentVersions,
+      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
+    );
+
+    if (latestActivatedContentVersion) {
+      const started = await this.processContentVersion(
+        server,
+        client,
+        latestActivatedContentVersion,
         options,
+        false,
       );
       if (started) return true;
     }
 
-    // Strategy 2: Try to start with latest activated content version
-    const started = await this.tryStartByLatestActivated(
-      server,
-      client,
-      evaluatedContentVersions,
-      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
-      options,
-    );
-    if (started) return true;
-
     // Strategy 3: Try to start with auto-start content version
-    return await this.tryStartByAutoStart(
-      server,
-      client,
-      evaluatedContentVersions,
-      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
-      options,
-    );
-  }
-
-  /**
-   * Try to start content by specific contentId
-   */
-  private async tryStartByContentId(
-    server: Server,
-    client: Socket,
-    evaluatedContentVersions: CustomContentVersion[],
-    contentId: string,
-    options?: StartContentOptions,
-  ): Promise<boolean> {
-    const foundContentVersion = findCustomContentVersionByContentId(
-      evaluatedContentVersions,
-      contentId,
-    );
-
-    if (!foundContentVersion) {
-      return false;
-    }
-
-    return await this.processContentVersion(server, client, foundContentVersion, options, true);
-  }
-
-  /**
-   * Try to start content with latest activated content version
-   */
-  private async tryStartByLatestActivated(
-    server: Server,
-    client: Socket,
-    evaluatedContentVersions: CustomContentVersion[],
-    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-    options?: StartContentOptions,
-  ): Promise<boolean> {
-    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
-      evaluatedContentVersions,
-      contentType,
-    );
-
-    if (!latestActivatedContentVersion) {
-      return false;
-    }
-
-    return await this.processContentVersion(
-      server,
-      client,
-      latestActivatedContentVersion,
-      options,
-      false,
-    );
-  }
-
-  /**
-   * Try to start content with auto-start content version
-   */
-  private async tryStartByAutoStart(
-    server: Server,
-    client: Socket,
-    evaluatedContentVersions: CustomContentVersion[],
-    contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-    options?: StartContentOptions,
-  ): Promise<boolean> {
     const autoStartContentVersion = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
-      contentType,
+      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
     )?.[0];
 
-    if (!autoStartContentVersion) {
-      return false;
+    if (autoStartContentVersion) {
+      return await this.processContentVersion(
+        server,
+        client,
+        autoStartContentVersion,
+        options,
+        true,
+      );
     }
 
-    return await this.processContentVersion(server, client, autoStartContentVersion, options, true);
+    return false;
   }
 
   /**
