@@ -24,9 +24,9 @@ export type CreateSessionDto = {
   companyId?: string;
   reason?: string;
   context?: {
-    pageUrl?: string;
-    viewportWidth?: number;
-    viewportHeight?: number;
+    page_url?: string;
+    viewport_width?: number;
+    viewport_height?: number;
   };
 };
 

@@ -1149,7 +1149,7 @@ export class WebSocketV2Service {
       contentId,
       companyId: externalCompanyId,
       reason,
-      context,
+      context = {},
     } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -1205,9 +1205,7 @@ export class WebSocketV2Service {
 
       // Use trackEvent to ensure consistent event parameters
       const baseEventData = {
-        [EventAttributes.PAGE_URL]: context?.pageUrl,
-        [EventAttributes.VIEWPORT_WIDTH]: context?.viewportWidth,
-        [EventAttributes.VIEWPORT_HEIGHT]: context?.viewportHeight,
+        ...context,
       };
 
       const eventData =
@@ -1660,14 +1658,13 @@ export class WebSocketV2Service {
   }
 
   async trackEventV2(data: TrackEventDto, environment: Environment): Promise<boolean> {
-    const clientContext = await this.getUserClientContext(environment, data.userId);
-    const newData = clientContext
+    const userClientContext = await this.getUserClientContext(environment, data.userId);
+    const clientContext = userClientContext?.clientContext ?? {};
+    const newData = userClientContext
       ? {
           ...data,
           eventData: {
-            [EventAttributes.PAGE_URL]: clientContext.pageUrl,
-            [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
-            [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+            ...clientContext,
             ...data.eventData,
           },
         }
@@ -2246,6 +2243,8 @@ export class WebSocketV2Service {
     const externalCompanyId = client.data.externalCompanyId;
     const contentType = customContentVersion.content.type as ContentDataType;
     const versionId = customContentVersion.id;
+    const userClientContext = await this.getUserClientContext(environment, externalUserId);
+    const context = userClientContext?.clientContext ?? {};
 
     let sessionId: string;
 
@@ -2258,7 +2257,7 @@ export class WebSocketV2Service {
           contentId: content.id,
           companyId: externalCompanyId,
           reason: 'auto_start',
-          context: {},
+          context,
         },
         environment,
       );
