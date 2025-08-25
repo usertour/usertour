@@ -2118,8 +2118,8 @@ export class WebSocketV2Service {
     const externalCompanyId = client.data.externalCompanyId;
 
     // Early return if session already exists
-    const flowSession = this.getContentSession(client, ContentDataType.FLOW);
-    if (flowSession) {
+    const contentSession = this.getContentSession(client, contentType);
+    if (contentSession) {
       return true;
     }
 
@@ -2130,7 +2130,6 @@ export class WebSocketV2Service {
       externalCompanyId,
     );
 
-    // Try to start content with different strategies
     const contentStarted = await this.tryStartContent(
       server,
       client,
