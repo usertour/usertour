@@ -64,7 +64,7 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon />
+                <QuestionMarkCircledIcon className="cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs bg-foreground text-background">
                 Whether the {contentType} can auto-start for the same user just once, or many times.
@@ -173,7 +173,7 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <QuestionMarkCircledIcon />
+              <QuestionMarkCircledIcon className="cursor-help" />
             </TooltipTrigger>
             <TooltipContent className="max-w-xs bg-foreground text-background">
               <p>
@@ -268,7 +268,7 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon />
+            <QuestionMarkCircledIcon className="cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
             If enabled, the {contentType} will only auto-start if no other {contentType} has shown

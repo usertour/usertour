@@ -40,7 +40,7 @@ export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon />
+            <QuestionMarkCircledIcon className="cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
             If enabled, the {contentType} will only auto-start if the user has not completed it

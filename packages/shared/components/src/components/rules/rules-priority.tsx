@@ -58,7 +58,7 @@ export const RulesPriority = (props: RulesPriorityProps) => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon />
+            <QuestionMarkCircledIcon className="cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
             <p>
