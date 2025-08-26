@@ -14,7 +14,7 @@ import {
   TooltipTargetMissingDto,
 } from '@/types/websocket';
 import { Socket, Evented, window } from '@/utils';
-import { SDKContentSession } from '@/types/sdk';
+import { SDKContentSession, TrackCondition } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
@@ -148,6 +148,11 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     // Listen for checklist session events from Socket.IO
     this.socket.on(WebSocketEvents.SET_CHECKLIST_SESSION, (message: unknown) => {
       this.trigger(WebSocketEvents.SET_CHECKLIST_SESSION, message as SDKContentSession);
+    });
+
+    // Listen for track client condition events from Socket.IO
+    this.socket.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (message: unknown) => {
+      this.trigger(WebSocketEvents.TRACK_CLIENT_CONDITION, message as TrackCondition);
     });
   }
 

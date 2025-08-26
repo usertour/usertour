@@ -38,7 +38,7 @@ import {
 } from '@/utils';
 import { buildNavigateUrl, hasAttributesChanged, createMockUser } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
-import { WebSocketEvents, ErrorMessages, SDKContentSession } from '@/types';
+import { WebSocketEvents, ErrorMessages, SDKContentSession, TrackCondition } from '@/types';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -303,6 +303,9 @@ export class UsertourCore extends Evented {
     this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
       this.setChecklistSession(session as SDKContentSession);
     });
+    this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
+      this.trackClientCondition(condition as TrackCondition);
+    });
   }
 
   /**
@@ -371,6 +374,10 @@ export class UsertourCore extends Evented {
   setChecklistSession(session: SDKContentSession) {
     console.log('setChecklistSession', session as SDKContentSession);
     //
+  }
+
+  trackClientCondition(condition: TrackCondition) {
+    console.log('trackClientCondition', condition);
   }
 
   /**
