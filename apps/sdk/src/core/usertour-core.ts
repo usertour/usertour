@@ -12,6 +12,7 @@ import {
   BizCompany,
   BizUserInfo,
   PlanType,
+  RulesCondition,
   SDKConfig,
   SDKContent,
   SDKSettingsMode,
@@ -24,7 +25,7 @@ import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourSocket } from '@/core/usertour-socket';
-import { UsertourRuleMonitor } from '@/core/usertour-rule-monitor';
+import { UsertourConditionsMonitor } from '@/core/usertour-conditions-monitor';
 import {
   autoBind,
   document,
@@ -72,8 +73,8 @@ export class UsertourCore extends Evented {
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
 
-  // Rule monitoring
-  private ruleMonitor: UsertourRuleMonitor | null = null;
+  // Condition monitoring
+  private conditionsMonitor: UsertourConditionsMonitor | null = null;
 
   constructor() {
     super();
@@ -81,6 +82,7 @@ export class UsertourCore extends Evented {
     this.socketService = new UsertourSocket();
     this.id = uuidV4();
     this.initializeEventListeners();
+    this.initializeConditionsMonitor();
   }
 
   /**
@@ -210,12 +212,9 @@ export class UsertourCore extends Evented {
     const { userId } = startOptions;
     this.startOptions = Object.assign({}, startOptions);
     //reset
-    this.setUser(undefined);
-    this.setCompany(undefined);
     this.reset();
     //start
     this.setUser(createMockUser(userId));
-    this.start();
   }
 
   async startContent(contentId: string, opts?: UserTourTypes.StartOptions) {
@@ -376,8 +375,12 @@ export class UsertourCore extends Evented {
     //
   }
 
+  /**
+   * Tracks a client condition
+   * @param condition - The condition to track
+   */
   trackClientCondition(condition: TrackCondition) {
-    console.log('trackClientCondition', condition);
+    this.addConditions([condition.condition]);
   }
 
   /**
@@ -391,6 +394,8 @@ export class UsertourCore extends Evented {
       return;
     }
 
+    this.reset();
+    this.startConditionsMonitor();
     // Use dedicated initialization method
     await this.initializeSocket(userId, token);
 
@@ -404,8 +409,6 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
-
-    this.reset();
   }
 
   /**
@@ -585,14 +588,6 @@ export class UsertourCore extends Evented {
     }
   }
 
-  async start() {
-    const userInfo = this.userInfo;
-    if (!userInfo) {
-      return;
-    }
-    this.reset();
-  }
-
   getSdkConfig() {
     return this.sdkConfig;
   }
@@ -706,8 +701,8 @@ export class UsertourCore extends Evented {
    * Ends all active content and resets the application
    */
   async endAll() {
-    // Destroy rule monitor
-    this.destroyRuleMonitor();
+    // Destroy condition monitor
+    this.destroyConditionsMonitor();
 
     for (const tour of this.tours) {
       tour.destroy();
@@ -717,38 +712,51 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Creates and initializes rule monitor
+   * Creates and initializes condition monitor
    */
-  createRuleMonitor(options?: { autoStart?: boolean; interval?: number }): UsertourRuleMonitor {
-    if (this.ruleMonitor) {
-      this.ruleMonitor.destroy();
+  initializeConditionsMonitor() {
+    if (this.conditionsMonitor) {
+      this.conditionsMonitor.destroy();
     }
 
-    this.ruleMonitor = new UsertourRuleMonitor(options);
+    this.conditionsMonitor = new UsertourConditionsMonitor({ autoStart: false });
 
-    // Listen for rule state change events
-    this.ruleMonitor.on('rule-state-changed', (eventData) => {
-      // Handle rule state changes - can be extended for custom logic
-      logger.info('Rule state changed in core:', eventData);
+    // Listen for condition state change events
+    this.conditionsMonitor.on('condition-state-changed', (eventData) => {
+      // Handle condition state changes - can be extended for custom logic
+      logger.info('Condition state changed in core:', eventData);
     });
-
-    return this.ruleMonitor;
   }
 
   /**
-   * Gets the current rule monitor instance
+   * Gets the current condition monitor instance
    */
-  getRuleMonitor(): UsertourRuleMonitor | null {
-    return this.ruleMonitor;
+  getConditionsMonitor(): UsertourConditionsMonitor | null {
+    return this.conditionsMonitor;
   }
 
   /**
-   * Destroys the rule monitor
+   * Starts the condition monitor
    */
-  destroyRuleMonitor(): void {
-    if (this.ruleMonitor) {
-      this.ruleMonitor.destroy();
-      this.ruleMonitor = null;
+  startConditionsMonitor() {
+    this.conditionsMonitor?.start();
+  }
+
+  /**
+   * Adds conditions to the condition monitor
+   * @param conditions - The conditions to add
+   */
+  addConditions(conditions: RulesCondition[]) {
+    this.conditionsMonitor?.addConditions(conditions);
+  }
+
+  /**
+   * Destroys the condition monitor
+   */
+  destroyConditionsMonitor(): void {
+    if (this.conditionsMonitor) {
+      this.conditionsMonitor.destroy();
+      this.conditionsMonitor = null;
     }
   }
 }
