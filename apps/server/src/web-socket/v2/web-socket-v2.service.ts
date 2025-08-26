@@ -80,14 +80,6 @@ interface SegmentDataItem {
   operators: 'and' | 'or';
 }
 
-/**
- * Interface for active track condition with tracking state
- */
-interface ActiveTrackCondition extends TrackCondition {
-  isActive: boolean;
-  lastUpdated: string;
-}
-
 @Injectable()
 export class WebSocketV2Service {
   private readonly logger = new Logger(WebSocketV2Service.name);
@@ -2355,7 +2347,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @param conditions - The conditions to track
    */
-  async trackClientConditions(server: Server, client: Socket, conditions: TrackCondition[]) {
+  async trackClientConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
 
@@ -2363,30 +2355,34 @@ export class WebSocketV2Service {
     const existingConditions = client.data.trackConditions || [];
 
     // Update new conditions with existing isActive values
-    const trackConditions: ActiveTrackCondition[] = conditions.map((condition: TrackCondition) => {
+    const conditions: TrackCondition[] = trackConditions.map((trackCondition: TrackCondition) => {
       const existingCondition = existingConditions.find(
-        (existing: ActiveTrackCondition) => existing.condition.id === condition.condition.id,
+        (existing: TrackCondition) => existing.condition.id === trackCondition.condition.id,
       );
 
       if (existingCondition) {
         return {
-          ...condition,
-          isActive: existingCondition.isActive,
-          lastUpdated: existingCondition.lastUpdated,
+          ...trackCondition,
+          condition: {
+            ...trackCondition.condition,
+            actived: existingCondition.condition.actived,
+          },
         };
       }
 
       return {
-        ...condition,
-        isActive: false,
-        lastUpdated: new Date().toISOString(),
+        ...trackCondition,
+        condition: {
+          ...trackCondition.condition,
+          actived: false,
+        },
       };
     });
 
-    client.data.trackConditions = trackConditions;
+    client.data.trackConditions = conditions;
 
-    for (const trackCondition of trackConditions) {
-      server.to(room).emit('track-client-condition', trackCondition.condition);
+    for (const condition of conditions) {
+      server.to(room).emit('track-client-condition', condition);
     }
   }
 
@@ -2411,7 +2407,7 @@ export class WebSocketV2Service {
 
     // Check if condition exists
     const conditionExists = existingConditions.some(
-      (condition: ActiveTrackCondition) => condition.condition.id === conditionId,
+      (condition: TrackCondition) => condition.condition.id === conditionId,
     );
 
     if (!conditionExists) {
@@ -2420,7 +2416,7 @@ export class WebSocketV2Service {
     }
 
     // Update conditions using map
-    const updatedConditions = existingConditions.map((condition: ActiveTrackCondition) => {
+    const updatedConditions = existingConditions.map((condition: TrackCondition) => {
       if (condition.condition.id === conditionId) {
         return {
           ...condition,
@@ -2436,7 +2432,7 @@ export class WebSocketV2Service {
 
     // Find the updated condition to emit
     const updatedCondition = updatedConditions.find(
-      (condition: ActiveTrackCondition) => condition.condition.id === conditionId,
+      (condition: TrackCondition) => condition.condition.id === conditionId,
     );
 
     // Emit the updated condition to the client
