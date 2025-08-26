@@ -25,7 +25,10 @@ import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourSocket } from '@/core/usertour-socket';
-import { UsertourConditionsMonitor } from '@/core/usertour-conditions-monitor';
+import {
+  ConditionStateChangeEvent,
+  UsertourConditionsMonitor,
+} from '@/core/usertour-conditions-monitor';
 import {
   autoBind,
   document,
@@ -722,9 +725,18 @@ export class UsertourCore extends Evented {
     this.conditionsMonitor = new UsertourConditionsMonitor({ autoStart: false });
 
     // Listen for condition state change events
-    this.conditionsMonitor.on('condition-state-changed', (eventData) => {
-      // Handle condition state changes - can be extended for custom logic
-      logger.info('Condition state changed in core:', eventData);
+    this.conditionsMonitor.on('condition-state-changed', (eventData: unknown) => {
+      const changeEvent = eventData as ConditionStateChangeEvent;
+      if (!changeEvent?.condition?.id) {
+        return;
+      }
+      this.socketService.toggleClientCondition(
+        {
+          conditionId: changeEvent?.condition?.id,
+          isActive: changeEvent?.state === 'activated',
+        },
+        { batch: true },
+      );
     });
   }
 

@@ -91,3 +91,8 @@ export type TooltipTargetMissingDto = {
   sessionId: string;
   stepId: string;
 };
+
+export type ToggleClientConditionDto = {
+  conditionId: string;
+  isActive: boolean;
+};

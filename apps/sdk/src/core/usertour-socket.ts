@@ -12,6 +12,7 @@ import {
   ShowChecklistDto,
   UpdateClientContextDto,
   TooltipTargetMissingDto,
+  ToggleClientConditionDto,
 } from '@/types/websocket';
 import { Socket, Evented, window } from '@/utils';
 import { SDKContentSession, TrackCondition } from '@/types/sdk';
@@ -241,6 +242,14 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
     return await this.socket.send(WebSocketEvents.REPORT_TOOLTIP_TARGET_MISSING, params, options);
+  }
+
+  async toggleClientCondition(
+    params: ToggleClientConditionDto,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    if (!this.socket) return false;
+    return await this.socket.send(WebSocketEvents.TOGGLE_CLIENT_CONDITION, params, options);
   }
 
   // Convenience methods for common operations

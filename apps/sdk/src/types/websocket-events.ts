@@ -20,4 +20,5 @@ export enum WebSocketEvents {
   SHOW_CHECKLIST = 'show-checklist',
   UPDATE_CLIENT_CONTEXT = 'update-client-context',
   REPORT_TOOLTIP_TARGET_MISSING = 'report-tooltip-target-missing',
+  TOGGLE_CLIENT_CONDITION = 'toggle-client-condition',
 }

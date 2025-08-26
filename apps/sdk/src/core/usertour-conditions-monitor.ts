@@ -19,11 +19,11 @@ interface ConditionsMonitorOptions {
 /**
  * Event data for condition state change
  */
-interface ConditionStateChangeEvent {
+export type ConditionStateChangeEvent = {
   condition: RulesCondition;
   timestamp: number;
   state: 'activated' | 'deactivated';
-}
+};
 
 /**
  * UsertourConditionsMonitor handles dynamic conditions monitoring and reporting
