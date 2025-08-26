@@ -38,3 +38,7 @@ export type StartContentOptions = {
   contentId?: string;
   stepIndex?: number;
 };
+
+export type UnTrackedCondition = {
+  conditionId: string;
+};

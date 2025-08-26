@@ -15,7 +15,7 @@ import {
   ToggleClientConditionDto,
 } from '@/types/websocket';
 import { Socket, Evented, window } from '@/utils';
-import { SDKContentSession, TrackCondition } from '@/types/sdk';
+import { SDKContentSession, TrackCondition, UnTrackedCondition } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
@@ -154,6 +154,11 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     // Listen for track client condition events from Socket.IO
     this.socket.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (message: unknown) => {
       this.trigger(WebSocketEvents.TRACK_CLIENT_CONDITION, message as TrackCondition);
+    });
+
+    // Listen for untrack client condition events from Socket.IO
+    this.socket.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
+      this.trigger(WebSocketEvents.UNTRACK_CLIENT_CONDITION, message as UnTrackedCondition);
     });
   }
 

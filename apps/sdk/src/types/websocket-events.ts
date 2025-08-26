@@ -6,6 +6,7 @@ export enum WebSocketEvents {
   SET_FLOW_SESSION = 'set-flow-session',
   SET_CHECKLIST_SESSION = 'set-checklist-session',
   TRACK_CLIENT_CONDITION = 'track-client-condition',
+  UNTRACK_CLIENT_CONDITION = 'untrack-client-condition',
 
   // Outgoing events (to server)
   UPSERT_USER = 'upsert-user',

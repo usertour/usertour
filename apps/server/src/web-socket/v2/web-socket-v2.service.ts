@@ -2415,28 +2415,25 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // Update conditions using map
-    const updatedConditions = existingConditions.map((condition: TrackCondition) => {
-      if (condition.condition.id === conditionId) {
+    // Update existing conditions with the new active status
+    const conditions = existingConditions.map((trackCondition: TrackCondition) => {
+      if (trackCondition.condition.id === conditionId) {
         return {
-          ...condition,
-          isActive,
-          lastUpdated: new Date().toISOString(),
+          ...trackCondition,
+          condition: {
+            ...trackCondition.condition,
+            actived: isActive,
+          },
         };
       }
-      return condition;
+      return trackCondition;
     });
 
     // Update client data
-    client.data.trackConditions = updatedConditions;
+    client.data.trackConditions = conditions;
 
-    // Find the updated condition to emit
-    const updatedCondition = updatedConditions.find(
-      (condition: TrackCondition) => condition.condition.id === conditionId,
-    );
-
-    // Emit the updated condition to the client
-    server.to(room).emit('untrack-client-condition', updatedCondition);
+    // Emit the untracked condition to the client
+    server.to(room).emit('untrack-client-condition', { conditionId });
 
     this.logger.log(
       `Updated condition ${conditionId} isActive status to ${isActive} for user ${externalUserId}`,

@@ -42,7 +42,13 @@ import {
 } from '@/utils';
 import { buildNavigateUrl, hasAttributesChanged, createMockUser } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
-import { WebSocketEvents, ErrorMessages, SDKContentSession, TrackCondition } from '@/types';
+import {
+  WebSocketEvents,
+  ErrorMessages,
+  SDKContentSession,
+  TrackCondition,
+  UnTrackedCondition,
+} from '@/types';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -308,6 +314,10 @@ export class UsertourCore extends Evented {
     this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
       this.trackClientCondition(condition as TrackCondition);
     });
+    this.socketService.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
+      const untrackedCondition = message as UnTrackedCondition;
+      this.removeConditions([untrackedCondition.conditionId]);
+    });
   }
 
   /**
@@ -384,6 +394,14 @@ export class UsertourCore extends Evented {
    */
   trackClientCondition(condition: TrackCondition) {
     this.addConditions([condition.condition]);
+  }
+
+  /**
+   * Removes conditions from the condition monitor
+   * @param conditionIds - The IDs of the conditions to remove
+   */
+  removeConditions(conditionIds: string[]) {
+    this.conditionsMonitor?.removeConditions(conditionIds);
   }
 
   /**

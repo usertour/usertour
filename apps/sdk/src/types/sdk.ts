@@ -33,3 +33,7 @@ export type TrackCondition = {
   versionId: string;
   condition: RulesCondition;
 };
+
+export type UnTrackedCondition = {
+  conditionId: string;
+};
