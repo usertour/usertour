@@ -2385,8 +2385,8 @@ export class WebSocketV2Service {
 
     client.data.trackConditions = trackConditions;
 
-    for (const condition of trackConditions) {
-      server.to(room).emit('track-client-condition', condition);
+    for (const trackCondition of trackConditions) {
+      server.to(room).emit('track-client-condition', trackCondition.condition);
     }
   }
 
