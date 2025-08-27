@@ -2197,7 +2197,7 @@ export class WebSocketV2Service {
     );
 
     if (trackConditions.length > 0) {
-      await this.trackClientConditions(server, client, trackConditions);
+      this.trackClientConditions(server, client, trackConditions);
     }
 
     return true;
@@ -2348,14 +2348,14 @@ export class WebSocketV2Service {
       [customContentVersion],
       ConditionExtractionMode.HIDE_ONLY,
     );
+
     const excludeConditionIds = clientTrackConditions?.map(
       (trackCondition) => trackCondition.condition.id,
     );
-
     this.untrackCurrentTrackConditions(server, client, excludeConditionIds);
 
     if (clientTrackConditions.length > 0) {
-      await this.trackClientConditions(server, client, clientTrackConditions);
+      this.trackClientConditions(server, client, clientTrackConditions);
     }
 
     return true;
@@ -2428,7 +2428,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @param conditions - The conditions to track
    */
-  async trackClientConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
+  trackClientConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
 
@@ -2543,28 +2543,25 @@ export class WebSocketV2Service {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const room = getExternalUserRoom(environment.id, externalUserId);
+
+    const currentTrackConditions = client.data.trackConditions as TrackCondition[];
+    const conditionIdsToRemove: string[] = [];
+
     for (const trackCondition of trackConditions) {
-      server.to(room).emit('untrack-client-condition', {
+      const emitted = server.to(room).emit('untrack-client-condition', {
         conditionId: trackCondition.condition.id,
       });
+
+      if (emitted) {
+        conditionIdsToRemove.push(trackCondition.condition.id);
+      }
     }
-  }
 
-  /**
-   * Un-track the client conditions for the given content types
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param conditionIds - The IDs of the conditions to un-track
-   */
-  untrackClientConditions(server: Server, client: Socket, conditionIds: string[]) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    for (const conditionId of conditionIds) {
-      server.to(room).emit('untrack-client-condition', {
-        conditionId,
-      });
+    // Remove successfully emitted conditions from client.data.trackConditions
+    if (conditionIdsToRemove.length > 0) {
+      client.data.trackConditions = currentTrackConditions.filter(
+        (condition: TrackCondition) => !conditionIdsToRemove.includes(condition.condition.id),
+      );
     }
   }
 }
