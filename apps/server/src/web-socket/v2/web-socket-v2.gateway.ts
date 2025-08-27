@@ -236,7 +236,9 @@ export class WebSocketV2Gateway {
     @MessageBody() { conditionId, isActive }: ToggleClientConditionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.toggleClientCondition(client, conditionId, isActive);
+    await this.service.toggleClientCondition(client, conditionId, isActive);
+    await this.service.startContent(this.server, client, ContentDataType.FLOW);
+    return true;
   }
 
   /**
