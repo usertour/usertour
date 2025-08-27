@@ -2468,11 +2468,15 @@ export class WebSocketV2Service {
         ),
     );
 
+    const emitTrackConditions: TrackCondition[] = [];
     for (const condition of newConditions) {
-      server.to(room).emit('track-client-condition', condition);
+      const emitted = server.to(room).emit('track-client-condition', condition);
+      if (emitted) {
+        emitTrackConditions.push(condition);
+      }
     }
 
-    client.data.trackConditions = conditions;
+    client.data.trackConditions = emitTrackConditions;
   }
 
   /**
