@@ -2162,13 +2162,15 @@ export class WebSocketV2Service {
       [contentType],
     );
     const contentSession = this.getContentSession(client, contentType);
+    const clientTrackConditions = client.data.trackConditions as TrackCondition[];
 
     if (contentSession) {
       const customContentVersion = evaluatedContentVersions.find(
         (version) => version.id === contentSession?.version.id,
       );
       if (!customContentVersion || isActivedHideRules(customContentVersion)) {
-        await this.unsetContentSession(server, client, contentType, contentSession.id);
+        this.unsetContentSession(server, client, contentType, contentSession.id);
+        this.untrackTrackConditions(server, client, clientTrackConditions);
       } else {
         return true;
       }
@@ -2397,7 +2399,7 @@ export class WebSocketV2Service {
    * @param contentType - The content type to unset
    * @param sessionId - The ID of the session to unset
    */
-  async unsetContentSession(
+  unsetContentSession(
     server: Server,
     client: Socket,
     contentType: ContentDataType,
@@ -2463,21 +2465,13 @@ export class WebSocketV2Service {
 
   /**
    * Toggle the isActive status of a specific client condition by condition ID
-   * @param server - The server instance
    * @param client - The client instance
    * @param conditionId - The ID of the condition to toggle
    * @param isActive - The new active status
    */
-  async toggleClientCondition(
-    server: Server,
-    client: Socket,
-    conditionId: string,
-    isActive: boolean,
-  ) {
-    const environment = client.data.environment;
+  async toggleClientCondition(client: Socket, conditionId: string, isActive: boolean) {
     const externalUserId = client.data.externalUserId;
 
-    const room = getExternalUserRoom(environment.id, externalUserId);
     const existingConditions = client.data.trackConditions || [];
 
     // Check if condition exists
@@ -2507,13 +2501,41 @@ export class WebSocketV2Service {
     // Update client data
     client.data.trackConditions = conditions;
 
-    // Emit the untracked condition to the client
-    server.to(room).emit('untrack-client-condition', { conditionId });
-
-    this.logger.log(
-      `Updated condition ${conditionId} isActive status to ${isActive} for user ${externalUserId}`,
-    );
-
     return true;
+  }
+
+  /**
+   * Un-track the client conditions for the given content types
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param trackConditions - The conditions to un-track
+   */
+  untrackTrackConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    for (const trackCondition of trackConditions) {
+      server.to(room).emit('untrack-client-condition', {
+        conditionId: trackCondition.condition.id,
+      });
+    }
+  }
+
+  /**
+   * Un-track the client conditions for the given content types
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param conditionIds - The IDs of the conditions to un-track
+   */
+  untrackClientConditions(server: Server, client: Socket, conditionIds: string[]) {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    for (const conditionId of conditionIds) {
+      server.to(room).emit('untrack-client-condition', {
+        conditionId,
+      });
+    }
   }
 }
