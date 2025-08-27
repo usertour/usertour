@@ -2159,10 +2159,10 @@ export class WebSocketV2Service {
     const contentSession = this.getContentSession(client, contentType);
 
     if (contentSession) {
-      const sessionCustomContentVersion = evaluatedContentVersions.find(
+      const customContentVersion = evaluatedContentVersions.find(
         (version) => version.id === contentSession?.version.id,
       );
-      if (!sessionCustomContentVersion || isActivedHideRules(sessionCustomContentVersion)) {
+      if (!customContentVersion || isActivedHideRules(customContentVersion)) {
         await this.unsetContentSession(server, client, contentType, contentSession.id);
       } else {
         return true;
