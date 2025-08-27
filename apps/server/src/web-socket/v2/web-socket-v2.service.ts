@@ -2462,15 +2462,16 @@ export class WebSocketV2Service {
 
     client.data.trackConditions = conditions;
 
-    for (const condition of conditions) {
-      // Only emit if the condition is not already in existingConditions
-      const isNewCondition = !existingConditions.some(
-        (existing: TrackCondition) => existing.condition.id === condition.condition.id,
-      );
+    // Filter out conditions that already exist to only emit new ones
+    const newConditions = conditions.filter(
+      (condition) =>
+        !existingConditions.some(
+          (existing: TrackCondition) => existing.condition.id === condition.condition.id,
+        ),
+    );
 
-      if (isNewCondition) {
-        server.to(room).emit('track-client-condition', condition);
-      }
+    for (const condition of newConditions) {
+      server.to(room).emit('track-client-condition', condition);
     }
   }
 
