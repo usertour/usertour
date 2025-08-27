@@ -47,6 +47,7 @@ import {
   StepSettings,
   ThemeTypesSetting,
   ContentConditionLogic,
+  RulesType,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -535,7 +536,7 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const userAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.USER);
     switch (rules.type) {
-      case 'user-attr': {
+      case RulesType.USER_ATTR: {
         return await this.activedUserAttributeRulesCondition(
           rules,
           environment,
@@ -544,7 +545,7 @@ export class WebSocketV2Service {
           externalCompanyId,
         );
       }
-      case 'segment': {
+      case RulesType.SEGMENT: {
         const { segmentId } = rules.data;
         const segment = await this.prisma.segment.findFirst({
           where: { id: segmentId },
@@ -571,7 +572,7 @@ export class WebSocketV2Service {
         }
         return false;
       }
-      case 'content': {
+      case RulesType.CONTENT: {
         return await this.activedContentRulesCondition(rules, bizUser);
       }
       default: {
@@ -1734,18 +1735,18 @@ export class WebSocketV2Service {
     client: Socket,
     contentTypes: ContentDataType[],
   ): Promise<CustomContentVersion[]> {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-    const externalCompanyId = client.data.externalCompanyId;
+    const environment = client.data.environment as Environment;
+    const externalUserId = client.data.externalUserId as string;
+    const externalCompanyId = client.data.externalCompanyId as string;
     const userClientContext = await this.getUserClientContext(environment, externalUserId);
     const clientContext = userClientContext?.clientContext ?? {};
-    const trackConditions = client.data.trackConditions || [];
+    const trackConditions = (client.data.trackConditions as TrackCondition[]) || [];
     const activatedIds = trackConditions
-      .filter((condition: RulesCondition) => condition.actived)
-      .map((condition: RulesCondition) => condition.id);
+      .filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
+      .map((trackCondition: TrackCondition) => trackCondition.condition.id);
     const deactivatedIds = trackConditions
-      .filter((condition: RulesCondition) => !condition.actived)
-      .map((condition: RulesCondition) => condition.id);
+      .filter((trackCondition: TrackCondition) => !trackCondition.condition.actived)
+      .map((trackCondition: TrackCondition) => trackCondition.condition.id);
 
     const contentVersions = await this.fetchCustomContentVersions(
       environment,
@@ -1757,6 +1758,10 @@ export class WebSocketV2Service {
     );
 
     return await evaluateCustomContentVersion(filteredContentVersions, {
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
+        [RulesType.TIME]: true,
+      },
       clientContext,
       activatedIds,
       deactivatedIds,
