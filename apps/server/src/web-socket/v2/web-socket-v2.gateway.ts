@@ -140,16 +140,7 @@ export class WebSocketV2Gateway {
     @MessageBody() endFlowDto: EndFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    const environment = client.data.environment;
-    await this.service.endFlow(
-      client.data.externalUserId,
-      endFlowDto.sessionId,
-      endFlowDto.reason,
-      environment,
-    );
-
-    // Unset session ID if it matches the ended session
-    this.unsetContentSessionId(client, endFlowDto.sessionId);
+    await this.service.endFlow(client, endFlowDto);
 
     return true;
   }
@@ -239,19 +230,5 @@ export class WebSocketV2Gateway {
     await this.service.toggleClientCondition(client, conditionId, isActive);
     await this.service.startContent(this.server, client, ContentDataType.FLOW);
     return true;
-  }
-
-  /**
-   * Clear client session IDs if they match the provided session ID
-   */
-  private unsetContentSessionId(client: Socket, sessionId: string): void {
-    const sessionKeys = ['flowSessionId', 'checklistSessionId'] as const;
-
-    for (const key of sessionKeys) {
-      if (client.data[key] === sessionId) {
-        client.data[key] = null;
-        break;
-      }
-    }
   }
 }

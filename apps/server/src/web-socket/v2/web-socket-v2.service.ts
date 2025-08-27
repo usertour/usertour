@@ -48,6 +48,7 @@ import {
   ThemeTypesSetting,
   ContentConditionLogic,
   RulesType,
+  EndFlowDto,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -1835,18 +1836,13 @@ export class WebSocketV2Service {
 
   /**
    * End flow
-   * @param externalUserId - The external user ID
-   * @param sessionId - The session ID
-   * @param reason - The reason for ending the flow
-   * @param environment - The environment
+   * @param client - The client instance
+   * @param endFlowDto - The end flow DTO
    * @returns True if the event was tracked successfully
    */
-  async endFlow(
-    externalUserId: string,
-    sessionId: string,
-    reason: string,
-    environment: Environment,
-  ): Promise<boolean> {
+  async endFlow(client: Socket, endFlowDto: EndFlowDto): Promise<boolean> {
+    const { sessionId, reason } = endFlowDto;
+    const { externalUserId, environment } = this.getClientData(client);
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
     });
@@ -1876,6 +1872,8 @@ export class WebSocketV2Service {
       },
       environment,
     );
+
+    this.unsetSessionData(client, ContentDataType.FLOW);
 
     return true;
   }
@@ -2415,9 +2413,21 @@ export class WebSocketV2Service {
     const room = getExternalUserRoom(environment.id, externalUserId);
     if (contentType === ContentDataType.FLOW) {
       server.to(room).emit('unset-flow-session', { sessionId });
-      client.data.flowSession = null;
     } else if (contentType === ContentDataType.CHECKLIST) {
       server.to(room).emit('unset-checklist-session', { sessionId });
+    }
+    this.unsetSessionData(client, contentType);
+  }
+
+  /**
+   * Unset the session data for the client
+   * @param client - The client instance
+   * @param contentType - The content type to unset
+   */
+  unsetSessionData(client: Socket, contentType: ContentDataType): void {
+    if (contentType === ContentDataType.FLOW) {
+      client.data.flowSession = null;
+    } else if (contentType === ContentDataType.CHECKLIST) {
       client.data.checklistSession = null;
     }
   }
