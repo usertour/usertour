@@ -2165,10 +2165,10 @@ export class WebSocketV2Service {
     const clientTrackConditions = client.data.trackConditions as TrackCondition[];
 
     if (contentSession) {
-      const customContentVersion = evaluatedContentVersions.find(
+      const sessionVersion = evaluatedContentVersions.find(
         (version) => version.id === contentSession?.version.id,
       );
-      if (!customContentVersion || isActivedHideRules(customContentVersion)) {
+      if (!sessionVersion || isActivedHideRules(sessionVersion)) {
         this.unsetContentSession(server, client, contentType, contentSession.id);
         this.untrackTrackConditions(server, client, clientTrackConditions);
       } else {
