@@ -2146,18 +2146,24 @@ export class WebSocketV2Service {
     const externalUserId = client.data.externalUserId;
     const externalCompanyId = client.data.externalCompanyId;
 
-    // Early return if session already exists
-    const contentSession = this.getContentSession(client, contentType);
-    if (contentSession) {
-      return true;
-    }
-
     const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
       environment,
       externalUserId,
       [contentType],
       externalCompanyId,
     );
+    const contentSession = this.getContentSession(client, contentType);
+
+    if (contentSession) {
+      const sessionCustomContentVersion = evaluatedContentVersions.find(
+        (version) => version.id === contentSession?.version.id,
+      );
+      if (!sessionCustomContentVersion || isActivedHideRules(sessionCustomContentVersion)) {
+        await this.unsetContentSession(server, client, contentType, contentSession.id);
+      } else {
+        return true;
+      }
+    }
 
     const contentStarted = await this.tryStartContent(
       server,
@@ -2322,6 +2328,12 @@ export class WebSocketV2Service {
     }
 
     await this.setContentSession(server, client, contentSession);
+
+    if (contentType === ContentDataType.FLOW) {
+      client.data.activedFlowVersion = customContentVersion;
+    } else if (contentType === ContentDataType.CHECKLIST) {
+      client.data.activedChecklistVersion = customContentVersion;
+    }
 
     this.prisma.bizSession.update({
       where: { id: sessionId },
