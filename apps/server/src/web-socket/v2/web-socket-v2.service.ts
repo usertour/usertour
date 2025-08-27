@@ -2526,7 +2526,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    */
   untrackCurrentTrackConditions(server: Server, client: Socket, excludeConditionIds?: string[]) {
-    const trackConditions = client.data.trackConditions as TrackCondition[];
+    const { trackConditions } = this.getClientData(client);
     const filteredTrackConditions = trackConditions.filter(
       (trackCondition) => !excludeConditionIds?.includes(trackCondition.condition.id),
     );
@@ -2540,11 +2540,13 @@ export class WebSocketV2Service {
    * @param trackConditions - The conditions to un-track
    */
   untrackTrackConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
+    const {
+      trackConditions: currentTrackConditions,
+      environment,
+      externalUserId,
+    } = this.getClientData(client);
     const room = getExternalUserRoom(environment.id, externalUserId);
 
-    const currentTrackConditions = client.data.trackConditions as TrackCondition[];
     const conditionIdsToRemove: string[] = [];
 
     for (const trackCondition of trackConditions) {
@@ -2563,5 +2565,24 @@ export class WebSocketV2Service {
         (condition: TrackCondition) => !conditionIdsToRemove.includes(condition.condition.id),
       );
     }
+  }
+
+  /**
+   * Get the client data
+   * @param client - The client instance
+   * @returns The client data
+   */
+  getClientData(client: Socket) {
+    const environment = client.data.environment as Environment;
+    const externalUserId = client.data.externalUserId as string;
+    const externalCompanyId = client.data.externalCompanyId as string | '';
+    const trackConditions = (client.data.trackConditions as TrackCondition[] | undefined) || [];
+
+    return {
+      environment,
+      externalUserId,
+      externalCompanyId,
+      trackConditions,
+    };
   }
 }
