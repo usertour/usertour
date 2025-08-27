@@ -2460,8 +2460,6 @@ export class WebSocketV2Service {
       };
     });
 
-    client.data.trackConditions = conditions;
-
     // Filter out conditions that already exist to only emit new ones
     const newConditions = conditions.filter(
       (condition) =>
@@ -2473,6 +2471,8 @@ export class WebSocketV2Service {
     for (const condition of newConditions) {
       server.to(room).emit('track-client-condition', condition);
     }
+
+    client.data.trackConditions = conditions;
   }
 
   /**
