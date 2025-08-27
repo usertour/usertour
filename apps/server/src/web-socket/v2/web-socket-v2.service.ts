@@ -1731,11 +1731,22 @@ export class WebSocketV2Service {
    * @returns The activated custom content versions
    */
   async findActivatedCustomContentVersionByEvaluated(
-    environment: Environment,
-    externalUserId: string,
+    client: Socket,
     contentTypes: ContentDataType[],
-    externalCompanyId?: string,
   ): Promise<CustomContentVersion[]> {
+    const environment = client.data.environment;
+    const externalUserId = client.data.externalUserId;
+    const externalCompanyId = client.data.externalCompanyId;
+    const userClientContext = await this.getUserClientContext(environment, externalUserId);
+    const clientContext = userClientContext?.clientContext ?? {};
+    const trackConditions = client.data.trackConditions || [];
+    const activatedIds = trackConditions
+      .filter((condition: RulesCondition) => condition.actived)
+      .map((condition: RulesCondition) => condition.id);
+    const deactivatedIds = trackConditions
+      .filter((condition: RulesCondition) => !condition.actived)
+      .map((condition: RulesCondition) => condition.id);
+
     const contentVersions = await this.fetchCustomContentVersions(
       environment,
       externalUserId,
@@ -1744,12 +1755,11 @@ export class WebSocketV2Service {
     const filteredContentVersions = contentVersions.filter((contentVersion) =>
       contentTypes.includes(contentVersion.content.type as ContentDataType),
     );
+
     return await evaluateCustomContentVersion(filteredContentVersions, {
-      clientContext: {
-        page_url: '',
-        viewport_width: 0,
-        viewport_height: 0,
-      },
+      clientContext,
+      activatedIds,
+      deactivatedIds,
     });
   }
 
@@ -2142,15 +2152,9 @@ export class WebSocketV2Service {
     contentType: ContentDataType,
     options?: StartContentOptions,
   ) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-    const externalCompanyId = client.data.externalCompanyId;
-
     const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
-      environment,
-      externalUserId,
+      client,
       [contentType],
-      externalCompanyId,
     );
     const contentSession = this.getContentSession(client, contentType);
 
