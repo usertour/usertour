@@ -2321,16 +2321,12 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // Set content session and update database in parallel
-    await Promise.all([
-      this.setContentSession(server, client, contentSession),
-      versionId
-        ? this.prisma.bizSession.update({
-            where: { id: sessionId },
-            data: { versionId },
-          })
-        : Promise.resolve(),
-    ]);
+    await this.setContentSession(server, client, contentSession);
+
+    this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { versionId },
+    });
 
     const clientTrackConditions = extractClientTrackConditions(
       [customContentVersion],
