@@ -1631,11 +1631,22 @@ export class WebSocketV2Service {
     };
   }
 
+  /**
+   * Fetch environment by token
+   * @param token - The token
+   * @returns The environment or null if not found
+   */
   async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
     if (!token) return null;
     return await this.prisma.environment.findFirst({ where: { token } });
   }
 
+  /**
+   * Track event v2
+   * @param data - The event data
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async trackEventV2(data: TrackEventDto, environment: Environment): Promise<boolean> {
     const userClientContext = await this.getUserClientContext(environment, data.userId);
     const clientContext = userClientContext?.clientContext ?? {};
@@ -1652,6 +1663,13 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Update user client context
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param clientContext - The client context
+   * @param externalCompanyId - The external company ID
+   */
   async updateUserClientContext(
     environment: Environment,
     externalUserId: string,
@@ -1666,6 +1684,12 @@ export class WebSocketV2Service {
     );
   }
 
+  /**
+   * Get user client context
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @returns The user client context or null if not found
+   */
   async getUserClientContext(
     environment: Environment,
     externalUserId: string,
@@ -1676,11 +1700,21 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
+  /**
+   * Cache current session
+   * @param userId - The user ID
+   * @param session - The session to cache
+   */
   async cacheCurrentSession(userId: string, session: SDKContentSession): Promise<void> {
     const key = `current_flow_session:${userId}`;
     await this.redisService.setex(key, 60 * 60 * 24, JSON.stringify(session));
   }
 
+  /**
+   * Get cached current session
+   * @param userId - The user ID
+   * @returns The cached session or null if not found
+   */
   async getCachedCurrentSession(userId: string): Promise<SDKContentSession | null> {
     const key = `current_flow_session:${userId}`;
     const value = await this.redisService.get(key);
@@ -1688,6 +1722,14 @@ export class WebSocketV2Service {
     return JSON.parse(value);
   }
 
+  /**
+   * Find activated custom content version by evaluated
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param contentTypes - The content types
+   * @param externalCompanyId - The external company ID
+   * @returns The activated custom content versions
+   */
   async findActivatedCustomContentVersionByEvaluated(
     environment: Environment,
     externalUserId: string,
@@ -1711,6 +1753,17 @@ export class WebSocketV2Service {
     });
   }
 
+  /**
+   * Create SDK content session
+   * @param sessionId - The session ID
+   * @param contentVersion - The content version
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param contentType - The content type
+   * @param externalCompanyId - The external company ID
+   * @param stepIndex - The step index
+   * @returns The SDK content session or null if the session creation fails
+   */
   async createSDKContentSession(
     sessionId: string,
     contentVersion: CustomContentVersion,
@@ -1765,6 +1818,14 @@ export class WebSocketV2Service {
     return session;
   }
 
+  /**
+   * End flow
+   * @param externalUserId - The external user ID
+   * @param sessionId - The session ID
+   * @param reason - The reason for ending the flow
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async endFlow(
     externalUserId: string,
     sessionId: string,
@@ -1804,6 +1865,12 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Go to step
+   * @param params - The parameters for the go to step event
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async goToStep(params: GoToStepDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
@@ -1858,6 +1925,12 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Answer question
+   * @param params - The parameters for the answer question event
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async answerQuestion(params: AnswerQuestionDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
@@ -1893,6 +1966,12 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Click checklist task
+   * @param params - The parameters for the click checklist task event
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async clickChecklistTask(
     params: ClickChecklistTaskDto,
     environment: Environment,
@@ -1934,6 +2013,12 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Hide checklist
+   * @param params - The parameters for the hide checklist event
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async hideChecklist(params: HideChecklistDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
@@ -1963,6 +2048,12 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Show checklist
+   * @param params - The parameters for the show checklist event
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async showChecklist(params: ShowChecklistDto, environment: Environment): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
@@ -1992,6 +2083,12 @@ export class WebSocketV2Service {
     return true;
   }
 
+  /**
+   * Report tooltip target missing
+   * @param params - The parameters for the tooltip target missing event
+   * @param environment - The environment
+   * @returns True if the event was tracked successfully
+   */
   async reportTooltipTargetMissing(
     params: TooltipTargetMissingDto,
     environment: Environment,
@@ -2028,50 +2125,6 @@ export class WebSocketV2Service {
       },
       environment,
     );
-
-    return true;
-  }
-
-  /**
-   * Create and set content session with common logic
-   */
-  private async createAndSetContentSession(
-    server: Server,
-    client: Socket,
-    sessionId: string,
-    customContentVersion: CustomContentVersion,
-    environment: Environment,
-    externalUserId: string,
-    contentType: ContentDataType,
-    externalCompanyId?: string,
-    stepIndex?: number,
-    versionId?: string,
-  ): Promise<boolean> {
-    // Create SDK content session
-    const contentSession = await this.createSDKContentSession(
-      sessionId,
-      customContentVersion,
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      stepIndex,
-    );
-
-    if (!contentSession) {
-      return false;
-    }
-
-    // Set content session and update database in parallel
-    await Promise.all([
-      this.setContentSession(server, client, contentSession),
-      versionId
-        ? this.prisma.bizSession.update({
-            where: { id: sessionId },
-            data: { versionId },
-          })
-        : Promise.resolve(),
-    ]);
 
     return true;
   }
@@ -2253,9 +2306,8 @@ export class WebSocketV2Service {
       }
     }
 
-    const success = await this.createAndSetContentSession(
-      server,
-      client,
+    // Create SDK content session
+    const contentSession = await this.createSDKContentSession(
       sessionId,
       customContentVersion,
       environment,
@@ -2263,21 +2315,33 @@ export class WebSocketV2Service {
       contentType,
       externalCompanyId,
       stepIndex,
-      versionId,
     );
 
-    if (success) {
-      const clientTrackConditions = extractClientTrackConditions(
-        [customContentVersion],
-        ConditionExtractionMode.HIDE_ONLY,
-      );
-
-      if (clientTrackConditions.length > 0) {
-        await this.trackClientConditions(server, client, clientTrackConditions);
-      }
+    if (!contentSession) {
+      return false;
     }
 
-    return success;
+    // Set content session and update database in parallel
+    await Promise.all([
+      this.setContentSession(server, client, contentSession),
+      versionId
+        ? this.prisma.bizSession.update({
+            where: { id: sessionId },
+            data: { versionId },
+          })
+        : Promise.resolve(),
+    ]);
+
+    const clientTrackConditions = extractClientTrackConditions(
+      [customContentVersion],
+      ConditionExtractionMode.HIDE_ONLY,
+    );
+
+    if (clientTrackConditions.length > 0) {
+      await this.trackClientConditions(server, client, clientTrackConditions);
+    }
+
+    return true;
   }
 
   /**
