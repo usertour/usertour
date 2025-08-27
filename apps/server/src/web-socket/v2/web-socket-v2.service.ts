@@ -2162,7 +2162,6 @@ export class WebSocketV2Service {
       [contentType],
     );
     const contentSession = this.getContentSession(client, contentType);
-    const clientTrackConditions = client.data.trackConditions as TrackCondition[];
 
     if (contentSession) {
       const sessionVersion = evaluatedContentVersions.find(
@@ -2170,7 +2169,7 @@ export class WebSocketV2Service {
       );
       if (!sessionVersion || isActivedHideRules(sessionVersion)) {
         this.unsetContentSession(server, client, contentType, contentSession.id);
-        this.untrackTrackConditions(server, client, clientTrackConditions);
+        this.untrackCurrentTrackConditions(server, client);
       } else {
         return true;
       }
@@ -2349,6 +2348,11 @@ export class WebSocketV2Service {
       [customContentVersion],
       ConditionExtractionMode.HIDE_ONLY,
     );
+    const excludeConditionIds = clientTrackConditions?.map(
+      (trackCondition) => trackCondition.condition.id,
+    );
+
+    this.untrackCurrentTrackConditions(server, client, excludeConditionIds);
 
     if (clientTrackConditions.length > 0) {
       await this.trackClientConditions(server, client, clientTrackConditions);
@@ -2459,7 +2463,14 @@ export class WebSocketV2Service {
     client.data.trackConditions = conditions;
 
     for (const condition of conditions) {
-      server.to(room).emit('track-client-condition', condition);
+      // Only emit if the condition is not already in existingConditions
+      const isNewCondition = !existingConditions.some(
+        (existing: TrackCondition) => existing.condition.id === condition.condition.id,
+      );
+
+      if (isNewCondition) {
+        server.to(room).emit('track-client-condition', condition);
+      }
     }
   }
 
@@ -2502,6 +2513,19 @@ export class WebSocketV2Service {
     client.data.trackConditions = conditions;
 
     return true;
+  }
+
+  /**
+   * Un-track the client conditions for the given content types
+   * @param server - The server instance
+   * @param client - The client instance
+   */
+  untrackCurrentTrackConditions(server: Server, client: Socket, excludeConditionIds?: string[]) {
+    const trackConditions = client.data.trackConditions as TrackCondition[];
+    const filteredTrackConditions = trackConditions.filter(
+      (trackCondition) => !excludeConditionIds?.includes(trackCondition.condition.id),
+    );
+    this.untrackTrackConditions(server, client, filteredTrackConditions);
   }
 
   /**
