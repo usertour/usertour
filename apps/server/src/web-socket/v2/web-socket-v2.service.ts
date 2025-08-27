@@ -2333,12 +2333,6 @@ export class WebSocketV2Service {
 
     await this.setContentSession(server, client, contentSession);
 
-    if (contentType === ContentDataType.FLOW) {
-      client.data.activedFlowVersion = customContentVersion;
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      client.data.activedChecklistVersion = customContentVersion;
-    }
-
     this.prisma.bizSession.update({
       where: { id: sessionId },
       data: { versionId },
@@ -2411,7 +2405,7 @@ export class WebSocketV2Service {
     if (contentType === ContentDataType.FLOW) {
       server.to(room).emit('unset-flow-session', { sessionId });
       client.data.flowSession = null;
-    } else {
+    } else if (contentType === ContentDataType.CHECKLIST) {
       server.to(room).emit('unset-checklist-session', { sessionId });
       client.data.checklistSession = null;
     }
