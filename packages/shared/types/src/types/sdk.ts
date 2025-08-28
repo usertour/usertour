@@ -77,9 +77,9 @@ export interface GetProjectSettingsResponse {
  * Client context information for condition evaluation
  */
 export interface ClientContext {
-  page_url: string;
-  viewport_width: number;
-  viewport_height: number;
+  pageUrl: string;
+  viewportWidth: number;
+  viewportHeight: number;
 }
 
 /**

@@ -21,13 +21,12 @@ import {
   GoToStepDto,
   HideChecklistDto,
   ShowChecklistDto,
-  UpdateClientContextDto,
   StartFlowDto,
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom } from '@/utils/ws-utils';
-import { ContentDataType } from '@usertour/types';
+import { ClientContext, ContentDataType } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -49,7 +48,7 @@ export class WebSocketV2Gateway {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
         const externalUserId = String(auth.externalUserId ?? '');
         const token = String(auth.token ?? '');
-        const clientContext = auth.clientContext as Record<string, any>;
+        const clientContext = auth.clientContext as ClientContext;
 
         if (!externalUserId || !token) {
           return next(new SDKAuthenticationError());
@@ -60,14 +59,14 @@ export class WebSocketV2Gateway {
           return next(new SDKAuthenticationError());
         }
 
-        if (clientContext) {
-          await this.service.updateUserClientContext(environment, externalUserId, clientContext);
-        }
-
         // Store validated data in socket
         socket.data.externalUserId = externalUserId;
         socket.data.envId = environment.id;
         socket.data.environment = environment;
+
+        if (clientContext) {
+          await this.service.updateUserClientContext(socket, clientContext);
+        }
 
         const room = getExternalUserRoom(environment.id, externalUserId);
         // Join user room for targeted messaging
@@ -98,11 +97,7 @@ export class WebSocketV2Gateway {
     @MessageBody() upsertUserDto: UpsertUserDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    const environment = client.data.environment;
-    this.logger.log(`Upserting user ${upsertUserDto.userId} in environment ${environment.id}`);
-
-    await this.service.upsertBizUsers(upsertUserDto, environment);
-    return true;
+    return await this.service.upsertBizUsers(client, upsertUserDto);
   }
 
   @SubscribeMessage('upsert-company')
@@ -110,17 +105,7 @@ export class WebSocketV2Gateway {
     @MessageBody() upsertCompanyDto: UpsertCompanyDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    const environment = client.data.environment;
-
-    const result = await this.service.upsertBizCompanies(upsertCompanyDto, environment);
-
-    // Store company info in socket data for future use
-    if (result) {
-      client.data.externalCompanyId = upsertCompanyDto.companyId;
-      client.data.companyInfo = result;
-    }
-
-    return true;
+    return await this.service.upsertBizCompanies(client, upsertCompanyDto);
   }
 
   @SubscribeMessage('start-flow')
@@ -150,7 +135,7 @@ export class WebSocketV2Gateway {
     @MessageBody() goToStepDto: GoToStepDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.goToStep(goToStepDto, client.data.environment);
+    return await this.service.goToStep(client, goToStepDto);
   }
 
   @SubscribeMessage('answer-question')
@@ -158,7 +143,7 @@ export class WebSocketV2Gateway {
     @MessageBody() answerQuestionDto: AnswerQuestionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.answerQuestion(answerQuestionDto, client.data.environment);
+    return await this.service.answerQuestion(client, answerQuestionDto);
   }
 
   @SubscribeMessage('click-checklist-task')
@@ -166,7 +151,7 @@ export class WebSocketV2Gateway {
     @MessageBody() clickChecklistTaskDto: ClickChecklistTaskDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.clickChecklistTask(clickChecklistTaskDto, client.data.environment);
+    return await this.service.clickChecklistTask(client, clickChecklistTaskDto);
   }
 
   @SubscribeMessage('hide-checklist')
@@ -174,7 +159,7 @@ export class WebSocketV2Gateway {
     @MessageBody() hideChecklistDto: HideChecklistDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.hideChecklist(hideChecklistDto, client.data.environment);
+    return await this.service.hideChecklist(client, hideChecklistDto);
   }
 
   @SubscribeMessage('show-checklist')
@@ -182,24 +167,15 @@ export class WebSocketV2Gateway {
     @MessageBody() showChecklistDto: ShowChecklistDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.showChecklist(showChecklistDto, client.data.environment);
+    return await this.service.showChecklist(client, showChecklistDto);
   }
 
   @SubscribeMessage('update-client-context')
   async updateClientContext(
-    @MessageBody() updateClientContextDto: UpdateClientContextDto,
+    @MessageBody() context: ClientContext,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    const externalUserId = client.data.externalUserId;
-    const environment = client.data.environment;
-    const externalCompanyId = client.data.externalCompanyId;
-
-    await this.service.updateUserClientContext(
-      environment,
-      externalUserId,
-      updateClientContextDto,
-      externalCompanyId,
-    );
+    await this.service.updateUserClientContext(client, context);
     return true;
   }
 
@@ -208,7 +184,7 @@ export class WebSocketV2Gateway {
     @MessageBody() trackEventDto: TrackEventDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return Boolean(await this.service.trackEventV2(trackEventDto, client.data.environment));
+    return Boolean(await this.service.trackEventV2(client, trackEventDto));
   }
 
   @SubscribeMessage('report-tooltip-target-missing')
@@ -216,10 +192,7 @@ export class WebSocketV2Gateway {
     @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.reportTooltipTargetMissing(
-      reportTooltipTargetMissingDto,
-      client.data.environment,
-    );
+    return await this.service.reportTooltipTargetMissing(client, reportTooltipTargetMissingDto);
   }
 
   @SubscribeMessage('toggle-client-condition')

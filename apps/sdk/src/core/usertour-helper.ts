@@ -177,9 +177,9 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
 export const activedRulesConditions = async (conditions: RulesCondition[]) => {
   return await evaluateRulesConditions(conditions, {
     clientContext: {
-      page_url: location?.href ?? '',
-      viewport_width: window?.innerWidth ?? 0,
-      viewport_height: window?.innerHeight ?? 0,
+      pageUrl: location?.href ?? '',
+      viewportWidth: window?.innerWidth ?? 0,
+      viewportHeight: window?.innerHeight ?? 0,
     },
     typeControl: {
       [RulesType.CURRENT_PAGE]: true,

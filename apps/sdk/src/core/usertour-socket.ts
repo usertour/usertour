@@ -1,4 +1,4 @@
-import { contentEndReason, EventAttributes } from '@usertour/types';
+import { ClientContext, contentEndReason } from '@usertour/types';
 import {
   AnswerQuestionDto,
   UpsertUserDto,
@@ -10,7 +10,6 @@ import {
   ClickChecklistTaskDto,
   HideChecklistDto,
   ShowChecklistDto,
-  UpdateClientContextDto,
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
 } from '@/types/websocket';
@@ -59,7 +58,7 @@ export interface IUsertourSocket {
   showChecklist(params: ShowChecklistDto, options?: BatchOptions): Promise<boolean>;
 
   // Context and reporting
-  updateClientContext(params: UpdateClientContextDto, options?: BatchOptions): Promise<boolean>;
+  updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean>;
   reportTooltipTargetMissing(
     params: TooltipTargetMissingDto,
     options?: BatchOptions,
@@ -118,9 +117,9 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
             token,
             externalUserId: userId,
             clientContext: {
-              [EventAttributes.PAGE_URL]: window?.location?.href,
-              [EventAttributes.VIEWPORT_WIDTH]: window?.innerWidth,
-              [EventAttributes.VIEWPORT_HEIGHT]: window?.innerHeight,
+              pageUrl: window?.location?.href,
+              viewportWidth: window?.innerWidth,
+              viewportHeight: window?.innerHeight,
             },
           },
         },
@@ -233,10 +232,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   }
 
   // Context and reporting
-  async updateClientContext(
-    params: UpdateClientContextDto,
-    options?: BatchOptions,
-  ): Promise<boolean> {
+  async updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
     return await this.socket.send(WebSocketEvents.UPDATE_CLIENT_CONTEXT, params, options);
   }

@@ -110,7 +110,7 @@ const evaluateRule = async (
   // Perform normal evaluation based on rule type
   switch (condition.type) {
     case RulesType.CURRENT_PAGE:
-      return evaluateUrlCondition(condition, options.clientContext?.page_url || '');
+      return evaluateUrlCondition(condition, options.clientContext?.pageUrl ?? '');
     case RulesType.TIME:
       return evaluateTimeCondition(condition);
     case RulesType.USER_ATTR:

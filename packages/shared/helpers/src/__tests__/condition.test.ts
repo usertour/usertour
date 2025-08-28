@@ -262,9 +262,9 @@ describe('evaluateRulesConditions', () => {
 
   const mockOptions = {
     clientContext: {
-      page_url: 'https://example.com',
-      viewport_width: 1920,
-      viewport_height: 1080,
+      pageUrl: 'https://example.com',
+      viewportWidth: 1920,
+      viewportHeight: 1080,
     },
     attributes: [
       {
@@ -675,9 +675,9 @@ describe('evaluateRulesConditions', () => {
 
     const options = {
       clientContext: {
-        page_url: 'https://example.com',
-        viewport_width: 1920,
-        viewport_height: 1080,
+        pageUrl: 'https://example.com',
+        viewportWidth: 1920,
+        viewportHeight: 1080,
       },
       typeControl: {
         [RulesType.CURRENT_PAGE]: true,

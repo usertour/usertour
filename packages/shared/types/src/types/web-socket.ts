@@ -81,12 +81,6 @@ export type ShowChecklistDto = {
   sessionId: string;
 };
 
-export type UpdateClientContextDto = {
-  pageUrl: string;
-  viewportWidth: number;
-  viewportHeight: number;
-};
-
 export type TooltipTargetMissingDto = {
   sessionId: string;
   stepId: string;

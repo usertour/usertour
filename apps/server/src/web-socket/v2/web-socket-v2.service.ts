@@ -49,6 +49,7 @@ import {
   ContentConditionLogic,
   RulesType,
   EndFlowDto,
+  ClientContext,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -1105,19 +1106,22 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(data: UpsertUserDto, environment: Environment): Promise<boolean> {
+  async upsertBizUsers(client: Socket, data: UpsertUserDto): Promise<boolean> {
     const { userId, attributes } = data;
+    const { environment } = this.getClientData(client);
     await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
     return true;
   }
 
   /**
    * Upsert business companies
+   * @param client - The client instance
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(data: UpsertCompanyDto, environment: Environment): Promise<boolean> {
+  async upsertBizCompanies(client: Socket, data: UpsertCompanyDto): Promise<boolean> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
+    const { environment } = this.getClientData(client);
     await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
@@ -1126,18 +1130,19 @@ export class WebSocketV2Service {
       environment.id,
       membership,
     );
+
+    client.data.externalCompanyId = externalCompanyId;
     return true;
   }
 
   /**
    * Create a session
+   * @param client - The client instance
    * @param data - The data to create a session
    * @returns The created session
    */
-  async createSession(
-    data: CreateSessionDto,
-    environment: Environment,
-  ): Promise<BizSession | null> {
+  async createSession(client: Socket, data: CreateSessionDto): Promise<BizSession | null> {
+    const { environment } = this.getClientData(client);
     const { userId: externalUserId, contentId, companyId: externalCompanyId, reason } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -1206,15 +1211,12 @@ export class WebSocketV2Service {
               [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
             };
 
-      await this.trackEventV2(
-        {
-          userId: String(externalUserId),
-          eventName,
-          sessionId: session.id,
-          eventData,
-        },
-        environment,
-      );
+      await this.trackEventV2(client, {
+        userId: String(externalUserId),
+        eventName,
+        sessionId: session.id,
+        eventData,
+      });
     }
 
     return session;
@@ -1645,18 +1647,26 @@ export class WebSocketV2Service {
 
   /**
    * Track event v2
+   * @param client - The client instance
    * @param data - The event data
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
-  async trackEventV2(data: TrackEventDto, environment: Environment): Promise<boolean> {
-    const userClientContext = await this.getUserClientContext(environment, data.userId);
-    const clientContext = userClientContext?.clientContext ?? {};
+  async trackEventV2(client: Socket, data: TrackEventDto): Promise<boolean> {
+    const { environment } = this.getClientData(client);
+    const userClientContext = await this.getUserClientContext(client, data.userId);
+    const clientContext = userClientContext?.clientContext;
+    const clientContextData = clientContext
+      ? {
+          [EventAttributes.PAGE_URL]: clientContext.pageUrl,
+          [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
+          [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+        }
+      : {};
     const newData = userClientContext
       ? {
           ...data,
           eventData: {
-            ...clientContext,
+            ...clientContextData,
             ...data.eventData,
           },
         }
@@ -1667,17 +1677,11 @@ export class WebSocketV2Service {
 
   /**
    * Update user client context
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
+   * @param client - The client instance
    * @param clientContext - The client context
-   * @param externalCompanyId - The external company ID
    */
-  async updateUserClientContext(
-    environment: Environment,
-    externalUserId: string,
-    clientContext: Record<string, any>,
-    externalCompanyId?: string,
-  ): Promise<void> {
+  async updateUserClientContext(client: Socket, clientContext: ClientContext): Promise<void> {
+    const { environment, externalUserId, externalCompanyId } = this.getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     await this.redisService.setex(
       key,
@@ -1688,14 +1692,15 @@ export class WebSocketV2Service {
 
   /**
    * Get user client context
-   * @param environment - The environment
+   * @param client - The client instance
    * @param externalUserId - The external user ID
    * @returns The user client context or null if not found
    */
   async getUserClientContext(
-    environment: Environment,
+    client: Socket,
     externalUserId: string,
   ): Promise<Record<string, any> | null> {
+    const { environment } = this.getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     const value = await this.redisService.get(key);
     if (!value) return null;
@@ -1726,10 +1731,8 @@ export class WebSocketV2Service {
 
   /**
    * Find activated custom content version by evaluated
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
+   * @param client - The client instance
    * @param contentTypes - The content types
-   * @param externalCompanyId - The external company ID
    * @returns The activated custom content versions
    */
   async findActivatedCustomContentVersionByEvaluated(
@@ -1738,7 +1741,7 @@ export class WebSocketV2Service {
   ): Promise<CustomContentVersion[]> {
     const { environment, trackConditions, externalUserId, externalCompanyId } =
       this.getClientData(client);
-    const userClientContext = await this.getUserClientContext(environment, externalUserId);
+    const userClientContext = await this.getUserClientContext(client, externalUserId);
     const clientContext = userClientContext?.clientContext ?? {};
     const activatedIds = trackConditions
       ?.filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
@@ -1840,7 +1843,7 @@ export class WebSocketV2Service {
    */
   async endFlow(client: Socket, endFlowDto: EndFlowDto): Promise<boolean> {
     const { sessionId, reason } = endFlowDto;
-    const { externalUserId, environment } = this.getClientData(client);
+    const { externalUserId } = this.getClientData(client);
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
     });
@@ -1861,15 +1864,12 @@ export class WebSocketV2Service {
       [EventAttributes.FLOW_END_REASON]: reason,
     });
 
-    await this.trackEventV2(
-      {
-        userId: String(externalUserId),
-        eventName: BizEvents.FLOW_ENDED,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(externalUserId),
+      eventName: BizEvents.FLOW_ENDED,
+      sessionId: bizSession.id,
+      eventData,
+    });
 
     this.unsetSessionData(client, ContentDataType.FLOW);
 
@@ -1878,11 +1878,11 @@ export class WebSocketV2Service {
 
   /**
    * Go to step
+   * @param client - The client instance
    * @param params - The parameters for the go to step event
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
-  async goToStep(params: GoToStepDto, environment: Environment): Promise<boolean> {
+  async goToStep(client: Socket, params: GoToStepDto): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, version: { include: { steps: true } } },
@@ -1911,26 +1911,20 @@ export class WebSocketV2Service {
       [EventAttributes.FLOW_STEP_PROGRESS]: Math.round(progress),
     };
 
-    await this.trackEventV2(
-      {
-        userId: String(bizSession.bizUser.externalId),
-        eventName: BizEvents.FLOW_STEP_SEEN,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(bizSession.bizUser.externalId),
+      eventName: BizEvents.FLOW_STEP_SEEN,
+      sessionId: bizSession.id,
+      eventData,
+    });
 
     if (isComplete) {
-      await this.trackEventV2(
-        {
-          userId: String(bizSession.bizUser.externalId),
-          eventName: BizEvents.FLOW_COMPLETED,
-          sessionId: bizSession.id,
-          eventData,
-        },
-        environment,
-      );
+      await this.trackEventV2(client, {
+        userId: String(bizSession.bizUser.externalId),
+        eventName: BizEvents.FLOW_COMPLETED,
+        sessionId: bizSession.id,
+        eventData,
+      });
     }
 
     return true;
@@ -1938,11 +1932,11 @@ export class WebSocketV2Service {
 
   /**
    * Answer question
+   * @param client - The client instance
    * @param params - The parameters for the answer question event
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
-  async answerQuestion(params: AnswerQuestionDto, environment: Environment): Promise<boolean> {
+  async answerQuestion(client: Socket, params: AnswerQuestionDto): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true },
@@ -1965,28 +1959,22 @@ export class WebSocketV2Service {
       eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
     }
 
-    await this.trackEventV2(
-      {
-        userId: String(bizSession.bizUser.externalId),
-        eventName: BizEvents.QUESTION_ANSWERED,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(bizSession.bizUser.externalId),
+      eventName: BizEvents.QUESTION_ANSWERED,
+      sessionId: bizSession.id,
+      eventData,
+    });
     return true;
   }
 
   /**
    * Click checklist task
+   * @param client - The client instance
    * @param params - The parameters for the click checklist task event
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
-  async clickChecklistTask(
-    params: ClickChecklistTaskDto,
-    environment: Environment,
-  ): Promise<boolean> {
+  async clickChecklistTask(client: Socket, params: ClickChecklistTaskDto): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -2011,26 +1999,23 @@ export class WebSocketV2Service {
       [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
     };
 
-    await this.trackEventV2(
-      {
-        userId: String(bizSession.bizUser.externalId),
-        eventName: BizEvents.CHECKLIST_TASK_CLICKED,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(bizSession.bizUser.externalId),
+      eventName: BizEvents.CHECKLIST_TASK_CLICKED,
+      sessionId: bizSession.id,
+      eventData,
+    });
 
     return true;
   }
 
   /**
    * Hide checklist
+   * @param client - The client instance
    * @param params - The parameters for the hide checklist event
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
-  async hideChecklist(params: HideChecklistDto, environment: Environment): Promise<boolean> {
+  async hideChecklist(client: Socket, params: HideChecklistDto): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -2046,26 +2031,23 @@ export class WebSocketV2Service {
       [EventAttributes.CHECKLIST_NAME]: content.name,
     };
 
-    await this.trackEventV2(
-      {
-        userId: String(bizSession.bizUser.externalId),
-        eventName: BizEvents.CHECKLIST_HIDDEN,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(bizSession.bizUser.externalId),
+      eventName: BizEvents.CHECKLIST_HIDDEN,
+      sessionId: bizSession.id,
+      eventData,
+    });
 
     return true;
   }
 
   /**
    * Show checklist
+   * @param client - The client instance
    * @param params - The parameters for the show checklist event
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
-  async showChecklist(params: ShowChecklistDto, environment: Environment): Promise<boolean> {
+  async showChecklist(client: Socket, params: ShowChecklistDto): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -2081,28 +2063,25 @@ export class WebSocketV2Service {
       [EventAttributes.CHECKLIST_NAME]: content.name,
     };
 
-    await this.trackEventV2(
-      {
-        userId: String(bizSession.bizUser.externalId),
-        eventName: BizEvents.CHECKLIST_SEEN,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(bizSession.bizUser.externalId),
+      eventName: BizEvents.CHECKLIST_SEEN,
+      sessionId: bizSession.id,
+      eventData,
+    });
 
     return true;
   }
 
   /**
    * Report tooltip target missing
+   * @param client - The client instance
    * @param params - The parameters for the tooltip target missing event
-   * @param environment - The environment
    * @returns True if the event was tracked successfully
    */
   async reportTooltipTargetMissing(
+    client: Socket,
     params: TooltipTargetMissingDto,
-    environment: Environment,
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
@@ -2127,15 +2106,12 @@ export class WebSocketV2Service {
       [EventAttributes.FLOW_STEP_PROGRESS]: progress,
     };
 
-    await this.trackEventV2(
-      {
-        userId: String(bizSession.bizUser.externalId),
-        eventName: BizEvents.TOOLTIP_TARGET_MISSING,
-        sessionId: bizSession.id,
-        eventData,
-      },
-      environment,
-    );
+    await this.trackEventV2(client, {
+      userId: String(bizSession.bizUser.externalId),
+      eventName: BizEvents.TOOLTIP_TARGET_MISSING,
+      sessionId: bizSession.id,
+      eventData,
+    });
 
     return true;
   }
@@ -2268,6 +2244,12 @@ export class WebSocketV2Service {
 
   /**
    * Process content version with common logic
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param customContentVersion - The custom content version
+   * @param options - The options for starting content
+   * @param createNewSession - Whether to create a new session
+   * @returns True if the content version was processed successfully
    */
   private async processContentVersion(
     server: Server,
@@ -2293,15 +2275,12 @@ export class WebSocketV2Service {
     if (createNewSession) {
       // Create new session
       const content = customContentVersion.content;
-      const newSession = await this.createSession(
-        {
-          userId: externalUserId,
-          contentId: content.id,
-          companyId: externalCompanyId,
-          reason: 'auto_start',
-        },
-        environment,
-      );
+      const newSession = await this.createSession(client, {
+        userId: externalUserId,
+        contentId: content.id,
+        companyId: externalCompanyId,
+        reason: 'auto_start',
+      });
 
       if (!newSession) {
         return false;

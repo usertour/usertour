@@ -1,3 +1,5 @@
+import { ClientContext } from '@usertour/types';
+
 export type ProjectConfig = {
   removeBranding: boolean;
   planType: string;
@@ -23,11 +25,7 @@ export type CreateSessionDto = {
   contentId: string;
   companyId?: string;
   reason?: string;
-  context?: {
-    page_url?: string;
-    viewport_width?: number;
-    viewport_height?: number;
-  };
+  context?: ClientContext;
 };
 
 // Track event request
@@ -79,12 +77,6 @@ export type HideChecklistDto = {
 
 export type ShowChecklistDto = {
   sessionId: string;
-};
-
-export type UpdateClientContextDto = {
-  pageUrl: string;
-  viewportWidth: number;
-  viewportHeight: number;
 };
 
 export type TooltipTargetMissingDto = {
