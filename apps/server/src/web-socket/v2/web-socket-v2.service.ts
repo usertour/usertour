@@ -75,14 +75,20 @@ import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
 import { getExternalUserRoom } from '@/utils/ws-utils';
 
-interface SegmentDataItem {
+type SegmentDataItem = {
   data: {
     logic: string;
     attrId: string;
   };
   type: 'user-attr';
   operators: 'and' | 'or';
-}
+};
+
+type UserClientContext = {
+  externalUserId: string;
+  externalCompanyId: string;
+  clientContext: ClientContext;
+};
 
 @Injectable()
 export class WebSocketV2Service {
@@ -1701,12 +1707,12 @@ export class WebSocketV2Service {
   async getUserClientContext(
     client: Socket,
     externalUserId: string,
-  ): Promise<Record<string, any> | null> {
+  ): Promise<UserClientContext | null> {
     const { environment } = this.getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     const value = await this.redisService.get(key);
     if (!value) return null;
-    return JSON.parse(value);
+    return JSON.parse(value) as UserClientContext;
   }
 
   /**
@@ -1744,7 +1750,7 @@ export class WebSocketV2Service {
     const { environment, trackConditions, externalUserId, externalCompanyId } =
       this.getClientData(client);
     const userClientContext = await this.getUserClientContext(client, externalUserId);
-    const clientContext = userClientContext?.clientContext ?? {};
+    const clientContext = userClientContext?.clientContext;
     const activatedIds = trackConditions
       ?.filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
       .map((trackCondition: TrackCondition) => trackCondition.condition.id);
