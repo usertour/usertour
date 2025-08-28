@@ -88,8 +88,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    await this.service.startContent(this.server, client, ContentDataType.FLOW);
-    return true;
+    return await this.service.startContent(this.server, client, ContentDataType.FLOW);
   }
 
   @SubscribeMessage('upsert-user')
@@ -125,9 +124,7 @@ export class WebSocketV2Gateway {
     @MessageBody() endFlowDto: EndFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    await this.service.endFlow(client, endFlowDto);
-
-    return true;
+    return await this.service.endFlow(client, endFlowDto);
   }
 
   @SubscribeMessage('go-to-step')
@@ -175,8 +172,7 @@ export class WebSocketV2Gateway {
     @MessageBody() context: ClientContext,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    await this.service.updateUserClientContext(client, context);
-    return true;
+    return await this.service.updateUserClientContext(client, context);
   }
 
   @SubscribeMessage('track-event')
@@ -184,7 +180,7 @@ export class WebSocketV2Gateway {
     @MessageBody() trackEventDto: TrackEventDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return Boolean(await this.service.trackEventV2(client, trackEventDto));
+    return await this.service.trackEventV2(client, trackEventDto);
   }
 
   @SubscribeMessage('report-tooltip-target-missing')

@@ -1680,7 +1680,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @param clientContext - The client context
    */
-  async updateUserClientContext(client: Socket, clientContext: ClientContext): Promise<void> {
+  async updateUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
     const { environment, externalUserId, externalCompanyId } = this.getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     await this.redisService.setex(
@@ -1688,6 +1688,7 @@ export class WebSocketV2Service {
       60 * 60 * 24,
       JSON.stringify({ externalUserId, externalCompanyId, clientContext }),
     );
+    return true;
   }
 
   /**
@@ -2128,7 +2129,7 @@ export class WebSocketV2Service {
     client: Socket,
     contentType: ContentDataType,
     options?: StartContentOptions,
-  ) {
+  ): Promise<boolean> {
     const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
       client,
       [contentType],
