@@ -2172,12 +2172,11 @@ export class WebSocketV2Service {
       const sessionVersion = evaluatedContentVersions.find(
         (version) => version.id === contentSession?.version.id,
       );
-      if (!sessionVersion || isActivedHideRules(sessionVersion)) {
-        this.unsetContentSession(server, client, contentType, contentSession.id);
-        this.untrackCurrentTrackConditions(server, client);
-      } else {
+      if (!isActivedHideRules(sessionVersion)) {
         return true;
       }
+      this.unsetContentSession(server, client, contentType, contentSession.id);
+      this.untrackCurrentTrackConditions(server, client);
     }
 
     const contentStarted = await this.tryStartContent(
