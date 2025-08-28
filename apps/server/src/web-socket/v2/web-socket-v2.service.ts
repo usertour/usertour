@@ -50,6 +50,7 @@ import {
   RulesType,
   EndFlowDto,
   ClientContext,
+  StartFlowDto,
 } from '@usertour/types';
 import {
   findLatestStepNumber,
@@ -2118,6 +2119,31 @@ export class WebSocketV2Service {
   }
 
   /**
+   * End batch
+   * @param server - The server instance
+   * @param client - The client instance
+   * @returns True if the batch was ended successfully
+   */
+  async endBatch(server: Server, client: Socket): Promise<boolean> {
+    return await this.startContent(server, client, ContentDataType.FLOW);
+  }
+
+  /**
+   * Start flow
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param startFlowDto - The parameters for the start flow event
+   * @returns True if the flow was started successfully
+   */
+  async startFlow(server: Server, client: Socket, startFlowDto: StartFlowDto): Promise<boolean> {
+    const options = {
+      contentId: startFlowDto.contentId,
+      stepIndex: startFlowDto.stepIndex,
+    };
+    return await this.startContent(server, client, ContentDataType.FLOW, options);
+  }
+
+  /**
    * Start content for the client
    * @param server - The server instance
    * @param client - The client instance
@@ -2469,11 +2495,18 @@ export class WebSocketV2Service {
 
   /**
    * Toggle the isActive status of a specific client condition by condition ID
+   * @param server - The server instance
    * @param client - The client instance
    * @param conditionId - The ID of the condition to toggle
    * @param isActive - The new active status
+   * @returns True if the condition was toggled successfully
    */
-  async toggleClientCondition(client: Socket, conditionId: string, isActive: boolean) {
+  async toggleClientCondition(
+    server: Server,
+    client: Socket,
+    conditionId: string,
+    isActive: boolean,
+  ): Promise<boolean> {
     const externalUserId = client.data.externalUserId;
 
     const existingConditions = client.data.trackConditions || [];
@@ -2504,6 +2537,9 @@ export class WebSocketV2Service {
 
     // Update client data
     client.data.trackConditions = conditions;
+
+    // Start content if the condition is active
+    await this.startContent(server, client, ContentDataType.FLOW);
 
     return true;
   }

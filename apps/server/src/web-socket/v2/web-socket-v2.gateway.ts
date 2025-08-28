@@ -26,7 +26,7 @@ import {
   ToggleClientConditionDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom } from '@/utils/ws-utils';
-import { ClientContext, ContentDataType } from '@usertour/types';
+import { ClientContext } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -88,7 +88,7 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(@ConnectedSocket() client: Socket): Promise<boolean> {
-    return await this.service.startContent(this.server, client, ContentDataType.FLOW);
+    return await this.service.endBatch(this.server, client);
   }
 
   @SubscribeMessage('upsert-user')
@@ -112,11 +112,7 @@ export class WebSocketV2Gateway {
     @MessageBody() startFlowDto: StartFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    const options = {
-      contentId: startFlowDto.contentId,
-      stepIndex: startFlowDto.stepIndex,
-    };
-    return await this.service.startContent(this.server, client, ContentDataType.FLOW, options);
+    return await this.service.startFlow(this.server, client, startFlowDto);
   }
 
   @SubscribeMessage('end-flow')
@@ -196,8 +192,6 @@ export class WebSocketV2Gateway {
     @MessageBody() { conditionId, isActive }: ToggleClientConditionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    await this.service.toggleClientCondition(client, conditionId, isActive);
-    await this.service.startContent(this.server, client, ContentDataType.FLOW);
-    return true;
+    return await this.service.toggleClientCondition(this.server, client, conditionId, isActive);
   }
 }
