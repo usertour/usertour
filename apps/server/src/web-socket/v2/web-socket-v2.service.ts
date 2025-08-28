@@ -11,11 +11,11 @@ import {
   Environment,
   Step,
   Theme,
-  Prisma,
   Version,
   BizEvent,
   BizSession,
-} from '@prisma/client';
+} from '@/common/types/schema';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
@@ -73,7 +73,7 @@ import { CustomContentVersion, CustomContentSession } from '@/common/types/conte
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
-import { getExternalUserRoom } from '@/utils/ws-utils';
+import { getClientData, getExternalUserRoom, setClientData } from '@/utils/ws-utils';
 
 type SegmentDataItem = {
   data: {
@@ -1115,7 +1115,7 @@ export class WebSocketV2Service {
    */
   async upsertBizUsers(client: Socket, data: UpsertUserDto): Promise<boolean> {
     const { userId, attributes } = data;
-    const { environment } = this.getClientData(client);
+    const { environment } = getClientData(client);
     await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
     return true;
   }
@@ -1128,7 +1128,7 @@ export class WebSocketV2Service {
    */
   async upsertBizCompanies(client: Socket, data: UpsertCompanyDto): Promise<boolean> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
-    const { environment } = this.getClientData(client);
+    const { environment } = getClientData(client);
     await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
@@ -1138,7 +1138,7 @@ export class WebSocketV2Service {
       membership,
     );
 
-    client.data.externalCompanyId = externalCompanyId;
+    setClientData(client, { externalCompanyId });
     return true;
   }
 
@@ -1149,7 +1149,7 @@ export class WebSocketV2Service {
    * @returns The created session
    */
   async createSession(client: Socket, data: CreateSessionDto): Promise<BizSession | null> {
-    const { environment } = this.getClientData(client);
+    const { environment } = getClientData(client);
     const { userId: externalUserId, contentId, companyId: externalCompanyId, reason } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
@@ -1659,7 +1659,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async trackEventV2(client: Socket, data: TrackEventDto): Promise<boolean> {
-    const { environment } = this.getClientData(client);
+    const { environment } = getClientData(client);
     const userClientContext = await this.getUserClientContext(client, data.userId);
     const clientContext = userClientContext?.clientContext;
     const clientContextData = clientContext
@@ -1688,7 +1688,7 @@ export class WebSocketV2Service {
    * @param clientContext - The client context
    */
   async updateUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
-    const { environment, externalUserId, externalCompanyId } = this.getClientData(client);
+    const { environment, externalUserId, externalCompanyId } = getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     await this.redisService.setex(
       key,
@@ -1708,7 +1708,7 @@ export class WebSocketV2Service {
     client: Socket,
     externalUserId: string,
   ): Promise<UserClientContext | null> {
-    const { environment } = this.getClientData(client);
+    const { environment } = getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     const value = await this.redisService.get(key);
     if (!value) return null;
@@ -1748,7 +1748,7 @@ export class WebSocketV2Service {
     contentTypes: ContentDataType[],
   ): Promise<CustomContentVersion[]> {
     const { environment, trackConditions, externalUserId, externalCompanyId } =
-      this.getClientData(client);
+      getClientData(client);
     const userClientContext = await this.getUserClientContext(client, externalUserId);
     const clientContext = userClientContext?.clientContext;
     const activatedIds = trackConditions
@@ -1851,7 +1851,7 @@ export class WebSocketV2Service {
    */
   async endFlow(client: Socket, endFlowDto: EndFlowDto): Promise<boolean> {
     const { sessionId, reason } = endFlowDto;
-    const { externalUserId } = this.getClientData(client);
+    const { externalUserId } = getClientData(client);
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
     });
@@ -2296,9 +2296,7 @@ export class WebSocketV2Service {
     }
 
     const { stepIndex } = options ?? {};
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
-    const externalCompanyId = client.data.externalCompanyId;
+    const { environment, externalUserId, externalCompanyId } = getClientData(client);
     const contentType = customContentVersion.content.type as ContentDataType;
     const versionId = customContentVersion.id;
 
@@ -2375,15 +2373,14 @@ export class WebSocketV2Service {
    * @param session - The session to set
    */
   setContentSession(server: Server, client: Socket, session: SDKContentSession) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
+    const { environment, externalUserId } = getClientData(client);
     const room = getExternalUserRoom(environment.id, externalUserId);
     const contentType = session.content.type as ContentDataType;
     if (contentType === ContentDataType.FLOW) {
-      client.data.flowSession = session;
+      setClientData(client, { flowSession: session });
       server.to(room).emit('set-flow-session', session);
     } else {
-      client.data.checklistSession = session;
+      setClientData(client, { checklistSession: session });
       server.to(room).emit('set-checklist-session', session);
     }
   }
@@ -2395,10 +2392,10 @@ export class WebSocketV2Service {
    */
   getContentSession(client: Socket, contentType: ContentDataType): SDKContentSession | null {
     if (contentType === ContentDataType.FLOW) {
-      return client.data.flowSession;
+      return getClientData(client).flowSession;
     }
     if (contentType === ContentDataType.CHECKLIST) {
-      return client.data.checklistSession;
+      return getClientData(client).checklistSession;
     }
     return null;
   }
@@ -2416,8 +2413,7 @@ export class WebSocketV2Service {
     contentType: ContentDataType,
     sessionId: string,
   ) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
+    const { environment, externalUserId } = getClientData(client);
 
     const room = getExternalUserRoom(environment.id, externalUserId);
     if (contentType === ContentDataType.FLOW) {
@@ -2435,9 +2431,9 @@ export class WebSocketV2Service {
    */
   unsetSessionData(client: Socket, contentType: ContentDataType): void {
     if (contentType === ContentDataType.FLOW) {
-      client.data.flowSession = null;
+      setClientData(client, { flowSession: undefined });
     } else if (contentType === ContentDataType.CHECKLIST) {
-      client.data.checklistSession = null;
+      setClientData(client, { checklistSession: undefined });
     }
   }
 
@@ -2448,11 +2444,10 @@ export class WebSocketV2Service {
    * @param conditions - The conditions to track
    */
   trackClientConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
-    const environment = client.data.environment;
-    const externalUserId = client.data.externalUserId;
+    const { environment, externalUserId } = getClientData(client);
 
     const room = getExternalUserRoom(environment.id, externalUserId);
-    const existingConditions = client.data.trackConditions || [];
+    const { trackConditions: existingConditions } = getClientData(client);
 
     // Update new conditions with existing isActive values
     const conditions: TrackCondition[] = trackConditions.map((trackCondition: TrackCondition) => {
@@ -2495,7 +2490,7 @@ export class WebSocketV2Service {
       }
     }
 
-    client.data.trackConditions = emitTrackConditions;
+    setClientData(client, { trackConditions: emitTrackConditions });
   }
 
   /**
@@ -2512,9 +2507,7 @@ export class WebSocketV2Service {
     conditionId: string,
     isActive: boolean,
   ): Promise<boolean> {
-    const externalUserId = client.data.externalUserId;
-
-    const existingConditions = client.data.trackConditions || [];
+    const { externalUserId, trackConditions: existingConditions } = getClientData(client);
 
     // Check if condition exists
     const conditionExists = existingConditions.some(
@@ -2541,7 +2534,7 @@ export class WebSocketV2Service {
     });
 
     // Update client data
-    client.data.trackConditions = conditions;
+    setClientData(client, { trackConditions: conditions });
 
     // Start content if the condition is active
     await this.startContent(server, client, ContentDataType.FLOW);
@@ -2555,7 +2548,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    */
   untrackCurrentTrackConditions(server: Server, client: Socket, excludeConditionIds?: string[]) {
-    const { trackConditions } = this.getClientData(client);
+    const { trackConditions } = getClientData(client);
     if (!trackConditions) return;
     const filteredTrackConditions = trackConditions?.filter(
       (trackCondition) => !excludeConditionIds?.includes(trackCondition.condition.id),
@@ -2570,7 +2563,7 @@ export class WebSocketV2Service {
    * @param trackConditions - The conditions to un-track
    */
   untrackTrackConditions(server: Server, client: Socket, untrackConditions: TrackCondition[]) {
-    const { trackConditions, environment, externalUserId } = this.getClientData(client);
+    const { trackConditions, environment, externalUserId } = getClientData(client);
     const room = getExternalUserRoom(environment.id, externalUserId);
 
     const conditionIdsToRemove: string[] = [];
@@ -2585,30 +2578,13 @@ export class WebSocketV2Service {
       }
     }
 
-    // Remove successfully emitted conditions from client.data.trackConditions
+    // Remove successfully emitted conditions from trackConditions
     if (conditionIdsToRemove.length > 0 && trackConditions) {
-      client.data.trackConditions = trackConditions.filter(
-        (condition: TrackCondition) => !conditionIdsToRemove.includes(condition.condition.id),
-      );
+      setClientData(client, {
+        trackConditions: trackConditions.filter(
+          (condition: TrackCondition) => !conditionIdsToRemove.includes(condition.condition.id),
+        ),
+      });
     }
-  }
-
-  /**
-   * Get the client data
-   * @param client - The client instance
-   * @returns The client data
-   */
-  getClientData(client: Socket) {
-    const environment = client?.data?.environment as Environment | undefined;
-    const externalUserId = client?.data?.externalUserId as string | undefined;
-    const externalCompanyId = client?.data?.externalCompanyId as string | undefined;
-    const trackConditions = client?.data?.trackConditions as TrackCondition[] | undefined;
-
-    return {
-      environment,
-      externalUserId,
-      externalCompanyId,
-      trackConditions,
-    };
   }
 }

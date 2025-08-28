@@ -18,3 +18,4 @@ export type VersionWithStepsAndContent = Version & {
   steps: Step[];
   content: Content;
 };
+export type Environment = Prisma.Environment;
