@@ -25,7 +25,7 @@ import {
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
 } from './web-socket-v2.dto';
-import { getExternalUserRoom } from '@/utils/ws-utils';
+import { getExternalUserRoom, setClientData } from '@/utils/ws-utils';
 import { ClientContext } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
@@ -60,9 +60,7 @@ export class WebSocketV2Gateway {
         }
 
         // Store validated data in socket
-        socket.data.externalUserId = externalUserId;
-        socket.data.envId = environment.id;
-        socket.data.environment = environment;
+        setClientData(socket, { environment, externalUserId });
 
         if (clientContext) {
           await this.service.updateUserClientContext(socket, clientContext);
