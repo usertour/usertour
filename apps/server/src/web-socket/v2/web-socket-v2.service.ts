@@ -2335,7 +2335,7 @@ export class WebSocketV2Service {
       return false;
     }
 
-    await this.setContentSession(server, client, contentSession);
+    this.setContentSession(server, client, contentSession);
 
     this.prisma.bizSession.update({
       where: { id: sessionId },
@@ -2365,7 +2365,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @param session - The session to set
    */
-  async setContentSession(server: Server, client: Socket, session: SDKContentSession) {
+  setContentSession(server: Server, client: Socket, session: SDKContentSession) {
     const environment = client.data.environment;
     const externalUserId = client.data.externalUserId;
     const room = getExternalUserRoom(environment.id, externalUserId);
