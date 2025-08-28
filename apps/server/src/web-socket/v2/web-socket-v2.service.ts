@@ -1736,17 +1736,15 @@ export class WebSocketV2Service {
     client: Socket,
     contentTypes: ContentDataType[],
   ): Promise<CustomContentVersion[]> {
-    const environment = client.data.environment as Environment;
-    const externalUserId = client.data.externalUserId as string;
-    const externalCompanyId = client.data.externalCompanyId as string;
+    const { environment, trackConditions, externalUserId, externalCompanyId } =
+      this.getClientData(client);
     const userClientContext = await this.getUserClientContext(environment, externalUserId);
     const clientContext = userClientContext?.clientContext ?? {};
-    const trackConditions = (client.data.trackConditions as TrackCondition[]) || [];
     const activatedIds = trackConditions
-      .filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
+      ?.filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
       .map((trackCondition: TrackCondition) => trackCondition.condition.id);
     const deactivatedIds = trackConditions
-      .filter((trackCondition: TrackCondition) => !trackCondition.condition.actived)
+      ?.filter((trackCondition: TrackCondition) => !trackCondition.condition.actived)
       .map((trackCondition: TrackCondition) => trackCondition.condition.id);
 
     const contentVersions = await this.fetchCustomContentVersions(
@@ -2537,7 +2535,8 @@ export class WebSocketV2Service {
    */
   untrackCurrentTrackConditions(server: Server, client: Socket, excludeConditionIds?: string[]) {
     const { trackConditions } = this.getClientData(client);
-    const filteredTrackConditions = trackConditions.filter(
+    if (!trackConditions) return;
+    const filteredTrackConditions = trackConditions?.filter(
       (trackCondition) => !excludeConditionIds?.includes(trackCondition.condition.id),
     );
     this.untrackTrackConditions(server, client, filteredTrackConditions);
@@ -2549,29 +2548,25 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @param trackConditions - The conditions to un-track
    */
-  untrackTrackConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
-    const {
-      trackConditions: currentTrackConditions,
-      environment,
-      externalUserId,
-    } = this.getClientData(client);
+  untrackTrackConditions(server: Server, client: Socket, untrackConditions: TrackCondition[]) {
+    const { trackConditions, environment, externalUserId } = this.getClientData(client);
     const room = getExternalUserRoom(environment.id, externalUserId);
 
     const conditionIdsToRemove: string[] = [];
 
-    for (const trackCondition of trackConditions) {
+    for (const untrackCondition of untrackConditions) {
       const emitted = server.to(room).emit('untrack-client-condition', {
-        conditionId: trackCondition.condition.id,
+        conditionId: untrackCondition.condition.id,
       });
 
       if (emitted) {
-        conditionIdsToRemove.push(trackCondition.condition.id);
+        conditionIdsToRemove.push(untrackCondition.condition.id);
       }
     }
 
     // Remove successfully emitted conditions from client.data.trackConditions
-    if (conditionIdsToRemove.length > 0) {
-      client.data.trackConditions = currentTrackConditions.filter(
+    if (conditionIdsToRemove.length > 0 && trackConditions) {
+      client.data.trackConditions = trackConditions.filter(
         (condition: TrackCondition) => !conditionIdsToRemove.includes(condition.condition.id),
       );
     }
@@ -2583,10 +2578,10 @@ export class WebSocketV2Service {
    * @returns The client data
    */
   getClientData(client: Socket) {
-    const environment = client.data.environment as Environment;
-    const externalUserId = client.data.externalUserId as string;
-    const externalCompanyId = client.data.externalCompanyId as string | '';
-    const trackConditions = (client.data.trackConditions as TrackCondition[] | undefined) || [];
+    const environment = client?.data?.environment as Environment | undefined;
+    const externalUserId = client?.data?.externalUserId as string | undefined;
+    const externalCompanyId = client?.data?.externalCompanyId as string | undefined;
+    const trackConditions = client?.data?.trackConditions as TrackCondition[] | undefined;
 
     return {
       environment,
