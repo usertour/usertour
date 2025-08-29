@@ -2186,15 +2186,11 @@ export class WebSocketV2Service {
    * @returns True if the flow was started successfully
    */
   async startFlow(server: Server, client: Socket, startFlowDto: StartFlowDto): Promise<boolean> {
-    const options = {
-      contentId: startFlowDto.contentId,
-      stepIndex: startFlowDto.stepIndex,
-    };
     const contentSession = this.getContentSession(client, ContentDataType.FLOW);
     if (contentSession) {
       this.unsetContentSession(server, client, ContentDataType.FLOW, contentSession.id);
     }
-    return await this.startContent(server, client, ContentDataType.FLOW, options);
+    return await this.startContent(server, client, ContentDataType.FLOW, startFlowDto);
   }
 
   /**
