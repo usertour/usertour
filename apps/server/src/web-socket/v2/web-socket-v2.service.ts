@@ -1874,7 +1874,7 @@ export class WebSocketV2Service {
    * @param endFlowDto - The end flow DTO
    * @returns True if the event was tracked successfully
    */
-  async endFlow(client: Socket, endFlowDto: EndFlowDto): Promise<boolean> {
+  async endFlow(server: Server, client: Socket, endFlowDto: EndFlowDto): Promise<boolean> {
     const { sessionId, reason } = endFlowDto;
     const { externalUserId } = getClientData(client);
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -1904,7 +1904,11 @@ export class WebSocketV2Service {
       eventData,
     });
 
-    return this.unsetSessionData(client, ContentDataType.FLOW);
+    // Unset current flow session
+    this.unsetSessionData(client, ContentDataType.FLOW);
+    // Start new flow session
+    await this.startContent(server, client, ContentDataType.FLOW);
+    return true;
   }
 
   /**
@@ -2186,6 +2190,10 @@ export class WebSocketV2Service {
       contentId: startFlowDto.contentId,
       stepIndex: startFlowDto.stepIndex,
     };
+    const contentSession = this.getContentSession(client, ContentDataType.FLOW);
+    if (contentSession) {
+      this.unsetContentSession(server, client, ContentDataType.FLOW, contentSession.id);
+    }
     return await this.startContent(server, client, ContentDataType.FLOW, options);
   }
 
@@ -2423,7 +2431,7 @@ export class WebSocketV2Service {
 
     // Update new conditions with existing isActive values
     const conditions: TrackCondition[] = trackConditions.map((trackCondition: TrackCondition) => {
-      const existingCondition = existingConditions.find(
+      const existingCondition = existingConditions?.find(
         (existing: TrackCondition) => existing.condition.id === trackCondition.condition.id,
       );
 
@@ -2448,7 +2456,7 @@ export class WebSocketV2Service {
 
     const newConditions = conditions.filter(
       (condition) =>
-        !existingConditions.some(
+        !existingConditions?.some(
           (existing: TrackCondition) => existing.condition.id === condition.condition.id,
         ),
     );
@@ -2481,7 +2489,7 @@ export class WebSocketV2Service {
     const { externalUserId, trackConditions: existingConditions } = getClientData(client);
 
     // Check if condition exists
-    const conditionExists = existingConditions.some(
+    const conditionExists = existingConditions?.some(
       (condition: TrackCondition) => condition.condition.id === conditionId,
     );
 
@@ -2491,7 +2499,7 @@ export class WebSocketV2Service {
     }
 
     // Update existing conditions with the new active status
-    const conditions = existingConditions.map((trackCondition: TrackCondition) => {
+    const conditions = existingConditions?.map((trackCondition: TrackCondition) => {
       if (trackCondition.condition.id === conditionId) {
         return {
           ...trackCondition,

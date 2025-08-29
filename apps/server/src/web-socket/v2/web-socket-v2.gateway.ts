@@ -118,7 +118,7 @@ export class WebSocketV2Gateway {
     @MessageBody() endFlowDto: EndFlowDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.endFlow(client, endFlowDto);
+    return await this.service.endFlow(this.server, client, endFlowDto);
   }
 
   @SubscribeMessage('go-to-step')

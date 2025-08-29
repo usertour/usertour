@@ -30,7 +30,7 @@ export const getClientData = (client: Socket): ClientData => {
   const environment = client?.data?.environment as Environment | undefined;
   const externalUserId = client?.data?.externalUserId as string | undefined;
   const externalCompanyId = client?.data?.externalCompanyId as string | undefined;
-  const trackConditions = client?.data?.trackConditions as TrackCondition[] | undefined;
+  const trackConditions = (client?.data?.trackConditions as TrackCondition[] | undefined) ?? [];
   const flowSession = client?.data?.flowSession as SDKContentSession | undefined;
   const checklistSession = client?.data?.checklistSession as SDKContentSession | undefined;
 
