@@ -14,8 +14,6 @@ export type ContentOnEnvironment = Prisma.ContentOnEnvironment;
 export type ContentWithContentOnEnvironments = Content & {
   contentOnEnvironments: ContentOnEnvironment[];
 };
-export type VersionWithStepsAndContent = Version & {
-  steps: Step[];
-  content: Content;
-};
+export type VersionWithSteps = Version & { steps: Step[] };
+export type VersionWithStepsAndContent = VersionWithSteps & { content: Content };
 export type Environment = Prisma.Environment;

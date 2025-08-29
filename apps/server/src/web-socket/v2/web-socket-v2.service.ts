@@ -14,6 +14,8 @@ import {
   Version,
   BizEvent,
   BizSession,
+  VersionWithStepsAndContent,
+  VersionWithSteps,
 } from '@/common/types/schema';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -273,89 +275,41 @@ export class WebSocketV2Service {
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
+    versionId?: string,
   ): Promise<CustomContentVersion[]> {
     try {
-      const environmentId = environment.id;
-
-      // Step 1: Get content list
-      const contentList = await this.prisma.content.findMany({
-        where: {
-          contentOnEnvironments: {
-            some: {
-              environmentId,
-              published: true,
-            },
-          },
-        },
-        include: {
-          contentOnEnvironments: true,
-        },
-      });
-
-      if (contentList.length === 0) {
-        return [];
-      }
-
-      // Step 2: Get bizUser and attributes in parallel
-      const [bizUser, attributes] = await Promise.all([
-        this.prisma.bizUser.findFirst({
-          where: { externalId: String(externalUserId), environmentId },
-        }),
-        this.prisma.attribute.findMany({
-          where: {
-            projectId: environment.projectId,
-            bizType: {
-              in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
-            },
-          },
-        }),
-      ]);
-
+      const { bizUser, attributes } = await this.getUserAndAttributes(environment, externalUserId);
       if (!bizUser) {
         return [];
       }
 
-      // Step 3: Batch fetch all versions and steps
-      const versionIds = contentList
-        .map((content) => getPublishedVersionId(content, environment.id))
-        .filter(Boolean);
+      const versions = await this.getVersions(environment, versionId);
+      if (versions.length === 0) {
+        return [];
+      }
 
-      const versions = await this.prisma.version.findMany({
-        where: { id: { in: versionIds } },
-        include: { steps: { orderBy: { sequence: 'asc' } } },
-      });
-
-      const versionMap = new Map(versions.map((v) => [v.id, v]));
-
-      // Step 4: Batch fetch session statistics for all contents
+      // Batch fetch session statistics for all contents
       const contentSessionMap = await this.getBatchContentSession(
-        contentList.map((c) => c.id),
+        versions.map((v) => v.content.id),
         bizUser.id,
       );
 
-      // Step 5: Process all contents in parallel
-      const processedContents = await Promise.all(
-        contentList.map(async (content) => {
-          const publishedVersionId = getPublishedVersionId(content, environment.id);
-
-          const version = versionMap.get(publishedVersionId);
-          if (!version) {
-            return null;
-          }
-
+      // Process all versions in parallel
+      const processedVersions = await Promise.all(
+        versions.map(async (version) => {
           return await this.processContentOptimized(
-            content,
+            version.content,
             version,
             environment,
             bizUser,
             attributes,
-            contentSessionMap.get(content.id),
+            contentSessionMap.get(version.content.id),
             String(externalCompanyId),
           );
         }),
       );
 
-      return processedContents.filter(Boolean);
+      return processedVersions.filter(Boolean);
     } catch (error) {
       this.logger.error({
         message: `Error in fetchCustomContentVersions: ${error.message}`,
@@ -363,6 +317,93 @@ export class WebSocketV2Service {
       });
       return [];
     }
+  }
+
+  /**
+   * Get user and attributes for content processing
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @returns Object containing bizUser and attributes
+   */
+  private async getUserAndAttributes(
+    environment: Environment,
+    externalUserId: string,
+  ): Promise<{ bizUser: BizUser | null; attributes: Attribute[] }> {
+    const environmentId = environment.id;
+    const projectId = environment.projectId;
+
+    const [bizUser, attributes] = await Promise.all([
+      this.prisma.bizUser.findFirst({
+        where: { externalId: String(externalUserId), environmentId },
+      }),
+      this.prisma.attribute.findMany({
+        where: {
+          projectId,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
+        },
+      }),
+    ]);
+
+    return { bizUser, attributes };
+  }
+
+  /**
+   * Get versions for content processing
+   * @param environment - The environment
+   * @param versionId - Optional specific version ID
+   * @returns Array of versions with content and steps
+   */
+  private async getVersions(
+    environment: Environment,
+    versionId?: string,
+  ): Promise<VersionWithStepsAndContent[]> {
+    if (versionId) {
+      // Get the specific version with content
+      const version = await this.prisma.version.findFirst({
+        where: {
+          id: versionId,
+        },
+        include: {
+          content: true,
+          steps: { orderBy: { sequence: 'asc' } },
+        },
+      });
+
+      return version ? [version] : [];
+    }
+
+    // Get all published versions with content
+    const publishedContents = await this.prisma.content.findMany({
+      where: {
+        contentOnEnvironments: {
+          some: {
+            environmentId: environment.id,
+            published: true,
+          },
+        },
+      },
+      include: {
+        contentOnEnvironments: true,
+      },
+    });
+
+    // Get version IDs for published contents
+    const versionIds = publishedContents
+      .map((content) => getPublishedVersionId(content, environment.id))
+      .filter(Boolean);
+
+    // Get versions with content and steps
+    const versions = await this.prisma.version.findMany({
+      where: { id: { in: versionIds } },
+      include: {
+        content: true,
+        steps: { orderBy: { sequence: 'asc' } },
+      },
+    });
+
+    return versions;
   }
 
   /**
@@ -1444,33 +1485,6 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Query ContentSession for a user/session
-   * @param externalUserId - external user id
-   * @param sessionId - session id
-   * @param environment - environment context
-   * @returns ContentSession or false if not found
-   */
-  async getContentSessionBySession(
-    externalUserId: string,
-    sessionId: string,
-    environment: Environment,
-  ): Promise<CustomContentSession | false> {
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
-    });
-    if (!bizUser) return false;
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-    });
-    if (!bizSession) return false;
-    const contentSession = await this.getBatchContentSession([bizSession.contentId], bizUser.id);
-    return {
-      contentId: bizSession.contentId,
-      ...contentSession.get(bizSession.contentId),
-    };
-  }
-
-  /**
    * Get session statistics for multiple contents in batch
    * @param contentIds - Array of content IDs
    * @param bizUserId - The ID of the business user
@@ -1605,8 +1619,8 @@ export class WebSocketV2Service {
    * @returns Processed content configuration or null if processing fails
    */
   private async processContentOptimized(
-    content: Content & { contentOnEnvironments: any[] },
-    version: Version & { steps: Step[] },
+    content: Content,
+    version: VersionWithSteps,
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
@@ -1746,6 +1760,7 @@ export class WebSocketV2Service {
   async findActivatedCustomContentVersionByEvaluated(
     client: Socket,
     contentTypes: ContentDataType[],
+    versionId?: string,
   ): Promise<CustomContentVersion[]> {
     const { environment, trackConditions, externalUserId, externalCompanyId } =
       getClientData(client);
@@ -1762,6 +1777,7 @@ export class WebSocketV2Service {
       environment,
       externalUserId,
       externalCompanyId,
+      versionId,
     );
     const filteredContentVersions = contentVersions.filter((contentVersion) =>
       contentTypes.includes(contentVersion.content.type as ContentDataType),
@@ -2162,22 +2178,25 @@ export class WebSocketV2Service {
     contentType: ContentDataType,
     options?: StartContentOptions,
   ): Promise<boolean> {
-    const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
-      client,
-      [contentType],
-    );
     const contentSession = this.getContentSession(client, contentType);
 
     if (contentSession) {
-      const sessionVersion = evaluatedContentVersions.find(
-        (version) => version.id === contentSession?.version.id,
+      const sessionVersion = await this.findActivatedCustomContentVersionByEvaluated(
+        client,
+        [contentType],
+        contentSession.version.id,
       );
-      if (sessionVersion && !isActivedHideRules(sessionVersion)) {
+      if (sessionVersion && !isActivedHideRules(sessionVersion[0])) {
         return true;
       }
       this.unsetContentSession(server, client, contentType, contentSession.id);
       this.untrackCurrentTrackConditions(server, client);
     }
+
+    const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
+      client,
+      [contentType],
+    );
 
     const contentStarted = await this.tryStartContent(
       server,
