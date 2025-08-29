@@ -63,7 +63,7 @@ export class WebSocketV2Gateway {
         setClientData(socket, { environment, externalUserId });
 
         if (clientContext) {
-          await this.service.updateUserClientContext(socket, clientContext);
+          await this.service.setUserClientContext(socket, clientContext);
         }
 
         const room = getExternalUserRoom(environment.id, externalUserId);
@@ -166,7 +166,7 @@ export class WebSocketV2Gateway {
     @MessageBody() context: ClientContext,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.updateUserClientContext(client, context);
+    return await this.service.updateClientContext(this.server, client, context);
   }
 
   @SubscribeMessage('track-event')

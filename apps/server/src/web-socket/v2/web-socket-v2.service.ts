@@ -1710,7 +1710,7 @@ export class WebSocketV2Service {
    * @param client - The client instance
    * @param clientContext - The client context
    */
-  async updateUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
+  async setUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
     const { environment, externalUserId, externalCompanyId } = getClientData(client);
     const key = `user_context:${environment.id}:${externalUserId}`;
     await this.redisService.setex(
@@ -2037,6 +2037,23 @@ export class WebSocketV2Service {
       eventData,
     });
 
+    return true;
+  }
+
+  /**
+   * Update client context
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param clientContext - The client context
+   * @returns True if the client context was updated successfully
+   */
+  async updateClientContext(
+    server: Server,
+    client: Socket,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    await this.setUserClientContext(client, clientContext);
+    await this.startContent(server, client, ContentDataType.FLOW);
     return true;
   }
 
