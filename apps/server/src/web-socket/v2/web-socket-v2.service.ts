@@ -2172,7 +2172,7 @@ export class WebSocketV2Service {
       const sessionVersion = evaluatedContentVersions.find(
         (version) => version.id === contentSession?.version.id,
       );
-      if (!isActivedHideRules(sessionVersion)) {
+      if (sessionVersion && !isActivedHideRules(sessionVersion)) {
         return true;
       }
       this.unsetContentSession(server, client, contentType, contentSession.id);
