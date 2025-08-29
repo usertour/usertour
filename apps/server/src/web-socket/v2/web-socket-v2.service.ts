@@ -15,7 +15,6 @@ import {
   BizEvent,
   BizSession,
   VersionWithStepsAndContent,
-  VersionWithSteps,
 } from '@/common/types/schema';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -308,7 +307,6 @@ export class WebSocketV2Service {
       const processedVersions = await Promise.all(
         versions.map(async (version) => {
           return await this.processContentOptimized(
-            version.content,
             version,
             environment,
             bizUser,
@@ -1629,17 +1627,18 @@ export class WebSocketV2Service {
    * @returns Processed content configuration or null if processing fails
    */
   private async processContentOptimized(
-    content: Content,
-    version: VersionWithSteps,
+    version: VersionWithStepsAndContent,
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
-    contentSession: CustomContentSession,
+    session: CustomContentSession,
     externalCompanyId?: string,
   ): Promise<CustomContentVersion> {
     if (!version) {
       return null;
     }
+
+    const content = version.content;
 
     // Process config and data in parallel
     const [config, processedData, processedSteps] = await Promise.all([
@@ -1661,8 +1660,8 @@ export class WebSocketV2Service {
       data: processedData as any,
       steps: processedSteps,
       config,
-      content: content,
-      session: contentSession,
+      content,
+      session,
     };
   }
 
