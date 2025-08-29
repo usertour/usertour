@@ -75,7 +75,17 @@ import { CustomContentVersion, CustomContentSession } from '@/common/types/conte
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
-import { getClientData, getExternalUserRoom, setClientData } from '@/utils/ws-utils';
+import {
+  getClientData,
+  getContentSession,
+  getExternalUserRoom,
+  setClientData,
+  setContentSession,
+  trackClientEvent,
+  unsetContentSession,
+  unsetSessionData,
+  untrackClientEvent,
+} from '@/utils/ws-utils';
 
 type SegmentDataItem = {
   data: {
@@ -1895,9 +1905,7 @@ export class WebSocketV2Service {
       eventData,
     });
 
-    this.unsetSessionData(client, ContentDataType.FLOW);
-
-    return true;
+    return unsetSessionData(client, ContentDataType.FLOW);
   }
 
   /**
@@ -2178,7 +2186,7 @@ export class WebSocketV2Service {
     contentType: ContentDataType,
     options?: StartContentOptions,
   ): Promise<boolean> {
-    const contentSession = this.getContentSession(client, contentType);
+    const contentSession = getContentSession(client, contentType);
 
     if (contentSession) {
       const sessionVersion = await this.findActivatedCustomContentVersionByEvaluated(
@@ -2189,7 +2197,7 @@ export class WebSocketV2Service {
       if (sessionVersion && !isActivedHideRules(sessionVersion[0])) {
         return true;
       }
-      this.unsetContentSession(server, client, contentType, contentSession.id);
+      unsetContentSession(server, client, contentType, contentSession.id);
       this.untrackCurrentTrackConditions(server, client);
     }
 
@@ -2361,7 +2369,7 @@ export class WebSocketV2Service {
       return false;
     }
 
-    this.setContentSession(server, client, contentSession);
+    setContentSession(server, client, contentSession);
 
     this.prisma.bizSession.update({
       where: { id: sessionId },
@@ -2383,77 +2391,6 @@ export class WebSocketV2Service {
     }
 
     return true;
-  }
-
-  /**
-   * Set the content session for the client
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param session - The session to set
-   */
-  setContentSession(server: Server, client: Socket, session: SDKContentSession) {
-    const { environment, externalUserId } = getClientData(client);
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    const contentType = session.content.type as ContentDataType;
-    if (contentType === ContentDataType.FLOW) {
-      setClientData(client, { flowSession: session });
-      server.to(room).emit('set-flow-session', session);
-    } else {
-      setClientData(client, { checklistSession: session });
-      server.to(room).emit('set-checklist-session', session);
-    }
-  }
-
-  /**
-   * Get the content session for the client
-   * @param client - The client instance
-   * @returns The content session
-   */
-  getContentSession(client: Socket, contentType: ContentDataType): SDKContentSession | null {
-    if (contentType === ContentDataType.FLOW) {
-      return getClientData(client).flowSession;
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return getClientData(client).checklistSession;
-    }
-    return null;
-  }
-
-  /**
-   * Unset the content session for the client
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param contentType - The content type to unset
-   * @param sessionId - The ID of the session to unset
-   */
-  unsetContentSession(
-    server: Server,
-    client: Socket,
-    contentType: ContentDataType,
-    sessionId: string,
-  ) {
-    const { environment, externalUserId } = getClientData(client);
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    if (contentType === ContentDataType.FLOW) {
-      server.to(room).emit('unset-flow-session', { sessionId });
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      server.to(room).emit('unset-checklist-session', { sessionId });
-    }
-    this.unsetSessionData(client, contentType);
-  }
-
-  /**
-   * Unset the session data for the client
-   * @param client - The client instance
-   * @param contentType - The content type to unset
-   */
-  unsetSessionData(client: Socket, contentType: ContentDataType): void {
-    if (contentType === ContentDataType.FLOW) {
-      setClientData(client, { flowSession: undefined });
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      setClientData(client, { checklistSession: undefined });
-    }
   }
 
   /**
@@ -2493,7 +2430,6 @@ export class WebSocketV2Service {
       };
     });
 
-    // Filter out conditions that already exist to only emit new ones
     const newConditions = conditions.filter(
       (condition) =>
         !existingConditions.some(
@@ -2503,7 +2439,7 @@ export class WebSocketV2Service {
 
     const emitTrackConditions: TrackCondition[] = [];
     for (const condition of newConditions) {
-      const emitted = server.to(room).emit('track-client-condition', condition);
+      const emitted = trackClientEvent(server, room, condition);
       if (emitted) {
         emitTrackConditions.push(condition);
       }
@@ -2588,9 +2524,7 @@ export class WebSocketV2Service {
     const conditionIdsToRemove: string[] = [];
 
     for (const untrackCondition of untrackConditions) {
-      const emitted = server.to(room).emit('untrack-client-condition', {
-        conditionId: untrackCondition.condition.id,
-      });
+      const emitted = untrackClientEvent(server, room, untrackCondition.condition.id);
 
       if (emitted) {
         conditionIdsToRemove.push(untrackCondition.condition.id);
