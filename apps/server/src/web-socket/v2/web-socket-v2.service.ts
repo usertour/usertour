@@ -1163,9 +1163,10 @@ export class WebSocketV2Service {
    * @returns The upserted business users
    */
   async upsertBizUsers(client: Socket, data: UpsertUserDto): Promise<boolean> {
-    const { userId, attributes } = data;
+    const { userId: externalUserId, attributes } = data;
     const { environment } = getClientData(client);
-    await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
+    await this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id);
+    setClientData(client, { externalUserId });
     return true;
   }
 
