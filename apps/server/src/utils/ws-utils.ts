@@ -1,6 +1,5 @@
 import { Environment } from '@/common/types/schema';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
-import { ContentDataType } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 
 type ClientData = {
@@ -52,82 +51,6 @@ export const getClientData = (client: Socket): ClientData => {
  */
 export const setClientData = (client: Socket, clientData: Partial<ClientData>) => {
   Object.assign(client.data, clientData);
-};
-
-/**
- * Set the content session for the client
- * @param server - The server instance
- * @param client - The client instance
- * @param session - The session to set
- */
-export const setContentSession = (server: Server, client: Socket, session: SDKContentSession) => {
-  const { environment, externalUserId } = getClientData(client);
-  const room = getExternalUserRoom(environment.id, externalUserId);
-  const contentType = session.content.type as ContentDataType;
-  if (contentType === ContentDataType.FLOW) {
-    setClientData(client, { flowSession: session });
-    setFlowSession(server, room, session);
-  } else if (contentType === ContentDataType.CHECKLIST) {
-    setClientData(client, { checklistSession: session });
-    setChecklistSession(server, room, session);
-  }
-};
-
-/**
- * Get the content session for the client
- * @param client - The client instance
- * @param contentType - The content type
- * @returns The content session
- */
-export const getContentSession = (
-  client: Socket,
-  contentType: ContentDataType,
-): SDKContentSession | null => {
-  if (contentType === ContentDataType.FLOW) {
-    return getClientData(client).flowSession;
-  }
-  if (contentType === ContentDataType.CHECKLIST) {
-    return getClientData(client).checklistSession;
-  }
-  return null;
-};
-
-/**
- * Unset the content session for the client
- * @param server - The server instance
- * @param client - The client instance
- * @param contentType - The content type to unset
- * @param sessionId - The ID of the session to unset
- */
-export const unsetContentSession = (
-  server: Server,
-  client: Socket,
-  contentType: ContentDataType,
-  sessionId: string,
-) => {
-  const { environment, externalUserId } = getClientData(client);
-
-  const room = getExternalUserRoom(environment.id, externalUserId);
-  if (contentType === ContentDataType.FLOW) {
-    unsetFlowSession(server, room, sessionId);
-  } else if (contentType === ContentDataType.CHECKLIST) {
-    unsetChecklistSession(server, room, sessionId);
-  }
-  unsetSessionData(client, contentType);
-};
-
-/**
- * Unset the session data for the client
- * @param client - The client instance
- * @param contentType - The content type to unset
- */
-export const unsetSessionData = (client: Socket, contentType: ContentDataType): boolean => {
-  if (contentType === ContentDataType.FLOW) {
-    setClientData(client, { flowSession: undefined });
-  } else if (contentType === ContentDataType.CHECKLIST) {
-    setClientData(client, { checklistSession: undefined });
-  }
-  return true;
 };
 
 /**
