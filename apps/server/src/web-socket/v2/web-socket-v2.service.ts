@@ -2135,13 +2135,14 @@ export class WebSocketV2Service {
     client: Socket,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
+    const { sessionId, stepId } = params;
     const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: params.sessionId },
+      where: { id: sessionId },
       include: { bizUser: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
     const version = bizSession.version;
-    const step = version.steps.find((s) => s.id === params.stepId);
+    const step = version.steps.find((s) => s.id === stepId);
     if (!step) return false;
     const stepIndex = version.steps.findIndex((s) => s.id === step.id);
     if (stepIndex === -1) return false;
