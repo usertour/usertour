@@ -1907,8 +1907,8 @@ export class WebSocketV2Service {
 
     // Unset current flow session
     this.unsetSessionData(client, ContentDataType.FLOW);
-    // Start new flow session
-    await this.startContent(server, client, ContentDataType.FLOW);
+    // Toggle contents for the client
+    await this.toggleContents(server, client);
     return true;
   }
 
@@ -2058,7 +2058,7 @@ export class WebSocketV2Service {
     clientContext: ClientContext,
   ): Promise<boolean> {
     await this.setUserClientContext(client, clientContext);
-    await this.startContent(server, client, ContentDataType.FLOW);
+    await this.toggleContents(server, client);
     return true;
   }
 
@@ -2177,7 +2177,7 @@ export class WebSocketV2Service {
    * @returns True if the batch was ended successfully
    */
   async endBatch(server: Server, client: Socket): Promise<boolean> {
-    return await this.startContent(server, client, ContentDataType.FLOW);
+    return await this.toggleContents(server, client);
   }
 
   /**
@@ -2188,17 +2188,30 @@ export class WebSocketV2Service {
    * @returns True if the flow was started successfully
    */
   async startFlow(server: Server, client: Socket, startFlowDto: StartFlowDto): Promise<boolean> {
-    return await this.startContent(server, client, ContentDataType.FLOW, startFlowDto);
+    return await this.startSingletonContent(server, client, ContentDataType.FLOW, startFlowDto);
   }
 
   /**
-   * Start content for the client
+   * Toggle contents for the client
+   * This method will start FLOW and CHECKLIST content, handling session cleanup and restart
+   * @param server - The server instance
+   * @param client - The client instance
+   * @returns True if the contents were toggled successfully
+   */
+  async toggleContents(server: Server, client: Socket): Promise<boolean> {
+    await this.startSingletonContent(server, client, ContentDataType.FLOW);
+    // await this.startSingletonContent(server, client, ContentDataType.CHECKLIST);
+    return true;
+  }
+
+  /**
+   * Start singleton content instance for the client
    * @param server - The server instance
    * @param client - The client instance
    * @param contentType - The content type
    * @param options - The options for starting content
    */
-  async startContent(
+  async startSingletonContent(
     server: Server,
     client: Socket,
     contentType: ContentDataType,
@@ -2597,7 +2610,7 @@ export class WebSocketV2Service {
     setClientData(client, { trackConditions: conditions });
 
     // Start content if the condition is active
-    await this.startContent(server, client, ContentDataType.FLOW);
+    await this.toggleContents(server, client);
 
     return true;
   }
