@@ -2392,7 +2392,7 @@ export class WebSocketV2Service {
 
     this.setContentSession(server, client, contentSession);
 
-    this.prisma.bizSession.update({
+    await this.prisma.bizSession.update({
       where: { id: sessionId },
       data: { versionId },
     });
