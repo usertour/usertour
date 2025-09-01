@@ -2210,18 +2210,18 @@ export class WebSocketV2Service {
       if (started) return true;
     }
 
-    const contentSession = this.getContentSession(client, contentType);
+    const session = this.getContentSession(client, contentType);
 
-    if (contentSession) {
+    if (session) {
       const sessionVersion = await this.findActivatedCustomContentVersionByEvaluated(
         client,
         [contentType],
-        contentSession.version.id,
+        session.version.id,
       );
       if (sessionVersion && !isActivedHideRules(sessionVersion[0])) {
         return true;
       }
-      this.unsetContentSession(server, client, contentType, contentSession.id);
+      this.unsetContentSession(server, client, contentType, session.id);
       this.untrackCurrentTrackConditions(server, client);
     }
 
