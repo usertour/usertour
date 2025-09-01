@@ -61,7 +61,6 @@ import {
   evaluateCustomContentVersion,
   ConditionExtractionMode,
   filterActivatedContentWithoutClientConditions,
-  findCustomContentVersionByContentId,
   findLatestActivatedCustomContentVersion,
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
@@ -2207,6 +2206,14 @@ export class WebSocketV2Service {
     contentType: ContentDataType,
     options?: StartContentOptions,
   ): Promise<boolean> {
+    const { contentId } = options ?? {};
+
+    // Strategy 1: Try to start by specific contentId
+    if (contentId) {
+      const started = await this.tryStartByContentId(server, client, contentType, options);
+      if (started) return true;
+    }
+
     const contentSession = this.getContentSession(client, contentType);
 
     if (contentSession) {
@@ -2227,7 +2234,22 @@ export class WebSocketV2Service {
       [contentType],
     );
 
-    const contentStarted = await this.tryStartContent(
+    // Strategy 2: Try to start by latest activated content version
+    const isLatestActivatedContentVersionStarted =
+      await this.tryStartByLatestActivatedContentVersion(
+        server,
+        client,
+        evaluatedContentVersions,
+        contentType,
+        options,
+      );
+
+    if (isLatestActivatedContentVersionStarted) {
+      return true;
+    }
+
+    // Strategy 3: Try to start by auto start conditions
+    const isAutoStartByConditions = await this.tryStartByAutoStartConditions(
       server,
       client,
       evaluatedContentVersions,
@@ -2235,11 +2257,10 @@ export class WebSocketV2Service {
       options,
     );
 
-    if (contentStarted) {
+    if (isAutoStartByConditions) {
       return true;
     }
 
-    // Track client conditions for remaining content
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
 
@@ -2256,37 +2277,70 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Try to start content using different strategies in priority order
+   * Try to start content by content ID
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param contentType - The content type
+   * @param options - The options for starting content
+   * @returns True if the content was started successfully
    */
-  private async tryStartContent(
+  private async tryStartByContentId(
+    server: Server,
+    client: Socket,
+    contentType: ContentDataType,
+    options: StartContentOptions,
+  ): Promise<boolean> {
+    const { contentId } = options;
+    const { environment } = getClientData(client);
+    // Get all published versions with content
+    const publishedVersion = await this.prisma.contentOnEnvironment.findFirst({
+      where: {
+        environmentId: environment.id,
+        contentId: contentId,
+        published: true,
+      },
+      include: {
+        publishedVersion: true,
+      },
+    });
+    if (!publishedVersion) {
+      return false;
+    }
+    const foundContentVersion = await this.findActivatedCustomContentVersionByEvaluated(
+      client,
+      [contentType],
+      publishedVersion.id,
+    );
+
+    if (foundContentVersion.length > 0) {
+      const started = await this.processContentVersion(
+        server,
+        client,
+        foundContentVersion[0],
+        options,
+        true,
+      );
+      if (started) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Try to start content by latest activated content version
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param evaluatedContentVersions - The evaluated content versions
+   * @param contentType - The content type
+   * @param options - The options for starting content
+   * @returns True if the content was started successfully
+   */
+  private async tryStartByLatestActivatedContentVersion(
     server: Server,
     client: Socket,
     evaluatedContentVersions: CustomContentVersion[],
     contentType: ContentDataType,
     options?: StartContentOptions,
   ): Promise<boolean> {
-    const { contentId } = options ?? {};
-
-    // Strategy 1: Try to start by specific contentId
-    if (contentId) {
-      const foundContentVersion = findCustomContentVersionByContentId(
-        evaluatedContentVersions,
-        contentId,
-      );
-
-      if (foundContentVersion) {
-        const started = await this.processContentVersion(
-          server,
-          client,
-          foundContentVersion,
-          options,
-          true,
-        );
-        if (started) return true;
-      }
-    }
-
-    // Strategy 2: Try to start with latest activated content version
     const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
       evaluatedContentVersions,
       contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
@@ -2302,8 +2356,25 @@ export class WebSocketV2Service {
       );
       if (started) return true;
     }
+    return false;
+  }
 
-    // Strategy 3: Try to start with auto-start content version
+  /**
+   * Try to start content by auto start conditions
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param evaluatedContentVersions - The evaluated content versions
+   * @param contentType - The content type
+   * @param options - The options for starting content
+   * @returns True if the content was started successfully
+   */
+  private async tryStartByAutoStartConditions(
+    server: Server,
+    client: Socket,
+    evaluatedContentVersions: CustomContentVersion[],
+    contentType: ContentDataType,
+    options?: StartContentOptions,
+  ): Promise<boolean> {
     const autoStartContentVersion = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
