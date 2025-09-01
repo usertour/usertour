@@ -2289,23 +2289,20 @@ export class WebSocketV2Service {
     const { contentId } = options;
     const { environment } = getClientData(client);
     // Get all published versions with content
-    const publishedVersion = await this.prisma.contentOnEnvironment.findFirst({
+    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
       where: {
         environmentId: environment.id,
         contentId: contentId,
         published: true,
       },
-      include: {
-        publishedVersion: true,
-      },
     });
-    if (!publishedVersion) {
+    if (!contentOnEnvironment) {
       return false;
     }
     const foundContentVersion = await this.findActivatedCustomContentVersionByEvaluated(
       client,
       [contentType],
-      publishedVersion.id,
+      contentOnEnvironment.publishedVersionId,
     );
 
     if (foundContentVersion.length > 0) {
