@@ -2299,17 +2299,17 @@ export class WebSocketV2Service {
     if (!contentOnEnvironment) {
       return false;
     }
-    const foundContentVersion = await this.findActivatedCustomContentVersionByEvaluated(
+    const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
       client,
       [contentType],
       contentOnEnvironment.publishedVersionId,
     );
 
-    if (foundContentVersion.length > 0) {
+    if (evaluatedContentVersions.length > 0) {
       const started = await this.processContentVersion(
         server,
         client,
-        foundContentVersion[0],
+        evaluatedContentVersions[0],
         options,
         true,
       );
