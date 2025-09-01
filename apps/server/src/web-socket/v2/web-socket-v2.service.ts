@@ -2210,17 +2210,15 @@ export class WebSocketV2Service {
       if (started) return true;
     }
 
+    // Handle existing session
     const session = this.getContentSession(client, contentType);
-
     if (session) {
-      const sessionVersion = await this.findActivatedCustomContentVersionByEvaluated(
-        client,
-        [contentType],
-        session.version.id,
-      );
-      if (sessionVersion && !isActivedHideRules(sessionVersion[0])) {
+      const isActive = await this.isSessionActive(client, contentType, session);
+      if (isActive) {
         return true;
       }
+
+      // Cleanup invalid session
       this.unsetContentSession(server, client, contentType, session.id);
       this.untrackCurrentTrackConditions(server, client);
     }
@@ -2270,6 +2268,27 @@ export class WebSocketV2Service {
     }
 
     return true;
+  }
+
+  /**
+   * Check if the existing session is still active
+   * @param client - The client instance
+   * @param contentType - The content type
+   * @param session - The existing session to validate
+   * @returns True if the session is still active
+   */
+  private async isSessionActive(
+    client: Socket,
+    contentType: ContentDataType,
+    session: SDKContentSession,
+  ): Promise<boolean> {
+    const sessionVersion = await this.findActivatedCustomContentVersionByEvaluated(
+      client,
+      [contentType],
+      session.version.id,
+    );
+
+    return sessionVersion && !isActivedHideRules(sessionVersion[0]);
   }
 
   /**
