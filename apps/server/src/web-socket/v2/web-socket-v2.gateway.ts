@@ -187,9 +187,9 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('toggle-client-condition')
   async toggleClientCondition(
-    @MessageBody() { conditionId, isActive }: ToggleClientConditionDto,
+    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.toggleClientCondition(this.server, client, conditionId, isActive);
+    return await this.service.toggleClientCondition(this.server, client, toggleClientConditionDto);
   }
 }

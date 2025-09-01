@@ -33,6 +33,7 @@ import {
   HideChecklistDto,
   ShowChecklistDto,
   TooltipTargetMissingDto,
+  ToggleClientConditionDto,
 } from './web-socket-v2.dto';
 import { getPublishedVersionId } from '@/utils/content';
 import {
@@ -2557,16 +2558,15 @@ export class WebSocketV2Service {
    * Toggle the isActive status of a specific client condition by condition ID
    * @param server - The server instance
    * @param client - The client instance
-   * @param conditionId - The ID of the condition to toggle
-   * @param isActive - The new active status
+   * @param toggleClientConditionDto - The DTO containing condition ID and active status
    * @returns True if the condition was toggled successfully
    */
   async toggleClientCondition(
     server: Server,
     client: Socket,
-    conditionId: string,
-    isActive: boolean,
+    toggleClientConditionDto: ToggleClientConditionDto,
   ): Promise<boolean> {
+    const { conditionId, isActive } = toggleClientConditionDto;
     const { externalUserId, trackConditions: existingConditions } = getClientData(client);
 
     // Check if condition exists
