@@ -689,36 +689,41 @@ export const getAttributeValue = (data: any, codeName: string): any => {
  * @returns Array of unique attrCode values
  */
 export const extractUserAttributeCodes = (editorContents: any): string[] => {
-  const attrCodes = new Set<string>();
+  try {
+    const attrCodes = new Set<string>();
 
-  const extractFromDescendants = (data: any) => {
-    for (const v of data) {
-      if ('children' in v && v.children) {
-        extractFromDescendants(v.children);
+    const extractFromDescendants = (data: any) => {
+      for (const v of data) {
+        if ('children' in v && v.children) {
+          extractFromDescendants(v.children);
+        }
+        if ('type' in v && v.type === 'user-attribute' && 'attrCode' in v && v.attrCode) {
+          attrCodes.add(v.attrCode);
+        }
       }
-      if ('type' in v && v.type === 'user-attribute' && 'attrCode' in v && v.attrCode) {
-        attrCodes.add(v.attrCode);
-      }
-    }
-  };
+    };
 
-  for (const editorContent of editorContents) {
-    if (!editorContent.children) {
-      continue;
-    }
-
-    for (const column of editorContent.children) {
-      if (!column.children) {
+    for (const editorContent of editorContents) {
+      if (!editorContent.children) {
         continue;
       }
 
-      for (const element of column.children) {
-        if (element.element.type === 'text' && element.element.data) {
-          extractFromDescendants(element.element.data);
+      for (const column of editorContent.children) {
+        if (!column.children) {
+          continue;
+        }
+
+        for (const element of column.children) {
+          if (element.element.type === 'text' && element.element.data) {
+            extractFromDescendants(element.element.data);
+          }
         }
       }
     }
-  }
 
-  return Array.from(attrCodes);
+    return Array.from(attrCodes);
+  } catch (error) {
+    console.error('Error in extractUserAttributeCodes:', error);
+    return [];
+  }
 };
