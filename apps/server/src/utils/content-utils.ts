@@ -682,3 +682,43 @@ export const getAttributeValue = (data: any, codeName: string): any => {
 
   return data[codeName] ?? null;
 };
+
+/**
+ * Extract all attrCode values from elements with type === 'user-attribute'
+ * @param editorContents - The editor contents to extract user attribute codes from
+ * @returns Array of unique attrCode values
+ */
+export const extractUserAttributeCodes = (editorContents: any): string[] => {
+  const attrCodes = new Set<string>();
+
+  const extractFromDescendants = (data: any) => {
+    for (const v of data) {
+      if ('children' in v && v.children) {
+        extractFromDescendants(v.children);
+      }
+      if ('type' in v && v.type === 'user-attribute' && 'attrCode' in v && v.attrCode) {
+        attrCodes.add(v.attrCode);
+      }
+    }
+  };
+
+  for (const editorContent of editorContents) {
+    if (!editorContent.children) {
+      continue;
+    }
+
+    for (const column of editorContent.children) {
+      if (!column.children) {
+        continue;
+      }
+
+      for (const element of column.children) {
+        if (element.element.type === 'text' && element.element.data) {
+          extractFromDescendants(element.element.data);
+        }
+      }
+    }
+  }
+
+  return Array.from(attrCodes);
+};
