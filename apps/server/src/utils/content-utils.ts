@@ -16,7 +16,7 @@ import {
   isAfter,
 } from 'date-fns';
 import { CustomContentVersion } from '@/common/types/content';
-import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
+import { BizEventWithEvent, BizSessionWithEvents, Step } from '@/common/types/schema';
 import {
   isUndefined,
   isConditionsActived,
@@ -611,4 +611,74 @@ export const extractClientTrackConditions = (
 ): TrackCondition[] => {
   const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
   return extractTrackConditions(customContentVersions, clientConditionTypes, extractionMode);
+};
+
+/**
+ * Recursively extracts attribute IDs from rules conditions
+ * @param conditions - Array of rules conditions
+ * @returns Array of unique attribute IDs
+ */
+export const extractAttributeIdsFromConditions = (conditions: RulesCondition[]): string[] => {
+  const attrIds: string[] = [];
+
+  for (const condition of conditions) {
+    if (condition.type === RulesType.USER_ATTR && condition.data?.attrId) {
+      attrIds.push(condition.data.attrId);
+    }
+
+    // Handle nested conditions (group type)
+    if (
+      condition.type === RulesType.GROUP &&
+      condition.conditions &&
+      condition.conditions.length > 0
+    ) {
+      attrIds.push(...extractAttributeIdsFromConditions(condition.conditions));
+    }
+  }
+
+  return attrIds;
+};
+
+/**
+ * Extracts trigger attribute IDs from steps
+ * @param steps - Array of steps
+ * @returns Array of unique attribute IDs
+ */
+export const extractTriggerAttributeIds = (steps: Step[]): string[] => {
+  const processedAttrIds = new Set<string>(); // Track processed attribute IDs to avoid duplicates
+
+  for (const step of steps) {
+    if (step.trigger && Array.isArray(step.trigger)) {
+      for (const trigger of step.trigger) {
+        // Type assertion to handle JsonValue type
+        const typedTrigger = trigger as any;
+        if (typedTrigger?.conditions && Array.isArray(typedTrigger.conditions)) {
+          // Recursively extract attribute IDs from nested conditions
+          const attrIds = extractAttributeIdsFromConditions(typedTrigger.conditions);
+
+          for (const attrId of attrIds) {
+            if (!processedAttrIds.has(attrId)) {
+              processedAttrIds.add(attrId);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(processedAttrIds);
+};
+
+/**
+ * Get attribute value from data object using attribute code name
+ * @param data - Data object containing attribute values
+ * @param codeName - Attribute code name
+ * @returns Attribute value or null if not found
+ */
+export const getAttributeValue = (data: any, codeName: string): any => {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  return data[codeName] ?? null;
 };

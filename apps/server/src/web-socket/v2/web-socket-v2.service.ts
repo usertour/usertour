@@ -66,6 +66,7 @@ import {
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
   extractClientTrackConditions,
+  getAttributeValue,
 } from '@/utils/content-utils';
 import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2733,91 +2734,6 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Extract trigger attribute IDs and query user attribute values
-   * @param steps - Array of steps to process
-   * @param environment - Environment context
-   * @param attributes - Available attributes
-   * @param bizUser - Business user
-   * @param externalCompanyId - Optional company ID
-   * @returns Array of attribute data containing ID, name and user value
-   */
-  async extractTriggerAttributeValues(
-    steps: Step[],
-    environment: Environment,
-    attributes: Attribute[],
-    bizUser: BizUser,
-    externalCompanyId?: string,
-  ): Promise<Array<{ attrId: string; attrName: string; userValue: any }>> {
-    const attributeValues: Array<{ attrId: string; attrName: string; userValue: any }> = [];
-    const processedAttrIds = new Set<string>(); // Track processed attribute IDs to avoid duplicates
-
-    for (const step of steps) {
-      if (step.trigger && Array.isArray(step.trigger)) {
-        for (const trigger of step.trigger) {
-          // Type assertion to handle JsonValue type
-          const typedTrigger = trigger as any;
-          if (typedTrigger?.conditions && Array.isArray(typedTrigger.conditions)) {
-            // Recursively extract attribute IDs from nested conditions
-            const attrIds = this.extractAttributeIdsFromConditions(typedTrigger.conditions);
-
-            for (const attrId of attrIds) {
-              if (!processedAttrIds.has(attrId)) {
-                processedAttrIds.add(attrId);
-
-                // Find the attribute definition
-                const attr = attributes.find((attr) => attr.id === attrId);
-                if (attr) {
-                  // Query user attribute value based on business type
-                  const userValue = await this.queryUserAttributeValue(
-                    attr,
-                    environment,
-                    bizUser,
-                    externalCompanyId,
-                  );
-
-                  attributeValues.push({
-                    attrId,
-                    attrName: attr.displayName,
-                    userValue,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return attributeValues;
-  }
-
-  /**
-   * Recursively extract attribute IDs from conditions
-   * @param conditions - Array of rules conditions
-   * @returns Array of attribute IDs
-   */
-  private extractAttributeIdsFromConditions(conditions: any[]): string[] {
-    const attrIds: string[] = [];
-
-    for (const condition of conditions) {
-      if (condition.type === 'user-attr' && condition.data?.attrId) {
-        attrIds.push(condition.data.attrId);
-      }
-
-      // Handle nested conditions (group type)
-      if (
-        condition.type === 'group' &&
-        condition.conditions &&
-        Array.isArray(condition.conditions)
-      ) {
-        attrIds.push(...this.extractAttributeIdsFromConditions(condition.conditions));
-      }
-    }
-
-    return attrIds;
-  }
-
-  /**
    * Query user attribute value based on attribute business type
    * @param attr - Attribute definition
    * @param environment - Environment context
@@ -2825,7 +2741,7 @@ export class WebSocketV2Service {
    * @param externalCompanyId - Optional company ID
    * @returns User attribute value
    */
-  private async queryUserAttributeValue(
+  async queryUserAttributeValue(
     attr: Attribute,
     environment: Environment,
     bizUser: BizUser,
@@ -2846,7 +2762,7 @@ export class WebSocketV2Service {
         });
 
         if (bizUserRecord?.data) {
-          return this.extractValueFromData(bizUserRecord.data, attr.codeName);
+          return getAttributeValue(bizUserRecord.data, attr.codeName);
         }
         return null;
       }
@@ -2875,7 +2791,7 @@ export class WebSocketV2Service {
         });
 
         if (userOnCompany?.data) {
-          return this.extractValueFromData(userOnCompany.data, attr.codeName);
+          return getAttributeValue(userOnCompany.data, attr.codeName);
         }
         return null;
       }
@@ -2883,26 +2799,5 @@ export class WebSocketV2Service {
       default:
         return null;
     }
-  }
-
-  /**
-   * Extract value from data object using attribute code name
-   * @param data - Data object containing attribute values
-   * @param codeName - Attribute code name
-   * @returns Extracted value
-   */
-  private extractValueFromData(data: any, codeName: string): any {
-    // Handle nested data structure with path array
-    if (data && typeof data === 'object' && 'path' in data) {
-      // This is a filter structure, extract the actual value
-      return data.path?.[0] ? data.path[0] : null;
-    }
-
-    // Handle direct data object
-    if (data && typeof data === 'object' && codeName in data) {
-      return data[codeName];
-    }
-
-    return null;
   }
 }
