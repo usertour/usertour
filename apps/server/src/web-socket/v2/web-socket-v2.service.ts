@@ -2749,55 +2749,58 @@ export class WebSocketV2Service {
   ): Promise<any> {
     const environmentId = environment.id;
 
-    switch (attr.bizType) {
-      case AttributeBizType.USER: {
-        const bizUserRecord = await this.prisma.bizUser.findFirst({
-          where: {
-            environmentId,
-            externalId: String(bizUser.externalId),
-          },
-          select: {
-            data: true,
-          },
-        });
+    if (attr.bizType === AttributeBizType.USER) {
+      const bizUserRecord = await this.prisma.bizUser.findFirst({
+        where: {
+          environmentId,
+          externalId: String(bizUser.externalId),
+        },
+        select: {
+          data: true,
+        },
+      });
 
-        if (bizUserRecord?.data) {
-          return getAttributeValue(bizUserRecord.data, attr.codeName);
-        }
-        return null;
+      if (bizUserRecord?.data) {
+        return getAttributeValue(bizUserRecord.data, attr.codeName);
       }
-
-      case AttributeBizType.COMPANY:
-      case AttributeBizType.MEMBERSHIP: {
-        if (!externalCompanyId) return null;
-
-        const bizCompany = await this.prisma.bizCompany.findFirst({
-          where: {
-            externalId: String(externalCompanyId),
-            environmentId,
-          },
-        });
-
-        if (!bizCompany) return null;
-
-        const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
-          where: {
-            bizUserId: bizUser.id,
-            bizCompanyId: bizCompany.id,
-          },
-          select: {
-            data: true,
-          },
-        });
-
-        if (userOnCompany?.data) {
-          return getAttributeValue(userOnCompany.data, attr.codeName);
-        }
-        return null;
-      }
-
-      default:
-        return null;
+      return null;
     }
+
+    if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
+      if (!externalCompanyId) return null;
+
+      const bizCompany = await this.prisma.bizCompany.findFirst({
+        where: {
+          externalId: String(externalCompanyId),
+          environmentId,
+        },
+      });
+
+      if (!bizCompany) return null;
+
+      const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
+        where: {
+          bizUserId: bizUser.id,
+          bizCompanyId: bizCompany.id,
+        },
+        select: {
+          data: true,
+        },
+      });
+
+      if (!userOnCompany) return null;
+
+      if (attr.bizType === AttributeBizType.COMPANY) {
+        return getAttributeValue(bizCompany.data, attr.codeName);
+      }
+
+      if (attr.bizType === AttributeBizType.MEMBERSHIP) {
+        return getAttributeValue(userOnCompany.data, attr.codeName);
+      }
+
+      return null;
+    }
+
+    return null;
   }
 }
