@@ -176,6 +176,9 @@ export const extractBindToAttribute = (step: Step): string | null => {
   return null;
 };
 
+/**
+ * Extract question data from step
+ */
 export const extractQuestionData = (data: GroupItem[]): QuestionElement[] => {
   const result: QuestionElement[] = [];
   // Helper function to recursively search through the data
