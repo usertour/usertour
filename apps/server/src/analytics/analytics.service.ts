@@ -17,7 +17,7 @@ import {
   GroupItem,
   numberQuestionTypes,
   QuestionElement,
-} from '@/utils/content';
+} from '@/utils/content-question';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
