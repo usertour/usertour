@@ -1,4 +1,4 @@
-import { BizEvents, EventAttributes } from '@usertour/types';
+import { BizEvents, ContentEditorRoot, EventAttributes } from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -9,14 +9,12 @@ import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { toZonedTime } from 'date-fns-tz';
+import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import {
   aggregationQuestionTypes,
-  ContentEditorElementType,
   extractQuestionData,
-  GroupItem,
   numberQuestionTypes,
-  QuestionElement,
 } from '@/utils/content-question';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
@@ -63,7 +61,7 @@ const completeDistribution = (distribution: QuestionAnswerAnalytics[]) => {
   return fullDistribution;
 };
 
-const getAggregationField = (question: QuestionElement) => {
+const getAggregationField = (question: ContentEditorQuestionElement) => {
   if (numberQuestionTypes.includes(question.type)) {
     return 'numberAnswer';
   }
@@ -328,7 +326,7 @@ export class AnalyticsService {
    * Extract question data from step if it's a valid question for analytics
    */
   private extractQuestionForAnalytics(step: any) {
-    const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
+    const questionData = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
     if (questionData.length === 0) return null;
 
     const question = questionData[0];
@@ -342,7 +340,7 @@ export class AnalyticsService {
    */
   private async processQuestionAnalytics(
     environmentId: string,
-    question: QuestionElement,
+    question: ContentEditorQuestionElement,
     contentId: string,
     startDateStr: string,
     endDateStr: string,
