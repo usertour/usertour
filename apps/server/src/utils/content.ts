@@ -159,6 +159,23 @@ export const extractQuestionForAnalytics = (step: Step) => {
   return question;
 };
 
+/**
+ * Extract bindToAttribute from step if it's a valid question for analytics
+ */
+export const extractBindToAttribute = (step: Step): string | null => {
+  const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
+  if (questionData.length === 0) return null;
+
+  const question = questionData[0];
+
+  // Check if bindToAttribute is true and return selectedAttribute, otherwise return null
+  if (question.data?.bindToAttribute === true) {
+    return question.data?.selectedAttribute || null;
+  }
+
+  return null;
+};
+
 export const extractQuestionData = (data: GroupItem[]): QuestionElement[] => {
   const result: QuestionElement[] = [];
   // Helper function to recursively search through the data
