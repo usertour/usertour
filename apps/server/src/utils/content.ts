@@ -1,7 +1,7 @@
 import { createId } from '@paralleldrive/cuid2';
 import { RulesCondition, Step } from '@usertour/types';
 
-export type ContentEditorNPSElement = {
+type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
   data: {
     cvid: string;
@@ -15,7 +15,7 @@ export type ContentEditorNPSElement = {
   };
 };
 
-export type ContentEditorStarRatingElement = {
+type ContentEditorStarRatingElement = {
   type: ContentEditorElementType.STAR_RATING;
   data: {
     cvid: string;
@@ -31,7 +31,7 @@ export type ContentEditorStarRatingElement = {
   };
 };
 
-export type ContentEditorScaleElement = {
+type ContentEditorScaleElement = {
   type: ContentEditorElementType.SCALE;
   data: {
     cvid: string;
@@ -46,7 +46,7 @@ export type ContentEditorScaleElement = {
   };
 };
 
-export interface ContentEditorSingleLineTextElement {
+interface ContentEditorSingleLineTextElement {
   type: ContentEditorElementType.SINGLE_LINE_TEXT;
   data: {
     cvid: string;
@@ -60,7 +60,7 @@ export interface ContentEditorSingleLineTextElement {
   };
 }
 
-export interface ContentEditorMultiLineTextElement {
+interface ContentEditorMultiLineTextElement {
   type: ContentEditorElementType.MULTI_LINE_TEXT;
   data: {
     cvid: string;
@@ -74,14 +74,14 @@ export interface ContentEditorMultiLineTextElement {
   };
 }
 // Define the option type
-export interface ContentEditorMultipleChoiceOption {
+interface ContentEditorMultipleChoiceOption {
   label: string;
   value: string;
   checked: boolean;
 }
 
 // Define the element type
-export interface ContentEditorMultipleChoiceElement {
+interface ContentEditorMultipleChoiceElement {
   type: ContentEditorElementType.MULTIPLE_CHOICE;
   data: {
     cvid: string;
@@ -98,6 +98,7 @@ export interface ContentEditorMultipleChoiceElement {
     selectedAttribute?: string;
   };
 }
+
 export type QuestionElement =
   | ContentEditorNPSElement
   | ContentEditorStarRatingElement
