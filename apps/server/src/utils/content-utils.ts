@@ -16,7 +16,12 @@ import {
   isAfter,
 } from 'date-fns';
 import { CustomContentVersion } from '@/common/types/content';
-import { BizEventWithEvent, BizSessionWithEvents, Step } from '@/common/types/schema';
+import {
+  BizEventWithEvent,
+  BizSessionWithEvents,
+  ContentWithContentOnEnvironments,
+  Step,
+} from '@/common/types/schema';
 import {
   isUndefined,
   isConditionsActived,
@@ -531,6 +536,21 @@ export const flattenConditions = (
   }
 
   return allConditions;
+};
+
+/**
+ * Get the published version ID for a content in a specific environment
+ * @param content - The content to get the published version ID for
+ * @param environmentId - The ID of the environment
+ * @returns The published version ID
+ */
+export const getPublishedVersionId = (
+  content: ContentWithContentOnEnvironments,
+  environmentId: string,
+): string | undefined => {
+  return content.contentOnEnvironments.find(
+    (item) => item.environmentId === environmentId && item.published,
+  )?.publishedVersionId;
 };
 
 /**

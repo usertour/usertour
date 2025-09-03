@@ -35,7 +35,6 @@ import {
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
 } from './web-socket-v2.dto';
-import { getPublishedVersionId } from '@/utils/content';
 import {
   EventAttributes,
   UserAttributes,
@@ -55,6 +54,7 @@ import {
   StartFlowDto,
 } from '@usertour/types';
 import {
+  getPublishedVersionId,
   findLatestStepNumber,
   findAvailableSessionId,
   flowIsDismissed,

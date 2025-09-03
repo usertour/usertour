@@ -1,6 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
-import { ContentWithContentOnEnvironments } from '@/common/types/schema';
-import { RulesCondition } from '@usertour/types';
+import { RulesCondition, Step } from '@usertour/types';
 
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
@@ -150,7 +149,7 @@ export const aggregationQuestionTypes = [
 /**
  * Extract question data from step if it's a valid question for analytics
  */
-export function extractQuestionForAnalytics(step: any) {
+export function extractQuestionForAnalytics(step: Step) {
   const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
   if (questionData.length === 0) return null;
 
@@ -212,18 +211,3 @@ export function processStepData(data: any): any {
 
   return data;
 }
-
-/**
- * Get the published version ID for a content in a specific environment
- * @param content - The content to get the published version ID for
- * @param environmentId - The ID of the environment
- * @returns The published version ID
- */
-export const getPublishedVersionId = (
-  content: ContentWithContentOnEnvironments,
-  environmentId: string,
-): string | undefined => {
-  return content.contentOnEnvironments.find(
-    (item) => item.environmentId === environmentId && item.published,
-  )?.publishedVersionId;
-};

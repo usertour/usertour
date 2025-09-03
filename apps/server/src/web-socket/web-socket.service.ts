@@ -38,7 +38,7 @@ import {
   GetProjectSettingsRequest,
   GetProjectSettingsResponse,
 } from './web-socket.dto';
-import { getPublishedVersionId } from '@/utils/content';
+import { getPublishedVersionId } from '@/utils/content-utils';
 import { BizEvents } from '@usertour/types';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { ContentType } from '@/content/models/content.model';
