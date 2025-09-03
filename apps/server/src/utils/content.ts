@@ -1,5 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 import { ContentWithContentOnEnvironments } from '@/common/types/schema';
+import { RulesCondition } from '@usertour/types';
 
 export type ContentEditorNPSElement = {
   type: ContentEditorElementType.NPS;
@@ -8,8 +9,10 @@ export type ContentEditorNPSElement = {
     name: string;
     lowLabel: string;
     highLabel: string;
-    actions?: any;
+    actions?: RulesCondition[];
     score?: number;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
@@ -23,7 +26,9 @@ export type ContentEditorStarRatingElement = {
     highRange: number;
     lowLabel?: string;
     highLabel?: string;
-    actions?: any;
+    actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
@@ -36,7 +41,9 @@ export type ContentEditorScaleElement = {
     highRange: number;
     lowLabel?: string;
     highLabel?: string;
-    actions?: any;
+    actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 };
 
@@ -48,7 +55,9 @@ export interface ContentEditorSingleLineTextElement {
     placeholder: string;
     buttonText: string;
     required: boolean;
-    actions?: any;
+    actions?: RulesCondition[];
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 
@@ -59,8 +68,10 @@ export interface ContentEditorMultiLineTextElement {
     name: string;
     placeholder: string;
     buttonText: string;
-    actions?: any;
+    actions?: RulesCondition[];
     required: boolean;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 // Define the option type
@@ -81,9 +92,11 @@ export interface ContentEditorMultipleChoiceElement {
     enableOther: boolean;
     allowMultiple: boolean;
     buttonText?: string;
-    actions?: any;
+    actions?: RulesCondition[];
     lowRange?: number;
     highRange?: number;
+    bindToAttribute?: boolean;
+    selectedAttribute?: string;
   };
 }
 export type QuestionElement =
