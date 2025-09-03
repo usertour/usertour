@@ -67,6 +67,7 @@ import {
   isActivedHideRules,
   extractClientTrackConditions,
   getAttributeValue,
+  extractTriggerAttributeIds,
 } from '@/utils/content-utils';
 import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -101,6 +102,13 @@ type UserClientContext = {
   externalCompanyId: string;
   clientContext: ClientContext;
 };
+
+interface TriggerAttributeInfo {
+  id: string;
+  codeName: string;
+  value: any;
+  bizType: AttributeBizType;
+}
 
 @Injectable()
 export class WebSocketV2Service {
@@ -2802,5 +2810,71 @@ export class WebSocketV2Service {
     }
 
     return null;
+  }
+
+  /**
+   * Extract session attribute data
+   * @param session - SDK content session
+   * @param environment - Environment context
+   * @param bizUser - Business user
+   * @param externalCompanyId - Optional company ID
+   * @returns Array of trigger attribute information or null if not a flow type
+   */
+  async extractSessionAttributeData(
+    session: SDKContentSession,
+    environment: Environment,
+    bizUser: BizUser,
+    externalCompanyId?: string,
+  ): Promise<TriggerAttributeInfo[] | null> {
+    // Check if content type is FLOW
+    if (session.type !== ContentDataType.FLOW) {
+      return null;
+    }
+
+    // Get steps from session version
+    const steps = session.version.steps;
+    if (!steps || steps.length === 0) {
+      return [];
+    }
+
+    // Extract trigger attribute IDs from steps
+    const attrIds = extractTriggerAttributeIds(steps as unknown as Step[]);
+
+    if (attrIds.length === 0) {
+      return [];
+    }
+
+    const attributes = await this.prisma.attribute.findMany({
+      where: {
+        projectId: environment.projectId,
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
+      },
+    });
+
+    // Filter attributes by the extracted IDs
+    const relevantAttributes = attributes.filter((attr) => attrIds.includes(attr.id));
+
+    // Query attribute values and build result
+    const results: TriggerAttributeInfo[] = [];
+
+    for (const attr of relevantAttributes) {
+      const value = await this.queryUserAttributeValue(
+        attr,
+        environment,
+        bizUser,
+        externalCompanyId,
+      );
+
+      results.push({
+        id: attr.id,
+        codeName: attr.codeName,
+        value,
+        bizType: attr.bizType,
+      });
+    }
+
+    return results;
   }
 }

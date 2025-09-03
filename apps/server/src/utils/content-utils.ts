@@ -7,6 +7,8 @@ import {
   RulesType,
   RulesEvaluationOptions,
   RulesCondition,
+  ContentEditorRoot,
+  ContentEditorElementType,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -704,46 +706,55 @@ export const getAttributeValue = (data: any, codeName: string): any => {
 };
 
 /**
- * Extract all attrCode values from elements with type === 'user-attribute'
- * @param editorContents - The editor contents to extract user attribute codes from
- * @returns Array of unique attrCode values
+ * Recursively extracts user attribute codes from data array
+ * @param data - Array of data to search through
+ * @returns Array of attribute codes
  */
-export const extractUserAttributeCodes = (editorContents: any): string[] => {
-  try {
-    const attrCodes = new Set<string>();
+const extractAttrCodesRecursively = (data: any[]): string[] => {
+  const attrCodes: string[] = [];
 
-    const extractFromDescendants = (data: any) => {
-      for (const v of data) {
-        if ('children' in v && v.children) {
-          extractFromDescendants(v.children);
-        }
-        if ('type' in v && v.type === 'user-attribute' && 'attrCode' in v && v.attrCode) {
-          attrCodes.add(v.attrCode);
-        }
-      }
-    };
+  for (const v of data) {
+    if (v.children) {
+      attrCodes.push(...extractAttrCodesRecursively(v.children));
+    }
+    if (v.type === 'user-attribute' && v.attrCode) {
+      attrCodes.push(v.attrCode);
+    }
+    if (v.type === 'link' && v.data) {
+      attrCodes.push(...extractAttrCodesRecursively(v.data));
+    }
+  }
 
-    for (const editorContent of editorContents) {
-      if (!editorContent.children) {
+  return attrCodes;
+};
+
+/**
+ * Extracts all user attribute codes from editor contents
+ * @param editorContents - Array of editor content roots to search through
+ * @returns Array of unique user attribute codes found in the content
+ */
+export const extractUserAttrCodes = (editorContents: ContentEditorRoot[]): string[] => {
+  const allAttrCodes: string[] = [];
+
+  for (const editorContent of editorContents) {
+    if (!editorContent.children) {
+      continue;
+    }
+
+    for (const column of editorContent.children) {
+      if (!column.children) {
         continue;
       }
 
-      for (const column of editorContent.children) {
-        if (!column.children) {
-          continue;
-        }
-
-        for (const element of column.children) {
-          if (element.element.type === 'text' && element.element.data) {
-            extractFromDescendants(element.element.data);
-          }
+      for (const element of column.children) {
+        if (element.element.type === ContentEditorElementType.TEXT && element.element.data) {
+          const attrCodes = extractAttrCodesRecursively(element.element.data);
+          allAttrCodes.push(...attrCodes);
         }
       }
     }
-
-    return Array.from(attrCodes);
-  } catch (error) {
-    console.error('Error in extractUserAttributeCodes:', error);
-    return [];
   }
+
+  // Return unique attribute codes
+  return [...new Set(allAttrCodes)];
 };
