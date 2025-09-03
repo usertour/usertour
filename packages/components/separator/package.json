@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-separator": "^1.0.3",
-    "@usertour/helpers": "^0.0.11"
+    "@usertour/helpers": "^0.0.29"
   },
   "peerDependencies": {
     "react": "^18.2.0"
