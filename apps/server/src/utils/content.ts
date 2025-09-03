@@ -149,7 +149,7 @@ export const aggregationQuestionTypes = [
 /**
  * Extract question data from step if it's a valid question for analytics
  */
-export function extractQuestionForAnalytics(step: Step) {
+export const extractQuestionForAnalytics = (step: Step) => {
   const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
   if (questionData.length === 0) return null;
 
@@ -157,9 +157,9 @@ export function extractQuestionForAnalytics(step: Step) {
   if (!aggregationQuestionTypes.includes(question.type)) return null;
 
   return question;
-}
+};
 
-export function extractQuestionData(data: GroupItem[]): QuestionElement[] {
+export const extractQuestionData = (data: GroupItem[]): QuestionElement[] => {
   const result: QuestionElement[] = [];
   // Helper function to recursively search through the data
   function traverse(item: GroupItem) {
@@ -182,4 +182,4 @@ export function extractQuestionData(data: GroupItem[]): QuestionElement[] {
   }
 
   return result;
-}
+};
