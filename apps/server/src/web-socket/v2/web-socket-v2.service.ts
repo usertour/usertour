@@ -1815,6 +1815,17 @@ export class WebSocketV2Service {
   }
 
   /**
+   * Get theme settings
+   * @param themes - The themes
+   * @param themeId - The theme ID
+   * @returns The theme settings or null if not found
+   */
+  async getThemeSettings(themes: Theme[], themeId: string): Promise<ThemeTypesSetting | null> {
+    const versionTheme = themes.find((theme) => theme.id === themeId);
+    return versionTheme?.settings as ThemeTypesSetting;
+  }
+
+  /**
    * Create content session
    * @param sessionId - The session ID
    * @param contentVersion - The content version
@@ -1836,7 +1847,7 @@ export class WebSocketV2Service {
   ): Promise<SDKContentSession | null> {
     const config = await this.getConfig(environment);
     const themes = await this.fetchThemes(environment, externalUserId, externalCompanyId);
-    const versionTheme = themes.find((theme) => theme.id === contentVersion.themeId);
+    const versionTheme = await this.getThemeSettings(themes, contentVersion.themeId);
 
     const session: SDKContentSession = {
       id: sessionId,
@@ -1856,7 +1867,7 @@ export class WebSocketV2Service {
         id: contentVersion.id,
         config: contentVersion.config,
         theme: {
-          settings: versionTheme.settings as ThemeTypesSetting,
+          settings: versionTheme,
         },
         data: [],
       },
