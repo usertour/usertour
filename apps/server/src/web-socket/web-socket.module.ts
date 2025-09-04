@@ -10,6 +10,7 @@ import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { SharedModule } from '@/shared/shared.module';
 import { TrackEventService } from './core/track-event.service';
 import { ContentManagementService } from './core/content-management.service';
+import { ContentSessionService } from './core/content-session.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -21,6 +22,7 @@ import { ContentManagementService } from './core/content-management.service';
     WebSocketV2Service,
     TrackEventService,
     ContentManagementService,
+    ContentSessionService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })
