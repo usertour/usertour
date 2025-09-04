@@ -1825,7 +1825,7 @@ export class WebSocketV2Service {
    * @param stepIndex - The step index
    * @returns The SDK content session or null if the session creation fails
    */
-  async createSDKContentSession(
+  async createContentSession(
     sessionId: string,
     contentVersion: CustomContentVersion,
     environment: Environment,
@@ -2492,7 +2492,7 @@ export class WebSocketV2Service {
     }
 
     // Create SDK content session
-    const contentSession = await this.createSDKContentSession(
+    const contentSession = await this.createContentSession(
       sessionId,
       customContentVersion,
       environment,
