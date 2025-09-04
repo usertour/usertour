@@ -1838,7 +1838,7 @@ export class WebSocketV2Service {
     const variations = versionTheme.variations as ThemeVariation[];
 
     const attrIds = extractThemeVariationsAttributeIds(variations);
-    const attributes = await this.extractAttributeData(
+    const attributes = await this.extractAttributes(
       attrIds,
       environment,
       externalUserId,
@@ -1974,16 +1974,14 @@ export class WebSocketV2Service {
       session.version.checklist = customContentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
       const steps = customContentVersion.steps;
-      const attrIds = extractStepTriggerAttributeIds(steps);
-      const attrCodes = extractStepContentAttrCodes(steps);
 
-      const attributes = await this.extractAttributeData(
-        attrIds,
+      const attributes = await this.extractStepsAttributes(
+        steps,
         environment,
         externalUserId,
         externalCompanyId,
-        attrCodes,
       );
+
       const currentStepIndex = isUndefined(stepIndex)
         ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
         : stepIndex;
@@ -2943,6 +2941,28 @@ export class WebSocketV2Service {
     return null;
   }
 
+  private async extractStepsAttributes(
+    steps: Step[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionAttribute[]> {
+    if (!steps || steps.length === 0) {
+      return [];
+    }
+
+    const attrIds = extractStepTriggerAttributeIds(steps);
+    const attrCodes = extractStepContentAttrCodes(steps);
+
+    return await this.extractAttributes(
+      attrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+  }
+
   /**
    * Extract attribute data based on attribute IDs and codes
    * @param attrIds - Array of attribute IDs to extract
@@ -2952,7 +2972,7 @@ export class WebSocketV2Service {
    * @param attrCodes - Array of attribute codes to extract (optional)
    * @returns Array of session attribute information
    */
-  private async extractAttributeData(
+  private async extractAttributes(
     attrIds: string[],
     environment: Environment,
     externalUserId: string,
