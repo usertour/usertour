@@ -119,10 +119,10 @@ export class UsertourSession {
   }
 
   /**
-   * Gets session data array
+   * Gets attributes array
    */
-  getSessionData() {
-    return this.session.data;
+  getAttributes() {
+    return this.session.attributes;
   }
 
   /**

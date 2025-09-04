@@ -52,6 +52,7 @@ import {
   EndFlowDto,
   ClientContext,
   StartFlowDto,
+  ThemeVariation,
 } from '@usertour/types';
 import {
   getPublishedVersionId,
@@ -69,12 +70,15 @@ import {
   getAttributeValue,
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
+  extractThemeVariationsAttributeIds,
 } from '@/utils/content-utils';
 import {
-  CustomAttributeInfo,
+  SessionAttribute,
   SDKContentSession,
   StartContentOptions,
   TrackCondition,
+  SessionTheme,
+  SessionStep,
 } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
@@ -1818,12 +1822,96 @@ export class WebSocketV2Service {
    * @param themeId - The theme ID
    * @returns The theme settings or null if not found
    */
-  async getThemeSettings(themes: Theme[], themeId: string): Promise<ThemeTypesSetting | null> {
+  async createSessionTheme(
+    themes: Theme[],
+    themeId: string,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionTheme | null> {
     const versionTheme = themes.find((theme) => theme.id === themeId);
     if (!versionTheme) {
       return null;
     }
-    return versionTheme.settings as ThemeTypesSetting;
+    const attributes = await this.extractThemeVariationsAttributeData(
+      versionTheme.variations as ThemeVariation[],
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+    return {
+      settings: versionTheme.settings as ThemeTypesSetting,
+      variations: versionTheme.variations as ThemeVariation[],
+      attributes,
+    };
+  }
+
+  /**
+   * Create session steps
+   * @param steps - The steps
+   * @param themes - The themes
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The session steps
+   */
+  async createSessionSteps(
+    steps: SDKStep[],
+    themes: Theme[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionStep[]> {
+    // Early return for empty steps
+    if (!steps.length) {
+      return [];
+    }
+
+    // Create a cache for session themes to avoid duplicate processing
+    const themeCache = new Map<string, SessionTheme | null>();
+
+    // Collect unique theme IDs that need processing
+    const uniqueThemeIds = new Set<string>();
+    for (const step of steps) {
+      if (step.themeId) {
+        uniqueThemeIds.add(step.themeId);
+      }
+    }
+
+    // Batch process all unique themes
+    const themePromises = Array.from(uniqueThemeIds).map(async (themeId) => {
+      try {
+        const sessionTheme = await this.createSessionTheme(
+          themes,
+          themeId,
+          environment,
+          externalUserId,
+          externalCompanyId,
+        );
+        themeCache.set(themeId, sessionTheme);
+      } catch (error) {
+        this.logger.error(`Failed to create session theme for themeId ${themeId}:`, error);
+        themeCache.set(themeId, null);
+      }
+    });
+
+    // Wait for all theme processing to complete
+    await Promise.all(themePromises);
+
+    // Process steps with cached themes
+    const results: SessionStep[] = steps.map((step) => {
+      if (!step.themeId) {
+        return step;
+      }
+
+      const sessionTheme = themeCache.get(step.themeId);
+      return {
+        ...step,
+        theme: sessionTheme,
+      };
+    });
+
+    return results;
   }
 
   /**
@@ -1848,7 +1936,13 @@ export class WebSocketV2Service {
   ): Promise<SDKContentSession | null> {
     const config = await this.getConfig(environment);
     const themes = await this.fetchThemes(environment, externalUserId, externalCompanyId);
-    const versionTheme = await this.getThemeSettings(themes, customContentVersion.themeId);
+    const sessionTheme = await this.createSessionTheme(
+      themes,
+      customContentVersion.themeId,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
 
     const session: SDKContentSession = {
       id: sessionId,
@@ -1863,13 +1957,11 @@ export class WebSocketV2Service {
         },
       },
       draftMode: false,
-      data: [],
+      attributes: [],
       version: {
         id: customContentVersion.id,
         config: customContentVersion.config,
-        theme: {
-          settings: versionTheme,
-        },
+        theme: sessionTheme,
         data: [],
       },
     };
@@ -1878,7 +1970,7 @@ export class WebSocketV2Service {
       session.version.checklist = customContentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
       const steps = customContentVersion.steps;
-      const data = await this.extractStepsAttributeData(
+      const attributes = await this.extractStepsAttributeData(
         steps,
         environment,
         externalUserId,
@@ -1889,12 +1981,21 @@ export class WebSocketV2Service {
         ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
         : stepIndex;
       const currentStep = steps[currentStepIndex];
-      session.version.steps = customContentVersion.steps as unknown as SDKStep[];
+      const versionSteps = customContentVersion.steps as unknown as SDKStep[];
+      const sessionSteps = await this.createSessionSteps(
+        versionSteps,
+        themes,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+
+      session.version.steps = sessionSteps;
       session.currentStep = {
         cvid: currentStep.cvid,
         id: currentStep.id,
       };
-      session.data = data;
+      session.attributes = attributes;
     }
     return session;
   }
@@ -2835,6 +2936,52 @@ export class WebSocketV2Service {
     return null;
   }
 
+  private async extractThemeVariationsAttributeData(
+    themeVariations: ThemeVariation[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionAttribute[]> {
+    if (!themeVariations || themeVariations.length === 0) {
+      return [];
+    }
+
+    const attrIds = extractThemeVariationsAttributeIds(themeVariations);
+
+    const attributes = await this.prisma.attribute.findMany({
+      where: {
+        projectId: environment.projectId,
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
+      },
+    });
+
+    // Filter attributes by the extracted IDs
+    const relevantAttributes = attributes.filter((attr) => attrIds.includes(attr.id));
+
+    // Query attribute values and build result
+    const results: SessionAttribute[] = [];
+
+    for (const attr of relevantAttributes) {
+      const value = await this.queryUserAttributeValue(
+        attr,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+
+      results.push({
+        id: attr.id,
+        codeName: attr.codeName,
+        value,
+        bizType: attr.bizType,
+      });
+    }
+
+    return results;
+  }
+
   /**
    * Extract steps attribute data
    * @param steps - Steps
@@ -2843,12 +2990,12 @@ export class WebSocketV2Service {
    * @param externalCompanyId - Optional company ID
    * @returns Array of trigger attribute information
    */
-  async extractStepsAttributeData(
+  private async extractStepsAttributeData(
     steps: Step[],
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
-  ): Promise<CustomAttributeInfo[]> {
+  ): Promise<SessionAttribute[]> {
     if (!steps || steps.length === 0) {
       return [];
     }
@@ -2874,7 +3021,7 @@ export class WebSocketV2Service {
     );
 
     // Query attribute values and build result
-    const results: CustomAttributeInfo[] = [];
+    const results: SessionAttribute[] = [];
 
     for (const attr of relevantAttributes) {
       const value = await this.queryUserAttributeValue(

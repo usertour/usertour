@@ -9,6 +9,7 @@ import {
   RulesCondition,
   ContentEditorRoot,
   ContentEditorElementType,
+  ThemeVariation,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -727,6 +728,19 @@ export const extractUserAttrCodes = (editorContents: ContentEditorRoot[]): strin
 
   // Return unique attribute codes
   return [...new Set(allAttrCodes)];
+};
+
+/**
+ * Extracts all attribute IDs from theme variations
+ * @param themeVariations - Array of theme variations
+ * @returns Array of unique attribute IDs
+ */
+export const extractThemeVariationsAttributeIds = (themeVariations: ThemeVariation[]): string[] => {
+  const attrIds: string[] = [];
+  for (const themeVariation of themeVariations) {
+    attrIds.push(...extractAttributeIdsFromConditions(themeVariation.conditions));
+  }
+  return attrIds;
 };
 
 /**

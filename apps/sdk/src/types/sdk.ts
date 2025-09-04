@@ -1,4 +1,5 @@
 import {
+  AttributeBizTypes,
   ChecklistData,
   Content,
   ContentDataType,
@@ -8,11 +9,26 @@ import {
   Theme,
 } from '@usertour/types';
 
+export type SessionAttribute = {
+  id: string;
+  codeName: string;
+  value: any;
+  bizType: AttributeBizTypes;
+};
+
+export type SessionTheme = Pick<Theme, 'settings' | 'variations'> & {
+  attributes?: SessionAttribute[];
+};
+
+export type SessionStep = Step & {
+  theme?: SessionTheme;
+};
+
 export type SDKContentSession = {
   id: string;
   type: ContentDataType;
   draftMode: boolean;
-  data: any[];
+  attributes: SessionAttribute[];
   content: Pick<Content, 'id' | 'name' | 'type'> & {
     project: {
       id: string;
@@ -21,8 +37,9 @@ export type SDKContentSession = {
   };
   expandPending?: boolean;
   currentStep?: Pick<Step, 'id' | 'cvid'>;
-  version: Pick<ContentVersion, 'id' | 'steps' | 'config' | 'data'> & {
-    theme?: Pick<Theme, 'settings' | 'variations'>;
+  version: Pick<ContentVersion, 'id' | 'config' | 'data'> & {
+    steps?: SessionStep[];
+    theme?: SessionTheme;
     checklist?: ChecklistData;
   };
 };
@@ -32,6 +49,11 @@ export type TrackCondition = {
   contentType: ContentDataType;
   versionId: string;
   condition: RulesCondition;
+};
+
+export type StartContentOptions = {
+  contentId?: string;
+  stepIndex?: number;
 };
 
 export type UnTrackedCondition = {
