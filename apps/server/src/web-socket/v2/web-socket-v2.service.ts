@@ -23,7 +23,6 @@ import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
   ProjectConfig,
-  CreateSessionDto,
   UpsertUserDto,
   UpsertCompanyDto,
   TrackEventDto,
@@ -1207,12 +1206,20 @@ export class WebSocketV2Service {
   /**
    * Create a biz session
    * @param client - The client instance
-   * @param data - The data to create a biz session
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param versionId - The version ID
+   * @param reason - The reason for creating the session
    * @returns The created session
    */
-  async createBizSession(client: Socket, data: CreateSessionDto): Promise<BizSession | null> {
+  async createBizSession(
+    client: Socket,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+    reason?: string,
+  ): Promise<BizSession | null> {
     const { environment } = getClientData(client);
-    const { userId: externalUserId, contentId, companyId: externalCompanyId, reason } = data;
     const environmentId = environment.id;
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
@@ -1223,25 +1230,19 @@ export class WebSocketV2Service {
     if (!bizUser || (externalCompanyId && !bizCompany)) {
       return null;
     }
-    const content = await this.prisma.content.findUnique({
-      where: { id: contentId },
-      include: {
-        contentOnEnvironments: true,
-      },
-    });
-    if (!content) {
-      return null;
-    }
-
-    const publishedVersionId = getPublishedVersionId(content, environmentId);
 
     const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
+      where: { id: versionId },
+      include: {
+        content: true,
+      },
     });
 
     if (!version) {
       return null;
     }
+
+    const content = version.content;
 
     const session = await this.prisma.bizSession.create({
       data: {
@@ -1251,7 +1252,7 @@ export class WebSocketV2Service {
         environmentId: environment.id,
         bizUserId: bizUser.id,
         contentId: content.id,
-        versionId: publishedVersionId,
+        versionId,
         bizCompanyId: externalCompanyId ? bizCompany.id : null,
       },
     });
@@ -1281,7 +1282,7 @@ export class WebSocketV2Service {
             };
 
       await this.trackEventV2(client, {
-        userId: String(externalUserId),
+        userId: externalUserId,
         eventName,
         sessionId: session.id,
         eventData,
@@ -2585,14 +2586,13 @@ export class WebSocketV2Service {
     let sessionId: string;
 
     if (createNewSession) {
-      // Create new session
-      const content = customContentVersion.content;
-      const newSession = await this.createBizSession(client, {
-        userId: externalUserId,
-        contentId: content.id,
-        companyId: externalCompanyId,
-        reason: 'auto_start',
-      });
+      const newSession = await this.createBizSession(
+        client,
+        externalUserId,
+        externalCompanyId,
+        versionId,
+        'auto_start',
+      );
 
       if (!newSession) {
         return false;
