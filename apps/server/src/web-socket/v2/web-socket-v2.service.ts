@@ -1205,12 +1205,12 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Create a session
+   * Create a biz session
    * @param client - The client instance
-   * @param data - The data to create a session
+   * @param data - The data to create a biz session
    * @returns The created session
    */
-  async createSession(client: Socket, data: CreateSessionDto): Promise<BizSession | null> {
+  async createBizSession(client: Socket, data: CreateSessionDto): Promise<BizSession | null> {
     const { environment } = getClientData(client);
     const { userId: externalUserId, contentId, companyId: externalCompanyId, reason } = data;
     const environmentId = environment.id;
@@ -2587,7 +2587,7 @@ export class WebSocketV2Service {
     if (createNewSession) {
       // Create new session
       const content = customContentVersion.content;
-      const newSession = await this.createSession(client, {
+      const newSession = await this.createBizSession(client, {
         userId: externalUserId,
         contentId: content.id,
         companyId: externalCompanyId,
