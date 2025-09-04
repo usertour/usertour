@@ -1374,7 +1374,7 @@ export class WebSocketV2Service {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventDto, environment: Environment): Promise<BizEvent | false> {
+  async trackEvent(environment: Environment, data: TrackEventDto): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;
@@ -1715,7 +1715,7 @@ export class WebSocketV2Service {
           },
         }
       : data;
-    await this.trackEvent(newData, environment);
+    await this.trackEvent(environment, newData);
     return true;
   }
 
