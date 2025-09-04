@@ -1831,7 +1831,7 @@ export class WebSocketV2Service {
   /**
    * Create content session
    * @param sessionId - The session ID
-   * @param contentVersion - The content version
+   * @param customContentVersion - The custom content version
    * @param environment - The environment
    * @param externalUserId - The external user ID
    * @param contentType - The content type
@@ -1841,7 +1841,7 @@ export class WebSocketV2Service {
    */
   async createContentSession(
     sessionId: string,
-    contentVersion: CustomContentVersion,
+    customContentVersion: CustomContentVersion,
     environment: Environment,
     externalUserId: string,
     contentType: ContentDataType,
@@ -1850,15 +1850,15 @@ export class WebSocketV2Service {
   ): Promise<SDKContentSession | null> {
     const config = await this.getConfig(environment);
     const themes = await this.fetchThemes(environment, externalUserId, externalCompanyId);
-    const versionTheme = await this.getThemeSettings(themes, contentVersion.themeId);
+    const versionTheme = await this.getThemeSettings(themes, customContentVersion.themeId);
 
     const session: SDKContentSession = {
       id: sessionId,
       type: contentType,
       content: {
-        id: contentVersion.contentId,
-        name: contentVersion.content.name,
-        type: contentVersion.content.type as ContentDataType,
+        id: customContentVersion.contentId,
+        name: customContentVersion.content.name,
+        type: customContentVersion.content.type as ContentDataType,
         project: {
           id: environment.projectId,
           removeBranding: config.removeBranding,
@@ -1867,19 +1867,19 @@ export class WebSocketV2Service {
       draftMode: false,
       data: [],
       version: {
-        id: contentVersion.id,
-        config: contentVersion.config,
+        id: customContentVersion.id,
+        config: customContentVersion.config,
         theme: {
           settings: versionTheme,
         },
         data: [],
       },
     };
-    const latestSession = contentVersion.session?.latestSession;
+    const latestSession = customContentVersion.session?.latestSession;
     if (contentType === ContentDataType.CHECKLIST) {
-      session.version.checklist = contentVersion.data as unknown as ChecklistData;
+      session.version.checklist = customContentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
-      const steps = contentVersion.steps;
+      const steps = customContentVersion.steps;
       const data = await this.extractStepsAttributeData(
         steps,
         environment,
@@ -1891,7 +1891,7 @@ export class WebSocketV2Service {
         ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
         : stepIndex;
       const currentStep = steps[currentStepIndex];
-      session.version.steps = contentVersion.steps as unknown as SDKStep[];
+      session.version.steps = customContentVersion.steps as unknown as SDKStep[];
       session.currentStep = {
         cvid: currentStep.cvid,
         id: currentStep.id,
