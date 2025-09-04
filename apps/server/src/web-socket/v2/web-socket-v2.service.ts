@@ -1960,9 +1960,7 @@ export class WebSocketV2Service {
       attributes: [],
       version: {
         id: customContentVersion.id,
-        config: customContentVersion.config,
         theme: sessionTheme,
-        data: [],
       },
     };
     const latestSession = customContentVersion.session?.latestSession;

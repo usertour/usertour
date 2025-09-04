@@ -3,7 +3,6 @@ import {
   ChecklistData,
   Content,
   ContentDataType,
-  ContentVersion,
   RulesCondition,
   Step,
   Theme,
@@ -37,7 +36,8 @@ export type SDKContentSession = {
   };
   expandPending?: boolean;
   currentStep?: Pick<Step, 'id' | 'cvid'>;
-  version: Pick<ContentVersion, 'id' | 'config' | 'data'> & {
+  version: {
+    id: string;
     steps?: SessionStep[];
     theme?: SessionTheme;
     checklist?: ChecklistData;

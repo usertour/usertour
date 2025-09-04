@@ -105,20 +105,6 @@ export class UsertourSession {
   }
 
   /**
-   * Gets version config from session
-   */
-  getVersionConfig() {
-    return this.session.version.config;
-  }
-
-  /**
-   * Gets version data from session
-   */
-  getVersionData() {
-    return this.session.version.data;
-  }
-
-  /**
    * Gets attributes array
    */
   getAttributes() {
