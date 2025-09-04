@@ -1,4 +1,5 @@
 import {
+  AttributeBizTypes,
   ChecklistData,
   Content,
   ContentDataType,
@@ -7,6 +8,13 @@ import {
   Step,
   Theme,
 } from '@usertour/types';
+
+export type CustomAttributeInfo = {
+  id: string;
+  codeName: string;
+  value: any;
+  bizType: AttributeBizTypes;
+};
 
 export type SDKContentSession = {
   id: string;

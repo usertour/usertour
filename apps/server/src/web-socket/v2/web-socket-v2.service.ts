@@ -70,7 +70,12 @@ import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
 } from '@/utils/content-utils';
-import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
+import {
+  CustomAttributeInfo,
+  SDKContentSession,
+  StartContentOptions,
+  TrackCondition,
+} from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
 import { RedisService } from '@/shared/redis.service';
 import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
@@ -103,13 +108,6 @@ type UserClientContext = {
   externalCompanyId: string;
   clientContext: ClientContext;
 };
-
-interface TriggerAttributeInfo {
-  id: string;
-  codeName: string;
-  value: any;
-  bizType: AttributeBizType;
-}
 
 @Injectable()
 export class WebSocketV2Service {
@@ -2850,7 +2848,7 @@ export class WebSocketV2Service {
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
-  ): Promise<TriggerAttributeInfo[]> {
+  ): Promise<CustomAttributeInfo[]> {
     if (!steps || steps.length === 0) {
       return [];
     }
@@ -2876,7 +2874,7 @@ export class WebSocketV2Service {
     );
 
     // Query attribute values and build result
-    const results: TriggerAttributeInfo[] = [];
+    const results: CustomAttributeInfo[] = [];
 
     for (const attr of relevantAttributes) {
       const value = await this.queryUserAttributeValue(
