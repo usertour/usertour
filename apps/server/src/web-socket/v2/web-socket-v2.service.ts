@@ -68,8 +68,8 @@ import {
   unsetFlowSession,
   untrackClientEvent,
 } from '@/utils/ws-utils';
-import { TrackEventService } from '../core/track-event.service';
-import { ContentManagementService } from '../core/content-management.service';
+import { TrackEventService } from '@/web-socket/core/track-event.service';
+import { ContentManagementService } from '@/web-socket/core/content-management.service';
 
 type UserClientContext = {
   externalUserId: string;
