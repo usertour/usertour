@@ -662,36 +662,6 @@ export const extractAttributeIdsFromConditions = (conditions: RulesCondition[]):
 };
 
 /**
- * Extracts trigger attribute IDs from steps
- * @param steps - Array of steps
- * @returns Array of unique attribute IDs
- */
-export const extractTriggerAttributeIds = (steps: Step[]): string[] => {
-  const processedAttrIds = new Set<string>(); // Track processed attribute IDs to avoid duplicates
-
-  for (const step of steps) {
-    if (step.trigger && Array.isArray(step.trigger)) {
-      for (const trigger of step.trigger) {
-        // Type assertion to handle JsonValue type
-        const typedTrigger = trigger as any;
-        if (typedTrigger?.conditions && Array.isArray(typedTrigger.conditions)) {
-          // Recursively extract attribute IDs from nested conditions
-          const attrIds = extractAttributeIdsFromConditions(typedTrigger.conditions);
-
-          for (const attrId of attrIds) {
-            if (!processedAttrIds.has(attrId)) {
-              processedAttrIds.add(attrId);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return Array.from(processedAttrIds);
-};
-
-/**
  * Get attribute value from data object using attribute code name
  * @param data - Data object containing attribute values
  * @param codeName - Attribute code name
@@ -757,4 +727,49 @@ export const extractUserAttrCodes = (editorContents: ContentEditorRoot[]): strin
 
   // Return unique attribute codes
   return [...new Set(allAttrCodes)];
+};
+
+/**
+ * Extracts trigger attribute IDs from steps
+ * @param steps - Array of steps
+ * @returns Array of unique attribute IDs
+ */
+export const extractStepTriggerAttributeIds = (steps: Step[]): string[] => {
+  const processedAttrIds = new Set<string>(); // Track processed attribute IDs to avoid duplicates
+
+  for (const step of steps) {
+    if (step.trigger && Array.isArray(step.trigger)) {
+      for (const trigger of step.trigger) {
+        // Type assertion to handle JsonValue type
+        const typedTrigger = trigger as any;
+        if (typedTrigger?.conditions && Array.isArray(typedTrigger.conditions)) {
+          // Recursively extract attribute IDs from nested conditions
+          const attrIds = extractAttributeIdsFromConditions(typedTrigger.conditions);
+
+          for (const attrId of attrIds) {
+            if (!processedAttrIds.has(attrId)) {
+              processedAttrIds.add(attrId);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(processedAttrIds);
+};
+
+/**
+ * Extracts all user attribute codes from step contents
+ * @param steps - Array of steps
+ * @returns Array of unique user attribute codes found in the step contents
+ */
+export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
+  const attrCodes: string[] = [];
+  for (const step of steps) {
+    if (step.data) {
+      attrCodes.push(...extractUserAttrCodes(step.data as unknown as ContentEditorRoot[]));
+    }
+  }
+  return attrCodes;
 };

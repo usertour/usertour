@@ -67,7 +67,8 @@ import {
   isActivedHideRules,
   extractClientTrackConditions,
   getAttributeValue,
-  extractTriggerAttributeIds,
+  extractStepTriggerAttributeIds,
+  extractStepContentAttrCodes,
 } from '@/utils/content-utils';
 import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
@@ -2832,17 +2833,14 @@ export class WebSocketV2Service {
     }
 
     // Get steps from session version
-    const steps = session.version.steps;
+    const steps = session.version.steps as unknown as Step[];
     if (!steps || steps.length === 0) {
       return [];
     }
 
     // Extract trigger attribute IDs from steps
-    const attrIds = extractTriggerAttributeIds(steps as unknown as Step[]);
-
-    if (attrIds.length === 0) {
-      return [];
-    }
+    const attrIds = extractStepTriggerAttributeIds(steps);
+    const attrCodes = extractStepContentAttrCodes(steps);
 
     const attributes = await this.prisma.attribute.findMany({
       where: {
@@ -2854,7 +2852,11 @@ export class WebSocketV2Service {
     });
 
     // Filter attributes by the extracted IDs
-    const relevantAttributes = attributes.filter((attr) => attrIds.includes(attr.id));
+    const relevantAttributes = attributes.filter(
+      (attr) =>
+        attrIds.includes(attr.id) ||
+        (attrCodes.includes(attr.codeName) && attr.bizType === AttributeBizType.USER),
+    );
 
     // Query attribute values and build result
     const results: TriggerAttributeInfo[] = [];
