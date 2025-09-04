@@ -1815,7 +1815,7 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Create SDK content session
+   * Create content session
    * @param sessionId - The session ID
    * @param contentVersion - The content version
    * @param environment - The environment
@@ -1823,7 +1823,7 @@ export class WebSocketV2Service {
    * @param contentType - The content type
    * @param externalCompanyId - The external company ID
    * @param stepIndex - The step index
-   * @returns The SDK content session or null if the session creation fails
+   * @returns The content session or null if the session creation fails
    */
   async createContentSession(
     sessionId: string,
