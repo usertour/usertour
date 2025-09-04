@@ -1822,7 +1822,10 @@ export class WebSocketV2Service {
    */
   async getThemeSettings(themes: Theme[], themeId: string): Promise<ThemeTypesSetting | null> {
     const versionTheme = themes.find((theme) => theme.id === themeId);
-    return versionTheme?.settings as ThemeTypesSetting;
+    if (!versionTheme) {
+      return null;
+    }
+    return versionTheme.settings as ThemeTypesSetting;
   }
 
   /**
