@@ -1866,6 +1866,13 @@ export class WebSocketV2Service {
       session.version.checklist = contentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
       const steps = contentVersion.steps;
+      const data = await this.extractStepsAttributeData(
+        steps,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+
       const currentStepIndex = isUndefined(stepIndex)
         ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
         : stepIndex;
@@ -1875,6 +1882,7 @@ export class WebSocketV2Service {
         cvid: currentStep.cvid,
         id: currentStep.id,
       };
+      session.data = data;
     }
     return session;
   }
@@ -2753,24 +2761,26 @@ export class WebSocketV2Service {
   async queryUserAttributeValue(
     attr: Attribute,
     environment: Environment,
-    bizUser: BizUser,
+    externalUserId: string,
     externalCompanyId?: string,
   ): Promise<any> {
     const environmentId = environment.id;
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: {
+        environmentId,
+        externalId: String(externalUserId),
+      },
+      select: {
+        data: true,
+        id: true,
+      },
+    });
+
+    if (!bizUser) return null;
 
     if (attr.bizType === AttributeBizType.USER) {
-      const bizUserRecord = await this.prisma.bizUser.findFirst({
-        where: {
-          environmentId,
-          externalId: String(bizUser.externalId),
-        },
-        select: {
-          data: true,
-        },
-      });
-
-      if (bizUserRecord?.data) {
-        return getAttributeValue(bizUserRecord.data, attr.codeName);
+      if (bizUser?.data) {
+        return getAttributeValue(bizUser.data, attr.codeName);
       }
       return null;
     }
@@ -2814,26 +2824,19 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Extract session attribute data
-   * @param session - SDK content session
+   * Extract steps attribute data
+   * @param steps - Steps
    * @param environment - Environment context
-   * @param bizUser - Business user
+   * @param externalUserId - External user ID
    * @param externalCompanyId - Optional company ID
-   * @returns Array of trigger attribute information or null if not a flow type
+   * @returns Array of trigger attribute information
    */
-  async extractSessionAttributeData(
-    session: SDKContentSession,
+  async extractStepsAttributeData(
+    steps: Step[],
     environment: Environment,
-    bizUser: BizUser,
+    externalUserId: string,
     externalCompanyId?: string,
-  ): Promise<TriggerAttributeInfo[] | null> {
-    // Check if content type is FLOW
-    if (session.type !== ContentDataType.FLOW) {
-      return null;
-    }
-
-    // Get steps from session version
-    const steps = session.version.steps as unknown as Step[];
+  ): Promise<TriggerAttributeInfo[]> {
     if (!steps || steps.length === 0) {
       return [];
     }
@@ -2865,7 +2868,7 @@ export class WebSocketV2Service {
       const value = await this.queryUserAttributeValue(
         attr,
         environment,
-        bizUser,
+        externalUserId,
         externalCompanyId,
       );
 
