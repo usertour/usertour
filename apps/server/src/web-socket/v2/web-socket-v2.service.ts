@@ -2941,6 +2941,14 @@ export class WebSocketV2Service {
     return null;
   }
 
+  /**
+   * Extract steps attributes
+   * @param steps - The steps
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The steps attributes
+   */
   private async extractStepsAttributes(
     steps: Step[],
     environment: Environment,
