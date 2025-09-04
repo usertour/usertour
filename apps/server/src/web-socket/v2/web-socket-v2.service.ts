@@ -1833,15 +1833,21 @@ export class WebSocketV2Service {
     if (!versionTheme) {
       return null;
     }
-    const attributes = await this.extractThemeVariationsAttributeData(
-      versionTheme.variations as ThemeVariation[],
+
+    const settings = versionTheme.settings as ThemeTypesSetting;
+    const variations = versionTheme.variations as ThemeVariation[];
+
+    const attrIds = extractThemeVariationsAttributeIds(variations);
+    const attributes = await this.extractAttributeData(
+      attrIds,
       environment,
       externalUserId,
       externalCompanyId,
     );
+
     return {
-      settings: versionTheme.settings as ThemeTypesSetting,
-      variations: versionTheme.variations as ThemeVariation[],
+      settings,
+      variations,
       attributes,
     };
   }
@@ -1968,13 +1974,16 @@ export class WebSocketV2Service {
       session.version.checklist = customContentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
       const steps = customContentVersion.steps;
-      const attributes = await this.extractStepsAttributeData(
-        steps,
+      const attrIds = extractStepTriggerAttributeIds(steps);
+      const attrCodes = extractStepContentAttrCodes(steps);
+
+      const attributes = await this.extractAttributeData(
+        attrIds,
         environment,
         externalUserId,
         externalCompanyId,
+        attrCodes,
       );
-
       const currentStepIndex = isUndefined(stepIndex)
         ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
         : stepIndex;
@@ -2934,73 +2943,25 @@ export class WebSocketV2Service {
     return null;
   }
 
-  private async extractThemeVariationsAttributeData(
-    themeVariations: ThemeVariation[],
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<SessionAttribute[]> {
-    if (!themeVariations || themeVariations.length === 0) {
-      return [];
-    }
-
-    const attrIds = extractThemeVariationsAttributeIds(themeVariations);
-
-    const attributes = await this.prisma.attribute.findMany({
-      where: {
-        projectId: environment.projectId,
-        bizType: {
-          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
-        },
-      },
-    });
-
-    // Filter attributes by the extracted IDs
-    const relevantAttributes = attributes.filter((attr) => attrIds.includes(attr.id));
-
-    // Query attribute values and build result
-    const results: SessionAttribute[] = [];
-
-    for (const attr of relevantAttributes) {
-      const value = await this.queryUserAttributeValue(
-        attr,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      results.push({
-        id: attr.id,
-        codeName: attr.codeName,
-        value,
-        bizType: attr.bizType,
-      });
-    }
-
-    return results;
-  }
-
   /**
-   * Extract steps attribute data
-   * @param steps - Steps
+   * Extract attribute data based on attribute IDs and codes
+   * @param attrIds - Array of attribute IDs to extract
    * @param environment - Environment context
    * @param externalUserId - External user ID
    * @param externalCompanyId - Optional company ID
-   * @returns Array of trigger attribute information
+   * @param attrCodes - Array of attribute codes to extract (optional)
+   * @returns Array of session attribute information
    */
-  private async extractStepsAttributeData(
-    steps: Step[],
+  private async extractAttributeData(
+    attrIds: string[],
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
+    attrCodes: string[] = [],
   ): Promise<SessionAttribute[]> {
-    if (!steps || steps.length === 0) {
+    if (attrIds.length === 0 && attrCodes.length === 0) {
       return [];
     }
-
-    // Extract trigger attribute IDs from steps
-    const attrIds = extractStepTriggerAttributeIds(steps);
-    const attrCodes = extractStepContentAttrCodes(steps);
 
     const attributes = await this.prisma.attribute.findMany({
       where: {
@@ -3011,7 +2972,7 @@ export class WebSocketV2Service {
       },
     });
 
-    // Filter attributes by the extracted IDs
+    // Filter attributes by the extracted IDs and codes
     const relevantAttributes = attributes.filter(
       (attr) =>
         attrIds.includes(attr.id) ||
