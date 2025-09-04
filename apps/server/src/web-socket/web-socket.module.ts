@@ -8,6 +8,7 @@ import { LicenseModule } from '@/license/license.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { SharedModule } from '@/shared/shared.module';
+import { TrackEventService } from './core/track-event.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -17,6 +18,7 @@ import { SharedModule } from '@/shared/shared.module';
     WebSocketPerformanceInterceptor,
     WebSocketV2Gateway,
     WebSocketV2Service,
+    TrackEventService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })
