@@ -92,14 +92,15 @@ export class WebSocketV2Service {
   async trackEvent(client: Socket, trackEventDto: TrackEventDto): Promise<boolean> {
     const { environment, externalUserId } = getClientData(client);
     const { eventName, sessionId, eventData } = trackEventDto;
-    await this.trackEventService.trackEvent(
-      environment,
-      externalUserId,
-      eventName,
-      sessionId,
-      eventData,
+    return Boolean(
+      await this.trackEventService.trackEvent(
+        environment,
+        externalUserId,
+        eventName,
+        sessionId,
+        eventData,
+      ),
     );
-    return true;
   }
 
   /**
