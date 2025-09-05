@@ -11,6 +11,7 @@ import { SharedModule } from '@/shared/shared.module';
 import { TrackEventService } from './core/track-event.service';
 import { ContentManagementService } from './core/content-management.service';
 import { ContentSessionService } from './core/content-session.service';
+import { UserClientContextService } from './core/user-client-context.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -23,6 +24,7 @@ import { ContentSessionService } from './core/content-session.service';
     TrackEventService,
     ContentManagementService,
     ContentSessionService,
+    UserClientContextService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

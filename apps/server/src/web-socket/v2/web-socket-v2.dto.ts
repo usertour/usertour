@@ -30,7 +30,7 @@ export type CreateSessionDto = {
 
 // Track event request
 export type TrackEventDto = {
-  userId: string;
+  externalUserId: string;
   eventName: string;
   sessionId: string;
   eventData: Record<string, any>;

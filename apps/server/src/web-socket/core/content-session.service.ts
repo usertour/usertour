@@ -1,6 +1,6 @@
 import { AttributeBizType, Attribute } from '@/attributes/models/attribute.model';
 import { Injectable, Logger } from '@nestjs/common';
-import { Environment, Step, Theme } from '@/common/types/schema';
+import { Environment, Step, Theme, BizSession } from '@/common/types/schema';
 import { PrismaService } from 'nestjs-prisma';
 import {
   ChecklistData,
@@ -28,6 +28,55 @@ export class ContentSessionService {
     private readonly prisma: PrismaService,
     private readonly contentManagementService: ContentManagementService,
   ) {}
+  /**
+   * Create a biz session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param versionId - The version ID
+   * @returns The created session
+   */
+  async createBizSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+  ): Promise<BizSession | null> {
+    const environmentId = environment.id;
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId },
+    });
+    const bizCompany = await this.prisma.bizCompany.findFirst({
+      where: { externalId: String(externalCompanyId), environmentId },
+    });
+    if (!bizUser || (externalCompanyId && !bizCompany)) {
+      return null;
+    }
+
+    const version = await this.prisma.version.findUnique({
+      where: { id: versionId },
+      include: {
+        content: true,
+      },
+    });
+
+    if (!version) {
+      return null;
+    }
+
+    return await this.prisma.bizSession.create({
+      data: {
+        state: 0,
+        progress: 0,
+        projectId: environment.projectId,
+        environmentId: environment.id,
+        bizUserId: bizUser.id,
+        contentId: version.content.id,
+        versionId,
+        bizCompanyId: externalCompanyId ? bizCompany.id : null,
+      },
+    });
+  }
 
   /**
    * Get theme settings

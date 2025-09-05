@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BizSession, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { TrackEventDto } from '../v2/web-socket-v2.dto';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import {
   BizEvents,
@@ -12,10 +11,15 @@ import {
 } from '@usertour/types';
 import { BizEvent, BizUser, Environment } from '@/common/types/schema';
 import { TrackEventData } from '@/common/types/track';
+import { UserClientContextService } from './user-client-context.service';
+import { CustomContentVersion } from '@/common/types/content';
 
 @Injectable()
 export class TrackEventService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly userClientContextService: UserClientContextService,
+  ) {}
 
   /**
    * Get filtered event data
@@ -99,13 +103,38 @@ export class TrackEventService {
 
   /**
    * Track an event
-   * @param data - The data to track an event
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param eventName - The event name
+   * @param sessionId - The session ID
+   * @param eventData - The event data
    * @returns The tracked event
    */
-  async trackEvent(environment: Environment, data: TrackEventDto): Promise<BizEvent | false> {
-    const { userId: externalUserId, eventName, sessionId, eventData } = data;
+  async trackEvent(
+    environment: Environment,
+    externalUserId: string,
+    eventName: string,
+    sessionId: string,
+    data: Record<string, any>,
+  ): Promise<BizEvent | false> {
     const environmentId = environment.id;
     const projectId = environment.projectId;
+
+    const userClientContext = await this.userClientContextService.getUserClientContext(
+      environment,
+      externalUserId,
+    );
+    const clientContext = userClientContext?.clientContext;
+
+    const eventData = clientContext
+      ? {
+          ...data,
+          [EventAttributes.PAGE_URL]: clientContext.pageUrl,
+          [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
+          [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+        }
+      : data;
+
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId },
     });
@@ -232,5 +261,42 @@ export class TrackEventService {
     // this.integrationService.trackEvent(trackEventData);
 
     return result;
+  }
+
+  /**
+   * Track auto start event
+   * @param customContentVersion - The custom content version
+   * @param bizSession - The business session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param startReason - The start reason
+   */
+  async trackAutoStartEvent(
+    customContentVersion: CustomContentVersion,
+    bizSession: BizSession,
+    environment: Environment,
+    externalUserId: string,
+    startReason: string,
+  ) {
+    const contentType = customContentVersion.content.type as ContentDataType;
+    const eventName =
+      contentType === ContentDataType.FLOW ? BizEvents.FLOW_STARTED : BizEvents.CHECKLIST_STARTED;
+
+    const eventData =
+      contentType === ContentDataType.FLOW
+        ? {
+            [EventAttributes.FLOW_START_REASON]: startReason,
+            [EventAttributes.FLOW_VERSION_ID]: customContentVersion.id,
+            [EventAttributes.FLOW_VERSION_NUMBER]: customContentVersion.sequence,
+          }
+        : {
+            [EventAttributes.CHECKLIST_ID]: customContentVersion.content.id,
+            [EventAttributes.CHECKLIST_NAME]: customContentVersion.content.name,
+            [EventAttributes.CHECKLIST_START_REASON]: startReason,
+            [EventAttributes.CHECKLIST_VERSION_ID]: customContentVersion.id,
+            [EventAttributes.CHECKLIST_VERSION_NUMBER]: customContentVersion.sequence,
+          };
+
+    await this.trackEvent(environment, externalUserId, eventName, bizSession.id, eventData);
   }
 }
