@@ -141,6 +141,10 @@ export function toggleClientCondition(
 
   if (!trackConditions) return false;
 
+  // Check if condition was found
+  const conditionExists = trackConditions.some((c) => c.condition.id === conditionId);
+  if (!conditionExists) return false;
+
   // Find and update the condition
   const updatedConditions = trackConditions.map((trackCondition) => {
     if (trackCondition.condition.id === conditionId) {
@@ -154,10 +158,6 @@ export function toggleClientCondition(
     }
     return trackCondition;
   });
-
-  // Check if condition was found
-  const conditionExists = trackConditions.some((c) => c.condition.id === conditionId);
-  if (!conditionExists) return false;
 
   // Update client data
   setClientData(client, { trackConditions: updatedConditions });
