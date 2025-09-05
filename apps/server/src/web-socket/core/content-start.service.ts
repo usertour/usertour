@@ -24,6 +24,7 @@ import {
   unsetContentSession,
   trackClientConditions,
   untrackCurrentConditions,
+  getContentSession,
 } from './socket-helper';
 
 export interface ContentStartContext {
@@ -239,7 +240,7 @@ export class ContentStartService {
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
     const { client, contentType } = context;
 
-    const session = this.getContentSession(client, contentType);
+    const session = getContentSession(client, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
@@ -414,7 +415,7 @@ export class ContentStartService {
       } else {
         // Find existing session
         const session = customContentVersion.session;
-        sessionId = this.findAvailableSessionId(session.latestSession, contentType);
+        sessionId = findAvailableSessionId(session.latestSession, contentType);
 
         if (!sessionId) {
           return {
@@ -534,30 +535,5 @@ export class ContentStartService {
     );
 
     return sessionVersion.length > 0 && !isActivedHideRules(sessionVersion[0]);
-  }
-
-  /**
-   * Get the content session for the client
-   */
-  private getContentSession(
-    client: Socket,
-    contentType: ContentDataType,
-  ): SDKContentSession | null {
-    const clientData = getClientData(client);
-
-    if (contentType === ContentDataType.FLOW) {
-      return clientData.flowSession || null;
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return clientData.checklistSession || null;
-    }
-    return null;
-  }
-
-  /**
-   * Find available session ID
-   */
-  private findAvailableSessionId(latestSession: any, contentType: ContentDataType): string | null {
-    return findAvailableSessionId(latestSession, contentType);
   }
 }
