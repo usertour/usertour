@@ -410,6 +410,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async reportTooltipTargetMissing(
+    server: Server,
     client: Socket,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
@@ -448,6 +449,8 @@ export class WebSocketV2Service {
     );
     // Unset current flow session
     unsetSessionData(client, ContentDataType.FLOW);
+    // Toggle contents for the client
+    await this.toggleContents(server, client);
 
     return true;
   }

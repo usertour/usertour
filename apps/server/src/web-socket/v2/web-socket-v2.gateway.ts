@@ -182,7 +182,11 @@ export class WebSocketV2Gateway {
     @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.reportTooltipTargetMissing(client, reportTooltipTargetMissingDto);
+    return await this.service.reportTooltipTargetMissing(
+      this.server,
+      client,
+      reportTooltipTargetMissingDto,
+    );
   }
 
   @SubscribeMessage('toggle-client-condition')
