@@ -24,21 +24,11 @@ import {
   ClientContext,
   StartFlowDto,
 } from '@usertour/types';
-import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
-import {
-  getClientData,
-  getExternalUserRoom,
-  setChecklistSession,
-  setClientData,
-  setFlowSession,
-  trackClientEvent,
-  unsetChecklistSession,
-  unsetFlowSession,
-  untrackClientEvent,
-} from '@/utils/ws-utils';
+import { getClientData, setClientData } from '@/utils/ws-utils';
+import { unsetSessionData, toggleClientCondition } from '@/web-socket/core/socket-helper';
 import { TrackEventService } from '@/web-socket/core/track-event.service';
 import { UserClientContextService } from '@/web-socket/core/user-client-context.service';
 import { ContentStartService } from '@/web-socket/core/content-start.service';
@@ -134,17 +124,6 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Get user client context
-   * @param client - The client instance
-   * @param externalUserId - The external user ID
-   * @returns The user client context or null if not found
-   */
-  async getUserClientContext(client: Socket, externalUserId: string) {
-    const { environment } = getClientData(client);
-    return await this.userClientContextService.getUserClientContext(environment, externalUserId);
-  }
-
-  /**
    * End flow
    * @param client - The client instance
    * @param endFlowDto - The end flow DTO
@@ -182,7 +161,7 @@ export class WebSocketV2Service {
     );
 
     // Unset current flow session
-    this.unsetSessionData(client, ContentDataType.FLOW);
+    unsetSessionData(client, ContentDataType.FLOW);
     // Toggle contents for the client
     await this.toggleContents(server, client);
     return true;
@@ -484,7 +463,12 @@ export class WebSocketV2Service {
    * @returns True if the flow was started successfully
    */
   async startFlow(server: Server, client: Socket, startFlowDto: StartFlowDto): Promise<boolean> {
-    return await this.startSingletonContent(server, client, ContentDataType.FLOW, startFlowDto);
+    return await this.contentStartService.startSingletonContent({
+      server,
+      client,
+      contentType: ContentDataType.FLOW,
+      options: startFlowDto,
+    });
   }
 
   /**
@@ -495,127 +479,12 @@ export class WebSocketV2Service {
    * @returns True if the contents were toggled successfully
    */
   async toggleContents(server: Server, client: Socket): Promise<boolean> {
-    await this.startSingletonContent(server, client, ContentDataType.FLOW);
-    // await this.startSingletonContent(server, client, ContentDataType.CHECKLIST);
-    return true;
-  }
-
-  /**
-   * Start singleton content instance for the client
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param contentType - The content type
-   * @param options - The options for starting content
-   */
-  async startSingletonContent(
-    server: Server,
-    client: Socket,
-    contentType: ContentDataType,
-    options?: StartContentOptions,
-  ): Promise<boolean> {
-    const context = {
+    await this.contentStartService.startSingletonContent({
       server,
       client,
-      contentType,
-      options,
-    };
-
-    const result = await this.contentStartService.startSingletonContent(context);
-
-    // Handle invalid session cleanup
-    if (result.invalidSession) {
-      this.unsetContentSession(server, client, contentType, result.invalidSession.id);
-      this.untrackCurrentTrackConditions(server, client);
-    }
-
-    // Early return if operation failed
-    if (!result.success) {
-      this.logger.debug(`Content start failed: ${result.reason}`, {
-        contentType,
-        options,
-      });
-      return false;
-    }
-
-    // Handle successful result
-    // Set the content session if one was created
-    if (result.session) {
-      this.setContentSession(server, client, result.session);
-    }
-
-    // Handle track conditions if any were returned
-    if (result.trackConditions && result.trackConditions.length > 0) {
-      // For hide-only conditions, untrack current conditions first
-      const excludeConditionIds = result.trackConditions?.map(
-        (trackCondition) => trackCondition.condition.id,
-      );
-      this.untrackCurrentTrackConditions(server, client, excludeConditionIds);
-
-      // Track the new conditions
-      this.trackClientConditions(server, client, result.trackConditions);
-    }
-
-    this.logger.debug(`Content start succeeded: ${result.reason}`, {
-      contentType,
-      options,
+      contentType: ContentDataType.FLOW,
     });
-
     return true;
-  }
-
-  /**
-   * Track the client conditions for the given content types
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param conditions - The conditions to track
-   */
-  trackClientConditions(server: Server, client: Socket, trackConditions: TrackCondition[]) {
-    const { environment, externalUserId } = getClientData(client);
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    const { trackConditions: existingConditions } = getClientData(client);
-
-    // Update new conditions with existing isActive values
-    const conditions: TrackCondition[] = trackConditions.map((trackCondition: TrackCondition) => {
-      const existingCondition = existingConditions?.find(
-        (existing: TrackCondition) => existing.condition.id === trackCondition.condition.id,
-      );
-
-      if (existingCondition) {
-        return {
-          ...trackCondition,
-          condition: {
-            ...trackCondition.condition,
-            actived: existingCondition.condition.actived,
-          },
-        };
-      }
-
-      return {
-        ...trackCondition,
-        condition: {
-          ...trackCondition.condition,
-          actived: false,
-        },
-      };
-    });
-
-    const newConditions = conditions.filter(
-      (condition) =>
-        !existingConditions?.some(
-          (existing: TrackCondition) => existing.condition.id === condition.condition.id,
-        ),
-    );
-
-    const emitTrackConditions: TrackCondition[] = [];
-    for (const condition of newConditions) {
-      const emitted = trackClientEvent(server, room, condition);
-      if (emitted) {
-        emitTrackConditions.push(condition);
-      }
-    }
-
-    setClientData(client, { trackConditions: emitTrackConditions });
   }
 
   /**
@@ -631,155 +500,15 @@ export class WebSocketV2Service {
     toggleClientConditionDto: ToggleClientConditionDto,
   ): Promise<boolean> {
     const { conditionId, isActive } = toggleClientConditionDto;
-    const { externalUserId, trackConditions: existingConditions } = getClientData(client);
+    const { externalUserId } = getClientData(client);
 
-    // Check if condition exists
-    const conditionExists = existingConditions?.some(
-      (condition: TrackCondition) => condition.condition.id === conditionId,
-    );
-
-    if (!conditionExists) {
+    const success = toggleClientCondition(client, conditionId, isActive);
+    if (!success) {
       this.logger.warn(`Condition with ID ${conditionId} not found for user ${externalUserId}`);
       return false;
     }
 
-    // Update existing conditions with the new active status
-    const conditions = existingConditions?.map((trackCondition: TrackCondition) => {
-      if (trackCondition.condition.id === conditionId) {
-        return {
-          ...trackCondition,
-          condition: {
-            ...trackCondition.condition,
-            actived: isActive,
-          },
-        };
-      }
-      return trackCondition;
-    });
-
-    // Update client data
-    setClientData(client, { trackConditions: conditions });
-
-    // Start content if the condition is active
     await this.toggleContents(server, client);
-
-    return true;
-  }
-
-  /**
-   * Un-track the client conditions for the given content types
-   * @param server - The server instance
-   * @param client - The client instance
-   */
-  untrackCurrentTrackConditions(server: Server, client: Socket, excludeConditionIds?: string[]) {
-    const { trackConditions } = getClientData(client);
-    if (!trackConditions) return;
-    const filteredTrackConditions = trackConditions?.filter(
-      (trackCondition) => !excludeConditionIds?.includes(trackCondition.condition.id),
-    );
-    this.untrackTrackConditions(server, client, filteredTrackConditions);
-  }
-
-  /**
-   * Un-track the client conditions for the given content types
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param trackConditions - The conditions to un-track
-   */
-  untrackTrackConditions(server: Server, client: Socket, untrackConditions: TrackCondition[]) {
-    const { trackConditions, environment, externalUserId } = getClientData(client);
-    const room = getExternalUserRoom(environment.id, externalUserId);
-
-    const conditionIdsToRemove: string[] = [];
-
-    for (const untrackCondition of untrackConditions) {
-      const emitted = untrackClientEvent(server, room, untrackCondition.condition.id);
-
-      if (emitted) {
-        conditionIdsToRemove.push(untrackCondition.condition.id);
-      }
-    }
-
-    // Remove successfully emitted conditions from trackConditions
-    if (conditionIdsToRemove.length > 0 && trackConditions) {
-      setClientData(client, {
-        trackConditions: trackConditions.filter(
-          (condition: TrackCondition) => !conditionIdsToRemove.includes(condition.condition.id),
-        ),
-      });
-    }
-  }
-
-  /**
-   * Set the content session for the client
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param session - The session to set
-   */
-  setContentSession(server: Server, client: Socket, session: SDKContentSession) {
-    const { environment, externalUserId } = getClientData(client);
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    const contentType = session.content.type as ContentDataType;
-    if (contentType === ContentDataType.FLOW) {
-      setClientData(client, { flowSession: session });
-      setFlowSession(server, room, session);
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      setClientData(client, { checklistSession: session });
-      setChecklistSession(server, room, session);
-    }
-  }
-
-  /**
-   * Get the content session for the client
-   * @param client - The client instance
-   * @param contentType - The content type
-   * @returns The content session
-   */
-  getContentSession(client: Socket, contentType: ContentDataType): SDKContentSession | null {
-    if (contentType === ContentDataType.FLOW) {
-      return getClientData(client).flowSession;
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return getClientData(client).checklistSession;
-    }
-    return null;
-  }
-
-  /**
-   * Unset the content session for the client
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param contentType - The content type to unset
-   * @param sessionId - The ID of the session to unset
-   */
-  unsetContentSession(
-    server: Server,
-    client: Socket,
-    contentType: ContentDataType,
-    sessionId: string,
-  ) {
-    const { environment, externalUserId } = getClientData(client);
-
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    if (contentType === ContentDataType.FLOW) {
-      unsetFlowSession(server, room, sessionId);
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      unsetChecklistSession(server, room, sessionId);
-    }
-    this.unsetSessionData(client, contentType);
-  }
-
-  /**
-   * Unset the session data for the client
-   * @param client - The client instance
-   * @param contentType - The content type to unset
-   */
-  unsetSessionData(client: Socket, contentType: ContentDataType): boolean {
-    if (contentType === ContentDataType.FLOW) {
-      setClientData(client, { flowSession: undefined });
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      setClientData(client, { checklistSession: undefined });
-    }
     return true;
   }
 }

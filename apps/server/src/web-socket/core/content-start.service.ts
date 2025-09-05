@@ -19,6 +19,12 @@ import { ContentManagementService } from './content-management.service';
 import { ContentSessionService } from './content-session.service';
 import { TrackEventService } from './track-event.service';
 import { UserClientContextService } from './user-client-context.service';
+import {
+  setContentSession,
+  unsetContentSession,
+  trackClientConditions,
+  untrackCurrentConditions,
+} from './socket-helper';
 
 export interface ContentStartContext {
   server: Server;
@@ -52,9 +58,65 @@ export class ContentStartService {
 
   /**
    * Main entry point for starting singleton content
-   * Implements multiple strategies for content activation
+   * Implements multiple strategies for content activation and handles all WebSocket operations
    */
-  async startSingletonContent(context: ContentStartContext): Promise<ContentStartResult> {
+  async startSingletonContent(context: ContentStartContext): Promise<boolean> {
+    const { server, client, contentType } = context;
+
+    try {
+      const result = await this.startSingletonContentInternal(context);
+
+      // Handle invalid session cleanup
+      if (result.invalidSession) {
+        unsetContentSession(server, client, contentType, result.invalidSession.id);
+        untrackCurrentConditions(server, client);
+      }
+
+      // Early return if operation failed
+      if (!result.success) {
+        this.logger.debug(`Content start failed: ${result.reason}`, {
+          contentType,
+        });
+        return false;
+      }
+
+      // Handle successful result
+      // Set the content session if one was created
+      if (result.session) {
+        setContentSession(server, client, result.session);
+      }
+
+      // Handle track conditions if any were returned
+      if (result.trackConditions && result.trackConditions.length > 0) {
+        // For hide-only conditions, untrack current conditions first
+        const excludeConditionIds = result.trackConditions.map(
+          (trackCondition) => trackCondition.condition.id,
+        );
+        untrackCurrentConditions(server, client, excludeConditionIds);
+
+        // Track the new conditions
+        trackClientConditions(server, client, result.trackConditions);
+      }
+
+      this.logger.debug(`Content start succeeded: ${result.reason}`, {
+        contentType,
+      });
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Error in startSingletonContent: ${error.message}`, {
+        contentType,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Internal method for content start logic (returns detailed result)
+   */
+  private async startSingletonContentInternal(
+    context: ContentStartContext,
+  ): Promise<ContentStartResult> {
     const { client, contentType, options } = context;
     const { contentId } = options ?? {};
 
