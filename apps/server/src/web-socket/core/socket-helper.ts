@@ -3,6 +3,16 @@ import { ContentDataType } from '@usertour/types';
 import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
 import { Environment } from '@/common/types/schema';
 
+/**
+ * Get the external user room
+ * @param environmentId - The environment id
+ * @param externalUserId - The external user id
+ * @returns The external user room
+ */
+export const getExternalUserRoom = (environmentId: string, externalUserId: string) => {
+  return `user:${environmentId}:${externalUserId}`;
+};
+
 // ============================================================================
 // Client Data Utils
 // ============================================================================
@@ -14,16 +24,6 @@ type ClientData = {
   trackConditions: TrackCondition[] | undefined;
   flowSession: SDKContentSession | undefined;
   checklistSession: SDKContentSession | undefined;
-};
-
-/**
- * Get the external user room
- * @param environmentId - The environment id
- * @param externalUserId - The external user id
- * @returns The external user room
- */
-export const getExternalUserRoom = (environmentId: string, externalUserId: string) => {
-  return `user:${environmentId}:${externalUserId}`;
 };
 
 /**
@@ -49,10 +49,6 @@ export const getClientData = (client: Socket): ClientData => {
   };
 };
 
-// ============================================================================
-// WebSocket Events Utils
-// ============================================================================
-
 /**
  * Set the client data to the socket
  * @param client - The socket
@@ -61,6 +57,10 @@ export const getClientData = (client: Socket): ClientData => {
 export const setClientData = (client: Socket, clientData: Partial<ClientData>) => {
   Object.assign(client.data, clientData);
 };
+
+// ============================================================================
+// WebSocket Events Utils
+// ============================================================================
 
 /**
  * Track a client event
