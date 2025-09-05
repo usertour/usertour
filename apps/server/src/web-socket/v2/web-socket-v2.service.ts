@@ -13,6 +13,7 @@ import {
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
   TrackEventDto,
+  StartFlowDto,
 } from './web-socket-v2.dto';
 import {
   EventAttributes,
@@ -22,7 +23,6 @@ import {
   StepSettings,
   EndFlowDto,
   ClientContext,
-  StartFlowDto,
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';

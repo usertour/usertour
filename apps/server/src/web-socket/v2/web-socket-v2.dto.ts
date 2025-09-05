@@ -43,7 +43,7 @@ export type IdentityDto = {
 
 export type StartFlowDto = {
   contentId: string;
-  stepIndex?: number;
+  stepCvid?: string;
 };
 
 export type EndFlowDto = {

@@ -10,6 +10,7 @@ import {
   ContentEditorRoot,
   ContentEditorElementType,
   ThemeVariation,
+  EventAttributes,
 } from '@usertour/types';
 import {
   differenceInDays,
@@ -289,6 +290,27 @@ export const findLatestStepNumber = (bizEvents: BizEventWithEvent[] | undefined)
     return -1;
   }
   return data.flow_step_number;
+};
+
+export const findLatestStepCvid = (
+  bizEvents: BizEventWithEvent[] | undefined,
+): string | undefined => {
+  try {
+    if (!bizEvents?.length || flowIsDismissed(bizEvents)) {
+      return undefined;
+    }
+    const latestStepSeenEvent = findLatestStepSeenEvent(bizEvents);
+    if (!latestStepSeenEvent) {
+      return undefined;
+    }
+    const data = latestStepSeenEvent.data as Record<string, unknown>;
+    if (isUndefined(data[EventAttributes.FLOW_STEP_CVID])) {
+      return undefined;
+    }
+    return data[EventAttributes.FLOW_STEP_CVID] as string;
+  } catch (_) {
+    return undefined;
+  }
 };
 
 export const findLatestStepSeenEvent = (

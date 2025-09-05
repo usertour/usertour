@@ -11,6 +11,7 @@ import {
   ConditionExtractionMode,
   evaluateCustomContentVersion,
   findAvailableSessionId,
+  findLatestStepCvid,
 } from '@/utils/content-utils';
 import { StartContentOptions, TrackCondition, SDKContentSession } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
@@ -378,12 +379,14 @@ export class ContentStartService {
       };
     }
 
-    const { stepIndex } = options ?? {};
+    const { stepCvid } = options ?? {};
     const { environment, externalUserId, externalCompanyId } = getClientData(client);
     const contentType = customContentVersion.content.type as ContentDataType;
     const versionId = customContentVersion.id;
+    const steps = customContentVersion.steps;
 
     let sessionId: string;
+    let currentStepCvid: string;
 
     try {
       if (createNewSession) {
@@ -412,10 +415,12 @@ export class ContentStartService {
         );
 
         sessionId = bizSession.id;
+        currentStepCvid = stepCvid || steps[0].cvid;
       } else {
         // Find existing session
         const session = customContentVersion.session;
         sessionId = findAvailableSessionId(session.latestSession, contentType);
+        currentStepCvid = stepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
 
         if (!sessionId) {
           return {
@@ -433,7 +438,7 @@ export class ContentStartService {
         externalUserId,
         contentType,
         externalCompanyId,
-        stepIndex,
+        currentStepCvid,
       );
 
       if (!contentSession) {

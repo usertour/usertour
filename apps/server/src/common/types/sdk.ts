@@ -53,7 +53,7 @@ export type TrackCondition = {
 
 export type StartContentOptions = {
   contentId?: string;
-  stepIndex?: number;
+  stepCvid?: string;
 };
 
 export type UnTrackedCondition = {

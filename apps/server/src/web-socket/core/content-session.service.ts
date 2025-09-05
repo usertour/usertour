@@ -10,7 +10,6 @@ import {
   ThemeVariation,
 } from '@usertour/types';
 import {
-  findLatestStepNumber,
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
   extractThemeVariationsAttributeIds,
@@ -18,7 +17,6 @@ import {
 } from '@/utils/content-utils';
 import { SessionAttribute, SDKContentSession, SessionTheme, SessionStep } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
-import { isUndefined } from '@usertour/helpers';
 import { ContentManagementService } from './content-management.service';
 
 @Injectable()
@@ -200,7 +198,7 @@ export class ContentSessionService {
     externalUserId: string,
     contentType: ContentDataType,
     externalCompanyId?: string,
-    stepIndex?: number,
+    stepCvid?: string,
   ): Promise<SDKContentSession | null> {
     const config = await this.contentManagementService.getConfig(environment);
     const themes = await this.contentManagementService.fetchThemes(
@@ -235,7 +233,6 @@ export class ContentSessionService {
         theme: sessionTheme,
       },
     };
-    const latestSession = customContentVersion.session?.latestSession;
     if (contentType === ContentDataType.CHECKLIST) {
       session.version.checklist = customContentVersion.data as unknown as ChecklistData;
     } else if (contentType === ContentDataType.FLOW) {
@@ -248,10 +245,11 @@ export class ContentSessionService {
         externalCompanyId,
       );
 
-      const currentStepIndex = isUndefined(stepIndex)
-        ? Math.max(findLatestStepNumber(latestSession?.bizEvent), 0)
-        : stepIndex;
-      const currentStep = steps[currentStepIndex];
+      const currentStep = steps.find((step) => step.cvid === stepCvid);
+      if (!currentStep) {
+        this.logger.error(`Current step not found for stepCvid ${stepCvid}`);
+        return null;
+      }
       const versionSteps = customContentVersion.steps as unknown as SDKStep[];
       const sessionSteps = await this.createSessionSteps(
         versionSteps,
