@@ -26,6 +26,8 @@ import {
   trackClientConditions,
   untrackCurrentConditions,
   getContentSession,
+  forceGoToStep,
+  getExternalUserRoom,
 } from '@/web-socket/core/socket-helper';
 
 export interface ContentStartContext {
@@ -114,6 +116,23 @@ export class ContentStartService {
   }
 
   /**
+   * Force go to step
+   * @param context - The context
+   * @param session - The session
+   * @returns The void
+   * @description Force go to step for the session
+   */
+  private async forceGoToStep(
+    context: ContentStartContext,
+    session: SDKContentSession,
+  ): Promise<void> {
+    const { server, client } = context;
+    const { environment, externalUserId } = getClientData(client);
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    forceGoToStep(server, room, session.id, session.currentStep?.cvid!);
+  }
+
+  /**
    * Internal method for content start logic (returns detailed result)
    */
   private async startSingletonContentInternal(
@@ -127,6 +146,7 @@ export class ContentStartService {
       if (contentId) {
         const result = await this.tryStartByContentId(context);
         if (result.success) {
+          await this.forceGoToStep(context, result.session);
           return result;
         }
       }
