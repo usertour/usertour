@@ -279,14 +279,15 @@ export class WebSocketV2Service {
     }
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    await this.trackEventService.trackEvent(
-      environment,
-      externalUserId,
-      BizEvents.QUESTION_ANSWERED,
-      bizSession.id,
-      eventData,
+    return Boolean(
+      await this.trackEventService.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.QUESTION_ANSWERED,
+        bizSession.id,
+        eventData,
+      ),
     );
-    return true;
   }
 
   /**
@@ -322,15 +323,15 @@ export class WebSocketV2Service {
     };
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    await this.trackEventService.trackEvent(
-      environment,
-      externalUserId,
-      BizEvents.CHECKLIST_TASK_CLICKED,
-      bizSession.id,
-      eventData,
+    return Boolean(
+      await this.trackEventService.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_TASK_CLICKED,
+        bizSession.id,
+        eventData,
+      ),
     );
-
-    return true;
   }
 
   /**
@@ -357,15 +358,15 @@ export class WebSocketV2Service {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    await this.trackEventService.trackEvent(
-      environment,
-      externalUserId,
-      BizEvents.CHECKLIST_HIDDEN,
-      bizSession.id,
-      eventData,
+    return Boolean(
+      await this.trackEventService.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_HIDDEN,
+        bizSession.id,
+        eventData,
+      ),
     );
-
-    return true;
   }
 
   /**
@@ -392,15 +393,15 @@ export class WebSocketV2Service {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    await this.trackEventService.trackEvent(
-      environment,
-      externalUserId,
-      BizEvents.CHECKLIST_SEEN,
-      bizSession.id,
-      eventData,
+    return Boolean(
+      await this.trackEventService.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_SEEN,
+        bizSession.id,
+        eventData,
+      ),
     );
-
-    return true;
   }
 
   /**
@@ -519,6 +520,6 @@ export class WebSocketV2Service {
     }
 
     await this.toggleContents(server, client);
-    return true;
+    return success;
   }
 }
