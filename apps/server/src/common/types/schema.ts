@@ -17,3 +17,7 @@ export type ContentWithContentOnEnvironments = Content & {
 export type VersionWithSteps = Version & { steps: Step[] };
 export type VersionWithStepsAndContent = VersionWithSteps & { content: Content };
 export type Environment = Prisma.Environment;
+export type AttributeOnEvent = Prisma.AttributeOnEvent;
+export type Attribute = Prisma.Attribute;
+export type Event = Prisma.Event;
+export type BizAnswer = Prisma.BizAnswer;

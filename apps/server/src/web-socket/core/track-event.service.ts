@@ -8,8 +8,9 @@ import {
   ContentDataType,
   EventAttributes,
   UserAttributes,
+  ClientContext,
 } from '@usertour/types';
-import { BizEvent, BizUser, Environment } from '@/common/types/schema';
+import { BizCompany, BizEvent, BizUser, Environment, Event } from '@/common/types/schema';
 import { TrackEventData } from '@/common/types/track';
 import { UserClientContextService } from './user-client-context.service';
 import { CustomContentVersion } from '@/common/types/content';
@@ -22,31 +23,132 @@ export class TrackEventService {
   ) {}
 
   /**
-   * Get filtered event data
+   * Filter event data based on allowed attributes for the event
    * @param eventId - The ID of the event
-   * @param data - The data to get filtered event data
-   * @returns The filtered event data
+   * @param data - The raw event data to filter
+   * @returns The filtered event data or false if no valid attributes found
    */
-  private async getFilterdEventData(
+  private async filterEventDataByAttributes(
     eventId: string,
-    data: any,
+    data: Record<string, any>,
   ): Promise<Record<string, any> | false> {
-    const attributes = await this.prisma.attributeOnEvent.findMany({
-      where: { eventId },
-      include: { attribute: true },
-    });
-    if (!attributes || attributes.length === 0) {
+    // Early return if no data provided
+    if (!data || Object.keys(data).length === 0) {
       return false;
     }
 
-    const attrs = {};
-    for (const key in data) {
-      const isFind = attributes.find((attr) => attr.attribute.codeName === key);
-      if (isFind) {
-        attrs[key] = data[key];
+    // Fetch event attributes with optimized query
+    const attributes = await this.prisma.attributeOnEvent.findMany({
+      where: { eventId },
+      select: {
+        attribute: {
+          select: {
+            codeName: true,
+          },
+        },
+      },
+    });
+
+    if (!attributes?.length) {
+      return false;
+    }
+
+    // Create a Set for O(1) lookup performance instead of O(n) find
+    const allowedAttributeNames = new Set(attributes.map((attr) => attr.attribute.codeName));
+
+    // Filter data using efficient Set lookup
+    const filteredData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedAttributeNames.has(key)) {
+        filteredData[key] = value;
       }
     }
-    return attrs;
+
+    // Return filtered data only if we have valid attributes
+    return Object.keys(filteredData).length > 0 ? filteredData : false;
+  }
+
+  /**
+   * Update seen attributes for a data record
+   * @param data - Current data record
+   * @param firstSeenKey - Key for first seen timestamp
+   * @param lastSeenKey - Key for last seen timestamp
+   * @param currentTime - Current timestamp
+   * @returns Updated data with seen attributes
+   */
+  private updateSeenAttributesData(
+    data: Record<string, unknown>,
+    firstSeenKey: string,
+    lastSeenKey: string,
+    currentTime: string,
+  ): Record<string, unknown> {
+    const isFirstEvent = !data[firstSeenKey];
+
+    return {
+      ...data,
+      [lastSeenKey]: currentTime,
+      ...(isFirstEvent && { [firstSeenKey]: currentTime }),
+    };
+  }
+
+  /**
+   * Update user seen attributes
+   * @param tx - Database transaction
+   * @param user - Business user
+   * @param currentTime - Current timestamp
+   * @returns Promise for user update operation
+   */
+  private updateUserSeenAttributes(
+    tx: Prisma.TransactionClient,
+    user: BizUser,
+    currentTime: string,
+  ): Promise<BizUser> {
+    const userData = (user.data as Record<string, unknown>) || {};
+    const updatedUserData = this.updateSeenAttributesData(
+      userData,
+      UserAttributes.FIRST_SEEN_AT,
+      UserAttributes.LAST_SEEN_AT,
+      currentTime,
+    );
+
+    return tx.bizUser.update({
+      where: { id: user.id },
+      data: { data: updatedUserData as any },
+    });
+  }
+
+  /**
+   * Update company seen attributes if company exists
+   * @param tx - Database transaction
+   * @param bizCompanyId - Business company ID
+   * @param currentTime - Current timestamp
+   * @returns Promise for company update operation or null
+   */
+  private async updateCompanySeenAttributes(
+    tx: Prisma.TransactionClient,
+    bizCompanyId: string,
+    currentTime: string,
+  ): Promise<BizCompany | null> {
+    const company = await tx.bizCompany.findUnique({
+      where: { id: bizCompanyId },
+    });
+
+    if (!company) {
+      return null;
+    }
+
+    const companyData = (company.data as Record<string, unknown>) || {};
+    const updatedCompanyData = this.updateSeenAttributesData(
+      companyData,
+      CompanyAttributes.FIRST_SEEN_AT,
+      CompanyAttributes.LAST_SEEN_AT,
+      currentTime,
+    );
+
+    return tx.bizCompany.update({
+      where: { id: company.id },
+      data: { data: updatedCompanyData as any },
+    });
   }
 
   /**
@@ -61,72 +163,29 @@ export class TrackEventService {
     user: BizUser,
     bizSession: { bizCompanyId: string | null },
   ): Promise<void> {
-    // Update user attributes
     const currentTime = new Date().toISOString();
-    const userData = (user.data as Record<string, unknown>) || {};
-    const isFirstUserEvent = !userData[UserAttributes.FIRST_SEEN_AT];
 
-    const updatedUserData = {
-      ...userData,
-      [UserAttributes.LAST_SEEN_AT]: currentTime,
-      ...(isFirstUserEvent && { [UserAttributes.FIRST_SEEN_AT]: currentTime }),
-    };
+    // Prepare update operations
+    const updateOperations: Promise<BizUser | BizCompany | null>[] = [
+      this.updateUserSeenAttributes(tx, user, currentTime),
+    ];
 
-    await tx.bizUser.update({
-      where: { id: user.id },
-      data: { data: updatedUserData },
-    });
-
-    // Update company attributes if user belongs to a company
+    // Add company update operation if company exists
     if (bizSession.bizCompanyId) {
-      const company = await tx.bizCompany.findUnique({
-        where: { id: bizSession.bizCompanyId },
-      });
-
-      if (company) {
-        const companyData = (company.data as Record<string, unknown>) || {};
-        const isFirstCompanyEvent = !companyData[CompanyAttributes.FIRST_SEEN_AT];
-
-        const updatedCompanyData = {
-          ...companyData,
-          [CompanyAttributes.LAST_SEEN_AT]: currentTime,
-          ...(isFirstCompanyEvent && { [CompanyAttributes.FIRST_SEEN_AT]: currentTime }),
-        };
-
-        await tx.bizCompany.update({
-          where: { id: company.id },
-          data: { data: updatedCompanyData },
-        });
-      }
+      updateOperations.push(
+        this.updateCompanySeenAttributes(tx, bizSession.bizCompanyId, currentTime),
+      );
     }
+
+    // Execute all updates in parallel within the transaction
+    await Promise.all(updateOperations);
   }
 
   /**
-   * Track an event
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param eventName - The event name
-   * @param sessionId - The session ID
-   * @param eventData - The event data
-   * @returns The tracked event
+   * Enrich event data with client context
    */
-  async trackEvent(
-    environment: Environment,
-    externalUserId: string,
-    eventName: string,
-    sessionId: string,
-    data: Record<string, any>,
-  ): Promise<BizEvent | false> {
-    const environmentId = environment.id;
-    const projectId = environment.projectId;
-
-    const userClientContext = await this.userClientContextService.getUserClientContext(
-      environment,
-      externalUserId,
-    );
-    const clientContext = userClientContext?.clientContext;
-
-    const eventData = clientContext
+  private enrichEventData(data: Record<string, unknown>, clientContext: ClientContext) {
+    return clientContext
       ? {
           ...data,
           [EventAttributes.PAGE_URL]: clientContext.pageUrl,
@@ -134,74 +193,96 @@ export class TrackEventService {
           [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
         }
       : data;
+  }
 
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
-    });
-    if (!bizUser) {
-      return false;
+  /**
+   * Validate required entities for event tracking
+   */
+  private validateTrackingEntities(bizUser: BizUser, bizSession: BizSession, event: Event) {
+    return bizUser && bizSession && bizSession.state !== 1 && event;
+  }
+
+  /**
+   * Create business answer for question answered events
+   */
+  private async createBusinessAnswer(
+    tx: Prisma.TransactionClient,
+    bizEvent: BizEvent,
+    events: Record<string, unknown>,
+    contentId: string,
+    versionId: string,
+    bizUserId: string,
+    bizSessionId: string,
+    environmentId: string,
+  ) {
+    const answer: any = {
+      bizEventId: bizEvent.id,
+      contentId,
+      cvid: events[EventAttributes.QUESTION_CVID] as string,
+      versionId,
+      bizUserId,
+      bizSessionId,
+      environmentId,
+    };
+
+    // Map answer fields based on the original implementation
+    if (events[EventAttributes.NUMBER_ANSWER]) {
+      answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER] as number;
     }
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        content: { include: { contentOnEnvironments: true } },
-        bizEvent: { include: { event: true } },
-        version: true,
-      },
-    });
-    if (!bizSession || bizSession.state === 1) {
-      return false;
+    if (events[EventAttributes.TEXT_ANSWER]) {
+      answer.textAnswer = events[EventAttributes.TEXT_ANSWER] as string;
     }
-    const event = await this.prisma.event.findFirst({
-      where: { codeName: eventName, projectId },
-    });
-    if (!event) {
-      return false;
-    }
-    const events = await this.getFilterdEventData(event.id, eventData);
-    if (!events) {
-      return false;
+    if (events[EventAttributes.LIST_ANSWER]) {
+      answer.listAnswer = events[EventAttributes.LIST_ANSWER] as string[];
     }
 
-    const contentId = bizSession.contentId;
-    const versionId = bizSession.versionId;
+    await tx.bizAnswer.create({ data: answer });
+  }
 
-    const progress =
-      events?.flow_step_progress !== undefined
-        ? getEventProgress(eventName, events.flow_step_progress)
-        : undefined;
-    const state = getEventState(eventName);
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Re-fetch the session with latest events inside the transaction and lock the row
+  /**
+   * Execute event tracking transaction
+   */
+  private async executeEventTransaction(
+    sessionId: string,
+    eventName: string,
+    events: Record<string, any>,
+    bizUser: BizUser,
+    bizSession: any,
+    event: any,
+    progress: number | undefined,
+    state: number,
+    environmentId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      // Re-fetch session with latest events
       const latestBizSession = await tx.bizSession.findUnique({
         where: { id: sessionId },
-        include: {
-          bizEvent: { include: { event: true } },
-        },
+        include: { bizEvent: { include: { event: true } } },
       });
 
       if (!latestBizSession || latestBizSession.state === 1) {
         return false;
       }
 
-      // Validate event inside the transaction with latest data
+      // Validate event
       if (!isValidEvent(eventName, latestBizSession, events)) {
         return false;
       }
 
-      // Update seen attributes for user and company
+      // Update seen attributes
       await this.updateSeenAttributes(tx, bizUser, bizSession);
 
-      const insert = {
-        bizUserId: bizUser.id,
-        eventId: event.id,
-        data: events,
-        bizSessionId: bizSession.id,
-      };
+      // Create business event
       const bizEvent = await tx.bizEvent.create({
-        data: insert,
+        data: {
+          bizUserId: bizUser.id,
+          eventId: event.id,
+          data: events,
+          bizSessionId: bizSession.id,
+        },
       });
+
+      // Update session
       await tx.bizSession.update({
         where: { id: bizSession.id },
         data: {
@@ -209,44 +290,48 @@ export class TrackEventService {
           state,
         },
       });
+
+      // Handle question answered event
       if (eventName === BizEvents.QUESTION_ANSWERED) {
-        const answer: any = {
-          bizEventId: bizEvent.id,
-          contentId,
-          cvid: events[EventAttributes.QUESTION_CVID],
-          versionId,
-          bizUserId: bizUser.id,
-          bizSessionId: bizSession.id,
+        await this.createBusinessAnswer(
+          tx,
+          bizEvent,
+          events,
+          bizSession.contentId,
+          bizSession.versionId,
+          bizUser.id,
+          bizSession.id,
           environmentId,
-        };
-        if (events[EventAttributes.NUMBER_ANSWER]) {
-          answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER];
-        }
-        if (events[EventAttributes.TEXT_ANSWER]) {
-          answer.textAnswer = events[EventAttributes.TEXT_ANSWER];
-        }
-        if (events[EventAttributes.LIST_ANSWER]) {
-          answer.listAnswer = events[EventAttributes.LIST_ANSWER];
-        }
-        await tx.bizAnswer.create({
-          data: answer,
-        });
+        );
       }
 
       return bizEvent;
     });
+  }
 
+  /**
+   * Build tracking data for integration service
+   */
+  private buildTrackingData(
+    eventName: string,
+    bizSession: any,
+    externalUserId: string,
+    environmentId: string,
+    projectId: string,
+    events: Record<string, any>,
+    bizUser: BizUser,
+  ): TrackEventData {
     const trackEventData: TrackEventData = {
       eventName,
       bizSessionId: bizSession.id,
       userId: String(externalUserId),
       environmentId,
       projectId,
-      eventProperties: {
-        ...events,
-      },
+      eventProperties: { ...events },
       userProperties: bizUser.data as Record<string, any>,
     };
+
+    // Add flow-specific properties
     if (bizSession.content.type === ContentDataType.FLOW) {
       trackEventData.eventProperties = {
         ...trackEventData.eventProperties,
@@ -258,18 +343,172 @@ export class TrackEventService {
       };
     }
 
+    return trackEventData;
+  }
+
+  /**
+   * Track an event
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param eventName - The event name
+   * @param sessionId - The session ID
+   * @param data - The event data
+   * @returns The tracked event
+   */
+  async trackEvent(
+    environment: Environment,
+    externalUserId: string,
+    eventName: string,
+    sessionId: string,
+    data: Record<string, any>,
+  ): Promise<BizEvent | false> {
+    const { id: environmentId, projectId } = environment;
+
+    // Get client context and enrich event data
+    const userClientContext = await this.userClientContextService.getUserClientContext(
+      environment,
+      externalUserId,
+    );
+    const eventData = this.enrichEventData(data, userClientContext?.clientContext);
+
+    // Fetch required entities
+    const [bizUser, bizSession, event] = await Promise.all([
+      this.prisma.bizUser.findFirst({
+        where: { externalId: externalUserId, environmentId },
+      }),
+      this.prisma.bizSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          content: { include: { contentOnEnvironments: true } },
+          bizEvent: { include: { event: true } },
+          version: true,
+        },
+      }),
+      this.prisma.event.findFirst({
+        where: { codeName: eventName, projectId },
+      }),
+    ]);
+
+    // Validate entities
+    if (!this.validateTrackingEntities(bizUser, bizSession, event)) {
+      return false;
+    }
+
+    // Filter event data
+    const events = await this.filterEventDataByAttributes(event.id, eventData);
+    if (!events) {
+      return false;
+    }
+
+    // Calculate progress and state
+    const progress =
+      events?.flow_step_progress !== undefined
+        ? getEventProgress(eventName, events.flow_step_progress)
+        : undefined;
+    const state = getEventState(eventName);
+
+    // Execute transaction
+    const result = await this.executeEventTransaction(
+      sessionId,
+      eventName,
+      events,
+      bizUser,
+      bizSession,
+      event,
+      progress,
+      state,
+      environmentId,
+    );
+
+    if (!result) {
+      return false;
+    }
+
+    // Build tracking data for integration service
+    // const trackEventData = this.buildTrackingData(
+    //   eventName,
+    //   bizSession,
+    //   externalUserId,
+    //   environmentId,
+    //   projectId,
+    //   events,
+    //   bizUser,
+    // );
+
     // this.integrationService.trackEvent(trackEventData);
 
     return result;
   }
 
   /**
-   * Track auto start event
+   * Build event data for flow start events
+   * @param customContentVersion - The custom content version
+   * @param startReason - The start reason
+   * @returns Flow start event data
+   */
+  private buildFlowStartEventData(
+    customContentVersion: CustomContentVersion,
+    startReason: string,
+  ): Record<string, any> {
+    return {
+      [EventAttributes.FLOW_START_REASON]: startReason,
+      [EventAttributes.FLOW_VERSION_ID]: customContentVersion.id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: customContentVersion.sequence,
+    };
+  }
+
+  /**
+   * Build event data for checklist start events
+   * @param customContentVersion - The custom content version
+   * @param startReason - The start reason
+   * @returns Checklist start event data
+   */
+  private buildChecklistStartEventData(
+    customContentVersion: CustomContentVersion,
+    startReason: string,
+  ): Record<string, any> {
+    return {
+      [EventAttributes.CHECKLIST_ID]: customContentVersion.content.id,
+      [EventAttributes.CHECKLIST_NAME]: customContentVersion.content.name,
+      [EventAttributes.CHECKLIST_START_REASON]: startReason,
+      [EventAttributes.CHECKLIST_VERSION_ID]: customContentVersion.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: customContentVersion.sequence,
+    };
+  }
+
+  /**
+   * Get event name and data for auto start events
+   * @param customContentVersion - The custom content version
+   * @param startReason - The start reason
+   * @returns Object containing event name and event data
+   */
+  private getAutoStartEventConfig(
+    customContentVersion: CustomContentVersion,
+    startReason: string,
+  ): { eventName: string; eventData: Record<string, any> } {
+    const contentType = customContentVersion.content.type as ContentDataType;
+
+    if (contentType === ContentDataType.FLOW) {
+      return {
+        eventName: BizEvents.FLOW_STARTED,
+        eventData: this.buildFlowStartEventData(customContentVersion, startReason),
+      };
+    }
+
+    return {
+      eventName: BizEvents.CHECKLIST_STARTED,
+      eventData: this.buildChecklistStartEventData(customContentVersion, startReason),
+    };
+  }
+
+  /**
+   * Track auto start event for flows or checklists
    * @param customContentVersion - The custom content version
    * @param bizSession - The business session
    * @param environment - The environment
    * @param externalUserId - The external user ID
    * @param startReason - The start reason
+   * @returns The tracked event or false if tracking failed
    */
   async trackAutoStartEvent(
     customContentVersion: CustomContentVersion,
@@ -277,26 +516,19 @@ export class TrackEventService {
     environment: Environment,
     externalUserId: string,
     startReason: string,
-  ) {
-    const contentType = customContentVersion.content.type as ContentDataType;
-    const eventName =
-      contentType === ContentDataType.FLOW ? BizEvents.FLOW_STARTED : BizEvents.CHECKLIST_STARTED;
+  ): Promise<BizEvent | false> {
+    // Input validation
+    if (!customContentVersion?.content?.type || !startReason?.trim() || !externalUserId?.trim()) {
+      return false;
+    }
 
-    const eventData =
-      contentType === ContentDataType.FLOW
-        ? {
-            [EventAttributes.FLOW_START_REASON]: startReason,
-            [EventAttributes.FLOW_VERSION_ID]: customContentVersion.id,
-            [EventAttributes.FLOW_VERSION_NUMBER]: customContentVersion.sequence,
-          }
-        : {
-            [EventAttributes.CHECKLIST_ID]: customContentVersion.content.id,
-            [EventAttributes.CHECKLIST_NAME]: customContentVersion.content.name,
-            [EventAttributes.CHECKLIST_START_REASON]: startReason,
-            [EventAttributes.CHECKLIST_VERSION_ID]: customContentVersion.id,
-            [EventAttributes.CHECKLIST_VERSION_NUMBER]: customContentVersion.sequence,
-          };
+    // Get event configuration based on content type
+    const { eventName, eventData } = this.getAutoStartEventConfig(
+      customContentVersion,
+      startReason,
+    );
 
-    await this.trackEvent(environment, externalUserId, eventName, bizSession.id, eventData);
+    // Track the event
+    return this.trackEvent(environment, externalUserId, eventName, bizSession.id, eventData);
   }
 }
