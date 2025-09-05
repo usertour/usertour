@@ -124,6 +124,20 @@ export const setChecklistSession = (server: Server, room: string, session: SDKCo
   return server.to(room).emit('set-checklist-session', session);
 };
 
+/**
+ * Force go to step
+ * @param server - The server instance
+ * @param room - The room to emit the event to
+ * @param sessionId - The session id to force go to step
+ * @param stepId - The step id to force go to step
+ */
+export const forceGoToStep = (server: Server, room: string, sessionId: string, stepId: string) => {
+  return server.to(room).emit('force-go-to-step', {
+    sessionId,
+    stepId,
+  });
+};
+
 // ============================================================================
 // Session Management Utils
 // ============================================================================
