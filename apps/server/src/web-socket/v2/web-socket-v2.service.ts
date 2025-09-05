@@ -84,6 +84,38 @@ export class WebSocketV2Service {
   }
 
   /**
+   * Update client context
+   * @param server - The server instance
+   * @param client - The client instance
+   * @param clientContext - The client context
+   * @returns True if the client context was updated successfully
+   */
+  async updateClientContext(
+    server: Server,
+    client: Socket,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    await this.setUserClientContext(client, clientContext);
+    await this.toggleContents(server, client);
+    return true;
+  }
+
+  /**
+   * Update user client context
+   * @param client - The client instance
+   * @param clientContext - The client context
+   */
+  async setUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
+    const { environment, externalUserId, externalCompanyId } = getClientData(client);
+    return await this.userClientContextService.setUserClientContext(
+      environment,
+      externalUserId,
+      externalCompanyId,
+      clientContext,
+    );
+  }
+
+  /**
    * Track event
    * @param client - The client instance
    * @param trackEventDto - The track event DTO
@@ -111,21 +143,6 @@ export class WebSocketV2Service {
   async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
     if (!token) return null;
     return await this.prisma.environment.findFirst({ where: { token } });
-  }
-
-  /**
-   * Update user client context
-   * @param client - The client instance
-   * @param clientContext - The client context
-   */
-  async setUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
-    const { environment, externalUserId, externalCompanyId } = getClientData(client);
-    return await this.userClientContextService.setUserClientContext(
-      environment,
-      externalUserId,
-      externalCompanyId,
-      clientContext,
-    );
   }
 
   /**
@@ -317,23 +334,6 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Update client context
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param clientContext - The client context
-   * @returns True if the client context was updated successfully
-   */
-  async updateClientContext(
-    server: Server,
-    client: Socket,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    await this.setUserClientContext(client, clientContext);
-    await this.toggleContents(server, client);
-    return true;
-  }
-
-  /**
    * Hide checklist
    * @param client - The client instance
    * @param params - The parameters for the hide checklist event
@@ -446,6 +446,8 @@ export class WebSocketV2Service {
       bizSession.id,
       eventData,
     );
+    // Unset current flow session
+    unsetSessionData(client, ContentDataType.FLOW);
 
     return true;
   }
