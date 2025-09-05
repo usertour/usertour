@@ -27,8 +27,12 @@ import {
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
-import { getClientData, setClientData } from '@/utils/ws-utils';
-import { unsetSessionData, toggleClientCondition } from '@/web-socket/core/socket-helper';
+import {
+  unsetSessionData,
+  toggleClientCondition,
+  getClientData,
+  setClientData,
+} from '@/web-socket/core/socket-helper';
 import { TrackEventService } from '@/web-socket/core/track-event.service';
 import { UserClientContextService } from '@/web-socket/core/user-client-context.service';
 import { ContentStartService } from '@/web-socket/core/content-start.service';

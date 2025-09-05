@@ -14,18 +14,18 @@ import {
 } from '@/utils/content-utils';
 import { StartContentOptions, TrackCondition, SDKContentSession } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
-import { getClientData } from '@/utils/ws-utils';
 import { ContentManagementService } from './content-management.service';
 import { ContentSessionService } from './content-session.service';
 import { TrackEventService } from './track-event.service';
 import { UserClientContextService } from './user-client-context.service';
 import {
+  getClientData,
   setContentSession,
   unsetContentSession,
   trackClientConditions,
   untrackCurrentConditions,
   getContentSession,
-} from './socket-helper';
+} from '@/web-socket/core/socket-helper';
 
 export interface ContentStartContext {
   server: Server;

@@ -25,7 +25,7 @@ import {
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
 } from './web-socket-v2.dto';
-import { getExternalUserRoom, setClientData } from '@/utils/ws-utils';
+import { getExternalUserRoom, setClientData } from '@/web-socket/core/socket-helper';
 import { ClientContext } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
