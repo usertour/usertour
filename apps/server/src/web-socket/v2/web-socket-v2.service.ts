@@ -20,24 +20,11 @@ import {
   ChecklistData,
   ContentDataType,
   StepSettings,
-  RulesType,
   EndFlowDto,
   ClientContext,
   StartFlowDto,
 } from '@usertour/types';
-import {
-  findAvailableSessionId,
-  evaluateCustomContentVersion,
-  ConditionExtractionMode,
-  filterActivatedContentWithoutClientConditions,
-  findLatestActivatedCustomContentVersion,
-  filterAvailableAutoStartContentVersions,
-  isActivedHideRules,
-  extractClientTrackConditions,
-} from '@/utils/content-utils';
 import { SDKContentSession, StartContentOptions, TrackCondition } from '@/common/types/sdk';
-import { RedisService } from '@/shared/redis.service';
-import { CustomContentVersion } from '@/common/types/content';
 import { isUndefined } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
@@ -53,9 +40,8 @@ import {
   untrackClientEvent,
 } from '@/utils/ws-utils';
 import { TrackEventService } from '@/web-socket/core/track-event.service';
-import { ContentManagementService } from '@/web-socket/core/content-management.service';
-import { ContentSessionService } from '@/web-socket/core/content-session.service';
 import { UserClientContextService } from '@/web-socket/core/user-client-context.service';
+import { ContentStartService } from '@/web-socket/core/content-start.service';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -64,10 +50,8 @@ export class WebSocketV2Service {
     private prisma: PrismaService,
     private bizService: BizService,
     private trackEventService: TrackEventService,
-    private contentManagementService: ContentManagementService,
-    private contentSessionService: ContentSessionService,
-    private readonly redisService: RedisService,
     private readonly userClientContextService: UserClientContextService,
+    private readonly contentStartService: ContentStartService,
   ) {}
 
   /**
@@ -158,49 +142,6 @@ export class WebSocketV2Service {
   async getUserClientContext(client: Socket, externalUserId: string) {
     const { environment } = getClientData(client);
     return await this.userClientContextService.getUserClientContext(environment, externalUserId);
-  }
-
-  /**
-   * Find activated custom content version by evaluated
-   * @param client - The client instance
-   * @param contentTypes - The content types
-   * @returns The activated custom content versions
-   */
-  async findActivatedCustomContentVersionByEvaluated(
-    client: Socket,
-    contentTypes: ContentDataType[],
-    versionId?: string,
-  ): Promise<CustomContentVersion[]> {
-    const { environment, trackConditions, externalUserId, externalCompanyId } =
-      getClientData(client);
-    const userClientContext = await this.getUserClientContext(client, externalUserId);
-    const clientContext = userClientContext?.clientContext;
-    const activatedIds = trackConditions
-      ?.filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
-      .map((trackCondition: TrackCondition) => trackCondition.condition.id);
-    const deactivatedIds = trackConditions
-      ?.filter((trackCondition: TrackCondition) => !trackCondition.condition.actived)
-      .map((trackCondition: TrackCondition) => trackCondition.condition.id);
-
-    const contentVersions = await this.contentManagementService.fetchCustomContentVersions(
-      environment,
-      externalUserId,
-      externalCompanyId,
-      versionId,
-    );
-    const filteredContentVersions = contentVersions.filter((contentVersion) =>
-      contentTypes.includes(contentVersion.content.type as ContentDataType),
-    );
-
-    return await evaluateCustomContentVersion(filteredContentVersions, {
-      typeControl: {
-        [RulesType.CURRENT_PAGE]: true,
-        [RulesType.TIME]: true,
-      },
-      clientContext,
-      activatedIds,
-      deactivatedIds,
-    });
   }
 
   /**
@@ -572,304 +513,52 @@ export class WebSocketV2Service {
     contentType: ContentDataType,
     options?: StartContentOptions,
   ): Promise<boolean> {
-    const { contentId } = options ?? {};
+    const context = {
+      server,
+      client,
+      contentType,
+      options,
+    };
 
-    // Strategy 1: Try to start by specific contentId
-    if (contentId) {
-      const started = await this.tryStartByContentId(server, client, contentType, options);
-      if (started) return true;
-    }
+    const result = await this.contentStartService.startSingletonContent(context);
 
-    // Handle existing session
-    const session = this.getContentSession(client, contentType);
-    if (session) {
-      const isActive = await this.isSessionActive(client, contentType, session);
-      if (isActive) {
-        return true;
-      }
-
-      // Cleanup invalid session
-      this.unsetContentSession(server, client, contentType, session.id);
+    // Handle invalid session cleanup
+    if (result.invalidSession) {
+      this.unsetContentSession(server, client, contentType, result.invalidSession.id);
       this.untrackCurrentTrackConditions(server, client);
     }
 
-    const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
-      client,
-      [contentType],
-    );
-
-    // Strategy 2: Try to start by latest activated content version
-    const isLatestActivatedContentVersionStarted =
-      await this.tryStartByLatestActivatedContentVersion(
-        server,
-        client,
-        evaluatedContentVersions,
+    // Early return if operation failed
+    if (!result.success) {
+      this.logger.debug(`Content start failed: ${result.reason}`, {
         contentType,
         options,
-      );
-
-    if (isLatestActivatedContentVersionStarted) {
-      return true;
+      });
+      return false;
     }
 
-    // Strategy 3: Try to start by auto start conditions
-    const isAutoStartByConditions = await this.tryStartByAutoStartConditions(
-      server,
-      client,
-      evaluatedContentVersions,
+    // Handle successful result
+    // Set the content session if one was created
+    if (result.session) {
+      this.setContentSession(server, client, result.session);
+    }
+
+    // Handle track conditions if any were returned
+    if (result.trackConditions && result.trackConditions.length > 0) {
+      // For hide-only conditions, untrack current conditions first
+      const excludeConditionIds = result.trackConditions?.map(
+        (trackCondition) => trackCondition.condition.id,
+      );
+      this.untrackCurrentTrackConditions(server, client, excludeConditionIds);
+
+      // Track the new conditions
+      this.trackClientConditions(server, client, result.trackConditions);
+    }
+
+    this.logger.debug(`Content start succeeded: ${result.reason}`, {
       contentType,
       options,
-    );
-
-    if (isAutoStartByConditions) {
-      return true;
-    }
-
-    const trackCustomContentVersions: CustomContentVersion[] =
-      filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
-
-    const trackConditions = extractClientTrackConditions(
-      trackCustomContentVersions,
-      ConditionExtractionMode.BOTH,
-    );
-
-    if (trackConditions.length > 0) {
-      this.trackClientConditions(server, client, trackConditions);
-    }
-
-    return true;
-  }
-
-  /**
-   * Check if the existing session is still active
-   * @param client - The client instance
-   * @param contentType - The content type
-   * @param session - The existing session to validate
-   * @returns True if the session is still active
-   */
-  private async isSessionActive(
-    client: Socket,
-    contentType: ContentDataType,
-    session: SDKContentSession,
-  ): Promise<boolean> {
-    const sessionVersion = await this.findActivatedCustomContentVersionByEvaluated(
-      client,
-      [contentType],
-      session.version.id,
-    );
-
-    return sessionVersion && !isActivedHideRules(sessionVersion[0]);
-  }
-
-  /**
-   * Try to start content by content ID
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param contentType - The content type
-   * @param options - The options for starting content
-   * @returns True if the content was started successfully
-   */
-  private async tryStartByContentId(
-    server: Server,
-    client: Socket,
-    contentType: ContentDataType,
-    options: StartContentOptions,
-  ): Promise<boolean> {
-    const { contentId } = options;
-    const { environment } = getClientData(client);
-    // Get all published versions with content
-    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
-      where: {
-        environmentId: environment.id,
-        contentId: contentId,
-        published: true,
-      },
     });
-    if (!contentOnEnvironment) {
-      return false;
-    }
-    const evaluatedContentVersions = await this.findActivatedCustomContentVersionByEvaluated(
-      client,
-      [contentType],
-      contentOnEnvironment.publishedVersionId,
-    );
-
-    if (evaluatedContentVersions.length > 0) {
-      const started = await this.processContentVersion(
-        server,
-        client,
-        evaluatedContentVersions[0],
-        options,
-        true,
-      );
-      if (started) return true;
-    }
-    return false;
-  }
-
-  /**
-   * Try to start content by latest activated content version
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param evaluatedContentVersions - The evaluated content versions
-   * @param contentType - The content type
-   * @param options - The options for starting content
-   * @returns True if the content was started successfully
-   */
-  private async tryStartByLatestActivatedContentVersion(
-    server: Server,
-    client: Socket,
-    evaluatedContentVersions: CustomContentVersion[],
-    contentType: ContentDataType,
-    options?: StartContentOptions,
-  ): Promise<boolean> {
-    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
-      evaluatedContentVersions,
-      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
-    );
-
-    if (latestActivatedContentVersion) {
-      const started = await this.processContentVersion(
-        server,
-        client,
-        latestActivatedContentVersion,
-        options,
-        false,
-      );
-      if (started) return true;
-    }
-    return false;
-  }
-
-  /**
-   * Try to start content by auto start conditions
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param evaluatedContentVersions - The evaluated content versions
-   * @param contentType - The content type
-   * @param options - The options for starting content
-   * @returns True if the content was started successfully
-   */
-  private async tryStartByAutoStartConditions(
-    server: Server,
-    client: Socket,
-    evaluatedContentVersions: CustomContentVersion[],
-    contentType: ContentDataType,
-    options?: StartContentOptions,
-  ): Promise<boolean> {
-    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
-      evaluatedContentVersions,
-      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
-    )?.[0];
-
-    if (autoStartContentVersion) {
-      return await this.processContentVersion(
-        server,
-        client,
-        autoStartContentVersion,
-        options,
-        true,
-      );
-    }
-
-    return false;
-  }
-
-  /**
-   * Process content version with common logic
-   * @param server - The server instance
-   * @param client - The client instance
-   * @param customContentVersion - The custom content version
-   * @param options - The options for starting content
-   * @param createNewSession - Whether to create a new session
-   * @returns True if the content version was processed successfully
-   */
-  private async processContentVersion(
-    server: Server,
-    client: Socket,
-    customContentVersion: CustomContentVersion,
-    options?: StartContentOptions,
-    createNewSession = false,
-  ): Promise<boolean> {
-    // Check if hide rules are active early
-    if (isActivedHideRules(customContentVersion)) {
-      return false;
-    }
-
-    const { stepIndex } = options ?? {};
-    const { environment, externalUserId, externalCompanyId } = getClientData(client);
-    const contentType = customContentVersion.content.type as ContentDataType;
-    const versionId = customContentVersion.id;
-
-    let sessionId: string;
-
-    if (createNewSession) {
-      // Always create start event when session is created
-      const startReason = 'auto_start';
-      const bizSession = await this.contentSessionService.createBizSession(
-        environment,
-        externalUserId,
-        externalCompanyId,
-        versionId,
-      );
-      await this.trackEventService.trackAutoStartEvent(
-        customContentVersion,
-        bizSession,
-        environment,
-        externalUserId,
-        startReason,
-      );
-
-      if (!bizSession) {
-        return false;
-      }
-
-      sessionId = bizSession.id;
-    } else {
-      // Find existing session
-      const session = customContentVersion.session;
-      sessionId = findAvailableSessionId(session.latestSession, contentType);
-
-      if (!sessionId) {
-        return false;
-      }
-    }
-
-    // Create SDK content session
-    const contentSession = await this.contentSessionService.createContentSession(
-      sessionId,
-      customContentVersion,
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      stepIndex,
-    );
-
-    if (!contentSession) {
-      return false;
-    }
-
-    this.setContentSession(server, client, contentSession);
-
-    await this.prisma.bizSession.update({
-      where: { id: sessionId },
-      data: { versionId },
-    });
-
-    const clientTrackConditions = extractClientTrackConditions(
-      [customContentVersion],
-      ConditionExtractionMode.HIDE_ONLY,
-    );
-
-    const excludeConditionIds = clientTrackConditions?.map(
-      (trackCondition) => trackCondition.condition.id,
-    );
-    this.untrackCurrentTrackConditions(server, client, excludeConditionIds);
-
-    if (clientTrackConditions.length > 0) {
-      this.trackClientConditions(server, client, clientTrackConditions);
-    }
 
     return true;
   }
