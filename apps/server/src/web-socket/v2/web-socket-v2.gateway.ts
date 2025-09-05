@@ -105,6 +105,30 @@ export class WebSocketV2Gateway {
     return await this.service.upsertBizCompanies(client, upsertCompanyDto);
   }
 
+  @SubscribeMessage('update-client-context')
+  async updateClientContext(
+    @MessageBody() context: ClientContext,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.updateClientContext(this.server, client, context);
+  }
+
+  @SubscribeMessage('track-event')
+  async trackEvent(
+    @MessageBody() trackEventDto: TrackEventDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.trackEvent(client, trackEventDto);
+  }
+
+  @SubscribeMessage('toggle-client-condition')
+  async toggleClientCondition(
+    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.toggleClientCondition(this.server, client, toggleClientConditionDto);
+  }
+
   @SubscribeMessage('start-flow')
   async startFlow(
     @MessageBody() startFlowDto: StartFlowDto,
@@ -127,6 +151,18 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.goToStep(client, goToStepDto);
+  }
+
+  @SubscribeMessage('report-tooltip-target-missing')
+  async reportTooltipTargetMissing(
+    @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.reportTooltipTargetMissing(
+      this.server,
+      client,
+      reportTooltipTargetMissingDto,
+    );
   }
 
   @SubscribeMessage('answer-question')
@@ -159,41 +195,5 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.showChecklist(client, showChecklistDto);
-  }
-
-  @SubscribeMessage('update-client-context')
-  async updateClientContext(
-    @MessageBody() context: ClientContext,
-    @ConnectedSocket() client: Socket,
-  ): Promise<boolean> {
-    return await this.service.updateClientContext(this.server, client, context);
-  }
-
-  @SubscribeMessage('track-event')
-  async trackEvent(
-    @MessageBody() trackEventDto: TrackEventDto,
-    @ConnectedSocket() client: Socket,
-  ): Promise<boolean> {
-    return await this.service.trackEvent(client, trackEventDto);
-  }
-
-  @SubscribeMessage('report-tooltip-target-missing')
-  async reportTooltipTargetMissing(
-    @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
-    @ConnectedSocket() client: Socket,
-  ): Promise<boolean> {
-    return await this.service.reportTooltipTargetMissing(
-      this.server,
-      client,
-      reportTooltipTargetMissingDto,
-    );
-  }
-
-  @SubscribeMessage('toggle-client-condition')
-  async toggleClientCondition(
-    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
-    @ConnectedSocket() client: Socket,
-  ): Promise<boolean> {
-    return await this.service.toggleClientCondition(this.server, client, toggleClientConditionDto);
   }
 }
