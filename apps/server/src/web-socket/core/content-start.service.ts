@@ -362,16 +362,9 @@ export class ContentStartService {
   }
 
   /**
-   * Process content version with common logic
+   * Validate content version before processing
    */
-  private async processContentVersion(
-    context: ContentStartContext,
-    customContentVersion: CustomContentVersion,
-    createNewSession = false,
-  ): Promise<ContentStartResult> {
-    const { client, options } = context;
-
-    // Check if hide rules are active early
+  private validateContentVersion(customContentVersion: CustomContentVersion): ContentStartResult {
     if (isActivedHideRules(customContentVersion)) {
       return {
         success: false,
@@ -379,66 +372,185 @@ export class ContentStartService {
       };
     }
 
-    const { stepCvid } = options ?? {};
-    const { environment, externalUserId, externalCompanyId } = getClientData(client);
+    return { success: true };
+  }
+
+  /**
+   * Handle session management (create new or find existing)
+   */
+  private async handleSessionManagement(
+    customContentVersion: CustomContentVersion,
+    clientData: any,
+    stepCvid?: string,
+    createNewSession = false,
+  ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
+    const { environment, externalUserId, externalCompanyId } = clientData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const versionId = customContentVersion.id;
     const steps = customContentVersion.steps;
 
-    let sessionId: string;
-    let currentStepCvid: string;
-
-    try {
-      if (createNewSession) {
-        // Create new session and track start event
-        const startReason = 'auto_start';
-        const bizSession = await this.contentSessionService.createBizSession(
-          environment,
-          externalUserId,
-          externalCompanyId,
-          versionId,
-        );
-
-        if (!bizSession) {
-          return {
-            success: false,
-            reason: 'Failed to create business session',
-          };
-        }
-
-        await this.trackEventService.trackAutoStartEvent(
-          customContentVersion,
-          bizSession,
-          environment,
-          externalUserId,
-          startReason,
-        );
-
-        sessionId = bizSession.id;
-        currentStepCvid = stepCvid || steps[0].cvid;
-      } else {
-        // Find existing session
-        const session = customContentVersion.session;
-        sessionId = findAvailableSessionId(session.latestSession, contentType);
-        currentStepCvid = stepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
-
-        if (!sessionId) {
-          return {
-            success: false,
-            reason: 'No available session found',
-          };
-        }
-      }
-
-      // Create SDK content session
-      const contentSession = await this.contentSessionService.createContentSession(
-        sessionId,
+    if (createNewSession) {
+      return await this.createNewSession(
         customContentVersion,
         environment,
         externalUserId,
-        contentType,
         externalCompanyId,
-        currentStepCvid,
+        versionId,
+        stepCvid,
+        steps,
+      );
+    }
+
+    return this.findExistingSession(customContentVersion, contentType, stepCvid);
+  }
+
+  /**
+   * Create a new business session
+   */
+  private async createNewSession(
+    customContentVersion: CustomContentVersion,
+    environment: any,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+    stepCvid?: string,
+    steps?: any[],
+  ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
+    const startReason = 'auto_start';
+    const bizSession = await this.contentSessionService.createBizSession(
+      environment,
+      externalUserId,
+      externalCompanyId,
+      versionId,
+    );
+
+    if (!bizSession) {
+      return {
+        success: false,
+        reason: 'Failed to create business session',
+      };
+    }
+
+    await this.trackEventService.trackAutoStartEvent(
+      customContentVersion,
+      bizSession,
+      environment,
+      externalUserId,
+      startReason,
+    );
+
+    return {
+      success: true,
+      sessionId: bizSession.id,
+      currentStepCvid: stepCvid || steps?.[0]?.cvid,
+    };
+  }
+
+  /**
+   * Find existing session
+   */
+  private findExistingSession(
+    customContentVersion: CustomContentVersion,
+    contentType: ContentDataType,
+    stepCvid?: string,
+  ): ContentStartResult & { sessionId?: string; currentStepCvid?: string } {
+    const session = customContentVersion.session;
+    const sessionId = findAvailableSessionId(session.latestSession, contentType);
+    const currentStepCvid = stepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
+
+    if (!sessionId) {
+      return {
+        success: false,
+        reason: 'No available session found',
+      };
+    }
+
+    return {
+      success: true,
+      sessionId,
+      currentStepCvid,
+    };
+  }
+
+  /**
+   * Create content session
+   */
+  private async createContentSession(
+    sessionId: string,
+    customContentVersion: CustomContentVersion,
+    clientData: any,
+    contentType: ContentDataType,
+    currentStepCvid: string,
+  ): Promise<SDKContentSession | null> {
+    const { environment, externalUserId, externalCompanyId } = clientData;
+
+    return await this.contentSessionService.createContentSession(
+      sessionId,
+      customContentVersion,
+      environment,
+      externalUserId,
+      contentType,
+      externalCompanyId,
+      currentStepCvid,
+    );
+  }
+
+  /**
+   * Update session version
+   */
+  private async updateSessionVersion(sessionId: string, versionId: string): Promise<void> {
+    await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { versionId },
+    });
+  }
+
+  /**
+   * Extract tracking conditions for hide rules
+   */
+  private extractTrackingConditions(customContentVersion: CustomContentVersion): TrackCondition[] {
+    return extractClientTrackConditions([customContentVersion], ConditionExtractionMode.HIDE_ONLY);
+  }
+
+  /**
+   * Process content version with common logic
+   */
+  private async processContentVersion(
+    context: ContentStartContext,
+    customContentVersion: CustomContentVersion,
+    createNewSession = false,
+  ): Promise<ContentStartResult> {
+    // Early validation
+    const validationResult = this.validateContentVersion(customContentVersion);
+    if (!validationResult.success) {
+      return validationResult;
+    }
+
+    const { client, options } = context;
+    const { stepCvid } = options ?? {};
+    const clientData = getClientData(client);
+    const contentType = customContentVersion.content.type as ContentDataType;
+
+    try {
+      // Handle session management
+      const sessionResult = await this.handleSessionManagement(
+        customContentVersion,
+        clientData,
+        stepCvid,
+        createNewSession,
+      );
+
+      if (!sessionResult.success) {
+        return sessionResult;
+      }
+
+      // Create content session
+      const contentSession = await this.createContentSession(
+        sessionResult.sessionId!,
+        customContentVersion,
+        clientData,
+        contentType,
+        sessionResult.currentStepCvid!,
       );
 
       if (!contentSession) {
@@ -449,21 +561,15 @@ export class ContentStartService {
       }
 
       // Update session version
-      await this.prisma.bizSession.update({
-        where: { id: sessionId },
-        data: { versionId },
-      });
+      await this.updateSessionVersion(sessionResult.sessionId!, customContentVersion.id);
 
-      // Extract client track conditions for hide rules
-      const clientTrackConditions = extractClientTrackConditions(
-        [customContentVersion],
-        ConditionExtractionMode.HIDE_ONLY,
-      );
+      // Extract tracking conditions
+      const trackConditions = this.extractTrackingConditions(customContentVersion);
 
       return {
         success: true,
         session: contentSession,
-        trackConditions: clientTrackConditions,
+        trackConditions,
         reason: 'Content session created successfully',
       };
     } catch (error) {
