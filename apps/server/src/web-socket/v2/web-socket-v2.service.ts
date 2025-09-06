@@ -54,7 +54,7 @@ export class WebSocketV2Service {
    * @returns The upserted business users
    */
   async upsertBizUsers(client: Socket, data: UpsertUserDto): Promise<boolean> {
-    const { userId: externalUserId, attributes } = data;
+    const { externalUserId, attributes } = data;
     const { environment } = getClientData(client);
     await this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id);
     setClientData(client, { externalUserId });
@@ -68,7 +68,7 @@ export class WebSocketV2Service {
    * @returns The upserted business companies
    */
   async upsertBizCompanies(client: Socket, data: UpsertCompanyDto): Promise<boolean> {
-    const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
+    const { externalCompanyId, externalUserId, attributes, membership } = data;
     const { environment } = getClientData(client);
     await this.bizService.upsertBizCompanies(
       this.prisma,

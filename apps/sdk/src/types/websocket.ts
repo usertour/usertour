@@ -5,34 +5,21 @@ export type ProjectConfig = {
 
 // Upsert user request
 export type UpsertUserDto = {
-  userId: string;
+  externalUserId: string;
   attributes?: Record<string, any>;
 };
 
 // Upsert company request
 export type UpsertCompanyDto = {
-  companyId: string;
-  userId: string;
+  externalCompanyId: string;
+  externalUserId: string;
   attributes?: Record<string, any>;
   membership?: Record<string, any>;
 };
 
-// Create session request
-export type CreateSessionDto = {
-  userId: string;
-  contentId: string;
-  companyId?: string;
-  reason?: string;
-  context?: {
-    pageUrl?: string;
-    viewportWidth?: number;
-    viewportHeight?: number;
-  };
-};
-
 // Track event request
 export type TrackEventDto = {
-  userId: string;
+  externalUserId: string;
   eventName: string;
   sessionId: string;
   eventData: Record<string, any>;
@@ -45,7 +32,7 @@ export type IdentityDto = {
 
 export type StartFlowDto = {
   contentId: string;
-  stepIndex?: number;
+  stepCvid?: string;
 };
 
 export type EndFlowDto = {

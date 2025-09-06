@@ -1,5 +1,3 @@
-import { ClientContext } from '@usertour/types';
-
 export type ProjectConfig = {
   removeBranding: boolean;
   planType: string;
@@ -7,25 +5,16 @@ export type ProjectConfig = {
 
 // Upsert user request
 export type UpsertUserDto = {
-  userId: string;
+  externalUserId: string;
   attributes?: Record<string, any>;
 };
 
 // Upsert company request
 export type UpsertCompanyDto = {
-  companyId: string;
-  userId: string;
+  externalCompanyId: string;
+  externalUserId: string;
   attributes?: Record<string, any>;
   membership?: Record<string, any>;
-};
-
-// Create session request
-export type CreateSessionDto = {
-  userId: string;
-  contentId: string;
-  companyId?: string;
-  reason?: string;
-  context?: ClientContext;
 };
 
 // Track event request

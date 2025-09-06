@@ -422,7 +422,7 @@ export class UsertourCore extends Evented {
 
     const result = await this.socketService.upsertUser(
       {
-        userId,
+        externalUserId: userId,
         attributes,
       },
       { batch: true },
@@ -489,10 +489,10 @@ export class UsertourCore extends Evented {
       return;
     }
 
-    const userId = this.userInfo.externalId;
+    const externalUserId = this.userInfo.externalId;
     const result = await this.socketService.upsertUser(
       {
-        userId,
+        externalUserId,
         attributes,
       },
       { batch: true },
@@ -536,11 +536,11 @@ export class UsertourCore extends Evented {
     if (!this.useCurrentUser()) {
       return;
     }
-    const userId = this.userInfo.externalId;
+    const externalUserId = this.userInfo.externalId;
     const result = await this.socketService.upsertCompany(
       {
-        userId,
-        companyId,
+        externalUserId,
+        externalCompanyId: companyId,
         attributes,
         membership: opts?.membership,
       },
@@ -576,12 +576,12 @@ export class UsertourCore extends Evented {
       return;
     }
 
-    const userId = this.userInfo.externalId;
-    const companyId = this.companyInfo?.externalId;
+    const externalUserId = this.userInfo.externalId;
+    const externalCompanyId = this.companyInfo?.externalId;
     const result = await this.socketService.upsertCompany(
       {
-        userId,
-        companyId,
+        externalUserId,
+        externalCompanyId,
         attributes,
         membership: opts?.membership,
       },
