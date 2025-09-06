@@ -430,8 +430,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param reason - The reason for closing the tour, defaults to USER_CLOSED
    */
   async close(reason: contentEndReason = contentEndReason.USER_CLOSED) {
-    // End content
-    await this.endContent(reason);
+    // End flow
+    await this.endFlow(reason);
     // Destroy the tour
     this.destroy();
   }
@@ -567,10 +567,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Ends the content
+   * Ends the flow
    * @param reason - The reason for the end
    */
-  private async endContent(reason: contentEndReason) {
+  private async endFlow(reason: contentEndReason) {
     await this.socketService.endContent(
       {
         sessionId: this.getSessionId(),
