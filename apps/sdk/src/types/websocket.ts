@@ -30,12 +30,12 @@ export type IdentityDto = {
   data: number;
 };
 
-export type StartFlowDto = {
+export type StartContentDto = {
   contentId: string;
   stepCvid?: string;
 };
 
-export type EndFlowDto = {
+export type EndContentDto = {
   sessionId: string;
   reason: string;
 };

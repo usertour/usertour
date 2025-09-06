@@ -13,7 +13,8 @@ import {
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
   TrackEventDto,
-  StartFlowDto,
+  StartContentDto,
+  EndContentDto,
 } from './web-socket-v2.dto';
 import {
   EventAttributes,
@@ -21,11 +22,9 @@ import {
   ChecklistData,
   ContentDataType,
   StepSettings,
-  EndFlowDto,
   ClientContext,
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
-import { deepmerge } from 'deepmerge-ts';
 import { Server, Socket } from 'socket.io';
 import {
   unsetSessionData,
@@ -143,50 +142,6 @@ export class WebSocketV2Service {
   async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
     if (!token) return null;
     return await this.prisma.environment.findFirst({ where: { token } });
-  }
-
-  /**
-   * End flow
-   * @param client - The client instance
-   * @param endFlowDto - The end flow DTO
-   * @returns True if the event was tracked successfully
-   */
-  async endFlow(server: Server, client: Socket, endFlowDto: EndFlowDto): Promise<boolean> {
-    const { sessionId, reason } = endFlowDto;
-    const { externalUserId, environment } = getClientData(client);
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-    });
-    if (!bizSession) return false;
-    const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
-      where: {
-        bizSessionId: bizSession.id,
-        event: {
-          codeName: BizEvents.FLOW_STEP_SEEN,
-        },
-      },
-      include: { event: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const seenData = (latestStepSeenEvent?.data as any) ?? {};
-
-    const eventData: Record<string, any> = deepmerge({}, seenData, {
-      [EventAttributes.FLOW_END_REASON]: reason,
-    });
-
-    await this.trackEventService.trackEvent(
-      environment,
-      externalUserId,
-      BizEvents.FLOW_ENDED,
-      bizSession.id,
-      eventData,
-    );
-
-    // Unset current flow session
-    unsetSessionData(client, ContentDataType.FLOW);
-    // Toggle contents for the client
-    await this.toggleContents(server, client);
-    return true;
   }
 
   /**
@@ -467,19 +422,65 @@ export class WebSocketV2Service {
   }
 
   /**
-   * Start flow
+   * Start content
    * @param server - The server instance
    * @param client - The client instance
-   * @param startFlowDto - The parameters for the start flow event
-   * @returns True if the flow was started successfully
+   * @param startContentDto - The parameters for the start content event
+   * @returns True if the content was started successfully
    */
-  async startFlow(server: Server, client: Socket, startFlowDto: StartFlowDto): Promise<boolean> {
+  async startContent(
+    server: Server,
+    client: Socket,
+    startContentDto: StartContentDto,
+  ): Promise<boolean> {
+    const { contentId } = startContentDto;
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+    });
+    const allowedTypes = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
+    // Check if the content exists
+    if (!content) return false;
+    const contentType = content.type as ContentDataType;
+    // Only allow FLOW and CHECKLIST content types
+    if (!allowedTypes.includes(contentType)) return false;
+    // Start the content
     return await this.contentStartService.startSingletonContent({
       server,
       client,
-      contentType: ContentDataType.FLOW,
-      options: startFlowDto,
+      contentType,
+      options: startContentDto,
     });
+  }
+
+  /**
+   * End content
+   * @param client - The client instance
+   * @param endContentDto - The end content DTO
+   * @returns True if the event was tracked successfully
+   */
+  async endContent(server: Server, client: Socket, endContentDto: EndContentDto): Promise<boolean> {
+    const { sessionId, reason } = endContentDto;
+    const { externalUserId, environment } = getClientData(client);
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { content: true },
+    });
+    if (!bizSession) return false;
+    const contentType = bizSession.content.type as ContentDataType;
+    if (contentType !== ContentDataType.FLOW) {
+      return false;
+    }
+    await this.trackEventService.trackFlowEndedEvent(
+      bizSession,
+      environment,
+      externalUserId,
+      reason,
+    );
+    // Unset current flow session
+    unsetSessionData(client, ContentDataType.FLOW);
+    // Toggle contents for the client
+    await this.toggleContents(server, client);
+    return true;
   }
 
   /**

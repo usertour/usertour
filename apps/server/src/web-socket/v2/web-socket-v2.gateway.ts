@@ -17,13 +17,13 @@ import {
   UpsertUserDto,
   AnswerQuestionDto,
   ClickChecklistTaskDto,
-  EndFlowDto,
   GoToStepDto,
   HideChecklistDto,
   ShowChecklistDto,
-  StartFlowDto,
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
+  StartContentDto,
+  EndContentDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom, setClientData } from '@/web-socket/core/socket-helper';
 import { ClientContext } from '@usertour/types';
@@ -129,20 +129,20 @@ export class WebSocketV2Gateway {
     return await this.service.toggleClientCondition(this.server, client, toggleClientConditionDto);
   }
 
-  @SubscribeMessage('start-flow')
-  async startFlow(
-    @MessageBody() startFlowDto: StartFlowDto,
+  @SubscribeMessage('start-content')
+  async startContent(
+    @MessageBody() startContentDto: StartContentDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.startFlow(this.server, client, startFlowDto);
+    return await this.service.startContent(this.server, client, startContentDto);
   }
 
-  @SubscribeMessage('end-flow')
-  async endFlow(
-    @MessageBody() endFlowDto: EndFlowDto,
+  @SubscribeMessage('end-content')
+  async endContent(
+    @MessageBody() endContentDto: EndContentDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.endFlow(this.server, client, endFlowDto);
+    return await this.service.endContent(this.server, client, endContentDto);
   }
 
   @SubscribeMessage('go-to-step')

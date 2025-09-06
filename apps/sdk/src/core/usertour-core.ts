@@ -226,9 +226,16 @@ export class UsertourCore extends Evented {
     this.setUser(createMockUser(userId));
   }
 
+  /**
+   * Starts a content
+   * @param contentId - The content ID to start
+   * @param opts - The options for starting the content
+   * @returns A promise that resolves when the content is started
+   */
   async startContent(contentId: string, opts?: UserTourTypes.StartOptions) {
-    console.log('startContent', contentId, opts);
+    await this.socketService.startContent({ contentId, stepCvid: opts?.cvid }, { batch: true });
   }
+
   /**
    * Starts a tour with given content ID and reason
    * @param contentId - Optional content ID to start specific tour

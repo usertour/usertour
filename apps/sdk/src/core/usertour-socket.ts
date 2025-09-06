@@ -4,8 +4,8 @@ import {
   UpsertUserDto,
   UpsertCompanyDto,
   TrackEventDto,
-  StartFlowDto,
-  EndFlowDto,
+  StartContentDto,
+  EndContentDto,
   GoToStepDto,
   ClickChecklistTaskDto,
   HideChecklistDto,
@@ -44,9 +44,9 @@ export interface IUsertourSocket {
   // Event tracking
   trackEvent(params: TrackEventDto, options?: BatchOptions): Promise<boolean>;
 
-  // Flow operations
-  startFlow(params: StartFlowDto, options?: BatchOptions): Promise<boolean>;
-  endFlow(params: EndFlowDto, options?: BatchOptions): Promise<boolean>;
+  // Content operations
+  startContent(params: StartContentDto, options?: BatchOptions): Promise<boolean>;
+  endContent(params: EndContentDto, options?: BatchOptions): Promise<boolean>;
   goToStep(params: GoToStepDto, options?: BatchOptions): Promise<boolean>;
 
   // Question operations
@@ -190,15 +190,15 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     return await this.socket.send(WebSocketEvents.TRACK_EVENT, params, options);
   }
 
-  // Flow operations
-  async startFlow(params: StartFlowDto, options?: BatchOptions): Promise<boolean> {
+  // Content operations
+  async startContent(params: StartContentDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.START_FLOW, params, options);
+    return await this.socket.send(WebSocketEvents.START_CONTENT, params, options);
   }
 
-  async endFlow(params: EndFlowDto, options?: BatchOptions): Promise<boolean> {
+  async endContent(params: EndContentDto, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.END_FLOW, params, options);
+    return await this.socket.send(WebSocketEvents.END_CONTENT, params, options);
   }
 
   async goToStep(params: GoToStepDto, options?: BatchOptions): Promise<boolean> {
@@ -267,7 +267,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     reason: contentEndReason,
     options?: BatchOptions,
   ): Promise<boolean> {
-    return await this.endFlow({ sessionId, reason }, options);
+    return await this.endContent({ sessionId, reason }, options);
   }
 
   async reportTargetMissing(
