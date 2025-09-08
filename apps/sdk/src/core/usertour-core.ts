@@ -17,6 +17,7 @@ import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourSocket } from '@/core/usertour-socket';
+import { UsertourAttributeManager } from '@/core/usertour-attribute-manager';
 import {
   ConditionStateChangeEvent,
   UsertourConditionsMonitor,
@@ -32,7 +33,7 @@ import {
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
-import { buildNavigateUrl, hasAttributesChanged } from '@/core/usertour-helper';
+import { buildNavigateUrl } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
 import {
   WebSocketEvents,
@@ -67,10 +68,11 @@ export class UsertourCore extends Evented {
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
-  localUserAttributes: UserTourTypes.Attributes | undefined;
-  localCompanyAttributes: UserTourTypes.Attributes | undefined;
-  localMembershipAttributes: UserTourTypes.Attributes | undefined;
   toursStore = new ExternalStore<UsertourTour[]>([]);
+
+  // Use dedicated attribute manager instead of direct properties
+  private attributeManager: UsertourAttributeManager;
+
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
   private targetMissingSeconds = 6;
@@ -84,6 +86,7 @@ export class UsertourCore extends Evented {
     super();
     autoBind(this);
     this.socketService = new UsertourSocket();
+    this.attributeManager = new UsertourAttributeManager();
     this.id = uuidV4();
     this.initializeEventListeners();
     this.initializeConditionsMonitor();
@@ -139,6 +142,38 @@ export class UsertourCore extends Evented {
    */
   getCustomNavigate(): ((url: string) => void) | null {
     return this.customNavigate;
+  }
+
+  /**
+   * Gets user attributes from attribute manager
+   * @returns Current user attributes
+   */
+  getUserAttributes(): UserTourTypes.Attributes {
+    return this.attributeManager.getUserAttributes();
+  }
+
+  /**
+   * Gets company attributes from attribute manager
+   * @returns Current company attributes
+   */
+  getCompanyAttributes(): UserTourTypes.Attributes {
+    return this.attributeManager.getCompanyAttributes();
+  }
+
+  /**
+   * Gets membership attributes from attribute manager
+   * @returns Current membership attributes
+   */
+  getMembershipAttributes(): UserTourTypes.Attributes {
+    return this.attributeManager.getMembershipAttributes();
+  }
+
+  /**
+   * Gets attribute manager instance
+   * @returns The attribute manager instance
+   */
+  getAttributeManager(): UsertourAttributeManager {
+    return this.attributeManager;
   }
 
   /**
@@ -249,7 +284,7 @@ export class UsertourCore extends Evented {
    * @param data - The data to navigate
    */
   handleNavigate(data: any) {
-    const userAttributes = this.localUserAttributes;
+    const userAttributes = this.getUserAttributes();
     const url = buildNavigateUrl(data.value, userAttributes);
 
     // Check if custom navigation function is set
@@ -408,9 +443,11 @@ export class UsertourCore extends Evented {
 
     this.reset();
     this.startConditionsMonitor();
+
     // Use dedicated initialization method
     await this.initializeSocket(userId, token);
 
+    // First call API with new attributes
     const result = await this.socketService.upsertUser(
       {
         externalUserId: userId,
@@ -421,8 +458,12 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
+
+    // Only update local state after successful API call
     this.externalUserId = userId;
-    this.localUserAttributes = attributes;
+    if (attributes) {
+      this.attributeManager.setUserAttributes(attributes);
+    }
   }
 
   /**
@@ -476,12 +517,12 @@ export class UsertourCore extends Evented {
       return;
     }
 
-    // Check if attributes have actually changed
-    if (!hasAttributesChanged(this.localUserAttributes, attributes)) {
-      // No changes detected, skip the update
-      return;
+    // Check if attributes have actually changed to avoid unnecessary API calls
+    if (!this.attributeManager.userAttrsChanged(attributes)) {
+      return; // No changes detected, skip the update
     }
 
+    // First call API with new attributes
     const externalUserId = this.externalUserId;
     const result = await this.socketService.upsertUser(
       {
@@ -493,7 +534,9 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_USER);
     }
-    this.localUserAttributes = { ...this.localUserAttributes, ...attributes };
+
+    // Only update local state after successful API call
+    this.attributeManager.setUserAttributes(attributes);
   }
 
   /**
@@ -514,6 +557,8 @@ export class UsertourCore extends Evented {
     if (!this.useCurrentUser()) {
       return;
     }
+
+    // First call API with new attributes
     const externalUserId = this.externalUserId;
     const result = await this.socketService.upsertCompany(
       {
@@ -527,9 +572,15 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
+
+    // Only update local state after successful API call
     this.externalCompanyId = companyId;
-    this.localCompanyAttributes = attributes;
-    this.localMembershipAttributes = opts?.membership;
+    if (attributes) {
+      this.attributeManager.setCompanyAttributes(attributes);
+    }
+    if (opts?.membership) {
+      this.attributeManager.setMembershipAttributes(opts.membership);
+    }
   }
 
   /**
@@ -546,12 +597,16 @@ export class UsertourCore extends Evented {
       return;
     }
 
-    // Check if attributes have actually changed
-    if (!hasAttributesChanged(this.localCompanyAttributes, attributes)) {
-      // No changes detected, skip the update
-      return;
+    // Check if attributes have actually changed to avoid unnecessary API calls
+    const hasCompanyChanged = attributes && this.attributeManager.companyAttrsChanged(attributes);
+    const hasMembershipChanged =
+      opts?.membership && this.attributeManager.membershipAttrsChanged(opts.membership);
+
+    if (!hasCompanyChanged && !hasMembershipChanged) {
+      return; // No changes detected, skip the update
     }
 
+    // First call API with new attributes
     const externalUserId = this.externalUserId;
     const externalCompanyId = this.externalCompanyId;
     const result = await this.socketService.upsertCompany(
@@ -566,8 +621,14 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
-    this.localCompanyAttributes = { ...this.localCompanyAttributes, ...attributes };
-    this.localMembershipAttributes = { ...this.localMembershipAttributes, ...opts?.membership };
+
+    // Only update local state after successful API call
+    if (attributes) {
+      this.attributeManager.setCompanyAttributes(attributes);
+    }
+    if (opts?.membership) {
+      this.attributeManager.setMembershipAttributes(opts.membership);
+    }
   }
 
   /**
@@ -672,9 +733,8 @@ export class UsertourCore extends Evented {
   reset() {
     this.externalUserId = undefined;
     this.externalCompanyId = undefined;
-    this.localUserAttributes = undefined;
-    this.localCompanyAttributes = undefined;
-    this.localMembershipAttributes = undefined;
+    // Clear all attributes using the attribute manager
+    this.attributeManager.clear();
     this.tours = [];
     timerManager.clear();
   }
