@@ -89,13 +89,13 @@ export class ContentSessionService {
     externalUserId: string,
     externalCompanyId?: string,
   ): Promise<SessionTheme | null> {
-    const versionTheme = themes.find((theme) => theme.id === themeId);
-    if (!versionTheme) {
+    const theme = themes.find((theme) => theme.id === themeId);
+    if (!theme) {
       return null;
     }
 
-    const settings = versionTheme.settings as ThemeTypesSetting;
-    const variations = versionTheme.variations as ThemeVariation[];
+    const settings = theme.settings as ThemeTypesSetting;
+    const variations = (theme.variations as ThemeVariation[]) || [];
 
     const attrIds = extractThemeVariationsAttributeIds(variations);
     const attributes = await this.extractAttributes(
@@ -156,7 +156,10 @@ export class ContentSessionService {
         );
         themeCache.set(themeId, sessionTheme);
       } catch (error) {
-        this.logger.error(`Failed to create session theme for themeId ${themeId}:`, error);
+        this.logger.error({
+          message: `Failed to create session theme for themeId ${themeId}:`,
+          error,
+        });
         themeCache.set(themeId, null);
       }
     });

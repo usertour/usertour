@@ -61,10 +61,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
     const theme = this.getVersionTheme();
-    if (!theme) {
-      return null;
+    // If the current step has a theme, use it
+    if (this.currentStep?.theme) {
+      return await UsertourTheme.getThemeSettings(this.currentStep?.theme);
     }
-    return await UsertourTheme.getThemeSettings(theme);
+    // If the version has a theme, use it
+    if (theme) {
+      return await UsertourTheme.getThemeSettings(theme);
+    }
+    // If no theme is found, return null
+    return null;
   }
 
   /**

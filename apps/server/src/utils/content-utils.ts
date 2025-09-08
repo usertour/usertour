@@ -758,9 +758,15 @@ export const extractUserAttrCodes = (editorContents: ContentEditorRoot[]): strin
  * @returns Array of unique attribute IDs
  */
 export const extractThemeVariationsAttributeIds = (themeVariations: ThemeVariation[]): string[] => {
+  if (!themeVariations || !Array.isArray(themeVariations)) {
+    return [];
+  }
+
   const attrIds: string[] = [];
   for (const themeVariation of themeVariations) {
-    attrIds.push(...extractAttributeIdsFromConditions(themeVariation.conditions));
+    if (themeVariation?.conditions) {
+      attrIds.push(...extractAttributeIdsFromConditions(themeVariation.conditions));
+    }
   }
   return attrIds;
 };
