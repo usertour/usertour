@@ -114,11 +114,7 @@ const evaluateRule = async (
     case RulesType.TIME:
       return evaluateTimeCondition(condition);
     case RulesType.USER_ATTR:
-      return evaluateAttributeCondition(
-        condition,
-        options.attributes || [],
-        options.userAttributes || {},
-      );
+      return evaluateAttributeCondition(condition, options);
     default:
       return condition.actived || false;
   }

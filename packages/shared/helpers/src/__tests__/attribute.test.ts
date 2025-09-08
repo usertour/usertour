@@ -1,5 +1,11 @@
-import { BizAttributeTypes, UserTourTypes, RulesCondition, SimpleAttribute } from '@usertour/types';
-import { evaluateFilterConditions } from '../conditions/attribute';
+import {
+  BizAttributeTypes,
+  UserTourTypes,
+  RulesCondition,
+  SimpleAttribute,
+  AttributeBizTypes,
+} from '@usertour/types';
+import { evaluateFilterConditions, evaluateAttributeCondition } from '../conditions/attribute';
 
 // Test data setup
 const testAttributes: SimpleAttribute[] = [
@@ -7,31 +13,63 @@ const testAttributes: SimpleAttribute[] = [
     id: 'email-attr',
     codeName: 'email',
     dataType: BizAttributeTypes.String,
+    bizType: AttributeBizTypes.User,
   },
   {
     id: 'age-attr',
     codeName: 'age',
     dataType: BizAttributeTypes.Number,
+    bizType: AttributeBizTypes.User,
   },
   {
     id: 'isPremium-attr',
     codeName: 'isPremium',
     dataType: BizAttributeTypes.Boolean,
+    bizType: AttributeBizTypes.User,
   },
   {
     id: 'roles-attr',
     codeName: 'roles',
     dataType: BizAttributeTypes.List,
+    bizType: AttributeBizTypes.User,
   },
   {
     id: 'signUpDate-attr',
     codeName: 'signUpDate',
     dataType: BizAttributeTypes.DateTime,
+    bizType: AttributeBizTypes.User,
   },
   {
     id: 'score-attr',
     codeName: 'score',
     dataType: BizAttributeTypes.Number,
+    bizType: AttributeBizTypes.User,
+  },
+  // Company attributes
+  {
+    id: 'company-name-attr',
+    codeName: 'companyName',
+    dataType: BizAttributeTypes.String,
+    bizType: AttributeBizTypes.Company,
+  },
+  {
+    id: 'company-size-attr',
+    codeName: 'companySize',
+    dataType: BizAttributeTypes.Number,
+    bizType: AttributeBizTypes.Company,
+  },
+  // Membership attributes
+  {
+    id: 'membership-level-attr',
+    codeName: 'membershipLevel',
+    dataType: BizAttributeTypes.String,
+    bizType: AttributeBizTypes.Membership,
+  },
+  {
+    id: 'membership-duration-attr',
+    codeName: 'membershipDuration',
+    dataType: BizAttributeTypes.Number,
+    bizType: AttributeBizTypes.Membership,
   },
 ];
 
@@ -43,6 +81,24 @@ const testUserAttributes: UserTourTypes.Attributes = {
   signUpDate: '2024-01-15T10:30:00Z',
   score: 85.5,
 } as UserTourTypes.Attributes;
+
+const testCompanyAttributes: UserTourTypes.Attributes = {
+  companyName: 'Example Corp',
+  companySize: 500,
+} as UserTourTypes.Attributes;
+
+const testMembershipAttributes: UserTourTypes.Attributes = {
+  membershipLevel: 'premium',
+  membershipDuration: 12,
+} as UserTourTypes.Attributes;
+
+// Default options for tests
+const defaultOptions = {
+  attributes: testAttributes,
+  userAttributes: testUserAttributes,
+  companyAttributes: testCompanyAttributes,
+  membershipAttributes: testMembershipAttributes,
+};
 
 describe('Attribute Filter - Complete Test Suite', () => {
   describe('String conditions (8 cases)', () => {
@@ -59,7 +115,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "not" condition correctly', () => {
@@ -75,7 +131,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "contains" condition correctly', () => {
@@ -91,7 +147,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "notContain" condition correctly', () => {
@@ -107,7 +163,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "startsWith" condition correctly', () => {
@@ -123,7 +179,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "endsWith" condition correctly', () => {
@@ -139,7 +195,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -154,7 +210,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -169,7 +225,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
   });
 
@@ -187,7 +243,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "not" condition correctly', () => {
@@ -203,7 +259,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isLessThan" condition correctly', () => {
@@ -219,7 +275,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isLessThanOrEqualTo" condition correctly', () => {
@@ -235,7 +291,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isGreaterThan" condition correctly', () => {
@@ -251,7 +307,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isGreaterThanOrEqualTo" condition correctly', () => {
@@ -267,7 +323,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "between" condition correctly', () => {
@@ -284,7 +340,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -299,7 +355,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -314,7 +370,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
   });
 
@@ -331,7 +387,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "false" condition correctly', () => {
@@ -346,7 +402,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -361,7 +417,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -376,7 +432,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
   });
 
@@ -394,7 +450,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "includesAll" condition correctly', () => {
@@ -410,7 +466,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "notIncludesAtLeastOne" condition correctly', () => {
@@ -426,7 +482,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "notIncludesAll" condition correctly', () => {
@@ -442,7 +498,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -457,7 +513,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -472,7 +528,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
   });
 
@@ -485,12 +541,12 @@ describe('Attribute Filter - Complete Test Suite', () => {
           operators: 'and',
           data: {
             logic: 'lessThan',
-            value: 600, // 600 days ago (signUpDate is 575 days ago, which is < 600, so should be false)
+            value: 30, // Check if signUpDate is within the last 30 days (it's not, so should be false)
             attrId: 'signUpDate-attr',
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "exactly" condition correctly', () => {
@@ -507,7 +563,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       // This will be false because the signUpDate is not exactly 30 days ago
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "moreThan" condition correctly', () => {
@@ -523,7 +579,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "before" condition correctly', () => {
@@ -539,7 +595,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "on" condition correctly', () => {
@@ -555,7 +611,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "after" condition correctly', () => {
@@ -571,7 +627,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -586,7 +642,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -601,7 +657,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
   });
 
@@ -637,7 +693,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate OR condition correctly', () => {
@@ -671,7 +727,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
     test('should evaluate mixed AND/OR condition correctly', () => {
@@ -723,17 +779,17 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
   });
 
   describe('Edge cases and error handling', () => {
     test('should handle empty conditions array', () => {
-      expect(evaluateFilterConditions([], testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions([], defaultOptions)).toBe(true);
     });
 
     test('should handle null/undefined conditions', () => {
-      expect(evaluateFilterConditions(null as any, testAttributes, testUserAttributes)).toBe(true);
+      expect(evaluateFilterConditions(null as any, defaultOptions)).toBe(true);
     });
 
     test('should handle missing attribute', () => {
@@ -749,7 +805,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should handle missing user attribute value', () => {
@@ -770,9 +826,12 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, userAttributesWithoutEmail)).toBe(
-        false,
-      );
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithoutEmail,
+        }),
+      ).toBe(false);
     });
 
     test('should handle invalid data type', () => {
@@ -780,7 +839,8 @@ describe('Attribute Filter - Complete Test Suite', () => {
         {
           id: 'invalid-attr',
           codeName: 'invalid',
-          dataType: 999, // Invalid data type
+          dataType: 999 as any, // Invalid data type for testing
+          bizType: AttributeBizTypes.User,
         },
       ];
 
@@ -796,7 +856,12 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, invalidAttribute, testUserAttributes)).toBe(false);
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          attributes: invalidAttribute,
+        }),
+      ).toBe(false);
     });
 
     test('should handle invalid logic', () => {
@@ -812,7 +877,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should handle missing data in condition', () => {
@@ -824,7 +889,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           data: undefined,
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
 
     test('should handle missing attrId in condition', () => {
@@ -839,7 +904,417 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, testAttributes, testUserAttributes)).toBe(false);
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+    });
+  });
+
+  describe('Company attributes evaluation', () => {
+    test('should evaluate company string attribute correctly', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'company-condition-1',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 'Example Corp',
+            attrId: 'company-name-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate company number attribute correctly', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'company-condition-2',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'isGreaterThan',
+            value: 100,
+            attrId: 'company-size-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should handle missing company attribute value', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'company-condition-3',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 'Test Corp',
+            attrId: 'company-name-attr',
+          },
+        },
+      ];
+
+      const optionsWithoutCompany = {
+        ...defaultOptions,
+        companyAttributes: {},
+      };
+
+      expect(evaluateFilterConditions(condition, optionsWithoutCompany)).toBe(false);
+    });
+  });
+
+  describe('Membership attributes evaluation', () => {
+    test('should evaluate membership string attribute correctly', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'membership-condition-1',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 'premium',
+            attrId: 'membership-level-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate membership number attribute correctly', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'membership-condition-2',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'isGreaterThanOrEqualTo',
+            value: 12,
+            attrId: 'membership-duration-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should handle missing membership attribute value', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'membership-condition-3',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 'premium',
+            attrId: 'membership-level-attr',
+          },
+        },
+      ];
+
+      const optionsWithoutMembership = {
+        ...defaultOptions,
+        membershipAttributes: {},
+      };
+
+      expect(evaluateFilterConditions(condition, optionsWithoutMembership)).toBe(false);
+    });
+  });
+
+  describe('Mixed attribute types in conditions', () => {
+    test('should evaluate mixed user and company attributes with AND logic', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'mixed-condition-1',
+          type: 'group',
+          operators: 'and',
+          data: {},
+          conditions: [
+            {
+              id: 'mixed-condition-1-1',
+              type: 'condition',
+              operators: 'and',
+              data: {
+                logic: 'contains',
+                value: 'example.com',
+                attrId: 'email-attr',
+              },
+            },
+            {
+              id: 'mixed-condition-1-2',
+              type: 'condition',
+              operators: 'and',
+              data: {
+                logic: 'isGreaterThan',
+                value: 100,
+                attrId: 'company-size-attr',
+              },
+            },
+          ],
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate mixed user, company, and membership attributes with OR logic', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'mixed-condition-2',
+          type: 'group',
+          operators: 'or',
+          data: {},
+          conditions: [
+            {
+              id: 'mixed-condition-2-1',
+              type: 'condition',
+              operators: 'or',
+              data: {
+                logic: 'is',
+                value: 'wrong@email.com',
+                attrId: 'email-attr',
+              },
+            },
+            {
+              id: 'mixed-condition-2-2',
+              type: 'condition',
+              operators: 'or',
+              data: {
+                logic: 'is',
+                value: 'Example Corp',
+                attrId: 'company-name-attr',
+              },
+            },
+            {
+              id: 'mixed-condition-2-3',
+              type: 'condition',
+              operators: 'or',
+              data: {
+                logic: 'is',
+                value: 'premium',
+                attrId: 'membership-level-attr',
+              },
+            },
+          ],
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+  });
+
+  describe('evaluateAttributeCondition function tests', () => {
+    test('should evaluate single attribute condition correctly', () => {
+      const condition: RulesCondition = {
+        id: 'single-condition-1',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          logic: 'is',
+          value: 'user@example.com',
+          attrId: 'email-attr',
+        },
+      };
+
+      expect(evaluateAttributeCondition(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should handle missing data in single condition', () => {
+      const condition: RulesCondition = {
+        id: 'single-condition-2',
+        type: 'condition',
+        operators: 'and',
+        data: undefined,
+      };
+
+      expect(evaluateAttributeCondition(condition, defaultOptions)).toBe(false);
+    });
+
+    test('should handle missing attribute in single condition', () => {
+      const condition: RulesCondition = {
+        id: 'single-condition-3',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          logic: 'is',
+          value: 'test',
+          attrId: 'non-existent-attr',
+        },
+      };
+
+      expect(evaluateAttributeCondition(condition, defaultOptions)).toBe(false);
+    });
+
+    test('should handle missing attributes array', () => {
+      const condition: RulesCondition = {
+        id: 'single-condition-4',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          logic: 'is',
+          value: 'test',
+          attrId: 'email-attr',
+        },
+      };
+
+      const optionsWithoutAttributes = {
+        ...defaultOptions,
+        attributes: undefined,
+      };
+
+      expect(evaluateAttributeCondition(condition, optionsWithoutAttributes)).toBe(false);
+    });
+
+    test('should evaluate company attribute in single condition', () => {
+      const condition: RulesCondition = {
+        id: 'single-condition-5',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          logic: 'is',
+          value: 'Example Corp',
+          attrId: 'company-name-attr',
+        },
+      };
+
+      expect(evaluateAttributeCondition(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate membership attribute in single condition', () => {
+      const condition: RulesCondition = {
+        id: 'single-condition-6',
+        type: 'condition',
+        operators: 'and',
+        data: {
+          logic: 'is',
+          value: 'premium',
+          attrId: 'membership-level-attr',
+        },
+      };
+
+      expect(evaluateAttributeCondition(condition, defaultOptions)).toBe(true);
+    });
+  });
+
+  describe('Additional edge cases for new functionality', () => {
+    test('should handle empty attribute contexts', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'empty-context-1',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 'test',
+            attrId: 'email-attr',
+          },
+        },
+      ];
+
+      const emptyOptions = {
+        attributes: testAttributes,
+        userAttributes: {},
+        companyAttributes: {},
+        membershipAttributes: {},
+      };
+
+      expect(evaluateFilterConditions(condition, emptyOptions)).toBe(false);
+    });
+
+    test('should handle missing attribute contexts', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'missing-context-1',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 'test',
+            attrId: 'email-attr',
+          },
+        },
+      ];
+
+      const minimalOptions = {
+        attributes: testAttributes,
+      };
+
+      expect(evaluateFilterConditions(condition, minimalOptions)).toBe(false);
+    });
+
+    test('should handle complex nested groups with mixed attribute types', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'complex-nested-1',
+          type: 'group',
+          operators: 'and',
+          data: {},
+          conditions: [
+            {
+              id: 'complex-nested-1-1',
+              type: 'group',
+              operators: 'or',
+              data: {},
+              conditions: [
+                {
+                  id: 'complex-nested-1-1-1',
+                  type: 'condition',
+                  operators: 'or',
+                  data: {
+                    logic: 'contains',
+                    value: 'example.com',
+                    attrId: 'email-attr',
+                  },
+                },
+                {
+                  id: 'complex-nested-1-1-2',
+                  type: 'condition',
+                  operators: 'or',
+                  data: {
+                    logic: 'is',
+                    value: 'Test Corp',
+                    attrId: 'company-name-attr',
+                  },
+                },
+              ],
+            },
+            {
+              id: 'complex-nested-1-2',
+              type: 'condition',
+              operators: 'and',
+              data: {
+                logic: 'is',
+                value: 'premium',
+                attrId: 'membership-level-attr',
+              },
+            },
+          ],
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should handle empty group conditions', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'empty-group-1',
+          type: 'group',
+          operators: 'and',
+          data: {},
+          conditions: [],
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+    });
+
+    test('should handle group with undefined conditions', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'undefined-group-1',
+          type: 'group',
+          operators: 'and',
+          data: {},
+          conditions: undefined,
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
   });
 });

@@ -1,3 +1,4 @@
+import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { ContentVersion, RulesType, RulesCondition } from './contents';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
@@ -112,7 +113,8 @@ export type CustomRuleEvaluators = Partial<Record<RulesType, CustomRuleEvaluator
 export interface SimpleAttribute {
   id: string;
   codeName: string;
-  dataType: number;
+  dataType: BizAttributeTypes;
+  bizType: AttributeBizTypes;
 }
 
 /**
@@ -122,6 +124,8 @@ export interface RulesEvaluationOptions {
   clientContext?: ClientContext;
   attributes?: SimpleAttribute[];
   userAttributes?: Attributes;
+  companyAttributes?: Attributes;
+  membershipAttributes?: Attributes;
   typeControl?: RulesTypeControl;
   activatedIds?: string[];
   deactivatedIds?: string[];

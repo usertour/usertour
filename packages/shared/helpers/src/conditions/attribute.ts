@@ -1,37 +1,45 @@
-import { BizAttributeTypes, UserTourTypes, RulesCondition, SimpleAttribute } from '@usertour/types';
+import {
+  BizAttributeTypes,
+  UserTourTypes,
+  RulesCondition,
+  AttributeBizTypes,
+  RulesEvaluationOptions,
+} from '@usertour/types';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 /**
  * Evaluate filter conditions and return boolean result
  * @param conditions - Filter conditions to evaluate
- * @param attributes - Available attributes
- * @param context - Filter context with user attributes
+ * @param options - Evaluation options including attributes, user attributes, company attributes, and membership attributes
  * @returns boolean indicating if conditions are met
  */
 export function evaluateFilterConditions(
   conditions: RulesCondition[],
-  attributes: SimpleAttribute[],
-  userAttributes: UserTourTypes.Attributes,
+  options: Pick<
+    RulesEvaluationOptions,
+    'attributes' | 'userAttributes' | 'companyAttributes' | 'membershipAttributes'
+  >,
 ): boolean {
   if (!conditions || !conditions.length) {
     return true; // No conditions means always true
   }
 
-  const result = evaluateAttributeConditionsGroup(conditions, attributes, userAttributes);
+  const result = evaluateAttributeConditionsGroup(conditions, options);
   return evaluateFilterResult(result);
 }
 
 /**
  * Evaluate a group of attribute conditions with AND/OR logic
  * @param conditions - Attribute filter conditions
- * @param attributes - Available attributes
- * @param context - Filter context with user attributes
+ * @param options - Evaluation options including attributes, user attributes, company attributes, and membership attributes
  * @returns Evaluation result structure with AND/OR logic
  */
 function evaluateAttributeConditionsGroup(
   conditions: RulesCondition[],
-  attributes: SimpleAttribute[],
-  userAttributes: UserTourTypes.Attributes,
+  options: Pick<
+    RulesEvaluationOptions,
+    'attributes' | 'userAttributes' | 'companyAttributes' | 'membershipAttributes'
+  >,
 ): any {
   if (!conditions || !conditions.length) {
     return false;
@@ -44,8 +52,8 @@ function evaluateAttributeConditionsGroup(
     const { operators } = condition;
     const item =
       condition.type !== 'group'
-        ? evaluateAttributeCondition(condition, attributes, userAttributes)
-        : evaluateAttributeConditionsGroup(condition.conditions || [], attributes, userAttributes);
+        ? evaluateAttributeCondition(condition, options)
+        : evaluateAttributeConditionsGroup(condition.conditions || [], options);
 
     if (!item) {
       continue;
@@ -76,22 +84,26 @@ function evaluateAttributeConditionsGroup(
 /**
  * Evaluate a single attribute condition
  * @param condition - Single attribute filter condition
- * @param attributes - Available attributes
- * @param context - Filter context with user attributes
+ * @param options - Evaluation options including attributes, user attributes, company attributes, and membership attributes
  * @returns Evaluation result (boolean or complex structure)
  */
 export function evaluateAttributeCondition(
   condition: RulesCondition,
-  attributes: SimpleAttribute[],
-  userAttributes: UserTourTypes.Attributes,
+  options: RulesEvaluationOptions,
 ): any {
   const { data } = condition;
   if (!data) {
     return false;
   }
   const { logic, value, attrId, value2, listValues = [] } = data;
+  const {
+    attributes,
+    userAttributes = {},
+    companyAttributes = {},
+    membershipAttributes = {},
+  } = options;
 
-  if (!attrId) {
+  if (!attrId || !attributes) {
     return false;
   }
 
@@ -100,7 +112,14 @@ export function evaluateAttributeCondition(
     return false;
   }
 
-  const actualValue = getAttributeValue(attr.codeName, userAttributes);
+  const bizAttributes =
+    attr.bizType === AttributeBizTypes.Company
+      ? companyAttributes
+      : attr.bizType === AttributeBizTypes.Membership
+        ? membershipAttributes
+        : userAttributes;
+
+  const actualValue = getAttributeValue(attr.codeName, bizAttributes);
 
   if (attr.dataType === BizAttributeTypes.String) {
     return evaluateStringCondition(logic, actualValue, value as string);
@@ -131,8 +150,8 @@ export function evaluateAttributeCondition(
  * @param context - Filter context with user attributes
  * @returns Attribute value
  */
-function getAttributeValue(codeName: string, userAttributes: UserTourTypes.Attributes): any {
-  return userAttributes?.[codeName];
+function getAttributeValue(codeName: string, attributes: UserTourTypes.Attributes): any {
+  return attributes?.[codeName];
 }
 
 /**

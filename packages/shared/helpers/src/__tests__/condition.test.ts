@@ -1,4 +1,10 @@
-import { RulesCondition, RulesType, RulesEvaluationOptions } from '@usertour/types';
+import {
+  RulesCondition,
+  RulesType,
+  RulesEvaluationOptions,
+  BizAttributeTypes,
+  AttributeBizTypes,
+} from '@usertour/types';
 import {
   filterConditionsByType,
   isConditionsActived,
@@ -270,7 +276,8 @@ describe('evaluateRulesConditions', () => {
       {
         id: 'email',
         codeName: 'email',
-        dataType: 2, // String
+        dataType: BizAttributeTypes.String,
+        bizType: AttributeBizTypes.User,
       },
     ],
     userAttributes: {
