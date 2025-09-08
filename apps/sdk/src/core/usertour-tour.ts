@@ -18,9 +18,7 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { document, logger } from '@/utils';
-
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
-
 import {
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
