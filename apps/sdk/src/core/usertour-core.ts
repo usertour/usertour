@@ -1,17 +1,12 @@
 import {
   MESSAGE_START_FLOW_WITH_TOKEN,
-  SDK_CSS_LOADED,
-  SDK_CSS_LOADED_FAILED,
   SDK_DOM_LOADED,
   STORAGE_IDENTIFY_ANONYMOUS,
-  SDK_CONTAINER_CREATED,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
 import { PlanType, RulesCondition, SDKConfig, SDKSettingsMode } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
-import ReactDOM from 'react-dom/client';
-import { render } from '@/components';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
@@ -22,19 +17,19 @@ import {
   ConditionStateChangeEvent,
   UsertourConditionsMonitor,
 } from '@/core/usertour-conditions-monitor';
+import { UsertourUIManager } from '@/core/usertour-ui-manager';
 import {
   autoBind,
   document,
   window,
   on,
-  loadCSSResource,
   logger,
   getValidMessage,
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
 import { buildNavigateUrl } from '@/core/usertour-helper';
-import { getMainCss, getWsUri } from '@/core/usertour-env';
+import { getWsUri } from '@/core/usertour-env';
 import {
   WebSocketEvents,
   ErrorMessages,
@@ -64,7 +59,6 @@ export class UsertourCore extends Evented {
     removeBranding: false,
   };
   tours: UsertourTour[] = [];
-  container?: HTMLDivElement;
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
@@ -73,8 +67,10 @@ export class UsertourCore extends Evented {
   // Use dedicated attribute manager instead of direct properties
   private attributeManager: UsertourAttributeManager;
 
+  // Use dedicated UI manager for DOM operations
+  private uiManager: UsertourUIManager;
+
   private baseZIndex = 1000000;
-  private root: ReactDOM.Root | undefined;
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
@@ -87,6 +83,11 @@ export class UsertourCore extends Evented {
     autoBind(this);
     this.socketService = new UsertourSocket();
     this.attributeManager = new UsertourAttributeManager();
+    this.uiManager = new UsertourUIManager({
+      containerId: 'usertour-widget',
+      maxRetries: 20,
+      retryDelay: 1000,
+    });
     this.id = uuidV4();
     this.initializeEventListeners();
     this.initializeConditionsMonitor();
@@ -180,13 +181,13 @@ export class UsertourCore extends Evented {
    * Initializes DOM event listeners for the application
    */
   initializeEventListeners() {
-    this.once(SDK_DOM_LOADED, () => {
-      this.loadCss();
+    this.once(SDK_DOM_LOADED, async () => {
+      const initialized = await this.uiManager.initialize(this.toursStore);
+      if (!initialized) {
+        logger.error('Failed to initialize UI manager');
+      }
     });
-    this.once(SDK_CSS_LOADED, () => {
-      this.createContainer();
-      this.createRoot();
-    });
+
     if (document?.readyState !== 'loading') {
       this.trigger(SDK_DOM_LOADED);
     } else if (document) {
@@ -625,23 +626,6 @@ export class UsertourCore extends Evented {
     }
   }
 
-  /**
-   * Loads required CSS resources
-   * @returns False if document is not available
-   */
-  async loadCss() {
-    const cssFile = getMainCss();
-    if (!document) {
-      return false;
-    }
-    const loadMainCss = await loadCSSResource(cssFile, document);
-    if (loadMainCss) {
-      this.trigger(SDK_CSS_LOADED);
-    } else {
-      this.trigger(SDK_CSS_LOADED_FAILED);
-    }
-  }
-
   getSdkConfig() {
     return this.sdkConfig;
   }
@@ -654,57 +638,11 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Creates the container element for the widget
-   */
-  createContainer() {
-    if (!document) {
-      logger.error('Document not found!');
-      return;
-    }
-
-    const containerId = 'usertour-widget';
-    let container = document.getElementById(containerId) as HTMLDivElement;
-
-    if (!container) {
-      container = document.createElement('div');
-      container.id = containerId;
-      document.body.appendChild(container);
-    }
-
-    this.container = container;
-    this.trigger(SDK_CONTAINER_CREATED);
-  }
-
-  /**
-   * Removes the container element from DOM
-   */
-  unmountContainer() {
-    if (this.container) {
-      this.container.parentNode?.removeChild(this.container);
-    }
-  }
-
-  /**
-   * Creates and initializes React root element
-   */
-  async createRoot() {
-    if (!this.container) {
-      return;
-    }
-    if (!this.root) {
-      this.root = ReactDOM.createRoot(this.container) as ReactDOM.Root;
-    }
-    return await render(this.root, {
-      toursStore: this.toursStore,
-    });
-  }
-
-  /**
    * Checks if the app is ready to start
    * @returns true if the app is ready to start, false otherwise
    */
   isReady() {
-    return this.container && this.root && this.externalUserId;
+    return this.uiManager.isReady() && this.externalUserId;
   }
 
   /**
@@ -740,9 +678,13 @@ export class UsertourCore extends Evented {
     // Destroy condition monitor
     this.destroyConditionsMonitor();
 
+    // Destroy all tours
     for (const tour of this.tours) {
       tour.destroy();
     }
+
+    // Destroy UI manager
+    this.uiManager.destroy();
 
     this.reset();
   }
