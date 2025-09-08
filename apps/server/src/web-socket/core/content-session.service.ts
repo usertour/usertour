@@ -351,6 +351,7 @@ export class ContentSessionService {
         codeName: attr.codeName,
         value,
         bizType: attr.bizType,
+        dataType: attr.dataType,
       });
     }
 

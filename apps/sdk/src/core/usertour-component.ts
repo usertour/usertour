@@ -5,9 +5,9 @@ import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
-import { contentEndReason, Step, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
+import { contentEndReason, Step } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { SDKContentSession } from '@/types/sdk';
+import { SDKContentSession, SessionTheme } from '@/types/sdk';
 
 /**
  * Options for component initialization
@@ -191,17 +191,10 @@ export abstract class UsertourComponent<TStore> extends Evented {
   }
 
   /**
-   * Gets the version theme settings from session
+   * Gets the version theme from session
    */
-  protected getVersionThemeSettings(): ThemeTypesSetting | undefined {
-    return this.session.getVersionThemeSettings();
-  }
-
-  /**
-   * Gets the version theme variations from session
-   */
-  protected getVersionThemeVariations(): ThemeVariation[] | undefined {
-    return this.session.getVersionThemeVariations();
+  protected getVersionTheme(): SessionTheme | undefined {
+    return this.session.getVersionTheme();
   }
 
   /**

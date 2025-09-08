@@ -60,16 +60,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
-    const themeSettings = this.getVersionThemeSettings();
-    const themeVariations = this.getVersionThemeVariations();
-    if (!themeSettings) {
-      logger.error('Theme settings not found');
+    const theme = this.getVersionTheme();
+    if (!theme) {
       return null;
     }
-    if (!themeVariations) {
-      return themeSettings;
-    }
-    return await UsertourTheme.getThemeSettings(themeSettings, themeVariations);
+    return await UsertourTheme.getThemeSettings(theme);
   }
 
   /**

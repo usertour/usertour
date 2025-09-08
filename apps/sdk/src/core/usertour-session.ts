@@ -1,5 +1,5 @@
-import { Step, ThemeVariation } from '@usertour/types';
-import { SDKContentSession, SessionAttribute } from '@/types/sdk';
+import { Step } from '@usertour/types';
+import { SDKContentSession, SessionTheme } from '@/types/sdk';
 
 /**
  * Session data access class
@@ -84,24 +84,10 @@ export class UsertourSession {
   }
 
   /**
-   * Gets theme settings from session
+   * Gets theme from session
    */
-  getVersionThemeSettings() {
-    return this.session.version.theme?.settings;
-  }
-
-  /**
-   * Gets theme variations from session
-   */
-  getVersionThemeVariations(): ThemeVariation[] | undefined {
-    return this.session.version.theme?.variations;
-  }
-
-  /**
-   * Gets theme attributes from session
-   */
-  getVersionThemeAttributes(): SessionAttribute[] | undefined {
-    return this.session.version.theme?.attributes;
+  getVersionTheme(): SessionTheme | undefined {
+    return this.session.version.theme;
   }
 
   /**

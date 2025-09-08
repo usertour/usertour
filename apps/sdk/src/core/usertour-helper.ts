@@ -14,6 +14,7 @@ import {
   RulesType,
   ContentPriority,
   BizUserInfo,
+  UserTourTypes,
 } from '@usertour/types';
 import {
   ContentEditorQuestionElement,
@@ -35,6 +36,8 @@ import {
   isConditionsActived,
   evaluateRulesConditions,
 } from '@usertour/helpers';
+import { SessionAttribute } from '@/types/sdk';
+import { AttributeBizTypes, RulesEvaluationOptions } from '@usertour/types';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -432,19 +435,15 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   return true;
 };
 
-interface UserInfo {
-  data: Record<string, string>;
-}
-
-export function buildNavigateUrl(value: any[], userInfo?: UserInfo): string {
+export function buildNavigateUrl(value: any[], userAttributes?: UserTourTypes.Attributes): string {
   let url = '';
 
   try {
     for (const v of value) {
       for (const vc of v.children) {
         if (vc.type === 'user-attribute') {
-          if (userInfo) {
-            url += userInfo.data[vc.attrCode] || vc.fallback;
+          if (userAttributes) {
+            url += userAttributes[vc.attrCode] || vc.fallback;
           }
         } else {
           url += vc.text;
@@ -546,4 +545,63 @@ export const createQuestionAnswerEventData = (
   }
 
   return eventData;
+};
+
+/**
+ * Convert SessionAttribute array to RulesEvaluationOptions format
+ * @param sessionAttributes - Array of session attributes to convert
+ * @returns Partial RulesEvaluationOptions for attribute evaluation
+ */
+const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAttribute[]) => {
+  const attributes: RulesEvaluationOptions['attributes'] = [];
+  const userAttributes: RulesEvaluationOptions['userAttributes'] = {};
+  const companyAttributes: RulesEvaluationOptions['companyAttributes'] = {};
+  const membershipAttributes: RulesEvaluationOptions['membershipAttributes'] = {};
+
+  for (const sessionAttr of sessionAttributes) {
+    const { value, ...attributeDefinition } = sessionAttr;
+
+    // Add to attributes definition array (exclude value field)
+    attributes?.push(attributeDefinition);
+
+    // Distribute values by business type
+    const { codeName, bizType } = sessionAttr;
+    if (bizType === AttributeBizTypes.Company) {
+      companyAttributes![codeName] = value;
+    } else if (bizType === AttributeBizTypes.Membership) {
+      membershipAttributes![codeName] = value;
+    } else {
+      userAttributes![codeName] = value; // Default for User and unknown types
+    }
+  }
+
+  return { attributes, userAttributes, companyAttributes, membershipAttributes };
+};
+
+/**
+ * Evaluate rules conditions by session attributes
+ * @param conditions - Rules conditions to evaluate
+ * @param attributes - Session attributes to evaluate
+ * @returns Evaluation result
+ */
+export const evaluateRulesConditionsBySessionAttributes = async (
+  conditions: RulesCondition[],
+  attributes: SessionAttribute[] = [],
+  options?: RulesEvaluationOptions,
+) => {
+  const clientContext = options?.clientContext ?? {
+    pageUrl: location?.href ?? '',
+    viewportWidth: window?.innerWidth ?? 0,
+    viewportHeight: window?.innerHeight ?? 0,
+  };
+  const typeControl = options?.typeControl ?? {
+    [RulesType.CURRENT_PAGE]: true,
+    [RulesType.USER_ATTR]: true,
+  };
+  return await evaluateRulesConditions(conditions, {
+    clientContext,
+    typeControl,
+    ...convertToAttributeEvaluationOptions(attributes),
+    ...options,
+  });
 };

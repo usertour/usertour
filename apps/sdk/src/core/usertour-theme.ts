@@ -1,10 +1,10 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
+import { ThemeTypesSetting } from '@usertour/types';
 import { convertSettings, convertToCssVars } from '@usertour/helpers';
-import { logger } from '@/utils';
 import { getUserTourCss } from '@/core/usertour-env';
-import { activedRulesConditions } from '@/core/usertour-helper';
+import { evaluateRulesConditionsBySessionAttributes } from '@/core/usertour-helper';
 import { isConditionsActived } from '@usertour/helpers';
+import { SessionTheme } from '@/types/sdk';
 
 const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
   const { fontFamily } = themeSettings.font;
@@ -43,31 +43,27 @@ export const UsertourTheme = {
    * Gets theme settings with variation support
    */
   getThemeSettings: async (
-    themeSettings: ThemeTypesSetting | undefined,
-    themeVariations?: ThemeVariation[],
+    sessionTheme: SessionTheme | undefined,
   ): Promise<ThemeTypesSetting | null> => {
-    if (!themeSettings) {
-      logger.error('Theme settings not found');
+    if (!sessionTheme) {
       return null;
     }
-
-    if (!themeVariations) {
-      return themeSettings;
+    const { settings, variations, attributes } = sessionTheme;
+    if (!variations || variations.length === 0) {
+      return settings;
     }
 
     // Process variations asynchronously to check conditions
-    const activeVariations = [];
-    for (const item of themeVariations) {
-      const activatedConditions = await activedRulesConditions(item.conditions);
+    for (const item of variations) {
+      const activatedConditions = await evaluateRulesConditionsBySessionAttributes(
+        item.conditions,
+        attributes,
+      );
       if (isConditionsActived(activatedConditions)) {
-        activeVariations.push(item);
+        return item.settings;
       }
     }
-
-    if (activeVariations.length === 0) {
-      return themeSettings;
-    }
-    return activeVariations[0].settings;
+    return settings;
   },
 
   /**

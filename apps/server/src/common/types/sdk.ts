@@ -1,5 +1,6 @@
 import {
   AttributeBizTypes,
+  BizAttributeTypes,
   ChecklistData,
   Content,
   ContentDataType,
@@ -11,8 +12,9 @@ import {
 export type SessionAttribute = {
   id: string;
   codeName: string;
-  value: any;
   bizType: AttributeBizTypes;
+  dataType: BizAttributeTypes;
+  value: any;
 };
 
 export type SessionTheme = Pick<Theme, 'settings' | 'variations'> & {

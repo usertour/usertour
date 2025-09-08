@@ -8,15 +8,7 @@ import {
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
-import {
-  BizCompany,
-  BizUserInfo,
-  PlanType,
-  RulesCondition,
-  SDKConfig,
-  SDKContent,
-  SDKSettingsMode,
-} from '@usertour/types';
+import { PlanType, RulesCondition, SDKConfig, SDKSettingsMode } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
@@ -40,7 +32,7 @@ import {
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
-import { buildNavigateUrl, hasAttributesChanged, createMockUser } from '@/core/usertour-helper';
+import { buildNavigateUrl, hasAttributesChanged } from '@/core/usertour-helper';
 import { getMainCss, getWsUri } from '@/core/usertour-env';
 import {
   WebSocketEvents,
@@ -73,8 +65,11 @@ export class UsertourCore extends Evented {
   tours: UsertourTour[] = [];
   container?: HTMLDivElement;
   assets: AssetAttributes[] = [];
-  userInfo: BizUserInfo | undefined;
-  companyInfo: BizCompany | undefined;
+  externalUserId: string | undefined;
+  externalCompanyId: string | undefined;
+  localUserAttributes: UserTourTypes.Attributes | undefined;
+  localCompanyAttributes: UserTourTypes.Attributes | undefined;
+  localMembershipAttributes: UserTourTypes.Attributes | undefined;
   toursStore = new ExternalStore<UsertourTour[]>([]);
   private baseZIndex = 1000000;
   private root: ReactDOM.Root | undefined;
@@ -147,14 +142,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Gets the current user info
-   * @returns The current user info
-   */
-  getUserInfo() {
-    return this.userInfo;
-  }
-
-  /**
    * Initializes DOM event listeners for the application
    */
   initializeEventListeners() {
@@ -218,12 +205,9 @@ export class UsertourCore extends Evented {
    * @param startOptions - Preview configuration options including test user ID
    */
   async preview(startOptions: AppStartOptions & { userId: string }) {
-    const { userId } = startOptions;
     this.startOptions = Object.assign({}, startOptions);
     //reset
     this.reset();
-    //start
-    this.setUser(createMockUser(userId));
   }
 
   /**
@@ -265,8 +249,8 @@ export class UsertourCore extends Evented {
    * @param data - The data to navigate
    */
   handleNavigate(data: any) {
-    const userInfo = this.getUserInfo();
-    const url = buildNavigateUrl(data.value, userInfo);
+    const userAttributes = this.localUserAttributes;
+    const url = buildNavigateUrl(data.value, userAttributes);
 
     // Check if custom navigation function is set
     const customNavigate = this.getCustomNavigate();
@@ -437,6 +421,8 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
+    this.externalUserId = userId;
+    this.localUserAttributes = attributes;
   }
 
   /**
@@ -464,7 +450,7 @@ export class UsertourCore extends Evented {
    * @returns True if user info exists, false otherwise
    */
   isIdentified() {
-    return !!this.userInfo;
+    return Boolean(this.externalUserId);
   }
 
   /**
@@ -483,7 +469,7 @@ export class UsertourCore extends Evented {
    */
   async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.userInfo?.externalId) {
+    if (!token || !this.externalUserId) {
       return;
     }
     if (!this.useCurrentUser()) {
@@ -491,12 +477,12 @@ export class UsertourCore extends Evented {
     }
 
     // Check if attributes have actually changed
-    if (!hasAttributesChanged(this.userInfo.data, attributes)) {
+    if (!hasAttributesChanged(this.localUserAttributes, attributes)) {
       // No changes detected, skip the update
       return;
     }
 
-    const externalUserId = this.userInfo.externalId;
+    const externalUserId = this.externalUserId;
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
@@ -507,22 +493,7 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_USER);
     }
-  }
-
-  /**
-   * Sets user information
-   * @param userInfo - User information to set
-   */
-  setUser(userInfo: BizUserInfo | undefined) {
-    this.userInfo = userInfo ? { ...userInfo } : undefined;
-  }
-
-  /**
-   * Sets company information
-   * @param companyInfo - Company information to set
-   */
-  setCompany(companyInfo: BizCompany | undefined) {
-    this.companyInfo = companyInfo ? { ...companyInfo } : undefined;
+    this.localUserAttributes = { ...this.localUserAttributes, ...attributes };
   }
 
   /**
@@ -537,13 +508,13 @@ export class UsertourCore extends Evented {
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.userInfo?.externalId) {
+    if (!token || !this.externalUserId) {
       return;
     }
     if (!this.useCurrentUser()) {
       return;
     }
-    const externalUserId = this.userInfo.externalId;
+    const externalUserId = this.externalUserId;
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
@@ -556,6 +527,9 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
+    this.externalCompanyId = companyId;
+    this.localCompanyAttributes = attributes;
+    this.localMembershipAttributes = opts?.membership;
   }
 
   /**
@@ -568,23 +542,18 @@ export class UsertourCore extends Evented {
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
     const { token } = this.startOptions;
-    if (
-      !token ||
-      !this.companyInfo?.externalId ||
-      !this.userInfo?.externalId ||
-      !this.useCurrentUser()
-    ) {
+    if (!token || !this.externalCompanyId || !this.externalUserId || !this.useCurrentUser()) {
       return;
     }
 
     // Check if attributes have actually changed
-    if (!hasAttributesChanged(this.companyInfo.data, attributes)) {
+    if (!hasAttributesChanged(this.localCompanyAttributes, attributes)) {
       // No changes detected, skip the update
       return;
     }
 
-    const externalUserId = this.userInfo.externalId;
-    const externalCompanyId = this.companyInfo?.externalId;
+    const externalUserId = this.externalUserId;
+    const externalCompanyId = this.externalCompanyId;
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
@@ -597,6 +566,8 @@ export class UsertourCore extends Evented {
     if (!result) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
+    this.localCompanyAttributes = { ...this.localCompanyAttributes, ...attributes };
+    this.localMembershipAttributes = { ...this.localMembershipAttributes, ...opts?.membership };
   }
 
   /**
@@ -658,26 +629,6 @@ export class UsertourCore extends Evented {
     }
   }
 
-  // Helper methods
-  private validateInitParams(): boolean {
-    const { token } = this.startOptions;
-    return !!(this.userInfo && token);
-  }
-
-  private filterContents(data: SDKContent[]): SDKContent[] {
-    const { versionId, contentId } = this.startOptions;
-
-    if (versionId) {
-      return data.filter((content) => content.id === versionId);
-    }
-
-    if (contentId) {
-      return data.filter((content) => content.contentId === contentId);
-    }
-
-    return data;
-  }
-
   /**
    * Creates and initializes React root element
    */
@@ -698,7 +649,7 @@ export class UsertourCore extends Evented {
    * @returns true if the app is ready to start, false otherwise
    */
   isReady() {
-    return this.container && this.root && this.userInfo?.externalId;
+    return this.container && this.root && this.externalUserId;
   }
 
   /**
@@ -719,8 +670,11 @@ export class UsertourCore extends Evented {
    * Resets the application state
    */
   reset() {
-    this.userInfo = undefined;
-    this.companyInfo = undefined;
+    this.externalUserId = undefined;
+    this.externalCompanyId = undefined;
+    this.localUserAttributes = undefined;
+    this.localCompanyAttributes = undefined;
+    this.localMembershipAttributes = undefined;
     this.tours = [];
     timerManager.clear();
   }
