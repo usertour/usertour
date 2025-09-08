@@ -510,10 +510,7 @@ export class UsertourCore extends Evented {
    */
   async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.externalUserId) {
-      return;
-    }
-    if (!this.useCurrentUser()) {
+    if (!token || !this.externalUserId || !this.useCurrentUser()) {
       return;
     }
 
@@ -551,10 +548,7 @@ export class UsertourCore extends Evented {
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.externalUserId) {
-      return;
-    }
-    if (!this.useCurrentUser()) {
+    if (!token || !this.externalUserId || !this.useCurrentUser()) {
       return;
     }
 
