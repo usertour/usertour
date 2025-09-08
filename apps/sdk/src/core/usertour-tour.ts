@@ -7,7 +7,6 @@ import {
 import {
   ContentActionsItemType,
   RulesCondition,
-  Step,
   StepContentType,
   ThemeTypesSetting,
   contentEndReason,
@@ -27,6 +26,7 @@ import {
   ELEMENT_FOUND_TIMEOUT,
   ELEMENT_CHANGED,
 } from '@usertour-packages/constants';
+import { SessionStep } from '@/types';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
   // Tour-specific constants
@@ -35,7 +35,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   // Tour-specific properties
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
-  private currentStep?: Step | null;
+  private currentStep?: SessionStep | null;
 
   /**
    * Checks the tour
@@ -107,7 +107,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Finds the target step by cvid or returns the first step
    * @private
    */
-  private findTargetStep(cvid?: string): Step | null {
+  private findTargetStep(cvid?: string): SessionStep | null {
     const steps = this.getSteps();
     if (!steps.length) return null;
 
@@ -155,7 +155,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Displays a step based on its type
    * @private
    */
-  private async displayStep(step: Step): Promise<void> {
+  private async displayStep(step: SessionStep): Promise<void> {
     if (step.type === StepContentType.TOOLTIP) {
       await this.showPopper(step);
     } else if (step.type === StepContentType.MODAL) {
@@ -179,7 +179,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param currentStep - The step to display as a tooltip
    * @throws Will close the tour if validation fails or target is missing
    */
-  private async showPopper(currentStep: Step): Promise<void> {
+  private async showPopper(currentStep: SessionStep): Promise<void> {
     // Validate step and target
     if (!this.canShowPopper(currentStep)) {
       logger.error('Step cannot be shown', { step: currentStep });
@@ -207,7 +207,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Checks if a popper step can be shown
    * @private
    */
-  private canShowPopper(step: Step): boolean {
+  private canShowPopper(step: SessionStep): boolean {
     return Boolean(step?.target && step.cvid === this.currentStep?.cvid && document);
   }
 
@@ -215,7 +215,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Sets up the element watcher for a popper step
    * @private
    */
-  private setupElementWatcher(step: Step, store: TourStore): void {
+  private setupElementWatcher(step: SessionStep, store: TourStore): void {
     // Clean up existing watcher
     if (this.watcher) {
       this.watcher.destroy();
@@ -330,7 +330,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Handles when the target element is found
    * @private
    */
-  private handleElementFound(el: Element, step: Step, store: TourStore): void {
+  private handleElementFound(el: Element, step: SessionStep, store: TourStore): void {
     const currentStep = this.currentStep;
     if (currentStep?.cvid !== step.cvid) {
       return;
@@ -349,7 +349,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     });
   }
 
-  private handleElementChanged(el: Element, step: Step, store: TourStore): void {
+  private handleElementChanged(el: Element, step: SessionStep, store: TourStore): void {
     const currentStep = this.currentStep;
     if (currentStep?.cvid !== step.cvid) {
       return;
@@ -366,7 +366,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Handles when the target element is not found
    * @private
    */
-  private async handleElementNotFound(step: Step): Promise<void> {
+  private async handleElementNotFound(step: SessionStep): Promise<void> {
     const currentStep = this.currentStep;
     if (currentStep?.cvid !== step.cvid) {
       return;
@@ -385,7 +385,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    *
    * @param currentStep - The step to be displayed as a modal
    */
-  private async showModal(currentStep: Step) {
+  private async showModal(currentStep: SessionStep) {
     // Build store data and get step information
     const store = await this.buildStoreData();
     if (!store) {
@@ -416,7 +416,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * 2. Reporting the completion event if it's the last step
    *
    */
-  private async showHidden(currentStep: Step) {
+  private async showHidden(currentStep: SessionStep) {
     await this.reportStepSeen(currentStep);
   }
 
@@ -538,7 +538,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param currentStep - The current step
    * @returns Store data with step info
    */
-  private getCurrentStepInfo(currentStep: Step) {
+  private getCurrentStepInfo(currentStep: SessionStep) {
     const steps = this.getSteps();
     // Early return for edge cases
     if (!steps.length) {
@@ -579,7 +579,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Reports the tooltip target missing event
    * @param step - The step where target is missing
    */
-  private async reportTargetMissing(step: Step) {
+  private async reportTargetMissing(step: SessionStep) {
     await this.socketService.reportTooltipTargetMissing(
       {
         sessionId: this.getSessionId(),
@@ -593,7 +593,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Reports step seen event
    * @param step - The step to report
    */
-  private async reportStepSeen(step: Step) {
+  private async reportStepSeen(step: SessionStep) {
     await this.socketService.goToStep(
       {
         sessionId: this.getSessionId(),

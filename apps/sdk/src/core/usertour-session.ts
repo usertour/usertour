@@ -1,5 +1,4 @@
-import { Step } from '@usertour/types';
-import { SDKContentSession, SessionTheme } from '@/types/sdk';
+import { SDKContentSession, SessionStep, SessionTheme } from '@/types/sdk';
 
 /**
  * Session data access class
@@ -30,7 +29,7 @@ export class UsertourSession {
   /**
    * Gets the step by cvid
    */
-  getStepByCvid(cvid: string): Step | undefined {
+  getStepByCvid(cvid: string): SessionStep | undefined {
     return this.getSteps().find((step) => step.cvid === cvid);
   }
 
@@ -79,7 +78,7 @@ export class UsertourSession {
   /**
    * Gets the steps array from session
    */
-  getSteps(): Step[] {
+  getSteps(): SessionStep[] {
     return this.session.version.steps || [];
   }
 

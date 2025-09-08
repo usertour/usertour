@@ -19,7 +19,6 @@ import {
   RulesCondition,
   SDKConfig,
   Side,
-  Step,
   StepContentType,
   ThemeTypesSetting,
   UserTourTypes,
@@ -28,13 +27,14 @@ import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { UsertourTour } from '@/core/usertour-tour';
 import { off, on } from '@/utils';
 import { useSettingsStyles } from '@usertour-packages/sdk';
+import { SessionStep } from '@/types';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {
   openState: boolean;
   zIndex: number;
   globalStyle: string;
-  currentStep: Step;
+  currentStep: SessionStep;
   assets: any;
   userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
@@ -53,7 +53,7 @@ type TourPopperProps = TourBaseProps & {
 type TourModalProps = TourBaseProps;
 
 type PopperContentProps = {
-  currentStep: Step;
+  currentStep: SessionStep;
   userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
   totalSteps: number;
@@ -163,7 +163,7 @@ const PopperContent = (props: PopperContentProps) => {
 // Hooks
 const useTargetActions = (
   ref: React.RefObject<HTMLElement> | Element | null | undefined,
-  currentStep: Step,
+  currentStep: SessionStep,
   handleActions: (actions: RulesCondition[]) => Promise<void>,
 ) => {
   useEffect(() => {
