@@ -574,10 +574,8 @@ export const evaluateConditions = async (
   const typeControl: RulesTypeControl = {
     [RulesType.CURRENT_PAGE]: true,
     [RulesType.TIME]: true,
+    ...(attributes ? { [RulesType.USER_ATTR]: true } : {}),
   };
-  if (attributes) {
-    typeControl[RulesType.USER_ATTR] = true;
-  }
   const clientContext: ClientContext = {
     pageUrl: location?.href ?? '',
     viewportWidth: window?.innerWidth ?? 0,
