@@ -30,14 +30,14 @@ import {
   getExternalUserRoom,
 } from '@/web-socket/core/socket-helper';
 
-export interface ContentStartContext {
+interface ContentStartContext {
   server: Server;
   client: Socket;
   contentType: ContentDataType;
   options?: StartContentOptions;
 }
 
-export interface ContentStartResult {
+interface ContentStartResult {
   success: boolean;
   session?: SDKContentSession;
   trackConditions?: TrackCondition[];
