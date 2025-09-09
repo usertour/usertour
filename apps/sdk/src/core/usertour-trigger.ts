@@ -4,30 +4,32 @@ import { evaluateConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
 import { SessionAttribute } from '@/types/sdk';
+import { Evented } from '@/utils/evented';
 
 /**
  * Manages trigger conditions and execution for a single step
  * Simple and focused - one trigger instance per step
  */
-export class UsertourTrigger {
+export class UsertourTrigger extends Evented {
   private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
 
   private triggers: StepTrigger[] = [];
   private readonly actionExecutor: (actions: RulesCondition[]) => Promise<void>;
-  private readonly sessionAttributes: SessionAttribute[];
+  private readonly getSessionAttributes: () => SessionAttribute[];
   private readonly id: string; // Unique identifier for this trigger
   private activeTimeouts: Set<string> = new Set(); // Track active timeout keys
 
   constructor(
     triggers: StepTrigger[],
-    sessionAttributes: SessionAttribute[],
+    getSessionAttributes: () => SessionAttribute[],
     actionExecutor: (actions: RulesCondition[]) => Promise<void>,
   ) {
+    super();
     autoBind(this);
     this.triggers = [...triggers]; // Copy to avoid modifying original
     this.actionExecutor = actionExecutor;
     this.id = uuidV4();
-    this.sessionAttributes = sessionAttributes;
+    this.getSessionAttributes = getSessionAttributes;
   }
 
   /**
@@ -38,11 +40,13 @@ export class UsertourTrigger {
     if (this.triggers.length === 0) return false;
 
     const remainingTriggers: StepTrigger[] = [];
+    // Get fresh session attributes on each process call
+    const sessionAttributes = this.getSessionAttributes();
 
     for (let i = 0; i < this.triggers.length; i++) {
       const trigger = this.triggers[i];
       const { conditions, ...rest } = trigger;
-      const activatedConditions = await evaluateConditions(conditions, this.sessionAttributes);
+      const activatedConditions = await evaluateConditions(conditions, sessionAttributes);
 
       if (!isConditionsActived(activatedConditions)) {
         // Conditions not met, keep for next check
