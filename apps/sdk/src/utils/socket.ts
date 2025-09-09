@@ -28,7 +28,7 @@ export class Socket {
   private readonly options: SocketOptions;
   private inBatch = false;
   private endBatchTimeout?: number;
-  private readonly BATCH_TIMEOUT = 100; // ms
+  private readonly BATCH_TIMEOUT = 300; // ms
 
   constructor(options: SocketOptions) {
     autoBind(this);
