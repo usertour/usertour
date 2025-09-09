@@ -5,7 +5,7 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import { autoBind, Evented } from '@/utils';
-import { activedRulesConditions } from '@/core/usertour-helper';
+import { evaluateConditions } from '@/core/usertour-helper';
 import { isConditionsActived } from '@usertour/helpers';
 
 /**
@@ -163,7 +163,7 @@ export class UsertourConfig extends Evented {
       key: keyof ContentConfigObject,
     ) => {
       if (enabled && rules && rules.length > 0) {
-        const activedRules = await activedRulesConditions(rules);
+        const activedRules = await evaluateConditions(rules);
         this.setConfig({ [key]: activedRules });
       }
     };

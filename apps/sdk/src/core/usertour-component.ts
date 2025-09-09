@@ -7,7 +7,7 @@ import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
 import { contentEndReason } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { SDKContentSession, SessionStep, SessionTheme } from '@/types/sdk';
+import { SDKContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 
 /**
  * Options for component initialization
@@ -188,6 +188,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected getStepByCvid(cvid: string): SessionStep | undefined {
     return this.session.getStepByCvid(cvid);
+  }
+
+  /**
+   * Gets the attributes from session
+   */
+  protected getAttributes(): SessionAttribute[] {
+    return this.session.getAttributes();
   }
 
   /**

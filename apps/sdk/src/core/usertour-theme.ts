@@ -2,7 +2,7 @@ import { AssetAttributes } from '@usertour-packages/frame';
 import { ThemeTypesSetting } from '@usertour/types';
 import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { getUserTourCss } from '@/core/usertour-env';
-import { evaluateRulesConditionsBySessionAttributes } from '@/core/usertour-helper';
+import { evaluateConditions } from '@/core/usertour-helper';
 import { isConditionsActived } from '@usertour/helpers';
 import { SessionTheme } from '@/types/sdk';
 
@@ -55,10 +55,7 @@ export const UsertourTheme = {
 
     // Process variations asynchronously to check conditions
     for (const item of variations) {
-      const activatedConditions = await evaluateRulesConditionsBySessionAttributes(
-        item.conditions,
-        attributes,
-      );
+      const activatedConditions = await evaluateConditions(item.conditions, attributes);
       if (isConditionsActived(activatedConditions)) {
         return item.settings;
       }

@@ -1,8 +1,9 @@
 import { StepTrigger, RulesCondition } from '@usertour/types';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
-import { activedRulesConditions } from '@/core/usertour-helper';
+import { evaluateConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
+import { SessionAttribute } from '@/types/sdk';
 
 /**
  * Manages trigger conditions and execution for a single step
@@ -13,17 +14,20 @@ export class UsertourTrigger {
 
   private triggers: StepTrigger[] = [];
   private readonly actionExecutor: (actions: RulesCondition[]) => Promise<void>;
+  private readonly sessionAttributes: SessionAttribute[];
   private readonly id: string; // Unique identifier for this trigger
   private activeTimeouts: Set<string> = new Set(); // Track active timeout keys
 
   constructor(
     triggers: StepTrigger[],
+    sessionAttributes: SessionAttribute[],
     actionExecutor: (actions: RulesCondition[]) => Promise<void>,
   ) {
     autoBind(this);
     this.triggers = [...triggers]; // Copy to avoid modifying original
     this.actionExecutor = actionExecutor;
     this.id = uuidV4();
+    this.sessionAttributes = sessionAttributes;
   }
 
   /**
@@ -38,7 +42,7 @@ export class UsertourTrigger {
     for (let i = 0; i < this.triggers.length; i++) {
       const trigger = this.triggers[i];
       const { conditions, ...rest } = trigger;
-      const activatedConditions = await activedRulesConditions(conditions);
+      const activatedConditions = await evaluateConditions(conditions, this.sessionAttributes);
 
       if (!isConditionsActived(activatedConditions)) {
         // Conditions not met, keep for next check

@@ -1,5 +1,5 @@
 import { RulesCondition } from '@usertour/types';
-import { activedRulesConditions } from '@/core/usertour-helper';
+import { evaluateConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
@@ -129,7 +129,7 @@ export class UsertourConditionsMonitor extends Evented {
 
     try {
       // Process all conditions to get their active state in one batch
-      const activatedConditions = await activedRulesConditions(this.conditions);
+      const activatedConditions = await evaluateConditions(this.conditions);
 
       // Check which conditions are active in one batch
       const activeConditions = activatedConditions.filter((condition) =>

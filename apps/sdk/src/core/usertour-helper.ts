@@ -15,6 +15,8 @@ import {
   ContentPriority,
   BizUserInfo,
   UserTourTypes,
+  RulesTypeControl,
+  ClientContext,
 } from '@usertour/types';
 import {
   ContentEditorQuestionElement,
@@ -175,25 +177,6 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
   on(document, 'keyup', onKeyup);
   fillCache.set(el, { timestamp: -1, value: el.value, isActive: false });
   return false;
-};
-
-export const activedRulesConditions = async (conditions: RulesCondition[]) => {
-  return await evaluateRulesConditions(conditions, {
-    clientContext: {
-      pageUrl: location?.href ?? '',
-      viewportWidth: window?.innerWidth ?? 0,
-      viewportHeight: window?.innerHeight ?? 0,
-    },
-    typeControl: {
-      [RulesType.CURRENT_PAGE]: true,
-      [RulesType.TIME]: true,
-    },
-    customEvaluators: {
-      [RulesType.ELEMENT]: isActiveRulesByElement,
-      [RulesType.TEXT_INPUT]: isActiveRulesByTextInput,
-      [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
-    },
-  });
 };
 
 export const isActiveContent = (content: SDKContent) => {
@@ -584,24 +567,31 @@ const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAttribute
  * @param attributes - Session attributes to evaluate
  * @returns Evaluation result
  */
-export const evaluateRulesConditionsBySessionAttributes = async (
+export const evaluateConditions = async (
   conditions: RulesCondition[],
-  attributes: SessionAttribute[] = [],
-  options?: RulesEvaluationOptions,
+  attributes?: SessionAttribute[],
 ) => {
-  const clientContext = options?.clientContext ?? {
+  const typeControl: RulesTypeControl = {
+    [RulesType.CURRENT_PAGE]: true,
+    [RulesType.TIME]: true,
+  };
+  if (attributes) {
+    typeControl[RulesType.USER_ATTR] = true;
+  }
+  const clientContext: ClientContext = {
     pageUrl: location?.href ?? '',
     viewportWidth: window?.innerWidth ?? 0,
     viewportHeight: window?.innerHeight ?? 0,
   };
-  const typeControl = options?.typeControl ?? {
-    [RulesType.CURRENT_PAGE]: true,
-    [RulesType.USER_ATTR]: true,
-  };
+
   return await evaluateRulesConditions(conditions, {
     clientContext,
     typeControl,
-    ...convertToAttributeEvaluationOptions(attributes),
-    ...options,
+    customEvaluators: {
+      [RulesType.ELEMENT]: isActiveRulesByElement,
+      [RulesType.TEXT_INPUT]: isActiveRulesByTextInput,
+      [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
+    },
+    ...(attributes ? convertToAttributeEvaluationOptions(attributes) : {}),
   });
 };
