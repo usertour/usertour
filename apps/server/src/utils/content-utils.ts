@@ -12,6 +12,7 @@ import {
   ThemeVariation,
   EventAttributes,
 } from '@usertour/types';
+import type { SessionAttribute, SessionTheme, SessionStep } from '@/common/types/sdk';
 import {
   differenceInDays,
   differenceInHours,
@@ -32,6 +33,7 @@ import {
   filterConditionsByType,
   evaluateRulesConditions,
   cuid,
+  isEqual,
 } from '@usertour/helpers';
 import { TrackCondition } from '@/common/types/sdk';
 
@@ -814,4 +816,102 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
     }
   }
   return attrCodes;
+};
+
+// ===== SESSION COMPARISON UTILITIES =====
+
+/**
+ * Compare two SessionAttribute arrays by ID and value
+ * @param oldAttributes - The original attributes
+ * @param newAttributes - The new attributes
+ * @returns True if there are differences
+ */
+export const compareSessionAttributes = (
+  oldAttributes: SessionAttribute[],
+  newAttributes: SessionAttribute[],
+): boolean => {
+  if (oldAttributes.length !== newAttributes.length) {
+    return true;
+  }
+
+  const sortedOld = [...oldAttributes].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedNew = [...newAttributes].sort((a, b) => a.id.localeCompare(b.id));
+
+  return !isEqual(sortedOld, sortedNew);
+};
+
+/**
+ * Compare theme variations by ID
+ * @param oldVariations - The original variations
+ * @param newVariations - The new variations
+ * @returns True if there are differences
+ */
+export const compareThemeVariations = (
+  oldVariations: ThemeVariation[] | undefined,
+  newVariations: ThemeVariation[] | undefined,
+): boolean => {
+  const oldVars = oldVariations || [];
+  const newVars = newVariations || [];
+
+  if (oldVars.length !== newVars.length) {
+    return true;
+  }
+
+  const sortedOld = [...oldVars].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedNew = [...newVars].sort((a, b) => a.id.localeCompare(b.id));
+
+  return !isEqual(sortedOld, sortedNew);
+};
+
+/**
+ * Compare two SessionTheme objects with smart comparison for variations and attributes
+ * @param oldTheme - The original theme
+ * @param newTheme - The new theme
+ * @returns True if there are differences
+ */
+export const compareSessionThemes = (
+  oldTheme: SessionTheme | null | undefined,
+  newTheme: SessionTheme | null | undefined,
+): boolean => {
+  // Handle null/undefined cases
+  if (!oldTheme && !newTheme) {
+    return false;
+  }
+  if (!oldTheme || !newTheme) {
+    return true;
+  }
+
+  // Compare settings (deep comparison for theme settings)
+  if (!isEqual(oldTheme.settings, newTheme.settings)) {
+    return true;
+  }
+
+  // Compare variations by ID
+  if (compareThemeVariations(oldTheme.variations, newTheme.variations)) {
+    return true;
+  }
+
+  // Compare theme attributes
+  if (compareSessionAttributes(oldTheme.attributes || [], newTheme.attributes || [])) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Compare session steps with smart theme comparison
+ * @param oldSteps - The original steps
+ * @param newSteps - The new steps
+ * @returns True if there are differences
+ */
+export const compareSessionSteps = (oldSteps: SessionStep[], newSteps: SessionStep[]): boolean => {
+  if (oldSteps.length !== newSteps.length) {
+    return true;
+  }
+
+  const sortedOld = [...oldSteps].sort((a, b) => a.cvid.localeCompare(b.cvid));
+  const sortedNew = [...newSteps].sort((a, b) => a.cvid.localeCompare(b.cvid));
+
+  return !isEqual(sortedOld, sortedNew);
 };

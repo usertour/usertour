@@ -260,14 +260,34 @@ export class ContentStartService {
    */
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
     const { client, contentType } = context;
+    const { environment, externalUserId, externalCompanyId } = getClientData(client);
 
     const session = getContentSession(client, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
+    // Refresh session
+    const refreshedSession = await this.contentSessionService.refreshContentSession(
+      session,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
 
+    // Compare session to detect changes
+    const isSessionChanged = this.contentSessionService.compareContentSessions(
+      session,
+      refreshedSession,
+    );
     const isActive = await this.isSessionActive(client, contentType, session);
     if (isActive) {
+      if (isSessionChanged) {
+        return {
+          success: true,
+          reason: 'Existing active session with changes',
+          session: refreshedSession,
+        };
+      }
       return {
         success: true,
         reason: 'Existing active session',

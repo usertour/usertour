@@ -14,6 +14,9 @@ import {
   extractStepContentAttrCodes,
   extractThemeVariationsAttributeIds,
   getAttributeValue,
+  compareSessionAttributes,
+  compareSessionThemes,
+  compareSessionSteps,
 } from '@/utils/content-utils';
 import { SessionAttribute, SDKContentSession, SessionTheme, SessionStep } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
@@ -270,6 +273,121 @@ export class ContentSessionService {
       session.attributes = attributes;
     }
     return session;
+  }
+
+  /**
+   * Refresh content session with updated data
+   * @param contentSession - The existing content session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID (optional)
+   * @returns Updated content session or null if refresh fails
+   */
+  async refreshContentSession(
+    contentSession: SDKContentSession,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SDKContentSession | null> {
+    // Get version to find themeId
+    const version = await this.prisma.version.findUnique({
+      where: { id: contentSession.version.id },
+    });
+
+    if (!version?.themeId) {
+      this.logger.error(`Version or themeId not found for version ${contentSession.version.id}`);
+      return null;
+    }
+
+    // Get themes for session theme creation
+    const themes = await this.contentManagementService.fetchThemes(
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    // Regenerate session theme
+    const sessionTheme = await this.createSessionTheme(
+      themes,
+      version.themeId,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    if (!sessionTheme) {
+      this.logger.error(`Failed to create session theme for themeId ${version.themeId}`);
+      return null;
+    }
+
+    // Create a deep copy of the content session to avoid mutating the original
+    const refreshedSession: SDKContentSession = {
+      ...contentSession,
+      version: {
+        ...contentSession.version,
+        theme: sessionTheme,
+      },
+    };
+
+    // Handle FLOW type - update attributes and steps
+    if (contentSession.type === ContentDataType.FLOW && contentSession.version.steps) {
+      const steps = contentSession.version.steps as unknown as Step[];
+
+      // Regenerate attributes
+      const attributes = await this.extractStepsAttributes(
+        steps,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+
+      // Regenerate session steps with updated themes
+      const sessionSteps = await this.createSessionSteps(
+        contentSession.version.steps,
+        themes,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+
+      refreshedSession.attributes = attributes;
+      refreshedSession.version = {
+        ...refreshedSession.version,
+        steps: sessionSteps,
+      };
+    }
+
+    return refreshedSession;
+  }
+
+  /**
+   * Compare two content sessions to detect changes in key data
+   * @param oldSession - The original content session
+   * @param newSession - The updated content session
+   * @returns True if there are changes in theme, attributes, or steps theme
+   */
+  compareContentSessions(oldSession: SDKContentSession, newSession: SDKContentSession): boolean {
+    // Basic validation - should be comparing the same session
+    if (oldSession.id !== newSession.id || oldSession.type !== ContentDataType.FLOW) {
+      return true;
+    }
+
+    // Compare version theme using utility function
+    if (compareSessionThemes(oldSession.version.theme, newSession.version.theme)) {
+      return true;
+    }
+
+    // Compare attributes using utility function
+    if (compareSessionAttributes(oldSession.attributes || [], newSession.attributes || [])) {
+      return true;
+    }
+
+    // Compare steps using utility function
+    if (compareSessionSteps(oldSession.version.steps || [], newSession.version.steps || [])) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
