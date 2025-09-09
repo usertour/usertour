@@ -110,7 +110,7 @@ export class WebSocketV2Gateway {
     @MessageBody() context: ClientContext,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.updateClientContext(this.server, client, context);
+    return await this.service.updateClientContext(client, context);
   }
 
   @SubscribeMessage('track-event')
@@ -126,7 +126,7 @@ export class WebSocketV2Gateway {
     @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
-    return await this.service.toggleClientCondition(this.server, client, toggleClientConditionDto);
+    return await this.service.toggleClientCondition(client, toggleClientConditionDto);
   }
 
   @SubscribeMessage('start-content')

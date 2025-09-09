@@ -86,18 +86,12 @@ export class WebSocketV2Service {
 
   /**
    * Update client context
-   * @param server - The server instance
    * @param client - The client instance
    * @param clientContext - The client context
    * @returns True if the client context was updated successfully
    */
-  async updateClientContext(
-    server: Server,
-    client: Socket,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
+  async updateClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
     await this.setUserClientContext(client, clientContext);
-    await this.toggleContents(server, client);
     return true;
   }
 
@@ -510,26 +504,16 @@ export class WebSocketV2Service {
 
   /**
    * Toggle the isActive status of a specific client condition by condition ID
-   * @param server - The server instance
    * @param client - The client instance
    * @param toggleClientConditionDto - The DTO containing condition ID and active status
    * @returns True if the condition was toggled successfully
    */
   async toggleClientCondition(
-    server: Server,
     client: Socket,
     toggleClientConditionDto: ToggleClientConditionDto,
   ): Promise<boolean> {
     const { conditionId, isActive } = toggleClientConditionDto;
-    const { externalUserId } = getClientData(client);
 
-    const success = toggleClientCondition(client, conditionId, isActive);
-    if (!success) {
-      this.logger.warn(`Condition with ID ${conditionId} not found for user ${externalUserId}`);
-      return false;
-    }
-
-    await this.toggleContents(server, client);
-    return success;
+    return toggleClientCondition(client, conditionId, isActive);
   }
 }
