@@ -32,6 +32,7 @@ import {
   toggleClientCondition,
   getClientData,
   setClientData,
+  untrackCurrentConditions,
 } from '@/web-socket/core/socket-helper';
 import { TrackEventService } from '@/web-socket/core/track-event.service';
 import { UserClientContextService } from '@/web-socket/core/user-client-context.service';
@@ -404,6 +405,8 @@ export class WebSocketV2Service {
       bizSession.id,
       eventData,
     );
+    // Untrack current conditions
+    untrackCurrentConditions(server, client);
     // Unset current flow session
     unsetSessionData(client, ContentDataType.FLOW);
     // Toggle contents for the client
@@ -477,6 +480,8 @@ export class WebSocketV2Service {
       externalUserId,
       reason,
     );
+    // Untrack current conditions
+    untrackCurrentConditions(server, client);
     // Unset current flow session
     unsetSessionData(client, ContentDataType.FLOW);
     // Toggle contents for the client

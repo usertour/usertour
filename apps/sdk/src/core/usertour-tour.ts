@@ -572,13 +572,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param reason - The reason for the end
    */
   private async endFlow(reason: contentEndReason) {
-    await this.socketService.endContent(
-      {
-        sessionId: this.getSessionId(),
-        reason,
-      },
-      { batch: true },
-    );
+    await this.socketService.endContent({
+      sessionId: this.getSessionId(),
+      reason,
+    });
   }
 
   /**

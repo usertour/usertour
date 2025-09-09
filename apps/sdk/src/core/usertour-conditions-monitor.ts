@@ -67,6 +67,10 @@ export class UsertourConditionsMonitor extends Evented {
    */
   removeConditions(conditionIds: string[]): void {
     this.conditions = this.conditions.filter((condition) => !conditionIds.includes(condition.id));
+    // Also remove from active conditions to prevent memory leaks
+    for (const id of conditionIds) {
+      this.activeConditions.delete(id);
+    }
   }
 
   /**
