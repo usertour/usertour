@@ -34,23 +34,23 @@ export enum contentEndReason {
 }
 
 export enum contentStartReason {
-  START_CONDITION = 'start_condition',
+  START_FROM_CONDITION = 'start_condition',
   START_FROM_URL = 'start_from_url',
   START_FROM_SESSION = 'start_from_session',
-  MANUAL_START = 'manual_start',
+  START_FROM_MANUAL = 'manual_start',
   START_FROM_PROGRAM = 'start_from_program',
   START_FROM_CONTENT_ID = 'start_from_content_id',
-  ACTION = 'action',
+  START_FROM_ACTION = 'action',
 }
 
 export const flowReasonTitleMap = {
-  [contentStartReason.START_CONDITION]: 'Matched auto-start condition',
+  [contentStartReason.START_FROM_CONDITION]: 'Matched auto-start condition',
   [contentStartReason.START_FROM_URL]: 'Started from URL',
   [contentStartReason.START_FROM_SESSION]: 'Started from session',
   [contentStartReason.START_FROM_PROGRAM]: 'Started from program',
   [contentStartReason.START_FROM_CONTENT_ID]: 'Started from content id',
-  [contentStartReason.MANUAL_START]: 'Manually started',
-  [contentStartReason.ACTION]: 'Button clicked',
+  [contentStartReason.START_FROM_MANUAL]: 'Manually started',
+  [contentStartReason.START_FROM_ACTION]: 'Button clicked',
   [contentEndReason.USER_CLOSED]: 'User closed',
   [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',

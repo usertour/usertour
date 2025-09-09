@@ -17,7 +17,10 @@ export const getExternalUserRoom = (environmentId: string, externalUserId: strin
 // Client Data Utils
 // ============================================================================
 
-type ClientData = {
+/**
+ * Client data type
+ */
+export type ClientData = {
   environment: Environment | undefined;
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;

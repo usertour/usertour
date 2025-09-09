@@ -5,7 +5,13 @@ import {
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
-import { PlanType, RulesCondition, SDKConfig, SDKSettingsMode } from '@usertour/types';
+import {
+  contentStartReason,
+  PlanType,
+  RulesCondition,
+  SDKConfig,
+  SDKSettingsMode,
+} from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
@@ -252,32 +258,30 @@ export class UsertourCore extends Evented {
    * @param opts - The options for starting the content
    * @returns A promise that resolves when the content is started
    */
-  async startContent(contentId: string, opts?: UserTourTypes.StartOptions) {
-    await this.socketService.startContent({ contentId, stepCvid: opts?.cvid }, { batch: true });
+  async startContent(
+    contentId: string,
+    startReason: contentStartReason,
+    opts?: UserTourTypes.StartOptions,
+  ) {
+    // Close all active tours
+    await this.closeActiveTours();
+    // Build start options
+    const startOptions = {
+      stepCvid: opts?.cvid,
+      startReason,
+      contentId,
+    };
+    // Start the content
+    await this.socketService.startContent(startOptions, { batch: true });
   }
 
   /**
-   * Starts a tour with given content ID and reason
-   * @param contentId - Optional content ID to start specific tour
-   * @param reason - Reason for starting the tour
+   * Starts a tour with given content ID
+   * @param contentId - content ID to start specific tour
    * @param opts - Optional start options
    */
-  async startTour(
-    contentId: string | undefined,
-    reason: string,
-    opts?: UserTourTypes.StartOptions,
-  ) {
-    try {
-      // If the app is not ready, do nothing
-      if (!this.isReady()) {
-        return;
-      }
-
-      // Start URL-based tour
-      console.log('startTour', contentId, reason, opts);
-    } catch (error) {
-      logger.error('Failed to start tour:', error);
-    }
+  async startTour(contentId: string, opts?: UserTourTypes.StartOptions) {
+    await this.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
   }
 
   /**
@@ -345,6 +349,32 @@ export class UsertourCore extends Evented {
       const untrackedCondition = message as UnTrackedCondition;
       this.removeConditions([untrackedCondition.conditionId]);
     });
+  }
+
+  /**
+   * Closes all active tours
+   */
+  async closeActiveTours(): Promise<void> {
+    if (this.tours.length === 0) {
+      return;
+    }
+
+    // Use Promise.allSettled for parallel processing
+    const closePromises = this.tours.map(async (tour) => {
+      try {
+        await tour.close();
+      } catch (error) {
+        logger.error('Failed to close tour:', error);
+        // Force destroy if close fails to prevent memory leaks
+        tour.destroy();
+      }
+    });
+
+    await Promise.allSettled(closePromises);
+
+    // Clear tours and sync store
+    this.tours = [];
+    this.syncToursStore();
   }
 
   /**

@@ -21,6 +21,7 @@ import {
 import { SessionAttribute, SDKContentSession, SessionTheme, SessionStep } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
 import { ContentManagementService } from './content-management.service';
+import { ClientData } from './socket-helper';
 
 @Injectable()
 export class ContentSessionService {
@@ -200,12 +201,11 @@ export class ContentSessionService {
   async createContentSession(
     sessionId: string,
     customContentVersion: CustomContentVersion,
-    environment: Environment,
-    externalUserId: string,
-    contentType: ContentDataType,
-    externalCompanyId?: string,
+    clientData: ClientData,
     stepCvid?: string,
   ): Promise<SDKContentSession | null> {
+    const { environment, externalUserId, externalCompanyId } = clientData;
+    const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.contentManagementService.getConfig(environment);
     const themes = await this.contentManagementService.fetchThemes(
       environment,

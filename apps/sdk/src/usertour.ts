@@ -1,4 +1,4 @@
-import { SDKSettingsMode, UserTourTypes } from '@usertour/types';
+import { contentStartReason, SDKSettingsMode, UserTourTypes } from '@usertour/types';
 import { UsertourCore } from './core/usertour-core';
 import { logger, window } from '@/utils';
 
@@ -133,7 +133,7 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
          * @returns A promise that resolves when the content is started
          */
         start: async (contentId: string, opts?: UserTourTypes.StartOptions) => {
-          return app.startContent(contentId, opts);
+          return app.startContent(contentId, contentStartReason.START_FROM_PROGRAM, opts);
         },
         endAll: async () => {
           return await app.endAll();

@@ -484,7 +484,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
         await this.show(action.data.stepCvid);
         break;
       case ContentActionsItemType.FLOW_START:
-        await this.instance.startTour(action.data.contentId, action.data.stepCvid);
+        await this.instance.startTour(action.data.contentId, { cvid: action.data.stepCvid });
         break;
       case ContentActionsItemType.FLOW_DISMIS:
         await this.handleClose(contentEndReason.USER_CLOSED);

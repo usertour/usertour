@@ -4,6 +4,7 @@ import {
   ChecklistData,
   Content,
   ContentDataType,
+  contentStartReason,
   RulesCondition,
   Step,
   Theme,
@@ -54,6 +55,7 @@ export type TrackCondition = {
 };
 
 export type StartContentOptions = {
+  startReason: contentStartReason;
   contentId?: string;
   stepCvid?: string;
 };

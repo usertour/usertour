@@ -1,3 +1,5 @@
+import { contentStartReason } from '@usertour/types';
+
 export type ProjectConfig = {
   removeBranding: boolean;
   planType: string;
@@ -32,6 +34,7 @@ export type IdentityDto = {
 
 export type StartContentDto = {
   contentId: string;
+  startReason: contentStartReason;
   stepCvid?: string;
 };
 

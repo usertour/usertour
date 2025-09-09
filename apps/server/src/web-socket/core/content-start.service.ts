@@ -29,6 +29,7 @@ import {
   forceGoToStep,
   getExternalUserRoom,
 } from '@/web-socket/core/socket-helper';
+import type { ClientData } from '@/web-socket/core/socket-helper';
 
 interface ContentStartContext {
   server: Server;
@@ -420,28 +421,15 @@ export class ContentStartService {
    */
   private async handleSessionManagement(
     customContentVersion: CustomContentVersion,
-    clientData: any,
-    stepCvid?: string,
+    clientData: ClientData,
+    startOptions: StartContentOptions,
     createNewSession = false,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    const { environment, externalUserId, externalCompanyId } = clientData;
-    const contentType = customContentVersion.content.type as ContentDataType;
-    const versionId = customContentVersion.id;
-    const steps = customContentVersion.steps;
-
     if (createNewSession) {
-      return await this.createNewSession(
-        customContentVersion,
-        environment,
-        externalUserId,
-        externalCompanyId,
-        versionId,
-        stepCvid,
-        steps,
-      );
+      return await this.createNewSession(customContentVersion, clientData, startOptions);
     }
 
-    return this.findExistingSession(customContentVersion, contentType, stepCvid);
+    return this.findExistingSession(customContentVersion, startOptions);
   }
 
   /**
@@ -449,14 +437,14 @@ export class ContentStartService {
    */
   private async createNewSession(
     customContentVersion: CustomContentVersion,
-    environment: any,
-    externalUserId: string,
-    externalCompanyId: string,
-    versionId: string,
-    stepCvid?: string,
-    steps?: any[],
+    clientData: ClientData,
+    startOptions: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    const startReason = 'auto_start';
+    const { environment, externalUserId, externalCompanyId } = clientData;
+    const { stepCvid, startReason } = startOptions;
+    const versionId = customContentVersion.id;
+    const steps = customContentVersion.steps;
+    const currentStepCvid = stepCvid || steps?.[0]?.cvid;
     const bizSession = await this.contentSessionService.createBizSession(
       environment,
       externalUserId,
@@ -482,7 +470,7 @@ export class ContentStartService {
     return {
       success: true,
       sessionId: bizSession.id,
-      currentStepCvid: stepCvid || steps?.[0]?.cvid,
+      currentStepCvid,
     };
   }
 
@@ -491,10 +479,11 @@ export class ContentStartService {
    */
   private findExistingSession(
     customContentVersion: CustomContentVersion,
-    contentType: ContentDataType,
-    stepCvid?: string,
+    startOptions: StartContentOptions,
   ): ContentStartResult & { sessionId?: string; currentStepCvid?: string } {
     const session = customContentVersion.session;
+    const contentType = customContentVersion.content.type as ContentDataType;
+    const { stepCvid } = startOptions;
     const sessionId = findAvailableSessionId(session.latestSession, contentType);
     const currentStepCvid = stepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
 
@@ -518,20 +507,14 @@ export class ContentStartService {
   private async createContentSession(
     sessionId: string,
     customContentVersion: CustomContentVersion,
-    clientData: any,
-    contentType: ContentDataType,
-    currentStepCvid: string,
+    clientData: ClientData,
+    stepCvid: string,
   ): Promise<SDKContentSession | null> {
-    const { environment, externalUserId, externalCompanyId } = clientData;
-
     return await this.contentSessionService.createContentSession(
       sessionId,
       customContentVersion,
-      environment,
-      externalUserId,
-      contentType,
-      externalCompanyId,
-      currentStepCvid,
+      clientData,
+      stepCvid,
     );
   }
 
@@ -567,16 +550,14 @@ export class ContentStartService {
     }
 
     const { client, options } = context;
-    const { stepCvid } = options ?? {};
     const clientData = getClientData(client);
-    const contentType = customContentVersion.content.type as ContentDataType;
 
     try {
       // Handle session management
       const sessionResult = await this.handleSessionManagement(
         customContentVersion,
         clientData,
-        stepCvid,
+        options,
         createNewSession,
       );
 
@@ -589,7 +570,6 @@ export class ContentStartService {
         sessionResult.sessionId!,
         customContentVersion,
         clientData,
-        contentType,
         sessionResult.currentStepCvid!,
       );
 

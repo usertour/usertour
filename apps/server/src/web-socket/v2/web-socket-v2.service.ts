@@ -23,6 +23,7 @@ import {
   ContentDataType,
   StepSettings,
   ClientContext,
+  contentStartReason,
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
@@ -495,6 +496,9 @@ export class WebSocketV2Service {
       server,
       client,
       contentType: ContentDataType.FLOW,
+      options: {
+        startReason: contentStartReason.START_FROM_CONDITION,
+      },
     });
     return true;
   }
