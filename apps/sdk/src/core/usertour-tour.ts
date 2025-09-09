@@ -599,13 +599,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param step - The step to report
    */
   private async reportStepSeen(step: SessionStep) {
-    await this.socketService.goToStep(
-      {
-        sessionId: this.getSessionId(),
-        stepId: String(step.id),
-      },
-      { batch: true },
-    );
+    await this.socketService.goToStep({
+      sessionId: this.getSessionId(),
+      stepId: String(step.id),
+    });
   }
 
   /**

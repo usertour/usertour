@@ -1,4 +1,4 @@
-import { ClientContext, contentEndReason } from '@usertour/types';
+import { ClientContext } from '@usertour/types';
 import {
   AnswerQuestionDto,
   UpsertUserDto,
@@ -65,13 +65,6 @@ export interface IUsertourSocket {
   ): Promise<boolean>;
 
   // Convenience methods
-  reportStepSeen(sessionId: string, stepId: string, options?: BatchOptions): Promise<boolean>;
-  reportCloseEvent(
-    sessionId: string,
-    reason: contentEndReason,
-    options?: BatchOptions,
-  ): Promise<boolean>;
-  reportTargetMissing(sessionId: string, stepId: string, options?: BatchOptions): Promise<boolean>;
 
   // Connection management
   initialize(options: SocketInitOptions): Promise<void>;
@@ -251,31 +244,6 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
     return await this.socket.send(WebSocketEvents.TOGGLE_CLIENT_CONDITION, params, options);
-  }
-
-  // Convenience methods for common operations
-  async reportStepSeen(
-    sessionId: string,
-    stepId: string,
-    options?: BatchOptions,
-  ): Promise<boolean> {
-    return await this.goToStep({ sessionId, stepId }, options);
-  }
-
-  async reportCloseEvent(
-    sessionId: string,
-    reason: contentEndReason,
-    options?: BatchOptions,
-  ): Promise<boolean> {
-    return await this.endContent({ sessionId, reason }, options);
-  }
-
-  async reportTargetMissing(
-    sessionId: string,
-    stepId: string,
-    options?: BatchOptions,
-  ): Promise<boolean> {
-    return await this.reportTooltipTargetMissing({ sessionId, stepId }, options);
   }
 
   // Socket connection management
