@@ -583,7 +583,7 @@ export class ContentStartService {
       // Update session version
       await this.updateSessionVersion(sessionResult.sessionId!, customContentVersion.id);
 
-      // Extract tracking conditions
+      // Extract tracking conditions for hide rules
       const trackConditions = this.extractTrackingConditions(customContentVersion);
 
       return {
