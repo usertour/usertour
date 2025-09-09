@@ -607,6 +607,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     );
   }
 
+  /**
+   * Resets the step trigger
+   */
   private resetStepTrigger() {
     this.stepTrigger?.destroy();
     this.stepTrigger = null;
