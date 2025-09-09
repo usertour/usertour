@@ -528,7 +528,7 @@ export class ContentStartService {
   /**
    * Extract tracking conditions for hide rules
    */
-  private extractTrackingConditions(customContentVersion: CustomContentVersion): TrackCondition[] {
+  private extractHideRulesConditions(customContentVersion: CustomContentVersion): TrackCondition[] {
     return extractClientTrackConditions([customContentVersion], ConditionExtractionMode.HIDE_ONLY);
   }
 
@@ -584,7 +584,7 @@ export class ContentStartService {
       await this.updateSessionVersion(sessionResult.sessionId!, customContentVersion.id);
 
       // Extract tracking conditions for hide rules
-      const trackConditions = this.extractTrackingConditions(customContentVersion);
+      const trackConditions = this.extractHideRulesConditions(customContentVersion);
 
       return {
         success: true,
