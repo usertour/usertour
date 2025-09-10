@@ -53,6 +53,12 @@ export type TrackCondition = {
   condition: RulesCondition;
 };
 
+export type WaitTimerCondition = {
+  versionId: string;
+  waitTime: number;
+  activated?: boolean;
+};
+
 export type StartContentOptions = {
   contentId?: string;
   stepCvid?: string;

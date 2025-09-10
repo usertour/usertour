@@ -12,7 +12,12 @@ import {
   ThemeVariation,
   EventAttributes,
 } from '@usertour/types';
-import type { SessionAttribute, SessionTheme, SessionStep } from '@/common/types/sdk';
+import type {
+  SessionAttribute,
+  SessionTheme,
+  SessionStep,
+  WaitTimerCondition,
+} from '@/common/types/sdk';
 import {
   differenceInDays,
   differenceInHours,
@@ -340,20 +345,40 @@ export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
+ * @param firedWaitTimerVersionIds - Optional array of version IDs that have fired wait timers
  * @returns The available auto-start custom content versions
  */
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  firedWaitTimerVersionIds?: string[],
 ) => {
   return customContentVersions
     .filter((customContentVersion) => {
-      const isAutoStart = isActivedAutoStartRules(customContentVersion);
-      const isAllowed = isAllowedByAutoStartRulesSetting(
-        customContentVersion,
-        customContentVersions,
-      );
-      return customContentVersion.content.type === contentType && isAutoStart && isAllowed;
+      // Early return if content type doesn't match
+      if (customContentVersion.content.type !== contentType) {
+        return false;
+      }
+
+      // Check auto-start rules activation
+      if (!isActivedAutoStartRules(customContentVersion)) {
+        return false;
+      }
+
+      // Check auto-start rules settings
+      if (!isAllowedByAutoStartRulesSetting(customContentVersion, customContentVersions)) {
+        return false;
+      }
+
+      // Check wait timer conditions
+      const waitTime = customContentVersion.config.autoStartRulesSetting.wait;
+      if (waitTime && firedWaitTimerVersionIds) {
+        if (!firedWaitTimerVersionIds.includes(customContentVersion.id)) {
+          return false;
+        }
+      }
+
+      return true;
     })
     .sort(priorityCompare);
 };
@@ -658,6 +683,29 @@ export const extractClientTrackConditions = (
 ): TrackCondition[] => {
   const clientConditionTypes = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL];
   return extractTrackConditions(customContentVersions, clientConditionTypes, extractionMode);
+};
+
+/**
+ * Extracts client wait timer conditions from custom content versions
+ * @param customContentVersions - The custom content versions
+ * @returns The client wait timer conditions
+ */
+export const extractClientWaitTimerConditions = (
+  customContentVersions: CustomContentVersion[],
+): WaitTimerCondition[] => {
+  const waitTimerConditions: WaitTimerCondition[] = [];
+  for (const customContentVersion of customContentVersions) {
+    if (
+      isEnabledAutoStartRules(customContentVersion) &&
+      customContentVersion.config.autoStartRulesSetting.wait > 0
+    ) {
+      waitTimerConditions.push({
+        versionId: customContentVersion.id,
+        waitTime: customContentVersion.config.autoStartRulesSetting.wait,
+      });
+    }
+  }
+  return waitTimerConditions;
 };
 
 /**

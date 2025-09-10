@@ -12,8 +12,14 @@ import {
   evaluateCustomContentVersion,
   findAvailableSessionId,
   findLatestStepCvid,
+  extractClientWaitTimerConditions,
 } from '@/utils/content-utils';
-import { StartContentOptions, TrackCondition, SDKContentSession } from '@/common/types/sdk';
+import {
+  StartContentOptions,
+  TrackCondition,
+  SDKContentSession,
+  WaitTimerCondition,
+} from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
 import { ContentManagementService } from './content-management.service';
 import { ContentSessionService } from './content-session.service';
@@ -28,6 +34,8 @@ import {
   getContentSession,
   forceGoToStep,
   getExternalUserRoom,
+  startWaitTimerConditions,
+  cancelCurrentWaitTimerConditions,
 } from '@/web-socket/core/socket-helper';
 import type { ClientData } from '@/web-socket/core/socket-helper';
 
@@ -42,6 +50,7 @@ interface ContentStartResult {
   success: boolean;
   session?: SDKContentSession;
   trackConditions?: TrackCondition[];
+  waitTimerConditions?: WaitTimerCondition[];
   reason?: string;
   invalidSession?: SDKContentSession;
 }
@@ -69,17 +78,18 @@ export class ContentStartService {
     const { server, client, contentType } = context;
 
     try {
-      const result = await this.startSingletonContentInternal(context);
+      const { success, invalidSession, session, trackConditions, waitTimerConditions, reason } =
+        await this.startSingletonContentInternal(context);
 
       // Handle invalid session cleanup
-      if (result.invalidSession) {
-        unsetContentSession(server, client, contentType, result.invalidSession.id);
+      if (invalidSession) {
+        unsetContentSession(server, client, contentType, invalidSession.id);
         untrackCurrentConditions(server, client);
       }
 
       // Early return if operation failed
-      if (!result.success) {
-        this.logger.debug(`Content start failed: ${result.reason}`, {
+      if (!success) {
+        this.logger.debug(`Content start failed: ${reason}`, {
           contentType,
         });
         return false;
@@ -87,23 +97,25 @@ export class ContentStartService {
 
       // Handle successful result
       // Set the content session if one was created
-      if (result.session) {
-        setContentSession(server, client, result.session);
+      if (session) {
+        setContentSession(server, client, session);
+        cancelCurrentWaitTimerConditions(server, client);
       }
 
       // Handle track conditions if any were returned
-      if (result.trackConditions && result.trackConditions.length > 0) {
-        // For hide-only conditions, untrack current conditions first
-        const excludeConditionIds = result.trackConditions.map(
-          (trackCondition) => trackCondition.condition.id,
-        );
-        untrackCurrentConditions(server, client, excludeConditionIds);
+      const excludeConditionIds =
+        trackConditions?.map((trackCondition) => trackCondition.condition.id) ?? [];
+      //untrack current conditions
+      untrackCurrentConditions(server, client, excludeConditionIds);
+      // Track the new conditions
+      trackClientConditions(server, client, trackConditions);
 
-        // Track the new conditions
-        trackClientConditions(server, client, result.trackConditions);
+      // Track the new wait timer conditions
+      if (waitTimerConditions) {
+        startWaitTimerConditions(server, client, waitTimerConditions);
       }
 
-      this.logger.debug(`Content start succeeded: ${result.reason}`, {
+      this.logger.debug(`Content start succeeded: ${reason}`, {
         contentType,
       });
 
@@ -343,19 +355,25 @@ export class ContentStartService {
     context: ContentStartContext,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
-    const { contentType } = context;
+    const { contentType, client } = context;
+    const { waitTimerConditions } = getClientData(client);
+    const firedWaitTimerVersionIds = waitTimerConditions
+      ?.filter((waitTimerCondition) => waitTimerCondition.activated)
+      .map((waitTimerCondition) => waitTimerCondition.versionId);
 
-    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
+    const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
-    )?.[0];
+      firedWaitTimerVersionIds,
+    );
 
-    if (!autoStartContentVersion) {
+    if (!autoStartContentVersions || autoStartContentVersions.length === 0) {
       return {
         success: false,
         reason: 'No auto-start content version available',
       };
     }
+    const autoStartContentVersion = autoStartContentVersions[0];
 
     const result = await this.processContentVersion(
       context,
@@ -386,12 +404,15 @@ export class ContentStartService {
       ConditionExtractionMode.BOTH,
     );
 
-    if (trackConditions.length > 0) {
+    const waitTimerConditions = extractClientWaitTimerConditions(trackCustomContentVersions);
+
+    if (trackConditions.length > 0 || waitTimerConditions.length > 0) {
       // This would need to be implemented in the calling service
       // as it involves WebSocket-specific operations
       return {
         success: true,
         trackConditions,
+        waitTimerConditions,
         reason: 'Setup tracking conditions for future activation',
       };
     }

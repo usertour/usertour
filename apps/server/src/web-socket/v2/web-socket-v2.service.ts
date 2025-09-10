@@ -15,6 +15,7 @@ import {
   TrackEventDto,
   StartContentDto,
   EndContentDto,
+  FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
 import {
   EventAttributes,
@@ -33,6 +34,7 @@ import {
   getClientData,
   setClientData,
   untrackCurrentConditions,
+  fireClientConditionWaitTimer,
 } from '@/web-socket/core/socket-helper';
 import { TrackEventService } from '@/web-socket/core/track-event.service';
 import { UserClientContextService } from '@/web-socket/core/user-client-context.service';
@@ -515,5 +517,19 @@ export class WebSocketV2Service {
     const { conditionId, isActive } = toggleClientConditionDto;
 
     return toggleClientCondition(client, conditionId, isActive);
+  }
+
+  /**
+   * Fire condition wait timer
+   * @param client - The client instance
+   * @param fireConditionWaitTimerDto - The DTO containing the version ID
+   * @returns True if the wait timer was fired successfully
+   */
+  async fireConditionWaitTimer(
+    client: Socket,
+    fireConditionWaitTimerDto: FireConditionWaitTimerDto,
+  ): Promise<boolean> {
+    const { versionId } = fireConditionWaitTimerDto;
+    return fireClientConditionWaitTimer(client, versionId);
   }
 }

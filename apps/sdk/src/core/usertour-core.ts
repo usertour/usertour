@@ -6,13 +6,7 @@ import {
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
-import {
-  contentStartReason,
-  PlanType,
-  RulesCondition,
-  SDKConfig,
-  SDKSettingsMode,
-} from '@usertour/types';
+import { contentStartReason, PlanType, SDKConfig, SDKSettingsMode } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
@@ -24,6 +18,10 @@ import {
   ConditionStateChangeEvent,
   UsertourConditionsMonitor,
 } from '@/core/usertour-conditions-monitor';
+import {
+  WaitTimerStateChangeEvent,
+  WaitTimerConditionsMonitor,
+} from '@/core/usertour-wait-timer-monitor';
 import { UsertourUIManager } from '@/core/usertour-ui-manager';
 import {
   autoBind,
@@ -43,6 +41,7 @@ import {
   SDKContentSession,
   TrackCondition,
   UnTrackedCondition,
+  WaitTimerCondition,
 } from '@/types';
 
 interface AppStartOptions {
@@ -84,6 +83,7 @@ export class UsertourCore extends Evented {
 
   // Condition monitoring
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
+  private waitTimerMonitor: WaitTimerConditionsMonitor | null = null;
 
   constructor() {
     super();
@@ -98,6 +98,7 @@ export class UsertourCore extends Evented {
     this.id = uuidV4();
     this.initializeEventListeners();
     this.initializeConditionsMonitor();
+    this.initializeWaitTimerMonitor();
   }
 
   /**
@@ -350,6 +351,12 @@ export class UsertourCore extends Evented {
       const untrackedCondition = message as UnTrackedCondition;
       this.removeConditions([untrackedCondition.conditionId]);
     });
+    this.socketService.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (condition: unknown) => {
+      this.startWaitTimerCondition(condition as WaitTimerCondition);
+    });
+    this.socketService.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (condition: unknown) => {
+      this.cancelWaitTimerCondition(condition as WaitTimerCondition);
+    });
   }
 
   /**
@@ -437,22 +444,6 @@ export class UsertourCore extends Evented {
   setChecklistSession(session: SDKContentSession) {
     console.log('setChecklistSession', session as SDKContentSession);
     //
-  }
-
-  /**
-   * Tracks a client condition
-   * @param condition - The condition to track
-   */
-  trackClientCondition(condition: TrackCondition) {
-    this.addConditions([condition.condition]);
-  }
-
-  /**
-   * Removes conditions from the condition monitor
-   * @param conditionIds - The IDs of the conditions to remove
-   */
-  removeConditions(conditionIds: string[]) {
-    this.conditionsMonitor?.removeConditions(conditionIds);
   }
 
   /**
@@ -702,6 +693,9 @@ export class UsertourCore extends Evented {
     // Destroy condition monitor
     this.destroyConditionsMonitor();
 
+    // Destroy wait timer monitor
+    this.destroyWaitTimerMonitor();
+
     // Destroy all tours
     for (const tour of this.tours) {
       tour.destroy();
@@ -740,10 +734,39 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Gets the current condition monitor instance
+   * Creates and initializes wait timer monitor
    */
-  getConditionsMonitor(): UsertourConditionsMonitor | null {
-    return this.conditionsMonitor;
+  initializeWaitTimerMonitor() {
+    if (this.waitTimerMonitor) {
+      this.waitTimerMonitor.destroy();
+    }
+
+    this.waitTimerMonitor = new WaitTimerConditionsMonitor({ autoStart: true });
+
+    // Listen for wait timer state change events
+    this.waitTimerMonitor.on('wait-timer-state-changed', async (eventData: unknown) => {
+      const changeEvent = eventData as WaitTimerStateChangeEvent;
+      if (!changeEvent?.condition?.versionId) {
+        return;
+      }
+
+      // Handle timer firing - could trigger next step or other actions
+      if (changeEvent.state === 'fired') {
+        const result = await this.socketService.fireConditionWaitTimer(
+          {
+            versionId: changeEvent.condition.versionId,
+          },
+          { batch: true },
+        );
+        if (!result) {
+          logger.error(
+            `Failed to fire wait timer for versionId: ${changeEvent.condition.versionId}`,
+          );
+        }
+        this.waitTimerMonitor?.cancelWaitTimer(changeEvent.condition.versionId);
+        // Additional logic for timer firing can be added here
+      }
+    });
   }
 
   /**
@@ -754,11 +777,35 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Adds conditions to the condition monitor
-   * @param conditions - The conditions to add
+   * Tracks a client condition
+   * @param condition - The condition to track
    */
-  addConditions(conditions: RulesCondition[]) {
-    this.conditionsMonitor?.addConditions(conditions);
+  trackClientCondition(condition: TrackCondition) {
+    this.conditionsMonitor?.addConditions([condition.condition]);
+  }
+
+  /**
+   * Removes conditions from the condition monitor
+   * @param conditionIds - The IDs of the conditions to remove
+   */
+  removeConditions(conditionIds: string[]) {
+    this.conditionsMonitor?.removeConditions(conditionIds);
+  }
+
+  /**
+   * Starts a wait timer condition
+   * @param condition - The condition to start
+   */
+  startWaitTimerCondition(condition: WaitTimerCondition) {
+    this.waitTimerMonitor?.addWaitTimer(condition);
+  }
+
+  /**
+   * Cancels a wait timer condition
+   * @param condition - The condition to cancel
+   */
+  cancelWaitTimerCondition(condition: WaitTimerCondition) {
+    this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
   }
 
   /**
@@ -768,6 +815,16 @@ export class UsertourCore extends Evented {
     if (this.conditionsMonitor) {
       this.conditionsMonitor.destroy();
       this.conditionsMonitor = null;
+    }
+  }
+
+  /**
+   * Destroys the wait timer monitor
+   */
+  destroyWaitTimerMonitor(): void {
+    if (this.waitTimerMonitor) {
+      this.waitTimerMonitor.destroy();
+      this.waitTimerMonitor = null;
     }
   }
 }

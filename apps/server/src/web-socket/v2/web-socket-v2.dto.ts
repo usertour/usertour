@@ -80,3 +80,7 @@ export type ToggleClientConditionDto = {
   conditionId: string;
   isActive: boolean;
 };
+
+export type FireConditionWaitTimerDto = {
+  versionId: string;
+};

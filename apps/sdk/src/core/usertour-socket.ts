@@ -12,9 +12,15 @@ import {
   ShowChecklistDto,
   TooltipTargetMissingDto,
   ToggleClientConditionDto,
+  FireConditionWaitTimerDto,
 } from '@/types/websocket';
 import { Socket, Evented, window } from '@/utils';
-import { SDKContentSession, TrackCondition, UnTrackedCondition } from '@/types/sdk';
+import {
+  SDKContentSession,
+  TrackCondition,
+  UnTrackedCondition,
+  WaitTimerCondition,
+} from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
@@ -152,6 +158,16 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     this.socket.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
       this.trigger(WebSocketEvents.UNTRACK_CLIENT_CONDITION, message as UnTrackedCondition);
     });
+
+    // Listen for start condition wait timer events from Socket.IO
+    this.socket.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (message: unknown) => {
+      this.trigger(WebSocketEvents.START_CONDITION_WAIT_TIMER, message as WaitTimerCondition);
+    });
+
+    // Listen for cancel condition wait timer events from Socket.IO
+    this.socket.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (message: unknown) => {
+      this.trigger(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, message as WaitTimerCondition);
+    });
   }
 
   /**
@@ -244,6 +260,14 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
     return await this.socket.send(WebSocketEvents.TOGGLE_CLIENT_CONDITION, params, options);
+  }
+
+  async fireConditionWaitTimer(
+    params: FireConditionWaitTimerDto,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    if (!this.socket) return false;
+    return await this.socket.send(WebSocketEvents.FIRE_CONDITION_WAIT_TIMER, params, options);
   }
 
   // Socket connection management

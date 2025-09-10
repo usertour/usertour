@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
-import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
+import { SDKContentSession, TrackCondition, WaitTimerCondition } from '@/common/types/sdk';
 import { Environment } from '@/common/types/schema';
 
 /**
@@ -25,6 +25,7 @@ export type ClientData = {
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
   trackConditions: TrackCondition[] | undefined;
+  waitTimerConditions: WaitTimerCondition[] | undefined;
   flowSession: SDKContentSession | undefined;
   checklistSession: SDKContentSession | undefined;
 };
@@ -41,12 +42,15 @@ export const getClientData = (client: Socket): ClientData => {
   const trackConditions = (client?.data?.trackConditions as TrackCondition[] | undefined) ?? [];
   const flowSession = client?.data?.flowSession as SDKContentSession | undefined;
   const checklistSession = client?.data?.checklistSession as SDKContentSession | undefined;
+  const waitTimerConditions =
+    (client?.data?.waitTimerConditions as WaitTimerCondition[] | undefined) ?? [];
 
   return {
     environment,
     externalUserId,
     externalCompanyId,
     trackConditions,
+    waitTimerConditions,
     flowSession,
     checklistSession,
   };
@@ -141,6 +145,34 @@ export const forceGoToStep = (server: Server, room: string, sessionId: string, s
   });
 };
 
+/**
+ * Start condition wait timer
+ * @param server - The server instance
+ * @param room - The room to emit the event to
+ * @param waitTimerCondition - The wait timer condition to start
+ */
+export const startConditionWaitTimer = (
+  server: Server,
+  room: string,
+  waitTimerCondition: WaitTimerCondition,
+) => {
+  return server.to(room).emit('start-condition-wait-timer', waitTimerCondition);
+};
+
+/**
+ * Cancel condition wait timer
+ * @param server - The server instance
+ * @param room - The room to emit the event to
+ * @param waitTimerCondition - The wait timer condition to cancel
+ */
+export const cancelConditionWaitTimer = (
+  server: Server,
+  room: string,
+  waitTimerCondition: WaitTimerCondition,
+) => {
+  return server.to(room).emit('cancel-condition-wait-timer', waitTimerCondition);
+};
+
 // ============================================================================
 // Session Management Utils
 // ============================================================================
@@ -220,13 +252,16 @@ export function unsetSessionData(client: Socket, contentType: ContentDataType): 
 // ============================================================================
 
 /**
- * Track client conditions with performance optimization
+ * Track client conditions
  */
 export function trackClientConditions(
   server: Server,
   client: Socket,
   trackConditions: TrackCondition[],
 ): void {
+  // Early return if no conditions to track
+  if (!trackConditions?.length) return;
+
   const {
     environment,
     externalUserId,
@@ -234,27 +269,24 @@ export function trackClientConditions(
   } = getClientData(client);
   const room = getExternalUserRoom(environment.id, externalUserId);
 
-  // Use Map for O(1) lookup instead of find()
-  const existingMap = new Map(
-    existingConditions?.map((c) => [c.condition.id, c.condition.actived]) ?? [],
+  // Filter out conditions that already exist
+  const newConditions = trackConditions.filter(
+    (condition) =>
+      !existingConditions?.some((existing) => existing.condition.id === condition.condition.id),
   );
 
-  // Merge conditions with existing active states
-  const conditions = trackConditions.map((trackCondition) => ({
-    ...trackCondition,
-    condition: {
-      ...trackCondition.condition,
-      actived: existingMap.get(trackCondition.condition.id) ?? false,
-    },
-  }));
+  // Early return if no new conditions to track
+  if (!newConditions.length) return;
 
-  // Only emit new conditions
-  const newConditions = conditions.filter((c) => !existingMap.has(c.condition.id));
-  const emitTrackConditions = newConditions.filter((condition) =>
+  // Emit track events and collect successfully tracked conditions
+  const trackedConditions = newConditions.filter((condition) =>
     trackClientEvent(server, room, condition),
   );
 
-  setClientData(client, { trackConditions: emitTrackConditions });
+  // Update client data by merging with existing conditions
+  setClientData(client, {
+    trackConditions: [...(existingConditions ?? []), ...trackedConditions],
+  });
 }
 
 /**
@@ -267,25 +299,26 @@ export function toggleClientCondition(
 ): boolean {
   const { trackConditions } = getClientData(client);
 
-  if (!trackConditions) return false;
+  // Early return if no conditions exist
+  if (!trackConditions?.length) return false;
 
-  // Check if condition was found
-  const conditionExists = trackConditions.some((c) => c.condition.id === conditionId);
-  if (!conditionExists) return false;
+  // Check if condition exists first
+  if (!trackConditions.some((c) => c.condition.id === conditionId)) {
+    return false;
+  }
 
-  // Find and update the condition
-  const updatedConditions = trackConditions.map((trackCondition) => {
-    if (trackCondition.condition.id === conditionId) {
-      return {
-        ...trackCondition,
-        condition: {
-          ...trackCondition.condition,
-          actived: isActive,
-        },
-      };
-    }
-    return trackCondition;
-  });
+  // Update the condition
+  const updatedConditions = trackConditions.map((trackCondition) =>
+    trackCondition.condition.id === conditionId
+      ? {
+          ...trackCondition,
+          condition: {
+            ...trackCondition.condition,
+            actived: isActive,
+          },
+        }
+      : trackCondition,
+  );
 
   // Update client data
   setClientData(client, { trackConditions: updatedConditions });
@@ -300,20 +333,33 @@ export function untrackConditions(
   client: Socket,
   untrackConditions: TrackCondition[],
 ): void {
+  // Early return if no conditions to untrack
+  if (!untrackConditions?.length) return;
+
   const { trackConditions, environment, externalUserId } = getClientData(client);
+
+  // Early return if no existing conditions to remove
+  if (!trackConditions?.length) return;
+
   const room = getExternalUserRoom(environment.id, externalUserId);
 
-  const removedIds = untrackConditions
-    .filter((condition) => untrackClientEvent(server, room, condition.condition.id))
-    .map((condition) => condition.condition.id);
+  // Only emit untrack for conditions that actually exist
+  const conditionsToUntrack = untrackConditions.filter((condition) =>
+    trackConditions.some((existing) => existing.condition.id === condition.condition.id),
+  );
 
-  if (removedIds.length && trackConditions) {
-    setClientData(client, {
-      trackConditions: trackConditions.filter(
-        (condition) => !removedIds.includes(condition.condition.id),
-      ),
-    });
-  }
+  // Emit untrack events and collect successfully untracked conditions
+  const untrackedConditions = conditionsToUntrack.filter((condition) =>
+    untrackClientEvent(server, room, condition.condition.id),
+  );
+
+  // Update client data
+  setClientData(client, {
+    trackConditions: trackConditions.filter(
+      (condition) =>
+        !untrackedConditions.some((untracked) => untracked.condition.id === condition.condition.id),
+    ),
+  });
 }
 
 /**
@@ -332,4 +378,131 @@ export function untrackCurrentConditions(
     : trackConditions;
 
   untrackConditions(server, client, conditionsToUntrack);
+}
+
+/**
+ * Cancel current wait timer conditions
+ */
+export const cancelCurrentWaitTimerConditions = (server: Server, client: Socket): void => {
+  const { waitTimerConditions, environment, externalUserId } = getClientData(client);
+
+  // Early return if no existing conditions to remove
+  if (!waitTimerConditions?.length) return;
+
+  const room = getExternalUserRoom(environment.id, externalUserId);
+
+  // Filter out already activated conditions and emit cancellation events
+  const conditionsToCancel = waitTimerConditions.filter((condition) => !condition.activated);
+
+  // Emit cancellation events for non-activated conditions
+  for (const condition of conditionsToCancel) {
+    cancelConditionWaitTimer(server, room, condition);
+  }
+
+  // Clear all wait timer conditions from client data
+  setClientData(client, { waitTimerConditions: [] });
+};
+
+/**
+ * Cancel wait timer conditions
+ */
+export const cancelWaitTimerConditions = (
+  server: Server,
+  client: Socket,
+  cancelConditions: WaitTimerCondition[],
+): void => {
+  // Early return if no conditions to cancel
+  if (!cancelConditions?.length) return;
+
+  const { waitTimerConditions, environment, externalUserId } = getClientData(client);
+
+  // Early return if no existing conditions to remove
+  if (!waitTimerConditions?.length) return;
+
+  const room = getExternalUserRoom(environment.id, externalUserId);
+
+  // Only emit cancellation for conditions that actually exist
+  const conditionsToCancel = cancelConditions.filter((condition) =>
+    waitTimerConditions.some((existing) => existing.versionId === condition.versionId),
+  );
+
+  // Emit cancellation events
+  const cancelledConditions = conditionsToCancel.filter((condition) =>
+    cancelConditionWaitTimer(server, room, condition),
+  );
+
+  // Update client data
+  setClientData(client, {
+    waitTimerConditions: waitTimerConditions.filter(
+      (condition) =>
+        !cancelledConditions.some((cancelled) => cancelled.versionId === condition.versionId),
+    ),
+  });
+};
+
+/**
+ * Start wait timer conditions
+ */
+export const startWaitTimerConditions = (
+  server: Server,
+  client: Socket,
+  startConditions: WaitTimerCondition[],
+): void => {
+  // Early return if no conditions to start
+  if (!startConditions?.length) return;
+
+  const {
+    environment,
+    externalUserId,
+    waitTimerConditions: existingConditions,
+  } = getClientData(client);
+  const room = getExternalUserRoom(environment.id, externalUserId);
+
+  // Filter out conditions that already exist
+  const newConditions = startConditions.filter(
+    (condition) =>
+      !existingConditions?.some((existing) => existing.versionId === condition.versionId),
+  );
+
+  // Early return if no new conditions to start
+  if (!newConditions.length) return;
+
+  // Emit start events and collect successfully started conditions
+  const startedConditions = newConditions.filter((condition) =>
+    startConditionWaitTimer(server, room, condition),
+  );
+
+  // Update client data by merging with existing conditions
+  setClientData(client, {
+    waitTimerConditions: [...(existingConditions ?? []), ...startedConditions],
+  });
+};
+
+/**
+ * Fire specific client condition wait timer
+ */
+export function fireClientConditionWaitTimer(client: Socket, versionId: string): boolean {
+  const { waitTimerConditions } = getClientData(client);
+
+  // Early return if no conditions exist
+  if (!waitTimerConditions?.length) return false;
+
+  const targetCondition = waitTimerConditions.find((c) => c.versionId === versionId);
+  // Check if condition exists first
+  if (!targetCondition) {
+    return false;
+  }
+
+  // Update the condition
+  const updatedConditions = waitTimerConditions.map((trackCondition) =>
+    trackCondition.versionId === versionId
+      ? {
+          ...trackCondition,
+          activated: true,
+        }
+      : trackCondition,
+  );
+  // Update client data
+  setClientData(client, { waitTimerConditions: updatedConditions });
+  return true;
 }

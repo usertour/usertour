@@ -24,6 +24,7 @@ import {
   ToggleClientConditionDto,
   StartContentDto,
   EndContentDto,
+  FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
 import { getExternalUserRoom, setClientData } from '@/web-socket/core/socket-helper';
 import { ClientContext } from '@usertour/types';
@@ -127,6 +128,14 @@ export class WebSocketV2Gateway {
     @ConnectedSocket() client: Socket,
   ): Promise<boolean> {
     return await this.service.toggleClientCondition(client, toggleClientConditionDto);
+  }
+
+  @SubscribeMessage('fire-condition-wait-timer')
+  async fireConditionWaitTimer(
+    @MessageBody() fireConditionWaitTimerDto: FireConditionWaitTimerDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<boolean> {
+    return await this.service.fireConditionWaitTimer(client, fireConditionWaitTimerDto);
   }
 
   @SubscribeMessage('start-content')

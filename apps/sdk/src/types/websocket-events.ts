@@ -7,6 +7,8 @@ export enum WebSocketEvents {
   SET_CHECKLIST_SESSION = 'set-checklist-session',
   TRACK_CLIENT_CONDITION = 'track-client-condition',
   UNTRACK_CLIENT_CONDITION = 'untrack-client-condition',
+  START_CONDITION_WAIT_TIMER = 'start-condition-wait-timer',
+  CANCEL_CONDITION_WAIT_TIMER = 'cancel-condition-wait-timer',
 
   // Outgoing events (to server)
   UPSERT_USER = 'upsert-user',
@@ -22,4 +24,5 @@ export enum WebSocketEvents {
   UPDATE_CLIENT_CONTEXT = 'update-client-context',
   REPORT_TOOLTIP_TARGET_MISSING = 'report-tooltip-target-missing',
   TOGGLE_CLIENT_CONDITION = 'toggle-client-condition',
+  FIRE_CONDITION_WAIT_TIMER = 'fire-condition-wait-timer',
 }
