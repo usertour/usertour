@@ -535,7 +535,7 @@ export const createQuestionAnswerEventData = (
  * @param sessionAttributes - Array of session attributes to convert
  * @returns Partial RulesEvaluationOptions for attribute evaluation
  */
-const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAttribute[]) => {
+export const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAttribute[]) => {
   const attributes: RulesEvaluationOptions['attributes'] = [];
   const userAttributes: RulesEvaluationOptions['userAttributes'] = {};
   const companyAttributes: RulesEvaluationOptions['companyAttributes'] = {};

@@ -193,7 +193,7 @@ export abstract class UsertourComponent<TStore> extends Evented {
   /**
    * Gets the attributes from session
    */
-  protected getAttributes(): SessionAttribute[] {
+  protected getSessionAttributes(): SessionAttribute[] {
     return this.session.getAttributes();
   }
 
@@ -208,6 +208,6 @@ export abstract class UsertourComponent<TStore> extends Evented {
    * Checks if the component has any steps
    */
   protected hasSteps(): boolean {
-    return Boolean(this.getSteps().length);
+    return this.getSteps().length > 0;
   }
 }

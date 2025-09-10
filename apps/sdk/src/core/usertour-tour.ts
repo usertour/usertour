@@ -18,7 +18,10 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { document, logger } from '@/utils';
-import { createQuestionAnswerEventData } from '@/core/usertour-helper';
+import {
+  convertToAttributeEvaluationOptions,
+  createQuestionAnswerEventData,
+} from '@/core/usertour-helper';
 import {
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
@@ -33,7 +36,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   // Tour-specific properties
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
-  private currentStep?: SessionStep | null;
+  private currentStepCvid?: string;
 
   /**
    * Checks the tour
@@ -59,9 +62,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
     const theme = this.getVersionTheme();
+    const currentStep = this.getCurrentStep();
     // If the current step has a theme, use it
-    if (this.currentStep?.theme) {
-      return await UsertourTheme.getThemeSettings(this.currentStep?.theme);
+    if (currentStep?.theme) {
+      return await UsertourTheme.getThemeSettings(currentStep?.theme);
     }
     // If the version has a theme, use it
     if (theme) {
@@ -77,16 +81,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
    */
   async show(cvid?: string): Promise<void> {
-    // Early return if tour cannot start
-    if (!this.hasSteps()) {
-      logger.error('No steps found', { steps: this.getSteps() });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
-      return;
-    }
-
-    // Find the target step
-    const currentStep = this.findTargetStep(cvid);
-    if (!currentStep) {
+    // Get the target step
+    const step = this.getStep(cvid);
+    if (!step) {
       logger.error('currentStep not found', { cvid });
       await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
@@ -94,31 +91,38 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Reset tour state and set new step
     this.reset();
-    this.currentStep = currentStep;
-
+    this.currentStepCvid = cvid;
     // Create trigger for this step if it has triggers
-    if (currentStep.trigger?.length) {
+    if (step.trigger?.length) {
       this.stepTrigger = new UsertourTrigger(
-        currentStep.trigger,
-        () => this.getAttributes(), // Simple function that gets fresh attributes
+        step.trigger,
+        () => this.getSessionAttributes(), // Simple function that gets fresh attributes
         (actions) => this.handleActions(actions),
       );
     }
 
     // Display step based on its type
-    await this.displayStep(currentStep);
+    await this.displayStep(step);
   }
 
   /**
    * Finds the target step by cvid or returns the first step
    * @private
    */
-  private findTargetStep(cvid?: string): SessionStep | null {
+  private getStep(cvid?: string): SessionStep | undefined {
     const steps = this.getSteps();
-    if (!steps.length) return null;
+    if (!steps.length) return undefined;
 
-    const step = cvid ? this.getStepByCvid(cvid) : steps[0];
-    return step?.cvid ? step : null;
+    return cvid ? this.getStepByCvid(cvid) : steps[0];
+  }
+
+  /**
+   * Gets the current step by cvid
+   * @private
+   */
+  private getCurrentStep(): SessionStep | undefined {
+    if (!this.currentStepCvid) return undefined;
+    return this.getStepByCvid(this.currentStepCvid);
   }
 
   /**
@@ -135,15 +139,18 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     const themeData = UsertourTheme.createThemeData(themeSettings);
+    const contentSession = this.getSessionAttributes();
+    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    const currentStep = this.getCurrentStep();
 
     // Combine all store data with proper defaults
     return {
       triggerRef: null, // Reset trigger reference
       sdkConfig: this.instance.getSdkConfig(),
       ...themeData,
-      userAttributes: {},
+      userAttributes,
       openState: false,
-      currentStep: this.currentStep,
+      currentStep,
       zIndex: this.getCalculatedZIndex(),
     } as TourStore;
   }
@@ -185,16 +192,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param currentStep - The step to display as a tooltip
    * @throws Will close the tour if validation fails or target is missing
    */
-  private async showPopper(currentStep: SessionStep): Promise<void> {
+  private async showPopper(step: SessionStep): Promise<void> {
     // Validate step and target
-    if (!this.canShowPopper(currentStep)) {
-      logger.error('Step cannot be shown', { step: currentStep });
+    if (!this.canShowPopper(step)) {
+      logger.error('Step cannot be shown', { step });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
 
     // Report step seen event
-    await this.reportStepSeen(currentStep);
+    await this.reportStepSeen(step);
 
     // Process trigger conditions
     await this.stepTrigger?.process();
@@ -202,11 +209,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Set up element watcher
     const store = await this.buildStoreData();
     if (!store) {
-      logger.error('Store not found', { step: currentStep });
+      logger.error('Store not found', { step });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    this.setupElementWatcher(currentStep, store);
+    this.setupElementWatcher(step, store);
   }
 
   /**
@@ -214,7 +221,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private canShowPopper(step: SessionStep): boolean {
-    return Boolean(step?.target && step.cvid === this.currentStep?.cvid && document);
+    const currentStep = this.getCurrentStep();
+    return Boolean(step?.target && step.cvid === currentStep?.cvid && document);
   }
 
   /**
@@ -337,7 +345,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private handleElementFound(el: Element, step: SessionStep, store: TourStore): void {
-    const currentStep = this.currentStep;
+    const currentStep = this.getCurrentStep();
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
@@ -356,7 +364,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   private handleElementChanged(el: Element, step: SessionStep, store: TourStore): void {
-    const currentStep = this.currentStep;
+    const currentStep = this.getCurrentStep();
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
@@ -373,7 +381,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async handleElementNotFound(step: SessionStep): Promise<void> {
-    const currentStep = this.currentStep;
+    const currentStep = this.getCurrentStep();
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
@@ -391,18 +399,18 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    *
    * @param currentStep - The step to be displayed as a modal
    */
-  private async showModal(currentStep: SessionStep) {
+  private async showModal(step: SessionStep) {
     // Build store data and get step information
     const store = await this.buildStoreData();
     if (!store) {
-      logger.error('Store not found', { step: currentStep });
+      logger.error('Store not found', { step });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    const stepInfo = this.getCurrentStepInfo(currentStep);
+    const stepInfo = this.getCurrentStepInfo(step);
 
     // Report that the step has been seen
-    await this.reportStepSeen(currentStep);
+    await this.reportStepSeen(step);
 
     // Process trigger conditions
     await this.stepTrigger?.process();
@@ -416,14 +424,32 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Refreshes the store data for the tour
+   */
+  async refreshStore(): Promise<void> {
+    const newStore = await this.buildStoreData();
+    const existingStore = this.getStoreData();
+    if (!newStore || !existingStore) {
+      return;
+    }
+    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
+    this.updateStore({
+      userAttributes,
+      assets,
+      globalStyle,
+      themeSettings,
+    });
+  }
+
+  /**
    * Displays a hidden step in the tour
    * This method handles:
    * 1. Reporting the step seen event
    * 2. Reporting the completion event if it's the last step
    *
    */
-  private async showHidden(currentStep: SessionStep) {
-    await this.reportStepSeen(currentStep);
+  private async showHidden(step: SessionStep) {
+    await this.reportStepSeen(step);
   }
 
   /**
@@ -615,7 +641,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Resets the tour
    */
   reset() {
-    this.currentStep = undefined;
+    this.currentStepCvid = undefined;
     this.setStoreData(undefined);
     this.resetStepTrigger();
     this.watcher = null;

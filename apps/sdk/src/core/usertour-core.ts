@@ -395,11 +395,20 @@ export class UsertourCore extends Evented {
     // Destroy all other tours to ensure single tour focus
     this.destroyOtherTours(contentId);
 
-    // Update or create tour
-    const targetTour = this.updateOrCreateTour(existingTour, session);
+    // Update existing tour if found
+    if (existingTour) {
+      existingTour.updateSession(session);
+      existingTour.refreshStore();
+      return;
+    }
 
-    // Sync store and show tour
+    // Create new tour
+    const targetTour = new UsertourTour(this, new UsertourSession(session));
+    // Add new tour to the tours array
+    this.tours.push(targetTour);
+    // Sync store
     this.syncToursStore();
+    // Show tour from the session current step
     targetTour?.show(session.currentStep?.cvid);
   }
 
@@ -417,27 +426,6 @@ export class UsertourCore extends Evented {
 
     // Keep only the tour with the specified content ID
     this.tours = this.tours.filter((tour) => tour.getContentId() === keepContentId);
-  }
-
-  /**
-   * Updates existing tour or creates a new one
-   * @param existingTour - The existing tour if found
-   * @param session - The session data
-   * @returns The target tour or undefined if creation fails
-   */
-  private updateOrCreateTour(
-    existingTour: UsertourTour | undefined,
-    session: SDKContentSession,
-  ): UsertourTour | undefined {
-    if (existingTour) {
-      existingTour.updateSession(session);
-      return existingTour;
-    }
-
-    // Create new tour - let constructor errors bubble up
-    const newTour = new UsertourTour(this, new UsertourSession(session));
-    this.tours.push(newTour);
-    return newTour;
   }
 
   setChecklistSession(session: SDKContentSession) {
