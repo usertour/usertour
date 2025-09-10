@@ -2,6 +2,7 @@ import {
   MESSAGE_START_FLOW_WITH_TOKEN,
   SDK_DOM_LOADED,
   STORAGE_IDENTIFY_ANONYMOUS,
+  TOUR_CLOSED,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
@@ -404,6 +405,11 @@ export class UsertourCore extends Evented {
 
     // Create new tour
     const targetTour = new UsertourTour(this, new UsertourSession(session));
+    targetTour.on(TOUR_CLOSED, (eventData: unknown) => {
+      const closeEvent = eventData as { sessionId: string };
+      this.tours = this.tours.filter((tour) => tour.getSessionId() !== closeEvent.sessionId);
+      this.syncToursStore();
+    });
     // Add new tour to the tours array
     this.tours.push(targetTour);
     // Sync store

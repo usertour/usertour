@@ -4,6 +4,7 @@ export const SDK_CSS_LOADED_FAILED = 'css-loaded-failed';
 export const SDK_CONTENT_CHANGED = 'content-changed';
 export const SDK_CONTAINER_CREATED = 'container-created';
 export const ELEMENT_FOUND = 'element-found';
+export const TOUR_CLOSED = 'tour-closed';
 
 export const ELEMENT_FOUND_TIMEOUT = 'element-found-timeout';
 export const CHECKLIST_FIRST_SEEN = 'checklist-first-seen';
