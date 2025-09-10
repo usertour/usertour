@@ -93,7 +93,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     this.reset();
     this.currentStepCvid = cvid;
     // Create trigger for this step if it has triggers
-    if (step.trigger?.length) {
+    if (step.trigger?.length && step.trigger.length > 0) {
       this.stepTrigger = new UsertourTrigger(
         step.trigger,
         () => this.getSessionAttributes(), // Simple function that gets fresh attributes
