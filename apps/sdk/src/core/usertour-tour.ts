@@ -352,7 +352,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    const stepInfo = this.getCurrentStepInfo(step);
+    const stepInfo = this.getStepInfo(step);
 
     // Scroll element into view if tour is visible
     smoothScroll(el, { block: 'center' });
@@ -410,7 +410,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    const stepInfo = this.getCurrentStepInfo(step);
+    const stepInfo = this.getStepInfo(step);
 
     // Report that the step has been seen
     await this.reportStepSeen(step);
@@ -572,10 +572,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   /**
    * Get the current step info for store data
-   * @param currentStep - The current step
+   * @param step - The step
    * @returns Store data with step info
    */
-  private getCurrentStepInfo(currentStep: SessionStep) {
+  private getStepInfo(step: SessionStep) {
     const steps = this.getSteps();
     // Early return for edge cases
     if (!steps.length) {
@@ -587,7 +587,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     const total = steps.length;
-    const index = steps.findIndex((step) => step.cvid === currentStep.cvid);
+    const index = steps.findIndex((s) => s.cvid === step.cvid);
     const validIndex = index === -1 ? 0 : index;
     const progress = Math.round(((validIndex + 1) / total) * 100);
 
