@@ -29,7 +29,7 @@ import {
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
 import {
-  unsetSessionData,
+  unsetCurrentContentSession,
   toggleClientCondition,
   getClientData,
   setClientData,
@@ -401,10 +401,11 @@ export class WebSocketV2Service {
       bizSession.id,
       eventData,
     );
+
+    // Unset current flow session
+    unsetCurrentContentSession(server, client, ContentDataType.FLOW, { sessionId: bizSession.id });
     // Untrack current conditions
     untrackCurrentConditions(server, client);
-    // Unset current flow session
-    unsetSessionData(client, ContentDataType.FLOW);
     // Toggle contents for the client
     await this.toggleContents(server, client);
 
@@ -476,10 +477,10 @@ export class WebSocketV2Service {
       externalUserId,
       reason,
     );
+    // Unset current flow session (without WebSocket emission)
+    unsetCurrentContentSession(server, client, ContentDataType.FLOW, { emitWebSocket: false });
     // Untrack current conditions
     untrackCurrentConditions(server, client);
-    // Unset current flow session
-    unsetSessionData(client, ContentDataType.FLOW);
     // Toggle contents for the client
     await this.toggleContents(server, client);
     return true;

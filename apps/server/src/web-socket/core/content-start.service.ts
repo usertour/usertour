@@ -28,7 +28,7 @@ import { UserClientContextService } from './user-client-context.service';
 import {
   getClientData,
   setContentSession,
-  unsetContentSession,
+  unsetCurrentContentSession,
   trackClientConditions,
   untrackCurrentConditions,
   getContentSession,
@@ -83,7 +83,7 @@ export class ContentStartService {
 
       // Handle invalid session cleanup
       if (invalidSession) {
-        unsetContentSession(server, client, contentType, invalidSession.id);
+        unsetCurrentContentSession(server, client, contentType, { sessionId: invalidSession.id });
         untrackCurrentConditions(server, client);
       }
 

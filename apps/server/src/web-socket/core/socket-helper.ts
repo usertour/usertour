@@ -216,34 +216,68 @@ export function setContentSession(
 }
 
 /**
- * Unset content session for client
+ * Options for unsetting content session
  */
-export function unsetContentSession(
-  server: Server,
-  client: Socket,
-  contentType: ContentDataType,
-  sessionId: string,
-): void {
-  const { environment, externalUserId } = getClientData(client);
-  const room = getExternalUserRoom(environment.id, externalUserId);
-
-  if (contentType === ContentDataType.FLOW) {
-    unsetFlowSession(server, room, sessionId);
-    setClientData(client, { flowSession: undefined });
-  } else if (contentType === ContentDataType.CHECKLIST) {
-    unsetChecklistSession(server, room, sessionId);
-    setClientData(client, { checklistSession: undefined });
-  }
+export interface UnsetContentSessionOptions {
+  /** The session id to unset */
+  sessionId?: string;
+  /** Whether to emit WebSocket events (default: true) */
+  emitWebSocket?: boolean;
 }
 
 /**
- * Unset session data only (no WebSocket emission)
+ * Unset current content session for client
+ * @param server - The server instance
+ * @param client - The socket client
+ * @param contentType - The content type to unset
+ * @param options - Options for unsetting the session
  */
-export function unsetSessionData(client: Socket, contentType: ContentDataType): void {
-  if (contentType === ContentDataType.FLOW) {
-    setClientData(client, { flowSession: undefined });
-  } else if (contentType === ContentDataType.CHECKLIST) {
-    setClientData(client, { checklistSession: undefined });
+export function unsetCurrentContentSession(
+  server: Server,
+  client: Socket,
+  contentType: ContentDataType,
+  options: UnsetContentSessionOptions = {},
+): void {
+  const { sessionId = '', emitWebSocket = true } = options;
+  const { environment, externalUserId, flowSession, checklistSession } = getClientData(client);
+
+  // Early return if no environment or user ID
+  if (!environment || !externalUserId) {
+    return;
+  }
+
+  const room = getExternalUserRoom(environment.id, externalUserId);
+
+  // Define session configuration based on content type
+  const sessionConfig = {
+    [ContentDataType.FLOW]: {
+      currentSession: flowSession,
+      unsetEvent: () => unsetFlowSession(server, room, sessionId),
+      clientDataKey: 'flowSession' as const,
+    },
+    [ContentDataType.CHECKLIST]: {
+      currentSession: checklistSession,
+      unsetEvent: () => unsetChecklistSession(server, room, sessionId),
+      clientDataKey: 'checklistSession' as const,
+    },
+  };
+
+  const config = sessionConfig[contentType];
+  if (!config) {
+    return;
+  }
+
+  // Emit WebSocket event if requested
+  if (emitWebSocket && sessionId) {
+    config.unsetEvent();
+  }
+
+  // Check if current session matches the sessionId to unset
+  const currentSessionId = config.currentSession?.id;
+
+  if (currentSessionId === sessionId) {
+    // Clear session data from client
+    setClientData(client, { [config.clientDataKey]: undefined });
   }
 }
 

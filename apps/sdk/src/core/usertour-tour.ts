@@ -389,7 +389,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       return;
     }
     await this.reportTargetMissing(step);
-    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
 
   /**
