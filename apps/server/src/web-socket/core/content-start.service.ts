@@ -88,7 +88,7 @@ export class ContentStartService {
    * Handles the result of content start operations
    * Processes ContentStartResult and performs necessary WebSocket operations
    */
-  async handleContentStartResult(
+  private async handleContentStartResult(
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
