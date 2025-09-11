@@ -180,10 +180,10 @@ export const cancelConditionWaitTimer = (
 /**
  * Get content session from client
  */
-export function getContentSession(
+export const getContentSession = (
   client: Socket,
   contentType: ContentDataType,
-): SDKContentSession | null {
+): SDKContentSession | null => {
   const data = getClientData(client);
   if (contentType === ContentDataType.FLOW) {
     return data.flowSession ?? null;
@@ -192,16 +192,16 @@ export function getContentSession(
     return data.checklistSession ?? null;
   }
   return null;
-}
+};
 
 /**
  * Set content session for client
  */
-export function setContentSession(
+export const setContentSession = (
   server: Server,
   client: Socket,
   session: SDKContentSession,
-): void {
+): void => {
   const { environment, externalUserId } = getClientData(client);
   const room = getExternalUserRoom(environment.id, externalUserId);
   const contentType = session.content.type as ContentDataType;
@@ -213,17 +213,17 @@ export function setContentSession(
     setClientData(client, { checklistSession: session });
     setChecklistSession(server, room, session);
   }
-}
+};
 
 /**
  * Options for unsetting content session
  */
-export interface UnsetContentSessionOptions {
+export type UnsetContentSessionOptions = {
   /** The session id to unset */
   sessionId?: string;
   /** Whether to emit WebSocket events (default: true) */
   emitWebSocket?: boolean;
-}
+};
 
 /**
  * Unset current content session for client
@@ -232,12 +232,12 @@ export interface UnsetContentSessionOptions {
  * @param contentType - The content type to unset
  * @param options - Options for unsetting the session
  */
-export function unsetCurrentContentSession(
+export const unsetCurrentContentSession = (
   server: Server,
   client: Socket,
   contentType: ContentDataType,
   options: UnsetContentSessionOptions = {},
-): void {
+): void => {
   const { sessionId = '', emitWebSocket = true } = options;
   const { environment, externalUserId, flowSession, checklistSession } = getClientData(client);
 
@@ -279,7 +279,7 @@ export function unsetCurrentContentSession(
     // Clear session data from client
     setClientData(client, { [config.clientDataKey]: undefined });
   }
-}
+};
 
 // ============================================================================
 // Condition Tracking Utils
@@ -288,11 +288,11 @@ export function unsetCurrentContentSession(
 /**
  * Track client conditions
  */
-export function trackClientConditions(
+export const trackClientConditions = (
   server: Server,
   client: Socket,
   trackConditions: TrackCondition[],
-): void {
+): void => {
   // Early return if no conditions to track
   if (!trackConditions?.length) return;
 
@@ -321,16 +321,16 @@ export function trackClientConditions(
   setClientData(client, {
     trackConditions: [...(existingConditions ?? []), ...trackedConditions],
   });
-}
+};
 
 /**
  * Toggle specific client condition
  */
-export function toggleClientCondition(
+export const toggleClientCondition = (
   client: Socket,
   conditionId: string,
   isActive: boolean,
-): boolean {
+): boolean => {
   const { trackConditions } = getClientData(client);
 
   // Early return if no conditions exist
@@ -357,16 +357,16 @@ export function toggleClientCondition(
   // Update client data
   setClientData(client, { trackConditions: updatedConditions });
   return true;
-}
+};
 
 /**
  * Untrack specific conditions
  */
-export function untrackConditions(
+export const untrackConditions = (
   server: Server,
   client: Socket,
   untrackConditions: TrackCondition[],
-): void {
+): void => {
   // Early return if no conditions to untrack
   if (!untrackConditions?.length) return;
 
@@ -394,16 +394,16 @@ export function untrackConditions(
         !untrackedConditions.some((untracked) => untracked.condition.id === condition.condition.id),
     ),
   });
-}
+};
 
 /**
  * Untrack current conditions with optional exclusions
  */
-export function untrackCurrentConditions(
+export const untrackCurrentConditions = (
   server: Server,
   client: Socket,
   excludeConditionIds?: string[],
-): void {
+): void => {
   const { trackConditions } = getClientData(client);
   if (!trackConditions?.length) return;
 
@@ -412,7 +412,7 @@ export function untrackCurrentConditions(
     : trackConditions;
 
   untrackConditions(server, client, conditionsToUntrack);
-}
+};
 
 /**
  * Cancel current wait timer conditions
@@ -515,7 +515,7 @@ export const startWaitTimerConditions = (
 /**
  * Fire specific client condition wait timer
  */
-export function fireClientConditionWaitTimer(client: Socket, versionId: string): boolean {
+export const fireClientConditionWaitTimer = (client: Socket, versionId: string): boolean => {
   const { waitTimerConditions } = getClientData(client);
 
   // Early return if no conditions exist
@@ -539,4 +539,4 @@ export function fireClientConditionWaitTimer(client: Socket, versionId: string):
   // Update client data
   setClientData(client, { waitTimerConditions: updatedConditions });
   return true;
-}
+};
