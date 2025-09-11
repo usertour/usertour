@@ -71,21 +71,33 @@ export class ContentStartService {
   ) {}
 
   /**
-   * Main entry point for starting singleton content
-   * Implements multiple strategies for content activation and handles all WebSocket operations
+   * Handles invalid session cleanup
+   * Cleans up invalid session state and tracking conditions
    */
-  async startSingletonContent(context: ContentStartContext): Promise<boolean> {
+  private handleInvalidSession(
+    context: ContentStartContext,
+    invalidSession: SDKContentSession,
+  ): void {
+    const { server, client, contentType } = context;
+
+    unsetCurrentContentSession(server, client, contentType, {
+      sessionId: invalidSession.id,
+    });
+    untrackCurrentConditions(server, client);
+  }
+
+  /**
+   * Handles the result of content start operations
+   * Processes ContentStartResult and performs necessary WebSocket operations
+   */
+  async handleContentStartResult(
+    context: ContentStartContext,
+    result: ContentStartResult,
+  ): Promise<boolean> {
     const { server, client, contentType } = context;
 
     try {
-      const { success, invalidSession, session, trackConditions, waitTimerConditions, reason } =
-        await this.startSingletonContentInternal(context);
-
-      // Handle invalid session cleanup
-      if (invalidSession) {
-        unsetCurrentContentSession(server, client, contentType, { sessionId: invalidSession.id });
-        untrackCurrentConditions(server, client);
-      }
+      const { success, session, trackConditions, waitTimerConditions, reason } = result;
 
       // Early return if operation failed
       if (!success) {
@@ -121,7 +133,7 @@ export class ContentStartService {
 
       return true;
     } catch (error) {
-      this.logger.error(`Error in startSingletonContent: ${error.message}`, {
+      this.logger.error(`Error in handleContentStartResult: ${error.message}`, {
         contentType,
       });
       return false;
@@ -129,28 +141,10 @@ export class ContentStartService {
   }
 
   /**
-   * Force go to step
-   * @param context - The context
-   * @param session - The session
-   * @returns The void
-   * @description Force go to step for the session
+   * Main entry point for starting singleton content
+   * Implements multiple strategies for content activation and coordinates the start process
    */
-  private async forceGoToStep(
-    context: ContentStartContext,
-    session: SDKContentSession,
-  ): Promise<void> {
-    const { server, client } = context;
-    const { environment, externalUserId } = getClientData(client);
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    forceGoToStep(server, room, session.id, session.currentStep?.cvid!);
-  }
-
-  /**
-   * Internal method for content start logic (returns detailed result)
-   */
-  private async startSingletonContentInternal(
-    context: ContentStartContext,
-  ): Promise<ContentStartResult> {
+  async startSingletonContent(context: ContentStartContext): Promise<boolean> {
     const { client, contentType, options } = context;
     const { contentId } = options ?? {};
 
@@ -160,14 +154,18 @@ export class ContentStartService {
         const result = await this.tryStartByContentId(context);
         if (result.success) {
           await this.forceGoToStep(context, result.session);
-          return result;
+          return await this.handleContentStartResult(context, result);
         }
       }
 
       // Strategy 2: Handle existing session
       const existingSessionResult = await this.handleExistingSession(context);
       if (existingSessionResult.success) {
-        return existingSessionResult;
+        return await this.handleContentStartResult(context, existingSessionResult);
+      }
+
+      if (existingSessionResult.invalidSession) {
+        this.handleInvalidSession(context, existingSessionResult.invalidSession);
       }
 
       // Get evaluated content versions for remaining strategies
@@ -179,7 +177,7 @@ export class ContentStartService {
         evaluatedContentVersions,
       );
       if (latestVersionResult.success) {
-        return latestVersionResult;
+        return await this.handleContentStartResult(context, latestVersionResult);
       }
 
       // Strategy 4: Try to start by auto start conditions
@@ -188,13 +186,13 @@ export class ContentStartService {
         evaluatedContentVersions,
       );
       if (autoStartResult.success) {
-        return autoStartResult;
+        return await this.handleContentStartResult(context, autoStartResult);
       }
 
       // Strategy 5: Setup tracking conditions for future activation
       const trackingResult = await this.setupTrackingConditions(context, evaluatedContentVersions);
 
-      return trackingResult;
+      return await this.handleContentStartResult(context, trackingResult);
     } catch (error) {
       this.logger.error(`Failed to start singleton content: ${error.message}`, {
         contentType,
@@ -202,10 +200,7 @@ export class ContentStartService {
         stack: error.stack,
       });
 
-      return {
-        success: false,
-        reason: `Error starting content: ${error.message}`,
-      };
+      return false;
     }
   }
 
@@ -687,5 +682,22 @@ export class ContentStartService {
     );
 
     return sessionVersion.length > 0 && !isActivedHideRules(sessionVersion[0]);
+  }
+
+  /**
+   * Force go to step
+   * @param context - The context
+   * @param session - The session
+   * @returns The void
+   * @description Force go to step for the session
+   */
+  private async forceGoToStep(
+    context: ContentStartContext,
+    session: SDKContentSession,
+  ): Promise<void> {
+    const { server, client } = context;
+    const { environment, externalUserId } = getClientData(client);
+    const room = getExternalUserRoom(environment.id, externalUserId);
+    forceGoToStep(server, room, session.id, session.currentStep?.cvid!);
   }
 }
