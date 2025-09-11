@@ -414,6 +414,10 @@ export const untrackCurrentConditions = (
   untrackConditions(server, client, conditionsToUntrack);
 };
 
+// ============================================================================
+// Wait Timer Conditions Utils
+// ============================================================================
+
 /**
  * Cancel current wait timer conditions
  */
