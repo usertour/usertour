@@ -419,29 +419,6 @@ export const untrackCurrentConditions = (
 // ============================================================================
 
 /**
- * Cancel current wait timer conditions
- */
-export const cancelCurrentWaitTimerConditions = (server: Server, client: Socket): void => {
-  const { waitTimerConditions, environment, externalUserId } = getClientData(client);
-
-  // Early return if no existing conditions to remove
-  if (!waitTimerConditions?.length) return;
-
-  const room = getExternalUserRoom(environment.id, externalUserId);
-
-  // Filter out already activated conditions and emit cancellation events
-  const conditionsToCancel = waitTimerConditions.filter((condition) => !condition.activated);
-
-  // Emit cancellation events for non-activated conditions
-  for (const condition of conditionsToCancel) {
-    cancelConditionWaitTimer(server, room, condition);
-  }
-
-  // Clear all wait timer conditions from client data
-  setClientData(client, { waitTimerConditions: [] });
-};
-
-/**
  * Start wait timer conditions
  */
 export const startWaitTimerConditions = (
@@ -506,4 +483,27 @@ export const fireClientConditionWaitTimer = (client: Socket, versionId: string):
   // Update client data
   setClientData(client, { waitTimerConditions: updatedConditions });
   return true;
+};
+
+/**
+ * Cancel current wait timer conditions
+ */
+export const cancelCurrentWaitTimerConditions = (server: Server, client: Socket): void => {
+  const { waitTimerConditions, environment, externalUserId } = getClientData(client);
+
+  // Early return if no existing conditions to remove
+  if (!waitTimerConditions?.length) return;
+
+  const room = getExternalUserRoom(environment.id, externalUserId);
+
+  // Filter out already activated conditions and emit cancellation events
+  const conditionsToCancel = waitTimerConditions.filter((condition) => !condition.activated);
+
+  // Emit cancellation events for non-activated conditions
+  for (const condition of conditionsToCancel) {
+    cancelConditionWaitTimer(server, room, condition);
+  }
+
+  // Clear all wait timer conditions from client data
+  setClientData(client, { waitTimerConditions: [] });
 };
