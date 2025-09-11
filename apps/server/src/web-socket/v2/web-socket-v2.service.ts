@@ -403,7 +403,7 @@ export class WebSocketV2Service {
     );
 
     // Unset current flow session
-    unsetCurrentContentSession(server, client, ContentDataType.FLOW, { sessionId });
+    unsetCurrentContentSession(server, client, ContentDataType.FLOW, sessionId);
     // Untrack current conditions
     untrackCurrentConditions(server, client);
     // Toggle contents for the client
@@ -478,7 +478,7 @@ export class WebSocketV2Service {
       reason,
     );
     // Unset current flow session (without WebSocket emission)
-    unsetCurrentContentSession(server, client, ContentDataType.FLOW, { emitWebSocket: false });
+    unsetCurrentContentSession(server, client, ContentDataType.FLOW, sessionId, false);
     // Untrack current conditions
     untrackCurrentConditions(server, client);
     // Toggle contents for the client

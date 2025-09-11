@@ -80,9 +80,7 @@ export class ContentStartService {
   ): void {
     const { server, client, contentType } = context;
 
-    unsetCurrentContentSession(server, client, contentType, {
-      sessionId: invalidSession.id,
-    });
+    unsetCurrentContentSession(server, client, contentType, invalidSession.id);
     untrackCurrentConditions(server, client);
   }
 

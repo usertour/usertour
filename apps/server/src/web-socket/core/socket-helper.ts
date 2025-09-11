@@ -216,33 +216,24 @@ export const setContentSession = (
 };
 
 /**
- * Options for unsetting content session
- */
-export type UnsetContentSessionOptions = {
-  /** The session id to unset */
-  sessionId?: string;
-  /** Whether to emit WebSocket events (default: true) */
-  emitWebSocket?: boolean;
-};
-
-/**
  * Unset current content session for client
  * @param server - The server instance
  * @param client - The socket client
  * @param contentType - The content type to unset
- * @param options - Options for unsetting the session
+ * @param sessionId - The session id to unset
+ * @param emitWebSocket - Whether to emit WebSocket events (default: true)
  */
 export const unsetCurrentContentSession = (
   server: Server,
   client: Socket,
   contentType: ContentDataType,
-  options: UnsetContentSessionOptions = {},
+  sessionId: string,
+  emitWebSocket = true,
 ): void => {
-  const { sessionId, emitWebSocket = true } = options;
   const { environment, externalUserId, flowSession, checklistSession } = getClientData(client);
 
   // Early return if no environment or user ID
-  if (!environment || !externalUserId) {
+  if (!environment || !externalUserId || !sessionId) {
     return;
   }
 
@@ -274,7 +265,6 @@ export const unsetCurrentContentSession = (
 
   // Check if current session matches the sessionId to unset
   const currentSessionId = config.currentSession?.id;
-
   if (currentSessionId === sessionId) {
     // Clear session data from client
     setClientData(client, { [config.clientDataKey]: undefined });
