@@ -58,7 +58,18 @@ export class UsertourConditionsMonitor extends Evented {
    * @param conditions - Array of conditions to add
    */
   addConditions(conditions: RulesCondition[]): void {
-    this.conditions.push(...conditions);
+    for (const condition of conditions) {
+      // Remove existing condition with same ID if it exists
+      const existingIndex = this.conditions.findIndex((c) => c.id === condition.id);
+      if (existingIndex !== -1) {
+        this.conditions.splice(existingIndex, 1);
+        // Also remove from active conditions to prevent memory leaks
+        this.activeConditions.delete(condition.id);
+      }
+
+      // Add new condition
+      this.conditions.push(condition);
+    }
   }
 
   /**
@@ -212,7 +223,7 @@ export class UsertourConditionsMonitor extends Evented {
     return {
       totalConditions: this.conditions.length,
       activeConditions: this.activeConditions.size,
-      isMonitoring: true, // TODO: Add actual monitoring state tracking
+      isMonitoring: this.intervalId !== null,
     };
   }
 }

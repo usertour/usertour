@@ -763,8 +763,6 @@ export class UsertourCore extends Evented {
             `Failed to fire wait timer for versionId: ${changeEvent.condition.versionId}`,
           );
         }
-        this.waitTimerMonitor?.cancelWaitTimer(changeEvent.condition.versionId);
-        // Additional logic for timer firing can be added here
       }
     });
   }
