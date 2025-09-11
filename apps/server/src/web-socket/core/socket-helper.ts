@@ -442,43 +442,6 @@ export const cancelCurrentWaitTimerConditions = (server: Server, client: Socket)
 };
 
 /**
- * Cancel wait timer conditions
- */
-export const cancelWaitTimerConditions = (
-  server: Server,
-  client: Socket,
-  cancelConditions: WaitTimerCondition[],
-): void => {
-  // Early return if no conditions to cancel
-  if (!cancelConditions?.length) return;
-
-  const { waitTimerConditions, environment, externalUserId } = getClientData(client);
-
-  // Early return if no existing conditions to remove
-  if (!waitTimerConditions?.length) return;
-
-  const room = getExternalUserRoom(environment.id, externalUserId);
-
-  // Only emit cancellation for conditions that actually exist
-  const conditionsToCancel = cancelConditions.filter((condition) =>
-    waitTimerConditions.some((existing) => existing.versionId === condition.versionId),
-  );
-
-  // Emit cancellation events
-  const cancelledConditions = conditionsToCancel.filter((condition) =>
-    cancelConditionWaitTimer(server, room, condition),
-  );
-
-  // Update client data
-  setClientData(client, {
-    waitTimerConditions: waitTimerConditions.filter(
-      (condition) =>
-        !cancelledConditions.some((cancelled) => cancelled.versionId === condition.versionId),
-    ),
-  });
-};
-
-/**
  * Start wait timer conditions
  */
 export const startWaitTimerConditions = (
