@@ -91,6 +91,7 @@ export class ContentStartService {
   private async handleContentStartResult(
     context: ContentStartContext,
     result: ContentStartResult,
+    forceGoToStep = false,
   ): Promise<boolean> {
     const { server, client, contentType } = context;
 
@@ -109,6 +110,9 @@ export class ContentStartService {
       // Set the content session if one was created
       if (session) {
         setContentSession(server, client, session);
+        if (forceGoToStep) {
+          await this.forceGoToStep(context, session);
+        }
         cancelCurrentWaitTimerConditions(server, client);
       }
 
@@ -151,8 +155,7 @@ export class ContentStartService {
       if (contentId) {
         const result = await this.tryStartByContentId(context);
         if (result.success) {
-          await this.forceGoToStep(context, result.session);
-          return await this.handleContentStartResult(context, result);
+          return await this.handleContentStartResult(context, result, true);
         }
       }
 
