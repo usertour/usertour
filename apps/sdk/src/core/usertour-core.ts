@@ -422,7 +422,7 @@ export class UsertourCore extends Evented {
     // Sync store
     this.syncToursStore();
     // Show tour from the session current step
-    targetTour?.show(session.currentStep?.cvid);
+    targetTour.show(session.currentStep?.cvid);
   }
 
   /**
