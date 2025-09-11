@@ -238,7 +238,7 @@ export const unsetCurrentContentSession = (
   contentType: ContentDataType,
   options: UnsetContentSessionOptions = {},
 ): void => {
-  const { sessionId = '', emitWebSocket = true } = options;
+  const { sessionId, emitWebSocket = true } = options;
   const { environment, externalUserId, flowSession, checklistSession } = getClientData(client);
 
   // Early return if no environment or user ID
