@@ -360,27 +360,35 @@ export const toggleClientCondition = (
 };
 
 /**
- * Untrack specific conditions
+ * Untrack current conditions with optional exclusions
+ * @param server - The server instance
+ * @param client - The socket client
+ * @param excludeConditionIds - Array of condition IDs to exclude from untracking (untrack all others)
  */
-export const untrackConditions = (
+export const untrackCurrentConditions = (
   server: Server,
   client: Socket,
-  untrackConditions: TrackCondition[],
+  excludeConditionIds?: string[],
 ): void => {
-  // Early return if no conditions to untrack
-  if (!untrackConditions?.length) return;
-
   const { trackConditions, environment, externalUserId } = getClientData(client);
 
   // Early return if no existing conditions to remove
   if (!trackConditions?.length) return;
 
+  // Early return if no environment or user ID
+  if (!environment || !externalUserId) {
+    return;
+  }
+
   const room = getExternalUserRoom(environment.id, externalUserId);
 
-  // Only emit untrack for conditions that actually exist
-  const conditionsToUntrack = untrackConditions.filter((condition) =>
-    trackConditions.some((existing) => existing.condition.id === condition.condition.id),
-  );
+  // Determine which conditions to untrack
+  const conditionsToUntrack = excludeConditionIds?.length
+    ? trackConditions.filter((c) => !excludeConditionIds.includes(c.condition.id))
+    : trackConditions;
+
+  // Early return if no conditions to untrack
+  if (!conditionsToUntrack.length) return;
 
   // Emit untrack events and collect successfully untracked conditions
   const untrackedConditions = conditionsToUntrack.filter((condition) =>
@@ -394,24 +402,6 @@ export const untrackConditions = (
         !untrackedConditions.some((untracked) => untracked.condition.id === condition.condition.id),
     ),
   });
-};
-
-/**
- * Untrack current conditions with optional exclusions
- */
-export const untrackCurrentConditions = (
-  server: Server,
-  client: Socket,
-  excludeConditionIds?: string[],
-): void => {
-  const { trackConditions } = getClientData(client);
-  if (!trackConditions?.length) return;
-
-  const conditionsToUntrack = excludeConditionIds
-    ? trackConditions.filter((c) => !excludeConditionIds.includes(c.condition.id))
-    : trackConditions;
-
-  untrackConditions(server, client, conditionsToUntrack);
 };
 
 // ============================================================================
