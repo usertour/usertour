@@ -97,6 +97,13 @@ export class ContentStartService {
       // Handle successful result
       // Set the content session if one was created
       if (session) {
+        const isSetSession = this.socketManagementService.updateContentSessionByType(
+          client.id,
+          session,
+        );
+        if (!isSetSession) {
+          return false;
+        }
         this.socketManagementService.setContentSession(client, session);
         if (forceGoToStep) {
           this.socketManagementService.forceGoToStep(

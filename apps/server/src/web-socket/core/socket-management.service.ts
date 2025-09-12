@@ -236,36 +236,46 @@ export class SocketManagementService {
   }
 
   /**
+   * Update content session by type
+   * @param socketId - The socket ID
+   * @param session - The session to update
+   * @returns Promise<boolean> - True if the session was updated successfully
+   */
+  async updateContentSessionByType(socketId: string, session: SDKContentSession): Promise<boolean> {
+    const contentType = session.content.type as ContentDataType;
+    switch (contentType) {
+      case ContentDataType.FLOW:
+        return await this.updateClientData(socketId, { flowSession: session });
+      case ContentDataType.CHECKLIST:
+        return await this.updateClientData(socketId, { checklistSession: session });
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Set content session for client
    * @param client - The socket client
    * @param session - The session to set
-   * @returns Promise<void>
+   * @returns boolean - True if the session was set successfully
    */
-  async setContentSession(client: Socket, session: SDKContentSession): Promise<void> {
+  setContentSession(client: Socket, session: SDKContentSession): boolean {
     const socketId = client.id;
     try {
-      const data = await this.getClientData(socketId);
-      if (!data?.environment || !data?.externalUserId) {
-        this.logger.warn(`Missing environment or user ID for socket ${socketId}`);
-        return;
-      }
-
       const contentType = session.content.type as ContentDataType;
 
       switch (contentType) {
         case ContentDataType.FLOW:
-          await this.updateClientData(socketId, { flowSession: session });
-          this.setFlowSession(client, session);
-          break;
+          return this.setFlowSession(client, session);
         case ContentDataType.CHECKLIST:
-          await this.updateClientData(socketId, { checklistSession: session });
-          this.setChecklistSession(client, session);
-          break;
+          return this.setChecklistSession(client, session);
         default:
           this.logger.warn(`Unsupported content type: ${contentType}`);
+          return false;
       }
     } catch (error) {
       this.logger.error(`Failed to set content session for socket ${socketId}:`, error);
+      return false;
     }
   }
 
