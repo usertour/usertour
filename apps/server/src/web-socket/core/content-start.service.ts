@@ -277,7 +277,7 @@ export class ContentStartService {
     }
     const { environment, externalUserId, externalCompanyId } = socketClietData;
 
-    const session = await this.socketManagementService.getSessionByContentType(
+    const session = await this.socketManagementService.getContentSessionByType(
       client.id,
       contentType,
     );

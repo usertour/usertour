@@ -96,24 +96,6 @@ export class SocketManagementService {
     }
   }
 
-  /**
-   * Get all client data for a specific user
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @returns Promise<ClientData[]> - Array of client data for the user
-   */
-  async getUserClientData(
-    environmentId: string,
-    externalUserId: string,
-  ): Promise<SocketClientData[]> {
-    try {
-      return await this.socketDataService.getUserClientData(environmentId, externalUserId);
-    } catch (error) {
-      this.logger.error(`Failed to get user client data for user ${externalUserId}:`, error);
-      return [];
-    }
-  }
-
   // ============================================================================
   // Room Management
   // ============================================================================
@@ -229,7 +211,7 @@ export class SocketManagementService {
    * @param contentType - The content type
    * @returns Promise<SDKContentSession | null> - The content session or null
    */
-  async getSessionByContentType(
+  async getContentSessionByType(
     socketId: string,
     contentType: ContentDataType,
   ): Promise<SDKContentSession | null> {
