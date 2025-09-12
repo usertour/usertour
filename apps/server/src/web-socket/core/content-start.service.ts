@@ -277,7 +277,7 @@ export class ContentStartService {
     }
     const { environment, externalUserId, externalCompanyId } = socketClietData;
 
-    const session = await this.socketManagementService.getContentSession(client, contentType);
+    const session = await this.socketManagementService.getSessionByContentType(client, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
