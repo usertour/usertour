@@ -203,7 +203,7 @@ export class ContentStartService {
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
     const { client, contentType, options } = context;
     const { contentId } = options!;
-    const socketClietData = await this.socketManagementService.getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client.id);
     if (!socketClietData) {
       return {
         success: false,
@@ -268,7 +268,7 @@ export class ContentStartService {
    */
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
     const { client, contentType } = context;
-    const socketClietData = await this.socketManagementService.getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client.id);
     if (!socketClietData) {
       return {
         success: false,
@@ -277,7 +277,10 @@ export class ContentStartService {
     }
     const { environment, externalUserId, externalCompanyId } = socketClietData;
 
-    const session = await this.socketManagementService.getSessionByContentType(client, contentType);
+    const session = await this.socketManagementService.getSessionByContentType(
+      client.id,
+      contentType,
+    );
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
@@ -358,7 +361,7 @@ export class ContentStartService {
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
     const { contentType, client } = context;
-    const socketClietData = await this.socketManagementService.getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client.id);
     if (!socketClietData) {
       return {
         success: false,
@@ -581,7 +584,7 @@ export class ContentStartService {
     }
 
     const { client, options } = context;
-    const clientData = await this.socketManagementService.getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client.id);
     if (!clientData) {
       return {
         success: false,
@@ -646,7 +649,7 @@ export class ContentStartService {
     contentType: ContentDataType,
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
-    const socketClietData = await this.socketManagementService.getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client.id);
     if (!socketClietData) {
       return [];
     }

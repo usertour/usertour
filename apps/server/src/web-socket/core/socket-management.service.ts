@@ -20,37 +20,37 @@ export class SocketManagementService {
 
   /**
    * Get client data from Redis
-   * @param client - The socket client
+   * @param socketId - The socket ID
    * @returns Promise<ClientData | null> - The client data or null if not found
    */
-  async getClientData(client: Socket): Promise<SocketClientData | null> {
+  async getClientData(socketId: string): Promise<SocketClientData | null> {
     try {
-      return await this.socketDataService.getClientData(client.id);
+      return await this.socketDataService.getClientData(socketId);
     } catch (error) {
-      this.logger.error(`Failed to get client data for socket ${client.id}:`, error);
+      this.logger.error(`Failed to get client data for socket ${socketId}:`, error);
       return null;
     }
   }
 
   /**
    * Set complete client data to Redis (for initialization)
-   * @param client - The socket client
+   * @param socketId - The socket ID
    * @param clientData - The complete client data to set (without lastUpdated and socketId)
    * @returns Promise<boolean> - True if the data was set successfully
    */
   async setClientData(
-    client: Socket,
+    socketId: string,
     clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
   ): Promise<boolean> {
     try {
       const data: SocketClientData = {
         ...clientData,
         lastUpdated: Date.now(),
-        socketId: client.id,
+        socketId,
       };
-      return await this.socketDataService.setClientData(client.id, data);
+      return await this.socketDataService.setClientData(socketId, data);
     } catch (error) {
-      this.logger.error(`Failed to set client data for socket ${client.id}:`, error);
+      this.logger.error(`Failed to set client data for socket ${socketId}:`, error);
       return false;
     }
   }
@@ -63,7 +63,7 @@ export class SocketManagementService {
    */
   async updateClientData(client: Socket, updates: Partial<SocketClientData>): Promise<boolean> {
     try {
-      const existingData = await this.getClientData(client);
+      const existingData = await this.getClientData(client.id);
       if (!existingData) {
         this.logger.error(
           `Client data not found for socket ${client.id}. Use setClientData first.`,
@@ -227,16 +227,16 @@ export class SocketManagementService {
 
   /**
    * Get content session from client
-   * @param client - The socket client
+   * @param socketId - The socket ID
    * @param contentType - The content type
    * @returns Promise<SDKContentSession | null> - The content session or null
    */
   async getSessionByContentType(
-    client: Socket,
+    socketId: string,
     contentType: ContentDataType,
   ): Promise<SDKContentSession | null> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(socketId);
       if (!data) {
         return null;
       }
@@ -250,7 +250,7 @@ export class SocketManagementService {
           return null;
       }
     } catch (error) {
-      this.logger.error(`Failed to get content session for socket ${client.id}:`, error);
+      this.logger.error(`Failed to get content session for socket ${socketId}:`, error);
       return null;
     }
   }
@@ -263,7 +263,7 @@ export class SocketManagementService {
    */
   async setContentSession(client: Socket, session: SDKContentSession): Promise<void> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       if (!data?.environment || !data?.externalUserId) {
         this.logger.warn(`Missing environment or user ID for socket ${client.id}`);
         return;
@@ -303,7 +303,7 @@ export class SocketManagementService {
     emitWebSocket = true,
   ): Promise<void> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       if (!data?.environment || !data?.externalUserId || !sessionId) {
         return;
       }
@@ -358,7 +358,7 @@ export class SocketManagementService {
       // Early return if no conditions to track
       if (!trackConditions?.length) return;
 
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       if (!data?.environment || !data?.externalUserId) {
         this.logger.warn(`Missing environment or user ID for socket ${client.id}`);
         return;
@@ -402,7 +402,7 @@ export class SocketManagementService {
     isActive: boolean,
   ): Promise<boolean> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       const trackConditions = data?.trackConditions ?? [];
 
       // Early return if no conditions exist
@@ -443,7 +443,7 @@ export class SocketManagementService {
    */
   async untrackCurrentConditions(client: Socket, excludeConditionIds?: string[]): Promise<void> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       const trackConditions = data?.trackConditions ?? [];
 
       // Early return if no existing conditions to remove
@@ -499,7 +499,7 @@ export class SocketManagementService {
       // Early return if no conditions to start
       if (!startConditions?.length) return;
 
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       if (!data?.environment || !data?.externalUserId) {
         this.logger.warn(`Missing environment or user ID for socket ${client.id}`);
         return;
@@ -538,7 +538,7 @@ export class SocketManagementService {
    */
   async fireClientConditionWaitTimer(client: Socket, versionId: string): Promise<boolean> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       const waitTimerConditions = data?.waitTimerConditions ?? [];
 
       // Early return if no conditions exist
@@ -579,7 +579,7 @@ export class SocketManagementService {
    */
   async cancelCurrentWaitTimerConditions(client: Socket): Promise<void> {
     try {
-      const data = await this.getClientData(client);
+      const data = await this.getClientData(client.id);
       const waitTimerConditions = data?.waitTimerConditions ?? [];
 
       // Early return if no existing conditions to remove

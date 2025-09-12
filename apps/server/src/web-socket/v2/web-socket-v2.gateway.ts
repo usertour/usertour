@@ -64,7 +64,7 @@ export class WebSocketV2Gateway {
         }
 
         // Store validated data in socket
-        await this.socketManagementService.setClientData(socket, {
+        await this.socketManagementService.setClientData(socket.id, {
           environment,
           externalUserId,
           clientContext,

@@ -14,7 +14,7 @@ export class WebSocketV2Guard implements CanActivate {
     const client: Socket = context.switchToWs().getClient();
 
     // Check if the client data exists in Redis
-    const clientData = await this.socketManagementService.getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client.id);
     if (!clientData?.environment) {
       throw new SDKAuthenticationError();
     }
