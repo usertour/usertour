@@ -12,16 +12,12 @@ import {
 } from '@usertour/types';
 import { BizCompany, BizEvent, BizUser, Environment, Event } from '@/common/types/schema';
 import { TrackEventData } from '@/common/types/track';
-import { UserClientContextService } from './user-client-context.service';
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
 
 @Injectable()
 export class TrackEventService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly userClientContextService: UserClientContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Filter event data based on allowed attributes for the event
@@ -362,15 +358,11 @@ export class TrackEventService {
     eventName: string,
     sessionId: string,
     data: Record<string, any>,
+    clientContext: ClientContext,
   ): Promise<BizEvent | false> {
     const { id: environmentId, projectId } = environment;
 
-    // Get client context and enrich event data
-    const userClientContext = await this.userClientContextService.getUserClientContext(
-      environment,
-      externalUserId,
-    );
-    const eventData = this.enrichEventData(data, userClientContext?.clientContext);
+    const eventData = this.enrichEventData(data, clientContext);
 
     // Fetch required entities
     const [bizUser, bizSession, event] = await Promise.all([
@@ -509,6 +501,7 @@ export class TrackEventService {
    * @param environment - The environment
    * @param externalUserId - The external user ID
    * @param startReason - The start reason
+   * @param clientContext - The client context
    * @returns The tracked event or false if tracking failed
    */
   async trackAutoStartEvent(
@@ -517,6 +510,7 @@ export class TrackEventService {
     environment: Environment,
     externalUserId: string,
     startReason: string,
+    clientContext: ClientContext,
   ): Promise<BizEvent | false> {
     // Input validation
     if (!customContentVersion?.content?.type || !startReason?.trim() || !externalUserId?.trim()) {
@@ -530,7 +524,14 @@ export class TrackEventService {
     );
 
     // Track the event
-    return await this.trackEvent(environment, externalUserId, eventName, bizSession.id, eventData);
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      eventName,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
   }
 
   /**
@@ -546,6 +547,7 @@ export class TrackEventService {
     environment: Environment,
     externalUserId: string,
     endReason: string,
+    clientContext: ClientContext,
   ): Promise<BizEvent | false> {
     const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
       where: {
@@ -564,6 +566,13 @@ export class TrackEventService {
     });
     const eventName = BizEvents.FLOW_ENDED;
 
-    return await this.trackEvent(environment, externalUserId, eventName, bizSession.id, eventData);
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      eventName,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
   }
 }

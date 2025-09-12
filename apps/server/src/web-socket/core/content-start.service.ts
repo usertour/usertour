@@ -24,20 +24,8 @@ import { CustomContentVersion } from '@/common/types/content';
 import { ContentManagementService } from './content-management.service';
 import { ContentSessionService } from './content-session.service';
 import { TrackEventService } from './track-event.service';
-import { UserClientContextService } from './user-client-context.service';
-import {
-  getClientData,
-  setContentSession,
-  unsetCurrentContentSession,
-  trackClientConditions,
-  untrackCurrentConditions,
-  getContentSession,
-  forceGoToStep,
-  getExternalUserRoom,
-  startWaitTimerConditions,
-  cancelCurrentWaitTimerConditions,
-} from '@/web-socket/core/socket-helper';
-import type { ClientData } from '@/web-socket/core/socket-helper';
+import { SocketManagementService } from './socket-management.service';
+import { SocketClientData } from './socket-data.service';
 
 interface ContentStartContext {
   server: Server;
@@ -67,7 +55,7 @@ export class ContentStartService {
     private readonly contentManagementService: ContentManagementService,
     private readonly contentSessionService: ContentSessionService,
     private readonly trackEventService: TrackEventService,
-    private readonly userClientContextService: UserClientContextService,
+    private readonly socketManagementService: SocketManagementService,
   ) {}
 
   /**
@@ -78,10 +66,10 @@ export class ContentStartService {
     context: ContentStartContext,
     invalidSession: SDKContentSession,
   ): void {
-    const { server, client, contentType } = context;
+    const { client, contentType } = context;
 
-    unsetCurrentContentSession(server, client, contentType, invalidSession.id);
-    untrackCurrentConditions(server, client);
+    this.socketManagementService.unsetCurrentContentSession(client, contentType, invalidSession.id);
+    this.socketManagementService.untrackCurrentConditions(client);
   }
 
   /**
@@ -93,7 +81,7 @@ export class ContentStartService {
     result: ContentStartResult,
     forceGoToStep = false,
   ): Promise<boolean> {
-    const { server, client, contentType } = context;
+    const { client, contentType } = context;
 
     try {
       const { success, session, trackConditions, waitTimerConditions, reason } = result;
@@ -109,24 +97,28 @@ export class ContentStartService {
       // Handle successful result
       // Set the content session if one was created
       if (session) {
-        setContentSession(server, client, session);
+        this.socketManagementService.setContentSession(client, session);
         if (forceGoToStep) {
-          await this.forceGoToStep(context, session);
+          this.socketManagementService.forceGoToStep(
+            client,
+            session.id,
+            session.currentStep?.cvid!,
+          );
         }
-        cancelCurrentWaitTimerConditions(server, client);
+        this.socketManagementService.cancelCurrentWaitTimerConditions(client);
       }
 
       // Handle track conditions if any were returned
       const excludeConditionIds =
         trackConditions?.map((trackCondition) => trackCondition.condition.id) ?? [];
       //untrack current conditions
-      untrackCurrentConditions(server, client, excludeConditionIds);
+      this.socketManagementService.untrackCurrentConditions(client, excludeConditionIds);
       // Track the new conditions
-      trackClientConditions(server, client, trackConditions);
+      this.socketManagementService.trackClientConditions(client, trackConditions);
 
       // Track the new wait timer conditions
       if (waitTimerConditions) {
-        startWaitTimerConditions(server, client, waitTimerConditions);
+        this.socketManagementService.startWaitTimerConditions(client, waitTimerConditions);
       }
 
       this.logger.debug(`Content start succeeded: ${reason}`, {
@@ -211,7 +203,14 @@ export class ContentStartService {
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
     const { client, contentType, options } = context;
     const { contentId } = options!;
-    const { environment } = getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client);
+    if (!socketClietData) {
+      return {
+        success: false,
+        reason: 'No socket client data',
+      };
+    }
+    const { environment } = socketClietData;
 
     try {
       // Get published version for the specific content
@@ -269,9 +268,16 @@ export class ContentStartService {
    */
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
     const { client, contentType } = context;
-    const { environment, externalUserId, externalCompanyId } = getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client);
+    if (!socketClietData) {
+      return {
+        success: false,
+        reason: 'No socket client data',
+      };
+    }
+    const { environment, externalUserId, externalCompanyId } = socketClietData;
 
-    const session = getContentSession(client, contentType);
+    const session = await this.socketManagementService.getContentSession(client, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
@@ -352,7 +358,14 @@ export class ContentStartService {
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
     const { contentType, client } = context;
-    const { waitTimerConditions } = getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client);
+    if (!socketClietData) {
+      return {
+        success: false,
+        reason: 'No socket client data',
+      };
+    }
+    const { waitTimerConditions } = socketClietData;
     const firedWaitTimerVersionIds = waitTimerConditions
       ?.filter((waitTimerCondition) => waitTimerCondition.activated)
       .map((waitTimerCondition) => waitTimerCondition.versionId);
@@ -438,7 +451,7 @@ export class ContentStartService {
    */
   private async handleSessionManagement(
     customContentVersion: CustomContentVersion,
-    clientData: ClientData,
+    clientData: SocketClientData,
     startOptions: StartContentOptions,
     createNewSession = false,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
@@ -454,10 +467,10 @@ export class ContentStartService {
    */
   private async createNewSession(
     customContentVersion: CustomContentVersion,
-    clientData: ClientData,
+    clientData: SocketClientData,
     startOptions: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    const { environment, externalUserId, externalCompanyId } = clientData;
+    const { environment, externalUserId, externalCompanyId, clientContext } = clientData;
     const { stepCvid, startReason } = startOptions;
     const versionId = customContentVersion.id;
     const steps = customContentVersion.steps;
@@ -482,6 +495,7 @@ export class ContentStartService {
       environment,
       externalUserId,
       startReason,
+      clientContext,
     );
 
     return {
@@ -524,7 +538,7 @@ export class ContentStartService {
   private async createContentSession(
     sessionId: string,
     customContentVersion: CustomContentVersion,
-    clientData: ClientData,
+    clientData: SocketClientData,
     stepCvid: string,
   ): Promise<SDKContentSession | null> {
     return await this.contentSessionService.createContentSession(
@@ -567,7 +581,13 @@ export class ContentStartService {
     }
 
     const { client, options } = context;
-    const clientData = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData) {
+      return {
+        success: false,
+        reason: 'No socket client data',
+      };
+    }
 
     try {
       // Handle session management
@@ -626,15 +646,14 @@ export class ContentStartService {
     contentType: ContentDataType,
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
-    const { environment, trackConditions, externalUserId, externalCompanyId } =
-      getClientData(client);
+    const socketClietData = await this.socketManagementService.getClientData(client);
+    if (!socketClietData) {
+      return [];
+    }
+    const { environment, trackConditions, externalUserId, externalCompanyId } = socketClietData;
 
-    // Get user client context
-    const userClientContext = await this.userClientContextService.getUserClientContext(
-      environment,
-      externalUserId,
-    );
-    const clientContext = userClientContext?.clientContext;
+    // Get client context from socket data
+    const clientContext = socketClietData.clientContext;
 
     // Extract activated and deactivated condition IDs
     const activatedIds = trackConditions
@@ -683,22 +702,5 @@ export class ContentStartService {
     );
 
     return sessionVersion.length > 0 && !isActivedHideRules(sessionVersion[0]);
-  }
-
-  /**
-   * Force go to step
-   * @param context - The context
-   * @param session - The session
-   * @returns The void
-   * @description Force go to step for the session
-   */
-  private async forceGoToStep(
-    context: ContentStartContext,
-    session: SDKContentSession,
-  ): Promise<void> {
-    const { server, client } = context;
-    const { environment, externalUserId } = getClientData(client);
-    const room = getExternalUserRoom(environment.id, externalUserId);
-    forceGoToStep(server, room, session.id, session.currentStep?.cvid!);
   }
 }

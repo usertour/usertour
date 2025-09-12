@@ -7,11 +7,11 @@ import { IntegrationModule } from '@/integration/integration.module';
 import { LicenseModule } from '@/license/license.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
+import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
 import { SharedModule } from '@/shared/shared.module';
 import { TrackEventService } from './core/track-event.service';
 import { ContentManagementService } from './core/content-management.service';
 import { ContentSessionService } from './core/content-session.service';
-import { UserClientContextService } from './core/user-client-context.service';
 import { ContentStartService } from './core/content-start.service';
 import { SocketManagementService } from './core/socket-management.service';
 import { SocketDataService } from './core/socket-data.service';
@@ -24,10 +24,10 @@ import { SocketDataService } from './core/socket-data.service';
     WebSocketPerformanceInterceptor,
     WebSocketV2Gateway,
     WebSocketV2Service,
+    WebSocketV2Guard,
     TrackEventService,
     ContentManagementService,
     ContentSessionService,
-    UserClientContextService,
     ContentStartService,
     SocketManagementService,
     SocketDataService,

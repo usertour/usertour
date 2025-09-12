@@ -28,16 +28,8 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import {
-  unsetCurrentContentSession,
-  toggleClientCondition,
-  getClientData,
-  setClientData,
-  untrackCurrentConditions,
-  fireClientConditionWaitTimer,
-} from '@/web-socket/core/socket-helper';
+import { SocketManagementService } from '@/web-socket/core/socket-management.service';
 import { TrackEventService } from '@/web-socket/core/track-event.service';
-import { UserClientContextService } from '@/web-socket/core/user-client-context.service';
 import { ContentStartService } from '@/web-socket/core/content-start.service';
 
 @Injectable()
@@ -47,8 +39,8 @@ export class WebSocketV2Service {
     private prisma: PrismaService,
     private bizService: BizService,
     private trackEventService: TrackEventService,
-    private readonly userClientContextService: UserClientContextService,
     private readonly contentStartService: ContentStartService,
+    private readonly socketManagementService: SocketManagementService,
   ) {}
 
   /**
@@ -58,9 +50,16 @@ export class WebSocketV2Service {
    */
   async upsertBizUsers(client: Socket, data: UpsertUserDto): Promise<boolean> {
     const { externalUserId, attributes } = data;
-    const { environment } = getClientData(client);
-    await this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id);
-    setClientData(client, { externalUserId });
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+
+    await this.bizService.upsertBizUsers(
+      this.prisma,
+      externalUserId,
+      attributes,
+      clientData.environment.id,
+    );
+    await this.socketManagementService.setClientData(client, { externalUserId });
     return true;
   }
 
@@ -72,17 +71,19 @@ export class WebSocketV2Service {
    */
   async upsertBizCompanies(client: Socket, data: UpsertCompanyDto): Promise<boolean> {
     const { externalCompanyId, externalUserId, attributes, membership } = data;
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+
     await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
       externalUserId,
       attributes,
-      environment.id,
+      clientData.environment.id,
       membership,
     );
 
-    setClientData(client, { externalCompanyId });
+    await this.socketManagementService.setClientData(client, { externalCompanyId });
     return true;
   }
 
@@ -103,13 +104,7 @@ export class WebSocketV2Service {
    * @param clientContext - The client context
    */
   async setUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
-    const { environment, externalUserId, externalCompanyId } = getClientData(client);
-    return await this.userClientContextService.setUserClientContext(
-      environment,
-      externalUserId,
-      externalCompanyId,
-      clientContext,
-    );
+    return await this.socketManagementService.setClientData(client, { clientContext });
   }
 
   /**
@@ -119,7 +114,9 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async trackEvent(client: Socket, trackEventDto: TrackEventDto): Promise<boolean> {
-    const { environment, externalUserId } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment || !clientData?.externalUserId) return false;
+    const { environment, externalUserId, clientContext } = clientData;
     const { eventName, sessionId, eventData } = trackEventDto;
     return Boolean(
       await this.trackEventService.trackEvent(
@@ -128,6 +125,7 @@ export class WebSocketV2Service {
         eventName,
         sessionId,
         eventData,
+        clientContext,
       ),
     );
   }
@@ -149,7 +147,9 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async goToStep(client: Socket, params: GoToStepDto): Promise<boolean> {
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+    const { environment, clientContext } = clientData;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, version: { include: { steps: true } } },
@@ -186,6 +186,7 @@ export class WebSocketV2Service {
       BizEvents.FLOW_STEP_SEEN,
       bizSession.id,
       eventData,
+      clientContext,
     );
 
     if (isComplete) {
@@ -195,6 +196,7 @@ export class WebSocketV2Service {
         BizEvents.FLOW_COMPLETED,
         bizSession.id,
         eventData,
+        clientContext,
       );
     }
 
@@ -208,7 +210,9 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async answerQuestion(client: Socket, params: AnswerQuestionDto): Promise<boolean> {
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+    const { environment, clientContext } = clientData;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true },
@@ -239,6 +243,7 @@ export class WebSocketV2Service {
         BizEvents.QUESTION_ANSWERED,
         bizSession.id,
         eventData,
+        clientContext,
       ),
     );
   }
@@ -250,7 +255,9 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async clickChecklistTask(client: Socket, params: ClickChecklistTaskDto): Promise<boolean> {
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+    const { environment, clientContext } = clientData;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -283,6 +290,7 @@ export class WebSocketV2Service {
         BizEvents.CHECKLIST_TASK_CLICKED,
         bizSession.id,
         eventData,
+        clientContext,
       ),
     );
   }
@@ -294,7 +302,9 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async hideChecklist(client: Socket, params: HideChecklistDto): Promise<boolean> {
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+    const { environment, clientContext } = clientData;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -318,6 +328,7 @@ export class WebSocketV2Service {
         BizEvents.CHECKLIST_HIDDEN,
         bizSession.id,
         eventData,
+        clientContext,
       ),
     );
   }
@@ -329,7 +340,9 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async showChecklist(client: Socket, params: ShowChecklistDto): Promise<boolean> {
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+    const { environment, clientContext } = clientData;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -353,6 +366,7 @@ export class WebSocketV2Service {
         BizEvents.CHECKLIST_SEEN,
         bizSession.id,
         eventData,
+        clientContext,
       ),
     );
   }
@@ -368,7 +382,9 @@ export class WebSocketV2Service {
     client: Socket,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
-    const { environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.environment) return false;
+    const { environment, clientContext } = clientData;
     const { sessionId, stepId } = params;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
@@ -400,12 +416,17 @@ export class WebSocketV2Service {
       BizEvents.TOOLTIP_TARGET_MISSING,
       bizSession.id,
       eventData,
+      clientContext,
     );
 
     // Unset current flow session
-    unsetCurrentContentSession(server, client, ContentDataType.FLOW, sessionId);
+    await this.socketManagementService.unsetCurrentContentSession(
+      client,
+      ContentDataType.FLOW,
+      sessionId,
+    );
     // Untrack current conditions
-    untrackCurrentConditions(server, client);
+    await this.socketManagementService.untrackCurrentConditions(client);
     // Toggle contents for the client
     await this.toggleContents(server, client);
 
@@ -461,7 +482,9 @@ export class WebSocketV2Service {
    */
   async endContent(server: Server, client: Socket, endContentDto: EndContentDto): Promise<boolean> {
     const { sessionId, reason } = endContentDto;
-    const { externalUserId, environment } = getClientData(client);
+    const clientData = await this.socketManagementService.getClientData(client);
+    if (!clientData?.externalUserId || !clientData?.environment) return false;
+    const { externalUserId, environment, clientContext } = clientData;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
       include: { content: true },
@@ -476,11 +499,17 @@ export class WebSocketV2Service {
       environment,
       externalUserId,
       reason,
+      clientContext,
     );
     // Unset current flow session (without WebSocket emission)
-    unsetCurrentContentSession(server, client, ContentDataType.FLOW, sessionId, false);
+    await this.socketManagementService.unsetCurrentContentSession(
+      client,
+      ContentDataType.FLOW,
+      sessionId,
+      false,
+    );
     // Untrack current conditions
-    untrackCurrentConditions(server, client);
+    await this.socketManagementService.untrackCurrentConditions(client);
     // Toggle contents for the client
     await this.toggleContents(server, client);
     return true;
@@ -517,7 +546,7 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const { conditionId, isActive } = toggleClientConditionDto;
 
-    return toggleClientCondition(client, conditionId, isActive);
+    return await this.socketManagementService.toggleClientCondition(client, conditionId, isActive);
   }
 
   /**
@@ -531,6 +560,6 @@ export class WebSocketV2Service {
     fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
     const { versionId } = fireConditionWaitTimerDto;
-    return fireClientConditionWaitTimer(client, versionId);
+    return await this.socketManagementService.fireClientConditionWaitTimer(client, versionId);
   }
 }

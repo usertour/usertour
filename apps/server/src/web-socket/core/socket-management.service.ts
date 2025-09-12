@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
 import { SDKContentSession, TrackCondition, WaitTimerCondition } from '@/common/types/sdk';
 import { SocketDataService, SocketClientData } from './socket-data.service';
@@ -100,7 +100,7 @@ export class SocketManagementService {
    * @param externalUserId - The external user id
    * @returns The external user room ID
    */
-  private buildExternalUserRoomId(environmentId: string, externalUserId: string): string {
+  buildExternalUserRoomId(environmentId: string, externalUserId: string): string {
     return `user:${environmentId}:${externalUserId}`;
   }
 
@@ -110,75 +110,68 @@ export class SocketManagementService {
 
   /**
    * Track a client event
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param condition - The condition to emit
    */
-  trackClientEvent(server: Server, room: string, condition: TrackCondition) {
-    return server.to(room).emit('track-client-condition', condition);
+  private trackClientEvent(client: Socket, condition: TrackCondition) {
+    return client.emit('track-client-condition', condition);
   }
 
   /**
    * Un-track a client event
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param conditionId - The condition id to un-track
    */
-  untrackClientEvent(server: Server, room: string, conditionId: string) {
-    return server.to(room).emit('untrack-client-condition', {
+  private untrackClientEvent(client: Socket, conditionId: string) {
+    return client.emit('untrack-client-condition', {
       conditionId,
     });
   }
 
   /**
    * Set the flow session
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket clientj
    * @param session - The session to set
    */
-  setFlowSession(server: Server, room: string, session: SDKContentSession) {
-    return server.to(room).emit('set-flow-session', session);
+  private setFlowSession(client: Socket, session: SDKContentSession) {
+    return client.emit('set-flow-session', session);
   }
 
   /**
    * Set the checklist session
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param session - The session to set
    */
-  setChecklistSession(server: Server, room: string, session: SDKContentSession) {
-    return server.to(room).emit('set-checklist-session', session);
+  private setChecklistSession(client: Socket, session: SDKContentSession) {
+    return client.emit('set-checklist-session', session);
   }
 
   /**
    * Unset the flow session
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param sessionId - The session id to unset
    */
-  unsetFlowSession(server: Server, room: string, sessionId: string) {
-    return server.to(room).emit('unset-flow-session', { sessionId });
+  unsetFlowSession(client: Socket, sessionId: string) {
+    return client.emit('unset-flow-session', { sessionId });
   }
 
   /**
    * Unset the checklist session
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param sessionId - The session id to unset
    */
-  unsetChecklistSession(server: Server, room: string, sessionId: string) {
-    return server.to(room).emit('unset-checklist-session', { sessionId });
+  unsetChecklistSession(client: Socket, sessionId: string) {
+    return client.emit('unset-checklist-session', { sessionId });
   }
 
   /**
    * Force go to step
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param sessionId - The session id to force go to step
    * @param stepId - The step id to force go to step
    */
-  forceGoToStep(server: Server, room: string, sessionId: string, stepId: string) {
-    return server.to(room).emit('force-go-to-step', {
+  forceGoToStep(client: Socket, sessionId: string, stepId: string) {
+    return client.emit('force-go-to-step', {
       sessionId,
       stepId,
     });
@@ -186,22 +179,20 @@ export class SocketManagementService {
 
   /**
    * Start condition wait timer
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param waitTimerCondition - The wait timer condition to start
    */
-  startConditionWaitTimer(server: Server, room: string, waitTimerCondition: WaitTimerCondition) {
-    return server.to(room).emit('start-condition-wait-timer', waitTimerCondition);
+  startConditionWaitTimer(client: Socket, waitTimerCondition: WaitTimerCondition) {
+    return client.emit('start-condition-wait-timer', waitTimerCondition);
   }
 
   /**
    * Cancel condition wait timer
-   * @param server - The server instance
-   * @param room - The room to emit the event to
+   * @param client - The socket client
    * @param waitTimerCondition - The wait timer condition to cancel
    */
-  cancelConditionWaitTimer(server: Server, room: string, waitTimerCondition: WaitTimerCondition) {
-    return server.to(room).emit('cancel-condition-wait-timer', waitTimerCondition);
+  cancelConditionWaitTimer(client: Socket, waitTimerCondition: WaitTimerCondition) {
+    return client.emit('cancel-condition-wait-timer', waitTimerCondition);
   }
 
   // ============================================================================
@@ -239,16 +230,11 @@ export class SocketManagementService {
 
   /**
    * Set content session for client
-   * @param server - The server instance
    * @param client - The socket client
    * @param session - The session to set
    * @returns Promise<void>
    */
-  async setContentSession(
-    server: Server,
-    client: Socket,
-    session: SDKContentSession,
-  ): Promise<void> {
+  async setContentSession(client: Socket, session: SDKContentSession): Promise<void> {
     try {
       const data = await this.getClientData(client);
       if (!data?.environment || !data?.externalUserId) {
@@ -256,15 +242,14 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
       const contentType = session.content.type as ContentDataType;
 
       if (contentType === ContentDataType.FLOW) {
         await this.setClientData(client, { flowSession: session });
-        this.setFlowSession(server, room, session);
+        this.setFlowSession(client, session);
       } else if (contentType === ContentDataType.CHECKLIST) {
         await this.setClientData(client, { checklistSession: session });
-        this.setChecklistSession(server, room, session);
+        this.setChecklistSession(client, session);
       }
     } catch (error) {
       this.logger.error(`Failed to set content session for socket ${client.id}:`, error);
@@ -273,7 +258,6 @@ export class SocketManagementService {
 
   /**
    * Unset current content session for client
-   * @param server - The server instance
    * @param client - The socket client
    * @param contentType - The content type to unset
    * @param sessionId - The session id to unset
@@ -281,7 +265,6 @@ export class SocketManagementService {
    * @returns Promise<void>
    */
   async unsetCurrentContentSession(
-    server: Server,
     client: Socket,
     contentType: ContentDataType,
     sessionId: string,
@@ -293,18 +276,16 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
-
       // Define session configuration based on content type
       const sessionConfig = {
         [ContentDataType.FLOW]: {
           currentSession: data.flowSession,
-          unsetEvent: () => this.unsetFlowSession(server, room, sessionId),
+          unsetEvent: () => this.unsetFlowSession(client, sessionId),
           clientDataKey: 'flowSession' as const,
         },
         [ContentDataType.CHECKLIST]: {
           currentSession: data.checklistSession,
-          unsetEvent: () => this.unsetChecklistSession(server, room, sessionId),
+          unsetEvent: () => this.unsetChecklistSession(client, sessionId),
           clientDataKey: 'checklistSession' as const,
         },
       };
@@ -336,16 +317,11 @@ export class SocketManagementService {
 
   /**
    * Track client conditions
-   * @param server - The server instance
    * @param client - The socket client
    * @param trackConditions - The conditions to track
    * @returns Promise<void>
    */
-  async trackClientConditions(
-    server: Server,
-    client: Socket,
-    trackConditions: TrackCondition[],
-  ): Promise<void> {
+  async trackClientConditions(client: Socket, trackConditions: TrackCondition[]): Promise<void> {
     try {
       // Early return if no conditions to track
       if (!trackConditions?.length) return;
@@ -356,7 +332,6 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
       const existingConditions = data.trackConditions ?? [];
 
       // Filter out conditions that already exist
@@ -370,7 +345,7 @@ export class SocketManagementService {
 
       // Emit track events and collect successfully tracked conditions
       const trackedConditions = newConditions.filter((condition) =>
-        this.trackClientEvent(server, room, condition),
+        this.trackClientEvent(client, condition),
       );
 
       // Update client data by merging with existing conditions
@@ -430,16 +405,11 @@ export class SocketManagementService {
 
   /**
    * Untrack current conditions with optional exclusions
-   * @param server - The server instance
    * @param client - The socket client
    * @param excludeConditionIds - Array of condition IDs to exclude from untracking
    * @returns Promise<void>
    */
-  async untrackCurrentConditions(
-    server: Server,
-    client: Socket,
-    excludeConditionIds?: string[],
-  ): Promise<void> {
+  async untrackCurrentConditions(client: Socket, excludeConditionIds?: string[]): Promise<void> {
     try {
       const data = await this.getClientData(client);
       const trackConditions = data?.trackConditions ?? [];
@@ -452,8 +422,6 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
-
       // Determine which conditions to untrack
       const conditionsToUntrack = excludeConditionIds?.length
         ? trackConditions.filter((c) => !excludeConditionIds.includes(c.condition.id))
@@ -464,7 +432,7 @@ export class SocketManagementService {
 
       // Emit untrack events and collect successfully untracked conditions
       const untrackedConditions = conditionsToUntrack.filter((condition) =>
-        this.untrackClientEvent(server, room, condition.condition.id),
+        this.untrackClientEvent(client, condition.condition.id),
       );
 
       // Update client data
@@ -487,13 +455,11 @@ export class SocketManagementService {
 
   /**
    * Start wait timer conditions
-   * @param server - The server instance
    * @param client - The socket client
    * @param startConditions - The conditions to start
    * @returns Promise<void>
    */
   async startWaitTimerConditions(
-    server: Server,
     client: Socket,
     startConditions: WaitTimerCondition[],
   ): Promise<void> {
@@ -507,7 +473,6 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
       const existingConditions = data.waitTimerConditions ?? [];
 
       // Filter out conditions that already exist
@@ -521,7 +486,7 @@ export class SocketManagementService {
 
       // Emit start events and collect successfully started conditions
       const startedConditions = newConditions.filter((condition) =>
-        this.startConditionWaitTimer(server, room, condition),
+        this.startConditionWaitTimer(client, condition),
       );
 
       // Update client data by merging with existing conditions
@@ -577,11 +542,10 @@ export class SocketManagementService {
 
   /**
    * Cancel current wait timer conditions
-   * @param server - The server instance
    * @param client - The socket client
    * @returns Promise<void>
    */
-  async cancelCurrentWaitTimerConditions(server: Server, client: Socket): Promise<void> {
+  async cancelCurrentWaitTimerConditions(client: Socket): Promise<void> {
     try {
       const data = await this.getClientData(client);
       const waitTimerConditions = data?.waitTimerConditions ?? [];
@@ -594,14 +558,12 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
-
       // Filter out already activated conditions and emit cancellation events
       const conditionsToCancel = waitTimerConditions.filter((condition) => !condition.activated);
 
       // Emit cancellation events for non-activated conditions
       for (const condition of conditionsToCancel) {
-        this.cancelConditionWaitTimer(server, room, condition);
+        this.cancelConditionWaitTimer(client, condition);
       }
 
       // Clear all wait timer conditions from client data

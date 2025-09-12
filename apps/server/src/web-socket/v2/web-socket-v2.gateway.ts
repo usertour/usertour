@@ -26,7 +26,7 @@ import {
   EndContentDto,
   FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
-import { getExternalUserRoom, setClientData } from '@/web-socket/core/socket-helper';
+import { SocketManagementService } from '@/web-socket/core/socket-management.service';
 import { ClientContext } from '@usertour/types';
 
 @WsGateway({ namespace: '/v2' })
@@ -38,7 +38,10 @@ export class WebSocketV2Gateway {
 
   private readonly logger = new Logger(WebSocketV2Gateway.name);
 
-  constructor(private readonly service: WebSocketV2Service) {}
+  constructor(
+    private readonly service: WebSocketV2Service,
+    private readonly socketManagementService: SocketManagementService,
+  ) {}
 
   // Connection-level authentication - runs during handshake
   async afterInit(server: Server): Promise<void> {
@@ -61,13 +64,18 @@ export class WebSocketV2Gateway {
         }
 
         // Store validated data in socket
-        setClientData(socket, { environment, externalUserId });
+        await this.socketManagementService.setClientData(socket, {
+          environment,
+          externalUserId,
+          clientContext,
+          trackConditions: [],
+          waitTimerConditions: [],
+        });
 
-        if (clientContext) {
-          await this.service.setUserClientContext(socket, clientContext);
-        }
-
-        const room = getExternalUserRoom(environment.id, externalUserId);
+        const room = this.socketManagementService.buildExternalUserRoomId(
+          environment.id,
+          externalUserId,
+        );
         // Join user room for targeted messaging
         await socket.join(room);
 
