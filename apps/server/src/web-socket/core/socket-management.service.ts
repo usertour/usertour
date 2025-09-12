@@ -24,12 +24,7 @@ export class SocketManagementService {
    * @returns Promise<ClientData | null> - The client data or null if not found
    */
   async getClientData(socketId: string): Promise<SocketClientData | null> {
-    try {
-      return await this.socketDataService.getClientData(socketId);
-    } catch (error) {
-      this.logger.error(`Failed to get client data for socket ${socketId}:`, error);
-      return null;
-    }
+    return await this.socketDataService.getClientData(socketId);
   }
 
   /**
@@ -42,58 +37,43 @@ export class SocketManagementService {
     socketId: string,
     clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
   ): Promise<boolean> {
-    try {
-      const data: SocketClientData = {
-        ...clientData,
-        lastUpdated: Date.now(),
-        socketId,
-      };
-      return await this.socketDataService.setClientData(socketId, data);
-    } catch (error) {
-      this.logger.error(`Failed to set client data for socket ${socketId}:`, error);
-      return false;
-    }
+    const data: SocketClientData = {
+      ...clientData,
+      lastUpdated: Date.now(),
+      socketId,
+    };
+    return await this.socketDataService.setClientData(socketId, data);
   }
 
   /**
    * Update partial client data in Redis
-   * @param client - The socket client
+   * @param socketId - The socket ID
    * @param updates - The partial data to update
    * @returns Promise<boolean> - True if the data was updated successfully
    */
   async updateClientData(socketId: string, updates: Partial<SocketClientData>): Promise<boolean> {
-    try {
-      const existingData = await this.getClientData(socketId);
-      if (!existingData) {
-        this.logger.error(`Client data not found for socket ${socketId}. Use setClientData first.`);
-        return false;
-      }
-
-      const mergedData: SocketClientData = {
-        ...existingData,
-        ...updates,
-        lastUpdated: Date.now(),
-        socketId,
-      };
-      return await this.socketDataService.setClientData(socketId, mergedData);
-    } catch (error) {
-      this.logger.error(`Failed to update client data for socket ${socketId}:`, error);
+    const existingData = await this.getClientData(socketId);
+    if (!existingData) {
+      this.logger.error(`Client data not found for socket ${socketId}. Use setClientData first.`);
       return false;
     }
+
+    const mergedData: SocketClientData = {
+      ...existingData,
+      ...updates,
+      lastUpdated: Date.now(),
+      socketId,
+    };
+    return await this.socketDataService.setClientData(socketId, mergedData);
   }
 
   /**
    * Remove client data from Redis
-   * @param client - The socket client
+   * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data was removed successfully
    */
   async removeClientData(socketId: string): Promise<boolean> {
-    try {
-      return await this.socketDataService.removeClientData(socketId);
-    } catch (error) {
-      this.logger.error(`Failed to remove client data for socket ${socketId}:`, error);
-      return false;
-    }
+    return await this.socketDataService.removeClientData(socketId);
   }
 
   // ============================================================================
@@ -215,23 +195,18 @@ export class SocketManagementService {
     socketId: string,
     contentType: ContentDataType,
   ): Promise<SDKContentSession | null> {
-    try {
-      const data = await this.getClientData(socketId);
-      if (!data) {
-        return null;
-      }
-
-      switch (contentType) {
-        case ContentDataType.FLOW:
-          return data.flowSession ?? null;
-        case ContentDataType.CHECKLIST:
-          return data.checklistSession ?? null;
-        default:
-          return null;
-      }
-    } catch (error) {
-      this.logger.error(`Failed to get content session for socket ${socketId}:`, error);
+    const data = await this.getClientData(socketId);
+    if (!data) {
       return null;
+    }
+
+    switch (contentType) {
+      case ContentDataType.FLOW:
+        return data.flowSession ?? null;
+      case ContentDataType.CHECKLIST:
+        return data.checklistSession ?? null;
+      default:
+        return null;
     }
   }
 
