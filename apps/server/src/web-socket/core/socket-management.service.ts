@@ -98,12 +98,12 @@ export class SocketManagementService {
   // ============================================================================
 
   /**
-   * Get the external user room
+   * Build the external user room ID
    * @param environmentId - The environment id
    * @param externalUserId - The external user id
-   * @returns The external user room
+   * @returns The external user room ID
    */
-  getExternalUserRoom(environmentId: string, externalUserId: string): string {
+  private buildExternalUserRoomId(environmentId: string, externalUserId: string): string {
     return `user:${environmentId}:${externalUserId}`;
   }
 
@@ -259,7 +259,7 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.getExternalUserRoom(data.environment.id, data.externalUserId);
+      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
       const contentType = session.content.type as ContentDataType;
 
       if (contentType === ContentDataType.FLOW) {
@@ -296,7 +296,7 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.getExternalUserRoom(data.environment.id, data.externalUserId);
+      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
 
       // Define session configuration based on content type
       const sessionConfig = {
@@ -359,7 +359,7 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.getExternalUserRoom(data.environment.id, data.externalUserId);
+      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
       const existingConditions = data.trackConditions ?? [];
 
       // Filter out conditions that already exist
@@ -455,7 +455,7 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.getExternalUserRoom(data.environment.id, data.externalUserId);
+      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
 
       // Determine which conditions to untrack
       const conditionsToUntrack = excludeConditionIds?.length
@@ -510,7 +510,7 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.getExternalUserRoom(data.environment.id, data.externalUserId);
+      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
       const existingConditions = data.waitTimerConditions ?? [];
 
       // Filter out conditions that already exist
@@ -597,7 +597,7 @@ export class SocketManagementService {
         return;
       }
 
-      const room = this.getExternalUserRoom(data.environment.id, data.externalUserId);
+      const room = this.buildExternalUserRoomId(data.environment.id, data.externalUserId);
 
       // Filter out already activated conditions and emit cancellation events
       const conditionsToCancel = waitTimerConditions.filter((condition) => !condition.activated);
