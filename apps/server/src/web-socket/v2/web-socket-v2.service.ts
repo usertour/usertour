@@ -59,7 +59,7 @@ export class WebSocketV2Service {
       attributes,
       clientData.environment.id,
     );
-    await this.socketManagementService.setClientData(client, { externalUserId });
+    await this.socketManagementService.updateClientData(client, { externalUserId });
     return true;
   }
 
@@ -83,7 +83,7 @@ export class WebSocketV2Service {
       membership,
     );
 
-    await this.socketManagementService.setClientData(client, { externalCompanyId });
+    await this.socketManagementService.updateClientData(client, { externalCompanyId });
     return true;
   }
 
@@ -104,7 +104,7 @@ export class WebSocketV2Service {
    * @param clientContext - The client context
    */
   async setUserClientContext(client: Socket, clientContext: ClientContext): Promise<boolean> {
-    return await this.socketManagementService.setClientData(client, { clientContext });
+    return await this.socketManagementService.updateClientData(client, { clientContext });
   }
 
   /**

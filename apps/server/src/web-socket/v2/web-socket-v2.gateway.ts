@@ -51,8 +51,8 @@ export class WebSocketV2Gateway {
       try {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
         const externalUserId = String(auth.externalUserId ?? '');
-        const token = String(auth.token ?? '');
         const clientContext = auth.clientContext as ClientContext;
+        const token = String(auth.token ?? '');
 
         if (!externalUserId || !token) {
           return next(new SDKAuthenticationError());
@@ -68,8 +68,6 @@ export class WebSocketV2Gateway {
           environment,
           externalUserId,
           clientContext,
-          trackConditions: [],
-          waitTimerConditions: [],
         });
 
         const room = this.socketManagementService.buildExternalUserRoomId(

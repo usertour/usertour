@@ -33,27 +33,53 @@ export class SocketManagementService {
   }
 
   /**
-   * Set client data to Redis
+   * Set complete client data to Redis (for initialization)
    * @param client - The socket client
-   * @param clientData - The client data to set
+   * @param clientData - The complete client data to set (without lastUpdated and socketId)
    * @returns Promise<boolean> - True if the data was set successfully
    */
-  async setClientData(client: Socket, clientData: Partial<SocketClientData>): Promise<boolean> {
+  async setClientData(
+    client: Socket,
+    clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
+  ): Promise<boolean> {
     try {
-      // Get existing data first
-      const existingData = await this.getClientData(client);
-
-      // Merge with new data
-      const mergedData: SocketClientData = {
-        ...existingData,
+      const data: SocketClientData = {
         ...clientData,
         lastUpdated: Date.now(),
         socketId: client.id,
       };
-
-      return await this.socketDataService.setClientData(client.id, mergedData);
+      return await this.socketDataService.setClientData(client.id, data);
     } catch (error) {
       this.logger.error(`Failed to set client data for socket ${client.id}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Update partial client data in Redis
+   * @param client - The socket client
+   * @param updates - The partial data to update
+   * @returns Promise<boolean> - True if the data was updated successfully
+   */
+  async updateClientData(client: Socket, updates: Partial<SocketClientData>): Promise<boolean> {
+    try {
+      const existingData = await this.getClientData(client);
+      if (!existingData) {
+        this.logger.error(
+          `Client data not found for socket ${client.id}. Use setClientData first.`,
+        );
+        return false;
+      }
+
+      const mergedData: SocketClientData = {
+        ...existingData,
+        ...updates,
+        lastUpdated: Date.now(),
+        socketId: client.id,
+      };
+      return await this.socketDataService.setClientData(client.id, mergedData);
+    } catch (error) {
+      this.logger.error(`Failed to update client data for socket ${client.id}:`, error);
       return false;
     }
   }
@@ -245,10 +271,10 @@ export class SocketManagementService {
       const contentType = session.content.type as ContentDataType;
 
       if (contentType === ContentDataType.FLOW) {
-        await this.setClientData(client, { flowSession: session });
+        await this.updateClientData(client, { flowSession: session });
         this.setFlowSession(client, session);
       } else if (contentType === ContentDataType.CHECKLIST) {
-        await this.setClientData(client, { checklistSession: session });
+        await this.updateClientData(client, { checklistSession: session });
         this.setChecklistSession(client, session);
       }
     } catch (error) {
@@ -304,7 +330,7 @@ export class SocketManagementService {
       const currentSessionId = config.currentSession?.id;
       if (currentSessionId === sessionId) {
         // Clear session data from client
-        await this.setClientData(client, { [config.clientDataKey]: undefined });
+        await this.updateClientData(client, { [config.clientDataKey]: undefined });
       }
     } catch (error) {
       this.logger.error(`Failed to unset content session for socket ${client.id}:`, error);
@@ -349,7 +375,7 @@ export class SocketManagementService {
       );
 
       // Update client data by merging with existing conditions
-      await this.setClientData(client, {
+      await this.updateClientData(client, {
         trackConditions: [...existingConditions, ...trackedConditions],
       });
     } catch (error) {
@@ -395,7 +421,7 @@ export class SocketManagementService {
       );
 
       // Update client data
-      await this.setClientData(client, { trackConditions: updatedConditions });
+      await this.updateClientData(client, { trackConditions: updatedConditions });
       return true;
     } catch (error) {
       this.logger.error(`Failed to toggle client condition for socket ${client.id}:`, error);
@@ -436,7 +462,7 @@ export class SocketManagementService {
       );
 
       // Update client data
-      await this.setClientData(client, {
+      await this.updateClientData(client, {
         trackConditions: trackConditions.filter(
           (condition) =>
             !untrackedConditions.some(
@@ -490,7 +516,7 @@ export class SocketManagementService {
       );
 
       // Update client data by merging with existing conditions
-      await this.setClientData(client, {
+      await this.updateClientData(client, {
         waitTimerConditions: [...existingConditions, ...startedConditions],
       });
     } catch (error) {
@@ -529,7 +555,7 @@ export class SocketManagementService {
       );
 
       // Update client data
-      await this.setClientData(client, { waitTimerConditions: updatedConditions });
+      await this.updateClientData(client, { waitTimerConditions: updatedConditions });
       return true;
     } catch (error) {
       this.logger.error(
@@ -567,7 +593,7 @@ export class SocketManagementService {
       }
 
       // Clear all wait timer conditions from client data
-      await this.setClientData(client, { waitTimerConditions: [] });
+      await this.updateClientData(client, { waitTimerConditions: [] });
     } catch (error) {
       this.logger.error(`Failed to cancel wait timer conditions for socket ${client.id}:`, error);
     }

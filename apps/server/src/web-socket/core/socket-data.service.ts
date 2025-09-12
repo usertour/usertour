@@ -10,7 +10,7 @@ import { ClientContext } from '@usertour/types';
 export interface SocketClientData {
   environment: Environment;
   externalUserId: string;
-  externalCompanyId: string;
+  externalCompanyId?: string;
   clientContext: ClientContext;
   trackConditions?: TrackCondition[];
   waitTimerConditions?: WaitTimerCondition[];
