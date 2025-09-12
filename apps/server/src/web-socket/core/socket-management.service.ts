@@ -61,13 +61,11 @@ export class SocketManagementService {
    * @param updates - The partial data to update
    * @returns Promise<boolean> - True if the data was updated successfully
    */
-  async updateClientData(client: Socket, updates: Partial<SocketClientData>): Promise<boolean> {
+  async updateClientData(socketId: string, updates: Partial<SocketClientData>): Promise<boolean> {
     try {
-      const existingData = await this.getClientData(client.id);
+      const existingData = await this.getClientData(socketId);
       if (!existingData) {
-        this.logger.error(
-          `Client data not found for socket ${client.id}. Use setClientData first.`,
-        );
+        this.logger.error(`Client data not found for socket ${socketId}. Use setClientData first.`);
         return false;
       }
 
@@ -75,11 +73,11 @@ export class SocketManagementService {
         ...existingData,
         ...updates,
         lastUpdated: Date.now(),
-        socketId: client.id,
+        socketId,
       };
-      return await this.socketDataService.setClientData(client.id, mergedData);
+      return await this.socketDataService.setClientData(socketId, mergedData);
     } catch (error) {
-      this.logger.error(`Failed to update client data for socket ${client.id}:`, error);
+      this.logger.error(`Failed to update client data for socket ${socketId}:`, error);
       return false;
     }
   }
@@ -89,11 +87,11 @@ export class SocketManagementService {
    * @param client - The socket client
    * @returns Promise<boolean> - True if the data was removed successfully
    */
-  async removeClientData(client: Socket): Promise<boolean> {
+  async removeClientData(socketId: string): Promise<boolean> {
     try {
-      return await this.socketDataService.removeClientData(client.id);
+      return await this.socketDataService.removeClientData(socketId);
     } catch (error) {
-      this.logger.error(`Failed to remove client data for socket ${client.id}:`, error);
+      this.logger.error(`Failed to remove client data for socket ${socketId}:`, error);
       return false;
     }
   }
@@ -262,10 +260,11 @@ export class SocketManagementService {
    * @returns Promise<void>
    */
   async setContentSession(client: Socket, session: SDKContentSession): Promise<void> {
+    const socketId = client.id;
     try {
-      const data = await this.getClientData(client.id);
+      const data = await this.getClientData(socketId);
       if (!data?.environment || !data?.externalUserId) {
-        this.logger.warn(`Missing environment or user ID for socket ${client.id}`);
+        this.logger.warn(`Missing environment or user ID for socket ${socketId}`);
         return;
       }
 
@@ -273,18 +272,18 @@ export class SocketManagementService {
 
       switch (contentType) {
         case ContentDataType.FLOW:
-          await this.updateClientData(client, { flowSession: session });
+          await this.updateClientData(socketId, { flowSession: session });
           this.setFlowSession(client, session);
           break;
         case ContentDataType.CHECKLIST:
-          await this.updateClientData(client, { checklistSession: session });
+          await this.updateClientData(socketId, { checklistSession: session });
           this.setChecklistSession(client, session);
           break;
         default:
           this.logger.warn(`Unsupported content type: ${contentType}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to set content session for socket ${client.id}:`, error);
+      this.logger.error(`Failed to set content session for socket ${socketId}:`, error);
     }
   }
 
@@ -336,7 +335,7 @@ export class SocketManagementService {
       const currentSessionId = config.currentSession?.id;
       if (currentSessionId === sessionId) {
         // Clear session data from client
-        await this.updateClientData(client, { [config.clientDataKey]: undefined });
+        await this.updateClientData(client.id, { [config.clientDataKey]: undefined });
       }
     } catch (error) {
       this.logger.error(`Failed to unset content session for socket ${client.id}:`, error);
@@ -381,7 +380,7 @@ export class SocketManagementService {
       );
 
       // Update client data by merging with existing conditions
-      await this.updateClientData(client, {
+      await this.updateClientData(client.id, {
         trackConditions: [...existingConditions, ...trackedConditions],
       });
     } catch (error) {
@@ -427,7 +426,7 @@ export class SocketManagementService {
       );
 
       // Update client data
-      await this.updateClientData(client, { trackConditions: updatedConditions });
+      await this.updateClientData(client.id, { trackConditions: updatedConditions });
       return true;
     } catch (error) {
       this.logger.error(`Failed to toggle client condition for socket ${client.id}:`, error);
@@ -468,7 +467,7 @@ export class SocketManagementService {
       );
 
       // Update client data
-      await this.updateClientData(client, {
+      await this.updateClientData(client.id, {
         trackConditions: trackConditions.filter(
           (condition) =>
             !untrackedConditions.some(
@@ -522,7 +521,7 @@ export class SocketManagementService {
       );
 
       // Update client data by merging with existing conditions
-      await this.updateClientData(client, {
+      await this.updateClientData(client.id, {
         waitTimerConditions: [...existingConditions, ...startedConditions],
       });
     } catch (error) {
@@ -561,7 +560,7 @@ export class SocketManagementService {
       );
 
       // Update client data
-      await this.updateClientData(client, { waitTimerConditions: updatedConditions });
+      await this.updateClientData(client.id, { waitTimerConditions: updatedConditions });
       return true;
     } catch (error) {
       this.logger.error(
@@ -599,7 +598,7 @@ export class SocketManagementService {
       }
 
       // Clear all wait timer conditions from client data
-      await this.updateClientData(client, { waitTimerConditions: [] });
+      await this.updateClientData(client.id, { waitTimerConditions: [] });
     } catch (error) {
       this.logger.error(`Failed to cancel wait timer conditions for socket ${client.id}:`, error);
     }
