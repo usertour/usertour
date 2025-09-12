@@ -49,9 +49,6 @@ export class SocketManagementService {
         ...clientData,
         lastUpdated: Date.now(),
         socketId: client.id,
-        trackConditions: clientData.trackConditions ?? existingData?.trackConditions ?? [],
-        waitTimerConditions:
-          clientData.waitTimerConditions ?? existingData?.waitTimerConditions ?? [],
       };
 
       return await this.socketDataService.setClientData(client.id, mergedData);

@@ -11,9 +11,9 @@ export interface SocketClientData {
   environment: Environment;
   externalUserId: string;
   externalCompanyId: string;
-  clientContext?: ClientContext;
-  trackConditions: TrackCondition[];
-  waitTimerConditions: WaitTimerCondition[];
+  clientContext: ClientContext;
+  trackConditions?: TrackCondition[];
+  waitTimerConditions?: WaitTimerCondition[];
   flowSession?: SDKContentSession;
   checklistSession?: SDKContentSession;
   lastUpdated: number;
