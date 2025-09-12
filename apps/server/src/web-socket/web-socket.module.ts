@@ -13,6 +13,8 @@ import { ContentManagementService } from './core/content-management.service';
 import { ContentSessionService } from './core/content-session.service';
 import { UserClientContextService } from './core/user-client-context.service';
 import { ContentStartService } from './core/content-start.service';
+import { SocketManagementService } from './core/socket-management.service';
+import { SocketDataService } from './core/socket-data.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -27,6 +29,8 @@ import { ContentStartService } from './core/content-start.service';
     ContentSessionService,
     UserClientContextService,
     ContentStartService,
+    SocketManagementService,
+    SocketDataService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })
