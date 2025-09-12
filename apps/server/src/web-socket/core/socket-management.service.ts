@@ -45,17 +45,13 @@ export class SocketManagementService {
 
       // Merge with new data
       const mergedData: SocketClientData = {
-        environment: clientData.environment ?? existingData?.environment,
-        externalUserId: clientData.externalUserId ?? existingData?.externalUserId,
-        externalCompanyId: clientData.externalCompanyId ?? existingData?.externalCompanyId,
-        clientContext: clientData.clientContext ?? existingData?.clientContext,
+        ...existingData,
+        ...clientData,
+        lastUpdated: Date.now(),
+        socketId: client.id,
         trackConditions: clientData.trackConditions ?? existingData?.trackConditions ?? [],
         waitTimerConditions:
           clientData.waitTimerConditions ?? existingData?.waitTimerConditions ?? [],
-        flowSession: clientData.flowSession ?? existingData?.flowSession,
-        checklistSession: clientData.checklistSession ?? existingData?.checklistSession,
-        lastUpdated: Date.now(),
-        socketId: client.id,
       };
 
       return await this.socketDataService.setClientData(client.id, mergedData);
