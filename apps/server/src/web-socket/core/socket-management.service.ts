@@ -49,22 +49,15 @@ export class SocketManagementService {
    * Update partial client data in Redis
    * @param socketId - The socket ID
    * @param updates - The partial data to update
+   * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the data was updated successfully
    */
-  async updateClientData(socketId: string, updates: Partial<SocketClientData>): Promise<boolean> {
-    const existingData = await this.getClientData(socketId);
-    if (!existingData) {
-      this.logger.error(`Client data not found for socket ${socketId}. Use setClientData first.`);
-      return false;
-    }
-
-    const mergedData: SocketClientData = {
-      ...existingData,
-      ...updates,
-      lastUpdated: Date.now(),
-      socketId,
-    };
-    return await this.socketDataService.setClientData(socketId, mergedData);
+  async updateClientData(
+    socketId: string,
+    updates: Partial<SocketClientData>,
+    ttlSeconds?: number,
+  ): Promise<boolean> {
+    return await this.socketDataService.updateClientData(socketId, updates, ttlSeconds);
   }
 
   /**
