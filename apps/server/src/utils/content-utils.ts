@@ -372,10 +372,14 @@ export const filterAvailableAutoStartContentVersions = (
 
       // Check wait timer conditions
       const waitTime = customContentVersion.config.autoStartRulesSetting.wait;
-      if (waitTime && firedWaitTimerVersionIds) {
-        if (!firedWaitTimerVersionIds.includes(customContentVersion.id)) {
-          return false;
+      if (waitTime) {
+        // Only allow content with wait timer if it has been fired
+        if (firedWaitTimerVersionIds?.includes(customContentVersion.id)) {
+          // Wait timer has been fired, allow this content
+          return true;
         }
+        // Wait timer not fired yet, skip this content
+        return false;
       }
 
       return true;
