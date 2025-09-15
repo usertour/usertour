@@ -183,41 +183,6 @@ export class SessionManagerService {
   }
 
   /**
-   * Check if content session needs refresh by comparing with current data
-   * @param socketClientData - The socket client data
-   * @param contentType - The content type
-   * @returns Promise<boolean> - True if the session needs refresh
-   */
-  async needsRefresh(
-    socketClientData: SocketClientData,
-    contentType: ContentDataType,
-  ): Promise<boolean> {
-    try {
-      const currentSession = await this.getContentSessionByType(socketClientData, contentType);
-      if (!currentSession) {
-        return false;
-      }
-
-      const { environment, externalUserId, externalCompanyId } = socketClientData;
-      const refreshedSession = await this.sessionDataService.refreshContentSession(
-        currentSession,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      if (!refreshedSession) {
-        return false;
-      }
-
-      return this.sessionDataService.compareContentSessions(currentSession, refreshedSession);
-    } catch (error) {
-      this.logger.error('Failed to check if session needs refresh:', error);
-      return false;
-    }
-  }
-
-  /**
    * Get session configuration for content type
    * @private
    */
