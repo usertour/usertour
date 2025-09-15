@@ -448,37 +448,6 @@ export const findCustomContentVersionByContentId = (
 };
 
 /**
- * Finds the activated custom content version
- * @param customContentVersions - The custom content versions
- * @param contentType - The content type
- * @param contentId - The content ID
- * @returns The activated custom content version
- */
-export const findActivatedCustomContentVersion = (
-  customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
-  contentId?: string,
-): CustomContentVersion | undefined => {
-  if (contentId) {
-    const contentVersion = findCustomContentVersionByContentId(customContentVersions, contentId);
-    if (contentVersion) {
-      return contentVersion;
-    }
-  }
-
-  // if the latest activated content version is found, return it
-  const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
-    customContentVersions,
-    contentType,
-  );
-  if (latestActivatedContentVersion) {
-    return latestActivatedContentVersion;
-  }
-  // if the latest activated content version is not found, return the first available auto-start content version
-  return filterAvailableAutoStartContentVersions(customContentVersions, contentType)?.[0];
-};
-
-/**
  * Filters activated custom content versions that do not have client-side conditions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -504,7 +473,7 @@ export const filterActivatedContentWithoutClientConditions = (
     }
 
     // Check if auto-start rules are enabled
-    if (!customContentVersion.config.enabledAutoStartRules) {
+    if (!isEnabledAutoStartRules(customContentVersion)) {
       return false;
     }
 
