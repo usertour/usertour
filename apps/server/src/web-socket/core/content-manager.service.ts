@@ -375,7 +375,7 @@ export class ContentManagerService {
 
     const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
-      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
+      contentType,
       true,
       firedWaitTimerVersionIds,
     );
@@ -409,6 +409,25 @@ export class ContentManagerService {
   ): Promise<ContentStartResult> {
     const { contentType } = context;
 
+    const autoStartContentVersionsWithoutWaitTimer = filterAvailableAutoStartContentVersions(
+      evaluatedContentVersions,
+      contentType,
+      false,
+    );
+
+    const waitTimerConditions = extractClientWaitTimerConditions(
+      autoStartContentVersionsWithoutWaitTimer,
+    );
+
+    if (waitTimerConditions.length > 0) {
+      return {
+        success: true,
+        trackConditions: [],
+        waitTimerConditions,
+        reason: 'Setup wait timer conditions for future activation',
+      };
+    }
+
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
 
@@ -417,15 +436,13 @@ export class ContentManagerService {
       ConditionExtractionMode.BOTH,
     );
 
-    const waitTimerConditions = extractClientWaitTimerConditions(trackCustomContentVersions);
-
-    if (trackConditions.length > 0 || waitTimerConditions.length > 0) {
+    if (trackConditions.length > 0) {
       // This would need to be implemented in the calling service
       // as it involves WebSocket-specific operations
       return {
         success: true,
         trackConditions,
-        waitTimerConditions,
+        waitTimerConditions: [],
         reason: 'Setup tracking conditions for future activation',
       };
     }

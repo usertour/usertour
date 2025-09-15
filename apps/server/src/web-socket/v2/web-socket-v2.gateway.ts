@@ -119,7 +119,7 @@ export class WebSocketV2Gateway {
     return await this.service.upsertBizCompanies(socket, socketClientData, upsertCompanyDto);
   }
 
-  @SubscribeMessage('update-socket-context')
+  @SubscribeMessage('update-client-context')
   async updateClientContext(
     @ConnectedSocket() socket: Socket,
     @MessageBody() context: ClientContext,
@@ -135,7 +135,7 @@ export class WebSocketV2Gateway {
     return await this.service.trackEvent(socketClientData, trackEventDto);
   }
 
-  @SubscribeMessage('toggle-socket-condition')
+  @SubscribeMessage('toggle-client-condition')
   async toggleClientCondition(
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,

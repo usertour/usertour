@@ -378,7 +378,7 @@ export const isAllowedByWaitTimerConditions = (
  */
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  contentType: ContentDataType,
   includeWaitTimer: boolean,
   firedWaitTimerVersionIds?: string[],
 ) => {
