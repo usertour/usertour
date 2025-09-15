@@ -11,7 +11,6 @@ import {
   HideChecklistDto,
   ShowChecklistDto,
   TooltipTargetMissingDto,
-  ToggleClientConditionDto,
   FireConditionWaitTimerDto,
 } from '@/types/websocket';
 import { Socket, Evented, window } from '@/utils';
@@ -20,6 +19,7 @@ import {
   TrackCondition,
   UnTrackedCondition,
   WaitTimerCondition,
+  ClientCondition,
 } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents } from '@/types';
@@ -254,10 +254,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     return await this.socket.send(WebSocketEvents.REPORT_TOOLTIP_TARGET_MISSING, params, options);
   }
 
-  async toggleClientCondition(
-    params: ToggleClientConditionDto,
-    options?: BatchOptions,
-  ): Promise<boolean> {
+  async toggleClientCondition(params: ClientCondition, options?: BatchOptions): Promise<boolean> {
     if (!this.socket) return false;
     return await this.socket.send(WebSocketEvents.TOGGLE_CLIENT_CONDITION, params, options);
   }

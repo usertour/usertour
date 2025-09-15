@@ -18,6 +18,7 @@ import {
   TrackCondition,
   SDKContentSession,
   WaitTimerCondition,
+  ClientCondition,
 } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
 import { ContentDataService } from './content-data.service';
@@ -650,17 +651,17 @@ export class ContentManagerService {
     contentType: ContentDataType,
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
-    const { environment, trackConditions, externalUserId, externalCompanyId, clientContext } =
+    const { environment, clientConditions, externalUserId, externalCompanyId, clientContext } =
       socketClientData;
 
     // Extract activated and deactivated condition IDs
-    const activatedIds = trackConditions
-      ?.filter((trackCondition: TrackCondition) => trackCondition.condition.actived)
-      .map((trackCondition: TrackCondition) => trackCondition.condition.id);
+    const activatedIds = clientConditions
+      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive)
+      .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
-    const deactivatedIds = trackConditions
-      ?.filter((trackCondition: TrackCondition) => !trackCondition.condition.actived)
-      .map((trackCondition: TrackCondition) => trackCondition.condition.id);
+    const deactivatedIds = clientConditions
+      ?.filter((clientCondition: ClientCondition) => !clientCondition.isActive)
+      .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
     const contentVersions = await this.contentDataService.fetchCustomContentVersions(
       environment,

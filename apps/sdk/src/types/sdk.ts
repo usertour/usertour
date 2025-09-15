@@ -4,6 +4,7 @@ import {
   ChecklistData,
   Content,
   ContentDataType,
+  contentStartReason,
   RulesCondition,
   Step,
   Theme,
@@ -60,10 +61,16 @@ export type WaitTimerCondition = {
 };
 
 export type StartContentOptions = {
+  startReason: contentStartReason;
   contentId?: string;
   stepCvid?: string;
 };
 
 export type UnTrackedCondition = {
   conditionId: string;
+};
+
+export type ClientCondition = {
+  conditionId: string;
+  isActive: boolean;
 };

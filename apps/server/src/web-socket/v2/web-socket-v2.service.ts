@@ -11,7 +11,6 @@ import {
   HideChecklistDto,
   ShowChecklistDto,
   TooltipTargetMissingDto,
-  ToggleClientConditionDto,
   TrackEventDto,
   StartContentDto,
   EndContentDto,
@@ -34,6 +33,7 @@ import { ConditionTimerService } from '@/web-socket/core/condition-timer.service
 import { SocketClientData, SocketDataService } from '@/web-socket/core/socket-data.service';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentManagerService } from '@/web-socket/core/content-manager.service';
+import { ClientCondition } from '@/common/types/sdk';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -567,15 +567,16 @@ export class WebSocketV2Service {
   /**
    * Toggle the isActive status of a specific socket condition by condition ID
    * @param socket - The socket instance
-   * @param toggleClientConditionDto - The DTO containing condition ID and active status
+   * @param socketClientData - The socket client data
+   * @param clientCondition - The client condition
    * @returns True if the condition was toggled successfully
    */
   async toggleClientCondition(
     socket: Socket,
     socketClientData: SocketClientData,
-    toggleClientConditionDto: ToggleClientConditionDto,
+    clientCondition: ClientCondition,
   ): Promise<boolean> {
-    const { conditionId, isActive } = toggleClientConditionDto;
+    const { conditionId, isActive } = clientCondition;
 
     return await this.conditionTrackingService.toggleClientCondition(
       socket,

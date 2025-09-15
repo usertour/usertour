@@ -36,25 +36,30 @@ export class ConditionTrackingService {
 
       if (!socketClientData) return;
 
-      const existingConditions = socketClientData.trackConditions ?? [];
+      const existingClientConditions = socketClientData.clientConditions ?? [];
 
       // Filter out conditions that already exist
       const newConditions = trackConditions.filter(
         (condition) =>
-          !existingConditions?.some((existing) => existing.condition.id === condition.condition.id),
+          !existingClientConditions?.some(
+            (existing) => existing.conditionId === condition.condition.id,
+          ),
       );
 
       // Early return if no new conditions to track
       if (!newConditions.length) return;
 
       // Emit track events and collect successfully tracked conditions
-      const trackedConditions = newConditions.filter((condition) =>
-        this.socketEmitterService.trackClientEvent(socket, condition),
-      );
+      const trackedClientConditions = newConditions
+        .filter((condition) => this.socketEmitterService.trackClientEvent(socket, condition))
+        .map((condition) => ({
+          conditionId: condition.condition.id,
+          isActive: false,
+        }));
 
       // Update socket data by merging with existing conditions
       await this.socketDataService.updateClientData(socket.id, {
-        trackConditions: [...existingConditions, ...trackedConditions],
+        clientConditions: [...existingClientConditions, ...trackedClientConditions],
       });
     } catch (error) {
       this.logger.error(`Failed to track socket conditions for socket ${socket.id}:`, error);
@@ -76,32 +81,29 @@ export class ConditionTrackingService {
     isActive: boolean,
   ): Promise<boolean> {
     try {
-      const trackConditions = socketClientData.trackConditions ?? [];
+      const clientConditions = socketClientData.clientConditions ?? [];
 
       // Early return if no conditions exist
-      if (!trackConditions?.length) return false;
+      if (!clientConditions?.length) return false;
 
       // Check if condition exists first
-      if (!trackConditions.some((c) => c.condition.id === conditionId)) {
+      if (!clientConditions.some((c) => c.conditionId === conditionId)) {
         return false;
       }
 
       // Update the condition
-      const updatedConditions = trackConditions.map((trackCondition) =>
-        trackCondition.condition.id === conditionId
+      const updatedConditions = clientConditions.map((clientCondition) =>
+        clientCondition.conditionId === conditionId
           ? {
-              ...trackCondition,
-              condition: {
-                ...trackCondition.condition,
-                actived: isActive,
-              },
+              ...clientCondition,
+              isActive,
             }
-          : trackCondition,
+          : clientCondition,
       );
 
       // Update socket data
       await this.socketDataService.updateClientData(socket.id, {
-        trackConditions: updatedConditions,
+        clientConditions: updatedConditions,
       });
       return true;
     } catch (error) {
@@ -125,30 +127,30 @@ export class ConditionTrackingService {
     try {
       if (!socketClientData) return;
 
-      const trackConditions = socketClientData.trackConditions ?? [];
+      const clientConditions = socketClientData.clientConditions ?? [];
 
       // Early return if no existing conditions to remove
-      if (!trackConditions?.length) return;
+      if (!clientConditions?.length) return;
 
       // Determine which conditions to untrack
       const conditionsToUntrack = excludeConditionIds?.length
-        ? trackConditions.filter((c) => !excludeConditionIds.includes(c.condition.id))
-        : trackConditions;
+        ? clientConditions.filter((c) => !excludeConditionIds.includes(c.conditionId))
+        : clientConditions;
 
       // Early return if no conditions to untrack
       if (!conditionsToUntrack.length) return;
 
       // Emit untrack events and collect successfully untracked conditions
       const untrackedConditions = conditionsToUntrack.filter((condition) =>
-        this.socketEmitterService.untrackClientEvent(socket, condition.condition.id),
+        this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
       );
 
       // Update socket data
       await this.socketDataService.updateClientData(socket.id, {
-        trackConditions: trackConditions.filter(
+        clientConditions: clientConditions.filter(
           (condition) =>
             !untrackedConditions.some(
-              (untracked) => untracked.condition.id === condition.condition.id,
+              (untracked) => untracked.conditionId === condition.conditionId,
             ),
         ),
       });

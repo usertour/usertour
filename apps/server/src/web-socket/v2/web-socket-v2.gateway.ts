@@ -22,7 +22,6 @@ import {
   HideChecklistDto,
   ShowChecklistDto,
   TooltipTargetMissingDto,
-  ToggleClientConditionDto,
   StartContentDto,
   EndContentDto,
   FireConditionWaitTimerDto,
@@ -31,6 +30,7 @@ import { SocketClientData, SocketDataService } from '@/web-socket/core/socket-da
 import { ClientContext } from '@usertour/types';
 import { buildExternalUserRoomId } from '../../utils/websocket-utils';
 import { WebSocketClientData } from '../web-socket.decorator';
+import { ClientCondition } from '@/common/types/sdk';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -55,6 +55,7 @@ export class WebSocketV2Gateway {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
         const externalUserId = String(auth.externalUserId ?? '');
         const clientContext = auth.clientContext as ClientContext;
+        const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
         const token = String(auth.token ?? '');
 
         if (!externalUserId || !token) {
@@ -71,7 +72,7 @@ export class WebSocketV2Gateway {
           environment,
           externalUserId,
           clientContext,
-          trackConditions: [],
+          clientConditions,
           waitTimerConditions: [],
         });
 
@@ -139,13 +140,9 @@ export class WebSocketV2Gateway {
   async toggleClientCondition(
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
+    @MessageBody() clientCondition: ClientCondition,
   ): Promise<boolean> {
-    return await this.service.toggleClientCondition(
-      socket,
-      socketClientData,
-      toggleClientConditionDto,
-    );
+    return await this.service.toggleClientCondition(socket, socketClientData, clientCondition);
   }
 
   @SubscribeMessage('fire-condition-wait-timer')

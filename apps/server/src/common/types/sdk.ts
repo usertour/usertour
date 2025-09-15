@@ -69,3 +69,8 @@ export type StartContentOptions = {
 export type UnTrackedCondition = {
   conditionId: string;
 };
+
+export type ClientCondition = {
+  conditionId: string;
+  isActive: boolean;
+};
