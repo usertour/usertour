@@ -58,14 +58,14 @@ export class WebSocketV2Service {
     const { externalUserId, attributes } = data;
     if (!socketClientData?.environment) return false;
 
-    await this.bizService.upsertBizUsers(
+    const bizUser = await this.bizService.upsertBizUsers(
       this.prisma,
       externalUserId,
       attributes,
       socketClientData.environment.id,
     );
-    await this.socketDataService.updateClientData(socket.id, { externalUserId });
-    return true;
+    if (!bizUser) return false;
+    return await this.socketDataService.updateClientData(socket.id, { externalUserId });
   }
 
   /**
@@ -82,7 +82,7 @@ export class WebSocketV2Service {
     const { externalCompanyId, externalUserId, attributes, membership } = data;
     if (!socketClientData?.environment) return false;
 
-    await this.bizService.upsertBizCompanies(
+    const bizCompany = await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
       externalUserId,
@@ -91,8 +91,8 @@ export class WebSocketV2Service {
       membership,
     );
 
-    await this.socketDataService.updateClientData(socket.id, { externalCompanyId });
-    return true;
+    if (!bizCompany) return false;
+    return await this.socketDataService.updateClientData(socket.id, { externalCompanyId });
   }
 
   /**
