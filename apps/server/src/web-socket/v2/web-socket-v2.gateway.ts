@@ -28,6 +28,7 @@ import {
 } from './web-socket-v2.dto';
 import { SocketManagementService } from '@/web-socket/core/socket-management.service';
 import { ClientContext } from '@usertour/types';
+import { buildExternalUserRoomId } from '../../utils/websocket-utils';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -72,10 +73,7 @@ export class WebSocketV2Gateway {
           waitTimerConditions: [],
         });
 
-        const room = this.socketManagementService.buildExternalUserRoomId(
-          environment.id,
-          externalUserId,
-        );
+        const room = buildExternalUserRoomId(environment.id, externalUserId);
         // Join user room for targeted messaging
         await socket.join(room);
 

@@ -26,6 +26,7 @@ import { ContentSessionService } from './content-session.service';
 import { TrackEventService } from './track-event.service';
 import { SocketManagementService } from './socket-management.service';
 import { SocketClientData } from './socket-data.service';
+import { SocketEmitterService } from './socket-emitter.service';
 
 interface ContentStartContext {
   server: Server;
@@ -56,6 +57,7 @@ export class ContentStartService {
     private readonly contentSessionService: ContentSessionService,
     private readonly trackEventService: TrackEventService,
     private readonly socketManagementService: SocketManagementService,
+    private readonly socketEmitterService: SocketEmitterService,
   ) {}
 
   /**
@@ -106,11 +108,7 @@ export class ContentStartService {
         }
         this.socketManagementService.setContentSession(client, session);
         if (forceGoToStep) {
-          this.socketManagementService.forceGoToStep(
-            client,
-            session.id,
-            session.currentStep?.cvid!,
-          );
+          this.socketEmitterService.forceGoToStep(client, session.id, session.currentStep?.cvid!);
         }
         this.socketManagementService.cancelCurrentWaitTimerConditions(client);
       }

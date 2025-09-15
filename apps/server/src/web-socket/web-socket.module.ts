@@ -15,6 +15,7 @@ import { ContentSessionService } from './core/content-session.service';
 import { ContentStartService } from './core/content-start.service';
 import { SocketManagementService } from './core/socket-management.service';
 import { SocketDataService } from './core/socket-data.service';
+import { SocketEmitterService } from './core/socket-emitter.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -31,6 +32,7 @@ import { SocketDataService } from './core/socket-data.service';
     ContentStartService,
     SocketManagementService,
     SocketDataService,
+    SocketEmitterService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

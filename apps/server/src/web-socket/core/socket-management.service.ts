@@ -3,16 +3,21 @@ import { Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
 import { SDKContentSession, TrackCondition, WaitTimerCondition } from '@/common/types/sdk';
 import { SocketDataService, SocketClientData } from './socket-data.service';
+import { SocketEmitterService } from './socket-emitter.service';
 
 /**
  * Socket management service
- * Handles all socket-related business logic, data operations, and WebSocket events
+ * Handles socket data management and business logic
+ * WebSocket event emissions are handled by SocketEmitterService
  */
 @Injectable()
 export class SocketManagementService {
   private readonly logger = new Logger(SocketManagementService.name);
 
-  constructor(private readonly socketDataService: SocketDataService) {}
+  constructor(
+    private readonly socketDataService: SocketDataService,
+    private readonly socketEmitterService: SocketEmitterService,
+  ) {}
 
   // ============================================================================
   // Client Data Management
@@ -53,120 +58,6 @@ export class SocketManagementService {
     ttlSeconds?: number,
   ): Promise<boolean> {
     return await this.socketDataService.updateClientData(socketId, updates, ttlSeconds);
-  }
-
-  /**
-   * Remove client data from Redis
-   * @param socketId - The socket ID
-   * @returns Promise<boolean> - True if the data was removed successfully
-   */
-  async removeClientData(socketId: string): Promise<boolean> {
-    return await this.socketDataService.removeClientData(socketId);
-  }
-
-  // ============================================================================
-  // Room Management
-  // ============================================================================
-
-  /**
-   * Build the external user room ID
-   * @param environmentId - The environment id
-   * @param externalUserId - The external user id
-   * @returns The external user room ID
-   */
-  buildExternalUserRoomId(environmentId: string, externalUserId: string): string {
-    return `user:${environmentId}:${externalUserId}`;
-  }
-
-  // ============================================================================
-  // WebSocket Event Helpers
-  // ============================================================================
-
-  /**
-   * Track a client event
-   * @param socket - The socket
-   * @param condition - The condition to emit
-   */
-  private trackClientEvent(socket: Socket, condition: TrackCondition) {
-    return socket.emit('track-client-condition', condition);
-  }
-
-  /**
-   * Un-track a client event
-   * @param socket - The socket
-   * @param conditionId - The condition id to un-track
-   */
-  private untrackClientEvent(socket: Socket, conditionId: string) {
-    return socket.emit('untrack-client-condition', {
-      conditionId,
-    });
-  }
-
-  /**
-   * Set the flow session
-   * @param socket - The socket
-   * @param session - The session to set
-   */
-  private setFlowSession(socket: Socket, session: SDKContentSession) {
-    return socket.emit('set-flow-session', session);
-  }
-
-  /**
-   * Set the checklist session
-   * @param socket - The socket
-   * @param session - The session to set
-   */
-  private setChecklistSession(socket: Socket, session: SDKContentSession) {
-    return socket.emit('set-checklist-session', session);
-  }
-
-  /**
-   * Unset the flow session
-   * @param socket - The socket
-   * @param sessionId - The session id to unset
-   */
-  unsetFlowSession(socket: Socket, sessionId: string) {
-    return socket.emit('unset-flow-session', { sessionId });
-  }
-
-  /**
-   * Unset the checklist session
-   * @param socket - The socket
-   * @param sessionId - The session id to unset
-   */
-  unsetChecklistSession(socket: Socket, sessionId: string) {
-    return socket.emit('unset-checklist-session', { sessionId });
-  }
-
-  /**
-   * Force go to step
-   * @param socket - The socket
-   * @param sessionId - The session id to force go to step
-   * @param stepId - The step id to force go to step
-   */
-  forceGoToStep(socket: Socket, sessionId: string, stepId: string) {
-    return socket.emit('force-go-to-step', {
-      sessionId,
-      stepId,
-    });
-  }
-
-  /**
-   * Start condition wait timer
-   * @param socket - The socket
-   * @param waitTimerCondition - The wait timer condition to start
-   */
-  startConditionWaitTimer(socket: Socket, waitTimerCondition: WaitTimerCondition) {
-    return socket.emit('start-condition-wait-timer', waitTimerCondition);
-  }
-
-  /**
-   * Cancel condition wait timer
-   * @param socket - The socket
-   * @param waitTimerCondition - The wait timer condition to cancel
-   */
-  cancelConditionWaitTimer(socket: Socket, waitTimerCondition: WaitTimerCondition) {
-    return socket.emit('cancel-condition-wait-timer', waitTimerCondition);
   }
 
   // ============================================================================
@@ -229,9 +120,9 @@ export class SocketManagementService {
 
       switch (contentType) {
         case ContentDataType.FLOW:
-          return this.setFlowSession(socket, session);
+          return this.socketEmitterService.setFlowSession(socket, session);
         case ContentDataType.CHECKLIST:
-          return this.setChecklistSession(socket, session);
+          return this.socketEmitterService.setChecklistSession(socket, session);
         default:
           this.logger.warn(`Unsupported content type: ${contentType}`);
           return false;
@@ -266,12 +157,12 @@ export class SocketManagementService {
       const sessionConfig = {
         [ContentDataType.FLOW]: {
           currentSession: data.flowSession,
-          unsetEvent: () => this.unsetFlowSession(socket, sessionId),
+          unsetEvent: () => this.socketEmitterService.unsetFlowSession(socket, sessionId),
           clientDataKey: 'flowSession' as const,
         },
         [ContentDataType.CHECKLIST]: {
           currentSession: data.checklistSession,
-          unsetEvent: () => this.unsetChecklistSession(socket, sessionId),
+          unsetEvent: () => this.socketEmitterService.unsetChecklistSession(socket, sessionId),
           clientDataKey: 'checklistSession' as const,
         },
       };
@@ -331,7 +222,7 @@ export class SocketManagementService {
 
       // Emit track events and collect successfully tracked conditions
       const trackedConditions = newConditions.filter((condition) =>
-        this.trackClientEvent(socket, condition),
+        this.socketEmitterService.trackClientEvent(socket, condition),
       );
 
       // Update client data by merging with existing conditions
@@ -418,7 +309,7 @@ export class SocketManagementService {
 
       // Emit untrack events and collect successfully untracked conditions
       const untrackedConditions = conditionsToUntrack.filter((condition) =>
-        this.untrackClientEvent(socket, condition.condition.id),
+        this.socketEmitterService.untrackClientEvent(socket, condition.condition.id),
       );
 
       // Update client data
@@ -472,7 +363,7 @@ export class SocketManagementService {
 
       // Emit start events and collect successfully started conditions
       const startedConditions = newConditions.filter((condition) =>
-        this.startConditionWaitTimer(socket, condition),
+        this.socketEmitterService.startConditionWaitTimer(socket, condition),
       );
 
       // Update client data by merging with existing conditions
@@ -549,7 +440,7 @@ export class SocketManagementService {
 
       // Emit cancellation events for non-activated conditions
       for (const condition of conditionsToCancel) {
-        this.cancelConditionWaitTimer(socket, condition);
+        this.socketEmitterService.cancelConditionWaitTimer(socket, condition);
       }
 
       // Clear all wait timer conditions from client data
