@@ -102,16 +102,6 @@ export class WebSocketV2Service {
    * @returns True if the socket context was updated successfully
    */
   async updateClientContext(socket: Socket, clientContext: ClientContext): Promise<boolean> {
-    await this.setUserClientContext(socket, clientContext);
-    return true;
-  }
-
-  /**
-   * Update user socket context
-   * @param socket - The socket instance
-   * @param clientContext - The socket context
-   */
-  async setUserClientContext(socket: Socket, clientContext: ClientContext): Promise<boolean> {
     return await this.socketDataService.updateClientData(socket.id, { clientContext });
   }
 
