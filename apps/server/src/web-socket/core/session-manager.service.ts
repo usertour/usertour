@@ -130,59 +130,6 @@ export class SessionManagerService {
   }
 
   /**
-   * Refresh content session with updated data
-   * @param socket - The socket
-   * @param socketClientData - The socket client data
-   * @param contentType - The content type
-   * @returns Promise<boolean> - True if the session was refreshed successfully
-   */
-  async refreshContentSession(
-    socket: Socket,
-    socketClientData: SocketClientData,
-    contentType: ContentDataType,
-  ): Promise<boolean> {
-    try {
-      const currentSession = await this.getContentSessionByType(socketClientData, contentType);
-      if (!currentSession) {
-        this.logger.warn(`No session found to refresh for type ${contentType}`);
-        return false;
-      }
-
-      const { environment, externalUserId, externalCompanyId } = socketClientData;
-      const refreshedSession = await this.sessionDataService.refreshContentSession(
-        currentSession,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      if (!refreshedSession) {
-        this.logger.error(`Failed to refresh session for type ${contentType}`);
-        return false;
-      }
-
-      // Update the session in socket data
-      const updateSuccess = await this.updateContentSessionByType(socket.id, refreshedSession);
-      if (!updateSuccess) {
-        this.logger.error(`Failed to update refreshed session for type ${contentType}`);
-        return false;
-      }
-
-      // Emit the refreshed session to the client
-      const emitSuccess = this.setContentSession(socket, refreshedSession);
-      if (!emitSuccess) {
-        this.logger.error(`Failed to emit refreshed session for type ${contentType}`);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to refresh content session for socket ${socket.id}:`, error);
-      return false;
-    }
-  }
-
-  /**
    * Get session configuration for content type
    * @private
    */
