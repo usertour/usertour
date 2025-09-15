@@ -4,7 +4,6 @@ import { ContentDataType } from '@usertour/types';
 import { SDKContentSession } from '@/common/types/sdk';
 import { SocketDataService, SocketClientData } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
-import { SessionDataService } from './session-data.service';
 
 /**
  * Content session manager service
@@ -19,7 +18,6 @@ export class SessionManagerService {
   constructor(
     private readonly socketDataService: SocketDataService,
     private readonly socketEmitterService: SocketEmitterService,
-    private readonly sessionDataService: SessionDataService,
   ) {}
 
   /**
