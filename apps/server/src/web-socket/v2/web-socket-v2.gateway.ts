@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
-import { WebSocketClientDataInterceptor } from './web-socket-client-data.interceptor';
+import { WebSocketClientDataInterceptor } from '../web-socket-client-data.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';

@@ -1,7 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
-import { SocketDataService } from '../core/socket-data.service';
+import { SocketDataService } from './core/socket-data.service';
 
 /**
  * Interceptor to automatically inject socketClientData into WebSocket handlers
