@@ -23,7 +23,7 @@ export class WebSocketClientDataInterceptor implements NestInterceptor {
       const socketClientData = await this.socketDataService.getClientData(client.id);
       client.data.socketClientData = socketClientData;
       this.logger.debug(
-        `Socket client data fetched from Redis and attached for socket ${client.id} with data ${JSON.stringify(socketClientData)}`,
+        `Socket client data fetched from Redis and attached for socket ${client.id}.`,
       );
     } catch (error) {
       this.logger.error(`Failed to fetch socket client data for socket ${client.id}:`, error);
