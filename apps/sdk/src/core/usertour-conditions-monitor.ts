@@ -5,6 +5,7 @@ import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
+import { ClientCondition } from '@/types';
 
 /**
  * Options for condition monitoring
@@ -159,8 +160,9 @@ export class UsertourConditionsMonitor extends Evented {
 
         // Check if condition just became active
         if (!this.activeConditions.has(condition.id)) {
-          await this.reportConditionStateChange(condition, 'activated');
+          // Update state first, then trigger event
           this.activeConditions.add(condition.id);
+          await this.reportConditionStateChange(condition, 'activated');
         }
       }
 
@@ -169,9 +171,10 @@ export class UsertourConditionsMonitor extends Evented {
         if (!currentActiveConditionIds.has(activeConditionId)) {
           const condition = this.conditions.find((c) => c.id === activeConditionId);
           if (condition) {
+            // Update state first, then trigger event
+            this.activeConditions.delete(activeConditionId);
             await this.reportConditionStateChange(condition, 'deactivated');
           }
-          this.activeConditions.delete(activeConditionId);
         }
       }
     } catch (error) {
@@ -210,6 +213,16 @@ export class UsertourConditionsMonitor extends Evented {
   destroy(): void {
     this.stop();
     this.clearConditions();
+  }
+
+  /**
+   * Gets client conditions
+   */
+  getClientConditions(): ClientCondition[] {
+    return this.conditions.map((condition) => ({
+      conditionId: condition.id,
+      isActive: this.activeConditions.has(condition.id),
+    }));
   }
 
   /**

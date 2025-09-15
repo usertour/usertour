@@ -33,10 +33,18 @@ export interface BatchOptions {
 
 // Socket initialization options
 export interface SocketInitOptions {
-  userId: string;
+  externalUserId: string;
   token: string;
   wsUri?: string;
   namespace?: string;
+}
+
+// Auth update options
+export interface AuthUpdateInfo {
+  externalUserId: string;
+  token: string;
+  clientContext?: ClientContext;
+  clientConditions?: ClientCondition[];
 }
 
 /**
@@ -80,6 +88,9 @@ export interface IUsertourSocket {
   isInBatch(): boolean;
   endBatch(): Promise<void>;
 
+  // Auth management
+  updateAuth(authInfo: AuthUpdateInfo): void;
+
   // Event management - delegate to underlying Socket
   addEventListener(event: string, handler: (...args: any[]) => void): void;
   removeEventListener(event: string, handler?: (...args: any[]) => void): void;
@@ -94,38 +105,44 @@ export interface IUsertourSocket {
  */
 export class UsertourSocket extends Evented implements IUsertourSocket {
   private socket: Socket | undefined;
-  private currentAuth: { userId: string; token: string } | undefined;
+  private currentAuth: AuthUpdateInfo | undefined;
 
   /**
    * Initialize Socket connection with given credentials
    */
   async initialize(options: SocketInitOptions): Promise<void> {
-    const { userId, token, wsUri = getWsUri(), namespace = WEBSOCKET_NAMESPACES_V2 } = options;
+    const {
+      externalUserId,
+      token,
+      wsUri = getWsUri(),
+      namespace = WEBSOCKET_NAMESPACES_V2,
+    } = options;
 
     // Check if Socket connection needs to be recreated
-    if (this.shouldRecreateSocket(userId, token)) {
+    if (this.shouldRecreateSocket(externalUserId, token)) {
       this.disconnect();
     }
 
     if (!this.socket) {
+      const clientContext: ClientContext = {
+        pageUrl: window?.location?.href ?? '',
+        viewportWidth: window?.innerWidth ?? 0,
+        viewportHeight: window?.innerHeight ?? 0,
+      };
+
+      // Store current connection auth info for comparison
+      this.currentAuth = { externalUserId, token, clientContext };
+
       this.socket = new Socket({
         wsUri,
         namespace,
         socketConfig: {
-          auth: {
-            token,
-            externalUserId: userId,
-            clientContext: {
-              pageUrl: window?.location?.href,
-              viewportWidth: window?.innerWidth,
-              viewportHeight: window?.innerHeight,
-            },
+          // Use function for auth to ensure latest info on reconnection
+          auth: (cb) => {
+            cb(this.currentAuth || {});
           },
         },
       });
-
-      // Store current connection auth info for comparison
-      this.currentAuth = { userId, token };
 
       // Setup business-specific event listeners
       this.setupBusinessEventListeners();
@@ -173,13 +190,13 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   /**
    * Check if Socket connection needs to be recreated due to credential changes
    */
-  private shouldRecreateSocket(userId: string, token: string): boolean {
+  private shouldRecreateSocket(externalUserId: string, token: string): boolean {
     if (!this.socket || !this.currentAuth) {
       return false;
     }
 
-    // Recreate if userId or token has changed
-    return this.currentAuth.userId !== userId || this.currentAuth.token !== token;
+    // Recreate if externalUserId or token has changed
+    return this.currentAuth.externalUserId !== externalUserId || this.currentAuth.token !== token;
   }
 
   // User and Company operations
@@ -309,5 +326,21 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   emitEvent(event: string, ...args: any[]): void {
     // This triggers Evented events, not Socket.IO events
     this.trigger(event, ...args);
+  }
+
+  // Auth management
+  updateAuth(authInfo: Partial<AuthUpdateInfo>): void {
+    if (!this.socket) {
+      console.warn('Socket not initialized. Cannot update auth.');
+      return;
+    }
+
+    // Update current auth info - the callback will use this on reconnection
+    if (this.currentAuth) {
+      this.currentAuth = {
+        ...this.currentAuth,
+        ...authInfo,
+      };
+    }
   }
 }

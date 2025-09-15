@@ -329,10 +329,10 @@ export class UsertourCore extends Evented {
    * @param userId - External user ID
    * @param token - Authentication token
    */
-  private async initializeSocket(userId: string, token: string): Promise<void> {
+  private async initializeSocket(externalUserId: string, token: string): Promise<void> {
     // Initialize SocketService with connection parameters
     await this.socketService.initialize({
-      userId,
+      externalUserId,
       token,
       wsUri: getWsUri(),
     });
@@ -723,6 +723,9 @@ export class UsertourCore extends Evented {
       if (!changeEvent?.condition?.id) {
         return;
       }
+      // Update socket auth info
+      this.updateSocketAuthInfo();
+      // Toggle client condition
       this.socketService.toggleClientCondition(
         {
           conditionId: changeEvent?.condition?.id,
@@ -764,6 +767,22 @@ export class UsertourCore extends Evented {
           );
         }
       }
+    });
+  }
+
+  /**
+   * Updates the socket auth info
+   */
+  updateSocketAuthInfo() {
+    const clientConditions = this.conditionsMonitor?.getClientConditions();
+    const clientContext = {
+      pageUrl: window?.location?.href ?? '',
+      viewportWidth: window?.innerWidth ?? 0,
+      viewportHeight: window?.innerHeight ?? 0,
+    };
+    this.socketService.updateAuth({
+      clientConditions,
+      clientContext,
     });
   }
 

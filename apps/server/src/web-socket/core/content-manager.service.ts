@@ -116,32 +116,32 @@ export class ContentManagerService {
           this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
         }
         this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
+      } else {
+        // Track the new wait timer conditions
+        if (waitTimerConditions && waitTimerConditions.length > 0) {
+          await this.conditionTimerService.startWaitTimerConditions(
+            socket,
+            socketClientData,
+            waitTimerConditions,
+          );
+        }
       }
 
       // Handle track conditions if any were returned
       const excludeConditionIds =
         trackConditions?.map((trackCondition) => trackCondition.condition.id) ?? [];
       //untrack current conditions
-      this.conditionTrackingService.untrackCurrentConditions(
+      await this.conditionTrackingService.untrackCurrentConditions(
         socket,
         socketClientData,
         excludeConditionIds,
       );
       // Track the new conditions
-      this.conditionTrackingService.trackClientConditions(
+      await this.conditionTrackingService.trackClientConditions(
         socket,
         socketClientData,
         trackConditions,
       );
-
-      // Track the new wait timer conditions
-      if (waitTimerConditions) {
-        this.conditionTimerService.startWaitTimerConditions(
-          socket,
-          socketClientData,
-          waitTimerConditions,
-        );
-      }
 
       this.logger.debug(`Content start succeeded: ${reason}`, {
         contentType,
