@@ -128,8 +128,9 @@ export class SocketEmitterService {
    * @param eventName - The event name
    * @param data - The data to emit
    * @returns boolean - True if the event was emitted successfully
+   * @private
    */
-  emitEvent(socket: Socket, eventName: string, data?: any): boolean {
+  private emitEvent(socket: Socket, eventName: string, data?: any): boolean {
     try {
       socket.emit(eventName, data);
       return true;
@@ -145,8 +146,9 @@ export class SocketEmitterService {
    * @param eventName - The event name
    * @param data - The data to emit
    * @returns number - Number of successful emissions
+   * @private
    */
-  emitToMultipleSockets(sockets: Socket[], eventName: string, data?: any): number {
+  private emitToMultipleSockets(sockets: Socket[], eventName: string, data?: any): number {
     let successCount = 0;
     for (const socket of sockets) {
       if (this.emitEvent(socket, eventName, data)) {
