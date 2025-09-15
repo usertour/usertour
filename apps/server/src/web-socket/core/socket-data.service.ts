@@ -5,7 +5,7 @@ import { SDKContentSession, TrackCondition, WaitTimerCondition } from '@/common/
 import { ClientContext } from '@usertour/types';
 
 /**
- * Socket client data type for storage
+ * Socket socket data type for storage
  */
 export interface SocketClientData {
   environment: Environment;
@@ -22,7 +22,7 @@ export interface SocketClientData {
 
 /**
  * Socket data storage service
- * Handles all data operations for socket client management
+ * Handles all data operations for socket socket management
  */
 @Injectable()
 export class SocketDataService {
@@ -32,7 +32,7 @@ export class SocketDataService {
   constructor(private readonly redisService: RedisService) {}
 
   /**
-   * Build Redis key for client data
+   * Build Redis key for socket data
    * @param socketId - The socket ID
    * @returns The Redis key
    */
@@ -51,9 +51,9 @@ export class SocketDataService {
   }
 
   /**
-   * Set client data in Redis
+   * Set socket data in Redis
    * @param socketId - The socket ID
-   * @param clientData - The client data to store
+   * @param clientData - The socket data to store
    * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the data was set successfully
    */
@@ -84,15 +84,15 @@ export class SocketDataService {
       this.logger.debug(`Client data set for socket ${socketId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to set client data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to set socket data for socket ${socketId}:`, error);
       return false;
     }
   }
 
   /**
-   * Get client data from Redis
+   * Get socket data from Redis
    * @param socketId - The socket ID
-   * @returns Promise<ClientData | null> - The client data or null if not found
+   * @returns Promise<ClientData | null> - The socket data or null if not found
    */
   async getClientData(socketId: string): Promise<SocketClientData | null> {
     try {
@@ -100,23 +100,23 @@ export class SocketDataService {
       const value = await this.redisService.get(key);
 
       if (!value) {
-        this.logger.debug(`No client data found for socket ${socketId}`);
+        this.logger.debug(`No socket data found for socket ${socketId}`);
         return null;
       }
 
       const clientData = JSON.parse(value) as SocketClientData;
-      this.logger.debug(`Retrieved client data for socket ${socketId}`);
+      this.logger.debug(`Retrieved socket data for socket ${socketId}`);
       return clientData;
     } catch (error) {
-      this.logger.error(`Failed to get client data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to get socket data for socket ${socketId}:`, error);
       return null;
     }
   }
 
   /**
-   * Update specific fields in client data
+   * Update specific fields in socket data
    * @param socketId - The socket ID
-   * @param updates - Partial client data to update
+   * @param updates - Partial socket data to update
    * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the data was updated successfully
    */
@@ -143,13 +143,13 @@ export class SocketDataService {
 
       return await this.setClientData(socketId, mergedData, ttlSeconds);
     } catch (error) {
-      this.logger.error(`Failed to update client data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to update socket data for socket ${socketId}:`, error);
       return false;
     }
   }
 
   /**
-   * Remove client data from Redis
+   * Remove socket data from Redis
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data was removed successfully
    */
@@ -174,19 +174,19 @@ export class SocketDataService {
         );
       }
 
-      this.logger.debug(`Removed client data for socket ${socketId}`);
+      this.logger.debug(`Removed socket data for socket ${socketId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to remove client data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to remove socket data for socket ${socketId}:`, error);
       return false;
     }
   }
 
   /**
-   * Get all client data for a specific user
+   * Get all socket data for a specific user
    * @param environmentId - The environment ID
    * @param externalUserId - The external user ID
-   * @returns Promise<ClientData[]> - Array of client data for the user
+   * @returns Promise<ClientData[]> - Array of socket data for the user
    */
   async getUserClientData(
     environmentId: string,
@@ -204,11 +204,11 @@ export class SocketDataService {
       }
 
       this.logger.debug(
-        `Retrieved ${clientDataList.length} client data entries for user ${externalUserId}`,
+        `Retrieved ${clientDataList.length} socket data entries for user ${externalUserId}`,
       );
       return clientDataList;
     } catch (error) {
-      this.logger.error(`Failed to get user client data for user ${externalUserId}:`, error);
+      this.logger.error(`Failed to get user socket data for user ${externalUserId}:`, error);
       return [];
     }
   }
@@ -290,7 +290,7 @@ export class SocketDataService {
   }
 
   /**
-   * Check if client data exists
+   * Check if socket data exists
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data exists
    */

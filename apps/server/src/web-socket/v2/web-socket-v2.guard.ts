@@ -11,10 +11,10 @@ export class WebSocketV2Guard implements CanActivate {
   constructor(private readonly socketDataService: SocketDataService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const client: Socket = context.switchToWs().getClient();
+    const socket: Socket = context.switchToWs().getClient();
 
-    // Check if the client data exists in Redis
-    const clientData = await this.socketDataService.getClientData(client.id);
+    // Check if the socket data exists in Redis
+    const clientData = await this.socketDataService.getClientData(socket.id);
     if (!clientData?.environment) {
       throw new SDKAuthenticationError();
     }

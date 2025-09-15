@@ -25,13 +25,14 @@ import { ContentManagementService } from './content-management.service';
 import { ContentSessionService } from './content-session.service';
 import { TrackEventService } from './track-event.service';
 import { SocketManagementService } from './socket-management.service';
-import { SocketDataService, SocketClientData } from './socket-data.service';
+import { SocketClientData } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 
 interface ContentStartContext {
   server: Server;
-  client: Socket;
+  socket: Socket;
   contentType: ContentDataType;
+  socketClientData: SocketClientData;
   options?: StartContentOptions;
 }
 
@@ -57,7 +58,6 @@ export class ContentStartService {
     private readonly contentSessionService: ContentSessionService,
     private readonly trackEventService: TrackEventService,
     private readonly socketManagementService: SocketManagementService,
-    private readonly socketDataService: SocketDataService,
     private readonly socketEmitterService: SocketEmitterService,
   ) {}
 
@@ -69,10 +69,15 @@ export class ContentStartService {
     context: ContentStartContext,
     invalidSession: SDKContentSession,
   ): void {
-    const { client, contentType } = context;
+    const { socket, contentType, socketClientData } = context;
 
-    this.socketManagementService.unsetCurrentContentSession(client, contentType, invalidSession.id);
-    this.socketManagementService.untrackCurrentConditions(client);
+    this.socketManagementService.unsetCurrentContentSession(
+      socket,
+      socketClientData,
+      contentType,
+      invalidSession.id,
+    );
+    this.socketManagementService.untrackCurrentConditions(socket, socketClientData);
   }
 
   /**
@@ -84,7 +89,7 @@ export class ContentStartService {
     result: ContentStartResult,
     forceGoToStep = false,
   ): Promise<boolean> {
-    const { client, contentType } = context;
+    const { socket, contentType, socketClientData } = context;
 
     try {
       const { success, session, trackConditions, waitTimerConditions, reason } = result;
@@ -101,30 +106,38 @@ export class ContentStartService {
       // Set the content session if one was created
       if (session) {
         const isSetSession = this.socketManagementService.updateContentSessionByType(
-          client.id,
+          socket.id,
           session,
         );
         if (!isSetSession) {
           return false;
         }
-        this.socketManagementService.setContentSession(client, session);
+        this.socketManagementService.setContentSession(socket, session);
         if (forceGoToStep) {
-          this.socketEmitterService.forceGoToStep(client, session.id, session.currentStep?.cvid!);
+          this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
         }
-        this.socketManagementService.cancelCurrentWaitTimerConditions(client);
+        this.socketManagementService.cancelCurrentWaitTimerConditions(socket, socketClientData);
       }
 
       // Handle track conditions if any were returned
       const excludeConditionIds =
         trackConditions?.map((trackCondition) => trackCondition.condition.id) ?? [];
       //untrack current conditions
-      this.socketManagementService.untrackCurrentConditions(client, excludeConditionIds);
+      this.socketManagementService.untrackCurrentConditions(
+        socket,
+        socketClientData,
+        excludeConditionIds,
+      );
       // Track the new conditions
-      this.socketManagementService.trackClientConditions(client, trackConditions);
+      this.socketManagementService.trackClientConditions(socket, socketClientData, trackConditions);
 
       // Track the new wait timer conditions
       if (waitTimerConditions) {
-        this.socketManagementService.startWaitTimerConditions(client, waitTimerConditions);
+        this.socketManagementService.startWaitTimerConditions(
+          socket,
+          socketClientData,
+          waitTimerConditions,
+        );
       }
 
       this.logger.debug(`Content start succeeded: ${reason}`, {
@@ -145,7 +158,7 @@ export class ContentStartService {
    * Implements multiple strategies for content activation and coordinates the start process
    */
   async startSingletonContent(context: ContentStartContext): Promise<boolean> {
-    const { client, contentType, options } = context;
+    const { contentType, options, socketClientData } = context;
     const { contentId } = options ?? {};
 
     try {
@@ -168,7 +181,10 @@ export class ContentStartService {
       }
 
       // Get evaluated content versions for remaining strategies
-      const evaluatedContentVersions = await this.getEvaluatedContentVersions(client, contentType);
+      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+        socketClientData,
+        contentType,
+      );
 
       // Strategy 3: Try to start by latest activated content version
       const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
@@ -207,16 +223,9 @@ export class ContentStartService {
    * Strategy 1: Try to start content by specific contentId
    */
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
-    const { client, contentType, options } = context;
+    const { contentType, options, socketClientData } = context;
     const { contentId } = options!;
-    const socketClietData = await this.socketDataService.getClientData(client.id);
-    if (!socketClietData) {
-      return {
-        success: false,
-        reason: 'No socket client data',
-      };
-    }
-    const { environment } = socketClietData;
+    const { environment } = socketClientData;
 
     try {
       // Get published version for the specific content
@@ -236,7 +245,7 @@ export class ContentStartService {
       }
 
       const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-        client,
+        socketClientData,
         contentType,
         contentOnEnvironment.publishedVersionId,
       );
@@ -273,18 +282,11 @@ export class ContentStartService {
    * Strategy 2: Handle existing session validation
    */
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
-    const { client, contentType } = context;
-    const socketClietData = await this.socketDataService.getClientData(client.id);
-    if (!socketClietData) {
-      return {
-        success: false,
-        reason: 'No socket client data',
-      };
-    }
-    const { environment, externalUserId, externalCompanyId } = socketClietData;
+    const { contentType, socketClientData } = context;
+    const { environment, externalUserId, externalCompanyId } = socketClientData;
 
     const session = await this.socketManagementService.getContentSessionByType(
-      client.id,
+      socketClientData,
       contentType,
     );
     if (!session) {
@@ -303,7 +305,7 @@ export class ContentStartService {
       session,
       refreshedSession,
     );
-    const isActive = await this.isSessionActive(client, contentType, session);
+    const isActive = await this.isSessionActive(socketClientData, contentType, session);
     if (isActive) {
       if (isSessionChanged) {
         return {
@@ -366,15 +368,8 @@ export class ContentStartService {
     context: ContentStartContext,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
-    const { contentType, client } = context;
-    const socketClietData = await this.socketDataService.getClientData(client.id);
-    if (!socketClietData) {
-      return {
-        success: false,
-        reason: 'No socket client data',
-      };
-    }
-    const { waitTimerConditions } = socketClietData;
+    const { contentType, socketClientData } = context;
+    const { waitTimerConditions } = socketClientData;
     const firedWaitTimerVersionIds = waitTimerConditions
       ?.filter((waitTimerCondition) => waitTimerCondition.activated)
       .map((waitTimerCondition) => waitTimerCondition.versionId);
@@ -589,20 +584,13 @@ export class ContentStartService {
       return validationResult;
     }
 
-    const { client, options } = context;
-    const clientData = await this.socketDataService.getClientData(client.id);
-    if (!clientData) {
-      return {
-        success: false,
-        reason: 'No socket client data',
-      };
-    }
+    const { options, socketClientData } = context;
 
     try {
       // Handle session management
       const sessionResult = await this.handleSessionManagement(
         customContentVersion,
-        clientData,
+        socketClientData,
         options,
         createNewSession,
       );
@@ -615,7 +603,7 @@ export class ContentStartService {
       const contentSession = await this.createContentSession(
         sessionResult.sessionId!,
         customContentVersion,
-        clientData,
+        socketClientData,
         sessionResult.currentStepCvid!,
       );
 
@@ -651,18 +639,12 @@ export class ContentStartService {
    * Get evaluated content versions
    */
   private async getEvaluatedContentVersions(
-    client: Socket,
+    socketClientData: SocketClientData,
     contentType: ContentDataType,
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
-    const socketClietData = await this.socketDataService.getClientData(client.id);
-    if (!socketClietData) {
-      return [];
-    }
-    const { environment, trackConditions, externalUserId, externalCompanyId } = socketClietData;
-
-    // Get client context from socket data
-    const clientContext = socketClietData.clientContext;
+    const { environment, trackConditions, externalUserId, externalCompanyId, clientContext } =
+      socketClientData;
 
     // Extract activated and deactivated condition IDs
     const activatedIds = trackConditions
@@ -700,12 +682,12 @@ export class ContentStartService {
    * Check if the existing session is still active
    */
   private async isSessionActive(
-    client: Socket,
+    socketClientData: SocketClientData,
     contentType: ContentDataType,
     session: SDKContentSession,
   ): Promise<boolean> {
     const sessionVersion = await this.getEvaluatedContentVersions(
-      client,
+      socketClientData,
       contentType,
       session.version.id,
     );

@@ -179,7 +179,7 @@ export class TrackEventService {
   }
 
   /**
-   * Enrich event data with client context
+   * Enrich event data with socket context
    */
   private enrichEventData(data: Record<string, unknown>, clientContext: ClientContext) {
     return clientContext
@@ -501,7 +501,7 @@ export class TrackEventService {
    * @param environment - The environment
    * @param externalUserId - The external user ID
    * @param startReason - The start reason
-   * @param clientContext - The client context
+   * @param clientContext - The socket context
    * @returns The tracked event or false if tracking failed
    */
   async trackAutoStartEvent(

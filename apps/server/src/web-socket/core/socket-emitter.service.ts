@@ -16,7 +16,7 @@ export class SocketEmitterService {
   // ============================================================================
 
   /**
-   * Track a client event
+   * Track a socket event
    * @param socket - The socket
    * @param condition - The condition to emit
    * @returns boolean - True if the event was emitted successfully
@@ -26,7 +26,7 @@ export class SocketEmitterService {
   }
 
   /**
-   * Un-track a client event
+   * Un-track a socket event
    * @param socket - The socket
    * @param conditionId - The condition id to un-track
    * @returns boolean - True if the event was emitted successfully
