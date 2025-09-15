@@ -115,8 +115,8 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
     trackEventDto: TrackEventDto,
   ): Promise<boolean> {
-    if (!socketClientData?.environment || !socketClientData?.externalUserId) return false;
     const { environment, externalUserId, clientContext } = socketClientData;
+    if (!environment || !externalUserId) return false;
     const { eventName, sessionId, eventData } = trackEventDto;
     return Boolean(
       await this.trackEventService.trackEvent(
@@ -212,8 +212,8 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
     params: AnswerQuestionDto,
   ): Promise<boolean> {
-    if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
+    if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true },
@@ -259,8 +259,8 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
     params: ClickChecklistTaskDto,
   ): Promise<boolean> {
-    if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
+    if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -308,8 +308,8 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
     params: HideChecklistDto,
   ): Promise<boolean> {
-    if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
+    if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -348,8 +348,8 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
     params: ShowChecklistDto,
   ): Promise<boolean> {
-    if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
+    if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
       include: { bizUser: true, content: true, version: { include: { steps: true } } },
@@ -390,8 +390,8 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
-    if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
+    if (!environment) return false;
     const { sessionId, stepId } = params;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
@@ -502,8 +502,8 @@ export class WebSocketV2Service {
     endContentDto: EndContentDto,
   ): Promise<boolean> {
     const { sessionId, reason } = endContentDto;
-    if (!socketClientData?.externalUserId || !socketClientData?.environment) return false;
     const { externalUserId, environment, clientContext } = socketClientData;
+    if (!externalUserId || !environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
       include: { content: true },
