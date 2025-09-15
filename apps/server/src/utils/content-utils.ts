@@ -342,6 +342,33 @@ export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
 };
 
 /**
+ * Checks if a custom content version is allowed based on wait timer conditions
+ * @param customContentVersion - The custom content version to check
+ * @param firedWaitTimerVersionIds - Optional array of version IDs that have fired wait timers
+ * @returns True if the content is allowed based on wait timer conditions, false otherwise
+ */
+export const isAllowedByWaitTimerConditions = (
+  customContentVersion: CustomContentVersion,
+  firedWaitTimerVersionIds?: string[],
+): boolean => {
+  const waitTime = customContentVersion.config.autoStartRulesSetting.wait;
+
+  // If no wait time is set, allow the content
+  if (!waitTime) {
+    return true;
+  }
+
+  // Only allow content with wait timer if it has been fired
+  if (firedWaitTimerVersionIds?.includes(customContentVersion.id)) {
+    // Wait timer has been fired, allow this content
+    return true;
+  }
+
+  // Wait timer not fired yet, skip this content
+  return false;
+};
+
+/**
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -371,14 +398,7 @@ export const filterAvailableAutoStartContentVersions = (
       }
 
       // Check wait timer conditions
-      const waitTime = customContentVersion.config.autoStartRulesSetting.wait;
-      if (waitTime) {
-        // Only allow content with wait timer if it has been fired
-        if (firedWaitTimerVersionIds?.includes(customContentVersion.id)) {
-          // Wait timer has been fired, allow this content
-          return true;
-        }
-        // Wait timer not fired yet, skip this content
+      if (!isAllowedByWaitTimerConditions(customContentVersion, firedWaitTimerVersionIds)) {
         return false;
       }
 
