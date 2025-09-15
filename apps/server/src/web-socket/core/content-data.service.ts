@@ -1145,4 +1145,61 @@ export class ContentDataService {
 
     return processedThemes;
   }
+
+  /**
+   * Find published content version ID by contentId and environmentId
+   * @param contentId - The content ID
+   * @param environmentId - The environment ID
+   * @returns Published version ID or null if not found
+   */
+  async findPublishedContentVersionId(
+    contentId: string,
+    environmentId: string,
+  ): Promise<string | null> {
+    try {
+      const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
+        where: {
+          environmentId,
+          contentId,
+          published: true,
+        },
+        select: {
+          publishedVersionId: true,
+        },
+      });
+
+      return contentOnEnvironment?.publishedVersionId || null;
+    } catch (error) {
+      this.logger.error({
+        message: `Error finding published content version ID: ${error.message}`,
+        stack: error.stack,
+        contentId,
+        environmentId,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Update session version
+   * @param sessionId - The session ID
+   * @param versionId - The version ID
+   * @returns Promise that resolves when update is complete
+   */
+  async updateSessionVersion(sessionId: string, versionId: string): Promise<void> {
+    try {
+      await this.prisma.bizSession.update({
+        where: { id: sessionId },
+        data: { versionId },
+      });
+    } catch (error) {
+      this.logger.error({
+        message: `Error updating session version: ${error.message}`,
+        stack: error.stack,
+        sessionId,
+        versionId,
+      });
+      throw error;
+    }
+  }
 }

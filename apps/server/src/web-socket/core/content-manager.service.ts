@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { PrismaService } from 'nestjs-prisma';
 import { ContentDataType, RulesType } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -55,7 +54,6 @@ export class ContentManagerService {
   private readonly logger = new Logger(ContentManagerService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
     private readonly sessionDataService: SessionDataService,
     private readonly eventTrackingService: EventTrackingService,
@@ -75,7 +73,7 @@ export class ContentManagerService {
   ): void {
     const { socket, contentType, socketClientData } = context;
 
-    this.sessionManagerService.unsetCurrentContentSession(
+    this.sessionManagerService.unsetCurrentSession(
       socket,
       socketClientData,
       contentType,
@@ -109,14 +107,10 @@ export class ContentManagerService {
       // Handle successful result
       // Set the content session if one was created
       if (session) {
-        const isSetSession = this.sessionManagerService.updateContentSessionByType(
-          socket.id,
-          session,
-        );
+        const isSetSession = this.sessionManagerService.setCurrentSession(socket, session);
         if (!isSetSession) {
           return false;
         }
-        this.sessionManagerService.setContentSession(socket, session);
         if (forceGoToStep) {
           this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
         }
@@ -236,16 +230,13 @@ export class ContentManagerService {
     const { environment } = socketClientData;
 
     try {
-      // Get published version for the specific content
-      const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
-        where: {
-          environmentId: environment.id,
-          contentId: contentId,
-          published: true,
-        },
-      });
+      // Get published version ID for the specific content
+      const publishedVersionId = await this.contentDataService.findPublishedContentVersionId(
+        contentId,
+        environment.id,
+      );
 
-      if (!contentOnEnvironment) {
+      if (!publishedVersionId) {
         return {
           success: false,
           reason: 'Content not found or not published',
@@ -255,7 +246,7 @@ export class ContentManagerService {
       const evaluatedContentVersions = await this.getEvaluatedContentVersions(
         socketClientData,
         contentType,
-        contentOnEnvironment.publishedVersionId,
+        publishedVersionId,
       );
 
       if (evaluatedContentVersions.length > 0) {
@@ -293,7 +284,7 @@ export class ContentManagerService {
     const { contentType, socketClientData } = context;
     const { environment, externalUserId, externalCompanyId } = socketClientData;
 
-    const session = await this.sessionManagerService.getContentSessionByType(
+    const session = await this.sessionManagerService.getCurrentSession(
       socketClientData,
       contentType,
     );
@@ -562,23 +553,6 @@ export class ContentManagerService {
   }
 
   /**
-   * Update session version
-   */
-  private async updateSessionVersion(sessionId: string, versionId: string): Promise<void> {
-    await this.prisma.bizSession.update({
-      where: { id: sessionId },
-      data: { versionId },
-    });
-  }
-
-  /**
-   * Extract tracking conditions for hide rules
-   */
-  private extractHideRulesConditions(customContentVersion: CustomContentVersion): TrackCondition[] {
-    return extractClientTrackConditions([customContentVersion], ConditionExtractionMode.HIDE_ONLY);
-  }
-
-  /**
    * Process content version with common logic
    */
   private async processContentVersion(
@@ -623,10 +597,17 @@ export class ContentManagerService {
       }
 
       // Update session version
-      await this.updateSessionVersion(sessionResult.sessionId!, customContentVersion.id);
+
+      await this.contentDataService.updateSessionVersion(
+        sessionResult.sessionId!,
+        customContentVersion.id,
+      );
 
       // Extract tracking conditions for hide rules
-      const trackConditions = this.extractHideRulesConditions(customContentVersion);
+      const trackConditions = extractClientTrackConditions(
+        [customContentVersion],
+        ConditionExtractionMode.HIDE_ONLY,
+      );
 
       return {
         success: true,

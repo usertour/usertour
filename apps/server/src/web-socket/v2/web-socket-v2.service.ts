@@ -431,7 +431,7 @@ export class WebSocketV2Service {
     );
 
     // Unset current flow session
-    await this.sessionManagerService.unsetCurrentContentSession(
+    await this.sessionManagerService.unsetCurrentSession(
       socket,
       socketClientData,
       ContentDataType.FLOW,
@@ -525,7 +525,7 @@ export class WebSocketV2Service {
       clientContext,
     );
     // Unset current flow session (without WebSocket emission)
-    await this.sessionManagerService.unsetCurrentContentSession(
+    await this.sessionManagerService.unsetCurrentSession(
       socket,
       socketClientData,
       ContentDataType.FLOW,
