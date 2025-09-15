@@ -372,12 +372,14 @@ export const isAllowedByWaitTimerConditions = (
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
+ * @param includeWaitTimer - Whether to include wait timer conditions in the filtering
  * @param firedWaitTimerVersionIds - Optional array of version IDs that have fired wait timers
  * @returns The available auto-start custom content versions
  */
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  includeWaitTimer: boolean,
   firedWaitTimerVersionIds?: string[],
 ) => {
   return customContentVersions
@@ -397,8 +399,11 @@ export const filterAvailableAutoStartContentVersions = (
         return false;
       }
 
-      // Check wait timer conditions
-      if (!isAllowedByWaitTimerConditions(customContentVersion, firedWaitTimerVersionIds)) {
+      // Check wait timer conditions if enabled
+      if (
+        includeWaitTimer &&
+        !isAllowedByWaitTimerConditions(customContentVersion, firedWaitTimerVersionIds)
+      ) {
         return false;
       }
 

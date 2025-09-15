@@ -376,6 +376,7 @@ export class ContentManagerService {
     const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
+      true,
       firedWaitTimerVersionIds,
     );
 
