@@ -20,15 +20,15 @@ import {
 } from '@/utils/content-utils';
 import { SessionAttribute, SDKContentSession, SessionTheme, SessionStep } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
-import { ContentManagementService } from './content-management.service';
+import { ContentDataService } from './content-data.service';
 import { SocketClientData } from './socket-data.service';
 
 @Injectable()
-export class ContentSessionService {
-  private readonly logger = new Logger(ContentSessionService.name);
+export class SessionDataService {
+  private readonly logger = new Logger(SessionDataService.name);
   constructor(
     private readonly prisma: PrismaService,
-    private readonly contentManagementService: ContentManagementService,
+    private readonly contentDataService: ContentDataService,
   ) {}
   /**
    * Create a biz session
@@ -206,8 +206,8 @@ export class ContentSessionService {
   ): Promise<SDKContentSession | null> {
     const { environment, externalUserId, externalCompanyId } = clientData;
     const contentType = customContentVersion.content.type as ContentDataType;
-    const config = await this.contentManagementService.getConfig(environment);
-    const themes = await this.contentManagementService.fetchThemes(
+    const config = await this.contentDataService.getConfig(environment);
+    const themes = await this.contentDataService.fetchThemes(
       environment,
       externalUserId,
       externalCompanyId,
@@ -300,7 +300,7 @@ export class ContentSessionService {
     }
 
     // Get themes for session theme creation
-    const themes = await this.contentManagementService.fetchThemes(
+    const themes = await this.contentDataService.fetchThemes(
       environment,
       externalUserId,
       externalCompanyId,

@@ -16,7 +16,7 @@ import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
 
 @Injectable()
-export class TrackEventService {
+export class EventTrackingService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**

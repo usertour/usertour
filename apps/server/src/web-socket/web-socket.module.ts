@@ -9,11 +9,13 @@ import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
 import { SharedModule } from '@/shared/shared.module';
-import { TrackEventService } from './core/track-event.service';
-import { ContentManagementService } from './core/content-management.service';
-import { ContentSessionService } from './core/content-session.service';
-import { ContentStartService } from './core/content-start.service';
-import { SocketManagementService } from './core/socket-management.service';
+import { EventTrackingService } from './core/event-tracking.service';
+import { ContentDataService } from './core/content-data.service';
+import { SessionDataService } from './core/session-data.service';
+import { ContentManagerService } from './core/content-manager.service';
+import { SessionManagerService } from './core/session-manager.service';
+import { ConditionTrackingService } from './core/condition-tracking.service';
+import { ConditionTimerService } from './core/condition-timer.service';
 import { SocketDataService } from './core/socket-data.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 
@@ -26,11 +28,13 @@ import { SocketEmitterService } from './core/socket-emitter.service';
     WebSocketV2Gateway,
     WebSocketV2Service,
     WebSocketV2Guard,
-    TrackEventService,
-    ContentManagementService,
-    ContentSessionService,
-    ContentStartService,
-    SocketManagementService,
+    EventTrackingService,
+    ContentDataService,
+    SessionDataService,
+    ContentManagerService,
+    SessionManagerService,
+    ConditionTrackingService,
+    ConditionTimerService,
     SocketDataService,
     SocketEmitterService,
   ],

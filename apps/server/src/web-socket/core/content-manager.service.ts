@@ -21,10 +21,12 @@ import {
   WaitTimerCondition,
 } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
-import { ContentManagementService } from './content-management.service';
-import { ContentSessionService } from './content-session.service';
-import { TrackEventService } from './track-event.service';
-import { SocketManagementService } from './socket-management.service';
+import { ContentDataService } from './content-data.service';
+import { SessionDataService } from './session-data.service';
+import { EventTrackingService } from './event-tracking.service';
+import { SessionManagerService } from './session-manager.service';
+import { ConditionTrackingService } from './condition-tracking.service';
+import { ConditionTimerService } from './condition-timer.service';
 import { SocketClientData } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 
@@ -46,18 +48,20 @@ interface ContentStartResult {
 }
 
 /**
- * Service responsible for starting content (flows, checklists) with various strategies
+ * Service responsible for managing content (flows, checklists) with various strategies
  */
 @Injectable()
-export class ContentStartService {
-  private readonly logger = new Logger(ContentStartService.name);
+export class ContentManagerService {
+  private readonly logger = new Logger(ContentManagerService.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly contentManagementService: ContentManagementService,
-    private readonly contentSessionService: ContentSessionService,
-    private readonly trackEventService: TrackEventService,
-    private readonly socketManagementService: SocketManagementService,
+    private readonly contentDataService: ContentDataService,
+    private readonly sessionDataService: SessionDataService,
+    private readonly eventTrackingService: EventTrackingService,
+    private readonly sessionManagerService: SessionManagerService,
+    private readonly conditionTrackingService: ConditionTrackingService,
+    private readonly conditionTimerService: ConditionTimerService,
     private readonly socketEmitterService: SocketEmitterService,
   ) {}
 
@@ -71,13 +75,13 @@ export class ContentStartService {
   ): void {
     const { socket, contentType, socketClientData } = context;
 
-    this.socketManagementService.unsetCurrentContentSession(
+    this.sessionManagerService.unsetCurrentContentSession(
       socket,
       socketClientData,
       contentType,
       invalidSession.id,
     );
-    this.socketManagementService.untrackCurrentConditions(socket, socketClientData);
+    this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
   }
 
   /**
@@ -105,35 +109,39 @@ export class ContentStartService {
       // Handle successful result
       // Set the content session if one was created
       if (session) {
-        const isSetSession = this.socketManagementService.updateContentSessionByType(
+        const isSetSession = this.sessionManagerService.updateContentSessionByType(
           socket.id,
           session,
         );
         if (!isSetSession) {
           return false;
         }
-        this.socketManagementService.setContentSession(socket, session);
+        this.sessionManagerService.setContentSession(socket, session);
         if (forceGoToStep) {
           this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
         }
-        this.socketManagementService.cancelCurrentWaitTimerConditions(socket, socketClientData);
+        this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
       }
 
       // Handle track conditions if any were returned
       const excludeConditionIds =
         trackConditions?.map((trackCondition) => trackCondition.condition.id) ?? [];
       //untrack current conditions
-      this.socketManagementService.untrackCurrentConditions(
+      this.conditionTrackingService.untrackCurrentConditions(
         socket,
         socketClientData,
         excludeConditionIds,
       );
       // Track the new conditions
-      this.socketManagementService.trackClientConditions(socket, socketClientData, trackConditions);
+      this.conditionTrackingService.trackClientConditions(
+        socket,
+        socketClientData,
+        trackConditions,
+      );
 
       // Track the new wait timer conditions
       if (waitTimerConditions) {
-        this.socketManagementService.startWaitTimerConditions(
+        this.conditionTimerService.startWaitTimerConditions(
           socket,
           socketClientData,
           waitTimerConditions,
@@ -285,7 +293,7 @@ export class ContentStartService {
     const { contentType, socketClientData } = context;
     const { environment, externalUserId, externalCompanyId } = socketClientData;
 
-    const session = await this.socketManagementService.getContentSessionByType(
+    const session = await this.sessionManagerService.getContentSessionByType(
       socketClientData,
       contentType,
     );
@@ -293,7 +301,7 @@ export class ContentStartService {
       return { success: false, reason: 'No existing session' };
     }
     // Refresh session
-    const refreshedSession = await this.contentSessionService.refreshContentSession(
+    const refreshedSession = await this.sessionDataService.refreshContentSession(
       session,
       environment,
       externalUserId,
@@ -301,7 +309,7 @@ export class ContentStartService {
     );
 
     // Compare session to detect changes
-    const isSessionChanged = this.contentSessionService.compareContentSessions(
+    const isSessionChanged = this.sessionDataService.compareContentSessions(
       session,
       refreshedSession,
     );
@@ -479,7 +487,7 @@ export class ContentStartService {
     const versionId = customContentVersion.id;
     const steps = customContentVersion.steps;
     const currentStepCvid = stepCvid || steps?.[0]?.cvid;
-    const bizSession = await this.contentSessionService.createBizSession(
+    const bizSession = await this.sessionDataService.createBizSession(
       environment,
       externalUserId,
       externalCompanyId,
@@ -493,7 +501,7 @@ export class ContentStartService {
       };
     }
 
-    await this.trackEventService.trackAutoStartEvent(
+    await this.eventTrackingService.trackAutoStartEvent(
       customContentVersion,
       bizSession,
       environment,
@@ -545,7 +553,7 @@ export class ContentStartService {
     clientData: SocketClientData,
     stepCvid: string,
   ): Promise<SDKContentSession | null> {
-    return await this.contentSessionService.createContentSession(
+    return await this.sessionDataService.createContentSession(
       sessionId,
       customContentVersion,
       clientData,
@@ -655,7 +663,7 @@ export class ContentStartService {
       ?.filter((trackCondition: TrackCondition) => !trackCondition.condition.actived)
       .map((trackCondition: TrackCondition) => trackCondition.condition.id);
 
-    const contentVersions = await this.contentManagementService.fetchCustomContentVersions(
+    const contentVersions = await this.contentDataService.fetchCustomContentVersions(
       environment,
       externalUserId,
       externalCompanyId,

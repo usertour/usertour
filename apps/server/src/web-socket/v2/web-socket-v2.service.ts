@@ -28,10 +28,12 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { SocketManagementService } from '@/web-socket/core/socket-management.service';
+import { SessionManagerService } from '@/web-socket/core/session-manager.service';
+import { ConditionTrackingService } from '@/web-socket/core/condition-tracking.service';
+import { ConditionTimerService } from '@/web-socket/core/condition-timer.service';
 import { SocketClientData, SocketDataService } from '@/web-socket/core/socket-data.service';
-import { TrackEventService } from '@/web-socket/core/track-event.service';
-import { ContentStartService } from '@/web-socket/core/content-start.service';
+import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
+import { ContentManagerService } from '@/web-socket/core/content-manager.service';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -39,9 +41,11 @@ export class WebSocketV2Service {
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
-    private trackEventService: TrackEventService,
-    private readonly contentStartService: ContentStartService,
-    private readonly socketManagementService: SocketManagementService,
+    private eventTrackingService: EventTrackingService,
+    private readonly contentManagerService: ContentManagerService,
+    private readonly sessionManagerService: SessionManagerService,
+    private readonly conditionTrackingService: ConditionTrackingService,
+    private readonly conditionTimerService: ConditionTimerService,
     private readonly socketDataService: SocketDataService,
   ) {}
 
@@ -119,7 +123,7 @@ export class WebSocketV2Service {
     if (!environment || !externalUserId) return false;
     const { eventName, sessionId, eventData } = trackEventDto;
     return Boolean(
-      await this.trackEventService.trackEvent(
+      await this.eventTrackingService.trackEvent(
         environment,
         externalUserId,
         eventName,
@@ -179,7 +183,7 @@ export class WebSocketV2Service {
 
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    await this.trackEventService.trackEvent(
+    await this.eventTrackingService.trackEvent(
       environment,
       externalUserId,
       BizEvents.FLOW_STEP_SEEN,
@@ -189,7 +193,7 @@ export class WebSocketV2Service {
     );
 
     if (isComplete) {
-      await this.trackEventService.trackEvent(
+      await this.eventTrackingService.trackEvent(
         environment,
         externalUserId,
         BizEvents.FLOW_COMPLETED,
@@ -238,7 +242,7 @@ export class WebSocketV2Service {
     const externalUserId = String(bizSession.bizUser.externalId);
 
     return Boolean(
-      await this.trackEventService.trackEvent(
+      await this.eventTrackingService.trackEvent(
         environment,
         externalUserId,
         BizEvents.QUESTION_ANSWERED,
@@ -287,7 +291,7 @@ export class WebSocketV2Service {
     const externalUserId = String(bizSession.bizUser.externalId);
 
     return Boolean(
-      await this.trackEventService.trackEvent(
+      await this.eventTrackingService.trackEvent(
         environment,
         externalUserId,
         BizEvents.CHECKLIST_TASK_CLICKED,
@@ -327,7 +331,7 @@ export class WebSocketV2Service {
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return Boolean(
-      await this.trackEventService.trackEvent(
+      await this.eventTrackingService.trackEvent(
         environment,
         externalUserId,
         BizEvents.CHECKLIST_HIDDEN,
@@ -367,7 +371,7 @@ export class WebSocketV2Service {
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return Boolean(
-      await this.trackEventService.trackEvent(
+      await this.eventTrackingService.trackEvent(
         environment,
         externalUserId,
         BizEvents.CHECKLIST_SEEN,
@@ -417,7 +421,7 @@ export class WebSocketV2Service {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    await this.trackEventService.trackEvent(
+    await this.eventTrackingService.trackEvent(
       environment,
       externalUserId,
       BizEvents.TOOLTIP_TARGET_MISSING,
@@ -427,14 +431,14 @@ export class WebSocketV2Service {
     );
 
     // Unset current flow session
-    await this.socketManagementService.unsetCurrentContentSession(
+    await this.sessionManagerService.unsetCurrentContentSession(
       socket,
       socketClientData,
       ContentDataType.FLOW,
       sessionId,
     );
     // Untrack current conditions
-    await this.socketManagementService.untrackCurrentConditions(socket, socketClientData);
+    await this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
     // Toggle contents for the socket
     await this.toggleContents(server, socket, socketClientData);
 
@@ -480,7 +484,7 @@ export class WebSocketV2Service {
     if (!allowedTypes.includes(contentType)) return false;
     if (!socketClientData) return false;
     // Start the content
-    return await this.contentStartService.startSingletonContent({
+    return await this.contentManagerService.startSingletonContent({
       server,
       socket,
       contentType,
@@ -513,7 +517,7 @@ export class WebSocketV2Service {
     if (contentType !== ContentDataType.FLOW) {
       return false;
     }
-    await this.trackEventService.trackFlowEndedEvent(
+    await this.eventTrackingService.trackFlowEndedEvent(
       bizSession,
       environment,
       externalUserId,
@@ -521,7 +525,7 @@ export class WebSocketV2Service {
       clientContext,
     );
     // Unset current flow session (without WebSocket emission)
-    await this.socketManagementService.unsetCurrentContentSession(
+    await this.sessionManagerService.unsetCurrentContentSession(
       socket,
       socketClientData,
       ContentDataType.FLOW,
@@ -529,7 +533,7 @@ export class WebSocketV2Service {
       false,
     );
     // Untrack current conditions
-    await this.socketManagementService.untrackCurrentConditions(socket, socketClientData);
+    await this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
     // Toggle contents for the socket
     await this.toggleContents(server, socket, socketClientData);
     return true;
@@ -548,7 +552,7 @@ export class WebSocketV2Service {
     socketClientData: SocketClientData,
   ): Promise<boolean> {
     if (!socketClientData) return false;
-    await this.contentStartService.startSingletonContent({
+    await this.contentManagerService.startSingletonContent({
       server,
       socket,
       contentType: ContentDataType.FLOW,
@@ -573,7 +577,7 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const { conditionId, isActive } = toggleClientConditionDto;
 
-    return await this.socketManagementService.toggleClientCondition(
+    return await this.conditionTrackingService.toggleClientCondition(
       socket,
       socketClientData,
       conditionId,
@@ -593,7 +597,7 @@ export class WebSocketV2Service {
     fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
     const { versionId } = fireConditionWaitTimerDto;
-    return await this.socketManagementService.fireClientConditionWaitTimer(
+    return await this.conditionTimerService.fireClientConditionWaitTimer(
       socket,
       socketClientData,
       versionId,
