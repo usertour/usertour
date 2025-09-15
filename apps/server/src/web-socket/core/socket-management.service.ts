@@ -37,12 +37,7 @@ export class SocketManagementService {
     socketId: string,
     clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
   ): Promise<boolean> {
-    const data: SocketClientData = {
-      ...clientData,
-      lastUpdated: Date.now(),
-      socketId,
-    };
-    return await this.socketDataService.setClientData(socketId, data);
+    return await this.socketDataService.setClientData(socketId, clientData);
   }
 
   /**
@@ -54,7 +49,7 @@ export class SocketManagementService {
    */
   async updateClientData(
     socketId: string,
-    updates: Partial<SocketClientData>,
+    updates: Partial<Omit<SocketClientData, 'lastUpdated' | 'socketId'>>,
     ttlSeconds?: number,
   ): Promise<boolean> {
     return await this.socketDataService.updateClientData(socketId, updates, ttlSeconds);

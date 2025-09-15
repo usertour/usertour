@@ -59,7 +59,7 @@ export class SocketDataService {
    */
   async setClientData(
     socketId: string,
-    clientData: SocketClientData,
+    clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
