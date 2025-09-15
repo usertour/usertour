@@ -95,53 +95,52 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('end-batch')
   async endBatch(
-    @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @ConnectedSocket() socket: Socket,
   ): Promise<boolean> {
     return await this.service.endBatch(this.server, socket, socketClientData);
   }
 
   @SubscribeMessage('upsert-user')
   async upsertBizUsers(
-    @MessageBody() upsertUserDto: UpsertUserDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() upsertUserDto: UpsertUserDto,
   ): Promise<boolean> {
     return await this.service.upsertBizUsers(socket, socketClientData, upsertUserDto);
   }
 
   @SubscribeMessage('upsert-company')
   async upsertBizCompanies(
-    @MessageBody() upsertCompanyDto: UpsertCompanyDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() upsertCompanyDto: UpsertCompanyDto,
   ): Promise<boolean> {
     return await this.service.upsertBizCompanies(socket, socketClientData, upsertCompanyDto);
   }
 
   @SubscribeMessage('update-socket-context')
   async updateClientContext(
-    @MessageBody() context: ClientContext,
     @ConnectedSocket() socket: Socket,
+    @MessageBody() context: ClientContext,
   ): Promise<boolean> {
     return await this.service.updateClientContext(socket, context);
   }
 
   @SubscribeMessage('track-event')
   async trackEvent(
-    @MessageBody() trackEventDto: TrackEventDto,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() trackEventDto: TrackEventDto,
   ): Promise<boolean> {
     return await this.service.trackEvent(socketClientData, trackEventDto);
   }
 
   @SubscribeMessage('toggle-socket-condition')
   async toggleClientCondition(
-    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() toggleClientConditionDto: ToggleClientConditionDto,
   ): Promise<boolean> {
-    if (!socketClientData) return false;
     return await this.service.toggleClientCondition(
       socket,
       socketClientData,
@@ -151,11 +150,10 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('fire-condition-wait-timer')
   async fireConditionWaitTimer(
-    @MessageBody() fireConditionWaitTimerDto: FireConditionWaitTimerDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
-    if (!socketClientData) return false;
     return await this.service.fireConditionWaitTimer(
       socket,
       socketClientData,
@@ -165,35 +163,35 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('start-content')
   async startContent(
-    @MessageBody() startContentDto: StartContentDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() startContentDto: StartContentDto,
   ): Promise<boolean> {
     return await this.service.startContent(this.server, socket, socketClientData, startContentDto);
   }
 
   @SubscribeMessage('end-content')
   async endContent(
-    @MessageBody() endContentDto: EndContentDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() endContentDto: EndContentDto,
   ): Promise<boolean> {
     return await this.service.endContent(this.server, socket, socketClientData, endContentDto);
   }
 
   @SubscribeMessage('go-to-step')
   async goToStep(
-    @MessageBody() goToStepDto: GoToStepDto,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() goToStepDto: GoToStepDto,
   ): Promise<boolean> {
     return await this.service.goToStep(socketClientData, goToStepDto);
   }
 
   @SubscribeMessage('report-tooltip-target-missing')
   async reportTooltipTargetMissing(
-    @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
   ): Promise<boolean> {
     return await this.service.reportTooltipTargetMissing(
       this.server,
@@ -205,32 +203,32 @@ export class WebSocketV2Gateway {
 
   @SubscribeMessage('answer-question')
   async answerQuestion(
-    @MessageBody() answerQuestionDto: AnswerQuestionDto,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() answerQuestionDto: AnswerQuestionDto,
   ): Promise<boolean> {
     return await this.service.answerQuestion(socketClientData, answerQuestionDto);
   }
 
   @SubscribeMessage('click-checklist-task')
   async clickChecklistTask(
-    @MessageBody() clickChecklistTaskDto: ClickChecklistTaskDto,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() clickChecklistTaskDto: ClickChecklistTaskDto,
   ): Promise<boolean> {
     return await this.service.clickChecklistTask(socketClientData, clickChecklistTaskDto);
   }
 
   @SubscribeMessage('hide-checklist')
   async hideChecklist(
-    @MessageBody() hideChecklistDto: HideChecklistDto,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() hideChecklistDto: HideChecklistDto,
   ): Promise<boolean> {
     return await this.service.hideChecklist(socketClientData, hideChecklistDto);
   }
 
   @SubscribeMessage('show-checklist')
   async showChecklist(
-    @MessageBody() showChecklistDto: ShowChecklistDto,
     @WebSocketClientData() socketClientData: SocketClientData,
+    @MessageBody() showChecklistDto: ShowChecklistDto,
   ): Promise<boolean> {
     return await this.service.showChecklist(socketClientData, showChecklistDto);
   }
