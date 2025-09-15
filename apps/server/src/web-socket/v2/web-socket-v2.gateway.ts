@@ -26,7 +26,7 @@ import {
   EndContentDto,
   FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
-import { SocketManagementService } from '@/web-socket/core/socket-management.service';
+import { SocketDataService } from '@/web-socket/core/socket-data.service';
 import { ClientContext } from '@usertour/types';
 import { buildExternalUserRoomId } from '../../utils/websocket-utils';
 
@@ -41,7 +41,7 @@ export class WebSocketV2Gateway {
 
   constructor(
     private readonly service: WebSocketV2Service,
-    private readonly socketManagementService: SocketManagementService,
+    private readonly socketDataService: SocketDataService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -65,7 +65,7 @@ export class WebSocketV2Gateway {
         }
 
         // Store validated data in socket
-        await this.socketManagementService.setClientData(socket.id, {
+        await this.socketDataService.setClientData(socket.id, {
           environment,
           externalUserId,
           clientContext,
