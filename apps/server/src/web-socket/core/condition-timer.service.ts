@@ -25,7 +25,7 @@ export class ConditionTimerService {
    * @param startConditions - The conditions to start
    * @returns Promise<boolean> - True if the conditions were started successfully
    */
-  async startWaitTimerConditions(
+  async startConditionWaitTimers(
     socket: Socket,
     socketClientData: SocketClientData,
     startConditions: WaitTimerCondition[],
@@ -67,7 +67,7 @@ export class ConditionTimerService {
    * @param versionId - The version ID
    * @returns Promise<boolean> - True if the condition was fired successfully
    */
-  async fireWaitTimerCondition(
+  async fireConditionWaitTimer(
     socket: Socket,
     socketClientData: SocketClientData,
     versionId: string,
@@ -113,7 +113,7 @@ export class ConditionTimerService {
    * @param socketClientData - The socket client data
    * @returns Promise<boolean> - True if the conditions were cancelled successfully
    */
-  async cancelWaitTimerConditions(
+  async cancelConditionWaitTimers(
     socket: Socket,
     socketClientData: SocketClientData,
   ): Promise<boolean> {

@@ -14,7 +14,7 @@ import {
   TrackEventDto,
   StartContentDto,
   EndContentDto,
-  FireWaitTimerConditionDto,
+  FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
 import {
   EventAttributes,
@@ -440,7 +440,7 @@ export class WebSocketV2Service {
     // Untrack current conditions
     await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
     // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelWaitTimerConditions(socket, socketClientData);
+    await this.conditionTimerService.cancelConditionWaitTimers(socket, socketClientData);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -539,7 +539,7 @@ export class WebSocketV2Service {
     // Untrack current conditions
     await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
     // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelWaitTimerConditions(socket, socketClientData);
+    await this.conditionTimerService.cancelConditionWaitTimers(socket, socketClientData);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -597,16 +597,16 @@ export class WebSocketV2Service {
    * Fire condition wait timer
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
-   * @param fireWaitTimerConditionDto - The DTO containing the version ID
+   * @param fireConditionWaitTimerDto - The DTO containing the version ID
    * @returns True if the wait timer was fired successfully
    */
-  async fireWaitTimerCondition(
+  async fireConditionWaitTimer(
     socket: Socket,
     socketClientData: SocketClientData,
-    fireWaitTimerConditionDto: FireWaitTimerConditionDto,
+    fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
-    const { versionId } = fireWaitTimerConditionDto;
-    return await this.conditionTimerService.fireWaitTimerCondition(
+    const { versionId } = fireConditionWaitTimerDto;
+    return await this.conditionTimerService.fireConditionWaitTimer(
       socket,
       socketClientData,
       versionId,

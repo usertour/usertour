@@ -753,7 +753,7 @@ export class UsertourCore extends Evented {
 
       // Handle timer firing - could trigger next step or other actions
       if (changeEvent.state === 'fired') {
-        const result = await this.socketService.fireWaitTimerCondition(
+        const result = await this.socketService.fireConditionWaitTimer(
           {
             versionId: changeEvent.condition.versionId,
           },

@@ -11,7 +11,7 @@ import {
   HideChecklistDto,
   ShowChecklistDto,
   TooltipTargetMissingDto,
-  FireWaitTimerConditionDto,
+  FireConditionWaitTimerDto,
 } from '@/types/websocket';
 import { Socket, Evented } from '@/utils';
 import {
@@ -275,8 +275,8 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     return await this.socket.send(WebSocketEvents.TOGGLE_CLIENT_CONDITION, params, options);
   }
 
-  async fireWaitTimerCondition(
-    params: FireWaitTimerConditionDto,
+  async fireConditionWaitTimer(
+    params: FireConditionWaitTimerDto,
     options?: BatchOptions,
   ): Promise<boolean> {
     if (!this.socket) return false;
