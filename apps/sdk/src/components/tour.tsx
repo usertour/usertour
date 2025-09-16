@@ -17,7 +17,6 @@ import {
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
-  SDKConfig,
   Side,
   StepContentType,
   ThemeTypesSetting,
@@ -39,7 +38,7 @@ type TourBaseProps = {
   userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
   totalSteps: number;
-  sdkConfig: SDKConfig;
+  removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
   handleClose: () => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
@@ -58,7 +57,7 @@ type PopperContentProps = {
   currentStepIndex: number;
   totalSteps: number;
   themeSettings: ThemeTypesSetting;
-  sdkConfig: SDKConfig;
+  removeBranding: boolean;
   handleClose: () => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
@@ -80,7 +79,7 @@ const useTourStore = (tour: UsertourTour) => {
     globalStyle,
     themeSettings,
     assets,
-    sdkConfig,
+    removeBranding,
     currentStepIndex,
     totalSteps,
   } = store;
@@ -98,7 +97,7 @@ const useTourStore = (tour: UsertourTour) => {
     globalStyle,
     themeSettings,
     assets,
-    sdkConfig,
+    removeBranding,
     currentStepIndex: currentStepIndex || 0,
     totalSteps: totalSteps || 0,
   };
@@ -112,7 +111,7 @@ const PopperContent = (props: PopperContentProps) => {
     currentStepIndex,
     totalSteps,
     themeSettings,
-    sdkConfig,
+    removeBranding,
     handleClose,
     handleOnClick,
   } = props;
@@ -147,7 +146,7 @@ const PopperContent = (props: PopperContentProps) => {
         onClick={handleOnClick}
         userAttributes={userAttributes}
       />
-      {!sdkConfig.removeBranding && <PopperMadeWith />}
+      {!removeBranding && <PopperMadeWith />}
       {showBottomProgress && (
         <PopperProgress
           type={progressType}
@@ -191,7 +190,7 @@ const TourPopper = (props: TourPopperProps) => {
     userAttributes,
     currentStepIndex,
     totalSteps,
-    sdkConfig,
+    removeBranding,
     handleClose,
     handleOnClick,
     handleActions,
@@ -251,7 +250,7 @@ const TourPopper = (props: TourPopperProps) => {
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           themeSettings={themeSettings}
-          sdkConfig={sdkConfig}
+          removeBranding={removeBranding}
           handleClose={handleClose}
           handleOnClick={handleOnClick}
         />
@@ -271,7 +270,7 @@ const TourModal = (props: TourModalProps) => {
     currentStepIndex,
     totalSteps,
     themeSettings,
-    sdkConfig,
+    removeBranding,
     handleClose,
     handleOnClick,
   } = props;
@@ -297,7 +296,7 @@ const TourModal = (props: TourModalProps) => {
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           themeSettings={themeSettings}
-          sdkConfig={sdkConfig}
+          removeBranding={removeBranding}
           handleClose={handleClose}
           handleOnClick={handleOnClick}
         />

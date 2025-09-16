@@ -1,12 +1,5 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import {
-  ChecklistData,
-  SDKConfig,
-  SDKContent,
-  Step,
-  ThemeTypesSetting,
-  UserTourTypes,
-} from '@usertour/types';
+import { ChecklistData, SDKContent, Step, ThemeTypesSetting, UserTourTypes } from '@usertour/types';
 
 // Base store interface
 export interface BaseStore {
@@ -15,7 +8,7 @@ export interface BaseStore {
   zIndex: number;
   assets: AssetAttributes[] | undefined;
   userAttributes?: UserTourTypes.Attributes;
-  sdkConfig: SDKConfig;
+  removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
 }
 

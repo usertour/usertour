@@ -6,7 +6,7 @@ import {
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
-import { contentStartReason, PlanType, SDKConfig, SDKSettingsMode } from '@usertour/types';
+import { contentStartReason, SDKSettingsMode } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
@@ -60,10 +60,6 @@ export class UsertourCore extends Evented {
     environmentId: '',
     token: '',
     mode: SDKSettingsMode.NORMAL,
-  };
-  sdkConfig: SDKConfig = {
-    planType: PlanType.HOBBY,
-    removeBranding: false,
   };
   tours: UsertourTour[] = [];
   assets: AssetAttributes[] = [];
@@ -642,10 +638,6 @@ export class UsertourCore extends Evented {
     if (opts?.membership) {
       this.attributeManager.setMembershipAttributes(opts.membership);
     }
-  }
-
-  getSdkConfig() {
-    return this.sdkConfig;
   }
 
   /**

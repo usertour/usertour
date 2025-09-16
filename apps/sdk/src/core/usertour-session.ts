@@ -116,4 +116,11 @@ export class UsertourSession {
   isExpandPending(): boolean {
     return Boolean(this.session.expandPending);
   }
+
+  /**
+   * Checks if the remove branding is enabled
+   */
+  isRemoveBranding(): boolean {
+    return this.session.content.project.removeBranding;
+  }
 }

@@ -210,4 +210,11 @@ export abstract class UsertourComponent<TStore> extends Evented {
   protected hasSteps(): boolean {
     return this.getSteps().length > 0;
   }
+
+  /**
+   * Checks if the remove branding is enabled
+   */
+  protected isRemoveBranding(): boolean {
+    return this.session.isRemoveBranding();
+  }
 }

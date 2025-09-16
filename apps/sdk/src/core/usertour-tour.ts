@@ -143,13 +143,13 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const contentSession = this.getSessionAttributes();
     const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
     const currentStep = this.getCurrentStep();
-    const sdkConfig = this.instance.getSdkConfig();
+    const removeBranding = this.isRemoveBranding();
     const zIndex = this.getCalculatedZIndex();
 
     // Combine all store data with proper defaults
     return {
       triggerRef: null, // Reset trigger reference
-      sdkConfig,
+      removeBranding,
       ...themeData,
       userAttributes,
       openState: false,
