@@ -33,7 +33,7 @@ import {
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
-import { buildNavigateUrl } from '@/core/usertour-helper';
+import { buildNavigateUrl, getClientContext } from '@/core/usertour-helper';
 import { getWsUri } from '@/core/usertour-env';
 import {
   WebSocketEvents,
@@ -775,12 +775,8 @@ export class UsertourCore extends Evented {
    */
   updateSocketAuthInfo() {
     const clientConditions = this.conditionsMonitor?.getClientConditions();
-    const clientContext = {
-      pageUrl: window?.location?.href ?? '',
-      viewportWidth: window?.innerWidth ?? 0,
-      viewportHeight: window?.innerHeight ?? 0,
-    };
-    this.socketService.updateAuth({
+    const clientContext = getClientContext();
+    this.socketService.updateCredentials({
       clientConditions,
       clientContext,
     });

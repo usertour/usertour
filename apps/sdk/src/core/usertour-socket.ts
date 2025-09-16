@@ -13,7 +13,7 @@ import {
   TooltipTargetMissingDto,
   FireConditionWaitTimerDto,
 } from '@/types/websocket';
-import { Socket, Evented, window } from '@/utils';
+import { Socket, Evented } from '@/utils';
 import {
   SDKContentSession,
   TrackCondition,
@@ -24,6 +24,7 @@ import {
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
+import { getClientContext } from '@/core/usertour-helper';
 
 // Batch options interface for consistency
 export interface BatchOptions {
@@ -39,8 +40,8 @@ export interface SocketInitOptions {
   namespace?: string;
 }
 
-// Auth update options
-export interface AuthUpdateInfo {
+// Auth credentials for authentication
+export interface AuthCredentials {
   externalUserId: string;
   token: string;
   clientContext?: ClientContext;
@@ -89,7 +90,7 @@ export interface IUsertourSocket {
   endBatch(): Promise<void>;
 
   // Auth management
-  updateAuth(authInfo: AuthUpdateInfo): void;
+  updateCredentials(authInfo: Partial<AuthCredentials>): void;
 
   // Event management - delegate to underlying Socket
   addEventListener(event: string, handler: (...args: any[]) => void): void;
@@ -105,7 +106,7 @@ export interface IUsertourSocket {
  */
 export class UsertourSocket extends Evented implements IUsertourSocket {
   private socket: Socket | undefined;
-  private currentAuth: AuthUpdateInfo | undefined;
+  private authCredentials: AuthCredentials | undefined;
 
   /**
    * Initialize Socket connection with given credentials
@@ -124,14 +125,10 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     }
 
     if (!this.socket) {
-      const clientContext: ClientContext = {
-        pageUrl: window?.location?.href ?? '',
-        viewportWidth: window?.innerWidth ?? 0,
-        viewportHeight: window?.innerHeight ?? 0,
-      };
+      const clientContext: ClientContext = getClientContext();
 
       // Store current connection auth info for comparison
-      this.currentAuth = { externalUserId, token, clientContext };
+      this.authCredentials = { externalUserId, token, clientContext };
 
       this.socket = new Socket({
         wsUri,
@@ -139,7 +136,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
         socketConfig: {
           // Use function for auth to ensure latest info on reconnection
           auth: (cb) => {
-            cb(this.currentAuth || {});
+            cb(this.authCredentials || {});
           },
         },
       });
@@ -191,12 +188,14 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
    * Check if Socket connection needs to be recreated due to credential changes
    */
   private shouldRecreateSocket(externalUserId: string, token: string): boolean {
-    if (!this.socket || !this.currentAuth) {
+    if (!this.socket || !this.authCredentials) {
       return false;
     }
 
     // Recreate if externalUserId or token has changed
-    return this.currentAuth.externalUserId !== externalUserId || this.currentAuth.token !== token;
+    return (
+      this.authCredentials.externalUserId !== externalUserId || this.authCredentials.token !== token
+    );
   }
 
   // User and Company operations
@@ -293,7 +292,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = undefined;
-      this.currentAuth = undefined;
+      this.authCredentials = undefined;
     }
   }
 
@@ -329,16 +328,16 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
   }
 
   // Auth management
-  updateAuth(authInfo: Partial<AuthUpdateInfo>): void {
+  updateCredentials(authInfo: Partial<AuthCredentials>): void {
     if (!this.socket) {
       console.warn('Socket not initialized. Cannot update auth.');
       return;
     }
 
     // Update current auth info - the callback will use this on reconnection
-    if (this.currentAuth) {
-      this.currentAuth = {
-        ...this.currentAuth,
+    if (this.authCredentials) {
+      this.authCredentials = {
+        ...this.authCredentials,
         ...authInfo,
       };
     }

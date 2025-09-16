@@ -593,3 +593,15 @@ export const evaluateConditions = async (
     ...(attributes ? convertToAttributeEvaluationOptions(attributes) : {}),
   });
 };
+
+/**
+ * Get client context
+ * @returns Client context
+ */
+export const getClientContext = () => {
+  return {
+    pageUrl: location?.href ?? '',
+    viewportWidth: window?.innerWidth ?? 0,
+    viewportHeight: window?.innerHeight ?? 0,
+  };
+};
