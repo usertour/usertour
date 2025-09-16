@@ -22,6 +22,7 @@ import {
   WaitTimerStateChangeEvent,
   WaitTimerConditionsMonitor,
 } from '@/core/usertour-wait-timer-monitor';
+import { UsertourURLMonitor } from '@/core/usertour-url-monitor';
 import { UsertourUIManager } from '@/core/usertour-ui-manager';
 import {
   autoBind,
@@ -84,6 +85,7 @@ export class UsertourCore extends Evented {
   // Condition monitoring
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
   private waitTimerMonitor: WaitTimerConditionsMonitor | null = null;
+  private urlMonitor: UsertourURLMonitor | null = null;
 
   constructor() {
     super();
@@ -99,6 +101,7 @@ export class UsertourCore extends Evented {
     this.initializeEventListeners();
     this.initializeConditionsMonitor();
     this.initializeWaitTimerMonitor();
+    this.initializeURLMonitor();
   }
 
   /**
@@ -188,7 +191,7 @@ export class UsertourCore extends Evented {
   /**
    * Initializes DOM event listeners for the application
    */
-  initializeEventListeners() {
+  private initializeEventListeners() {
     this.once(SDK_DOM_LOADED, async () => {
       const initialized = await this.uiManager.initialize(this.toursStore);
       if (!initialized) {
@@ -212,7 +215,7 @@ export class UsertourCore extends Evented {
    * Handles preview messages from the builder
    * @param e - Message event containing preview data
    */
-  handlePreviewMessage(e: MessageEvent) {
+  private handlePreviewMessage(e: MessageEvent) {
     const message = getValidMessage(e);
     if (!message) {
       return;
@@ -696,6 +699,9 @@ export class UsertourCore extends Evented {
     // Destroy wait timer monitor
     this.destroyWaitTimerMonitor();
 
+    // Destroy URL monitor
+    this.destroyURLMonitor();
+
     // Destroy all tours
     for (const tour of this.tours) {
       tour.destroy();
@@ -710,7 +716,7 @@ export class UsertourCore extends Evented {
   /**
    * Creates and initializes condition monitor
    */
-  initializeConditionsMonitor() {
+  private initializeConditionsMonitor() {
     if (this.conditionsMonitor) {
       this.conditionsMonitor.destroy();
     }
@@ -739,7 +745,7 @@ export class UsertourCore extends Evented {
   /**
    * Creates and initializes wait timer monitor
    */
-  initializeWaitTimerMonitor() {
+  private initializeWaitTimerMonitor() {
     if (this.waitTimerMonitor) {
       this.waitTimerMonitor.destroy();
     }
@@ -773,7 +779,7 @@ export class UsertourCore extends Evented {
   /**
    * Updates the socket auth info
    */
-  updateSocketAuthInfo() {
+  private updateSocketAuthInfo() {
     const clientConditions = this.conditionsMonitor?.getClientConditions();
     const clientContext = getClientContext();
     this.socketService.updateCredentials({
@@ -785,7 +791,7 @@ export class UsertourCore extends Evented {
   /**
    * Starts the condition monitor
    */
-  startConditionsMonitor() {
+  private startConditionsMonitor() {
     this.conditionsMonitor?.start();
   }
 
@@ -793,7 +799,7 @@ export class UsertourCore extends Evented {
    * Tracks a client condition
    * @param condition - The condition to track
    */
-  trackClientCondition(condition: TrackCondition) {
+  private trackClientCondition(condition: TrackCondition) {
     this.conditionsMonitor?.addConditions([condition.condition]);
   }
 
@@ -801,7 +807,7 @@ export class UsertourCore extends Evented {
    * Removes conditions from the condition monitor
    * @param conditionIds - The IDs of the conditions to remove
    */
-  removeConditions(conditionIds: string[]) {
+  private removeConditions(conditionIds: string[]) {
     this.conditionsMonitor?.removeConditions(conditionIds);
   }
 
@@ -809,7 +815,7 @@ export class UsertourCore extends Evented {
    * Starts a wait timer condition
    * @param condition - The condition to start
    */
-  startWaitTimerCondition(condition: WaitTimerCondition) {
+  private startWaitTimerCondition(condition: WaitTimerCondition) {
     this.waitTimerMonitor?.addWaitTimer(condition);
   }
 
@@ -817,14 +823,14 @@ export class UsertourCore extends Evented {
    * Cancels a wait timer condition
    * @param condition - The condition to cancel
    */
-  cancelWaitTimerCondition(condition: WaitTimerCondition) {
+  private cancelWaitTimerCondition(condition: WaitTimerCondition) {
     this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
   }
 
   /**
    * Destroys the condition monitor
    */
-  destroyConditionsMonitor(): void {
+  private destroyConditionsMonitor(): void {
     if (this.conditionsMonitor) {
       this.conditionsMonitor.destroy();
       this.conditionsMonitor = null;
@@ -834,10 +840,40 @@ export class UsertourCore extends Evented {
   /**
    * Destroys the wait timer monitor
    */
-  destroyWaitTimerMonitor(): void {
+  private destroyWaitTimerMonitor(): void {
     if (this.waitTimerMonitor) {
       this.waitTimerMonitor.destroy();
       this.waitTimerMonitor = null;
+    }
+  }
+
+  /**
+   * Creates and initializes URL monitor
+   */
+  private initializeURLMonitor() {
+    if (this.urlMonitor) {
+      this.urlMonitor.destroy();
+    }
+
+    this.urlMonitor = new UsertourURLMonitor({
+      autoStart: true,
+      interval: 500,
+    });
+
+    // Listen for URL change events
+    this.urlMonitor.on('url-changed', () => {
+      const clientContext = getClientContext();
+      this.socketService.updateClientContext(clientContext, { batch: true });
+    });
+  }
+
+  /**
+   * Destroys the URL monitor
+   */
+  private destroyURLMonitor(): void {
+    if (this.urlMonitor) {
+      this.urlMonitor.destroy();
+      this.urlMonitor = null;
     }
   }
 }
