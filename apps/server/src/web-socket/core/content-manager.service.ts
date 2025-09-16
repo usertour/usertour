@@ -66,25 +66,6 @@ export class ContentManagerService {
   ) {}
 
   /**
-   * Handles invalid session cleanup
-   * Cleans up invalid session state and tracking conditions
-   */
-  private handleInvalidSession(
-    context: ContentStartContext,
-    invalidSession: SDKContentSession,
-  ): void {
-    const { socket, contentType, socketClientData } = context;
-
-    this.sessionManagerService.unsetCurrentSession(
-      socket,
-      socketClientData,
-      contentType,
-      invalidSession.id,
-    );
-    this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
-  }
-
-  /**
    * Handles the result of content start operations
    * Processes ContentStartResult and performs necessary WebSocket operations
    */
@@ -93,83 +74,144 @@ export class ContentManagerService {
     result: ContentStartResult,
     forceGoToStep = false,
   ): Promise<boolean> {
-    const { socket, contentType, socketClientData } = context;
+    const { success, session, trackHideConditions, reason, trackConditions, conditionWaitTimers } =
+      result;
 
-    try {
-      const {
-        success,
-        session,
-        trackConditions,
-        trackHideConditions,
-        conditionWaitTimers,
-        reason,
-      } = result;
-
-      // Early return if operation failed
-      if (!success) {
-        this.logger.debug(`Content start failed: ${reason}`, {
-          contentType,
-        });
-        return false;
-      }
-
-      // Track the client conditions, because no content was found to start
-      if (trackConditions && trackConditions.length > 0) {
-        this.logger.debug(`Tracking conditions: ${trackConditions.length}`);
-        return await this.conditionTrackingService.trackClientConditions(
-          socket,
-          socketClientData,
-          trackConditions,
-        );
-      }
-
-      // Found content that can be started, but set a wait timer
-      if (conditionWaitTimers && conditionWaitTimers.length > 0) {
-        this.logger.debug(`Starting wait timer conditions: ${conditionWaitTimers.length}`);
-        return await this.conditionTimerService.startConditionWaitTimers(
-          socket,
-          conditionWaitTimers,
-        );
-      }
-
-      // Found content that can be started, set the session
-      if (session) {
-        const isSetSession = this.sessionManagerService.setCurrentSession(socket, session);
-        if (!isSetSession) {
-          return false;
-        }
-        if (forceGoToStep) {
-          this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
-        }
-        //untrack current conditions
-        await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
-        // Cancel wait timer conditions
-        await this.conditionTimerService.cancelConditionWaitTimers(
-          socket,
-          socketClientData.conditionWaitTimers,
-        );
-        if (trackHideConditions && trackHideConditions.length > 0) {
-          // Track the new conditions
-          await this.conditionTrackingService.trackClientConditions(
-            socket,
-            socketClientData,
-            trackHideConditions,
-          );
-        }
-
-        this.logger.debug(`Content start succeeded: ${reason}`, {
-          contentType,
-        });
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      this.logger.error(`Error in handleContentStartResult: ${error.message}`, {
-        contentType,
-      });
+    // Early return if operation failed
+    if (!success) {
+      this.logger.debug(`Content start failed: ${reason}`);
       return false;
     }
+
+    // Handle tracking conditions
+    if (trackConditions && trackConditions.length > 0) {
+      return await this.handleTrackingConditions(context, trackConditions);
+    }
+
+    // Handle condition wait timers
+    if (conditionWaitTimers && conditionWaitTimers.length > 0) {
+      return await this.handleConditionWaitTimers(context, conditionWaitTimers);
+    }
+
+    // Handle successful session creation
+    if (session) {
+      return await this.handleSuccessfulSession(
+        context,
+        session,
+        trackHideConditions,
+        forceGoToStep,
+        reason,
+      );
+    }
+
+    return false;
+  }
+
+  /**
+   * Handles tracking conditions when no content was found to start
+   */
+  private async handleTrackingConditions(
+    context: ContentStartContext,
+    trackConditions: TrackCondition[],
+  ): Promise<boolean> {
+    const { socket, socketClientData } = context;
+
+    this.logger.debug(`Tracking conditions: ${trackConditions.length}`);
+    // Track the client conditions, because no content was found to start
+    const newTrackConditions = trackConditions?.filter(
+      (trackCondition) =>
+        !socketClientData?.clientConditions?.some(
+          (clientCondition) => clientCondition.conditionId === trackCondition.condition.id,
+        ),
+    );
+    return await this.conditionTrackingService.trackClientConditions(socket, newTrackConditions);
+  }
+
+  /**
+   * Handles condition wait timers for future content activation
+   */
+  private async handleConditionWaitTimers(
+    context: ContentStartContext,
+    conditionWaitTimers: ConditionWaitTimer[],
+  ): Promise<boolean> {
+    const { socket, socketClientData } = context;
+
+    this.logger.debug(`Starting wait timer conditions: ${conditionWaitTimers.length}`);
+    const newConditionWaitTimers = conditionWaitTimers?.filter(
+      (conditionWaitTimer) =>
+        !socketClientData?.conditionWaitTimers?.some(
+          (waitTimer) => waitTimer.versionId === conditionWaitTimer.versionId,
+        ),
+    );
+    return await this.conditionTimerService.startConditionWaitTimers(
+      socket,
+      newConditionWaitTimers,
+    );
+  }
+
+  /**
+   * Handles successful session creation and setup
+   */
+  private async handleSuccessfulSession(
+    context: ContentStartContext,
+    session: SDKContentSession,
+    trackHideConditions: TrackCondition[] | undefined,
+    forceGoToStep: boolean,
+    reason: string | undefined,
+  ): Promise<boolean> {
+    const { socket, contentType, socketClientData } = context;
+    const { clientConditions, conditionWaitTimers } = socketClientData;
+
+    const isSetSession = await this.sessionManagerService.setCurrentSession(socket, session);
+    if (!isSetSession) {
+      return false;
+    }
+
+    if (forceGoToStep) {
+      this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
+    }
+
+    // Untrack current conditions
+    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
+
+    // Cancel wait timer conditions that are not the current session
+    const cancelConditionWaitTimers = conditionWaitTimers.filter(
+      (conditionWaitTimer) => conditionWaitTimer.versionId !== session.version.id,
+    );
+    await this.conditionTimerService.cancelConditionWaitTimers(socket, cancelConditionWaitTimers);
+
+    // Track the hide conditions
+    if (trackHideConditions && trackHideConditions.length > 0) {
+      await this.conditionTrackingService.trackClientConditions(socket, trackHideConditions);
+    }
+
+    this.logger.debug(`Content start succeeded: ${reason}`, {
+      contentType,
+    });
+    return true;
+  }
+
+  /**
+   * Handles invalid session cleanup
+   * Cleans up invalid session state and tracking conditions
+   */
+  private async handleInvalidSession(
+    context: ContentStartContext,
+    invalidSession: SDKContentSession,
+  ): Promise<boolean> {
+    const { socket, contentType, socketClientData } = context;
+    const { clientConditions } = socketClientData;
+
+    const isUnsetSession = await this.sessionManagerService.unsetCurrentSession(
+      socket,
+      socketClientData,
+      contentType,
+      invalidSession.id,
+    );
+    if (!isUnsetSession) {
+      return false;
+    }
+    return await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
   }
 
   /**
@@ -196,7 +238,13 @@ export class ContentManagerService {
       }
 
       if (existingSessionResult.invalidSession) {
-        this.handleInvalidSession(context, existingSessionResult.invalidSession);
+        const isSuccess = await this.handleInvalidSession(
+          context,
+          existingSessionResult.invalidSession,
+        );
+        if (!isSuccess) {
+          return false;
+        }
       }
 
       // Get evaluated content versions for remaining strategies

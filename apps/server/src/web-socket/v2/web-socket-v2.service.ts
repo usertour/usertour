@@ -437,13 +437,11 @@ export class WebSocketV2Service {
       ContentDataType.FLOW,
       sessionId,
     );
+    const { clientConditions, conditionWaitTimers } = socketClientData;
     // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
+    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
     // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelConditionWaitTimers(
-      socket,
-      socketClientData.conditionWaitTimers,
-    );
+    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -539,13 +537,11 @@ export class WebSocketV2Service {
       sessionId,
       false,
     );
+    const { clientConditions, conditionWaitTimers } = socketClientData;
     // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
+    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
     // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelConditionWaitTimers(
-      socket,
-      socketClientData.conditionWaitTimers,
-    );
+    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -591,9 +587,10 @@ export class WebSocketV2Service {
     clientCondition: ClientCondition,
   ): Promise<boolean> {
     const { conditionId, isActive } = clientCondition;
+    const { clientConditions } = socketClientData;
     return await this.conditionTrackingService.toggleClientCondition(
       socket,
-      socketClientData,
+      clientConditions,
       conditionId,
       isActive,
     );

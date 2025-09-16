@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { TrackCondition } from '@/common/types/sdk';
-import { SocketDataService, SocketClientData } from './socket-data.service';
+import { ClientCondition, TrackCondition } from '@/common/types/sdk';
+import { SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 
 /**
@@ -21,34 +21,16 @@ export class ConditionTrackingService {
   /**
    * Track socket conditions
    * @param socket - The socket
-   * @param socketClientData - The socket client data
    * @param trackConditions - The conditions to track
    * @returns Promise<void>
    */
-  async trackClientConditions(
-    socket: Socket,
-    socketClientData: SocketClientData,
-    trackConditions: TrackCondition[],
-  ): Promise<boolean> {
+  async trackClientConditions(socket: Socket, trackConditions: TrackCondition[]): Promise<boolean> {
     try {
       // Early return if no conditions to track
       if (!trackConditions?.length) return false;
 
-      const existingClientConditions = socketClientData.clientConditions ?? [];
-
-      // Filter out conditions that already exist
-      const newConditions = trackConditions.filter(
-        (condition) =>
-          !existingClientConditions?.some(
-            (existing) => existing.conditionId === condition.condition.id,
-          ),
-      );
-
-      // Early return if no new conditions to track
-      if (!newConditions.length) return false;
-
       // Emit track events and collect successfully tracked conditions
-      const trackedClientConditions = newConditions
+      const clientConditions = trackConditions
         .filter((condition) => this.socketEmitterService.trackClientEvent(socket, condition))
         .map((condition) => ({
           conditionId: condition.condition.id,
@@ -57,7 +39,7 @@ export class ConditionTrackingService {
 
       // Update socket data by merging with existing conditions
       return await this.socketDataService.updateClientData(socket.id, {
-        clientConditions: [...existingClientConditions, ...trackedClientConditions],
+        clientConditions,
       });
     } catch (error) {
       this.logger.error(`Failed to track socket conditions for socket ${socket.id}:`, error);
@@ -68,25 +50,20 @@ export class ConditionTrackingService {
   /**
    * Toggle specific socket condition
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param clientConditions - The client conditions to toggle
    * @param conditionId - The condition ID
    * @param isActive - Whether the condition is active
    * @returns Promise<boolean> - True if the condition was toggled successfully
    */
   async toggleClientCondition(
     socket: Socket,
-    socketClientData: SocketClientData,
+    clientConditions: ClientCondition[],
     conditionId: string,
     isActive: boolean,
   ): Promise<boolean> {
     try {
-      const clientConditions = socketClientData.clientConditions ?? [];
-
-      // Early return if no conditions exist
-      if (!clientConditions?.length) return false;
-
-      // Check if condition exists first
-      if (!clientConditions.some((c) => c.conditionId === conditionId)) {
+      // Check if condition exists
+      if (!clientConditions?.some((c) => c.conditionId === conditionId)) {
         return false;
       }
 
@@ -113,18 +90,16 @@ export class ConditionTrackingService {
   /**
    * Untrack client conditions
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param clientConditions - The client conditions to untrack
    * @returns Promise<boolean> - True if the conditions were untracked successfully
    */
   async untrackClientConditions(
     socket: Socket,
-    socketClientData: SocketClientData,
+    clientConditions: ClientCondition[],
   ): Promise<boolean> {
     try {
-      const clientConditions = socketClientData.clientConditions ?? [];
-
-      // Early return if no existing conditions to remove
-      if (!clientConditions?.length) return true;
+      // Early return if no conditions to untrack
+      if (!clientConditions?.length) return false;
 
       // Emit untrack events and collect successfully untracked conditions
       const untrackedConditions = clientConditions.filter((condition) =>

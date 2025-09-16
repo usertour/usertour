@@ -130,7 +130,7 @@ export class SessionManagerService {
    * @returns Promise<boolean> - True if the session was set successfully
    */
   async setCurrentSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
-    const isSetSession = this.updateContentSessionByType(socket.id, session);
+    const isSetSession = await this.updateContentSessionByType(socket.id, session);
     if (!isSetSession) {
       return false;
     }
@@ -152,15 +152,15 @@ export class SessionManagerService {
     contentType: ContentDataType,
     sessionId: string,
     emitWebSocket = true,
-  ): Promise<void> {
-    if (!sessionId || !socketClientData) return;
+  ): Promise<boolean> {
+    if (!sessionId || !socketClientData) return false;
     const sessionConfig = this.getUnsetSessionConfig(
       contentType,
       socketClientData,
       socket,
       sessionId,
     );
-    if (!sessionConfig) return;
+    if (!sessionConfig) return false;
 
     // Emit WebSocket event if requested
     if (emitWebSocket) {
@@ -173,5 +173,6 @@ export class SessionManagerService {
         [sessionConfig.clientDataKey]: undefined,
       });
     }
+    return true;
   }
 }
