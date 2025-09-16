@@ -113,7 +113,7 @@ export class ContentManagerService {
         return false;
       }
 
-      // Track the new conditions
+      // Track the client conditions, because no content was found to start
       if (trackConditions && trackConditions.length > 0) {
         this.logger.debug(`Tracking conditions: ${trackConditions.length}`);
         return await this.conditionTrackingService.trackClientConditions(
@@ -123,7 +123,7 @@ export class ContentManagerService {
         );
       }
 
-      // Start wait timer conditions
+      // Found content that can be started, but set a wait timer
       if (conditionWaitTimers && conditionWaitTimers.length > 0) {
         this.logger.debug(`Starting wait timer conditions: ${conditionWaitTimers.length}`);
         return await this.conditionTimerService.startConditionWaitTimers(
@@ -132,7 +132,7 @@ export class ContentManagerService {
         );
       }
 
-      // Set the content session if one was created
+      // Found content that can be started, set the session
       if (session) {
         const isSetSession = this.sessionManagerService.setCurrentSession(socket, session);
         if (!isSetSession) {
@@ -143,6 +143,7 @@ export class ContentManagerService {
         }
         //untrack current conditions
         await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
+        // Cancel wait timer conditions
         await this.conditionTimerService.cancelConditionWaitTimers(
           socket,
           socketClientData.conditionWaitTimers,
