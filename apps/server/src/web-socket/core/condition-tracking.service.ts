@@ -123,8 +123,6 @@ export class ConditionTrackingService {
     excludeConditionIds?: string[],
   ): Promise<void> {
     try {
-      if (!socketClientData) return;
-
       const clientConditions = socketClientData.clientConditions ?? [];
 
       // Early return if no existing conditions to remove
