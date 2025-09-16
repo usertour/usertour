@@ -71,20 +71,20 @@ export class UsertourCore extends Evented {
   externalCompanyId: string | undefined;
   toursStore = new ExternalStore<UsertourTour[]>([]);
 
-  // Use dedicated attribute manager instead of direct properties
-  private attributeManager: UsertourAttributeManager;
-
-  // Use dedicated UI manager for DOM operations
-  private uiManager: UsertourUIManager;
-
   private baseZIndex = 1000000;
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
 
+  // Use dedicated attribute manager instead of direct properties
+  private attributeManager: UsertourAttributeManager;
+  // Use dedicated UI manager for DOM operations
+  private uiManager: UsertourUIManager;
   // Condition monitoring
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
+  // Wait timer monitoring
   private waitTimerMonitor: WaitTimerConditionsMonitor | null = null;
+  // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
 
   constructor() {
