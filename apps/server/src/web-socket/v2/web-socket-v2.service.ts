@@ -14,7 +14,7 @@ import {
   TrackEventDto,
   StartContentDto,
   EndContentDto,
-  FireConditionWaitTimerDto,
+  FireWaitTimerConditionDto,
 } from './web-socket-v2.dto';
 import {
   EventAttributes,
@@ -438,9 +438,9 @@ export class WebSocketV2Service {
       sessionId,
     );
     // Untrack current conditions
-    await this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
+    await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
     // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
+    await this.conditionTimerService.cancelWaitTimerConditions(socket, socketClientData);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -537,9 +537,9 @@ export class WebSocketV2Service {
       false,
     );
     // Untrack current conditions
-    await this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
+    await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
     // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
+    await this.conditionTimerService.cancelWaitTimerConditions(socket, socketClientData);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -585,7 +585,6 @@ export class WebSocketV2Service {
     clientCondition: ClientCondition,
   ): Promise<boolean> {
     const { conditionId, isActive } = clientCondition;
-
     return await this.conditionTrackingService.toggleClientCondition(
       socket,
       socketClientData,
@@ -597,16 +596,17 @@ export class WebSocketV2Service {
   /**
    * Fire condition wait timer
    * @param socket - The socket instance
-   * @param fireConditionWaitTimerDto - The DTO containing the version ID
+   * @param socketClientData - The socket client data
+   * @param fireWaitTimerConditionDto - The DTO containing the version ID
    * @returns True if the wait timer was fired successfully
    */
-  async fireConditionWaitTimer(
+  async fireWaitTimerCondition(
     socket: Socket,
     socketClientData: SocketClientData,
-    fireConditionWaitTimerDto: FireConditionWaitTimerDto,
+    fireWaitTimerConditionDto: FireWaitTimerConditionDto,
   ): Promise<boolean> {
-    const { versionId } = fireConditionWaitTimerDto;
-    return await this.conditionTimerService.fireClientConditionWaitTimer(
+    const { versionId } = fireWaitTimerConditionDto;
+    return await this.conditionTimerService.fireWaitTimerCondition(
       socket,
       socketClientData,
       versionId,

@@ -111,33 +111,23 @@ export class ConditionTrackingService {
   }
 
   /**
-   * Untrack current conditions with optional exclusions
+   * Untrack client conditions
    * @param socket - The socket
    * @param socketClientData - The socket client data
-   * @param excludeConditionIds - Array of condition IDs to exclude from untracking
-   * @returns Promise<void>
+   * @returns Promise<boolean> - True if the conditions were untracked successfully
    */
-  async untrackCurrentConditions(
+  async untrackClientConditions(
     socket: Socket,
     socketClientData: SocketClientData,
-    excludeConditionIds?: string[],
   ): Promise<boolean> {
     try {
       const clientConditions = socketClientData.clientConditions ?? [];
 
       // Early return if no existing conditions to remove
-      if (!clientConditions?.length) return false;
-
-      // Determine which conditions to untrack
-      const conditionsToUntrack = excludeConditionIds?.length
-        ? clientConditions.filter((c) => !excludeConditionIds.includes(c.conditionId))
-        : clientConditions;
-
-      // Early return if no conditions to untrack
-      if (!conditionsToUntrack.length) return false;
+      if (!clientConditions?.length) return true;
 
       // Emit untrack events and collect successfully untracked conditions
-      const untrackedConditions = conditionsToUntrack.filter((condition) =>
+      const untrackedConditions = clientConditions.filter((condition) =>
         this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
       );
 

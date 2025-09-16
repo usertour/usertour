@@ -42,6 +42,7 @@ interface ContentStartResult {
   success: boolean;
   session?: SDKContentSession;
   trackConditions?: TrackCondition[];
+  trackHideConditions?: TrackCondition[];
   waitTimerConditions?: WaitTimerCondition[];
   reason?: string;
   invalidSession?: SDKContentSession;
@@ -80,7 +81,7 @@ export class ContentManagerService {
       contentType,
       invalidSession.id,
     );
-    this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
+    this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
   }
 
   /**
@@ -95,7 +96,14 @@ export class ContentManagerService {
     const { socket, contentType, socketClientData } = context;
 
     try {
-      const { success, session, trackConditions, waitTimerConditions, reason } = result;
+      const {
+        success,
+        session,
+        trackConditions,
+        trackHideConditions,
+        waitTimerConditions,
+        reason,
+      } = result;
 
       // Early return if operation failed
       if (!success) {
@@ -105,7 +113,19 @@ export class ContentManagerService {
         return false;
       }
 
+      // Track the new conditions
+      if (trackConditions && trackConditions.length > 0) {
+        this.logger.debug(`Tracking conditions: ${trackConditions.length}`);
+        return await this.conditionTrackingService.trackClientConditions(
+          socket,
+          socketClientData,
+          trackConditions,
+        );
+      }
+
+      // Start wait timer conditions
       if (waitTimerConditions && waitTimerConditions.length > 0) {
+        this.logger.debug(`Starting wait timer conditions: ${waitTimerConditions.length}`);
         return await this.conditionTimerService.startWaitTimerConditions(
           socket,
           socketClientData,
@@ -113,7 +133,6 @@ export class ContentManagerService {
         );
       }
 
-      // Handle successful result
       // Set the content session if one was created
       if (session) {
         const isSetSession = this.sessionManagerService.setCurrentSession(socket, session);
@@ -123,30 +142,25 @@ export class ContentManagerService {
         if (forceGoToStep) {
           this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
         }
-        this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
+        //untrack current conditions
+        await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
+        await this.conditionTimerService.cancelWaitTimerConditions(socket, socketClientData);
+        if (trackHideConditions && trackHideConditions.length > 0) {
+          // Track the new conditions
+          await this.conditionTrackingService.trackClientConditions(
+            socket,
+            socketClientData,
+            trackHideConditions,
+          );
+        }
+
+        this.logger.debug(`Content start succeeded: ${reason}`, {
+          contentType,
+        });
+        return true;
       }
 
-      // Handle track conditions if any were returned
-      const excludeConditionIds =
-        trackConditions?.map((trackCondition) => trackCondition.condition.id) ?? [];
-      //untrack current conditions
-      await this.conditionTrackingService.untrackCurrentConditions(
-        socket,
-        socketClientData,
-        excludeConditionIds,
-      );
-      // Track the new conditions
-      await this.conditionTrackingService.trackClientConditions(
-        socket,
-        socketClientData,
-        trackConditions,
-      );
-
-      this.logger.debug(`Content start succeeded: ${reason}`, {
-        contentType,
-      });
-
-      return true;
+      return false;
     } catch (error) {
       this.logger.error(`Error in handleContentStartResult: ${error.message}`, {
         contentType,

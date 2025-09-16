@@ -23,7 +23,7 @@ export class ConditionTimerService {
    * @param socket - The socket
    * @param socketClientData - The socket client data
    * @param startConditions - The conditions to start
-   * @returns Promise<void>
+   * @returns Promise<boolean> - True if the conditions were started successfully
    */
   async startWaitTimerConditions(
     socket: Socket,
@@ -61,13 +61,13 @@ export class ConditionTimerService {
   }
 
   /**
-   * Fire specific socket condition wait timer
+   * Fire wait timer conditions
    * @param socket - The socket
    * @param socketClientData - The socket client data
    * @param versionId - The version ID
    * @returns Promise<boolean> - True if the condition was fired successfully
    */
-  async fireClientConditionWaitTimer(
+  async fireWaitTimerCondition(
     socket: Socket,
     socketClientData: SocketClientData,
     versionId: string,
@@ -95,10 +95,9 @@ export class ConditionTimerService {
       );
 
       // Update socket data
-      await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketDataService.updateClientData(socket.id, {
         waitTimerConditions: updatedConditions,
       });
-      return true;
     } catch (error) {
       this.logger.error(
         `Failed to fire socket condition wait timer for socket ${socket.id}:`,
@@ -109,22 +108,22 @@ export class ConditionTimerService {
   }
 
   /**
-   * Cancel current wait timer conditions
+   * Cancel wait timer conditions
    * @param socket - The socket
    * @param socketClientData - The socket client data
-   * @returns Promise<void>
+   * @returns Promise<boolean> - True if the conditions were cancelled successfully
    */
-  async cancelCurrentWaitTimerConditions(
+  async cancelWaitTimerConditions(
     socket: Socket,
     socketClientData: SocketClientData,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
-      if (!socketClientData) return;
+      if (!socketClientData) return true;
 
       const waitTimerConditions = socketClientData.waitTimerConditions ?? [];
 
       // Early return if no existing conditions to remove
-      if (!waitTimerConditions?.length) return;
+      if (!waitTimerConditions?.length) return true;
 
       // Filter out already activated conditions and emit cancellation events
       const conditionsToCancel = waitTimerConditions.filter((condition) => !condition.activated);
@@ -135,9 +134,10 @@ export class ConditionTimerService {
       }
 
       // Clear all wait timer conditions from socket data
-      await this.socketDataService.updateClientData(socket.id, { waitTimerConditions: [] });
+      return await this.socketDataService.updateClientData(socket.id, { waitTimerConditions: [] });
     } catch (error) {
       this.logger.error(`Failed to cancel wait timer conditions for socket ${socket.id}:`, error);
+      return false;
     }
   }
 }

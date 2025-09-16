@@ -24,7 +24,7 @@ import {
   TooltipTargetMissingDto,
   StartContentDto,
   EndContentDto,
-  FireConditionWaitTimerDto,
+  FireWaitTimerConditionDto,
 } from './web-socket-v2.dto';
 import { SocketClientData, SocketDataService } from '@/web-socket/core/socket-data.service';
 import { ClientContext } from '@usertour/types';
@@ -146,15 +146,15 @@ export class WebSocketV2Gateway {
   }
 
   @SubscribeMessage('fire-condition-wait-timer')
-  async fireConditionWaitTimer(
+  async fireWaitTimerCondition(
     @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() fireConditionWaitTimerDto: FireConditionWaitTimerDto,
+    @MessageBody() fireWaitTimerConditionDto: FireWaitTimerConditionDto,
   ): Promise<boolean> {
-    return await this.service.fireConditionWaitTimer(
+    return await this.service.fireWaitTimerCondition(
       socket,
       socketClientData,
-      fireConditionWaitTimerDto,
+      fireWaitTimerConditionDto,
     );
   }
 
