@@ -27,7 +27,7 @@ import { EventTrackingService } from './event-tracking.service';
 import { SessionManagerService } from './session-manager.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
-import { SocketClientData } from './socket-data.service';
+import { SocketClientData, SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 
 interface ContentStartContext {
@@ -63,6 +63,7 @@ export class ContentManagerService {
     private readonly conditionTrackingService: ConditionTrackingService,
     private readonly conditionTimerService: ConditionTimerService,
     private readonly socketEmitterService: SocketEmitterService,
+    private readonly socketDataService: SocketDataService,
   ) {}
 
   /**
@@ -245,6 +246,11 @@ export class ContentManagerService {
         if (!isSuccess) {
           return false;
         }
+        const newSocketClientData = await this.socketDataService.getClientData(context.socket.id);
+        if (!newSocketClientData) {
+          return false;
+        }
+        context.socketClientData = newSocketClientData;
       }
 
       // Get evaluated content versions for remaining strategies
