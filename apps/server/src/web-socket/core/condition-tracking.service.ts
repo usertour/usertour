@@ -29,10 +29,10 @@ export class ConditionTrackingService {
     socket: Socket,
     socketClientData: SocketClientData,
     trackConditions: TrackCondition[],
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       // Early return if no conditions to track
-      if (!trackConditions?.length) return;
+      if (!trackConditions?.length) return false;
 
       const existingClientConditions = socketClientData.clientConditions ?? [];
 
@@ -45,7 +45,7 @@ export class ConditionTrackingService {
       );
 
       // Early return if no new conditions to track
-      if (!newConditions.length) return;
+      if (!newConditions.length) return false;
 
       // Emit track events and collect successfully tracked conditions
       const trackedClientConditions = newConditions
@@ -56,11 +56,12 @@ export class ConditionTrackingService {
         }));
 
       // Update socket data by merging with existing conditions
-      await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketDataService.updateClientData(socket.id, {
         clientConditions: [...existingClientConditions, ...trackedClientConditions],
       });
     } catch (error) {
       this.logger.error(`Failed to track socket conditions for socket ${socket.id}:`, error);
+      return false;
     }
   }
 
@@ -100,10 +101,9 @@ export class ConditionTrackingService {
       );
 
       // Update socket data
-      await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketDataService.updateClientData(socket.id, {
         clientConditions: updatedConditions,
       });
-      return true;
     } catch (error) {
       this.logger.error(`Failed to toggle socket condition for socket ${socket.id}:`, error);
       return false;
@@ -121,12 +121,12 @@ export class ConditionTrackingService {
     socket: Socket,
     socketClientData: SocketClientData,
     excludeConditionIds?: string[],
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       const clientConditions = socketClientData.clientConditions ?? [];
 
       // Early return if no existing conditions to remove
-      if (!clientConditions?.length) return;
+      if (!clientConditions?.length) return false;
 
       // Determine which conditions to untrack
       const conditionsToUntrack = excludeConditionIds?.length
@@ -134,7 +134,7 @@ export class ConditionTrackingService {
         : clientConditions;
 
       // Early return if no conditions to untrack
-      if (!conditionsToUntrack.length) return;
+      if (!conditionsToUntrack.length) return false;
 
       // Emit untrack events and collect successfully untracked conditions
       const untrackedConditions = conditionsToUntrack.filter((condition) =>
@@ -142,7 +142,7 @@ export class ConditionTrackingService {
       );
 
       // Update socket data
-      await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketDataService.updateClientData(socket.id, {
         clientConditions: clientConditions.filter(
           (condition) =>
             !untrackedConditions.some(
@@ -152,6 +152,7 @@ export class ConditionTrackingService {
       });
     } catch (error) {
       this.logger.error(`Failed to untrack socket conditions for socket ${socket.id}:`, error);
+      return false;
     }
   }
 }
