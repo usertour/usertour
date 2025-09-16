@@ -54,7 +54,7 @@ export type TrackCondition = {
   condition: RulesCondition;
 };
 
-export type WaitTimerCondition = {
+export type ConditionWaitTimer = {
   versionId: string;
   waitTime: number;
   activated?: boolean;

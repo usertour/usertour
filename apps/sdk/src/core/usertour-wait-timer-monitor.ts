@@ -3,7 +3,7 @@ import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
-import { WaitTimerCondition } from '@/types/sdk';
+import { ConditionWaitTimer } from '@/types/sdk';
 
 /**
  * Options for wait timer monitoring
@@ -17,7 +17,7 @@ interface WaitTimerMonitorOptions {
  * Event data for wait timer state change
  */
 export type WaitTimerStateChangeEvent = {
-  condition: WaitTimerCondition;
+  condition: ConditionWaitTimer;
   timestamp: number;
   state: 'started' | 'fired' | 'cancelled';
 };
@@ -25,17 +25,17 @@ export type WaitTimerStateChangeEvent = {
 /**
  * Internal wait timer item with additional tracking information
  */
-interface WaitTimerItem extends WaitTimerCondition {
+interface WaitTimerItem extends ConditionWaitTimer {
   timerId: string;
   startTime: number;
   isActive: boolean;
 }
 
 /**
- * WaitTimerConditionsMonitor handles wait timer conditions queue management
- * Monitors WaitTimerCondition objects and manages their timeout execution
+ * ConditionWaitTimersMonitor handles wait timer conditions queue management
+ * Monitors ConditionWaitTimer objects and manages their timeout execution
  */
-export class WaitTimerConditionsMonitor extends Evented {
+export class ConditionWaitTimersMonitor extends Evented {
   private waitTimers: Map<string, WaitTimerItem> = new Map();
   private readonly id: string;
   private readonly options: WaitTimerMonitorOptions;
@@ -53,9 +53,9 @@ export class WaitTimerConditionsMonitor extends Evented {
 
   /**
    * Adds a wait timer condition to the queue
-   * @param condition - WaitTimerCondition to add
+   * @param condition - ConditionWaitTimer to add
    */
-  addWaitTimer(condition: WaitTimerCondition): void {
+  addWaitTimer(condition: ConditionWaitTimer): void {
     const timerId = `${this.id}-${condition.versionId}`;
 
     // Cancel existing timer for the same versionId if it exists
@@ -141,7 +141,7 @@ export class WaitTimerConditionsMonitor extends Evented {
    * This method can be overridden or extended for custom reporting logic
    */
   protected async reportWaitTimerStateChange(
-    condition: WaitTimerCondition,
+    condition: ConditionWaitTimer,
     state: 'started' | 'fired' | 'cancelled',
   ): Promise<void> {
     try {
@@ -164,8 +164,8 @@ export class WaitTimerConditionsMonitor extends Evented {
   /**
    * Gets all active wait timers
    */
-  getActiveWaitTimers(): WaitTimerCondition[] {
-    const activeTimers: WaitTimerCondition[] = [];
+  getActiveWaitTimers(): ConditionWaitTimer[] {
+    const activeTimers: ConditionWaitTimer[] = [];
 
     for (const waitTimerItem of this.waitTimers.values()) {
       if (waitTimerItem.isActive) {
@@ -183,7 +183,7 @@ export class WaitTimerConditionsMonitor extends Evented {
   /**
    * Gets a specific wait timer by versionId
    */
-  getWaitTimer(versionId: string): WaitTimerCondition | null {
+  getWaitTimer(versionId: string): ConditionWaitTimer | null {
     const waitTimerItem = this.waitTimers.get(versionId);
 
     if (!waitTimerItem || !waitTimerItem.isActive) {

@@ -442,7 +442,7 @@ export class WebSocketV2Service {
     // Cancel current wait timer conditions
     await this.conditionTimerService.cancelConditionWaitTimers(
       socket,
-      socketClientData.waitTimerConditions,
+      socketClientData.conditionWaitTimers,
     );
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
@@ -544,7 +544,7 @@ export class WebSocketV2Service {
     // Cancel current wait timer conditions
     await this.conditionTimerService.cancelConditionWaitTimers(
       socket,
-      socketClientData.waitTimerConditions,
+      socketClientData.conditionWaitTimers,
     );
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
@@ -614,7 +614,7 @@ export class WebSocketV2Service {
     const { versionId } = fireConditionWaitTimerDto;
     return await this.conditionTimerService.fireConditionWaitTimer(
       socket,
-      socketClientData.waitTimerConditions,
+      socketClientData.conditionWaitTimers,
       versionId,
     );
   }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
 import { Environment } from '@/common/types/schema';
-import { ClientCondition, SDKContentSession, WaitTimerCondition } from '@/common/types/sdk';
+import { ClientCondition, SDKContentSession, ConditionWaitTimer } from '@/common/types/sdk';
 import { ClientContext } from '@usertour/types';
 
 /**
@@ -13,7 +13,7 @@ export interface SocketClientData {
   externalCompanyId?: string;
   clientContext: ClientContext;
   clientConditions?: ClientCondition[];
-  waitTimerConditions?: WaitTimerCondition[];
+  conditionWaitTimers?: ConditionWaitTimer[];
   flowSession?: SDKContentSession;
   checklistSession?: SDKContentSession;
   lastUpdated: number;

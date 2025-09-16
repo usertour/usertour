@@ -16,7 +16,7 @@ import type {
   SessionAttribute,
   SessionTheme,
   SessionStep,
-  WaitTimerCondition,
+  ConditionWaitTimer,
 } from '@/common/types/sdk';
 import {
   differenceInDays,
@@ -347,7 +347,7 @@ export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
  * @param firedWaitTimerVersionIds - Optional array of version IDs that have fired wait timers
  * @returns True if the content is allowed based on wait timer conditions, false otherwise
  */
-export const isAllowedByWaitTimerConditions = (
+export const isAllowedByConditionWaitTimers = (
   customContentVersion: CustomContentVersion,
   firedWaitTimerVersionIds?: string[],
 ): boolean => {
@@ -402,7 +402,7 @@ export const filterAvailableAutoStartContentVersions = (
       // Check wait timer conditions if enabled
       if (
         includeWaitTimer &&
-        !isAllowedByWaitTimerConditions(customContentVersion, firedWaitTimerVersionIds)
+        !isAllowedByConditionWaitTimers(customContentVersion, firedWaitTimerVersionIds)
       ) {
         return false;
       }
@@ -688,22 +688,22 @@ export const extractClientTrackConditions = (
  * @param customContentVersions - The custom content versions
  * @returns The client wait timer conditions
  */
-export const extractClientWaitTimerConditions = (
+export const extractClientConditionWaitTimers = (
   customContentVersions: CustomContentVersion[],
-): WaitTimerCondition[] => {
-  const waitTimerConditions: WaitTimerCondition[] = [];
+): ConditionWaitTimer[] => {
+  const conditionWaitTimers: ConditionWaitTimer[] = [];
   for (const customContentVersion of customContentVersions) {
     if (
       isEnabledAutoStartRules(customContentVersion) &&
       customContentVersion.config.autoStartRulesSetting.wait > 0
     ) {
-      waitTimerConditions.push({
+      conditionWaitTimers.push({
         versionId: customContentVersion.id,
         waitTime: customContentVersion.config.autoStartRulesSetting.wait,
       });
     }
   }
-  return waitTimerConditions;
+  return conditionWaitTimers;
 };
 
 /**

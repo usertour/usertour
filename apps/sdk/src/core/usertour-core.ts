@@ -20,7 +20,7 @@ import {
 } from '@/core/usertour-conditions-monitor';
 import {
   WaitTimerStateChangeEvent,
-  WaitTimerConditionsMonitor,
+  ConditionWaitTimersMonitor,
 } from '@/core/usertour-wait-timer-monitor';
 import { UsertourURLMonitor } from '@/core/usertour-url-monitor';
 import { UsertourUIManager } from '@/core/usertour-ui-manager';
@@ -42,7 +42,7 @@ import {
   SDKContentSession,
   TrackCondition,
   UnTrackedCondition,
-  WaitTimerCondition,
+  ConditionWaitTimer,
 } from '@/types';
 
 interface AppStartOptions {
@@ -79,7 +79,7 @@ export class UsertourCore extends Evented {
   // Condition monitoring
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
   // Wait timer monitoring
-  private waitTimerMonitor: WaitTimerConditionsMonitor | null = null;
+  private waitTimerMonitor: ConditionWaitTimersMonitor | null = null;
   // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
 
@@ -351,10 +351,10 @@ export class UsertourCore extends Evented {
       this.removeConditions([untrackedCondition.conditionId]);
     });
     this.socketService.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (condition: unknown) => {
-      this.startWaitTimerCondition(condition as WaitTimerCondition);
+      this.startConditionWaitTimer(condition as ConditionWaitTimer);
     });
     this.socketService.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (condition: unknown) => {
-      this.cancelWaitTimerCondition(condition as WaitTimerCondition);
+      this.cancelConditionWaitTimer(condition as ConditionWaitTimer);
     });
   }
 
@@ -742,7 +742,7 @@ export class UsertourCore extends Evented {
       this.waitTimerMonitor.destroy();
     }
 
-    this.waitTimerMonitor = new WaitTimerConditionsMonitor({ autoStart: true });
+    this.waitTimerMonitor = new ConditionWaitTimersMonitor({ autoStart: true });
 
     // Listen for wait timer state change events
     this.waitTimerMonitor.on('wait-timer-state-changed', async (eventData: unknown) => {
@@ -807,7 +807,7 @@ export class UsertourCore extends Evented {
    * Starts a wait timer condition
    * @param condition - The condition to start
    */
-  private startWaitTimerCondition(condition: WaitTimerCondition) {
+  private startConditionWaitTimer(condition: ConditionWaitTimer) {
     this.waitTimerMonitor?.addWaitTimer(condition);
   }
 
@@ -815,7 +815,7 @@ export class UsertourCore extends Evented {
    * Cancels a wait timer condition
    * @param condition - The condition to cancel
    */
-  private cancelWaitTimerCondition(condition: WaitTimerCondition) {
+  private cancelConditionWaitTimer(condition: ConditionWaitTimer) {
     this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
   }
 

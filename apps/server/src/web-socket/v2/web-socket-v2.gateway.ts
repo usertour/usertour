@@ -73,7 +73,7 @@ export class WebSocketV2Gateway {
           externalUserId,
           clientContext,
           clientConditions,
-          waitTimerConditions: [],
+          conditionWaitTimers: [],
         });
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);

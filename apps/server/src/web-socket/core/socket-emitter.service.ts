@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SDKContentSession, TrackCondition, WaitTimerCondition } from '@/common/types/sdk';
+import { SDKContentSession, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
 
 /**
  * Socket emitter service
@@ -101,21 +101,21 @@ export class SocketEmitterService {
   /**
    * Start condition wait timer
    * @param socket - The socket
-   * @param waitTimerCondition - The wait timer condition to start
+   * @param conditionWaitTimer - The wait timer condition to start
    * @returns boolean - True if the event was emitted successfully
    */
-  startConditionWaitTimer(socket: Socket, waitTimerCondition: WaitTimerCondition): boolean {
-    return this.emitEvent(socket, 'start-condition-wait-timer', waitTimerCondition);
+  startConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
+    return this.emitEvent(socket, 'start-condition-wait-timer', conditionWaitTimer);
   }
 
   /**
    * Cancel condition wait timer
    * @param socket - The socket
-   * @param waitTimerCondition - The wait timer condition to cancel
+   * @param conditionWaitTimer - The wait timer condition to cancel
    * @returns boolean - True if the event was emitted successfully
    */
-  cancelConditionWaitTimer(socket: Socket, waitTimerCondition: WaitTimerCondition): boolean {
-    return this.emitEvent(socket, 'cancel-condition-wait-timer', waitTimerCondition);
+  cancelConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
+    return this.emitEvent(socket, 'cancel-condition-wait-timer', conditionWaitTimer);
   }
 
   // ============================================================================

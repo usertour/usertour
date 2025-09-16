@@ -11,13 +11,13 @@ import {
   evaluateCustomContentVersion,
   findAvailableSessionId,
   findLatestStepCvid,
-  extractClientWaitTimerConditions,
+  extractClientConditionWaitTimers,
 } from '@/utils/content-utils';
 import {
   StartContentOptions,
   TrackCondition,
   SDKContentSession,
-  WaitTimerCondition,
+  ConditionWaitTimer,
   ClientCondition,
 } from '@/common/types/sdk';
 import { CustomContentVersion } from '@/common/types/content';
@@ -43,7 +43,7 @@ interface ContentStartResult {
   session?: SDKContentSession;
   trackConditions?: TrackCondition[];
   trackHideConditions?: TrackCondition[];
-  waitTimerConditions?: WaitTimerCondition[];
+  conditionWaitTimers?: ConditionWaitTimer[];
   reason?: string;
   invalidSession?: SDKContentSession;
 }
@@ -101,7 +101,7 @@ export class ContentManagerService {
         session,
         trackConditions,
         trackHideConditions,
-        waitTimerConditions,
+        conditionWaitTimers,
         reason,
       } = result;
 
@@ -124,11 +124,11 @@ export class ContentManagerService {
       }
 
       // Start wait timer conditions
-      if (waitTimerConditions && waitTimerConditions.length > 0) {
-        this.logger.debug(`Starting wait timer conditions: ${waitTimerConditions.length}`);
+      if (conditionWaitTimers && conditionWaitTimers.length > 0) {
+        this.logger.debug(`Starting wait timer conditions: ${conditionWaitTimers.length}`);
         return await this.conditionTimerService.startConditionWaitTimers(
           socket,
-          waitTimerConditions,
+          conditionWaitTimers,
         );
       }
 
@@ -145,7 +145,7 @@ export class ContentManagerService {
         await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
         await this.conditionTimerService.cancelConditionWaitTimers(
           socket,
-          socketClientData.waitTimerConditions,
+          socketClientData.conditionWaitTimers,
         );
         if (trackHideConditions && trackHideConditions.length > 0) {
           // Track the new conditions
@@ -384,10 +384,10 @@ export class ContentManagerService {
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
     const { contentType, socketClientData } = context;
-    const { waitTimerConditions } = socketClientData;
-    const firedWaitTimerVersionIds = waitTimerConditions
-      ?.filter((waitTimerCondition) => waitTimerCondition.activated)
-      .map((waitTimerCondition) => waitTimerCondition.versionId);
+    const { conditionWaitTimers } = socketClientData;
+    const firedWaitTimerVersionIds = conditionWaitTimers
+      ?.filter((conditionWaitTimer) => conditionWaitTimer.activated)
+      .map((conditionWaitTimer) => conditionWaitTimer.versionId);
 
     const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
@@ -431,15 +431,15 @@ export class ContentManagerService {
       false,
     );
 
-    const waitTimerConditions = extractClientWaitTimerConditions(
+    const conditionWaitTimers = extractClientConditionWaitTimers(
       autoStartContentVersionsWithoutWaitTimer,
     );
 
-    if (waitTimerConditions.length > 0) {
+    if (conditionWaitTimers.length > 0) {
       return {
         success: true,
         trackConditions: [],
-        waitTimerConditions,
+        conditionWaitTimers,
         reason: 'Setup wait timer conditions for future activation',
       };
     }
@@ -458,7 +458,7 @@ export class ContentManagerService {
       return {
         success: true,
         trackConditions,
-        waitTimerConditions: [],
+        conditionWaitTimers: [],
         reason: 'Setup tracking conditions for future activation',
       };
     }

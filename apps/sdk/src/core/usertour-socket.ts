@@ -18,7 +18,7 @@ import {
   SDKContentSession,
   TrackCondition,
   UnTrackedCondition,
-  WaitTimerCondition,
+  ConditionWaitTimer,
   ClientCondition,
 } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
@@ -175,12 +175,12 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
 
     // Listen for start condition wait timer events from Socket.IO
     this.socket.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (message: unknown) => {
-      this.trigger(WebSocketEvents.START_CONDITION_WAIT_TIMER, message as WaitTimerCondition);
+      this.trigger(WebSocketEvents.START_CONDITION_WAIT_TIMER, message as ConditionWaitTimer);
     });
 
     // Listen for cancel condition wait timer events from Socket.IO
     this.socket.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (message: unknown) => {
-      this.trigger(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, message as WaitTimerCondition);
+      this.trigger(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, message as ConditionWaitTimer);
     });
   }
 
