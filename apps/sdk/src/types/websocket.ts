@@ -76,6 +76,6 @@ export type TooltipTargetMissingDto = {
   stepId: string;
 };
 
-export type FireConditionWaitTimerDto = {
+export type FireWaitTimerConditionDto = {
   versionId: string;
 };
