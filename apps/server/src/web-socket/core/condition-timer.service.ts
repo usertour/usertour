@@ -29,12 +29,10 @@ export class ConditionTimerService {
     socket: Socket,
     socketClientData: SocketClientData,
     startConditions: WaitTimerCondition[],
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       // Early return if no conditions to start
-      if (!startConditions?.length) return;
-
-      if (!socketClientData) return;
+      if (!startConditions?.length) return false;
 
       const existingConditions = socketClientData.waitTimerConditions ?? [];
 
@@ -45,7 +43,7 @@ export class ConditionTimerService {
       );
 
       // Early return if no new conditions to start
-      if (!newConditions.length) return;
+      if (!newConditions.length) return false;
 
       // Emit start events and collect successfully started conditions
       const startedConditions = newConditions.filter((condition) =>
@@ -53,11 +51,12 @@ export class ConditionTimerService {
       );
 
       // Update socket data by merging with existing conditions
-      await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketDataService.updateClientData(socket.id, {
         waitTimerConditions: [...existingConditions, ...startedConditions],
       });
     } catch (error) {
       this.logger.error(`Failed to start wait timer conditions for socket ${socket.id}:`, error);
+      return false;
     }
   }
 

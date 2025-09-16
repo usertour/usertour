@@ -34,8 +34,6 @@ export class ConditionTrackingService {
       // Early return if no conditions to track
       if (!trackConditions?.length) return;
 
-      if (!socketClientData) return;
-
       const existingClientConditions = socketClientData.clientConditions ?? [];
 
       // Filter out conditions that already exist

@@ -105,6 +105,14 @@ export class ContentManagerService {
         return false;
       }
 
+      if (waitTimerConditions && waitTimerConditions.length > 0) {
+        return await this.conditionTimerService.startWaitTimerConditions(
+          socket,
+          socketClientData,
+          waitTimerConditions,
+        );
+      }
+
       // Handle successful result
       // Set the content session if one was created
       if (session) {
@@ -116,15 +124,6 @@ export class ContentManagerService {
           this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
         }
         this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
-      } else {
-        // Track the new wait timer conditions
-        if (waitTimerConditions && waitTimerConditions.length > 0) {
-          await this.conditionTimerService.startWaitTimerConditions(
-            socket,
-            socketClientData,
-            waitTimerConditions,
-          );
-        }
       }
 
       // Handle track conditions if any were returned

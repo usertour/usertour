@@ -439,6 +439,8 @@ export class WebSocketV2Service {
     );
     // Untrack current conditions
     await this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
+    // Cancel current wait timer conditions
+    await this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -536,6 +538,8 @@ export class WebSocketV2Service {
     );
     // Untrack current conditions
     await this.conditionTrackingService.untrackCurrentConditions(socket, socketClientData);
+    // Cancel current wait timer conditions
+    await this.conditionTimerService.cancelCurrentWaitTimerConditions(socket, socketClientData);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
