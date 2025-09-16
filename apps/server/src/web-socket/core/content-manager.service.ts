@@ -128,7 +128,6 @@ export class ContentManagerService {
         this.logger.debug(`Starting wait timer conditions: ${waitTimerConditions.length}`);
         return await this.conditionTimerService.startConditionWaitTimers(
           socket,
-          socketClientData,
           waitTimerConditions,
         );
       }
@@ -144,7 +143,10 @@ export class ContentManagerService {
         }
         //untrack current conditions
         await this.conditionTrackingService.untrackClientConditions(socket, socketClientData);
-        await this.conditionTimerService.cancelConditionWaitTimers(socket, socketClientData);
+        await this.conditionTimerService.cancelConditionWaitTimers(
+          socket,
+          socketClientData.waitTimerConditions,
+        );
         if (trackHideConditions && trackHideConditions.length > 0) {
           // Track the new conditions
           await this.conditionTrackingService.trackClientConditions(
