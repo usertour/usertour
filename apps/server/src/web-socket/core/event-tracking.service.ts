@@ -11,7 +11,6 @@ import {
   ClientContext,
 } from '@usertour/types';
 import { BizCompany, BizEvent, BizUser, Environment, Event } from '@/common/types/schema';
-import { TrackEventData } from '@/common/types/track';
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
 
@@ -307,43 +306,6 @@ export class EventTrackingService {
   }
 
   /**
-   * Build tracking data for integration service
-   */
-  private buildTrackingData(
-    eventName: string,
-    bizSession: any,
-    externalUserId: string,
-    environmentId: string,
-    projectId: string,
-    events: Record<string, any>,
-    bizUser: BizUser,
-  ): TrackEventData {
-    const trackEventData: TrackEventData = {
-      eventName,
-      bizSessionId: bizSession.id,
-      userId: String(externalUserId),
-      environmentId,
-      projectId,
-      eventProperties: { ...events },
-      userProperties: bizUser.data as Record<string, any>,
-    };
-
-    // Add flow-specific properties
-    if (bizSession.content.type === ContentDataType.FLOW) {
-      trackEventData.eventProperties = {
-        ...trackEventData.eventProperties,
-        [EventAttributes.FLOW_ID]: bizSession.content.id,
-        [EventAttributes.FLOW_NAME]: bizSession.content.name,
-        [EventAttributes.FLOW_SESSION_ID]: bizSession.id,
-        [EventAttributes.FLOW_VERSION_ID]: bizSession.version.id,
-        [EventAttributes.FLOW_VERSION_NUMBER]: bizSession.version.sequence,
-      };
-    }
-
-    return trackEventData;
-  }
-
-  /**
    * Track an event
    * @param environment - The environment
    * @param externalUserId - The external user ID
@@ -413,24 +375,7 @@ export class EventTrackingService {
       environmentId,
     );
 
-    if (!result) {
-      return false;
-    }
-
-    // Build tracking data for integration service
-    // const trackEventData = this.buildTrackingData(
-    //   eventName,
-    //   bizSession,
-    //   externalUserId,
-    //   environmentId,
-    //   projectId,
-    //   events,
-    //   bizUser,
-    // );
-
-    // this.integrationService.trackEvent(trackEventData);
-
-    return result;
+    return result ?? false;
   }
 
   /**
