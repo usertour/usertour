@@ -692,7 +692,7 @@ export class ContentManagerService {
         customContentVersion.id,
       );
 
-      // Extract tracking conditions for hide rules
+      // Extract tracking conditions for hide conditions
       const trackHideConditions = extractClientTrackConditions(
         [customContentVersion],
         ConditionExtractionMode.HIDE_ONLY,
