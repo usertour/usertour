@@ -67,6 +67,83 @@ export class ContentManagerService {
   ) {}
 
   /**
+   * Main entry point for starting singleton content
+   * Implements multiple strategies for content activation and coordinates the start process
+   */
+  async startSingletonContent(context: ContentStartContext): Promise<boolean> {
+    const { contentType, options, socketClientData } = context;
+    const { contentId } = options ?? {};
+
+    try {
+      // Strategy 1: Try to start by specific contentId
+      if (contentId) {
+        const result = await this.tryStartByContentId(context);
+        if (result.success) {
+          return await this.handleContentStartResult(context, result, true);
+        }
+      }
+
+      // Strategy 2: Handle existing session
+      const existingSessionResult = await this.handleExistingSession(context);
+      if (existingSessionResult.success) {
+        return await this.handleContentStartResult(context, existingSessionResult);
+      }
+
+      if (existingSessionResult.invalidSession) {
+        const isSuccess = await this.handleInvalidSession(
+          context,
+          existingSessionResult.invalidSession,
+        );
+        if (!isSuccess) {
+          return false;
+        }
+        const newSocketClientData = await this.socketDataService.getClientData(context.socket.id);
+        if (!newSocketClientData) {
+          return false;
+        }
+        context.socketClientData = newSocketClientData;
+      }
+
+      // Get evaluated content versions for remaining strategies
+      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+        socketClientData,
+        contentType,
+      );
+
+      // Strategy 3: Try to start by latest activated content version
+      const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
+        context,
+        evaluatedContentVersions,
+      );
+      if (latestVersionResult.success) {
+        return await this.handleContentStartResult(context, latestVersionResult);
+      }
+
+      // Strategy 4: Try to start by auto start conditions
+      const autoStartResult = await this.tryStartByAutoStartConditions(
+        context,
+        evaluatedContentVersions,
+      );
+      if (autoStartResult.success) {
+        return await this.handleContentStartResult(context, autoStartResult);
+      }
+
+      // Strategy 5: Setup tracking conditions for future activation
+      const trackingResult = await this.setupTrackingConditions(context, evaluatedContentVersions);
+
+      return await this.handleContentStartResult(context, trackingResult);
+    } catch (error) {
+      this.logger.error(`Failed to start singleton content: ${error.message}`, {
+        contentType,
+        options,
+        stack: error.stack,
+      });
+
+      return false;
+    }
+  }
+
+  /**
    * Handles the result of content start operations
    * Processes ContentStartResult and performs necessary WebSocket operations
    */
@@ -184,83 +261,6 @@ export class ContentManagerService {
   ): Promise<boolean> {
     const { socket } = context;
     return await this.sessionManagerService.cleanupSocketSession(socket, invalidSession.id);
-  }
-
-  /**
-   * Main entry point for starting singleton content
-   * Implements multiple strategies for content activation and coordinates the start process
-   */
-  async startSingletonContent(context: ContentStartContext): Promise<boolean> {
-    const { contentType, options, socketClientData } = context;
-    const { contentId } = options ?? {};
-
-    try {
-      // Strategy 1: Try to start by specific contentId
-      if (contentId) {
-        const result = await this.tryStartByContentId(context);
-        if (result.success) {
-          return await this.handleContentStartResult(context, result, true);
-        }
-      }
-
-      // Strategy 2: Handle existing session
-      const existingSessionResult = await this.handleExistingSession(context);
-      if (existingSessionResult.success) {
-        return await this.handleContentStartResult(context, existingSessionResult);
-      }
-
-      if (existingSessionResult.invalidSession) {
-        const isSuccess = await this.handleInvalidSession(
-          context,
-          existingSessionResult.invalidSession,
-        );
-        if (!isSuccess) {
-          return false;
-        }
-        const newSocketClientData = await this.socketDataService.getClientData(context.socket.id);
-        if (!newSocketClientData) {
-          return false;
-        }
-        context.socketClientData = newSocketClientData;
-      }
-
-      // Get evaluated content versions for remaining strategies
-      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-        socketClientData,
-        contentType,
-      );
-
-      // Strategy 3: Try to start by latest activated content version
-      const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
-        context,
-        evaluatedContentVersions,
-      );
-      if (latestVersionResult.success) {
-        return await this.handleContentStartResult(context, latestVersionResult);
-      }
-
-      // Strategy 4: Try to start by auto start conditions
-      const autoStartResult = await this.tryStartByAutoStartConditions(
-        context,
-        evaluatedContentVersions,
-      );
-      if (autoStartResult.success) {
-        return await this.handleContentStartResult(context, autoStartResult);
-      }
-
-      // Strategy 5: Setup tracking conditions for future activation
-      const trackingResult = await this.setupTrackingConditions(context, evaluatedContentVersions);
-
-      return await this.handleContentStartResult(context, trackingResult);
-    } catch (error) {
-      this.logger.error(`Failed to start singleton content: ${error.message}`, {
-        contentType,
-        options,
-        stack: error.stack,
-      });
-
-      return false;
-    }
   }
 
   /**
