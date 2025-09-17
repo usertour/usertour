@@ -26,12 +26,12 @@ export class SessionManagerService {
   ) {}
 
   /**
-   * Update content session by type in socket data
+   * Update client data by session
    * @param socketId - The socket ID
    * @param session - The session to update
    * @returns Promise<boolean> - True if the session was updated successfully
    */
-  private async updateContentSessionByType(
+  private async updateClientDataBySession(
     socketId: string,
     session: SDKContentSession,
   ): Promise<boolean> {
@@ -45,6 +45,32 @@ export class SessionManagerService {
         });
       default:
         return false;
+    }
+  }
+
+  /**
+   * Emit set socket session event
+   * @param socket - The socket
+   * @param session - The session to set
+   * @returns boolean - True if the session was set successfully
+   */
+  private setSocketSession(socket: Socket, session: SDKContentSession): boolean {
+    const socketId = socket.id;
+    try {
+      const contentType = session.content.type as ContentDataType;
+
+      switch (contentType) {
+        case ContentDataType.FLOW:
+          return this.socketEmitterService.setFlowSession(socket, session);
+        case ContentDataType.CHECKLIST:
+          return this.socketEmitterService.setChecklistSession(socket, session);
+        default:
+          this.logger.warn(`Unsupported content type: ${contentType}`);
+          return false;
+      }
+    } catch (error) {
+      this.logger.error(`Failed to set content session for socket ${socketId}:`, error);
+      return false;
     }
   }
 
@@ -82,32 +108,6 @@ export class SessionManagerService {
   }
 
   /**
-   * Set content session for socket and emit WebSocket event
-   * @param socket - The socket
-   * @param session - The session to set
-   * @returns boolean - True if the session was set successfully
-   */
-  private setContentSession(socket: Socket, session: SDKContentSession): boolean {
-    const socketId = socket.id;
-    try {
-      const contentType = session.content.type as ContentDataType;
-
-      switch (contentType) {
-        case ContentDataType.FLOW:
-          return this.socketEmitterService.setFlowSession(socket, session);
-        case ContentDataType.CHECKLIST:
-          return this.socketEmitterService.setChecklistSession(socket, session);
-        default:
-          this.logger.warn(`Unsupported content type: ${contentType}`);
-          return false;
-      }
-    } catch (error) {
-      this.logger.error(`Failed to set content session for socket ${socketId}:`, error);
-      return false;
-    }
-  }
-
-  /**
    * Get current content session from socket data by type
    * @param socketClientData - The socket client data
    * @param contentType - The content type
@@ -126,20 +126,6 @@ export class SessionManagerService {
       default:
         return null;
     }
-  }
-
-  /**
-   * Set current content session for socket
-   * @param socket - The socket
-   * @param session - The session to set
-   * @returns Promise<boolean> - True if the session was set successfully
-   */
-  async setCurrentSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
-    const isSetSession = await this.updateContentSessionByType(socket.id, session);
-    if (!isSetSession) {
-      return false;
-    }
-    return this.setContentSession(socket, session);
   }
 
   /**
@@ -232,7 +218,11 @@ export class SessionManagerService {
     }
     const { clientConditions, conditionWaitTimers } = socketClientData;
 
-    const isSetSession = await this.setCurrentSession(socket, session);
+    const isUpdated = await this.updateClientDataBySession(socket.id, session);
+    if (!isUpdated) {
+      return false;
+    }
+    const isSetSession = this.setSocketSession(socket, session);
     if (!isSetSession) {
       return false;
     }
