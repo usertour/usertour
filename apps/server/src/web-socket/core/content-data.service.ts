@@ -1187,19 +1187,9 @@ export class ContentDataService {
    * @returns Promise that resolves when update is complete
    */
   async updateSessionVersion(sessionId: string, versionId: string): Promise<void> {
-    try {
-      await this.prisma.bizSession.update({
-        where: { id: sessionId },
-        data: { versionId },
-      });
-    } catch (error) {
-      this.logger.error({
-        message: `Error updating session version: ${error.message}`,
-        stack: error.stack,
-        sessionId,
-        versionId,
-      });
-      throw error;
-    }
+    await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { versionId },
+    });
   }
 }
