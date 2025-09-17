@@ -20,8 +20,9 @@ import {
   SDKContentSession,
   ConditionWaitTimer,
   ClientCondition,
-} from '@/common/types/sdk';
-import { CustomContentVersion } from '@/common/types/content';
+  SocketClientData,
+  CustomContentVersion,
+} from '@/common/types';
 import { ContentDataService } from './content-data.service';
 import { SessionDataService } from './session-data.service';
 import { EventTrackingService } from './event-tracking.service';
@@ -29,7 +30,6 @@ import { SessionManagerService } from './session-manager.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
 import { SocketDataService } from './socket-data.service';
-import { SocketClientData } from '@/common/types/content';
 
 interface ContentStartContext {
   server: Server;
