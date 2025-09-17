@@ -29,6 +29,7 @@ import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
 import { SocketClientData, SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
+import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 
 interface ContentStartContext {
   server: Server;
@@ -151,16 +152,18 @@ export class ContentManagerService {
   }
 
   /**
-   * Handles successful session creation and setup
+   * Process session for a single socket
    */
-  private async handleSuccessfulSession(
-    context: ContentStartContext,
+  private async handleSocketSession(
+    socket: Socket,
     session: SDKContentSession,
     trackHideConditions: TrackCondition[] | undefined,
     forceGoToStep: boolean,
-    reason: string | undefined,
   ): Promise<boolean> {
-    const { socket, contentType, socketClientData } = context;
+    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    if (!socketClientData) {
+      return false;
+    }
     const { clientConditions, conditionWaitTimers } = socketClientData;
 
     const isSetSession = await this.sessionManagerService.setCurrentSession(socket, session);
@@ -186,9 +189,32 @@ export class ContentManagerService {
       await this.conditionTrackingService.trackClientConditions(socket, trackHideConditions);
     }
 
-    this.logger.debug(`Content start succeeded: ${reason}`, {
-      contentType,
-    });
+    return true;
+  }
+
+  /**
+   * Handles successful session creation and setup
+   */
+  private async handleSuccessfulSession(
+    context: ContentStartContext,
+    session: SDKContentSession,
+    trackHideConditions: TrackCondition[] | undefined,
+    forceGoToStep: boolean,
+    reason: string | undefined,
+  ): Promise<boolean> {
+    const { server, socketClientData } = context;
+    const { environment, externalUserId } = socketClientData;
+    const room = buildExternalUserRoomId(environment.id, externalUserId);
+    const sockets = await server.in(room).fetchSockets();
+    for (const socket of sockets) {
+      await this.handleSocketSession(
+        socket as unknown as Socket,
+        session,
+        trackHideConditions,
+        forceGoToStep,
+      );
+    }
+    this.logger.debug(`Content start succeeded: ${reason}`);
     return true;
   }
 
