@@ -343,6 +343,10 @@ export class UsertourCore extends Evented {
     this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
       this.setChecklistSession(session as SDKContentSession);
     });
+    this.socketService.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
+      const data = message as { sessionId: string };
+      this.unsetFlowSession(data.sessionId);
+    });
     this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
       this.trackClientCondition(condition as TrackCondition);
     });
@@ -422,6 +426,24 @@ export class UsertourCore extends Evented {
     this.syncToursStore();
     // Show tour from the session current step
     targetTour.show(session.currentStep?.cvid);
+  }
+
+  /**
+   * Unsets the flow session and destroys the tour
+   * @param sessionId - The session ID to unset
+   */
+  unsetFlowSession(sessionId: string) {
+    const tourToDestroy = this.tours.find((tour) => tour.getSessionId() === sessionId);
+
+    if (!tourToDestroy) {
+      return;
+    }
+    tourToDestroy.destroy();
+
+    // Keep only the tour with the specified session ID
+    this.tours = this.tours.filter((tour) => tour.getSessionId() !== sessionId);
+    // Sync store
+    this.syncToursStore();
   }
 
   /**

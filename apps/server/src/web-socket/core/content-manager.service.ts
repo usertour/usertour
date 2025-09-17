@@ -28,8 +28,6 @@ import { SessionManagerService } from './session-manager.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
 import { SocketClientData, SocketDataService } from './socket-data.service';
-import { SocketEmitterService } from './socket-emitter.service';
-import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 
 interface ContentStartContext {
   server: Server;
@@ -63,7 +61,6 @@ export class ContentManagerService {
     private readonly sessionManagerService: SessionManagerService,
     private readonly conditionTrackingService: ConditionTrackingService,
     private readonly conditionTimerService: ConditionTimerService,
-    private readonly socketEmitterService: SocketEmitterService,
     private readonly socketDataService: SocketDataService,
   ) {}
 
@@ -152,47 +149,6 @@ export class ContentManagerService {
   }
 
   /**
-   * Process session for a single socket
-   */
-  private async handleSocketSession(
-    socket: Socket,
-    session: SDKContentSession,
-    trackHideConditions: TrackCondition[] | undefined,
-    forceGoToStep: boolean,
-  ): Promise<boolean> {
-    const socketClientData = await this.socketDataService.getClientData(socket.id);
-    if (!socketClientData) {
-      return false;
-    }
-    const { clientConditions, conditionWaitTimers } = socketClientData;
-
-    const isSetSession = await this.sessionManagerService.setCurrentSession(socket, session);
-    if (!isSetSession) {
-      return false;
-    }
-
-    if (forceGoToStep) {
-      this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
-    }
-
-    // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
-
-    // Cancel wait timer conditions that are not the current session
-    const cancelConditionWaitTimers = conditionWaitTimers.filter(
-      (conditionWaitTimer) => conditionWaitTimer.versionId !== session.version.id,
-    );
-    await this.conditionTimerService.cancelConditionWaitTimers(socket, cancelConditionWaitTimers);
-
-    // Track the hide conditions
-    if (trackHideConditions && trackHideConditions.length > 0) {
-      await this.conditionTrackingService.trackClientConditions(socket, trackHideConditions);
-    }
-
-    return true;
-  }
-
-  /**
    * Handles successful session creation and setup
    */
   private async handleSuccessfulSession(
@@ -204,18 +160,16 @@ export class ContentManagerService {
   ): Promise<boolean> {
     const { server, socketClientData } = context;
     const { environment, externalUserId } = socketClientData;
-    const room = buildExternalUserRoomId(environment.id, externalUserId);
-    const sockets = await server.in(room).fetchSockets();
-    for (const socket of sockets) {
-      await this.handleSocketSession(
-        socket as unknown as Socket,
-        session,
-        trackHideConditions,
-        forceGoToStep,
-      );
-    }
+
     this.logger.debug(`Content start succeeded: ${reason}`);
-    return true;
+    return await this.sessionManagerService.activateAllSocketsInRoom(
+      server,
+      session,
+      trackHideConditions,
+      forceGoToStep,
+      environment.id,
+      externalUserId,
+    );
   }
 
   /**
@@ -226,19 +180,8 @@ export class ContentManagerService {
     context: ContentStartContext,
     invalidSession: SDKContentSession,
   ): Promise<boolean> {
-    const { socket, contentType, socketClientData } = context;
-    const { clientConditions } = socketClientData;
-
-    const isUnsetSession = await this.sessionManagerService.unsetCurrentSession(
-      socket,
-      socketClientData,
-      contentType,
-      invalidSession.id,
-    );
-    if (!isUnsetSession) {
-      return false;
-    }
-    return await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
+    const { socket } = context;
+    return await this.sessionManagerService.cleanupSocketSession(socket, invalidSession.id);
   }
 
   /**

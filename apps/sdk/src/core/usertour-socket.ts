@@ -158,6 +158,11 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
       this.trigger(WebSocketEvents.SET_FLOW_SESSION, message as SDKContentSession);
     });
 
+    // Listen for unset flow session events from Socket.IO
+    this.socket.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
+      this.trigger(WebSocketEvents.UNSET_FLOW_SESSION, message);
+    });
+
     // Listen for checklist session events from Socket.IO
     this.socket.on(WebSocketEvents.SET_CHECKLIST_SESSION, (message: unknown) => {
       this.trigger(WebSocketEvents.SET_CHECKLIST_SESSION, message as SDKContentSession);

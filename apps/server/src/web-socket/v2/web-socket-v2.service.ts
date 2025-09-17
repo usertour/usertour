@@ -430,18 +430,7 @@ export class WebSocketV2Service {
       clientContext,
     );
 
-    // Unset current flow session
-    await this.sessionManagerService.unsetCurrentSession(
-      socket,
-      socketClientData,
-      ContentDataType.FLOW,
-      sessionId,
-    );
-    const { clientConditions, conditionWaitTimers } = socketClientData;
-    // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
-    // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
+    await this.sessionManagerService.cleanupSocketSession(socket, sessionId);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
@@ -522,6 +511,7 @@ export class WebSocketV2Service {
     if (contentType !== ContentDataType.FLOW) {
       return false;
     }
+    const environmentId = environment.id;
     await this.eventTrackingService.trackFlowEndedEvent(
       bizSession,
       environment,
@@ -529,19 +519,15 @@ export class WebSocketV2Service {
       reason,
       clientContext,
     );
-    // Unset current flow session (without WebSocket emission)
-    await this.sessionManagerService.unsetCurrentSession(
+    await this.sessionManagerService.cleanupSocketSession(socket, sessionId, false);
+
+    await this.sessionManagerService.cleanupOtherSocketsInRoom(
+      server,
       socket,
-      socketClientData,
-      ContentDataType.FLOW,
       sessionId,
-      false,
+      environmentId,
+      externalUserId,
     );
-    const { clientConditions, conditionWaitTimers } = socketClientData;
-    // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
-    // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
     // Get new socket client data
     const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
