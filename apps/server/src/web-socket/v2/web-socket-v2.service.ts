@@ -432,10 +432,8 @@ export class WebSocketV2Service {
     );
 
     await this.sessionManagerService.cleanupSocketSession(socket, sessionId);
-    // Get new socket client data
-    const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
-    await this.toggleContents(server, socket, newSocketClientData);
+    await this.toggleContents(server, socket);
 
     return true;
   }
@@ -529,10 +527,8 @@ export class WebSocketV2Service {
       environmentId,
       externalUserId,
     );
-    // Get new socket client data
-    const newSocketClientData = await this.socketDataService.getClientData(socket.id);
     // Toggle contents for the socket
-    await this.toggleContents(server, socket, newSocketClientData);
+    await this.toggleContents(server, socket);
     return true;
   }
 
@@ -541,19 +537,24 @@ export class WebSocketV2Service {
    * This method will start FLOW and CHECKLIST content, handling session cleanup and restart
    * @param server - The server instance
    * @param socket - The socket instance
+   * @param socketClientData - Optional socket client data, will be fetched if not provided
    * @returns True if the contents were toggled successfully
    */
   async toggleContents(
     server: Server,
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketClientData?: SocketClientData,
   ): Promise<boolean> {
-    if (!socketClientData) return false;
+    // If socketClientData is not provided, fetch it using getClientData
+    const clientData = socketClientData ?? (await this.socketDataService.getClientData(socket.id));
+
+    if (!clientData) return false;
+
     await this.contentManagerService.startSingletonContent({
       server,
       socket,
       contentType: ContentDataType.FLOW,
-      socketClientData,
+      socketClientData: clientData,
       options: {
         startReason: contentStartReason.START_FROM_CONDITION,
       },
