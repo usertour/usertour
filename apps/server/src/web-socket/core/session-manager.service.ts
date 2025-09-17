@@ -277,6 +277,9 @@ export class SessionManagerService {
     try {
       const room = buildExternalUserRoomId(environmentId, externalUserId);
       const sockets = await server.in(room).fetchSockets();
+      if (sockets.length === 0) {
+        return false;
+      }
 
       for (const socket of sockets) {
         if (socket.id === currentSocket.id) {
@@ -313,6 +316,10 @@ export class SessionManagerService {
     try {
       const room = buildExternalUserRoomId(environmentId, externalUserId);
       const sockets = await server.in(room).fetchSockets();
+
+      if (sockets.length === 0) {
+        return false;
+      }
 
       for (const socket of sockets) {
         await this.activateSocketSession(
