@@ -1,6 +1,5 @@
 import { AttributeBizType, Attribute } from '@/attributes/models/attribute.model';
 import { Injectable, Logger } from '@nestjs/common';
-import { Environment, Step, Theme, BizSession } from '@/common/types/schema';
 import { PrismaService } from 'nestjs-prisma';
 import {
   ChecklistData,
@@ -18,10 +17,19 @@ import {
   compareSessionThemes,
   compareSessionSteps,
 } from '@/utils/content-utils';
-import { SessionAttribute, SDKContentSession, SessionTheme, SessionStep } from '@/common/types/sdk';
-import { CustomContentVersion } from '@/common/types/content';
+import {
+  SessionAttribute,
+  CustomContentVersion,
+  SocketClientData,
+  SDKContentSession,
+  SessionTheme,
+  SessionStep,
+  Environment,
+  Step,
+  Theme,
+  BizSession,
+} from '@/common/types';
 import { ContentDataService } from './content-data.service';
-import { SocketClientData } from './socket-data.service';
 
 @Injectable()
 export class SessionDataService {

@@ -26,7 +26,8 @@ import {
   EndContentDto,
   FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
-import { SocketClientData, SocketDataService } from '@/web-socket/core/socket-data.service';
+import { SocketDataService } from '@/web-socket/core/socket-data.service';
+import { SocketClientData } from '@/common/types/content';
 import { ClientContext } from '@usertour/types';
 import { buildExternalUserRoomId } from '../../utils/websocket-utils';
 import { WebSocketClientData } from '../web-socket.decorator';

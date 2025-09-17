@@ -1,24 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
-import { Environment } from '@/common/types/schema';
-import { ClientCondition, SDKContentSession, ConditionWaitTimer } from '@/common/types/sdk';
-import { ClientContext } from '@usertour/types';
-
-/**
- * Socket socket data type for storage
- */
-export interface SocketClientData {
-  environment: Environment;
-  externalUserId: string;
-  externalCompanyId?: string;
-  clientContext: ClientContext;
-  clientConditions?: ClientCondition[];
-  conditionWaitTimers?: ConditionWaitTimer[];
-  flowSession?: SDKContentSession;
-  checklistSession?: SDKContentSession;
-  lastUpdated: number;
-  socketId: string;
-}
+import { SocketClientData } from '@/common/types/content';
 
 /**
  * Socket data storage service

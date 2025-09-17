@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
-import { SDKContentSession, TrackCondition } from '@/common/types/sdk';
-import { SocketDataService, SocketClientData } from './socket-data.service';
+import { SDKContentSession, TrackCondition, SocketClientData } from '@/common/types';
+import { SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
@@ -105,27 +105,6 @@ export class SessionManagerService {
       },
     };
     return configs[contentType] || null;
-  }
-
-  /**
-   * Get current content session from socket data by type
-   * @param socketClientData - The socket client data
-   * @param contentType - The content type
-   * @returns Promise<SDKContentSession | null> - The content session or null
-   */
-  async getCurrentSession(
-    socketClientData: SocketClientData,
-    contentType: ContentDataType,
-  ): Promise<SDKContentSession | null> {
-    const { flowSession, checklistSession } = socketClientData;
-    switch (contentType) {
-      case ContentDataType.FLOW:
-        return flowSession ?? null;
-      case ContentDataType.CHECKLIST:
-        return checklistSession ?? null;
-      default:
-        return null;
-    }
   }
 
   /**

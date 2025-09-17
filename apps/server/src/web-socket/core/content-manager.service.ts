@@ -13,6 +13,7 @@ import {
   findLatestStepCvid,
   extractClientConditionWaitTimers,
 } from '@/utils/content-utils';
+import { extractSessionByContentType } from '@/utils/websocket-utils';
 import {
   StartContentOptions,
   TrackCondition,
@@ -27,7 +28,8 @@ import { EventTrackingService } from './event-tracking.service';
 import { SessionManagerService } from './session-manager.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
-import { SocketClientData, SocketDataService } from './socket-data.service';
+import { SocketDataService } from './socket-data.service';
+import { SocketClientData } from '@/common/types/content';
 
 interface ContentStartContext {
   server: Server;
@@ -324,10 +326,7 @@ export class ContentManagerService {
     const { contentType, socketClientData } = context;
     const { environment, externalUserId, externalCompanyId } = socketClientData;
 
-    const session = await this.sessionManagerService.getCurrentSession(
-      socketClientData,
-      contentType,
-    );
+    const session = extractSessionByContentType(socketClientData, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }

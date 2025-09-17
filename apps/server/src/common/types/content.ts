@@ -1,5 +1,11 @@
 import { BizSessionWithEvents, VersionWithStepsAndContent } from './schema';
-import { ContentConfigObject } from '@usertour/types';
+import {
+  ClientCondition,
+  Environment,
+  SDKContentSession,
+  ConditionWaitTimer,
+} from '@/common/types';
+import { ClientContext, ContentConfigObject } from '@usertour/types';
 
 export type CustomContentSession = {
   contentId: string;
@@ -14,3 +20,19 @@ export type CustomContentVersion = Omit<VersionWithStepsAndContent, 'config'> & 
   session: CustomContentSession;
   config: ContentConfigObject;
 };
+
+/**
+ * Socket client data type for storage
+ */
+export interface SocketClientData {
+  environment: Environment;
+  externalUserId: string;
+  externalCompanyId?: string;
+  clientContext: ClientContext;
+  clientConditions?: ClientCondition[];
+  conditionWaitTimers?: ConditionWaitTimer[];
+  flowSession?: SDKContentSession;
+  checklistSession?: SDKContentSession;
+  lastUpdated: number;
+  socketId: string;
+}

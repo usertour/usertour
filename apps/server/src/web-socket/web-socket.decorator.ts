@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SocketClientData } from './core/socket-data.service';
+import { SocketClientData } from '@/common/types';
 
 export const WebSocketEnvironment = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
