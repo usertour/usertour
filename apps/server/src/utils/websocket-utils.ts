@@ -36,3 +36,23 @@ export function extractSessionByContentType(
       return null;
   }
 }
+
+/**
+ * Extract content type by session id
+ * @param socketClientData - The socket client data
+ * @param sessionId - The session id
+ * @returns The content type or null
+ */
+export const extractContentTypeBySessionId = (
+  socketClientData: SocketClientData,
+  sessionId: string,
+): ContentDataType | null => {
+  const { flowSession, checklistSession } = socketClientData;
+  if (flowSession?.id === sessionId) {
+    return ContentDataType.FLOW;
+  }
+  if (checklistSession?.id === sessionId) {
+    return ContentDataType.CHECKLIST;
+  }
+  return null;
+};

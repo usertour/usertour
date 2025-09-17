@@ -6,7 +6,7 @@ import { SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
-import { buildExternalUserRoomId } from '@/utils/websocket-utils';
+import { buildExternalUserRoomId, extractContentTypeBySessionId } from '@/utils/websocket-utils';
 
 /**
  * Content session manager service
@@ -75,75 +75,95 @@ export class SessionManagerService {
   }
 
   /**
-   * Get the unset session config for a given content type
-   * @param contentType - The content type
-   * @param socketClientData - The socket client data
-   * @param socket - The socket
-   * @param sessionId - The session id to unset
-   * @returns The unset session config
-   */
-  private getUnsetSessionConfig(
-    contentType: ContentDataType,
-    socketClientData: SocketClientData,
-    socket: Socket,
-    sessionId: string,
-  ): {
-    currentSession: SDKContentSession;
-    unsetEvent: () => void;
-    clientDataKey: string;
-  } | null {
-    const configs = {
-      [ContentDataType.FLOW]: {
-        currentSession: socketClientData.flowSession,
-        unsetEvent: () => this.socketEmitterService.unsetFlowSession(socket, sessionId),
-        clientDataKey: 'flowSession' as const,
-      },
-      [ContentDataType.CHECKLIST]: {
-        currentSession: socketClientData.checklistSession,
-        unsetEvent: () => this.socketEmitterService.unsetChecklistSession(socket, sessionId),
-        clientDataKey: 'checklistSession' as const,
-      },
-    };
-    return configs[contentType] || null;
-  }
-
-  /**
-   * Unset current content session for socket
+   * Clear flow session for socket
    * @param socket - The socket
    * @param socketClientData - The socket client data
-   * @param contentType - The content type to unset
-   * @param sessionId - The session id to unset
+   * @param sessionId - The session id to clear
    * @param emitWebSocket - Whether to emit WebSocket events (default: true)
-   * @returns Promise<void>
+   * @returns Promise<boolean> - True if the session was cleared successfully
    */
-  async unsetCurrentSession(
+  async clearFlowSession(
     socket: Socket,
     socketClientData: SocketClientData,
-    contentType: ContentDataType,
     sessionId: string,
     emitWebSocket = true,
   ): Promise<boolean> {
-    if (!sessionId || !socketClientData) return false;
-    const sessionConfig = this.getUnsetSessionConfig(
-      contentType,
-      socketClientData,
-      socket,
-      sessionId,
-    );
-    if (!sessionConfig) return false;
+    try {
+      // Validate input parameters
+      if (!sessionId?.trim() || !socketClientData) {
+        return false;
+      }
 
-    // Emit WebSocket event if requested
-    if (emitWebSocket) {
-      sessionConfig.unsetEvent();
-    }
+      const currentSession = socketClientData.flowSession;
 
-    // Clear session data if it matches the sessionId to unset
-    if (sessionConfig.currentSession?.id === sessionId) {
-      await this.socketDataService.updateClientData(socket.id, {
-        [sessionConfig.clientDataKey]: undefined,
-      });
+      // Emit WebSocket event if requested
+      if (emitWebSocket) {
+        this.socketEmitterService.unsetFlowSession(socket, sessionId);
+      }
+
+      // Clear session data if it matches the sessionId
+      if (currentSession?.id === sessionId) {
+        const updateSuccess = await this.socketDataService.updateClientData(socket.id, {
+          flowSession: undefined,
+        });
+
+        if (!updateSuccess) {
+          this.logger.error(`Failed to clear flow session data for session ${sessionId}`);
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to clear flow session ${sessionId}:`, error);
+      return false;
     }
-    return true;
+  }
+
+  /**
+   * Clear checklist session for socket
+   * @param socket - The socket
+   * @param socketClientData - The socket client data
+   * @param sessionId - The session id to clear
+   * @param emitWebSocket - Whether to emit WebSocket events (default: true)
+   * @returns Promise<boolean> - True if the session was cleared successfully
+   */
+  async clearChecklistSession(
+    socket: Socket,
+    socketClientData: SocketClientData,
+    sessionId: string,
+    emitWebSocket = true,
+  ): Promise<boolean> {
+    try {
+      // Validate input parameters
+      if (!sessionId?.trim() || !socketClientData) {
+        return false;
+      }
+
+      const currentSession = socketClientData.checklistSession;
+
+      // Emit WebSocket event if requested
+      if (emitWebSocket) {
+        this.socketEmitterService.unsetChecklistSession(socket, sessionId);
+      }
+
+      // Clear session data if it matches the sessionId
+      if (currentSession?.id === sessionId) {
+        const updateSuccess = await this.socketDataService.updateClientData(socket.id, {
+          checklistSession: undefined,
+        });
+
+        if (!updateSuccess) {
+          this.logger.error(`Failed to clear checklist session data for session ${sessionId}`);
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to clear checklist session ${sessionId}:`, error);
+      return false;
+    }
   }
 
   /**
@@ -162,15 +182,14 @@ export class SessionManagerService {
       return false;
     }
     const { clientConditions, conditionWaitTimers } = socketClientData;
+    const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
 
-    // Unset current flow session (without WebSocket emission)
-    await this.unsetCurrentSession(
-      socket,
-      socketClientData,
-      ContentDataType.FLOW,
-      sessionId,
-      emitUnsetSessionEvent,
-    );
+    // Clear current flow session (without WebSocket emission)
+    if (contentType === ContentDataType.FLOW) {
+      await this.clearFlowSession(socket, socketClientData, sessionId, emitUnsetSessionEvent);
+    } else if (contentType === ContentDataType.CHECKLIST) {
+      await this.clearChecklistSession(socket, socketClientData, sessionId, emitUnsetSessionEvent);
+    }
     // Untrack current conditions
     await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
     // Cancel current wait timer conditions
