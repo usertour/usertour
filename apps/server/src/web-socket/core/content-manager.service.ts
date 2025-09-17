@@ -693,7 +693,7 @@ export class ContentManagerService {
       );
 
       // Extract tracking conditions for hide rules
-      const trackConditions = extractClientTrackConditions(
+      const trackHideConditions = extractClientTrackConditions(
         [customContentVersion],
         ConditionExtractionMode.HIDE_ONLY,
       );
@@ -701,7 +701,7 @@ export class ContentManagerService {
       return {
         success: true,
         session: contentSession,
-        trackConditions,
+        trackHideConditions,
         reason: 'Content session created successfully',
       };
     } catch (error) {
