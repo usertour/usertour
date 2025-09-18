@@ -104,43 +104,13 @@ export class ContentManagerService {
         context.socketClientData = newSocketClientData;
       }
 
-      // Get evaluated content versions for remaining strategies
-      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      // Execute content start strategies and handle the result
+      const strategyResult = await this.executeContentStartStrategies(
+        context,
         socketClientData,
         contentType,
       );
-
-      // Strategy 3: Try to start by latest activated content version
-      const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
-        context,
-        evaluatedContentVersions,
-      );
-      if (latestVersionResult.success) {
-        return await this.handleContentStartResult(context, latestVersionResult);
-      }
-
-      // Strategy 4: Try to start by auto start conditions
-      const autoStartResult = await this.tryStartByAutoStartConditions(
-        context,
-        evaluatedContentVersions,
-      );
-      if (autoStartResult.success) {
-        return await this.handleContentStartResult(context, autoStartResult);
-      }
-
-      // Strategy 5: Setup wait timer conditions for future activation
-      const waitTimerResult = this.prepareConditionWaitTimersResult(
-        evaluatedContentVersions,
-        contentType,
-      );
-      if (waitTimerResult.success) {
-        return await this.handleContentStartResult(context, waitTimerResult);
-      }
-
-      // Strategy 6: Setup tracking conditions for future activation
-      const trackingResult = await this.setupTrackingConditions(context, evaluatedContentVersions);
-
-      return await this.handleContentStartResult(context, trackingResult);
+      return await this.handleContentStartResult(context, strategyResult);
     } catch (error) {
       this.logger.error(`Failed to start singleton content: ${error.message}`, {
         contentType,
@@ -150,6 +120,51 @@ export class ContentManagerService {
 
       return false;
     }
+  }
+
+  /**
+   * Execute content start strategies (strategies 3-6) and return the result
+   */
+  private async executeContentStartStrategies(
+    context: ContentStartContext,
+    socketClientData: SocketClientData,
+    contentType: ContentDataType,
+  ): Promise<ContentStartResult> {
+    // Get evaluated content versions for remaining strategies
+    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      socketClientData,
+      contentType,
+    );
+
+    // Strategy 3: Try to start by latest activated content version
+    const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
+      context,
+      evaluatedContentVersions,
+    );
+    if (latestVersionResult.success) {
+      return latestVersionResult;
+    }
+
+    // Strategy 4: Try to start by auto start conditions
+    const autoStartResult = await this.tryStartByAutoStartConditions(
+      context,
+      evaluatedContentVersions,
+    );
+    if (autoStartResult.success) {
+      return autoStartResult;
+    }
+
+    // Strategy 5: Setup wait timer conditions for future activation
+    const waitTimerResult = this.prepareConditionWaitTimersResult(
+      evaluatedContentVersions,
+      contentType,
+    );
+    if (waitTimerResult.success) {
+      return waitTimerResult;
+    }
+
+    // Strategy 6: Setup tracking conditions for future activation
+    return await this.setupTrackingConditions(context, evaluatedContentVersions);
   }
 
   /**
