@@ -511,7 +511,8 @@ export class WebSocketV2Service {
     if (contentType !== ContentDataType.FLOW) {
       return false;
     }
-    const environmentId = environment.id;
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+    // Track flow ended event
     await this.eventTrackingService.trackFlowEndedEvent(
       bizSession,
       environment,
@@ -519,9 +520,9 @@ export class WebSocketV2Service {
       reason,
       clientContext,
     );
+    // Cleanup socket session
     await this.sessionManagerService.cleanupSocketSession(socket, sessionId, false);
-
-    const roomId = buildExternalUserRoomId(environmentId, externalUserId);
+    // Cleanup other sockets in room
     await this.sessionManagerService.cleanupOtherSocketsInRoom(server, roomId, socket, sessionId);
     // Toggle contents for the socket
     await this.toggleContents(server, socket);
