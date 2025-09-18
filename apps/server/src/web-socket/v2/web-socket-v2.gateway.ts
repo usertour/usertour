@@ -70,14 +70,22 @@ export class WebSocketV2Gateway {
         }
 
         // Store validated data in socket
-        await this.socketDataService.setClientData(socket.id, {
+        const clientData = {
           environment,
           externalUserId,
           clientContext,
           clientConditions,
           externalCompanyId,
           conditionWaitTimers: [],
-        });
+        };
+        const isClientDataPersisted = await this.socketDataService.setClientData(
+          socket.id,
+          clientData,
+        );
+        if (!isClientDataPersisted) {
+          this.logger.error(`Failed to persist client data for socket ${socket.id}`);
+          return next(new SDKAuthenticationError());
+        }
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);
         // Join user room for targeted messaging
