@@ -89,11 +89,6 @@ export class SessionManagerService {
     emitWebSocket = true,
   ): Promise<boolean> {
     try {
-      // Validate input parameters
-      if (!sessionId?.trim() || !socketClientData) {
-        return false;
-      }
-
       const currentSession = socketClientData.flowSession;
 
       // Emit WebSocket event if requested
@@ -101,14 +96,13 @@ export class SessionManagerService {
         await this.socketEmitterService.unsetFlowSession(socket, sessionId);
       }
 
-      if (currentSession?.id !== sessionId) {
-        return true;
+      if (currentSession?.id === sessionId) {
+        // Clear session data if it matches the sessionId
+        return await this.socketDataService.updateClientData(socket.id, {
+          flowSession: undefined,
+        });
       }
-
-      // Clear session data if it matches the sessionId
-      return await this.socketDataService.updateClientData(socket.id, {
-        flowSession: undefined,
-      });
+      return true;
     } catch (error) {
       this.logger.error(`Failed to clear flow session ${sessionId}:`, error);
       return false;
@@ -130,11 +124,6 @@ export class SessionManagerService {
     emitWebSocket = true,
   ): Promise<boolean> {
     try {
-      // Validate input parameters
-      if (!sessionId?.trim() || !socketClientData) {
-        return false;
-      }
-
       const currentSession = socketClientData.checklistSession;
 
       // Emit WebSocket event if requested
@@ -142,20 +131,20 @@ export class SessionManagerService {
         await this.socketEmitterService.unsetChecklistSession(socket, sessionId);
       }
 
-      if (currentSession?.id !== sessionId) {
-        return true;
+      if (currentSession?.id === sessionId) {
+        // Clear session data if it matches the sessionId
+        return await this.socketDataService.updateClientData(socket.id, {
+          checklistSession: undefined,
+        });
       }
-
-      // Clear session data if it matches the sessionId
-      return await this.socketDataService.updateClientData(socket.id, {
-        checklistSession: undefined,
-      });
+      return true;
     } catch (error) {
       this.logger.error(`Failed to clear checklist session ${sessionId}:`, error);
       return false;
     }
   }
 
+  // Clear session data if it matches the sessionId
   /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
