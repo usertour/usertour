@@ -10,6 +10,7 @@ import { SDKContentSession, TrackCondition, ConditionWaitTimer } from '@/common/
 @Injectable()
 export class SocketEmitterService {
   private readonly logger = new Logger(SocketEmitterService.name);
+  private readonly DEFAULT_TIMEOUT = 2000; // 2 seconds timeout for real-time communication
 
   // ============================================================================
   // Client Event Tracking
@@ -19,20 +20,20 @@ export class SocketEmitterService {
    * Track a socket event
    * @param socket - The socket
    * @param condition - The condition to emit
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  trackClientEvent(socket: Socket, condition: TrackCondition): boolean {
-    return this.emitEvent(socket, 'track-client-condition', condition);
+  async trackClientEvent(socket: Socket, condition: TrackCondition): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'track-client-condition', condition);
   }
 
   /**
    * Un-track a socket event
    * @param socket - The socket
    * @param conditionId - The condition id to un-track
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  untrackClientEvent(socket: Socket, conditionId: string): boolean {
-    return this.emitEvent(socket, 'untrack-client-condition', { conditionId });
+  async untrackClientEvent(socket: Socket, conditionId: string): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'untrack-client-condition', { conditionId });
   }
 
   // ============================================================================
@@ -43,40 +44,40 @@ export class SocketEmitterService {
    * Set the flow session
    * @param socket - The socket
    * @param session - The session to set
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  setFlowSession(socket: Socket, session: SDKContentSession): boolean {
-    return this.emitEvent(socket, 'set-flow-session', session);
+  async setFlowSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'set-flow-session', session);
   }
 
   /**
    * Set the checklist session
    * @param socket - The socket
    * @param session - The session to set
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  setChecklistSession(socket: Socket, session: SDKContentSession): boolean {
-    return this.emitEvent(socket, 'set-checklist-session', session);
+  async setChecklistSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'set-checklist-session', session);
   }
 
   /**
    * Unset the flow session
    * @param socket - The socket
    * @param sessionId - The session id to unset
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  unsetFlowSession(socket: Socket, sessionId: string): boolean {
-    return this.emitEvent(socket, 'unset-flow-session', { sessionId });
+  async unsetFlowSession(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'unset-flow-session', { sessionId });
   }
 
   /**
    * Unset the checklist session
    * @param socket - The socket
    * @param sessionId - The session id to unset
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  unsetChecklistSession(socket: Socket, sessionId: string): boolean {
-    return this.emitEvent(socket, 'unset-checklist-session', { sessionId });
+  async unsetChecklistSession(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'unset-checklist-session', { sessionId });
   }
 
   // ============================================================================
@@ -88,10 +89,10 @@ export class SocketEmitterService {
    * @param socket - The socket
    * @param sessionId - The session id to force go to step
    * @param stepId - The step id to force go to step
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  forceGoToStep(socket: Socket, sessionId: string, stepId: string): boolean {
-    return this.emitEvent(socket, 'force-go-to-step', { sessionId, stepId });
+  async forceGoToStep(socket: Socket, sessionId: string, stepId: string): Promise<boolean> {
+    return await this.emitEventWithTimeout(socket, 'force-go-to-step', { sessionId, stepId });
   }
 
   // ============================================================================
@@ -102,20 +103,34 @@ export class SocketEmitterService {
    * Start condition wait timer
    * @param socket - The socket
    * @param conditionWaitTimer - The wait timer condition to start
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  startConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
-    return this.emitEvent(socket, 'start-condition-wait-timer', conditionWaitTimer);
+  async startConditionWaitTimer(
+    socket: Socket,
+    conditionWaitTimer: ConditionWaitTimer,
+  ): Promise<boolean> {
+    return await this.emitEventWithTimeout(
+      socket,
+      'start-condition-wait-timer',
+      conditionWaitTimer,
+    );
   }
 
   /**
    * Cancel condition wait timer
    * @param socket - The socket
    * @param conditionWaitTimer - The wait timer condition to cancel
-   * @returns boolean - True if the event was emitted successfully
+   * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  cancelConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
-    return this.emitEvent(socket, 'cancel-condition-wait-timer', conditionWaitTimer);
+  async cancelConditionWaitTimer(
+    socket: Socket,
+    conditionWaitTimer: ConditionWaitTimer,
+  ): Promise<boolean> {
+    return await this.emitEventWithTimeout(
+      socket,
+      'cancel-condition-wait-timer',
+      conditionWaitTimer,
+    );
   }
 
   // ============================================================================
@@ -123,17 +138,26 @@ export class SocketEmitterService {
   // ============================================================================
 
   /**
-   * Emit a generic event to a socket
+   * Emit a generic event to a socket with timeout and handle acknowledgment
    * @param socket - The socket
    * @param eventName - The event name
    * @param data - The data to emit
-   * @returns boolean - True if the event was emitted successfully
+   * @param timeout - Timeout in milliseconds (default: 5000)
+   * @returns Promise<boolean> - True if the client successfully processed the event
    * @private
    */
-  private emitEvent(socket: Socket, eventName: string, data?: any): boolean {
+  private async emitEventWithTimeout(
+    socket: Socket,
+    eventName: string,
+    data?: any,
+    timeout = this.DEFAULT_TIMEOUT,
+  ): Promise<boolean> {
     try {
-      socket.emit(eventName, data);
-      return true;
+      const success = await socket.timeout(timeout).emitWithAck(eventName, data);
+      if (!success) {
+        this.logger.warn(`Client failed to process ${eventName} for socket ${socket.id}`);
+      }
+      return !!success;
     } catch (error) {
       this.logger.error(`Failed to emit ${eventName} for socket ${socket.id}:`, error);
       return false;
@@ -141,17 +165,21 @@ export class SocketEmitterService {
   }
 
   /**
-   * Emit an event to multiple sockets
+   * Emit an event to multiple sockets with timeout
    * @param sockets - Array of sockets
    * @param eventName - The event name
    * @param data - The data to emit
-   * @returns number - Number of successful emissions
+   * @returns Promise<number> - Number of successful emissions
    * @private
    */
-  private emitToMultipleSockets(sockets: Socket[], eventName: string, data?: any): number {
+  private async emitToMultipleSockets(
+    sockets: Socket[],
+    eventName: string,
+    data?: any,
+  ): Promise<number> {
     let successCount = 0;
     for (const socket of sockets) {
-      if (this.emitEvent(socket, eventName, data)) {
+      if (await this.emitEventWithTimeout(socket, eventName, data)) {
         successCount++;
       }
     }

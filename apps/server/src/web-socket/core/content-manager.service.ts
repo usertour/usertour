@@ -13,7 +13,7 @@ import {
   findLatestStepCvid,
   extractClientConditionWaitTimers,
 } from '@/utils/content-utils';
-import { extractSessionByContentType } from '@/utils/websocket-utils';
+import { buildExternalUserRoomId, extractSessionByContentType } from '@/utils/websocket-utils';
 import {
   StartContentOptions,
   TrackCondition,
@@ -128,7 +128,16 @@ export class ContentManagerService {
         return await this.handleContentStartResult(context, autoStartResult);
       }
 
-      // Strategy 5: Setup tracking conditions for future activation
+      // Strategy 5: Setup wait timer conditions for future activation
+      const waitTimerResult = this.prepareConditionWaitTimersResult(
+        evaluatedContentVersions,
+        contentType,
+      );
+      if (waitTimerResult.success) {
+        return await this.handleContentStartResult(context, waitTimerResult);
+      }
+
+      // Strategy 6: Setup tracking conditions for future activation
       const trackingResult = await this.setupTrackingConditions(context, evaluatedContentVersions);
 
       return await this.handleContentStartResult(context, trackingResult);
@@ -237,18 +246,30 @@ export class ContentManagerService {
     forceGoToStep: boolean,
     reason: string | undefined,
   ): Promise<boolean> {
-    const { server, socketClientData } = context;
+    const { server, socketClientData, socket } = context;
     const { environment, externalUserId } = socketClientData;
 
-    this.logger.debug(`Content start succeeded: ${reason}`);
-    return await this.sessionManagerService.activateAllSocketsInRoom(
-      server,
+    const isActivated = await this.sessionManagerService.activateSocketSession(
+      socket,
       session,
       trackHideConditions,
       forceGoToStep,
-      environment.id,
-      externalUserId,
     );
+    if (!isActivated) {
+      return false;
+    }
+    this.logger.debug(`Content start succeeded: ${reason}`);
+
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+    await this.sessionManagerService.activatOtherSocketsInRoom(
+      server,
+      roomId,
+      socket,
+      session,
+      trackHideConditions,
+      forceGoToStep,
+    );
+    return isActivated;
   }
 
   /**
@@ -440,14 +461,12 @@ export class ContentManagerService {
   }
 
   /**
-   * Strategy 5: Setup tracking conditions for future activation
+   * Prepare wait timer conditions result for future activation
    */
-  private async setupTrackingConditions(
-    context: ContentStartContext,
+  private prepareConditionWaitTimersResult(
     evaluatedContentVersions: CustomContentVersion[],
-  ): Promise<ContentStartResult> {
-    const { contentType } = context;
-
+    contentType: ContentDataType,
+  ): ContentStartResult {
     const autoStartContentVersionsWithoutWaitTimer = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType,
@@ -461,11 +480,25 @@ export class ContentManagerService {
     if (conditionWaitTimers.length > 0) {
       return {
         success: true,
-        trackConditions: [],
         conditionWaitTimers,
         reason: 'Setup wait timer conditions for future activation',
       };
     }
+
+    return {
+      success: false,
+      reason: 'No wait timer conditions available',
+    };
+  }
+
+  /**
+   * Strategy 6: Setup tracking conditions for future activation
+   */
+  private async setupTrackingConditions(
+    context: ContentStartContext,
+    evaluatedContentVersions: CustomContentVersion[],
+  ): Promise<ContentStartResult> {
+    const { contentType } = context;
 
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
@@ -481,7 +514,6 @@ export class ContentManagerService {
       return {
         success: true,
         trackConditions,
-        conditionWaitTimers: [],
         reason: 'Setup tracking conditions for future activation',
       };
     }

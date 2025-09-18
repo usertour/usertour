@@ -19,25 +19,29 @@ export class ConditionTimerService {
   ) {}
 
   /**
-   * Start wait timer conditions
-   * @param socket - The socket
-   * @param conditionWaitTimers - The wait timer conditions to start
-   * @returns Promise<boolean> - True if the conditions were started successfully
+   * Start multiple wait timer conditions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param conditionWaitTimers - Array of wait timer conditions to start
+   * @returns Promise<boolean> - True if all conditions were started and acknowledged
    */
   async startConditionWaitTimers(
     socket: Socket,
     conditionWaitTimers: ConditionWaitTimer[],
   ): Promise<boolean> {
     try {
-      // Early return if no conditions to start
       if (!conditionWaitTimers?.length) return false;
 
-      // Emit start events and collect successfully started conditions
-      const updatedConditions = conditionWaitTimers.filter((condition) =>
-        this.socketEmitterService.startConditionWaitTimer(socket, condition),
+      // Process all conditions in parallel and wait for acknowledgments
+      const results = await Promise.all(
+        conditionWaitTimers.map((condition) =>
+          this.socketEmitterService.startConditionWaitTimer(socket, condition),
+        ),
       );
 
-      // Update socket data by merging with existing conditions
+      // Filter conditions that were successfully acknowledged
+      const updatedConditions = conditionWaitTimers.filter((_, index) => results[index]);
+
+      // Update socket data with successfully started conditions
       return await this.socketDataService.updateClientData(socket.id, {
         conditionWaitTimers: updatedConditions,
       });
@@ -93,23 +97,33 @@ export class ConditionTimerService {
   }
 
   /**
-   * Cancel wait timer conditions
-   * @param socket - The socket
-   * @param conditionWaitTimers - The wait timer conditions to cancel
-   * @returns Promise<boolean> - True if the conditions were cancelled successfully
+   * Cancel multiple wait timer conditions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param conditionWaitTimers - Array of wait timer conditions to cancel
+   * @returns Promise<boolean> - True if all conditions were cancelled successfully
    */
   async cancelConditionWaitTimers(
     socket: Socket,
     conditionWaitTimers: ConditionWaitTimer[],
   ): Promise<boolean> {
     try {
-      // Emit cancellation events for non-activated conditions
-      for (const condition of conditionWaitTimers) {
-        this.socketEmitterService.cancelConditionWaitTimer(socket, condition);
+      // Process all cancellations in parallel and wait for acknowledgments
+      const results = await Promise.all(
+        conditionWaitTimers.map((condition) =>
+          this.socketEmitterService.cancelConditionWaitTimer(socket, condition),
+        ),
+      );
+
+      // Check if all cancellations were successful
+      const allCancelled = results.every((success) => success);
+      if (!allCancelled) {
+        this.logger.warn(`Some wait timer conditions failed to cancel for socket ${socket.id}`);
       }
 
       // Clear all wait timer conditions from socket data
-      return await this.socketDataService.updateClientData(socket.id, { conditionWaitTimers: [] });
+      return await this.socketDataService.updateClientData(socket.id, {
+        conditionWaitTimers: [],
+      });
     } catch (error) {
       this.logger.error(`Failed to cancel wait timer conditions for socket ${socket.id}:`, error);
       return false;

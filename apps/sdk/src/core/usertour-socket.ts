@@ -13,14 +13,9 @@ import {
   TooltipTargetMissingDto,
   FireConditionWaitTimerDto,
 } from '@/types/websocket';
-import { Socket, Evented } from '@/utils';
-import {
-  SDKContentSession,
-  TrackCondition,
-  UnTrackedCondition,
-  ConditionWaitTimer,
-  ClientCondition,
-} from '@/types/sdk';
+
+import { Socket, logger } from '@/utils';
+import { ClientCondition } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
@@ -43,6 +38,7 @@ export interface SocketInitOptions {
 // Auth credentials for authentication
 export interface AuthCredentials {
   externalUserId: string;
+  externalCompanyId?: string;
   token: string;
   clientContext?: ClientContext;
   clientConditions?: ClientCondition[];
@@ -92,11 +88,10 @@ export interface IUsertourSocket {
   // Auth management
   updateCredentials(authInfo: Partial<AuthCredentials>): void;
 
-  // Event management - delegate to underlying Socket
-  addEventListener(event: string, handler: (...args: any[]) => void): void;
-  removeEventListener(event: string, handler?: (...args: any[]) => void): void;
-  addOnceEventListener(event: string, handler: (...args: any[]) => void): void;
-  emitEvent(event: string, ...args: any[]): void;
+  // Event management with acknowledgment support
+  on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
+  off(event: string, handler?: (...args: any[]) => void): void;
+  once(event: string, handler: (...args: any[]) => void): void;
 }
 
 /**
@@ -104,7 +99,7 @@ export interface IUsertourSocket {
  * This should be a singleton shared across all components
  * Now manages the Socket lifecycle internally
  */
-export class UsertourSocket extends Evented implements IUsertourSocket {
+export class UsertourSocket implements IUsertourSocket {
   private socket: Socket | undefined;
   private authCredentials: AuthCredentials | undefined;
 
@@ -140,53 +135,7 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
           },
         },
       });
-
-      // Setup business-specific event listeners
-      this.setupBusinessEventListeners();
     }
-  }
-
-  /**
-   * Setup business-specific event listeners
-   * Handles events like set-flow-session, set-checklist-session
-   */
-  private setupBusinessEventListeners(): void {
-    if (!this.socket) return;
-
-    // Listen for flow session events from Socket.IO
-    this.socket.on(WebSocketEvents.SET_FLOW_SESSION, (message: unknown) => {
-      this.trigger(WebSocketEvents.SET_FLOW_SESSION, message as SDKContentSession);
-    });
-
-    // Listen for unset flow session events from Socket.IO
-    this.socket.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
-      this.trigger(WebSocketEvents.UNSET_FLOW_SESSION, message);
-    });
-
-    // Listen for checklist session events from Socket.IO
-    this.socket.on(WebSocketEvents.SET_CHECKLIST_SESSION, (message: unknown) => {
-      this.trigger(WebSocketEvents.SET_CHECKLIST_SESSION, message as SDKContentSession);
-    });
-
-    // Listen for track client condition events from Socket.IO
-    this.socket.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (message: unknown) => {
-      this.trigger(WebSocketEvents.TRACK_CLIENT_CONDITION, message as TrackCondition);
-    });
-
-    // Listen for untrack client condition events from Socket.IO
-    this.socket.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
-      this.trigger(WebSocketEvents.UNTRACK_CLIENT_CONDITION, message as UnTrackedCondition);
-    });
-
-    // Listen for start condition wait timer events from Socket.IO
-    this.socket.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (message: unknown) => {
-      this.trigger(WebSocketEvents.START_CONDITION_WAIT_TIMER, message as ConditionWaitTimer);
-    });
-
-    // Listen for cancel condition wait timer events from Socket.IO
-    this.socket.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (message: unknown) => {
-      this.trigger(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, message as ConditionWaitTimer);
-    });
   }
 
   /**
@@ -314,22 +263,29 @@ export class UsertourSocket extends Evented implements IUsertourSocket {
     await this.socket?.endBatch();
   }
 
-  // Socket.IO event listener management - delegate to underlying Socket
-  addEventListener(event: string, handler: (...args: any[]) => void): void {
-    this.socket?.on(event, handler);
+  /**
+   * Register an event handler with acknowledgment support
+   * @param event - The event name to handle
+   * @param handler - Event handler function that returns boolean indicating success
+   */
+  on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void {
+    this.socket?.on(event, async (message: unknown, callback: (success: boolean) => void) => {
+      try {
+        const result = await handler(message);
+        callback(result);
+      } catch (error) {
+        logger.error(`Failed to process ${event}:`, error);
+        callback(false);
+      }
+    });
   }
 
-  removeEventListener(event: string, handler?: (...args: any[]) => void): void {
+  off(event: string, handler?: (...args: any[]) => void): void {
     this.socket?.off(event, handler);
   }
 
-  addOnceEventListener(event: string, handler: (...args: any[]) => void): void {
+  once(event: string, handler: (...args: any[]) => void): void {
     this.socket?.once(event, handler);
-  }
-
-  emitEvent(event: string, ...args: any[]): void {
-    // This triggers Evented events, not Socket.IO events
-    this.trigger(event, ...args);
   }
 
   // Auth management

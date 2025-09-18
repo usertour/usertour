@@ -55,6 +55,7 @@ export class WebSocketV2Gateway {
       try {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
         const externalUserId = String(auth.externalUserId ?? '');
+        const externalCompanyId = String(auth.externalCompanyId ?? '');
         const clientContext = auth.clientContext as ClientContext;
         const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
         const token = String(auth.token ?? '');
@@ -74,6 +75,7 @@ export class WebSocketV2Gateway {
           externalUserId,
           clientContext,
           clientConditions,
+          externalCompanyId,
           conditionWaitTimers: [],
         });
 

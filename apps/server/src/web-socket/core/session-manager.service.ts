@@ -6,7 +6,7 @@ import { SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { ConditionTrackingService } from './condition-tracking.service';
 import { ConditionTimerService } from './condition-timer.service';
-import { buildExternalUserRoomId, extractContentTypeBySessionId } from '@/utils/websocket-utils';
+import { extractContentTypeBySessionId } from '@/utils/websocket-utils';
 
 /**
  * Content session manager service
@@ -49,21 +49,21 @@ export class SessionManagerService {
   }
 
   /**
-   * Emit set socket session event
-   * @param socket - The socket
-   * @param session - The session to set
-   * @returns boolean - True if the session was set successfully
+   * Emit set socket session event with acknowledgment
+   * @param socket - The socket instance
+   * @param session - The session data to set
+   * @returns Promise<boolean> - True if the session was set and acknowledged by client
    */
-  private setSocketSession(socket: Socket, session: SDKContentSession): boolean {
+  private async setSocketSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
     const socketId = socket.id;
     try {
       const contentType = session.content.type as ContentDataType;
 
       switch (contentType) {
         case ContentDataType.FLOW:
-          return this.socketEmitterService.setFlowSession(socket, session);
+          return await this.socketEmitterService.setFlowSession(socket, session);
         case ContentDataType.CHECKLIST:
-          return this.socketEmitterService.setChecklistSession(socket, session);
+          return await this.socketEmitterService.setChecklistSession(socket, session);
         default:
           this.logger.warn(`Unsupported content type: ${contentType}`);
           return false;
@@ -98,7 +98,7 @@ export class SessionManagerService {
 
       // Emit WebSocket event if requested
       if (emitWebSocket) {
-        this.socketEmitterService.unsetFlowSession(socket, sessionId);
+        await this.socketEmitterService.unsetFlowSession(socket, sessionId);
       }
 
       // Clear session data if it matches the sessionId
@@ -144,7 +144,7 @@ export class SessionManagerService {
 
       // Emit WebSocket event if requested
       if (emitWebSocket) {
-        this.socketEmitterService.unsetChecklistSession(socket, sessionId);
+        await this.socketEmitterService.unsetChecklistSession(socket, sessionId);
       }
 
       // Clear session data if it matches the sessionId
@@ -167,9 +167,10 @@ export class SessionManagerService {
   }
 
   /**
-   * Cleanup socket session
-   * @param socket - The socket
+   * Cleanup socket session and associated conditions
+   * @param socket - The socket instance
    * @param sessionId - The session id to cleanup
+   * @param emitUnsetSessionEvent - Whether to emit unset session events (default: true)
    * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
   async cleanupSocketSession(
@@ -186,14 +187,32 @@ export class SessionManagerService {
 
     // Clear current flow session (without WebSocket emission)
     if (contentType === ContentDataType.FLOW) {
-      await this.clearFlowSession(socket, socketClientData, sessionId, emitUnsetSessionEvent);
+      const flowCleared = await this.clearFlowSession(
+        socket,
+        socketClientData,
+        sessionId,
+        emitUnsetSessionEvent,
+      );
+      if (!flowCleared) {
+        return false;
+      }
     } else if (contentType === ContentDataType.CHECKLIST) {
-      await this.clearChecklistSession(socket, socketClientData, sessionId, emitUnsetSessionEvent);
+      const checklistCleared = await this.clearChecklistSession(
+        socket,
+        socketClientData,
+        sessionId,
+        emitUnsetSessionEvent,
+      );
+      if (!checklistCleared) {
+        return false;
+      }
     }
     // Untrack current conditions
     await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
     // Cancel current wait timer conditions
     await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
+
+    return true;
   }
 
   /**
@@ -220,13 +239,13 @@ export class SessionManagerService {
     if (!isUpdated) {
       return false;
     }
-    const isSetSession = this.setSocketSession(socket, session);
+    const isSetSession = await this.setSocketSession(socket, session);
     if (!isSetSession) {
       return false;
     }
 
     if (forceGoToStep) {
-      this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
+      await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
     }
 
     // Untrack current conditions
@@ -249,22 +268,19 @@ export class SessionManagerService {
   /**
    * Cleanup socket sessions for other sockets in the same room
    * @param server - The WebSocket server
+   * @param roomId - The room ID
    * @param currentSocket - The current socket to exclude
    * @param sessionId - The session ID to cleanup
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
    * @returns Promise<boolean> - True if cleanup was successful
    */
   async cleanupOtherSocketsInRoom(
     server: Server,
+    roomId: string,
     currentSocket: Socket,
     sessionId: string,
-    environmentId: string,
-    externalUserId: string,
   ): Promise<boolean> {
     try {
-      const room = buildExternalUserRoomId(environmentId, externalUserId);
-      const sockets = await server.in(room).fetchSockets();
+      const sockets = await server.in(roomId).fetchSockets();
       if (sockets.length === 0) {
         return false;
       }
@@ -286,30 +302,32 @@ export class SessionManagerService {
   /**
    * Activate socket sessions for all sockets in the same room
    * @param server - The WebSocket server
+   * @param roomId - The room ID
+   * @param currentSocket - The current socket to exclude
    * @param session - The session to activate
    * @param trackHideConditions - The hide conditions to track
    * @param forceGoToStep - Whether to force go to step
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
    * @returns Promise<boolean> - True if activation was successful
    */
-  async activateAllSocketsInRoom(
+  async activatOtherSocketsInRoom(
     server: Server,
+    roomId: string,
+    currentSocket: Socket,
     session: SDKContentSession,
     trackHideConditions: TrackCondition[] | undefined,
     forceGoToStep: boolean,
-    environmentId: string,
-    externalUserId: string,
   ): Promise<boolean> {
     try {
-      const room = buildExternalUserRoomId(environmentId, externalUserId);
-      const sockets = await server.in(room).fetchSockets();
+      const sockets = await server.in(roomId).fetchSockets();
 
-      if (sockets.length === 0) {
+      if (sockets.length === 0 || sockets.length > 100) {
         return false;
       }
 
       for (const socket of sockets) {
+        if (socket.id === currentSocket.id) {
+          continue;
+        }
         await this.activateSocketSession(
           socket as unknown as Socket,
           session,

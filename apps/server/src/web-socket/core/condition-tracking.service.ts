@@ -19,25 +19,32 @@ export class ConditionTrackingService {
   ) {}
 
   /**
-   * Track socket conditions
-   * @param socket - The socket
-   * @param trackConditions - The conditions to track
-   * @returns Promise<void>
+   * Track multiple client conditions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param trackConditions - Array of conditions to track
+   * @returns Promise<boolean> - True if all conditions were tracked and acknowledged
    */
   async trackClientConditions(socket: Socket, trackConditions: TrackCondition[]): Promise<boolean> {
     try {
       // Early return if no conditions to track
       if (!trackConditions?.length) return false;
 
-      // Emit track events and collect successfully tracked conditions
+      // Process all conditions in parallel and wait for acknowledgments
+      const results = await Promise.all(
+        trackConditions.map((condition) =>
+          this.socketEmitterService.trackClientEvent(socket, condition),
+        ),
+      );
+
+      // Filter conditions that were successfully acknowledged
       const clientConditions = trackConditions
-        .filter((condition) => this.socketEmitterService.trackClientEvent(socket, condition))
+        .filter((_, index) => results[index])
         .map((condition) => ({
           conditionId: condition.condition.id,
           isActive: false,
         }));
 
-      // Update socket data by merging with existing conditions
+      // Update socket data with successfully tracked conditions
       return await this.socketDataService.updateClientData(socket.id, {
         clientConditions,
       });

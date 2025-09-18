@@ -35,6 +35,7 @@ import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentManagerService } from '@/web-socket/core/content-manager.service';
 import { ClientCondition } from '@/common/types/sdk';
+import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -520,13 +521,8 @@ export class WebSocketV2Service {
     );
     await this.sessionManagerService.cleanupSocketSession(socket, sessionId, false);
 
-    await this.sessionManagerService.cleanupOtherSocketsInRoom(
-      server,
-      socket,
-      sessionId,
-      environmentId,
-      externalUserId,
-    );
+    const roomId = buildExternalUserRoomId(environmentId, externalUserId);
+    await this.sessionManagerService.cleanupOtherSocketsInRoom(server, roomId, socket, sessionId);
     // Toggle contents for the socket
     await this.toggleContents(server, socket);
     return true;

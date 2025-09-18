@@ -338,27 +338,27 @@ export class UsertourCore extends Evented {
 
     // Set up event listeners on UsertourSocket (which extends Evented)
     this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
-      this.setFlowSession(session as SDKContentSession);
+      return this.setFlowSession(session as SDKContentSession);
     });
     this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
-      this.setChecklistSession(session as SDKContentSession);
+      return this.setChecklistSession(session as SDKContentSession);
     });
     this.socketService.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
       const data = message as { sessionId: string };
-      this.unsetFlowSession(data.sessionId);
+      return this.unsetFlowSession(data.sessionId);
     });
     this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
-      this.trackClientCondition(condition as TrackCondition);
+      return this.trackClientCondition(condition as TrackCondition);
     });
     this.socketService.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
       const untrackedCondition = message as UnTrackedCondition;
-      this.removeConditions([untrackedCondition.conditionId]);
+      return this.removeConditions([untrackedCondition.conditionId]);
     });
     this.socketService.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (condition: unknown) => {
-      this.startConditionWaitTimer(condition as ConditionWaitTimer);
+      return this.startConditionWaitTimer(condition as ConditionWaitTimer);
     });
     this.socketService.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (condition: unknown) => {
-      this.cancelConditionWaitTimer(condition as ConditionWaitTimer);
+      return this.cancelConditionWaitTimer(condition as ConditionWaitTimer);
     });
   }
 
@@ -392,10 +392,10 @@ export class UsertourCore extends Evented {
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
    */
-  setFlowSession(session: SDKContentSession) {
+  setFlowSession(session: SDKContentSession): boolean {
     if (!session?.content?.id) {
       logger.warn('Invalid session data provided to setFlowSession');
-      return;
+      return false;
     }
 
     const contentId = session.content.id;
@@ -410,7 +410,7 @@ export class UsertourCore extends Evented {
     if (existingTour) {
       existingTour.updateSession(session);
       existingTour.refreshStore();
-      return;
+      return true;
     }
 
     // Create new tour
@@ -426,17 +426,18 @@ export class UsertourCore extends Evented {
     this.syncToursStore();
     // Show tour from the session current step
     targetTour.show(session.currentStep?.cvid);
+    return true;
   }
 
   /**
    * Unsets the flow session and destroys the tour
    * @param sessionId - The session ID to unset
    */
-  unsetFlowSession(sessionId: string) {
+  unsetFlowSession(sessionId: string): boolean {
     const tourToDestroy = this.tours.find((tour) => tour.getSessionId() === sessionId);
 
     if (!tourToDestroy) {
-      return;
+      return false;
     }
     tourToDestroy.destroy();
 
@@ -444,6 +445,7 @@ export class UsertourCore extends Evented {
     this.tours = this.tours.filter((tour) => tour.getSessionId() !== sessionId);
     // Sync store
     this.syncToursStore();
+    return true;
   }
 
   /**
@@ -462,9 +464,9 @@ export class UsertourCore extends Evented {
     this.tours = this.tours.filter((tour) => tour.getContentId() === keepContentId);
   }
 
-  setChecklistSession(session: SDKContentSession) {
+  setChecklistSession(session: SDKContentSession): boolean {
     console.log('setChecklistSession', session as SDKContentSession);
-    //
+    return true;
   }
 
   /**
@@ -606,6 +608,8 @@ export class UsertourCore extends Evented {
 
     // Only update local state after successful API call
     this.externalCompanyId = companyId;
+    // Update socket auth info
+    this.updateSocketAuthInfo();
     if (attributes) {
       this.attributeManager.setCompanyAttributes(attributes);
     }
@@ -795,9 +799,11 @@ export class UsertourCore extends Evented {
    */
   private updateSocketAuthInfo() {
     const clientConditions = this.conditionsMonitor?.getClientConditions();
+    const externalCompanyId = this.externalCompanyId;
     const clientContext = getClientContext();
     this.socketService.updateCredentials({
       clientConditions,
+      externalCompanyId,
       clientContext,
     });
   }
@@ -813,32 +819,36 @@ export class UsertourCore extends Evented {
    * Tracks a client condition
    * @param condition - The condition to track
    */
-  private trackClientCondition(condition: TrackCondition) {
+  private trackClientCondition(condition: TrackCondition): boolean {
     this.conditionsMonitor?.addConditions([condition.condition]);
+    return true;
   }
 
   /**
    * Removes conditions from the condition monitor
    * @param conditionIds - The IDs of the conditions to remove
    */
-  private removeConditions(conditionIds: string[]) {
+  private removeConditions(conditionIds: string[]): boolean {
     this.conditionsMonitor?.removeConditions(conditionIds);
+    return true;
   }
 
   /**
    * Starts a wait timer condition
    * @param condition - The condition to start
    */
-  private startConditionWaitTimer(condition: ConditionWaitTimer) {
+  private startConditionWaitTimer(condition: ConditionWaitTimer): boolean {
     this.waitTimerMonitor?.addWaitTimer(condition);
+    return true;
   }
 
   /**
    * Cancels a wait timer condition
    * @param condition - The condition to cancel
    */
-  private cancelConditionWaitTimer(condition: ConditionWaitTimer) {
+  private cancelConditionWaitTimer(condition: ConditionWaitTimer): boolean {
     this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
+    return true;
   }
 
   /**
