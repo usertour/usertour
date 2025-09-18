@@ -108,19 +108,19 @@ export class ConditionTrackingService {
       // Early return if no conditions to untrack
       if (!clientConditions?.length) return false;
 
-      // Emit untrack events and collect successfully untracked conditions
-      const untrackedConditions = clientConditions.filter((condition) =>
-        this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
+      // Emit untrack events in parallel and await acknowledgments
+      const results = await Promise.all(
+        clientConditions.map((condition) =>
+          this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
+        ),
       );
+
+      // Keep only conditions that were not acknowledged as untracked
+      const remainingConditions = clientConditions.filter((_, index) => !results[index]);
 
       // Update socket data
       return await this.socketDataService.updateClientData(socket.id, {
-        clientConditions: clientConditions.filter(
-          (condition) =>
-            !untrackedConditions.some(
-              (untracked) => untracked.conditionId === condition.conditionId,
-            ),
-        ),
+        clientConditions: remainingConditions,
       });
     } catch (error) {
       this.logger.error(`Failed to untrack socket conditions for socket ${socket.id}:`, error);
