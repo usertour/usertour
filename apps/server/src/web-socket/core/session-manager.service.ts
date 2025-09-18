@@ -260,16 +260,15 @@ export class SessionManagerService {
   ): Promise<boolean> {
     try {
       const sockets = await server.in(roomId).fetchSockets();
-      if (sockets.length === 0) {
+      if (sockets.length === 0 || sockets.length > 100) {
         return false;
       }
 
-      for (const socket of sockets) {
-        if (socket.id === currentSocket.id) {
-          continue;
-        }
-        await this.cleanupSocketSession(socket as unknown as Socket, sessionId);
-      }
+      const cleanupPromises = sockets
+        .filter((socket) => socket.id !== currentSocket.id)
+        .map((socket) => this.cleanupSocketSession(socket as unknown as Socket, sessionId));
+
+      await Promise.allSettled(cleanupPromises);
 
       return true;
     } catch (error) {
@@ -303,17 +302,18 @@ export class SessionManagerService {
         return false;
       }
 
-      for (const socket of sockets) {
-        if (socket.id === currentSocket.id) {
-          continue;
-        }
-        await this.activateSocketSession(
-          socket as unknown as Socket,
-          session,
-          trackHideConditions,
-          forceGoToStep,
+      const activatePromises = sockets
+        .filter((socket) => socket.id !== currentSocket.id)
+        .map((socket) =>
+          this.activateSocketSession(
+            socket as unknown as Socket,
+            session,
+            trackHideConditions,
+            forceGoToStep,
+          ),
         );
-      }
+
+      await Promise.allSettled(activatePromises);
 
       return true;
     } catch (error) {
