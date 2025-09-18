@@ -101,19 +101,14 @@ export class SessionManagerService {
         await this.socketEmitterService.unsetFlowSession(socket, sessionId);
       }
 
-      // Clear session data if it matches the sessionId
-      if (currentSession?.id === sessionId) {
-        const updateSuccess = await this.socketDataService.updateClientData(socket.id, {
-          flowSession: undefined,
-        });
-
-        if (!updateSuccess) {
-          this.logger.error(`Failed to clear flow session data for session ${sessionId}`);
-          return false;
-        }
+      if (currentSession?.id !== sessionId) {
+        return true;
       }
 
-      return true;
+      // Clear session data if it matches the sessionId
+      return await this.socketDataService.updateClientData(socket.id, {
+        flowSession: undefined,
+      });
     } catch (error) {
       this.logger.error(`Failed to clear flow session ${sessionId}:`, error);
       return false;
@@ -147,19 +142,14 @@ export class SessionManagerService {
         await this.socketEmitterService.unsetChecklistSession(socket, sessionId);
       }
 
-      // Clear session data if it matches the sessionId
-      if (currentSession?.id === sessionId) {
-        const updateSuccess = await this.socketDataService.updateClientData(socket.id, {
-          checklistSession: undefined,
-        });
-
-        if (!updateSuccess) {
-          this.logger.error(`Failed to clear checklist session data for session ${sessionId}`);
-          return false;
-        }
+      if (currentSession?.id !== sessionId) {
+        return true;
       }
 
-      return true;
+      // Clear session data if it matches the sessionId
+      return await this.socketDataService.updateClientData(socket.id, {
+        checklistSession: undefined,
+      });
     } catch (error) {
       this.logger.error(`Failed to clear checklist session ${sessionId}:`, error);
       return false;
