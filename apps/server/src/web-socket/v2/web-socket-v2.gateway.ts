@@ -10,7 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
 import { WebSocketClientDataInterceptor } from '../web-socket-client-data.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
-import { SDKAuthenticationError } from '@/common/errors';
+import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import {
   TrackEventDto,
@@ -78,13 +78,9 @@ export class WebSocketV2Gateway {
           externalCompanyId,
           conditionWaitTimers: [],
         };
-        const isClientDataPersisted = await this.socketDataService.setClientData(
-          socket.id,
-          clientData,
-        );
-        if (!isClientDataPersisted) {
+        if (!(await this.socketDataService.setClientData(socket.id, clientData))) {
           this.logger.error(`Failed to persist client data for socket ${socket.id}`);
-          return next(new SDKAuthenticationError());
+          return next(new ServiceUnavailableError());
         }
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);
