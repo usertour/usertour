@@ -54,15 +54,6 @@ export class SocketDataService {
 
       await this.redisService.setex(key, ttlSeconds, JSON.stringify(dataWithTimestamp));
 
-      // Update user socket mapping
-      if (clientData.environment && clientData.externalUserId) {
-        await this.addSocketToUserMapping(
-          clientData.environment.id,
-          clientData.externalUserId,
-          socketId,
-        );
-      }
-
       this.logger.debug(`Client data set for socket ${socketId}`);
       return true;
     } catch (error) {

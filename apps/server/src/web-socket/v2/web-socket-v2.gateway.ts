@@ -5,6 +5,7 @@ import {
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
@@ -36,7 +37,7 @@ import { ClientCondition } from '@/common/types/sdk';
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
 @UseInterceptors(WebSocketPerformanceInterceptor, WebSocketClientDataInterceptor)
-export class WebSocketV2Gateway {
+export class WebSocketV2Gateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -94,6 +95,19 @@ export class WebSocketV2Gateway {
         return next(new SDKAuthenticationError());
       }
     });
+  }
+
+  // Cleanup when a socket disconnects for any reason
+  async handleDisconnect(socket: Socket): Promise<void> {
+    try {
+      await this.socketDataService.removeClientData(socket.id);
+      this.logger.debug(`Cleaned up client data for disconnected socket ${socket.id}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to cleanup client data for disconnected socket ${socket.id}: ` +
+          `${(error as Error)?.message ?? 'Unknown error'}`,
+      );
+    }
   }
 
   @SubscribeMessage('begin-batch')
