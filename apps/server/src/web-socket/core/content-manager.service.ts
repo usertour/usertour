@@ -650,17 +650,15 @@ export class ContentManagerService {
       refreshedSession,
     );
     const isActive = await this.isSessionActive(socketClientData, contentType, session);
+
+    // Handle active session cases
     if (isActive) {
-      if (isSessionChanged) {
-        return {
-          success: true,
-          reason: 'Existing active session with changes',
-          session: refreshedSession,
-        };
-      }
       return {
         success: true,
-        reason: 'Existing active session',
+        reason: isSessionChanged
+          ? 'Existing active session with changes'
+          : 'Existing active session',
+        ...(isSessionChanged && { session: refreshedSession }),
       };
     }
 
