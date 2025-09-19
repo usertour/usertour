@@ -410,7 +410,7 @@ export class ContentManagerService {
     }
 
     // Strategy 6: Setup tracking conditions for future activation
-    return await this.setupTrackingConditions(context, filteredContentVersions);
+    return await this.setupTrackingConditions(contentType, filteredContentVersions);
   }
 
   /**
@@ -762,11 +762,9 @@ export class ContentManagerService {
    * Strategy 6: Setup tracking conditions for future activation
    */
   private async setupTrackingConditions(
-    context: ContentStartContext,
+    contentType: ContentDataType,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
-    const { contentType } = context;
-
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
 
