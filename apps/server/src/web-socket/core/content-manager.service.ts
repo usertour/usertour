@@ -211,23 +211,59 @@ export class ContentManagerService {
       return await this.handleContentStartResult(context, strategyResult, false, false);
     }
 
-    // If the current session is not null, cleanup the socket session
-    if (currentSession) {
-      const isCleaned = await this.sessionManagerService.cleanupSocketSession(
-        socket,
-        socketClientData,
-        sessionId,
-      );
-      if (!isCleaned) {
-        return false;
-      }
-      const newSocketClientData = await this.socketDataService.getClientData(socket.id);
-      if (!newSocketClientData) {
-        return false;
-      }
-      context.socketClientData = newSocketClientData;
+    // Cleanup current session if exists
+    const cleanupResult = await this.cleanupCurrentSessionIfNeeded(
+      currentSession,
+      socket,
+      socketClientData,
+      sessionId,
+    );
+    if (!cleanupResult.success) {
+      return false;
     }
+
+    // Update context with fresh client data if session was cleaned
+    if (cleanupResult.updatedClientData) {
+      context.socketClientData = cleanupResult.updatedClientData;
+    }
+
     return await this.handleContentStartResult(context, strategyResult, false, false);
+  }
+
+  /**
+   * Cleanup current session if it exists and return updated client data
+   * @param currentSession - The current session to cleanup
+   * @param socket - The socket instance
+   * @param socketClientData - The current socket client data
+   * @param sessionId - The session ID to cleanup
+   * @returns Cleanup result with success status and updated client data
+   */
+  private async cleanupCurrentSessionIfNeeded(
+    currentSession: SDKContentSession | null,
+    socket: Socket,
+    socketClientData: SocketClientData,
+    sessionId: string,
+  ): Promise<{ success: boolean; updatedClientData?: SocketClientData }> {
+    if (!currentSession) {
+      return { success: true };
+    }
+
+    const isCleaned = await this.sessionManagerService.cleanupSocketSession(
+      socket,
+      socketClientData,
+      sessionId,
+    );
+
+    if (!isCleaned) {
+      return { success: false };
+    }
+
+    const updatedClientData = await this.socketDataService.getClientData(socket.id);
+    if (!updatedClientData) {
+      return { success: false };
+    }
+
+    return { success: true, updatedClientData };
   }
 
   /**
