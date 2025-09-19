@@ -57,8 +57,16 @@ interface CancelSessionParams {
   server: Server;
   socket: Socket;
   socketClientData: SocketClientData;
-  contentType: ContentDataType;
+  sessionId: string;
+}
+
+interface ActivateSessionParams {
+  server: Server;
+  socket: Socket;
+  socketClientData?: SocketClientData;
   session: SDKContentSession;
+  trackHideConditions: TrackCondition[] | undefined;
+  forceGoToStep: boolean;
 }
 
 /**
@@ -152,11 +160,6 @@ export class ContentManagerService {
     if (!socketClientData) {
       return false;
     }
-    const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
-    const session = extractSessionByContentType(socketClientData, contentType);
-    if (!session || session.id !== sessionId) {
-      return false;
-    }
     const { environment, externalUserId } = socketClientData;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
 
@@ -165,12 +168,11 @@ export class ContentManagerService {
       server,
       socket,
       socketClientData,
-      contentType,
-      session,
+      sessionId,
     };
 
     // Cleanup socket session
-    await this.cancelCurrentSocketSession(cancelSessionParams);
+    await this.cancelSocketSession(cancelSessionParams);
 
     // Cleanup other sockets in room
     if (cancelOtherSessions) {
@@ -184,24 +186,44 @@ export class ContentManagerService {
    * @param params - The cancel session parameters
    * @returns True if the session was canceled successfully
    */
-  private async cancelCurrentSocketSession(params: CancelSessionParams) {
-    const { server, socket, socketClientData, contentType, session } = params;
-    // Cleanup socket session
-    await this.sessionManagerService.cleanupSocketSession(socket, session.id, false);
+  private async cancelSocketSession(params: CancelSessionParams) {
+    const { server, socket, sessionId, socketClientData } = params;
+    const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
+    const currentSession = extractSessionByContentType(socketClientData, contentType);
+    const contentId = currentSession?.content?.id;
     const context = {
       server,
       socket,
       socketClientData,
       contentType,
     };
+    // If the current session is not the same as the session id, return false
+    if (currentSession && currentSession.id !== sessionId) {
+      return false;
+    }
     // Execute content start strategies and handle the result
     const strategyResult = await this.executeContentStartStrategies(
       context,
       socketClientData,
       contentType,
-      [session.content.id],
+      contentId ? [contentId] : [],
     );
-    return await this.handleContentStartResult(context, strategyResult);
+
+    // If the strategy result is successful and the session is not null, return the strategy result
+    if (strategyResult.success && strategyResult.session) {
+      return await this.handleContentStartResult(context, strategyResult, false, false);
+    }
+
+    // If the current session is not null, cleanup the socket session
+    if (currentSession) {
+      await this.sessionManagerService.cleanupSocketSession(
+        socket,
+        socketClientData,
+        sessionId,
+        false,
+      );
+    }
+    return await this.handleContentStartResult(context, strategyResult, false, false);
   }
 
   /**
@@ -210,28 +232,15 @@ export class ContentManagerService {
    * @returns True if the session was canceled successfully
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
-    const { server, socket, socketClientData, contentType, session } = params;
-    const context = {
-      server,
-      socket,
-      socketClientData,
-      contentType,
-    };
-    const sessionId = session.id;
-    const contentId = session.content.id;
-    // Execute content start strategies and handle the result
-    const strategyResult = await this.executeContentStartStrategies(
-      context,
-      socketClientData,
-      contentType,
-      [contentId],
-    );
-    if (strategyResult.success && strategyResult.session) {
-      return await this.handleContentStartResult(context, strategyResult);
+    const { socket } = params;
+    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    if (!socketClientData) {
+      return false;
     }
-
-    await this.sessionManagerService.cleanupSocketSession(socket, sessionId, false);
-    return await this.handleContentStartResult(context, strategyResult);
+    return await this.cancelSocketSession({
+      ...params,
+      socketClientData,
+    });
   }
 
   /**
@@ -262,6 +271,84 @@ export class ContentManagerService {
       return true;
     } catch (error) {
       this.logger.error(`Failed to stop other sockets in room: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Activate current socket session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateSocketSession(params: ActivateSessionParams) {
+    const { socket, session, trackHideConditions, forceGoToStep, socketClientData } = params;
+    if (!socketClientData) {
+      return false;
+    }
+    return await this.sessionManagerService.activateSocketSession(
+      socket as unknown as Socket,
+      socketClientData,
+      session,
+      trackHideConditions,
+      forceGoToStep,
+    );
+  }
+
+  /**
+   * Activate other socket session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateOtherSocketSession(params: ActivateSessionParams) {
+    const { socket, session } = params;
+    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    if (!socketClientData) {
+      return false;
+    }
+    const contentType = session.content.type;
+    // If the session is already activated, return false
+    if (extractSessionByContentType(socketClientData, contentType)) {
+      return false;
+    }
+    return await this.activateSocketSession({
+      ...params,
+      socketClientData,
+    });
+  }
+
+  /**
+   * Activate socket sessions for all sockets in the same room
+   * @param server - The WebSocket server
+   * @param roomId - The room ID
+   * @param params - The activate session parameters
+   * @returns Promise<boolean> - True if activation was successful
+   */
+  private async activateOtherSocketsInRoom(
+    roomId: string,
+    params: ActivateSessionParams,
+  ): Promise<boolean> {
+    try {
+      const { server, socket: currentSocket } = params;
+      const sockets = await server.in(roomId).fetchSockets();
+
+      if (sockets.length === 0 || sockets.length > 100) {
+        return false;
+      }
+
+      const activatePromises = sockets
+        .filter((socket) => socket.id !== currentSocket.id)
+        .map((socket) =>
+          this.activateOtherSocketSession({
+            ...params,
+            socket: socket as unknown as Socket,
+          }),
+        );
+
+      await Promise.allSettled(activatePromises);
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to activate all sockets in room: ${error.message}`);
       return false;
     }
   }
@@ -328,6 +415,7 @@ export class ContentManagerService {
     context: ContentStartContext,
     result: ContentStartResult,
     forceGoToStep = false,
+    isActivateOtherSockets = true,
   ): Promise<boolean> {
     const { success, session, trackHideConditions, reason, trackConditions, conditionWaitTimers } =
       result;
@@ -354,8 +442,9 @@ export class ContentManagerService {
         context,
         session,
         trackHideConditions,
-        forceGoToStep,
         reason,
+        forceGoToStep,
+        isActivateOtherSockets,
       );
     }
 
@@ -411,32 +500,32 @@ export class ContentManagerService {
     context: ContentStartContext,
     session: SDKContentSession,
     trackHideConditions: TrackCondition[] | undefined,
-    forceGoToStep: boolean,
     reason: string | undefined,
+    forceGoToStep: boolean,
+    isActivateOtherSockets = true,
   ): Promise<boolean> {
     const { server, socketClientData, socket } = context;
     const { environment, externalUserId } = socketClientData;
 
-    const isActivated = await this.sessionManagerService.activateSocketSession(
+    const activateSessionParams: ActivateSessionParams = {
+      server,
       socket,
       session,
+      socketClientData,
       trackHideConditions,
       forceGoToStep,
-    );
+    };
+
+    const isActivated = await this.activateSocketSession(activateSessionParams);
     if (!isActivated) {
       return false;
     }
     this.logger.debug(`Content start succeeded: ${reason}`);
 
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
-    await this.sessionManagerService.activatOtherSocketsInRoom(
-      server,
-      roomId,
-      socket,
-      session,
-      trackHideConditions,
-      forceGoToStep,
-    );
+    if (isActivateOtherSockets) {
+      await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
+    }
     return isActivated;
   }
 
@@ -448,8 +537,12 @@ export class ContentManagerService {
     context: ContentStartContext,
     invalidSession: SDKContentSession,
   ): Promise<boolean> {
-    const { socket } = context;
-    return await this.sessionManagerService.cleanupSocketSession(socket, invalidSession.id);
+    const { socket, socketClientData } = context;
+    return await this.sessionManagerService.cleanupSocketSession(
+      socket,
+      socketClientData,
+      invalidSession.id,
+    );
   }
 
   /**

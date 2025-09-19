@@ -264,8 +264,6 @@ export class UsertourCore extends Evented {
     startReason: contentStartReason,
     opts?: UserTourTypes.StartOptions,
   ) {
-    // Close all active tours
-    await this.closeActiveTours();
     // Build start options
     const startOptions = {
       stepCvid: opts?.cvid,
@@ -360,32 +358,6 @@ export class UsertourCore extends Evented {
     this.socketService.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (condition: unknown) => {
       return this.cancelConditionWaitTimer(condition as ConditionWaitTimer);
     });
-  }
-
-  /**
-   * Closes all active tours
-   */
-  async closeActiveTours(): Promise<void> {
-    if (this.tours.length === 0) {
-      return;
-    }
-
-    // Use Promise.allSettled for parallel processing
-    const closePromises = this.tours.map(async (tour) => {
-      try {
-        await tour.close();
-      } catch (error) {
-        logger.error('Failed to close tour:', error);
-        // Force destroy if close fails to prevent memory leaks
-        tour.destroy();
-      }
-    });
-
-    await Promise.allSettled(closePromises);
-
-    // Clear tours and sync store
-    this.tours = [];
-    this.syncToursStore();
   }
 
   /**
