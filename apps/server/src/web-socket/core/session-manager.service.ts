@@ -71,22 +71,18 @@ export class SessionManagerService {
   /**
    * Clear flow session for socket
    * @param socket - The socket
-   * @param sessionId - The session id to clear
-   * @param emitWebSocket - Whether to emit WebSocket events (default: true)
+   * @param session - The session to clear
    * @returns Promise<boolean> - True if the session was cleared successfully
    */
-  private async clearFlowSession(
-    socket: Socket,
-    sessionId: string,
-    emitWebSocket = true,
-  ): Promise<boolean> {
-    // Emit WebSocket event if requested
-    if (emitWebSocket) {
-      await this.socketEmitterService.unsetFlowSession(socket, sessionId);
+  private async clearFlowSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+    // Emit WebSocket event
+    const isUnset = await this.socketEmitterService.unsetFlowSession(socket, session.id);
+    if (!isUnset) {
+      return false;
     }
-
     // Clear session data if it matches the sessionId
     return await this.socketDataService.updateClientData(socket.id, {
+      lastActivatedFlowSession: session,
       flowSession: undefined,
     });
   }
@@ -94,22 +90,21 @@ export class SessionManagerService {
   /**
    * Clear checklist session for socket
    * @param socket - The socket
-   * @param sessionId - The session id to clear
-   * @param emitWebSocket - Whether to emit WebSocket events (default: true)
+   * @param session - The session to clear
    * @returns Promise<boolean> - True if the session was cleared successfully
    */
   private async clearChecklistSession(
     socket: Socket,
-    sessionId: string,
-    emitWebSocket = true,
+    session: SDKContentSession,
   ): Promise<boolean> {
-    // Emit WebSocket event if requested
-    if (emitWebSocket) {
-      await this.socketEmitterService.unsetChecklistSession(socket, sessionId);
+    // Emit WebSocket event
+    const isUnset = await this.socketEmitterService.unsetChecklistSession(socket, session.id);
+    if (!isUnset) {
+      return false;
     }
-
     // Clear session data if it matches the sessionId
     return await this.socketDataService.updateClientData(socket.id, {
+      lastActivatedChecklistSession: session,
       checklistSession: undefined,
     });
   }
@@ -120,16 +115,15 @@ export class SessionManagerService {
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
    * @param sessionId - The session id to cleanup
-   * @param emitUnsetSessionEvent - Whether to emit unset session events (default: true)
    * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
   async cleanupSocketSession(
     socket: Socket,
     socketClientData: SocketClientData,
     sessionId: string,
-    emitUnsetSessionEvent = true,
   ): Promise<boolean> {
-    const { clientConditions, conditionWaitTimers } = socketClientData;
+    const { clientConditions, flowSession, checklistSession, conditionWaitTimers } =
+      socketClientData;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
     // If the session is not found, return false
     if (!contentType) {
@@ -137,16 +131,12 @@ export class SessionManagerService {
     }
     // Clear current flow session (without WebSocket emission)
     if (contentType === ContentDataType.FLOW) {
-      const flowCleared = await this.clearFlowSession(socket, sessionId, emitUnsetSessionEvent);
+      const flowCleared = await this.clearFlowSession(socket, flowSession);
       if (!flowCleared) {
         return false;
       }
     } else if (contentType === ContentDataType.CHECKLIST) {
-      const checklistCleared = await this.clearChecklistSession(
-        socket,
-        sessionId,
-        emitUnsetSessionEvent,
-      );
+      const checklistCleared = await this.clearChecklistSession(socket, checklistSession);
       if (!checklistCleared) {
         return false;
       }

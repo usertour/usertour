@@ -17,6 +17,7 @@ import {
   buildExternalUserRoomId,
   extractContentTypeBySessionId,
   extractSessionByContentType,
+  extractExcludedContentIds,
 } from '@/utils/websocket-utils';
 import {
   StartContentOptions,
@@ -124,11 +125,14 @@ export class ContentManagerService {
         context.socketClientData = newSocketClientData;
       }
 
+      // Extract excluded content IDs based on current content type
+      const excludeContentIds = extractExcludedContentIds(socketClientData, contentType);
       // Execute content start strategies and handle the result
       const strategyResult = await this.executeContentStartStrategies(
         context,
         socketClientData,
         contentType,
+        excludeContentIds,
       );
       return await this.handleContentStartResult(context, strategyResult);
     } catch (error) {
@@ -190,7 +194,6 @@ export class ContentManagerService {
     const { server, socket, sessionId, socketClientData } = params;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
     const currentSession = extractSessionByContentType(socketClientData, contentType);
-    const contentId = currentSession?.content?.id;
     const context = {
       server,
       socket,
@@ -201,12 +204,13 @@ export class ContentManagerService {
     if (currentSession && currentSession.id !== sessionId) {
       return false;
     }
+    const excludeContentIds = [currentSession?.content?.id].filter(Boolean) as string[];
     // Execute content start strategies and handle the result
     const strategyResult = await this.executeContentStartStrategies(
       context,
       socketClientData,
       contentType,
-      contentId ? [contentId] : [],
+      excludeContentIds,
     );
 
     // If the strategy result is successful and the session is not null, return the strategy result
@@ -216,12 +220,14 @@ export class ContentManagerService {
 
     // If the current session is not null, cleanup the socket session
     if (currentSession) {
-      await this.sessionManagerService.cleanupSocketSession(
+      const isCleaned = await this.sessionManagerService.cleanupSocketSession(
         socket,
         socketClientData,
         sessionId,
-        false,
       );
+      if (!isCleaned) {
+        return false;
+      }
     }
     return await this.handleContentStartResult(context, strategyResult, false, false);
   }
