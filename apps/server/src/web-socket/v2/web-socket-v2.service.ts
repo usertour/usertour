@@ -27,7 +27,6 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { SessionManagerService } from '@/web-socket/core/session-manager.service';
 import { ConditionTrackingService } from '@/web-socket/core/condition-tracking.service';
 import { ConditionTimerService } from '@/web-socket/core/condition-timer.service';
 import { SocketDataService } from '@/web-socket/core/socket-data.service';
@@ -35,7 +34,6 @@ import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentManagerService } from '@/web-socket/core/content-manager.service';
 import { ClientCondition } from '@/common/types/sdk';
-import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -45,7 +43,6 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentManagerService: ContentManagerService,
-    private readonly sessionManagerService: SessionManagerService,
     private readonly conditionTrackingService: ConditionTrackingService,
     private readonly conditionTimerService: ConditionTimerService,
     private readonly socketDataService: SocketDataService,
@@ -432,11 +429,7 @@ export class WebSocketV2Service {
       clientContext,
     );
 
-    await this.sessionManagerService.cleanupSocketSession(socket, sessionId);
-    // Toggle contents for the socket
-    await this.toggleContents(server, socket);
-
-    return true;
+    return await this.contentManagerService.cancelContent(server, socket, sessionId, false);
   }
 
   /**
@@ -478,7 +471,7 @@ export class WebSocketV2Service {
     if (!allowedTypes.includes(contentType)) return false;
     if (!socketClientData) return false;
     // Start the content
-    return await this.contentManagerService.startSingletonContent({
+    return await this.contentManagerService.startContent({
       server,
       socket,
       contentType,
@@ -511,7 +504,6 @@ export class WebSocketV2Service {
     if (contentType !== ContentDataType.FLOW) {
       return false;
     }
-    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     // Track flow ended event
     await this.eventTrackingService.trackFlowEndedEvent(
       bizSession,
@@ -520,12 +512,7 @@ export class WebSocketV2Service {
       reason,
       clientContext,
     );
-    // Cleanup socket session
-    await this.sessionManagerService.cleanupSocketSession(socket, sessionId, false);
-    // Cleanup other sockets in room
-    await this.sessionManagerService.cleanupOtherSocketsInRoom(server, roomId, socket, sessionId);
-    // Toggle contents for the socket
-    await this.toggleContents(server, socket);
+    await this.contentManagerService.cancelContent(server, socket, sessionId);
     return true;
   }
 
@@ -547,7 +534,7 @@ export class WebSocketV2Service {
 
     if (!clientData) return false;
 
-    await this.contentManagerService.startSingletonContent({
+    await this.contentManagerService.startContent({
       server,
       socket,
       contentType: ContentDataType.FLOW,

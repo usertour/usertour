@@ -13,7 +13,11 @@ import {
   findLatestStepCvid,
   extractClientConditionWaitTimers,
 } from '@/utils/content-utils';
-import { buildExternalUserRoomId, extractSessionByContentType } from '@/utils/websocket-utils';
+import {
+  buildExternalUserRoomId,
+  extractContentTypeBySessionId,
+  extractSessionByContentType,
+} from '@/utils/websocket-utils';
 import {
   StartContentOptions,
   TrackCondition,
@@ -49,6 +53,14 @@ interface ContentStartResult {
   invalidSession?: SDKContentSession;
 }
 
+interface CancelSessionParams {
+  server: Server;
+  socket: Socket;
+  socketClientData: SocketClientData;
+  contentType: ContentDataType;
+  session: SDKContentSession;
+}
+
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
  */
@@ -70,7 +82,7 @@ export class ContentManagerService {
    * Main entry point for starting singleton content
    * Implements multiple strategies for content activation and coordinates the start process
    */
-  async startSingletonContent(context: ContentStartContext): Promise<boolean> {
+  async startContent(context: ContentStartContext): Promise<boolean> {
     const { contentType, options, socketClientData } = context;
     const { contentId } = options ?? {};
 
@@ -123,12 +135,145 @@ export class ContentManagerService {
   }
 
   /**
+   * Cancel content
+   * @param server - The server instance
+   * @param socket - The socket instance
+   * @param sessionId - The session id
+   * @param cancelOtherSessions - Whether to cancel other sessions in room
+   * @returns True if the content was canceled successfully
+   */
+  async cancelContent(
+    server: Server,
+    socket: Socket,
+    sessionId: string,
+    cancelOtherSessions = true,
+  ) {
+    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    if (!socketClientData) {
+      return false;
+    }
+    const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
+    const session = extractSessionByContentType(socketClientData, contentType);
+    if (!session || session.id !== sessionId) {
+      return false;
+    }
+    const { environment, externalUserId } = socketClientData;
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+
+    // Define common cancel session parameters
+    const cancelSessionParams: CancelSessionParams = {
+      server,
+      socket,
+      socketClientData,
+      contentType,
+      session,
+    };
+
+    // Cleanup socket session
+    await this.cancelCurrentSocketSession(cancelSessionParams);
+
+    // Cleanup other sockets in room
+    if (cancelOtherSessions) {
+      await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
+    }
+    return true;
+  }
+
+  /**
+   * Cancel current socket session
+   * @param params - The cancel session parameters
+   * @returns True if the session was canceled successfully
+   */
+  private async cancelCurrentSocketSession(params: CancelSessionParams) {
+    const { server, socket, socketClientData, contentType, session } = params;
+    // Cleanup socket session
+    await this.sessionManagerService.cleanupSocketSession(socket, session.id, false);
+    const context = {
+      server,
+      socket,
+      socketClientData,
+      contentType,
+    };
+    // Execute content start strategies and handle the result
+    const strategyResult = await this.executeContentStartStrategies(
+      context,
+      socketClientData,
+      contentType,
+      [session.content.id],
+    );
+    return await this.handleContentStartResult(context, strategyResult);
+  }
+
+  /**
+   * Cancel other socket session
+   * @param params - The cancel session parameters
+   * @returns True if the session was canceled successfully
+   */
+  private async cancelOtherSocketSession(params: CancelSessionParams) {
+    const { server, socket, socketClientData, contentType, session } = params;
+    const context = {
+      server,
+      socket,
+      socketClientData,
+      contentType,
+    };
+    const sessionId = session.id;
+    const contentId = session.content.id;
+    // Execute content start strategies and handle the result
+    const strategyResult = await this.executeContentStartStrategies(
+      context,
+      socketClientData,
+      contentType,
+      [contentId],
+    );
+    if (strategyResult.success && strategyResult.session) {
+      return await this.handleContentStartResult(context, strategyResult);
+    }
+
+    await this.sessionManagerService.cleanupSocketSession(socket, sessionId, false);
+    return await this.handleContentStartResult(context, strategyResult);
+  }
+
+  /**
+   * Cancel other socket sessions in room
+   * @param roomId - The room id
+   * @param params - The cancel session parameters
+   * @returns True if the sessions were canceled successfully
+   */
+  private async cancelOtherSocketSessionsInRoom(roomId: string, params: CancelSessionParams) {
+    const { server, socket: currentSocket } = params;
+    try {
+      const sockets = await server.in(roomId).fetchSockets();
+      if (sockets.length === 0 || sockets.length > 100) {
+        return false;
+      }
+
+      const stopPromises = sockets
+        .filter((socket) => socket.id !== currentSocket.id)
+        .map((socket) =>
+          this.cancelOtherSocketSession({
+            ...params,
+            socket: socket as unknown as Socket,
+          }),
+        );
+
+      await Promise.allSettled(stopPromises);
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to stop other sockets in room: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Execute content start strategies (strategies 3-6) and return the result
    */
   private async executeContentStartStrategies(
     context: ContentStartContext,
     socketClientData: SocketClientData,
     contentType: ContentDataType,
+    excludeContentIds: string[] = [],
   ): Promise<ContentStartResult> {
     // Get evaluated content versions for remaining strategies
     const evaluatedContentVersions = await this.getEvaluatedContentVersions(
@@ -136,10 +281,18 @@ export class ContentManagerService {
       contentType,
     );
 
+    // Filter out excluded content IDs if provided
+    const filteredContentVersions =
+      excludeContentIds.length > 0
+        ? evaluatedContentVersions.filter(
+            (contentVersion) => !excludeContentIds.includes(contentVersion.content.id),
+          )
+        : evaluatedContentVersions;
+
     // Strategy 3: Try to start by latest activated content version
     const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
       context,
-      evaluatedContentVersions,
+      filteredContentVersions,
     );
     if (latestVersionResult.success) {
       return latestVersionResult;
@@ -148,7 +301,7 @@ export class ContentManagerService {
     // Strategy 4: Try to start by auto start conditions
     const autoStartResult = await this.tryStartByAutoStartConditions(
       context,
-      evaluatedContentVersions,
+      filteredContentVersions,
     );
     if (autoStartResult.success) {
       return autoStartResult;
@@ -156,7 +309,7 @@ export class ContentManagerService {
 
     // Strategy 5: Setup wait timer conditions for future activation
     const waitTimerResult = this.prepareConditionWaitTimersResult(
-      evaluatedContentVersions,
+      filteredContentVersions,
       contentType,
     );
     if (waitTimerResult.success) {
@@ -164,7 +317,7 @@ export class ContentManagerService {
     }
 
     // Strategy 6: Setup tracking conditions for future activation
-    return await this.setupTrackingConditions(context, evaluatedContentVersions);
+    return await this.setupTrackingConditions(context, filteredContentVersions);
   }
 
   /**
