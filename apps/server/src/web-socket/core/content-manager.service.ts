@@ -677,7 +677,7 @@ export class ContentManagerService {
     context: ContentStartContext,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
-    const { contentType } = context;
+    const { contentType, socketClientData } = context;
 
     const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
       evaluatedContentVersions,
@@ -689,6 +689,28 @@ export class ContentManagerService {
         success: false,
         reason: 'No latest activated content version found',
       };
+    }
+
+    //Get latest activated content version by latest session version id if it exists
+    const latestActivatedContentVersionId =
+      latestActivatedContentVersion.session.latestSession?.versionId;
+    if (latestActivatedContentVersionId) {
+      const latestActivatedContentVersions = await this.getEvaluatedContentVersions(
+        socketClientData,
+        contentType,
+        latestActivatedContentVersionId,
+      );
+      if (latestActivatedContentVersions.length > 0) {
+        const result = await this.processContentVersion(
+          context,
+          latestActivatedContentVersions[0],
+          false, // don't create new session
+        );
+        return {
+          ...result,
+          reason: result.success ? 'Started by latest activated version' : result.reason,
+        };
+      }
     }
 
     const result = await this.processContentVersion(
