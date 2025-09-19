@@ -570,22 +570,6 @@ export class ContentManagerService {
   }
 
   /**
-   * Handles invalid session cleanup
-   * Cleans up invalid session state and tracking conditions
-   */
-  private async handleInvalidSession(
-    context: ContentStartContext,
-    invalidSession: SDKContentSession,
-  ): Promise<boolean> {
-    const { socket, socketClientData } = context;
-    return await this.sessionManagerService.cleanupSocketSession(
-      socket,
-      socketClientData,
-      invalidSession.id,
-    );
-  }
-
-  /**
    * Strategy 1: Try to start content by specific contentId
    */
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
