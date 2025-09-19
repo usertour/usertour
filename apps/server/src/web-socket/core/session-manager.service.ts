@@ -183,11 +183,8 @@ export class SessionManagerService {
     // Untrack current conditions
     await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
 
-    // Cancel wait timer conditions that are not the current session
-    const cancelConditionWaitTimers = conditionWaitTimers.filter(
-      (conditionWaitTimer) => conditionWaitTimer.versionId !== session.version.id,
-    );
-    await this.conditionTimerService.cancelConditionWaitTimers(socket, cancelConditionWaitTimers);
+    // Cancel wait timer conditions
+    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
 
     // Track the hide conditions
     if (trackHideConditions && trackHideConditions.length > 0) {
