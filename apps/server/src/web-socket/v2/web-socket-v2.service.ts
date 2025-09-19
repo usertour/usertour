@@ -429,7 +429,7 @@ export class WebSocketV2Service {
       clientContext,
     );
 
-    return await this.contentManagerService.cancelContent(server, socket, sessionId, false);
+    return await this.contentManagerService.cancelContent(server, socket, sessionId);
   }
 
   /**

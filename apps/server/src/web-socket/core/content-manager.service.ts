@@ -111,18 +111,11 @@ export class ContentManagerService {
       }
 
       if (existingSessionResult.invalidSession) {
-        const isSuccess = await this.handleInvalidSession(
-          context,
-          existingSessionResult.invalidSession,
+        return await this.cancelContent(
+          context.server,
+          context.socket,
+          existingSessionResult.invalidSession.id,
         );
-        if (!isSuccess) {
-          return false;
-        }
-        const newSocketClientData = await this.socketDataService.getClientData(context.socket.id);
-        if (!newSocketClientData) {
-          return false;
-        }
-        context.socketClientData = newSocketClientData;
       }
 
       // Extract excluded content IDs based on current content type
@@ -228,6 +221,11 @@ export class ContentManagerService {
       if (!isCleaned) {
         return false;
       }
+      const newSocketClientData = await this.socketDataService.getClientData(socket.id);
+      if (!newSocketClientData) {
+        return false;
+      }
+      context.socketClientData = newSocketClientData;
     }
     return await this.handleContentStartResult(context, strategyResult, false, false);
   }
