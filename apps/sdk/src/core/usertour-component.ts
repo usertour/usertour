@@ -5,7 +5,7 @@ import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
-import { contentEndReason } from '@usertour/types';
+import { contentEndReason, Step } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { SDKContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 
@@ -201,6 +201,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected getSessionAttributes(): SessionAttribute[] {
     return this.session.getAttributes();
+  }
+
+  /**
+   * Gets the current step from session
+   */
+  protected getCurrentStepFromSession(): Pick<Step, 'id' | 'cvid'> | undefined {
+    return this.session.getCurrentStepFromSession();
   }
 
   /**

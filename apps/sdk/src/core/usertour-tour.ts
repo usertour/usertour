@@ -219,12 +219,15 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Validate step and target
     if (!this.canShowPopper(step)) {
       logger.error('Step cannot be shown', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
 
-    // Report step seen event
-    await this.reportStepSeen(step);
+    const currentStepInSession = this.getCurrentStepFromSession();
+
+    if (currentStepInSession?.cvid !== step.cvid) {
+      // Report step seen event
+      await this.reportStepSeen(step);
+    }
 
     // Process trigger conditions
     await this.stepTrigger?.process();
@@ -233,7 +236,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const store = await this.buildStoreData();
     if (!store) {
       logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
     this.setupElementWatcher(step, store);
