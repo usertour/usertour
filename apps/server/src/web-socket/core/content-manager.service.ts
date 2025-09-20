@@ -602,7 +602,7 @@ export class ContentManagerService {
           return latestVersionResult;
         }
 
-        const result = await this.processContentVersion(
+        const result = await this.handleContentVersion(
           context,
           evaluatedContentVersions[0],
           true, // createNewSession
@@ -708,7 +708,7 @@ export class ContentManagerService {
         latestActivatedContentVersionId,
       );
       if (latestActivatedContentVersions.length > 0) {
-        const result = await this.processContentVersion(
+        const result = await this.handleContentVersion(
           context,
           latestActivatedContentVersions[0],
           false, // don't create new session
@@ -720,7 +720,7 @@ export class ContentManagerService {
       }
     }
 
-    const result = await this.processContentVersion(
+    const result = await this.handleContentVersion(
       context,
       latestActivatedContentVersion,
       false, // don't create new session
@@ -760,7 +760,7 @@ export class ContentManagerService {
     }
     const autoStartContentVersion = autoStartContentVersions[0];
 
-    const result = await this.processContentVersion(
+    const result = await this.handleContentVersion(
       context,
       autoStartContentVersion,
       true, // create new session for auto-start
@@ -832,20 +832,6 @@ export class ContentManagerService {
       success: true,
       reason: 'No content available for activation or tracking',
     };
-  }
-
-  /**
-   * Validate content version before processing
-   */
-  private validateContentVersion(customContentVersion: CustomContentVersion): ContentStartResult {
-    if (isActivedHideRules(customContentVersion)) {
-      return {
-        success: false,
-        reason: 'Content is hidden by rules',
-      };
-    }
-
-    return { success: true };
   }
 
   /**
@@ -940,41 +926,26 @@ export class ContentManagerService {
   }
 
   /**
-   * Create content session
+   * Handles content version validation, session initialization and tracking conditions setup
    */
-  private async createContentSession(
-    sessionId: string,
-    customContentVersion: CustomContentVersion,
-    clientData: SocketClientData,
-    stepCvid: string,
-  ): Promise<SDKContentSession | null> {
-    return await this.sessionDataService.createContentSession(
-      sessionId,
-      customContentVersion,
-      clientData,
-      stepCvid,
-    );
-  }
-
-  /**
-   * Process content version with common logic
-   */
-  private async processContentVersion(
+  private async handleContentVersion(
     context: ContentStartContext,
     customContentVersion: CustomContentVersion,
     createNewSession = false,
   ): Promise<ContentStartResult> {
     // Early validation
-    const validationResult = this.validateContentVersion(customContentVersion);
-    if (!validationResult.success) {
-      return validationResult;
+    if (isActivedHideRules(customContentVersion)) {
+      return {
+        success: false,
+        reason: 'Content is hidden by rules',
+      };
     }
 
     const { options, socketClientData } = context;
 
     try {
-      // Handle session management
-      const sessionResult = await this.handleSessionManagement(
+      // Handle session initialization
+      const sessionResult = await this.initializeSession(
         customContentVersion,
         socketClientData,
         options,
@@ -985,28 +956,6 @@ export class ContentManagerService {
         return sessionResult;
       }
 
-      // Create content session
-      const contentSession = await this.createContentSession(
-        sessionResult.sessionId!,
-        customContentVersion,
-        socketClientData,
-        sessionResult.currentStepCvid!,
-      );
-
-      if (!contentSession) {
-        return {
-          success: false,
-          reason: 'Failed to create content session',
-        };
-      }
-
-      // Update session version
-
-      await this.contentDataService.updateSessionVersion(
-        sessionResult.sessionId!,
-        customContentVersion.id,
-      );
-
       // Extract tracking conditions for hide conditions
       const trackHideConditions = extractClientTrackConditions(
         [customContentVersion],
@@ -1015,17 +964,65 @@ export class ContentManagerService {
 
       return {
         success: true,
-        session: contentSession,
+        session: sessionResult.session,
         trackHideConditions,
         reason: 'Content session created successfully',
       };
     } catch (error) {
-      this.logger.error(`Error processing content version: ${error.message}`);
+      this.logger.error(`Error initializing content version: ${error.message}`);
       return {
         success: false,
-        reason: `Error processing content version: ${error.message}`,
+        reason: `Error initializing content version: ${error.message}`,
       };
     }
+  }
+
+  /**
+   * Initializes a session for the content version
+   */
+  private async initializeSession(
+    customContentVersion: CustomContentVersion,
+    socketClientData: SocketClientData,
+    options?: StartContentOptions,
+    createNewSession = false,
+  ): Promise<{ success: boolean; session?: SDKContentSession; reason?: string }> {
+    // Handle session management
+    const sessionResult = await this.handleSessionManagement(
+      customContentVersion,
+      socketClientData,
+      options,
+      createNewSession,
+    );
+
+    if (!sessionResult.success) {
+      return sessionResult;
+    }
+
+    // Create content session
+    const contentSession = await this.sessionDataService.createContentSession(
+      sessionResult.sessionId!,
+      customContentVersion,
+      socketClientData,
+      sessionResult.currentStepCvid!,
+    );
+
+    if (!contentSession) {
+      return {
+        success: false,
+        reason: 'Failed to create content session',
+      };
+    }
+
+    // Update session version
+    await this.contentDataService.updateSessionVersion(
+      sessionResult.sessionId!,
+      customContentVersion.id,
+    );
+
+    return {
+      success: true,
+      session: contentSession,
+    };
   }
 
   /**
