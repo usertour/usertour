@@ -969,7 +969,6 @@ export class ContentManagerService {
         reason: 'Content session created successfully',
       };
     } catch (error) {
-      this.logger.error(`Error initializing content version: ${error.message}`);
       return {
         success: false,
         reason: `Error initializing content version: ${error.message}`,
