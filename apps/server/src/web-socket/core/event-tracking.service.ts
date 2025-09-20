@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BizSession, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
+import { getEventProgress, getEventState, isValidEvent } from '@/utils/event-v2';
 import {
   BizEvents,
   CompanyAttributes,
@@ -199,9 +199,9 @@ export class EventTrackingService {
   }
 
   /**
-   * Create business answer for question answered events
+   * Handle question answer creation or update for question answered events
    */
-  private async createBusinessAnswer(
+  private async handleQuestionAnswer(
     tx: Prisma.TransactionClient,
     bizEvent: BizEvent,
     events: Record<string, unknown>,
@@ -211,10 +211,20 @@ export class EventTrackingService {
     bizSessionId: string,
     environmentId: string,
   ) {
-    const answer: any = {
+    const cvid = events[EventAttributes.QUESTION_CVID] as string;
+
+    // First, try to find existing answer by cvid and bizSessionId
+    const existingAnswer = await tx.bizAnswer.findFirst({
+      where: {
+        cvid,
+        bizSessionId,
+      },
+    });
+
+    const answerData: any = {
       bizEventId: bizEvent.id,
       contentId,
-      cvid: events[EventAttributes.QUESTION_CVID] as string,
+      cvid,
       versionId,
       bizUserId,
       bizSessionId,
@@ -223,16 +233,25 @@ export class EventTrackingService {
 
     // Map answer fields based on the original implementation
     if (events[EventAttributes.NUMBER_ANSWER]) {
-      answer.numberAnswer = events[EventAttributes.NUMBER_ANSWER] as number;
+      answerData.numberAnswer = events[EventAttributes.NUMBER_ANSWER] as number;
     }
     if (events[EventAttributes.TEXT_ANSWER]) {
-      answer.textAnswer = events[EventAttributes.TEXT_ANSWER] as string;
+      answerData.textAnswer = events[EventAttributes.TEXT_ANSWER] as string;
     }
     if (events[EventAttributes.LIST_ANSWER]) {
-      answer.listAnswer = events[EventAttributes.LIST_ANSWER] as string[];
+      answerData.listAnswer = events[EventAttributes.LIST_ANSWER] as string[];
     }
 
-    await tx.bizAnswer.create({ data: answer });
+    if (existingAnswer) {
+      // Update existing answer
+      await tx.bizAnswer.update({
+        where: { id: existingAnswer.id },
+        data: answerData,
+      });
+    } else {
+      // Create new answer
+      await tx.bizAnswer.create({ data: answerData });
+    }
   }
 
   /**
@@ -243,8 +262,8 @@ export class EventTrackingService {
     eventName: string,
     events: Record<string, any>,
     bizUser: BizUser,
-    bizSession: any,
-    event: any,
+    bizSession: BizSession,
+    event: Event,
     progress: number | undefined,
     state: number,
     environmentId: string,
@@ -282,14 +301,14 @@ export class EventTrackingService {
       await tx.bizSession.update({
         where: { id: bizSession.id },
         data: {
-          ...(progress !== undefined && { progress }),
+          ...(progress !== undefined && { progress: Math.max(progress, bizSession.progress) }),
           state,
         },
       });
 
       // Handle question answered event
       if (eventName === BizEvents.QUESTION_ANSWERED) {
-        await this.createBusinessAnswer(
+        await this.handleQuestionAnswer(
           tx,
           bizEvent,
           events,
