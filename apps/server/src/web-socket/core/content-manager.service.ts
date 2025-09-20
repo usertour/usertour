@@ -457,8 +457,7 @@ export class ContentManagerService {
     forceGoToStep = false,
     isActivateOtherSockets = true,
   ): Promise<boolean> {
-    const { success, session, trackHideConditions, reason, trackConditions, conditionWaitTimers } =
-      result;
+    const { success, session, trackConditions, conditionWaitTimers, reason } = result;
 
     // Early return if operation failed
     if (!success) {
@@ -480,9 +479,7 @@ export class ContentManagerService {
     if (session) {
       return await this.handleSuccessfulSession(
         context,
-        session,
-        trackHideConditions,
-        reason,
+        result,
         forceGoToStep,
         isActivateOtherSockets,
       );
@@ -538,14 +535,13 @@ export class ContentManagerService {
    */
   private async handleSuccessfulSession(
     context: ContentStartContext,
-    session: SDKContentSession,
-    trackHideConditions: TrackCondition[] | undefined,
-    reason: string | undefined,
+    result: ContentStartResult,
     forceGoToStep: boolean,
     isActivateOtherSockets = true,
   ): Promise<boolean> {
     const { server, socketClientData, socket } = context;
     const { environment, externalUserId } = socketClientData;
+    const { session, trackHideConditions, reason } = result;
 
     const activateSessionParams: ActivateSessionParams = {
       server,
