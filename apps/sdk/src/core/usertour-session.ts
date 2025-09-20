@@ -34,6 +34,13 @@ export class UsertourSession {
   }
 
   /**
+   * Gets the step by id
+   */
+  getStepById(id: string): SessionStep | undefined {
+    return this.getSteps().find((step) => step.id === id);
+  }
+
+  /**
    * Gets the content ID from session
    */
   getContentId(): string {

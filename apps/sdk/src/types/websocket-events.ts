@@ -4,6 +4,7 @@
 export enum WebSocketEvents {
   // Incoming events (from server)
   SET_FLOW_SESSION = 'set-flow-session',
+  FORCE_GO_TO_STEP = 'force-go-to-step',
   UNSET_FLOW_SESSION = 'unset-flow-session',
   SET_CHECKLIST_SESSION = 'set-checklist-session',
   UNSET_CHECKLIST_SESSION = 'unset-checklist-session',

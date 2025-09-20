@@ -56,7 +56,6 @@ export abstract class UsertourComponent<TStore> extends Evented {
   }
 
   // Abstract methods that subclasses must implement
-  abstract show(params?: any): Promise<void>;
   abstract buildStoreData(): Promise<TStore | null>;
   abstract check(): Promise<void>;
   abstract destroy(): void;
@@ -188,6 +187,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected getStepByCvid(cvid: string): SessionStep | undefined {
     return this.session.getStepByCvid(cvid);
+  }
+
+  /**
+   * Gets the step by id from session
+   */
+  protected getStepById(id: string): SessionStep | undefined {
+    return this.session.getStepById(id);
   }
 
   /**

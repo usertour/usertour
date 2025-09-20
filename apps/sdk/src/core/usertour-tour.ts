@@ -77,22 +77,53 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Shows a specific step in the tour by its id
+   * @param id - The id of the step to show
+   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   */
+  async showStepById(id: string): Promise<void> {
+    const step = this.getStepById(id);
+    if (!step) {
+      logger.error('Step not found', { id });
+      return;
+    }
+    return await this.show(step);
+  }
+
+  /**
+   * Shows a specific step in the tour by its cvid
+   * @param cvid - The cvid of the step to show
+   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   */
+  async showStepByCvid(cvid: string): Promise<void> {
+    const step = this.getStepByCvid(cvid);
+    if (!step) {
+      logger.error('Step not found', { cvid });
+      return;
+    }
+    return await this.show(step);
+  }
+
+  /**
+   * Shows a specific step in the tour by its index
+   * @param index - The index of the step to show
+   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   */
+  async showStepByIndex(index: number): Promise<void> {
+    const steps = this.getSteps();
+    if (!steps.length) return;
+    return await this.show(steps[index]);
+  }
+
+  /**
    * Shows a specific step in the tour by its cvid, or the first step if no cvid is provided
    * @param cvid - Optional cvid of the step to show. If not provided, shows the first step
    * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
    */
-  async show(cvid?: string): Promise<void> {
-    // Get the target step
-    const step = this.getStep(cvid);
-    if (!step) {
-      logger.error('currentStep not found', { cvid });
-      await this.close(contentEndReason.STEP_NOT_FOUND);
-      return;
-    }
-
+  private async show(step: SessionStep): Promise<void> {
     // Reset tour state and set new step
     this.reset();
-    this.currentStepCvid = cvid;
+    this.currentStepCvid = step.cvid;
     // Create trigger for this step if it has triggers
     if (step.trigger?.length && step.trigger.length > 0) {
       this.stepTrigger = new UsertourTrigger(
@@ -512,7 +543,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private async executeAction(action: RulesCondition) {
     switch (action.type) {
       case ContentActionsItemType.STEP_GOTO:
-        await this.show(action.data.stepCvid);
+        await this.showStepByCvid(action.data.stepCvid);
         break;
       case ContentActionsItemType.FLOW_START:
         await this.instance.startTour(action.data.contentId, { cvid: action.data.stepCvid });

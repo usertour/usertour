@@ -598,6 +598,14 @@ export class ContentManagerService {
       );
 
       if (evaluatedContentVersions.length > 0) {
+        const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
+          context,
+          evaluatedContentVersions,
+        );
+        if (latestVersionResult.success) {
+          return latestVersionResult;
+        }
+
         const result = await this.processContentVersion(
           context,
           evaluatedContentVersions[0],
@@ -694,7 +702,10 @@ export class ContentManagerService {
     //Get latest activated content version by latest session version id if it exists
     const latestActivatedContentVersionId =
       latestActivatedContentVersion.session.latestSession?.versionId;
-    if (latestActivatedContentVersionId) {
+    if (
+      latestActivatedContentVersionId &&
+      latestActivatedContentVersion.id !== latestActivatedContentVersionId
+    ) {
       const latestActivatedContentVersions = await this.getEvaluatedContentVersions(
         socketClientData,
         contentType,
@@ -909,9 +920,13 @@ export class ContentManagerService {
   ): ContentStartResult & { sessionId?: string; currentStepCvid?: string } {
     const session = customContentVersion.session;
     const contentType = customContentVersion.content.type as ContentDataType;
-    const { stepCvid } = startOptions;
+    const { stepCvid, contentId } = startOptions;
     const sessionId = findAvailableSessionId(session.latestSession, contentType);
-    const currentStepCvid = stepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
+    const firstStepCvid = customContentVersion.steps[0]?.cvid;
+    const currentStepCvid =
+      stepCvid ||
+      (contentId && firstStepCvid) ||
+      findLatestStepCvid(session.latestSession?.bizEvent);
 
     if (!sessionId) {
       return {

@@ -338,6 +338,10 @@ export class UsertourCore extends Evented {
     this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
       return this.setFlowSession(session as SDKContentSession);
     });
+    this.socketService.on(WebSocketEvents.FORCE_GO_TO_STEP, (message: unknown) => {
+      const data = message as { sessionId: string; stepId: string };
+      return this.forceGoToStep(data.sessionId, data.stepId);
+    });
     this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
       return this.setChecklistSession(session as SDKContentSession);
     });
@@ -397,7 +401,11 @@ export class UsertourCore extends Evented {
     // Sync store
     this.syncToursStore();
     // Show tour from the session current step
-    targetTour.show(session.currentStep?.cvid);
+    if (session.currentStep?.cvid) {
+      targetTour.showStepByCvid(session.currentStep?.cvid);
+    } else {
+      targetTour.showStepByIndex(0);
+    }
     return true;
   }
 
@@ -417,6 +425,21 @@ export class UsertourCore extends Evented {
     this.tours = this.tours.filter((tour) => tour.getSessionId() !== sessionId);
     // Sync store
     this.syncToursStore();
+    return true;
+  }
+
+  /**
+   * Forces a step to be shown in the tour
+   * @param sessionId - The session ID to force go to step
+   * @param stepId - The step ID to force go to step
+   * @returns True if the step was forced to be shown, false otherwise
+   */
+  forceGoToStep(sessionId: string, stepId: string): boolean {
+    const existingTour = this.tours.find((tour) => tour.getSessionId() === sessionId);
+    if (!existingTour) {
+      return false;
+    }
+    existingTour.showStepById(stepId);
     return true;
   }
 

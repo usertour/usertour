@@ -176,8 +176,8 @@ export class SessionManagerService {
       return false;
     }
 
-    if (forceGoToStep) {
-      await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep?.cvid!);
+    if (forceGoToStep && session.currentStep?.id) {
+      await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
     }
 
     // Untrack current conditions
