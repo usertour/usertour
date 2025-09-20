@@ -52,6 +52,8 @@ interface ContentStartResult {
   conditionWaitTimers?: ConditionWaitTimer[];
   reason?: string;
   invalidSession?: SDKContentSession;
+  forceGoToStep?: boolean;
+  isActivateOtherSockets?: boolean;
 }
 
 interface CancelSessionParams {
@@ -100,7 +102,7 @@ export class ContentManagerService {
       if (contentId) {
         const result = await this.tryStartByContentId(context);
         if (result.success) {
-          return await this.handleContentStartResult(context, result, true);
+          return await this.handleContentStartResult(context, { ...result, forceGoToStep: true });
         }
       }
 
@@ -208,7 +210,10 @@ export class ContentManagerService {
 
     // If the strategy result is successful and the session is not null, return the strategy result
     if (strategyResult.success && strategyResult.session) {
-      return await this.handleContentStartResult(context, strategyResult, false, false);
+      return await this.handleContentStartResult(context, {
+        ...strategyResult,
+        isActivateOtherSockets: false,
+      });
     }
 
     // Cleanup current session if exists
@@ -227,7 +232,10 @@ export class ContentManagerService {
       context.socketClientData = cleanupResult.updatedClientData;
     }
 
-    return await this.handleContentStartResult(context, strategyResult, false, false);
+    return await this.handleContentStartResult(context, {
+      ...strategyResult,
+      isActivateOtherSockets: false,
+    });
   }
 
   /**
@@ -454,8 +462,6 @@ export class ContentManagerService {
   private async handleContentStartResult(
     context: ContentStartContext,
     result: ContentStartResult,
-    forceGoToStep = false,
-    isActivateOtherSockets = true,
   ): Promise<boolean> {
     const { success, session, trackConditions, conditionWaitTimers } = result;
 
@@ -476,12 +482,7 @@ export class ContentManagerService {
 
     // Handle successful session creation
     if (session) {
-      return await this.handleSuccessfulSession(
-        context,
-        result,
-        forceGoToStep,
-        isActivateOtherSockets,
-      );
+      return await this.handleSuccessfulSession(context, result);
     }
 
     return false;
@@ -533,14 +534,18 @@ export class ContentManagerService {
   private async handleSuccessfulSession(
     context: ContentStartContext,
     result: ContentStartResult,
-    forceGoToStep: boolean,
-    isActivateOtherSockets = true,
   ): Promise<boolean> {
     const { server, socketClientData, socket } = context;
     const { environment, externalUserId } = socketClientData;
-    const { session, trackHideConditions } = result;
+    const {
+      session,
+      trackHideConditions,
+      forceGoToStep = false,
+      isActivateOtherSockets = true,
+    } = result;
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
 
-    const activateSessionParams: ActivateSessionParams = {
+    const activateSessionParams = {
       server,
       socket,
       session,
@@ -554,7 +559,6 @@ export class ContentManagerService {
       return false;
     }
 
-    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     if (isActivateOtherSockets) {
       await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
     }
