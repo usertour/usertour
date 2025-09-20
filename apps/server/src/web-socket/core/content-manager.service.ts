@@ -457,11 +457,10 @@ export class ContentManagerService {
     forceGoToStep = false,
     isActivateOtherSockets = true,
   ): Promise<boolean> {
-    const { success, session, trackConditions, conditionWaitTimers, reason } = result;
+    const { success, session, trackConditions, conditionWaitTimers } = result;
 
     // Early return if operation failed
     if (!success) {
-      this.logger.debug(`Content start failed: ${reason}`);
       return false;
     }
 
@@ -497,7 +496,6 @@ export class ContentManagerService {
   ): Promise<boolean> {
     const { socket, socketClientData } = context;
 
-    this.logger.debug(`Tracking conditions: ${trackConditions.length}`);
     // Track the client conditions, because no content was found to start
     const newTrackConditions = trackConditions?.filter(
       (trackCondition) =>
@@ -517,7 +515,6 @@ export class ContentManagerService {
   ): Promise<boolean> {
     const { socket, socketClientData } = context;
 
-    this.logger.debug(`Starting wait timer conditions: ${conditionWaitTimers.length}`);
     const newConditionWaitTimers = conditionWaitTimers?.filter(
       (conditionWaitTimer) =>
         !socketClientData?.conditionWaitTimers?.some(
@@ -541,7 +538,7 @@ export class ContentManagerService {
   ): Promise<boolean> {
     const { server, socketClientData, socket } = context;
     const { environment, externalUserId } = socketClientData;
-    const { session, trackHideConditions, reason } = result;
+    const { session, trackHideConditions } = result;
 
     const activateSessionParams: ActivateSessionParams = {
       server,
@@ -556,7 +553,6 @@ export class ContentManagerService {
     if (!isActivated) {
       return false;
     }
-    this.logger.debug(`Content start succeeded: ${reason}`);
 
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     if (isActivateOtherSockets) {
