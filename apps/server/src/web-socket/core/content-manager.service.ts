@@ -685,7 +685,7 @@ export class ContentManagerService {
 
     const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
       evaluatedContentVersions,
-      contentType as ContentDataType.CHECKLIST | ContentDataType.FLOW,
+      contentType,
     );
 
     if (!latestActivatedContentVersion) {

@@ -442,7 +442,7 @@ export const findAvailableSessionId = (
  */
 export const findLatestActivatedCustomContentVersion = (
   customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType.CHECKLIST | ContentDataType.FLOW,
+  contentType: ContentDataType,
 ): CustomContentVersion | undefined => {
   return customContentVersions
     .filter((customContentVersion) => {
