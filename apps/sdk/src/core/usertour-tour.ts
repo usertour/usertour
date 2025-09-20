@@ -138,17 +138,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Finds the target step by cvid or returns the first step
-   * @private
-   */
-  private getStep(cvid?: string): SessionStep | undefined {
-    const steps = this.getSteps();
-    if (!steps.length) return undefined;
-
-    return cvid ? this.getStepByCvid(cvid) : steps[0];
-  }
-
-  /**
    * Gets the current step by cvid
    * @private
    */

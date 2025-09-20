@@ -854,7 +854,7 @@ export class ContentManagerService {
   private async handleSessionManagement(
     customContentVersion: CustomContentVersion,
     clientData: SocketClientData,
-    startOptions: StartContentOptions,
+    startOptions?: StartContentOptions,
     createNewSession = false,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
     if (createNewSession) {
@@ -870,10 +870,10 @@ export class ContentManagerService {
   private async createNewSession(
     customContentVersion: CustomContentVersion,
     clientData: SocketClientData,
-    startOptions: StartContentOptions,
+    startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
     const { environment, externalUserId, externalCompanyId, clientContext } = clientData;
-    const { stepCvid, startReason } = startOptions;
+    const { stepCvid, startReason } = startOptions ?? {};
     const versionId = customContentVersion.id;
     const steps = customContentVersion.steps;
     const currentStepCvid = stepCvid || steps?.[0]?.cvid;
@@ -912,11 +912,11 @@ export class ContentManagerService {
    */
   private findExistingSession(
     customContentVersion: CustomContentVersion,
-    startOptions: StartContentOptions,
+    startOptions?: StartContentOptions,
   ): ContentStartResult & { sessionId?: string; currentStepCvid?: string } {
     const session = customContentVersion.session;
     const contentType = customContentVersion.content.type as ContentDataType;
-    const { stepCvid, contentId } = startOptions;
+    const { stepCvid, contentId } = startOptions ?? {};
     const sessionId = findAvailableSessionId(session.latestSession, contentType);
     const firstStepCvid = customContentVersion.steps[0]?.cvid;
     const currentStepCvid =
