@@ -933,6 +933,8 @@ export class ContentManagerService {
     customContentVersion: CustomContentVersion,
     createNewSession = false,
   ): Promise<ContentStartResult> {
+    const { options, socketClientData } = context;
+
     // Early validation
     if (isActivedHideRules(customContentVersion)) {
       return {
@@ -940,8 +942,6 @@ export class ContentManagerService {
         reason: 'Content is hidden by rules',
       };
     }
-
-    const { options, socketClientData } = context;
 
     try {
       // Handle session initialization
