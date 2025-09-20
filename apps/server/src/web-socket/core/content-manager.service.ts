@@ -95,7 +95,7 @@ export class ContentManagerService {
    */
   async startContent(context: ContentStartContext): Promise<boolean> {
     const { contentType, options, socketClientData } = context;
-    const { contentId } = options ?? {};
+    const contentId = options?.contentId;
 
     try {
       // Strategy 1: Try to start by specific contentId
@@ -873,7 +873,8 @@ export class ContentManagerService {
     startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
     const { environment, externalUserId, externalCompanyId, clientContext } = clientData;
-    const { stepCvid, startReason } = startOptions ?? {};
+    const stepCvid = startOptions?.stepCvid;
+    const startReason = startOptions?.startReason;
     const versionId = customContentVersion.id;
     const steps = customContentVersion.steps;
     const currentStepCvid = stepCvid || steps?.[0]?.cvid;
