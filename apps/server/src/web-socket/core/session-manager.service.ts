@@ -4,9 +4,13 @@ import { ContentDataType } from '@usertour/types';
 import { SDKContentSession, TrackCondition, SocketClientData } from '@/common/types';
 import { SocketDataService } from './socket-data.service';
 import { SocketEmitterService } from './socket-emitter.service';
-import { ConditionTrackingService } from './condition-tracking.service';
-import { ConditionTimerService } from './condition-timer.service';
-import { extractContentTypeBySessionId } from '@/utils/websocket-utils';
+import { ConditionEmitterService } from './condition-emitter.service';
+import {
+  extractContentTypeBySessionId,
+  categorizeClientConditions,
+  calculateRemainingClientConditions,
+  calculateRemainingConditionWaitTimers,
+} from '@/utils/websocket-utils';
 
 /**
  * Content session manager service
@@ -21,32 +25,8 @@ export class SessionManagerService {
   constructor(
     private readonly socketDataService: SocketDataService,
     private readonly socketEmitterService: SocketEmitterService,
-    private readonly conditionTrackingService: ConditionTrackingService,
-    private readonly conditionTimerService: ConditionTimerService,
+    private readonly conditionEmitterService: ConditionEmitterService,
   ) {}
-
-  /**
-   * Update client data by session
-   * @param socketId - The socket ID
-   * @param session - The session to update
-   * @returns Promise<boolean> - True if the session was updated successfully
-   */
-  private async updateClientDataBySession(
-    socketId: string,
-    session: SDKContentSession,
-  ): Promise<boolean> {
-    const contentType = session.content.type as ContentDataType;
-    switch (contentType) {
-      case ContentDataType.FLOW:
-        return await this.socketDataService.updateClientData(socketId, { flowSession: session });
-      case ContentDataType.CHECKLIST:
-        return await this.socketDataService.updateClientData(socketId, {
-          checklistSession: session,
-        });
-      default:
-        return false;
-    }
-  }
 
   /**
    * Emit set socket session event with acknowledgment
@@ -69,47 +49,28 @@ export class SessionManagerService {
   }
 
   /**
-   * Clear flow session for socket
-   * @param socket - The socket
-   * @param session - The session to clear
-   * @returns Promise<boolean> - True if the session was cleared successfully
+   * Emit unset socket session event with acknowledgment
+   * @param socket - The socket instance
+   * @param sessionId - The session id to unset
+   * @param contentType - The content type
+   * @returns Promise<boolean> - True if the session was unset and acknowledged by client
    */
-  private async clearFlowSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
-    // Emit WebSocket event
-    const isUnset = await this.socketEmitterService.unsetFlowSession(socket, session.id);
-    if (!isUnset) {
-      return false;
-    }
-    // Clear session data if it matches the sessionId
-    return await this.socketDataService.updateClientData(socket.id, {
-      lastActivatedFlowSession: session,
-      flowSession: undefined,
-    });
-  }
-
-  /**
-   * Clear checklist session for socket
-   * @param socket - The socket
-   * @param session - The session to clear
-   * @returns Promise<boolean> - True if the session was cleared successfully
-   */
-  private async clearChecklistSession(
+  private async unsetSocketSession(
     socket: Socket,
-    session: SDKContentSession,
+    sessionId: string,
+    contentType: ContentDataType,
   ): Promise<boolean> {
-    // Emit WebSocket event
-    const isUnset = await this.socketEmitterService.unsetChecklistSession(socket, session.id);
-    if (!isUnset) {
-      return false;
+    switch (contentType) {
+      case ContentDataType.FLOW:
+        return await this.socketEmitterService.unsetFlowSession(socket, sessionId);
+      case ContentDataType.CHECKLIST:
+        return await this.socketEmitterService.unsetChecklistSession(socket, sessionId);
+      default:
+        this.logger.warn(`Unsupported content type: ${contentType}`);
+        return false;
     }
-    // Clear session data if it matches the sessionId
-    return await this.socketDataService.updateClientData(socket.id, {
-      lastActivatedChecklistSession: session,
-      checklistSession: undefined,
-    });
   }
 
-  // Clear session data if it matches the sessionId
   /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
@@ -129,24 +90,45 @@ export class SessionManagerService {
     if (!contentType) {
       return false;
     }
-    // Clear current flow session (without WebSocket emission)
-    if (contentType === ContentDataType.FLOW) {
-      const flowCleared = await this.clearFlowSession(socket, flowSession);
-      if (!flowCleared) {
-        return false;
-      }
-    } else if (contentType === ContentDataType.CHECKLIST) {
-      const checklistCleared = await this.clearChecklistSession(socket, checklistSession);
-      if (!checklistCleared) {
-        return false;
-      }
+    // Send WebSocket messages first, return false if any fails
+    const targetSessionId =
+      contentType === ContentDataType.FLOW ? flowSession.id : checklistSession.id;
+    const isUnset = await this.unsetSocketSession(socket, targetSessionId, contentType);
+    if (!isUnset) {
+      return false;
     }
-    // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
-    // Cancel current wait timer conditions
-    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
 
-    return true;
+    // Process condition cleanup operations in parallel
+    const [untrackedConditions, cancelledTimers] = await Promise.all([
+      this.conditionEmitterService.untrackClientConditions(socket, clientConditions),
+      this.conditionEmitterService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+    ]);
+
+    // Calculate remaining conditions and timers (those that failed to process)
+    const remainingConditions = calculateRemainingClientConditions(
+      clientConditions,
+      untrackedConditions,
+    );
+    const remainingTimers = calculateRemainingConditionWaitTimers(
+      conditionWaitTimers,
+      cancelledTimers,
+    );
+
+    // Update client data with session clearing and remaining conditions/timers in one call
+    const updateClientData = {
+      clientConditions: remainingConditions,
+      conditionWaitTimers: remainingTimers,
+      ...(contentType === ContentDataType.FLOW && {
+        lastActivatedFlowSession: flowSession,
+        flowSession: undefined,
+      }),
+      ...(contentType === ContentDataType.CHECKLIST && {
+        lastActivatedChecklistSession: checklistSession,
+        checklistSession: undefined,
+      }),
+    };
+
+    return await this.socketDataService.updateClientData(socket.id, updateClientData);
   }
 
   /**
@@ -166,31 +148,44 @@ export class SessionManagerService {
     forceGoToStep: boolean,
   ): Promise<boolean> {
     const { clientConditions, conditionWaitTimers } = socketClientData;
-    // Update client data by session
-    const isUpdated = await this.updateClientDataBySession(socket.id, session);
-    if (!isUpdated) {
-      return false;
-    }
     const isSetSession = await this.setSocketSession(socket, session);
     if (!isSetSession) {
       return false;
     }
-
     if (forceGoToStep && session.currentStep?.id) {
       await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
     }
 
-    // Untrack current conditions
-    await this.conditionTrackingService.untrackClientConditions(socket, clientConditions);
+    // Process condition updates efficiently
+    const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
+      categorizeClientConditions(clientConditions, trackHideConditions);
 
-    // Cancel wait timer conditions
-    await this.conditionTimerService.cancelConditionWaitTimers(socket, conditionWaitTimers);
+    // Execute all condition operations in parallel
+    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
+      this.conditionEmitterService.untrackClientConditions(socket, conditionsToUntrack),
+      this.conditionEmitterService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+      this.conditionEmitterService.trackClientConditions(socket, conditionsToTrack),
+    ]);
 
-    // Track the hide conditions
-    if (trackHideConditions && trackHideConditions.length > 0) {
-      await this.conditionTrackingService.trackClientConditions(socket, trackHideConditions);
-    }
+    // Calculate remaining conditions and timers (those that failed to process)
+    const remainingConditions = calculateRemainingClientConditions(
+      conditionsToUntrack,
+      untrackedConditions,
+    );
+    const remainingTimers = calculateRemainingConditionWaitTimers(
+      conditionWaitTimers,
+      cancelledTimers,
+    );
 
-    return true;
+    // Update client data with session and all condition changes in one call
+    const contentType = session.content.type as ContentDataType;
+    const updateClientData = {
+      clientConditions: [...preservedConditions, ...remainingConditions, ...newConditions],
+      conditionWaitTimers: remainingTimers,
+      ...(contentType === ContentDataType.FLOW && { flowSession: session }),
+      ...(contentType === ContentDataType.CHECKLIST && { checklistSession: session }),
+    };
+
+    return await this.socketDataService.updateClientData(socket.id, updateClientData);
   }
 }

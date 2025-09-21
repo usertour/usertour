@@ -32,8 +32,7 @@ import { ContentDataService } from './content-data.service';
 import { SessionDataService } from './session-data.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SessionManagerService } from './session-manager.service';
-import { ConditionTrackingService } from './condition-tracking.service';
-import { ConditionTimerService } from './condition-timer.service';
+import { ConditionEmitterService } from './condition-emitter.service';
 import { SocketDataService } from './socket-data.service';
 
 interface ContentStartContext {
@@ -84,8 +83,7 @@ export class ContentManagerService {
     private readonly sessionDataService: SessionDataService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly sessionManagerService: SessionManagerService,
-    private readonly conditionTrackingService: ConditionTrackingService,
-    private readonly conditionTimerService: ConditionTimerService,
+    private readonly conditionEmitterService: ConditionEmitterService,
     private readonly socketDataService: SocketDataService,
   ) {}
 
@@ -496,15 +494,29 @@ export class ContentManagerService {
     trackConditions: TrackCondition[],
   ): Promise<boolean> {
     const { socket, socketClientData } = context;
+    const { clientConditions = [] } = socketClientData;
 
     // Track the client conditions, because no content was found to start
     const newTrackConditions = trackConditions?.filter(
       (trackCondition) =>
-        !socketClientData?.clientConditions?.some(
+        !clientConditions?.some(
           (clientCondition) => clientCondition.conditionId === trackCondition.condition.id,
         ),
     );
-    return await this.conditionTrackingService.trackClientConditions(socket, newTrackConditions);
+
+    const trackedConditions = await this.conditionEmitterService.trackClientConditions(
+      socket,
+      newTrackConditions,
+    );
+
+    // Update socket data with successfully tracked conditions
+    if (trackedConditions.length > 0) {
+      return await this.socketDataService.updateClientData(socket.id, {
+        clientConditions: [...clientConditions, ...trackedConditions],
+      });
+    }
+
+    return true;
   }
 
   /**
@@ -515,17 +527,26 @@ export class ContentManagerService {
     conditionWaitTimers: ConditionWaitTimer[],
   ): Promise<boolean> {
     const { socket, socketClientData } = context;
+    const { conditionWaitTimers: existingTimers = [] } = socketClientData;
 
     const newConditionWaitTimers = conditionWaitTimers?.filter(
       (conditionWaitTimer) =>
-        !socketClientData?.conditionWaitTimers?.some(
-          (waitTimer) => waitTimer.versionId === conditionWaitTimer.versionId,
-        ),
+        !existingTimers.some((waitTimer) => waitTimer.versionId === conditionWaitTimer.versionId),
     );
-    return await this.conditionTimerService.startConditionWaitTimers(
+
+    const startedTimers = await this.conditionEmitterService.startConditionWaitTimers(
       socket,
       newConditionWaitTimers,
     );
+
+    // Update socket data with successfully started timers
+    if (startedTimers.length > 0) {
+      return await this.socketDataService.updateClientData(socket.id, {
+        conditionWaitTimers: [...existingTimers, ...startedTimers],
+      });
+    }
+
+    return true;
   }
 
   /**

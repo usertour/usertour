@@ -14,10 +14,9 @@ import { ContentDataService } from './core/content-data.service';
 import { SessionDataService } from './core/session-data.service';
 import { ContentManagerService } from './core/content-manager.service';
 import { SessionManagerService } from './core/session-manager.service';
-import { ConditionTrackingService } from './core/condition-tracking.service';
-import { ConditionTimerService } from './core/condition-timer.service';
 import { SocketDataService } from './core/socket-data.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
+import { ConditionEmitterService } from './core/condition-emitter.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -33,10 +32,9 @@ import { SocketEmitterService } from './core/socket-emitter.service';
     SessionDataService,
     ContentManagerService,
     SessionManagerService,
-    ConditionTrackingService,
-    ConditionTimerService,
     SocketDataService,
     SocketEmitterService,
+    ConditionEmitterService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

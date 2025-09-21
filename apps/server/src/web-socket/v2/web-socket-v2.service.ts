@@ -27,8 +27,6 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { ConditionTrackingService } from '@/web-socket/core/condition-tracking.service';
-import { ConditionTimerService } from '@/web-socket/core/condition-timer.service';
 import { SocketDataService } from '@/web-socket/core/socket-data.service';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
@@ -43,8 +41,6 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentManagerService: ContentManagerService,
-    private readonly conditionTrackingService: ConditionTrackingService,
-    private readonly conditionTimerService: ConditionTimerService,
     private readonly socketDataService: SocketDataService,
   ) {}
 
@@ -556,12 +552,24 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const { conditionId, isActive } = clientCondition;
     const { clientConditions } = socketClientData;
-    return await this.conditionTrackingService.toggleClientCondition(
-      socket,
-      clientConditions,
-      conditionId,
+
+    // Check if condition exists
+    const existingCondition = clientConditions?.find((c) => c.conditionId === conditionId);
+    if (!existingCondition) {
+      return false;
+    }
+
+    // Update the condition in socket data
+    const updatedCondition = {
+      ...existingCondition,
       isActive,
-    );
+    };
+
+    return await this.socketDataService.updateClientData(socket.id, {
+      clientConditions: clientConditions.map((clientCondition) =>
+        clientCondition.conditionId === conditionId ? updatedCondition : clientCondition,
+      ),
+    });
   }
 
   /**
@@ -577,10 +585,25 @@ export class WebSocketV2Service {
     fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
     const { versionId } = fireConditionWaitTimerDto;
-    return await this.conditionTimerService.fireConditionWaitTimer(
-      socket,
-      socketClientData.conditionWaitTimers,
-      versionId,
-    );
+    const { conditionWaitTimers = [] } = socketClientData;
+
+    // Check if condition exists
+    const targetCondition = conditionWaitTimers.find((c) => c.versionId === versionId);
+    if (!targetCondition) {
+      return false;
+    }
+
+    // Update the condition
+    const updatedCondition = {
+      ...targetCondition,
+      activated: true,
+    };
+
+    // Update socket data
+    return await this.socketDataService.updateClientData(socket.id, {
+      conditionWaitTimers: conditionWaitTimers.map((condition) =>
+        condition.versionId === versionId ? updatedCondition : condition,
+      ),
+    });
   }
 }
