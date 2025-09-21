@@ -410,7 +410,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    await this.reportTargetMissing(step);
+    await this.reportTooltipTargetMissing(step);
+    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
 
   /**
@@ -634,7 +635,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Reports the tooltip target missing event
    * @param step - The step where target is missing
    */
-  private async reportTargetMissing(step: SessionStep) {
+  private async reportTooltipTargetMissing(step: SessionStep) {
     await this.socketService.reportTooltipTargetMissing(
       {
         sessionId: this.getSessionId(),

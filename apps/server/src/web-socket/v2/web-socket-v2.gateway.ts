@@ -207,13 +207,10 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('report-tooltip-target-missing')
   async reportTooltipTargetMissing(
-    @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
     @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
   ): Promise<boolean> {
     return await this.service.reportTooltipTargetMissing(
-      this.server,
-      socket,
       socketClientData,
       reportTooltipTargetMissingDto,
     );

@@ -388,8 +388,6 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async reportTooltipTargetMissing(
-    server: Server,
-    socket: Socket,
     socketClientData: SocketClientData,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
@@ -428,8 +426,6 @@ export class WebSocketV2Service {
       eventData,
       clientContext,
     );
-
-    return await this.contentManagerService.cancelContent(server, socket, sessionId);
   }
 
   /**
