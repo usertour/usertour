@@ -17,7 +17,7 @@ import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { UsertourTrigger } from '@/core/usertour-trigger';
-import { document, logger } from '@/utils';
+import { logger } from '@/utils';
 import {
   convertToAttributeEvaluationOptions,
   createQuestionAnswerEventData,
@@ -85,6 +85,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const step = this.getStepById(id);
     if (!step) {
       logger.error('Step not found', { id });
+      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
     return await this.show(step);
@@ -99,6 +100,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const step = this.getStepByCvid(cvid);
     if (!step) {
       logger.error('Step not found', { cvid });
+      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
     return await this.show(step);
@@ -111,7 +113,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async showStepByIndex(index: number): Promise<void> {
     const steps = this.getSteps();
-    if (!steps.length) return;
+    if (!steps.length) {
+      await this.close(contentEndReason.STEP_NOT_FOUND);
+      return;
+    }
     return await this.show(steps[index]);
   }
 
@@ -216,12 +221,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @throws Will close the tour if validation fails or target is missing
    */
   private async showPopper(step: SessionStep): Promise<void> {
-    // Validate step and target
-    if (!this.canShowPopper(step)) {
-      logger.error('Step cannot be shown', { step });
-      return;
-    }
-
     const currentStepInSession = this.getCurrentStepFromSession();
 
     if (currentStepInSession?.cvid !== step.cvid) {
@@ -239,15 +238,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       return;
     }
     this.setupElementWatcher(step, store);
-  }
-
-  /**
-   * Checks if a popper step can be shown
-   * @private
-   */
-  private canShowPopper(step: SessionStep): boolean {
-    const currentStep = this.getCurrentStep();
-    return Boolean(step?.target && step.cvid === currentStep?.cvid && document);
   }
 
   /**
