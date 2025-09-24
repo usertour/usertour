@@ -83,14 +83,14 @@ export class SocketDataService {
 
       // Get client condition reports from Hash and merge with clientConditions
       const clientConditionReports = await this.getClientConditionReports(socketId);
-      const resolvedClientConditions = resolveConditionStates(
+      const clientConditions = resolveConditionStates(
         clientData.clientConditions || [],
         clientConditionReports,
       );
 
       const mergedClientData: SocketClientData = {
         ...clientData,
-        clientConditions: resolvedClientConditions,
+        clientConditions,
       };
 
       this.logger.debug(`Retrieved socket data for socket ${socketId}`);
