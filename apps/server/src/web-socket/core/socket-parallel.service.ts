@@ -34,8 +34,8 @@ export class SocketParallelService {
     try {
       if (!operations?.length || !items?.length) return [];
 
-      // Execute all operations in parallel
-      const results = await Promise.all(operations);
+      // Execute all operations in parallel - call each function to get the Promise
+      const results = await Promise.all(operations.map((operation) => operation()));
 
       // Filter items that were successfully processed
       const successfulItems = items.filter((_, index) => results[index]);
