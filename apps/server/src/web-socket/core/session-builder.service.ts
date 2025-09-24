@@ -29,14 +29,14 @@ import {
   Theme,
   BizSession,
 } from '@/common/types';
-import { ContentResolverService } from './content-resolver.service';
+import { DataResolverService } from './data-resolver.service';
 
 @Injectable()
 export class SessionBuilderService {
   private readonly logger = new Logger(SessionBuilderService.name);
   constructor(
     private readonly prisma: PrismaService,
-    private readonly contentResolverService: ContentResolverService,
+    private readonly dataResolverService: DataResolverService,
   ) {}
   /**
    * Create a biz session
@@ -214,8 +214,8 @@ export class SessionBuilderService {
   ): Promise<SDKContentSession | null> {
     const { environment, externalUserId, externalCompanyId } = clientData;
     const contentType = customContentVersion.content.type as ContentDataType;
-    const config = await this.contentResolverService.getConfig(environment);
-    const themes = await this.contentResolverService.fetchThemes(
+    const config = await this.dataResolverService.getConfig(environment);
+    const themes = await this.dataResolverService.fetchThemes(
       environment,
       externalUserId,
       externalCompanyId,
@@ -308,7 +308,7 @@ export class SessionBuilderService {
     }
 
     // Get themes for session theme creation
-    const themes = await this.contentResolverService.fetchThemes(
+    const themes = await this.dataResolverService.fetchThemes(
       environment,
       externalUserId,
       externalCompanyId,

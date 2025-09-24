@@ -31,7 +31,7 @@ import {
   SocketClientData,
   CustomContentVersion,
 } from '@/common/types';
-import { ContentResolverService } from './content-resolver.service';
+import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketSessionService } from './socket-session.service';
@@ -83,7 +83,7 @@ export class ContentOrchestratorService {
   private readonly logger = new Logger(ContentOrchestratorService.name);
 
   constructor(
-    private readonly contentResolverService: ContentResolverService,
+    private readonly dataResolverService: DataResolverService,
     private readonly sessionBuilderService: SessionBuilderService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
@@ -636,7 +636,7 @@ export class ContentOrchestratorService {
 
     try {
       // Get published version ID for the specific content
-      const publishedVersionId = await this.contentResolverService.findPublishedContentVersionId(
+      const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
         contentId,
         environment.id,
       );
@@ -1055,7 +1055,7 @@ export class ContentOrchestratorService {
     }
 
     // Update session version
-    await this.contentResolverService.updateSessionVersion(
+    await this.dataResolverService.updateSessionVersion(
       sessionResult.sessionId!,
       customContentVersion.id,
     );
@@ -1087,7 +1087,7 @@ export class ContentOrchestratorService {
       ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
       .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
-    const contentVersions = await this.contentResolverService.fetchCustomContentVersions(
+    const contentVersions = await this.dataResolverService.fetchCustomContentVersions(
       environment,
       externalUserId,
       externalCompanyId,
