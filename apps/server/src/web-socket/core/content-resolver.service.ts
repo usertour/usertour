@@ -37,8 +37,8 @@ type SegmentDataItem = {
 };
 
 @Injectable()
-export class ContentDataService {
-  private readonly logger = new Logger(ContentDataService.name);
+export class ContentResolverService {
+  private readonly logger = new Logger(ContentResolverService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,

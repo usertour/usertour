@@ -31,7 +31,7 @@ import {
   SocketClientData,
   CustomContentVersion,
 } from '@/common/types';
-import { ContentDataService } from './content-data.service';
+import { ContentResolverService } from './content-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketSessionService } from './socket-session.service';
@@ -83,7 +83,7 @@ export class ContentManagerService {
   private readonly logger = new Logger(ContentManagerService.name);
 
   constructor(
-    private readonly contentDataService: ContentDataService,
+    private readonly contentResolverService: ContentResolverService,
     private readonly sessionBuilderService: SessionBuilderService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
@@ -636,7 +636,7 @@ export class ContentManagerService {
 
     try {
       // Get published version ID for the specific content
-      const publishedVersionId = await this.contentDataService.findPublishedContentVersionId(
+      const publishedVersionId = await this.contentResolverService.findPublishedContentVersionId(
         contentId,
         environment.id,
       );
@@ -1055,7 +1055,7 @@ export class ContentManagerService {
     }
 
     // Update session version
-    await this.contentDataService.updateSessionVersion(
+    await this.contentResolverService.updateSessionVersion(
       sessionResult.sessionId!,
       customContentVersion.id,
     );
@@ -1087,7 +1087,7 @@ export class ContentManagerService {
       ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
       .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
-    const contentVersions = await this.contentDataService.fetchCustomContentVersions(
+    const contentVersions = await this.contentResolverService.fetchCustomContentVersions(
       environment,
       externalUserId,
       externalCompanyId,
