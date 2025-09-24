@@ -14,7 +14,7 @@ import { ContentDataService } from './core/content-data.service';
 import { SessionDataService } from './core/session-data.service';
 import { ContentManagerService } from './core/content-manager.service';
 import { SessionManagerService } from './core/session-manager.service';
-import { SocketDataService } from './core/socket-data.service';
+import { SocketRedisService } from './core/socket-redis.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { ConditionEmitterService } from './core/condition-emitter.service';
 
@@ -32,7 +32,7 @@ import { ConditionEmitterService } from './core/condition-emitter.service';
     SessionDataService,
     ContentManagerService,
     SessionManagerService,
-    SocketDataService,
+    SocketRedisService,
     SocketEmitterService,
     ConditionEmitterService,
   ],

@@ -4,12 +4,12 @@ import { SocketClientData } from '@/common/types/content';
 import { ClientCondition } from '@/common/types/sdk';
 
 /**
- * Socket data storage service
- * Handles all data operations for socket socket management
+ * Socket Redis storage service
+ * Handles all Redis data operations for socket management
  */
 @Injectable()
-export class SocketDataService {
-  private readonly logger = new Logger(SocketDataService.name);
+export class SocketRedisService {
+  private readonly logger = new Logger(SocketRedisService.name);
   private readonly DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
   constructor(private readonly redisService: RedisService) {}

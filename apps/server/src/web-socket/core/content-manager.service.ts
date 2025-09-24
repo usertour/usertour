@@ -36,7 +36,7 @@ import { SessionDataService } from './session-data.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SessionManagerService } from './session-manager.service';
 import { ConditionEmitterService } from './condition-emitter.service';
-import { SocketDataService } from './socket-data.service';
+import { SocketRedisService } from './socket-redis.service';
 import { resolveConditionStates } from '@/utils/content-utils';
 
 interface ContentStartContext {
@@ -88,7 +88,7 @@ export class ContentManagerService {
     private readonly eventTrackingService: EventTrackingService,
     private readonly sessionManagerService: SessionManagerService,
     private readonly conditionEmitterService: ConditionEmitterService,
-    private readonly socketDataService: SocketDataService,
+    private readonly socketRedisService: SocketRedisService,
   ) {}
 
   /**
@@ -551,7 +551,7 @@ export class ContentManagerService {
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
-      return await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketRedisService.updateClientData(socket.id, {
         clientConditions: [...clientConditions, ...trackedConditions],
       });
     }
@@ -581,7 +581,7 @@ export class ContentManagerService {
 
     // Update socket data with successfully started timers
     if (startedTimers.length > 0) {
-      return await this.socketDataService.updateClientData(socket.id, {
+      return await this.socketRedisService.updateClientData(socket.id, {
         conditionWaitTimers: [...existingTimers, ...startedTimers],
       });
     }
@@ -1112,21 +1112,21 @@ export class ContentManagerService {
 
   /**
    * Get socket client data with condition states resolved (merged with condition reports)
-   * This method handles the business logic that was previously in SocketDataService.getClientData
+   * This method handles the business logic that was previously in SocketRedisService.getClientData
    * @param socketId - The socket ID
    * @returns Promise<SocketClientData | null> - The resolved socket data or null if not found
    */
   async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
     try {
       // Get raw data from Redis (pure operation)
-      const rawClientData = await this.socketDataService.getClientData(socketId);
+      const rawClientData = await this.socketRedisService.getClientData(socketId);
       if (!rawClientData) {
         return null;
       }
 
       // Apply business logic: merge with condition reports
       const clientConditionReports =
-        await this.socketDataService.getClientConditionReports(socketId);
+        await this.socketRedisService.getClientConditionReports(socketId);
       const clientConditions = resolveConditionStates(
         rawClientData.clientConditions || [],
         clientConditionReports,

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
 import { SDKContentSession, TrackCondition, SocketClientData } from '@/common/types';
-import { SocketDataService } from './socket-data.service';
+import { SocketRedisService } from './socket-redis.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { ConditionEmitterService } from './condition-emitter.service';
 import {
@@ -23,7 +23,7 @@ export class SessionManagerService {
   private readonly logger = new Logger(SessionManagerService.name);
 
   constructor(
-    private readonly socketDataService: SocketDataService,
+    private readonly socketRedisService: SocketRedisService,
     private readonly socketEmitterService: SocketEmitterService,
     private readonly conditionEmitterService: ConditionEmitterService,
   ) {}
@@ -127,9 +127,9 @@ export class SessionManagerService {
       }),
     };
 
-    await this.socketDataService.updateClientData(socket.id, updateClientData);
+    await this.socketRedisService.updateClientData(socket.id, updateClientData);
 
-    const clientConditionReports = await this.socketDataService.getClientConditionReports(
+    const clientConditionReports = await this.socketRedisService.getClientConditionReports(
       socket.id,
     );
     // Remove condition reports for conditions that are no longer tracked
@@ -140,7 +140,7 @@ export class SessionManagerService {
 
     if (reportsToRemove.length > 0) {
       const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
-      await this.socketDataService.removeClientConditionReports(socket.id, conditionIdsToRemove);
+      await this.socketRedisService.removeClientConditionReports(socket.id, conditionIdsToRemove);
     }
 
     return true;
@@ -203,9 +203,9 @@ export class SessionManagerService {
       ...(contentType === ContentDataType.CHECKLIST && { checklistSession: session }),
     };
 
-    await this.socketDataService.updateClientData(socket.id, updateClientData);
+    await this.socketRedisService.updateClientData(socket.id, updateClientData);
 
-    const clientConditionReports = await this.socketDataService.getClientConditionReports(
+    const clientConditionReports = await this.socketRedisService.getClientConditionReports(
       socket.id,
     );
 
@@ -217,7 +217,7 @@ export class SessionManagerService {
 
     if (reportsToRemove.length > 0) {
       const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
-      await this.socketDataService.removeClientConditionReports(socket.id, conditionIdsToRemove);
+      await this.socketRedisService.removeClientConditionReports(socket.id, conditionIdsToRemove);
     }
 
     return true;

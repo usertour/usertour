@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { SocketDataService } from '@/web-socket/core/socket-data.service';
+import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentManagerService } from '@/web-socket/core/content-manager.service';
@@ -41,7 +41,7 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentManagerService: ContentManagerService,
-    private readonly socketDataService: SocketDataService,
+    private readonly socketRedisService: SocketRedisService,
   ) {}
 
   /**
@@ -64,7 +64,7 @@ export class WebSocketV2Service {
       socketClientData.environment.id,
     );
     if (!bizUser) return false;
-    return await this.socketDataService.updateClientData(socket.id, { externalUserId });
+    return await this.socketRedisService.updateClientData(socket.id, { externalUserId });
   }
 
   /**
@@ -91,7 +91,7 @@ export class WebSocketV2Service {
     );
 
     if (!bizCompany) return false;
-    return await this.socketDataService.updateClientData(socket.id, { externalCompanyId });
+    return await this.socketRedisService.updateClientData(socket.id, { externalCompanyId });
   }
 
   /**
@@ -101,7 +101,7 @@ export class WebSocketV2Service {
    * @returns True if the socket context was updated successfully
    */
   async updateClientContext(socket: Socket, clientContext: ClientContext): Promise<boolean> {
-    return await this.socketDataService.updateClientData(socket.id, { clientContext });
+    return await this.socketRedisService.updateClientData(socket.id, { clientContext });
   }
 
   /**
@@ -559,7 +559,7 @@ export class WebSocketV2Service {
     );
 
     // Use atomic Redis Hash operation to avoid race conditions
-    return await this.socketDataService.updateClientConditionReport(
+    return await this.socketRedisService.updateClientConditionReport(
       socket.id,
       conditionId,
       isActive,
@@ -594,7 +594,7 @@ export class WebSocketV2Service {
     };
 
     // Update socket data
-    return await this.socketDataService.updateClientData(socket.id, {
+    return await this.socketRedisService.updateClientData(socket.id, {
       conditionWaitTimers: conditionWaitTimers.map((condition) =>
         condition.versionId === versionId ? updatedCondition : condition,
       ),

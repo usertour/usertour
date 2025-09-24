@@ -27,7 +27,7 @@ import {
   EndContentDto,
   FireConditionWaitTimerDto,
 } from './web-socket-v2.dto';
-import { SocketDataService } from '@/web-socket/core/socket-data.service';
+import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { ClientContext } from '@usertour/types';
 import { buildExternalUserRoomId } from '../../utils/websocket-utils';
@@ -45,7 +45,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
   constructor(
     private readonly service: WebSocketV2Service,
-    private readonly socketDataService: SocketDataService,
+    private readonly socketRedisService: SocketRedisService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -79,7 +79,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           externalCompanyId,
           conditionWaitTimers: [],
         };
-        if (!(await this.socketDataService.setClientData(socket.id, clientData))) {
+        if (!(await this.socketRedisService.setClientData(socket.id, clientData))) {
           this.logger.error(`Failed to persist client data for socket ${socket.id}`);
           return next(new ServiceUnavailableError());
         }
@@ -100,7 +100,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   // Cleanup when a socket disconnects for any reason
   async handleDisconnect(socket: Socket): Promise<void> {
     try {
-      await this.socketDataService.removeClientData(socket.id);
+      await this.socketRedisService.removeClientData(socket.id);
       this.logger.debug(`Cleaned up client data for disconnected socket ${socket.id}`);
     } catch (error) {
       this.logger.error(
