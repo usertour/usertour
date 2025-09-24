@@ -32,7 +32,7 @@ import {
   CustomContentVersion,
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
-import { SessionDataService } from './session-data.service';
+import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
@@ -84,7 +84,7 @@ export class ContentManagerService {
 
   constructor(
     private readonly contentDataService: ContentDataService,
-    private readonly sessionDataService: SessionDataService,
+    private readonly sessionBuilderService: SessionBuilderService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
@@ -689,7 +689,7 @@ export class ContentManagerService {
       return { success: false, reason: 'No existing session' };
     }
     // Refresh session
-    const refreshedSession = await this.sessionDataService.refreshContentSession(
+    const refreshedSession = await this.sessionBuilderService.refreshContentSession(
       session,
       environment,
       externalUserId,
@@ -697,7 +697,7 @@ export class ContentManagerService {
     );
 
     // Compare session to detect changes
-    const isSessionChanged = this.sessionDataService.compareContentSessions(
+    const isSessionChanged = this.sessionBuilderService.compareContentSessions(
       session,
       refreshedSession,
     );
@@ -914,7 +914,7 @@ export class ContentManagerService {
     const versionId = customContentVersion.id;
     const steps = customContentVersion.steps;
     const currentStepCvid = stepCvid || steps?.[0]?.cvid;
-    const bizSession = await this.sessionDataService.createBizSession(
+    const bizSession = await this.sessionBuilderService.createBizSession(
       environment,
       externalUserId,
       externalCompanyId,
@@ -1040,7 +1040,7 @@ export class ContentManagerService {
     }
 
     // Create content session
-    const contentSession = await this.sessionDataService.createContentSession(
+    const contentSession = await this.sessionBuilderService.createContentSession(
       sessionResult.sessionId!,
       customContentVersion,
       socketClientData,

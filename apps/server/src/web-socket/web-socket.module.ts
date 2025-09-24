@@ -11,7 +11,7 @@ import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
 import { SharedModule } from '@/shared/shared.module';
 import { EventTrackingService } from './core/event-tracking.service';
 import { ContentDataService } from './core/content-data.service';
-import { SessionDataService } from './core/session-data.service';
+import { SessionBuilderService } from './core/session-builder.service';
 import { ContentManagerService } from './core/content-manager.service';
 import { SocketSessionService } from './core/socket-session.service';
 import { SocketRedisService } from './core/socket-redis.service';
@@ -29,7 +29,7 @@ import { SocketParallelService } from './core/socket-parallel.service';
     WebSocketV2Guard,
     EventTrackingService,
     ContentDataService,
-    SessionDataService,
+    SessionBuilderService,
     ContentManagerService,
     SocketSessionService,
     SocketRedisService,

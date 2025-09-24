@@ -16,7 +16,7 @@ import {
  * Content session manager service
  * Handles content session management for Flow and Checklist content types
  * Focused on session lifecycle management, data persistence, and WebSocket communication
- * Delegates session creation and manipulation to SessionDataService
+ * Delegates session creation and manipulation to SessionBuilderService
  */
 @Injectable()
 export class SocketSessionService {

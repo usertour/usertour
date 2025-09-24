@@ -32,8 +32,8 @@ import {
 import { ContentDataService } from './content-data.service';
 
 @Injectable()
-export class SessionDataService {
-  private readonly logger = new Logger(SessionDataService.name);
+export class SessionBuilderService {
+  private readonly logger = new Logger(SessionBuilderService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
