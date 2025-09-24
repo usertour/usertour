@@ -25,16 +25,6 @@ export class SocketDataService {
   }
 
   /**
-   * Build Redis key for user socket mapping
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @returns The Redis key
-   */
-  private buildUserSocketsKey(environmentId: string, externalUserId: string): string {
-    return `user_sockets:${environmentId}:${externalUserId}`;
-  }
-
-  /**
    * Set socket data in Redis
    * @param socketId - The socket ID
    * @param clientData - The socket data to store
@@ -242,9 +232,6 @@ export class SocketDataService {
    */
   async removeClientData(socketId: string): Promise<boolean> {
     try {
-      // Get the data first to extract user info for cleanup
-      const clientData = await this.getClientData(socketId);
-
       const key = this.buildClientDataKey(socketId);
       const reportsKey = this.buildClientConditionReportsKey(socketId);
       const client = this.redisService.getClient();
@@ -253,15 +240,6 @@ export class SocketDataService {
         // Remove both main data and condition reports
         await client.del(key);
         await client.del(reportsKey);
-      }
-
-      // Remove from user socket mapping
-      if (clientData?.environment && clientData?.externalUserId) {
-        await this.removeSocketFromUserMapping(
-          clientData.environment.id,
-          clientData.externalUserId,
-          socketId,
-        );
       }
 
       this.logger.debug(`Removed socket data for socket ${socketId}`);
@@ -273,113 +251,6 @@ export class SocketDataService {
   }
 
   /**
-   * Get all socket data for a specific user
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @returns Promise<ClientData[]> - Array of socket data for the user
-   */
-  async getUserClientData(
-    environmentId: string,
-    externalUserId: string,
-  ): Promise<SocketClientData[]> {
-    try {
-      const socketIds = await this.getUserSocketIds(environmentId, externalUserId);
-      const clientDataList: SocketClientData[] = [];
-
-      for (const socketId of socketIds) {
-        const clientData = await this.getClientData(socketId);
-        if (clientData) {
-          clientDataList.push(clientData);
-        }
-      }
-
-      this.logger.debug(
-        `Retrieved ${clientDataList.length} socket data entries for user ${externalUserId}`,
-      );
-      return clientDataList;
-    } catch (error) {
-      this.logger.error(`Failed to get user socket data for user ${externalUserId}:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Get all socket IDs for a specific user
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @returns Promise<string[]> - Array of socket IDs
-   */
-  async getUserSocketIds(environmentId: string, externalUserId: string): Promise<string[]> {
-    try {
-      const key = this.buildUserSocketsKey(environmentId, externalUserId);
-      const client = this.redisService.getClient();
-
-      if (!client) {
-        return [];
-      }
-
-      const socketIds = await client.smembers(key);
-      return socketIds || [];
-    } catch (error) {
-      this.logger.error(`Failed to get user socket IDs for user ${externalUserId}:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Add socket to user mapping
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @param socketId - The socket ID
-   */
-  private async addSocketToUserMapping(
-    environmentId: string,
-    externalUserId: string,
-    socketId: string,
-  ): Promise<void> {
-    try {
-      const key = this.buildUserSocketsKey(environmentId, externalUserId);
-      const client = this.redisService.getClient();
-
-      if (client) {
-        await client.sadd(key, socketId);
-        await client.expire(key, this.DEFAULT_TTL_SECONDS);
-      }
-    } catch (error) {
-      this.logger.error(`Failed to add socket ${socketId} to user mapping:`, error);
-    }
-  }
-
-  /**
-   * Remove socket from user mapping
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @param socketId - The socket ID
-   */
-  private async removeSocketFromUserMapping(
-    environmentId: string,
-    externalUserId: string,
-    socketId: string,
-  ): Promise<void> {
-    try {
-      const key = this.buildUserSocketsKey(environmentId, externalUserId);
-      const client = this.redisService.getClient();
-
-      if (client) {
-        await client.srem(key, socketId);
-
-        // If no more sockets for this user, remove the key
-        const remainingSockets = await client.scard(key);
-        if (remainingSockets === 0) {
-          await client.del(key);
-        }
-      }
-    } catch (error) {
-      this.logger.error(`Failed to remove socket ${socketId} from user mapping:`, error);
-    }
-  }
-
-  /**
    * Check if socket data exists
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data exists
@@ -387,58 +258,5 @@ export class SocketDataService {
   async hasClientData(socketId: string): Promise<boolean> {
     const data = await this.getClientData(socketId);
     return data !== null;
-  }
-
-  /**
-   * Clean up all data for a specific user
-   * @param environmentId - The environment ID
-   * @param externalUserId - The external user ID
-   * @returns Promise<number> - Number of sockets cleaned up
-   */
-  async cleanupUserData(environmentId: string, externalUserId: string): Promise<number> {
-    try {
-      const socketIds = await this.getUserSocketIds(environmentId, externalUserId);
-      let cleanedCount = 0;
-
-      for (const socketId of socketIds) {
-        const success = await this.removeClientData(socketId);
-        if (success) {
-          cleanedCount++;
-        }
-      }
-
-      this.logger.debug(`Cleaned up ${cleanedCount} sockets for user ${externalUserId}`);
-      return cleanedCount;
-    } catch (error) {
-      this.logger.error(`Failed to cleanup user data for user ${externalUserId}:`, error);
-      return 0;
-    }
-  }
-
-  /**
-   * Get statistics about stored data
-   * @returns Promise<object> - Statistics about the stored data
-   */
-  async getDataStats(): Promise<{
-    totalClientData: number;
-    totalUserMappings: number;
-  }> {
-    try {
-      const client = this.redisService.getClient();
-      if (!client) {
-        return { totalClientData: 0, totalUserMappings: 0 };
-      }
-
-      const clientDataKeys = await client.keys('client_data:*');
-      const userMappingKeys = await client.keys('user_sockets:*');
-
-      return {
-        totalClientData: clientDataKeys.length,
-        totalUserMappings: userMappingKeys.length,
-      };
-    } catch (error) {
-      this.logger.error('Failed to get data stats:', error);
-      return { totalClientData: 0, totalUserMappings: 0 };
-    }
   }
 }
