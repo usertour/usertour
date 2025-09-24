@@ -13,7 +13,7 @@ import { EventTrackingService } from './core/event-tracking.service';
 import { ContentDataService } from './core/content-data.service';
 import { SessionDataService } from './core/session-data.service';
 import { ContentManagerService } from './core/content-manager.service';
-import { SessionManagerService } from './core/session-manager.service';
+import { SocketSessionService } from './core/socket-session.service';
 import { SocketRedisService } from './core/socket-redis.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { ConditionEmitterService } from './core/condition-emitter.service';
@@ -31,7 +31,7 @@ import { ConditionEmitterService } from './core/condition-emitter.service';
     ContentDataService,
     SessionDataService,
     ContentManagerService,
-    SessionManagerService,
+    SocketSessionService,
     SocketRedisService,
     SocketEmitterService,
     ConditionEmitterService,

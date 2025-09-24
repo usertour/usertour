@@ -19,8 +19,8 @@ import {
  * Delegates session creation and manipulation to SessionDataService
  */
 @Injectable()
-export class SessionManagerService {
-  private readonly logger = new Logger(SessionManagerService.name);
+export class SocketSessionService {
+  private readonly logger = new Logger(SocketSessionService.name);
 
   constructor(
     private readonly socketRedisService: SocketRedisService,

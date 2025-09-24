@@ -34,7 +34,7 @@ import {
 import { ContentDataService } from './content-data.service';
 import { SessionDataService } from './session-data.service';
 import { EventTrackingService } from './event-tracking.service';
-import { SessionManagerService } from './session-manager.service';
+import { SocketSessionService } from './socket-session.service';
 import { ConditionEmitterService } from './condition-emitter.service';
 import { SocketRedisService } from './socket-redis.service';
 import { resolveConditionStates } from '@/utils/content-utils';
@@ -86,7 +86,7 @@ export class ContentManagerService {
     private readonly contentDataService: ContentDataService,
     private readonly sessionDataService: SessionDataService,
     private readonly eventTrackingService: EventTrackingService,
-    private readonly sessionManagerService: SessionManagerService,
+    private readonly socketSessionService: SocketSessionService,
     private readonly conditionEmitterService: ConditionEmitterService,
     private readonly socketRedisService: SocketRedisService,
   ) {}
@@ -251,7 +251,7 @@ export class ContentManagerService {
       return { success: true };
     }
 
-    const isCleaned = await this.sessionManagerService.cleanupSocketSession(
+    const isCleaned = await this.socketSessionService.cleanupSocketSession(
       socket,
       socketClientData,
       sessionId,
@@ -328,7 +328,7 @@ export class ContentManagerService {
     if (!socketClientData) {
       return false;
     }
-    return await this.sessionManagerService.activateSocketSession(
+    return await this.socketSessionService.activateSocketSession(
       socket as unknown as Socket,
       socketClientData,
       session,
