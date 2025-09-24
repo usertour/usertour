@@ -3,7 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { ContentDataType, RulesType } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
-  findLatestActivatedCustomContentVersion,
+  findLatestActivatedCustomContentVersions,
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
   extractClientTrackConditions,
@@ -12,6 +12,9 @@ import {
   findAvailableSessionId,
   findLatestStepCvid,
   extractClientConditionWaitTimers,
+  sessionIsAvailable,
+  isEnabledHideRules,
+  conditionsIsReady,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -99,23 +102,16 @@ export class ContentManagerService {
       // Strategy 1: Try to start by specific contentId
       if (contentId) {
         const result = await this.tryStartByContentId(context);
-        if (result.success) {
-          return await this.handleContentStartResult(context, { ...result, forceGoToStep: true });
+        if (!result.success) {
+          return false;
         }
+        return await this.handleSuccessfulSession(context, { ...result, forceGoToStep: true });
       }
 
       // Strategy 2: Handle existing session
       const existingSessionResult = await this.handleExistingSession(context);
       if (existingSessionResult.success) {
-        return await this.handleContentStartResult(context, existingSessionResult);
-      }
-
-      if (existingSessionResult.invalidSession) {
-        return await this.cancelContent(
-          context.server,
-          context.socket,
-          existingSessionResult.invalidSession.id,
-        );
+        return await this.handleSuccessfulSession(context, existingSessionResult);
       }
 
       // Extract excluded content IDs based on current content type
@@ -208,7 +204,7 @@ export class ContentManagerService {
 
     // If the strategy result is successful and the session is not null, return the strategy result
     if (strategyResult.success && strategyResult.session) {
-      return await this.handleContentStartResult(context, {
+      return await this.handleSuccessfulSession(context, {
         ...strategyResult,
         isActivateOtherSockets: false,
       });
@@ -427,6 +423,7 @@ export class ContentManagerService {
       context,
       filteredContentVersions,
     );
+
     if (latestVersionResult.success) {
       return latestVersionResult;
     }
@@ -444,6 +441,7 @@ export class ContentManagerService {
     const waitTimerResult = this.prepareConditionWaitTimersResult(
       filteredContentVersions,
       contentType,
+      socketClientData.clientConditions,
     );
     if (waitTimerResult.success) {
       return waitTimerResult;
@@ -461,7 +459,7 @@ export class ContentManagerService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { success, session, trackConditions, conditionWaitTimers } = result;
+    const { success, trackConditions, conditionWaitTimers } = result;
 
     // Early return if operation failed
     if (!success) {
@@ -478,12 +476,53 @@ export class ContentManagerService {
       return await this.handleConditionWaitTimers(context, conditionWaitTimers);
     }
 
-    // Handle successful session creation
-    if (session) {
-      return await this.handleSuccessfulSession(context, result);
+    return await this.handleSuccessfulSession(context, result);
+  }
+
+  /**
+   * Checks hide conditions and cancels content if necessary
+   */
+  private async checkHideConditions(
+    context: ContentStartContext,
+    result: ContentStartResult,
+  ): Promise<boolean> {
+    const { socket, server } = context;
+    const { session } = result;
+    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    const contentType = session.content.type;
+    const sessionId = session.id;
+    if (!socketClientData) {
+      return true;
+    }
+    const sessionVersion = await this.getEvaluatedContentVersions(
+      socketClientData,
+      contentType,
+      session.version.id,
+    )?.[0];
+    const { clientConditions } = socketClientData;
+
+    if (
+      sessionVersion &&
+      isEnabledHideRules(sessionVersion) &&
+      !conditionsIsReady(sessionVersion.config.hideRules, clientConditions)
+    ) {
+      return true;
     }
 
-    return false;
+    if (!sessionVersion || isActivedHideRules(sessionVersion)) {
+      this.logger.debug(
+        `Hide rules are activated, canceling session, sessionVersion: ${sessionVersion?.content.name}, sessionId: ${sessionId}, isActivedHideRules: ${isActivedHideRules(sessionVersion)}`,
+      );
+      // Cleanup socket session
+      return await this.cancelSocketSession({
+        server,
+        socket,
+        socketClientData,
+        sessionId,
+      });
+    }
+
+    return true;
   }
 
   /**
@@ -494,7 +533,7 @@ export class ContentManagerService {
     trackConditions: TrackCondition[],
   ): Promise<boolean> {
     const { socket, socketClientData } = context;
-    const { clientConditions = [] } = socketClientData;
+    const { clientConditions } = socketClientData;
 
     // Track the client conditions, because no content was found to start
     const newTrackConditions = trackConditions?.filter(
@@ -565,7 +604,6 @@ export class ContentManagerService {
       isActivateOtherSockets = true,
     } = result;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
-
     const activateSessionParams = {
       server,
       socket,
@@ -575,15 +613,16 @@ export class ContentManagerService {
       forceGoToStep,
     };
 
-    const isActivated = await this.activateSocketSession(activateSessionParams);
-    if (!isActivated) {
-      return false;
+    if (session) {
+      if (!(await this.activateSocketSession(activateSessionParams))) {
+        return false;
+      }
+      if (isActivateOtherSockets) {
+        await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
+      }
     }
-
-    if (isActivateOtherSockets) {
-      await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
-    }
-    return isActivated;
+    // Check hide conditions and cancel content if necessary
+    return await this.checkHideConditions(context, result);
   }
 
   /**
@@ -600,47 +639,34 @@ export class ContentManagerService {
         contentId,
         environment.id,
       );
-
       if (!publishedVersionId) {
         return {
           success: false,
           reason: 'Content not found or not published',
         };
       }
-
-      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      const evaluatedContentVersion = await this.getEvaluatedContentVersions(
         socketClientData,
         contentType,
         publishedVersionId,
+      )?.[0];
+      if (!evaluatedContentVersion) {
+        return {
+          success: false,
+          reason: 'Content version not available or not activated',
+        };
+      }
+      const latestActivatedContentVersion = await this.findLatestActivatedCustomContentVersion(
+        socketClientData,
+        contentType,
+        evaluatedContentVersion,
       );
 
-      if (evaluatedContentVersions.length > 0) {
-        const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
-          context,
-          evaluatedContentVersions,
-        );
-        if (latestVersionResult.success) {
-          return latestVersionResult;
-        }
-
-        const result = await this.handleContentVersion(
-          context,
-          evaluatedContentVersions[0],
-          true, // createNewSession
-        );
-
-        if (result.success) {
-          return {
-            ...result,
-            reason: 'Started by contentId',
-          };
-        }
-      }
-
-      return {
-        success: false,
-        reason: 'Content version not available or not activated',
-      };
+      return await this.handleContentVersion(
+        context,
+        latestActivatedContentVersion,
+        true, // createNewSession
+      );
     } catch (error) {
       this.logger.error(`Error in tryStartByContentId: ${error.message}`);
       return {
@@ -674,25 +700,42 @@ export class ContentManagerService {
       session,
       refreshedSession,
     );
-    const isActive = await this.isSessionActive(socketClientData, contentType, session);
 
     // Handle active session cases
-    if (isActive) {
-      return {
-        success: true,
-        reason: isSessionChanged
-          ? 'Existing active session with changes'
-          : 'Existing active session',
-        ...(isSessionChanged && { session: refreshedSession }),
-      };
-    }
-
-    // Return information about invalid session that needs cleanup
     return {
-      success: false,
-      reason: 'Existing session was invalid and needs cleanup',
-      invalidSession: session,
+      success: true,
+      reason: isSessionChanged ? 'Existing active session with changes' : 'Existing active session',
+      ...(isSessionChanged && { session: refreshedSession }),
     };
+  }
+
+  /**
+   * Find the latest activated content version, potentially updated by latest session version
+   */
+  private async findLatestActivatedCustomContentVersion(
+    socketClientData: SocketClientData,
+    contentType: ContentDataType,
+    evaluatedContentVersion: CustomContentVersion,
+  ): Promise<CustomContentVersion> {
+    if (!sessionIsAvailable(evaluatedContentVersion.session.latestSession, contentType)) {
+      return evaluatedContentVersion;
+    }
+    const latestActivatedContentVersionId =
+      evaluatedContentVersion.session.latestSession?.versionId;
+    if (
+      latestActivatedContentVersionId &&
+      evaluatedContentVersion.id !== latestActivatedContentVersionId
+    ) {
+      const activatedContentVersion = await this.getEvaluatedContentVersions(
+        socketClientData,
+        contentType,
+        latestActivatedContentVersionId,
+      )?.[0];
+      if (activatedContentVersion) {
+        return activatedContentVersion;
+      }
+    }
+    return evaluatedContentVersion;
   }
 
   /**
@@ -703,42 +746,20 @@ export class ContentManagerService {
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
     const { contentType, socketClientData } = context;
+    const { clientConditions } = socketClientData;
 
-    const latestActivatedContentVersion = findLatestActivatedCustomContentVersion(
+    const latestActivatedContentVersion = findLatestActivatedCustomContentVersions(
       evaluatedContentVersions,
       contentType,
-    );
+      clientConditions,
+    )?.[0];
 
+    // Check if content version is allowed by hide rules
     if (!latestActivatedContentVersion) {
       return {
         success: false,
         reason: 'No latest activated content version found',
       };
-    }
-
-    //Get latest activated content version by latest session version id if it exists
-    const latestActivatedContentVersionId =
-      latestActivatedContentVersion.session.latestSession?.versionId;
-    if (
-      latestActivatedContentVersionId &&
-      latestActivatedContentVersion.id !== latestActivatedContentVersionId
-    ) {
-      const latestActivatedContentVersions = await this.getEvaluatedContentVersions(
-        socketClientData,
-        contentType,
-        latestActivatedContentVersionId,
-      );
-      if (latestActivatedContentVersions.length > 0) {
-        const result = await this.handleContentVersion(
-          context,
-          latestActivatedContentVersions[0],
-          false, // don't create new session
-        );
-        return {
-          ...result,
-          reason: result.success ? 'Started by latest activated version' : result.reason,
-        };
-      }
     }
 
     const result = await this.handleContentVersion(
@@ -762,24 +783,25 @@ export class ContentManagerService {
   ): Promise<ContentStartResult> {
     const { contentType, socketClientData } = context;
     const { conditionWaitTimers } = socketClientData;
+    const { clientConditions } = socketClientData;
     const firedWaitTimerVersionIds = conditionWaitTimers
       ?.filter((conditionWaitTimer) => conditionWaitTimer.activated)
       .map((conditionWaitTimer) => conditionWaitTimer.versionId);
 
-    const autoStartContentVersions = filterAvailableAutoStartContentVersions(
+    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType,
+      clientConditions,
       true,
       firedWaitTimerVersionIds,
-    );
+    )?.[0];
 
-    if (!autoStartContentVersions || autoStartContentVersions.length === 0) {
+    if (!autoStartContentVersion) {
       return {
         success: false,
         reason: 'No auto-start content version available',
       };
     }
-    const autoStartContentVersion = autoStartContentVersions[0];
 
     const result = await this.handleContentVersion(
       context,
@@ -799,11 +821,17 @@ export class ContentManagerService {
   private prepareConditionWaitTimersResult(
     evaluatedContentVersions: CustomContentVersion[],
     contentType: ContentDataType,
+    clientConditions: ClientCondition[],
   ): ContentStartResult {
     const autoStartContentVersionsWithoutWaitTimer = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType,
+      clientConditions,
       false,
+    );
+
+    this.logger.debug(
+      `autoStartContentVersionsWithoutWaitTimer: ${autoStartContentVersionsWithoutWaitTimer.length}`,
     );
 
     const conditionWaitTimers = extractClientConditionWaitTimers(
@@ -956,14 +984,6 @@ export class ContentManagerService {
   ): Promise<ContentStartResult> {
     const { options, socketClientData } = context;
 
-    // Early validation
-    if (isActivedHideRules(customContentVersion)) {
-      return {
-        success: false,
-        reason: 'Content is hidden by rules',
-      };
-    }
-
     try {
       // Handle session initialization
       const sessionResult = await this.initializeSession(
@@ -1053,16 +1073,17 @@ export class ContentManagerService {
     contentType: ContentDataType,
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
-    const { environment, clientConditions, externalUserId, externalCompanyId, clientContext } =
-      socketClientData;
+    const { environment, externalUserId, externalCompanyId, clientContext } = socketClientData;
+
+    const { clientConditions } = socketClientData;
 
     // Extract activated and deactivated condition IDs
     const activatedIds = clientConditions
-      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive)
+      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === true)
       .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
     const deactivatedIds = clientConditions
-      ?.filter((clientCondition: ClientCondition) => !clientCondition.isActive)
+      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
       .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
     const contentVersions = await this.contentDataService.fetchCustomContentVersions(
@@ -1086,22 +1107,5 @@ export class ContentManagerService {
       activatedIds,
       deactivatedIds,
     });
-  }
-
-  /**
-   * Check if the existing session is still active
-   */
-  private async isSessionActive(
-    socketClientData: SocketClientData,
-    contentType: ContentDataType,
-    session: SDKContentSession,
-  ): Promise<boolean> {
-    const sessionVersion = await this.getEvaluatedContentVersions(
-      socketClientData,
-      contentType,
-      session.version.id,
-    );
-
-    return sessionVersion.length > 0 && !isActivedHideRules(sessionVersion[0]);
   }
 }

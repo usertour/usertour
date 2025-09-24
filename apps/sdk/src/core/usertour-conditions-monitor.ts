@@ -71,6 +71,11 @@ export class UsertourConditionsMonitor extends Evented {
       // Add new condition
       this.conditions.push(condition);
     }
+
+    // Immediately check the initial state of newly added conditions
+    if (conditions.length > 0) {
+      this.checkInitialConditionStates(conditions);
+    }
   }
 
   /**
@@ -134,6 +139,36 @@ export class UsertourConditionsMonitor extends Evented {
     if (this.intervalId) {
       timerManager.clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+  }
+
+  /**
+   * Checks the initial state of newly added conditions
+   * @param conditions - Array of conditions to check
+   */
+  private async checkInitialConditionStates(conditions: RulesCondition[]): Promise<void> {
+    try {
+      // Process the new conditions to get their current state
+      const activatedConditions = await evaluateConditions(conditions);
+
+      for (const condition of activatedConditions) {
+        const isActive = isConditionsActived([condition]);
+
+        if (isActive) {
+          // Condition is currently active
+          if (!this.activeConditions.has(condition.id)) {
+            this.activeConditions.add(condition.id);
+            await this.reportConditionStateChange(condition, 'activated');
+          }
+        } else {
+          // Condition is currently inactive - report deactivated for initial state
+          if (!this.activeConditions.has(condition.id)) {
+            await this.reportConditionStateChange(condition, 'deactivated');
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Error checking initial condition states:', error);
     }
   }
 

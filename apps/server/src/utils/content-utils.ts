@@ -17,6 +17,7 @@ import type {
   SessionTheme,
   SessionStep,
   ConditionWaitTimer,
+  ClientCondition,
 } from '@/common/types/sdk';
 import {
   differenceInDays,
@@ -369,6 +370,34 @@ export const isAllowedByConditionWaitTimers = (
 };
 
 /**
+ * Checks if content version is allowed to start based on hide rules
+ * @param customContentVersion - The content version to check
+ * @param clientConditions - Current client conditions for hide rules validation
+ * @returns True if content version is allowed to start, false if blocked by hide rules
+ */
+export const isAllowedByHideRules = (
+  customContentVersion: CustomContentVersion,
+  clientConditions: ClientCondition[],
+): boolean => {
+  if (!isEnabledHideRules(customContentVersion)) {
+    return true;
+  }
+
+  const hideRules = customContentVersion.config.hideRules;
+  // Check if hide rules are enabled but conditions are not ready
+  if (hideRules && !conditionsIsReady(hideRules, clientConditions)) {
+    console.log('hideRules are enabled but conditions are not ready', clientConditions, hideRules);
+    return false;
+  }
+  // Check if hide rules are activated and blocking the content
+  if (isActivedHideRules(customContentVersion)) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -379,6 +408,7 @@ export const isAllowedByConditionWaitTimers = (
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType,
+  clientConditions: ClientCondition[],
   includeWaitTimer: boolean,
   firedWaitTimerVersionIds?: string[],
 ) => {
@@ -396,6 +426,10 @@ export const filterAvailableAutoStartContentVersions = (
 
       // Check auto-start rules settings
       if (!isAllowedByAutoStartRulesSetting(customContentVersion, customContentVersions)) {
+        return false;
+      }
+
+      if (!isAllowedByHideRules(customContentVersion, clientConditions)) {
         return false;
       }
 
@@ -435,28 +469,51 @@ export const findAvailableSessionId = (
 };
 
 /**
+ * Checks if a session is available
+ * @param latestSession - The latest session
+ * @param contentType - The content type
+ * @returns True if the session is available, false otherwise
+ */
+export const sessionIsAvailable = (
+  latestSession: BizSessionWithEvents,
+  contentType: ContentDataType,
+): boolean => {
+  if (contentType === ContentDataType.CHECKLIST) {
+    if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
+      return true;
+    }
+  } else if (contentType === ContentDataType.FLOW) {
+    if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
  * @returns The latest activated custom content version
  */
-export const findLatestActivatedCustomContentVersion = (
+export const findLatestActivatedCustomContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType,
-): CustomContentVersion | undefined => {
+  clientConditions: ClientCondition[],
+): CustomContentVersion[] | undefined => {
   return customContentVersions
     .filter((customContentVersion) => {
-      const hasAvailableSession = findAvailableSessionId(
-        customContentVersion.session.latestSession,
-        contentType,
+      return (
+        sessionIsAvailable(customContentVersion.session.latestSession, contentType) &&
+        isAllowedByHideRules(customContentVersion, clientConditions) &&
+        customContentVersion.session.latestSession?.createdAt
       );
-      return hasAvailableSession && customContentVersion.session.latestSession?.createdAt;
     })
     .sort(
       (a, b) =>
         new Date(b.session.latestSession!.createdAt).getTime() -
         new Date(a.session.latestSession!.createdAt).getTime(),
-    )?.[0];
+    );
 };
 
 /**
@@ -482,7 +539,12 @@ export const filterActivatedContentWithoutClientConditions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType,
 ): CustomContentVersion[] => {
-  // Define the condition types to filter by
+  // Early return if no content versions provided
+  if (!customContentVersions?.length) {
+    return [];
+  }
+
+  // Define the condition types to filter by (server-side only conditions)
   const allowedConditionTypes = [
     RulesType.USER_ATTR,
     RulesType.SEGMENT,
@@ -497,28 +559,55 @@ export const filterActivatedContentWithoutClientConditions = (
       return false;
     }
 
-    // Check if auto-start rules are enabled
-    if (!isEnabledAutoStartRules(customContentVersion)) {
+    // Check if content is blocked by hide rules (common check for both paths)
+    const isBlockedByHideRules =
+      isEnabledHideRules(customContentVersion) && isActivedHideRules(customContentVersion);
+
+    if (isBlockedByHideRules) {
       return false;
     }
 
-    if (!isAllowedByAutoStartRulesSetting(customContentVersion, customContentVersions)) {
-      return false;
+    // Path 1: Check auto-start content versions
+    if (
+      isAutoStartContentEligible(customContentVersion, customContentVersions, allowedConditionTypes)
+    ) {
+      return true;
     }
 
-    // Filter conditions by allowed types
-    const filteredConditions = filterConditionsByType(
-      customContentVersion.config.autoStartRules,
-      allowedConditionTypes,
-    );
-
-    // Check if filtered conditions are activated
-    if (!isConditionsActived(filteredConditions)) {
-      return false;
-    }
-
-    return true;
+    // Path 2: Check activated content versions (session-based)
+    return sessionIsAvailable(customContentVersion.session.latestSession, contentType);
   });
+};
+
+/**
+ * Helper function to check if auto-start content is eligible
+ * @param customContentVersion - The content version to check
+ * @param allContentVersions - All content versions for context
+ * @param allowedConditionTypes - Allowed condition types for filtering
+ * @returns True if the content is eligible for auto-start
+ */
+const isAutoStartContentEligible = (
+  customContentVersion: CustomContentVersion,
+  allContentVersions: CustomContentVersion[],
+  allowedConditionTypes: RulesType[],
+): boolean => {
+  // Check if auto-start rules are enabled
+  if (!isEnabledAutoStartRules(customContentVersion)) {
+    return false;
+  }
+
+  // Check auto-start rules settings
+  if (!isAllowedByAutoStartRulesSetting(customContentVersion, allContentVersions)) {
+    return false;
+  }
+
+  // Filter conditions by allowed types and check if they are activated
+  const filteredConditions = filterConditionsByType(
+    customContentVersion.config.autoStartRules,
+    allowedConditionTypes,
+  );
+
+  return isConditionsActived(filteredConditions);
 };
 
 /**
@@ -586,6 +675,29 @@ export const flattenConditions = (
   }
 
   return allConditions;
+};
+
+/**
+ * Recursively extracts all condition IDs from a RulesCondition array including nested conditions
+ * @param conditions - Array of rules conditions to extract IDs from
+ * @returns Array of all condition IDs including nested ones
+ */
+export const extractConditionIds = (conditions: RulesCondition[]): string[] => {
+  const allIds: string[] = [];
+
+  for (const condition of conditions) {
+    // Add current condition ID if it exists
+    if (condition.id) {
+      allIds.push(condition.id);
+    }
+
+    // Recursively extract IDs from nested conditions
+    if (condition.conditions && condition.conditions.length > 0) {
+      allIds.push(...extractConditionIds(condition.conditions));
+    }
+  }
+
+  return allIds;
 };
 
 /**
@@ -960,4 +1072,79 @@ export const compareSessionSteps = (oldSteps: SessionStep[], newSteps: SessionSt
   const sortedNew = [...newSteps].sort((a, b) => a.cvid.localeCompare(b.cvid));
 
   return !isEqual(sortedOld, sortedNew);
+};
+
+/**
+ * Checks if all condition IDs in rules conditions exist and are ready in client conditions
+ * @param conditions - Array of rules conditions (hideRules, autoStartRules, etc.)
+ * @param clientConditions - Array of client conditions from Redis socket data
+ * @returns True if all condition IDs exist and are ready (have isActive status), false otherwise
+ */
+export const conditionsIsReady = (
+  conditions: RulesCondition[],
+  clientConditions: ClientCondition[],
+): boolean => {
+  if (!clientConditions || clientConditions.length === 0) {
+    return false;
+  }
+
+  const conditionIds = extractConditionIds(conditions);
+  console.log('conditionIds', conditionIds);
+  const clientConditionIds = clientConditions
+    .filter((cc) => cc.isActive !== undefined)
+    .map((cc) => cc.conditionId);
+  console.log('clientConditionIds', clientConditionIds);
+
+  // Check if all condition IDs exist in client conditions with feedback
+  return conditionIds.every((id) => clientConditionIds.includes(id));
+};
+
+/**
+ * Upsert (update or insert) a condition in the conditions array
+ * @param conditions - Current conditions array
+ * @param conditionId - Condition ID to upsert
+ * @param isActive - New active state
+ * @returns Updated conditions array
+ */
+export const upsertCondition = (
+  conditions: ClientCondition[],
+  conditionId: string,
+  isActive: boolean,
+): ClientCondition[] => {
+  const existingIndex = conditions.findIndex((c) => c.conditionId === conditionId);
+
+  if (existingIndex >= 0) {
+    // Update existing condition
+    return conditions.map((condition, index) =>
+      index === existingIndex ? { ...condition, isActive } : condition,
+    );
+  }
+
+  // Add new condition
+  return [...conditions, { conditionId, isActive }];
+};
+
+/**
+ * Resolve clientConditions with latest states from clientConditionReports
+ * @param clientConditions - Business conditions (metadata)
+ * @param clientConditionReports - Client feedback conditions
+ * @returns Resolved clientConditions with latest states
+ */
+export const resolveConditionStates = (
+  clientConditions: ClientCondition[],
+  clientConditionReports: ClientCondition[],
+): ClientCondition[] => {
+  // Create a map of client reports for quick lookup
+  const reportsMap = new Map(
+    clientConditionReports.map((report) => [report.conditionId, report.isActive]),
+  );
+
+  // Update clientConditions with latest states from reports
+  return clientConditions.map((condition) => {
+    const reportValue = reportsMap.get(condition.conditionId);
+    return {
+      ...condition,
+      isActive: reportValue !== undefined ? reportValue : condition.isActive,
+    };
+  });
 };

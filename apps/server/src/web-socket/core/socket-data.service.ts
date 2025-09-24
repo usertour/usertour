@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
 import { SocketClientData } from '@/common/types/content';
+import { ClientCondition } from '@/common/types/sdk';
+import { resolveConditionStates } from '@/utils/content-utils';
 
 /**
  * Socket data storage service
@@ -78,8 +80,21 @@ export class SocketDataService {
       }
 
       const clientData = JSON.parse(value) as SocketClientData;
+
+      // Get client condition reports from Hash and merge with clientConditions
+      const clientConditionReports = await this.getClientConditionReports(socketId);
+      const resolvedClientConditions = resolveConditionStates(
+        clientData.clientConditions || [],
+        clientConditionReports,
+      );
+
+      const mergedClientData: SocketClientData = {
+        ...clientData,
+        clientConditions: resolvedClientConditions,
+      };
+
       this.logger.debug(`Retrieved socket data for socket ${socketId}`);
-      return clientData;
+      return mergedClientData;
     } catch (error) {
       this.logger.error(`Failed to get socket data for socket ${socketId}:`, error);
       return null;
@@ -122,6 +137,105 @@ export class SocketDataService {
   }
 
   /**
+   * Atomically update a single client condition report using Redis Hash
+   * @param socketId - The socket ID
+   * @param conditionId - The condition ID to update
+   * @param isActive - The new active state
+   * @param ttlSeconds - Optional TTL in seconds
+   * @returns Promise<boolean> - True if the update was successful
+   */
+  async updateClientConditionReport(
+    socketId: string,
+    conditionId: string,
+    isActive: boolean,
+    ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
+  ): Promise<boolean> {
+    try {
+      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const client = this.redisService.getClient();
+
+      if (!client) {
+        this.logger.error('Redis client not available');
+        return false;
+      }
+
+      // Use Redis Hash to atomically update a single condition
+      await client.hset(reportsKey, conditionId, isActive.toString());
+      await client.expire(reportsKey, ttlSeconds);
+
+      this.logger.debug(
+        `Updated condition report: socket=${socketId}, condition=${conditionId}, isActive=${isActive}`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to update client condition report for socket ${socketId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove client condition reports
+   * @param socketId - The socket ID
+   * @param conditionIds - Array of condition IDs to remove
+   * @returns Promise<number> - Number of conditions that were removed
+   */
+  async removeClientConditionReports(socketId: string, conditionIds: string[]): Promise<number> {
+    try {
+      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const client = this.redisService.getClient();
+
+      if (!client || conditionIds.length === 0) {
+        return 0;
+      }
+
+      // Use HDEL to remove multiple conditions from Hash
+      const result = await client.hdel(reportsKey, ...conditionIds);
+
+      this.logger.debug(
+        `Removed ${result} condition reports: socket=${socketId}, conditions=${conditionIds.join(',')}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to remove client condition reports for socket ${socketId}:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get all client condition reports for a socket
+   * @param socketId - The socket ID
+   * @returns Promise<ClientCondition[]> - Array of client condition reports
+   */
+  async getClientConditionReports(socketId: string): Promise<ClientCondition[]> {
+    try {
+      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const client = this.redisService.getClient();
+
+      if (!client) {
+        return [];
+      }
+
+      const reports = await client.hgetall(reportsKey);
+      return Object.entries(reports).map(([conditionId, isActive]) => ({
+        conditionId,
+        isActive: isActive === 'true',
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to get client condition reports for socket ${socketId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Build Redis key for client condition reports
+   * @param socketId - The socket ID
+   * @returns Redis key string
+   */
+  private buildClientConditionReportsKey(socketId: string): string {
+    return `socket:reports:${socketId}`;
+  }
+
+  /**
    * Remove socket data from Redis
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data was removed successfully
@@ -132,10 +246,13 @@ export class SocketDataService {
       const clientData = await this.getClientData(socketId);
 
       const key = this.buildClientDataKey(socketId);
+      const reportsKey = this.buildClientConditionReportsKey(socketId);
       const client = this.redisService.getClient();
 
       if (client) {
+        // Remove both main data and condition reports
         await client.del(key);
+        await client.del(reportsKey);
       }
 
       // Remove from user socket mapping

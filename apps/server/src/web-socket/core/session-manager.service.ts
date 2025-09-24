@@ -113,7 +113,6 @@ export class SessionManagerService {
       conditionWaitTimers,
       cancelledTimers,
     );
-
     // Update client data with session clearing and remaining conditions/timers in one call
     const updateClientData = {
       clientConditions: remainingConditions,
@@ -128,7 +127,23 @@ export class SessionManagerService {
       }),
     };
 
-    return await this.socketDataService.updateClientData(socket.id, updateClientData);
+    await this.socketDataService.updateClientData(socket.id, updateClientData);
+
+    const clientConditionReports = await this.socketDataService.getClientConditionReports(
+      socket.id,
+    );
+    // Remove condition reports for conditions that are no longer tracked
+    const reportsToRemove = calculateRemainingClientConditions(
+      clientConditionReports,
+      remainingConditions,
+    );
+
+    if (reportsToRemove.length > 0) {
+      const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
+      await this.socketDataService.removeClientConditionReports(socket.id, conditionIdsToRemove);
+    }
+
+    return true;
   }
 
   /**
@@ -177,15 +192,34 @@ export class SessionManagerService {
       cancelledTimers,
     );
 
+    const updatedConditions = [...preservedConditions, ...remainingConditions, ...newConditions];
+
     // Update client data with session and all condition changes in one call
     const contentType = session.content.type as ContentDataType;
-    const updateClientData = {
-      clientConditions: [...preservedConditions, ...remainingConditions, ...newConditions],
+    const updateClientData: Partial<SocketClientData> = {
+      clientConditions: updatedConditions,
       conditionWaitTimers: remainingTimers,
       ...(contentType === ContentDataType.FLOW && { flowSession: session }),
       ...(contentType === ContentDataType.CHECKLIST && { checklistSession: session }),
     };
 
-    return await this.socketDataService.updateClientData(socket.id, updateClientData);
+    await this.socketDataService.updateClientData(socket.id, updateClientData);
+
+    const clientConditionReports = await this.socketDataService.getClientConditionReports(
+      socket.id,
+    );
+
+    // Remove condition reports for conditions that are no longer tracked
+    const reportsToRemove = calculateRemainingClientConditions(
+      clientConditionReports,
+      updatedConditions,
+    );
+
+    if (reportsToRemove.length > 0) {
+      const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
+      await this.socketDataService.removeClientConditionReports(socket.id, conditionIdsToRemove);
+    }
+
+    return true;
   }
 }

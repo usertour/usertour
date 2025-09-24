@@ -540,6 +540,7 @@ export class WebSocketV2Service {
 
   /**
    * Toggle the isActive status of a specific socket condition by condition ID
+   * Handles timing issues by creating the condition if it doesn't exist yet
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
    * @param clientCondition - The client condition
@@ -547,29 +548,21 @@ export class WebSocketV2Service {
    */
   async toggleClientCondition(
     socket: Socket,
-    socketClientData: SocketClientData,
+    _socketClientData: SocketClientData,
     clientCondition: ClientCondition,
   ): Promise<boolean> {
     const { conditionId, isActive } = clientCondition;
-    const { clientConditions } = socketClientData;
 
-    // Check if condition exists
-    const existingCondition = clientConditions?.find((c) => c.conditionId === conditionId);
-    if (!existingCondition) {
-      return false;
-    }
+    this.logger.debug(
+      `Updating condition report: socket=${socket.id}, condition=${conditionId}, isActive=${isActive}`,
+    );
 
-    // Update the condition in socket data
-    const updatedCondition = {
-      ...existingCondition,
+    // Use atomic Redis Hash operation to avoid race conditions
+    return await this.socketDataService.updateClientConditionReport(
+      socket.id,
+      conditionId,
       isActive,
-    };
-
-    return await this.socketDataService.updateClientData(socket.id, {
-      clientConditions: clientConditions.map((clientCondition) =>
-        clientCondition.conditionId === conditionId ? updatedCondition : clientCondition,
-      ),
-    });
+    );
   }
 
   /**

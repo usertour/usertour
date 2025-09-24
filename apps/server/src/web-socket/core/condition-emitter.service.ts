@@ -44,7 +44,6 @@ export class ConditionEmitterService {
         .filter((_, index) => results[index])
         .map((condition) => ({
           conditionId: condition.condition.id,
-          isActive: false,
         }));
     } catch (error) {
       this.logger.error(`Failed to track socket conditions for socket ${socket.id}:`, error);
@@ -124,6 +123,7 @@ export class ConditionEmitterService {
     conditionWaitTimers: ConditionWaitTimer[],
   ): Promise<ConditionWaitTimer[]> {
     try {
+      if (!conditionWaitTimers?.length) return [];
       // Process all cancellations in parallel and wait for acknowledgments
       const results = await Promise.all(
         conditionWaitTimers.map((condition) =>
