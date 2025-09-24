@@ -1,7 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
-import { ContentManagerService } from './core/content-manager.service';
+import { ContentOrchestratorService } from './core/content-orchestrator.service';
 
 /**
  * Interceptor to automatically inject socketClientData into WebSocket handlers
@@ -11,7 +11,7 @@ import { ContentManagerService } from './core/content-manager.service';
 export class WebSocketClientDataInterceptor implements NestInterceptor {
   private readonly logger = new Logger(WebSocketClientDataInterceptor.name);
 
-  constructor(private readonly contentManagerService: ContentManagerService) {}
+  constructor(private readonly contentOrchestratorService: ContentOrchestratorService) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const client: Socket = context.switchToWs().getClient();
@@ -20,7 +20,9 @@ export class WebSocketClientDataInterceptor implements NestInterceptor {
       // Always fetch fresh data from Redis to ensure data consistency across multiple instances
       // This is essential for multi-instance deployments where load balancing may route
       // requests to different instances
-      const socketClientData = await this.contentManagerService.getClientDataResolved(client.id);
+      const socketClientData = await this.contentOrchestratorService.getClientDataResolved(
+        client.id,
+      );
       client.data.socketClientData = socketClientData;
       this.logger.debug(
         `Socket client data fetched from Redis and attached for socket ${client.id}.`,

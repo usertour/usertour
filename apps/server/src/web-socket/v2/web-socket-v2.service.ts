@@ -30,7 +30,7 @@ import { Server, Socket } from 'socket.io';
 import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
-import { ContentManagerService } from '@/web-socket/core/content-manager.service';
+import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { ClientCondition } from '@/common/types/sdk';
 
 @Injectable()
@@ -40,7 +40,7 @@ export class WebSocketV2Service {
     private prisma: PrismaService,
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
-    private readonly contentManagerService: ContentManagerService,
+    private readonly contentOrchestratorService: ContentOrchestratorService,
     private readonly socketRedisService: SocketRedisService,
   ) {}
 
@@ -463,7 +463,7 @@ export class WebSocketV2Service {
     if (!allowedTypes.includes(contentType)) return false;
     if (!socketClientData) return false;
     // Start the content
-    return await this.contentManagerService.startContent({
+    return await this.contentOrchestratorService.startContent({
       server,
       socket,
       contentType,
@@ -504,7 +504,7 @@ export class WebSocketV2Service {
       reason,
       clientContext,
     );
-    await this.contentManagerService.cancelContent(server, socket, sessionId);
+    await this.contentOrchestratorService.cancelContent(server, socket, sessionId);
     return true;
   }
 
@@ -523,11 +523,11 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     // If socketClientData is not provided, fetch it using getClientDataResolved
     const clientData =
-      socketClientData ?? (await this.contentManagerService.getClientDataResolved(socket.id));
+      socketClientData ?? (await this.contentOrchestratorService.getClientDataResolved(socket.id));
 
     if (!clientData) return false;
 
-    await this.contentManagerService.startContent({
+    await this.contentOrchestratorService.startContent({
       server,
       socket,
       contentType: ContentDataType.FLOW,

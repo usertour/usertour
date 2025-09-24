@@ -79,8 +79,8 @@ interface ActivateSessionParams {
  * Service responsible for managing content (flows, checklists) with various strategies
  */
 @Injectable()
-export class ContentManagerService {
-  private readonly logger = new Logger(ContentManagerService.name);
+export class ContentOrchestratorService {
+  private readonly logger = new Logger(ContentOrchestratorService.name);
 
   constructor(
     private readonly contentResolverService: ContentResolverService,

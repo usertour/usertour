@@ -12,7 +12,7 @@ import { SharedModule } from '@/shared/shared.module';
 import { EventTrackingService } from './core/event-tracking.service';
 import { ContentResolverService } from './core/content-resolver.service';
 import { SessionBuilderService } from './core/session-builder.service';
-import { ContentManagerService } from './core/content-manager.service';
+import { ContentOrchestratorService } from './core/content-orchestrator.service';
 import { SocketSessionService } from './core/socket-session.service';
 import { SocketRedisService } from './core/socket-redis.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
@@ -30,7 +30,7 @@ import { SocketParallelService } from './core/socket-parallel.service';
     EventTrackingService,
     ContentResolverService,
     SessionBuilderService,
-    ContentManagerService,
+    ContentOrchestratorService,
     SocketSessionService,
     SocketRedisService,
     SocketEmitterService,
