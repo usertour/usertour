@@ -521,8 +521,9 @@ export class WebSocketV2Service {
     socket: Socket,
     socketClientData?: SocketClientData,
   ): Promise<boolean> {
-    // If socketClientData is not provided, fetch it using getClientData
-    const clientData = socketClientData ?? (await this.socketDataService.getClientData(socket.id));
+    // If socketClientData is not provided, fetch it using getClientDataResolved
+    const clientData =
+      socketClientData ?? (await this.contentManagerService.getClientDataResolved(socket.id));
 
     if (!clientData) return false;
 

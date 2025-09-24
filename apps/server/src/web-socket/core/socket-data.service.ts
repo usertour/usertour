@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { ClientCondition } from '@/common/types/sdk';
-import { resolveConditionStates } from '@/utils/content-utils';
 
 /**
  * Socket data storage service
@@ -70,21 +69,8 @@ export class SocketDataService {
       }
 
       const clientData = JSON.parse(value) as SocketClientData;
-
-      // Get client condition reports from Hash and merge with clientConditions
-      const clientConditionReports = await this.getClientConditionReports(socketId);
-      const clientConditions = resolveConditionStates(
-        clientData.clientConditions || [],
-        clientConditionReports,
-      );
-
-      const mergedClientData: SocketClientData = {
-        ...clientData,
-        clientConditions,
-      };
-
       this.logger.debug(`Retrieved socket data for socket ${socketId}`);
-      return mergedClientData;
+      return clientData;
     } catch (error) {
       this.logger.error(`Failed to get socket data for socket ${socketId}:`, error);
       return null;

@@ -37,6 +37,7 @@ import { EventTrackingService } from './event-tracking.service';
 import { SessionManagerService } from './session-manager.service';
 import { ConditionEmitterService } from './condition-emitter.service';
 import { SocketDataService } from './socket-data.service';
+import { resolveConditionStates } from '@/utils/content-utils';
 
 interface ContentStartContext {
   server: Server;
@@ -149,7 +150,7 @@ export class ContentManagerService {
     sessionId: string,
     cancelOtherSessions = true,
   ) {
-    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    const socketClientData = await this.getClientDataResolved(socket.id);
     if (!socketClientData) {
       return false;
     }
@@ -260,7 +261,7 @@ export class ContentManagerService {
       return { success: false };
     }
 
-    const updatedClientData = await this.socketDataService.getClientData(socket.id);
+    const updatedClientData = await this.getClientDataResolved(socket.id);
     if (!updatedClientData) {
       return { success: false };
     }
@@ -275,7 +276,7 @@ export class ContentManagerService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    const socketClientData = await this.getClientDataResolved(socket.id);
     if (!socketClientData) {
       return false;
     }
@@ -343,7 +344,7 @@ export class ContentManagerService {
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
     const { socket, session } = params;
-    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    const socketClientData = await this.getClientDataResolved(socket.id);
     if (!socketClientData) {
       return false;
     }
@@ -488,7 +489,7 @@ export class ContentManagerService {
   ): Promise<boolean> {
     const { socket, server } = context;
     const { session } = result;
-    const socketClientData = await this.socketDataService.getClientData(socket.id);
+    const socketClientData = await this.getClientDataResolved(socket.id);
     const contentType = session.content.type;
     const sessionId = session.id;
     if (!socketClientData) {
@@ -1107,5 +1108,37 @@ export class ContentManagerService {
       activatedIds,
       deactivatedIds,
     });
+  }
+
+  /**
+   * Get socket client data with condition states resolved (merged with condition reports)
+   * This method handles the business logic that was previously in SocketDataService.getClientData
+   * @param socketId - The socket ID
+   * @returns Promise<SocketClientData | null> - The resolved socket data or null if not found
+   */
+  async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
+    try {
+      // Get raw data from Redis (pure operation)
+      const rawClientData = await this.socketDataService.getClientData(socketId);
+      if (!rawClientData) {
+        return null;
+      }
+
+      // Apply business logic: merge with condition reports
+      const clientConditionReports =
+        await this.socketDataService.getClientConditionReports(socketId);
+      const clientConditions = resolveConditionStates(
+        rawClientData.clientConditions || [],
+        clientConditionReports,
+      );
+
+      return {
+        ...rawClientData,
+        clientConditions,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get processed socket data for socket ${socketId}:`, error);
+      return null;
+    }
   }
 }
