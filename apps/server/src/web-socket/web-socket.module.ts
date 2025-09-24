@@ -16,7 +16,7 @@ import { ContentManagerService } from './core/content-manager.service';
 import { SocketSessionService } from './core/socket-session.service';
 import { SocketRedisService } from './core/socket-redis.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
-import { ConditionEmitterService } from './core/condition-emitter.service';
+import { SocketParallelService } from './core/socket-parallel.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -34,7 +34,7 @@ import { ConditionEmitterService } from './core/condition-emitter.service';
     SocketSessionService,
     SocketRedisService,
     SocketEmitterService,
-    ConditionEmitterService,
+    SocketParallelService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

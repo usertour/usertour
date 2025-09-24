@@ -4,7 +4,7 @@ import { ContentDataType } from '@usertour/types';
 import { SDKContentSession, TrackCondition, SocketClientData } from '@/common/types';
 import { SocketRedisService } from './socket-redis.service';
 import { SocketEmitterService } from './socket-emitter.service';
-import { ConditionEmitterService } from './condition-emitter.service';
+import { SocketParallelService } from './socket-parallel.service';
 import {
   extractContentTypeBySessionId,
   categorizeClientConditions,
@@ -25,7 +25,7 @@ export class SocketSessionService {
   constructor(
     private readonly socketRedisService: SocketRedisService,
     private readonly socketEmitterService: SocketEmitterService,
-    private readonly conditionEmitterService: ConditionEmitterService,
+    private readonly socketParallelService: SocketParallelService,
   ) {}
 
   /**
@@ -100,8 +100,8 @@ export class SocketSessionService {
 
     // Process condition cleanup operations in parallel
     const [untrackedConditions, cancelledTimers] = await Promise.all([
-      this.conditionEmitterService.untrackClientConditions(socket, clientConditions),
-      this.conditionEmitterService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+      this.socketParallelService.untrackClientConditions(socket, clientConditions),
+      this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
     ]);
 
     // Calculate remaining conditions and timers (those that failed to process)
@@ -177,9 +177,9 @@ export class SocketSessionService {
 
     // Execute all condition operations in parallel
     const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
-      this.conditionEmitterService.untrackClientConditions(socket, conditionsToUntrack),
-      this.conditionEmitterService.cancelConditionWaitTimers(socket, conditionWaitTimers),
-      this.conditionEmitterService.trackClientConditions(socket, conditionsToTrack),
+      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
+      this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
     ]);
 
     // Calculate remaining conditions and timers (those that failed to process)

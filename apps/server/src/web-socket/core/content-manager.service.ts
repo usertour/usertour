@@ -35,7 +35,7 @@ import { ContentDataService } from './content-data.service';
 import { SessionDataService } from './session-data.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketSessionService } from './socket-session.service';
-import { ConditionEmitterService } from './condition-emitter.service';
+import { SocketParallelService } from './socket-parallel.service';
 import { SocketRedisService } from './socket-redis.service';
 import { resolveConditionStates } from '@/utils/content-utils';
 
@@ -87,7 +87,7 @@ export class ContentManagerService {
     private readonly sessionDataService: SessionDataService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
-    private readonly conditionEmitterService: ConditionEmitterService,
+    private readonly socketParallelService: SocketParallelService,
     private readonly socketRedisService: SocketRedisService,
   ) {}
 
@@ -544,7 +544,7 @@ export class ContentManagerService {
         ),
     );
 
-    const trackedConditions = await this.conditionEmitterService.trackClientConditions(
+    const trackedConditions = await this.socketParallelService.trackClientConditions(
       socket,
       newTrackConditions,
     );
@@ -574,7 +574,7 @@ export class ContentManagerService {
         !existingTimers.some((waitTimer) => waitTimer.versionId === conditionWaitTimer.versionId),
     );
 
-    const startedTimers = await this.conditionEmitterService.startConditionWaitTimers(
+    const startedTimers = await this.socketParallelService.startConditionWaitTimers(
       socket,
       newConditionWaitTimers,
     );
