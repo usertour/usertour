@@ -61,6 +61,15 @@ export class ContentOrchestratorService {
   ) {}
 
   /**
+   * Generate a standardized lock key for socket operations
+   * @param socketId - The socket ID
+   * @returns The lock key string
+   */
+  private generateSocketLockKey(socketId: string): string {
+    return `socket:${socketId}`;
+  }
+
+  /**
    * Main entry point for starting singleton content
    * Implements multiple strategies for content activation and coordinates the start process
    */
@@ -69,7 +78,7 @@ export class ContentOrchestratorService {
     const socketId = socket.id;
 
     // Use distributed lock to prevent concurrent startContent calls
-    const lockKey = `socket:${socketId}`;
+    const lockKey = this.generateSocketLockKey(socketId);
     return await this.distributedLockService.withLock(
       lockKey,
       async () => {
@@ -135,7 +144,7 @@ export class ContentOrchestratorService {
     const socketId = socket.id;
 
     // Use distributed lock to prevent concurrent cancelContent calls
-    const lockKey = `socket:${socketId}`;
+    const lockKey = this.generateSocketLockKey(socketId);
     return await this.distributedLockService.withLock(
       lockKey,
       async () => {
