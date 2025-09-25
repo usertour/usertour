@@ -502,6 +502,9 @@ export class ContentOrchestratorService {
       return true;
     }
     const session = extractSessionByContentType(socketClientData, contentType);
+    if (!session) {
+      return true;
+    }
     const sessionId = session.id;
     const sessionVersion = await this.getEvaluatedContentVersions(
       socketClientData,
