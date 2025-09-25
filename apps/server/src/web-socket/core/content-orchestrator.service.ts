@@ -70,15 +70,13 @@ export class ContentOrchestratorService {
 
     // Use distributed lock to prevent concurrent startContent calls
     const lockKey = `socket:${socketId}`;
-    const result = await this.distributedLockService.withLock(
+    return await this.distributedLockService.withLock(
       lockKey,
       async () => {
         return await this.executeStartContent(context);
       },
       5000, // 5 seconds timeout
     );
-
-    return result === true;
   }
 
   /**
@@ -138,15 +136,13 @@ export class ContentOrchestratorService {
 
     // Use distributed lock to prevent concurrent cancelContent calls
     const lockKey = `socket:${socketId}`;
-    const result = await this.distributedLockService.withLock(
+    return await this.distributedLockService.withLock(
       lockKey,
       async () => {
         return await this.executeCancelContent(context);
       },
       5000, // 5 seconds timeout
     );
-
-    return result === true;
   }
 
   /**
