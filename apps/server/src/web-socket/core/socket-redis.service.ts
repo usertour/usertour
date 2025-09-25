@@ -292,12 +292,16 @@ export class SocketRedisService {
         redis.call('SETEX', KEYS[1], ARGV[1], ARGV[2])
         
         -- Remove condition reports if any
-        if #ARGV[3] > 0 then
+        if ARGV[3] ~= '' then
           redis.call('HDEL', KEYS[2], unpack(cjson.decode(ARGV[3])))
         end
         
         return 1
       `;
+
+      // Pass empty string if no condition IDs to remove, avoiding unpack() issues
+      const conditionIdsArg =
+        conditionIdsToRemove.length > 0 ? JSON.stringify(conditionIdsToRemove) : '';
 
       await client.eval(
         script,
@@ -306,7 +310,7 @@ export class SocketRedisService {
         reportsKey,
         ttlSeconds.toString(),
         JSON.stringify(mergedData),
-        JSON.stringify(conditionIdsToRemove),
+        conditionIdsArg,
       );
 
       this.logger.debug(
@@ -314,7 +318,9 @@ export class SocketRedisService {
       );
       return true;
     } catch (error) {
-      this.logger.error(`Failed to atomically update client data for socket ${socketId}:`, error);
+      this.logger.error(
+        `Failed to atomically update client data for socket: ${socketId}, error: ${error.message}`,
+      );
       return false;
     }
   }
