@@ -36,8 +36,8 @@ export interface SocketClientData {
   conditionWaitTimers?: ConditionWaitTimer[];
   flowSession?: SDKContentSession;
   checklistSession?: SDKContentSession;
-  lastActivatedFlowSession?: SDKContentSession;
-  lastActivatedChecklistSession?: SDKContentSession;
+  lastActivatedFlowId?: string;
+  lastActivatedChecklistId?: string;
   lastUpdated: number;
   socketId: string;
 }

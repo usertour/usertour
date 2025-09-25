@@ -143,11 +143,11 @@ export class SocketSessionService {
       clientConditions: remainingConditions,
       conditionWaitTimers: remainingTimers,
       ...(contentType === ContentDataType.FLOW && {
-        lastActivatedFlowSession: flowSession,
+        lastActivatedFlowId: flowSession.content.id,
         flowSession: undefined,
       }),
       ...(contentType === ContentDataType.CHECKLIST && {
-        lastActivatedChecklistSession: checklistSession,
+        lastActivatedChecklistId: checklistSession.content.id,
         checklistSession: undefined,
       }),
     };

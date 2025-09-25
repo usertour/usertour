@@ -486,18 +486,14 @@ export class ContentOrchestratorService {
   /**
    * Checks hide conditions and cancels content if necessary
    */
-  private async checkHideConditions(
-    context: ContentStartContext,
-    result: ContentStartResult,
-  ): Promise<boolean> {
-    const { socket, server } = context;
-    const { session } = result;
+  private async checkHideConditions(context: ContentStartContext): Promise<boolean> {
+    const { socket, server, contentType } = context;
     const socketClientData = await this.getClientDataResolved(socket.id);
-    const contentType = session.content.type;
-    const sessionId = session.id;
     if (!socketClientData) {
       return true;
     }
+    const session = extractSessionByContentType(socketClientData, contentType);
+    const sessionId = session.id;
     const sessionVersion = await this.getEvaluatedContentVersions(
       socketClientData,
       contentType,
@@ -617,7 +613,7 @@ export class ContentOrchestratorService {
       }
     }
     // Check hide conditions and cancel content if necessary
-    return await this.checkHideConditions(context, result);
+    return await this.checkHideConditions(context);
   }
 
   /**
