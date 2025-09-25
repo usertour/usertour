@@ -139,7 +139,7 @@ export class SocketSessionService {
       cancelledTimers,
     );
     // Update client data with session clearing and remaining conditions/timers in one call
-    const updateClientData = {
+    const updatedClientData = {
       clientConditions: remainingConditions,
       conditionWaitTimers: remainingTimers,
       ...(contentType === ContentDataType.FLOW && {
@@ -158,7 +158,7 @@ export class SocketSessionService {
     // Use atomic operation to update client data and cleanup conditions
     return await this.socketRedisService.updateAndCleanup(
       socket.id,
-      updateClientData,
+      updatedClientData,
       conditionIdsToRemove,
     );
   }
@@ -213,7 +213,7 @@ export class SocketSessionService {
 
     // Update client data with session and all condition changes in one call
     const contentType = session.content.type as ContentDataType;
-    const updateClientData: Partial<SocketClientData> = {
+    const updatedClientData: Partial<SocketClientData> = {
       clientConditions: updatedConditions,
       conditionWaitTimers: remainingTimers,
       ...(contentType === ContentDataType.FLOW && { flowSession: session }),
@@ -226,7 +226,7 @@ export class SocketSessionService {
     // Use atomic operation to update client data and cleanup conditions
     return await this.socketRedisService.updateAndCleanup(
       socket.id,
-      updateClientData,
+      updatedClientData,
       conditionIdsToRemove,
     );
   }
