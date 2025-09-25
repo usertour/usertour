@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
-import { SDKContentSession, TrackCondition, SocketClientData } from '@/common/types';
+import {
+  SDKContentSession,
+  TrackCondition,
+  SocketClientData,
+  ClientCondition,
+} from '@/common/types';
 import { SocketRedisService } from './socket-redis.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { SocketParallelService } from './socket-parallel.service';
@@ -72,6 +77,37 @@ export class SocketSessionService {
   }
 
   /**
+   * Clean up client condition reports for conditions that are no longer tracked
+   * @param socketId - The socket ID
+   * @param currentConditions - The current tracked conditions
+   * @returns Promise<boolean> - True if the cleanup was successful
+   */
+  private async cleanupClientConditionReports(
+    socketId: string,
+    currentConditions: ClientCondition[],
+  ): Promise<boolean> {
+    const clientConditionReports =
+      await this.socketRedisService.getClientConditionReports(socketId);
+
+    // Remove condition reports for conditions that are no longer tracked
+    const reportsToRemove = calculateRemainingClientConditions(
+      clientConditionReports,
+      currentConditions,
+    );
+
+    if (reportsToRemove.length === 0) {
+      return true;
+    }
+
+    const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
+    const removedCount = await this.socketRedisService.removeClientConditionReports(
+      socketId,
+      conditionIdsToRemove,
+    );
+    return removedCount === conditionIdsToRemove.length;
+  }
+
+  /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
@@ -127,21 +163,10 @@ export class SocketSessionService {
       }),
     };
 
+    // Update client data with session clearing and remaining conditions/timers in one call
     await this.socketRedisService.updateClientData(socket.id, updateClientData);
-
-    const clientConditionReports = await this.socketRedisService.getClientConditionReports(
-      socket.id,
-    );
-    // Remove condition reports for conditions that are no longer tracked
-    const reportsToRemove = calculateRemainingClientConditions(
-      clientConditionReports,
-      remainingConditions,
-    );
-
-    if (reportsToRemove.length > 0) {
-      const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
-      await this.socketRedisService.removeClientConditionReports(socket.id, conditionIdsToRemove);
-    }
+    // Clean up client condition reports for conditions that are no longer tracked
+    await this.cleanupClientConditionReports(socket.id, remainingConditions);
 
     return true;
   }
@@ -205,20 +230,8 @@ export class SocketSessionService {
 
     await this.socketRedisService.updateClientData(socket.id, updateClientData);
 
-    const clientConditionReports = await this.socketRedisService.getClientConditionReports(
-      socket.id,
-    );
-
-    // Remove condition reports for conditions that are no longer tracked
-    const reportsToRemove = calculateRemainingClientConditions(
-      clientConditionReports,
-      updatedConditions,
-    );
-
-    if (reportsToRemove.length > 0) {
-      const conditionIdsToRemove = reportsToRemove.map((report) => report.conditionId);
-      await this.socketRedisService.removeClientConditionReports(socket.id, conditionIdsToRemove);
-    }
+    // Clean up client condition reports for conditions that are no longer tracked
+    await this.cleanupClientConditionReports(socket.id, updatedConditions);
 
     return true;
   }
