@@ -495,48 +495,6 @@ export class EventTrackingService {
   }
 
   /**
-   * Track flow ended event
-   * @param bizSession - The business session
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param endReason - The end reason
-   * @returns The tracked event or false if tracking failed
-   */
-  async trackFlowEndedEvent(
-    bizSession: BizSession,
-    environment: Environment,
-    externalUserId: string,
-    endReason: string,
-    clientContext: ClientContext,
-  ): Promise<BizEvent | false> {
-    const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
-      where: {
-        bizSessionId: bizSession.id,
-        event: {
-          codeName: BizEvents.FLOW_STEP_SEEN,
-        },
-      },
-      include: { event: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const seenData = (latestStepSeenEvent?.data as any) ?? {};
-
-    const eventData: Record<string, any> = deepmerge({}, seenData, {
-      [EventAttributes.FLOW_END_REASON]: endReason,
-    });
-    const eventName = BizEvents.FLOW_ENDED;
-
-    return await this.trackEvent(
-      environment,
-      externalUserId,
-      eventName,
-      bizSession.id,
-      eventData,
-      clientContext,
-    );
-  }
-
-  /**
    * Build go to step event data
    * @param bizSession - The business session
    * @param stepId - The step ID
@@ -713,5 +671,47 @@ export class EventTrackingService {
       this.logger.error('Failed to track go to step events', error.message);
       return false;
     }
+  }
+
+  /**
+   * Track flow ended event
+   * @param bizSession - The business session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param endReason - The end reason
+   * @returns The tracked event or false if tracking failed
+   */
+  async trackFlowEndedEvent(
+    bizSession: BizSession,
+    environment: Environment,
+    externalUserId: string,
+    endReason: string,
+    clientContext: ClientContext,
+  ): Promise<BizEvent | false> {
+    const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
+      where: {
+        bizSessionId: bizSession.id,
+        event: {
+          codeName: BizEvents.FLOW_STEP_SEEN,
+        },
+      },
+      include: { event: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const seenData = (latestStepSeenEvent?.data as any) ?? {};
+
+    const eventData: Record<string, any> = deepmerge({}, seenData, {
+      [EventAttributes.FLOW_END_REASON]: endReason,
+    });
+    const eventName = BizEvents.FLOW_ENDED;
+
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      eventName,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
   }
 }
