@@ -221,12 +221,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @throws Will close the tour if validation fails or target is missing
    */
   private async showPopper(step: SessionStep): Promise<void> {
-    const currentStepInSession = this.getCurrentStepFromSession();
-
-    if (currentStepInSession?.cvid !== step.cvid) {
-      // Report step seen event
-      await this.reportStepSeen(step);
-    }
+    // Report step seen event
+    await this.reportStepSeen(step);
 
     // Process trigger conditions
     await this.stepTrigger?.process();
@@ -424,7 +420,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
     const stepInfo = this.getStepInfo(step);
 
-    // Report that the step has been seen
+    // Report step seen event
     await this.reportStepSeen(step);
 
     // Process trigger conditions
@@ -640,6 +636,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param step - The step to report
    */
   private async reportStepSeen(step: SessionStep) {
+    const currentStepInSession = this.getCurrentStepFromSession();
+    if (currentStepInSession?.cvid === step.cvid) {
+      return;
+    }
     await this.socketService.goToStep({
       sessionId: this.getSessionId(),
       stepId: String(step.id),

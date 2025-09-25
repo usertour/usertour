@@ -21,3 +21,7 @@ export type AttributeOnEvent = Prisma.AttributeOnEvent;
 export type Attribute = Prisma.Attribute;
 export type Event = Prisma.Event;
 export type BizAnswer = Prisma.BizAnswer;
+export type BizSessionWithBizUserAndVersion = BizSession & {
+  bizUser: BizUser;
+  version: VersionWithSteps;
+};

@@ -21,7 +21,6 @@ import {
   BizEvents,
   ChecklistData,
   ContentDataType,
-  StepSettings,
   ClientContext,
   contentStartReason,
 } from '@usertour/types';
@@ -148,57 +147,13 @@ export class WebSocketV2Service {
   async goToStep(socketClientData: SocketClientData, params: GoToStepDto): Promise<boolean> {
     if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: params.sessionId },
-      include: { bizUser: true, version: { include: { steps: true } } },
-    });
-    if (!bizSession) return false;
-    const version = bizSession.version;
-    const step = version.steps.find((s) => s.id === params.stepId);
-    if (!step) return false;
-    const stepIndex = version.steps.findIndex((s) => s.id === step.id);
-    if (stepIndex === -1) return false;
 
-    const total = version.steps.length;
-    const progress = Math.round(((stepIndex + 1) / total) * 100);
-
-    const isExplicitCompletionStep = (step.setting as StepSettings).explicitCompletionStep;
-    const isComplete = isExplicitCompletionStep
-      ? isExplicitCompletionStep
-      : stepIndex + 1 === total;
-
-    const eventData = {
-      [EventAttributes.FLOW_VERSION_ID]: version.id,
-      [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
-      [EventAttributes.FLOW_STEP_CVID]: step.cvid,
-      [EventAttributes.FLOW_STEP_NAME]: step.name,
-      [EventAttributes.FLOW_STEP_PROGRESS]: Math.round(progress),
-    };
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-
-    await this.eventTrackingService.trackEvent(
+    return await this.eventTrackingService.trackGoToStepEvent(
+      params.sessionId,
+      params.stepId,
       environment,
-      externalUserId,
-      BizEvents.FLOW_STEP_SEEN,
-      bizSession.id,
-      eventData,
       clientContext,
     );
-
-    if (isComplete) {
-      await this.eventTrackingService.trackEvent(
-        environment,
-        externalUserId,
-        BizEvents.FLOW_COMPLETED,
-        bizSession.id,
-        eventData,
-        clientContext,
-      );
-    }
-
-    return true;
   }
 
   /**

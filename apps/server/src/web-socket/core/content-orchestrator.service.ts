@@ -437,6 +437,8 @@ export class ContentOrchestratorService {
       filteredContentVersions,
     );
 
+    this.logger.debug(`Latest version result: ${latestVersionResult.reason}`);
+
     if (latestVersionResult.success) {
       return latestVersionResult;
     }
@@ -446,6 +448,7 @@ export class ContentOrchestratorService {
       context,
       filteredContentVersions,
     );
+    this.logger.debug(`Auto start result: ${autoStartResult.reason}`);
     if (autoStartResult.success) {
       return autoStartResult;
     }
@@ -456,6 +459,7 @@ export class ContentOrchestratorService {
       contentType,
       socketClientData.clientConditions,
     );
+    this.logger.debug(`Wait timer result: ${waitTimerResult.reason}`);
     if (waitTimerResult.success) {
       return waitTimerResult;
     }
@@ -929,15 +933,24 @@ export class ContentOrchestratorService {
         reason: 'Failed to create business session',
       };
     }
+    const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id;
 
-    await this.eventTrackingService.trackAutoStartEvent(
+    const result = await this.eventTrackingService.trackAutoStartEvent(
       customContentVersion,
       bizSession,
       environment,
       externalUserId,
       startReason,
+      stepId,
       clientContext,
     );
+
+    if (!result) {
+      return {
+        success: false,
+        reason: 'Failed to track auto start event',
+      };
+    }
 
     return {
       success: true,
@@ -962,6 +975,7 @@ export class ContentOrchestratorService {
       stepCvid ||
       (contentId && firstStepCvid) ||
       findLatestStepCvid(session.latestSession?.bizEvent);
+    console.log(currentStepCvid, session.latestSession);
 
     if (!sessionId) {
       return {
