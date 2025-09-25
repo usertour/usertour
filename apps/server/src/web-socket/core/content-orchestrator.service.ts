@@ -13,8 +13,6 @@ import {
   findLatestStepCvid,
   extractClientConditionWaitTimers,
   sessionIsAvailable,
-  isEnabledHideRules,
-  conditionsIsReady,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -500,15 +498,6 @@ export class ContentOrchestratorService {
       contentType,
       session.version.id,
     )?.[0];
-    const { clientConditions } = socketClientData;
-
-    if (
-      sessionVersion &&
-      isEnabledHideRules(sessionVersion) &&
-      !conditionsIsReady(sessionVersion.config.hideRules, clientConditions)
-    ) {
-      return true;
-    }
 
     if (!sessionVersion || isActivedHideRules(sessionVersion)) {
       this.logger.debug(

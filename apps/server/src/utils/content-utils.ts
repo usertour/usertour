@@ -383,14 +383,15 @@ export const isAllowedByHideRules = (
     return true;
   }
 
-  const hideRules = customContentVersion.config.hideRules;
-  // Check if hide rules are enabled but conditions are not ready
-  if (hideRules && !conditionsIsReady(hideRules, clientConditions)) {
-    console.log('hideRules are enabled but conditions are not ready', clientConditions, hideRules);
-    return false;
-  }
   // Check if hide rules are activated and blocking the content
   if (isActivedHideRules(customContentVersion)) {
+    return false;
+  }
+
+  const hideRules = customContentVersion.config.hideRules;
+  // Check if hide rules are enabled but conditions are not ready
+  if (!conditionsIsReady(hideRules, clientConditions)) {
+    console.log('hideRules are enabled but conditions are not ready', clientConditions, hideRules);
     return false;
   }
 
@@ -559,11 +560,8 @@ export const filterActivatedContentWithoutClientConditions = (
       return false;
     }
 
-    // Check if content is blocked by hide rules (common check for both paths)
-    const isBlockedByHideRules =
-      isEnabledHideRules(customContentVersion) && isActivedHideRules(customContentVersion);
-
-    if (isBlockedByHideRules) {
+    // Check if hide rules are activated and blocking the content
+    if (isActivedHideRules(customContentVersion)) {
       return false;
     }
 
@@ -1083,20 +1081,21 @@ export const compareSessionSteps = (oldSteps: SessionStep[], newSteps: SessionSt
 export const conditionsIsReady = (
   conditions: RulesCondition[],
   clientConditions: ClientCondition[],
+  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
 ): boolean => {
   if (!clientConditions || clientConditions.length === 0) {
     return false;
   }
 
-  const conditionIds = extractConditionIds(conditions);
-  console.log('conditionIds', conditionIds);
+  const allowedConditions = flattenConditions(conditions, allowedTypes);
+  console.log('conditionIds', allowedConditions);
   const clientConditionIds = clientConditions
     .filter((cc) => cc.isActive !== undefined)
     .map((cc) => cc.conditionId);
   console.log('clientConditionIds', clientConditionIds);
 
   // Check if all condition IDs exist in client conditions with feedback
-  return conditionIds.every((id) => clientConditionIds.includes(id));
+  return allowedConditions.every((conditions) => clientConditionIds.includes(conditions.id));
 };
 
 /**
