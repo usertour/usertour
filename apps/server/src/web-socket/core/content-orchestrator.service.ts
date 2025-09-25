@@ -113,7 +113,7 @@ export class ContentOrchestratorService {
       async () => {
         return await this.executeStartContent(context);
       },
-      3000, // 3 seconds timeout
+      5000, // 5 seconds timeout
     );
 
     return result === true;
@@ -181,7 +181,7 @@ export class ContentOrchestratorService {
       async () => {
         return await this.executeCancelContent(context);
       },
-      3000, // 3 seconds timeout
+      5000, // 5 seconds timeout
     );
 
     return result === true;
