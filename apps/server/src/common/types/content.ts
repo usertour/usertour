@@ -4,8 +4,11 @@ import {
   Environment,
   SDKContentSession,
   ConditionWaitTimer,
+  TrackCondition,
+  StartContentOptions,
 } from '@/common/types';
-import { ClientContext, ContentConfigObject } from '@usertour/types';
+import { ClientContext, ContentConfigObject, ContentDataType } from '@usertour/types';
+import { Server, Socket } from 'socket.io';
 
 export type CustomContentSession = {
   contentId: string;
@@ -37,4 +40,47 @@ export interface SocketClientData {
   lastActivatedChecklistSession?: SDKContentSession;
   lastUpdated: number;
   socketId: string;
+}
+
+export interface ContentStartContext {
+  server: Server;
+  socket: Socket;
+  contentType: ContentDataType;
+  socketClientData: SocketClientData;
+  options?: StartContentOptions;
+}
+
+export interface ContentCancelContext {
+  server: Server;
+  socket: Socket;
+  sessionId: string;
+  cancelOtherSessions?: boolean;
+}
+
+export interface ContentStartResult {
+  success: boolean;
+  session?: SDKContentSession;
+  trackConditions?: TrackCondition[];
+  trackHideConditions?: TrackCondition[];
+  conditionWaitTimers?: ConditionWaitTimer[];
+  reason?: string;
+  invalidSession?: SDKContentSession;
+  forceGoToStep?: boolean;
+  isActivateOtherSockets?: boolean;
+}
+
+export interface CancelSessionParams {
+  server: Server;
+  socket: Socket;
+  socketClientData: SocketClientData;
+  sessionId: string;
+}
+
+export interface ActivateSessionParams {
+  server: Server;
+  socket: Socket;
+  socketClientData?: SocketClientData;
+  session: SDKContentSession;
+  trackHideConditions: TrackCondition[] | undefined;
+  forceGoToStep: boolean;
 }

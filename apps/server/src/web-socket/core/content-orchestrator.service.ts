@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { ContentDataType, RulesType } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -28,6 +28,11 @@ import {
   ClientCondition,
   SocketClientData,
   CustomContentVersion,
+  ContentStartContext,
+  ContentCancelContext,
+  CancelSessionParams,
+  ActivateSessionParams,
+  ContentStartResult,
 } from '@/common/types';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
@@ -37,49 +42,6 @@ import { SocketParallelService } from './socket-parallel.service';
 import { SocketRedisService } from './socket-redis.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { resolveConditionStates } from '@/utils/content-utils';
-
-interface ContentStartContext {
-  server: Server;
-  socket: Socket;
-  contentType: ContentDataType;
-  socketClientData: SocketClientData;
-  options?: StartContentOptions;
-}
-
-interface ContentCancelContext {
-  server: Server;
-  socket: Socket;
-  sessionId: string;
-  cancelOtherSessions?: boolean;
-}
-
-interface ContentStartResult {
-  success: boolean;
-  session?: SDKContentSession;
-  trackConditions?: TrackCondition[];
-  trackHideConditions?: TrackCondition[];
-  conditionWaitTimers?: ConditionWaitTimer[];
-  reason?: string;
-  invalidSession?: SDKContentSession;
-  forceGoToStep?: boolean;
-  isActivateOtherSockets?: boolean;
-}
-
-interface CancelSessionParams {
-  server: Server;
-  socket: Socket;
-  socketClientData: SocketClientData;
-  sessionId: string;
-}
-
-interface ActivateSessionParams {
-  server: Server;
-  socket: Socket;
-  socketClientData?: SocketClientData;
-  session: SDKContentSession;
-  trackHideConditions: TrackCondition[] | undefined;
-  forceGoToStep: boolean;
-}
 
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
