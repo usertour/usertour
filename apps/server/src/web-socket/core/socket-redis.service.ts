@@ -245,4 +245,77 @@ export class SocketRedisService {
     const data = await this.getClientData(socketId);
     return data !== null;
   }
+
+  /**
+   * Atomically update client data and cleanup condition reports using Lua script
+   * This method ensures true atomicity - either all operations succeed or all fail
+   * @param socketId - The socket ID
+   * @param updates - Partial socket data to update
+   * @param conditionIdsToRemove - Array of condition IDs to remove
+   * @param ttlSeconds - Optional TTL in seconds
+   * @returns Promise<boolean> - True if the operation was successful
+   */
+  async updateAndCleanup(
+    socketId: string,
+    updates: Partial<SocketClientData>,
+    conditionIdsToRemove: string[],
+    ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
+  ): Promise<boolean> {
+    try {
+      const client = this.redisService.getClient();
+      if (!client) {
+        this.logger.error('Redis client not available');
+        return false;
+      }
+
+      // Get existing data first
+      const existingData = await this.getClientData(socketId);
+      if (!existingData) {
+        this.logger.warn(`No existing data found for socket ${socketId}, cannot update`);
+        return false;
+      }
+
+      // Merge with updates
+      const mergedData: SocketClientData = {
+        ...existingData,
+        ...updates,
+        lastUpdated: Date.now(),
+        socketId,
+      };
+
+      const dataKey = this.buildClientDataKey(socketId);
+      const reportsKey = this.buildClientConditionReportsKey(socketId);
+
+      // Use Lua script for atomic operations
+      const script = `
+        -- Update client data
+        redis.call('SETEX', KEYS[1], ARGV[1], ARGV[2])
+        
+        -- Remove condition reports if any
+        if #ARGV[3] > 0 then
+          redis.call('HDEL', KEYS[2], unpack(cjson.decode(ARGV[3])))
+        end
+        
+        return 1
+      `;
+
+      await client.eval(
+        script,
+        2,
+        dataKey,
+        reportsKey,
+        ttlSeconds.toString(),
+        JSON.stringify(mergedData),
+        JSON.stringify(conditionIdsToRemove),
+      );
+
+      this.logger.debug(
+        `Atomically updated client data and cleaned up ${conditionIdsToRemove.length} conditions for socket ${socketId}`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to atomically update client data for socket ${socketId}:`, error);
+      return false;
+    }
+  }
 }
