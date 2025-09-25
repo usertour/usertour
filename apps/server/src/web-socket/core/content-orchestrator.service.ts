@@ -46,6 +46,13 @@ interface ContentStartContext {
   options?: StartContentOptions;
 }
 
+interface ContentCancelContext {
+  server: Server;
+  socket: Socket;
+  sessionId: string;
+  cancelOtherSessions?: boolean;
+}
+
 interface ContentStartResult {
   success: boolean;
   session?: SDKContentSession;
@@ -160,18 +167,34 @@ export class ContentOrchestratorService {
 
   /**
    * Cancel content
-   * @param server - The server instance
-   * @param socket - The socket instance
-   * @param sessionId - The session id
-   * @param cancelOtherSessions - Whether to cancel other sessions in room
+   * @param context - The content cancel context
    * @returns True if the content was canceled successfully
    */
-  async cancelContent(
-    server: Server,
-    socket: Socket,
-    sessionId: string,
-    cancelOtherSessions = true,
-  ) {
+  async cancelContent(context: ContentCancelContext): Promise<boolean> {
+    const { socket } = context;
+    const socketId = socket.id;
+
+    // Use distributed lock to prevent concurrent cancelContent calls
+    const lockKey = `socket:${socketId}`;
+    const result = await this.distributedLockService.withLock(
+      lockKey,
+      async () => {
+        return await this.executeCancelContent(context);
+      },
+      3000, // 3 seconds timeout
+    );
+
+    return result === true;
+  }
+
+  /**
+   * Execute the actual cancelContent logic without lock management
+   * @param context - The content cancel context
+   * @returns True if the content was canceled successfully
+   */
+  private async executeCancelContent(context: ContentCancelContext): Promise<boolean> {
+    const { server, socket, sessionId, cancelOtherSessions = true } = context;
+
     const socketClientData = await this.getClientDataResolved(socket.id);
     if (!socketClientData) {
       return false;

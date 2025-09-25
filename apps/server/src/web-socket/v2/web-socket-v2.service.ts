@@ -497,15 +497,20 @@ export class WebSocketV2Service {
       return false;
     }
     // Track flow ended event
-    await this.eventTrackingService.trackFlowEndedEvent(
+    const trackResult = await this.eventTrackingService.trackFlowEndedEvent(
       bizSession,
       environment,
       externalUserId,
       reason,
       clientContext,
     );
-    await this.contentOrchestratorService.cancelContent(server, socket, sessionId);
-    return true;
+    if (!trackResult) return false;
+    return await this.contentOrchestratorService.cancelContent({
+      server,
+      socket,
+      sessionId,
+      cancelOtherSessions: true,
+    });
   }
 
   /**
