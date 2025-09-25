@@ -841,7 +841,7 @@ export class AnalyticsService {
       where: { id: sessionId, deleted: false },
       include: {
         bizUser: { include: { bizCompany: true } },
-        bizEvent: { include: { event: true }, orderBy: { createdAt: 'desc' } },
+        bizEvent: { include: { event: true }, orderBy: { id: 'desc' } },
         content: true,
         version: true,
       },
