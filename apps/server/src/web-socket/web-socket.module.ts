@@ -17,6 +17,7 @@ import { SocketSessionService } from './core/socket-session.service';
 import { SocketRedisService } from './core/socket-redis.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
+import { DistributedLockService } from './core/distributed-lock.service';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -35,6 +36,7 @@ import { SocketParallelService } from './core/socket-parallel.service';
     SocketRedisService,
     SocketEmitterService,
     SocketParallelService,
+    DistributedLockService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

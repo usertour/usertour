@@ -35,6 +35,7 @@ import { EventTrackingService } from './event-tracking.service';
 import { SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
 import { SocketRedisService } from './socket-redis.service';
+import { DistributedLockService } from './distributed-lock.service';
 import { resolveConditionStates } from '@/utils/content-utils';
 
 interface ContentStartContext {
@@ -87,6 +88,7 @@ export class ContentOrchestratorService {
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
     private readonly socketRedisService: SocketRedisService,
+    private readonly distributedLockService: DistributedLockService,
   ) {}
 
   /**
@@ -94,6 +96,28 @@ export class ContentOrchestratorService {
    * Implements multiple strategies for content activation and coordinates the start process
    */
   async startContent(context: ContentStartContext): Promise<boolean> {
+    const { socket } = context;
+    const socketId = socket.id;
+
+    // Use distributed lock to prevent concurrent startContent calls
+    const lockKey = `socket:${socketId}`;
+    const result = await this.distributedLockService.withLock(
+      lockKey,
+      async () => {
+        return await this.executeStartContent(context);
+      },
+      3000, // 3 seconds timeout
+    );
+
+    return result === true;
+  }
+
+  /**
+   * Execute the actual startContent logic without lock management
+   * @param context - The content start context
+   * @returns Promise<boolean> - True if content was started successfully
+   */
+  private async executeStartContent(context: ContentStartContext): Promise<boolean> {
     const { contentType, options, socketClientData } = context;
     const contentId = options?.contentId;
 
