@@ -24,6 +24,15 @@ export class SocketRedisService {
   }
 
   /**
+   * Build Redis key for client condition reports
+   * @param socketId - The socket ID
+   * @returns Redis key string
+   */
+  private buildClientConditionReportsKey(socketId: string): string {
+    return `socket:reports:${socketId}`;
+  }
+
+  /**
    * Set socket data in Redis
    * @param socketId - The socket ID
    * @param clientData - The socket data to store
@@ -203,15 +212,6 @@ export class SocketRedisService {
   }
 
   /**
-   * Build Redis key for client condition reports
-   * @param socketId - The socket ID
-   * @returns Redis key string
-   */
-  private buildClientConditionReportsKey(socketId: string): string {
-    return `socket:reports:${socketId}`;
-  }
-
-  /**
    * Cleanup socket data and condition reports from Redis
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data was cleaned up successfully
@@ -234,16 +234,6 @@ export class SocketRedisService {
       this.logger.error(`Failed to remove socket data for socket ${socketId}:`, error);
       return false;
     }
-  }
-
-  /**
-   * Check if socket data exists
-   * @param socketId - The socket ID
-   * @returns Promise<boolean> - True if the data exists
-   */
-  async hasClientData(socketId: string): Promise<boolean> {
-    const data = await this.getClientData(socketId);
-    return data !== null;
   }
 
   /**
