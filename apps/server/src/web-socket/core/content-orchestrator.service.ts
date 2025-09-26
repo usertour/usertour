@@ -260,7 +260,7 @@ export class ContentOrchestratorService {
       socket,
       socketClientData,
       sessionId,
-      shouldUnsetSession,
+      { shouldUnsetSession },
     );
 
     if (!isCleaned) {

@@ -18,6 +18,14 @@ import {
 } from '@/utils/websocket-utils';
 
 /**
+ * Options for cleaning up socket session
+ */
+interface CleanupSocketSessionOptions {
+  /** Whether to execute unsetSocketSession, defaults to true */
+  shouldUnsetSession?: boolean;
+}
+
+/**
  * Content session manager service
  * Handles content session management for Flow and Checklist content types
  * Focused on session lifecycle management, data persistence, and WebSocket communication
@@ -101,15 +109,16 @@ export class SocketSessionService {
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
    * @param sessionId - The session id to cleanup
-   * @param shouldUnsetSession - Whether to execute unsetSocketSession, defaults to true
+   * @param options - Options for cleanup behavior
    * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
   async cleanupSocketSession(
     socket: Socket,
     socketClientData: SocketClientData,
     sessionId: string,
-    shouldUnsetSession = true,
+    options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
+    const { shouldUnsetSession = true } = options;
     const { clientConditions, flowSession, checklistSession, conditionWaitTimers } =
       socketClientData;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
