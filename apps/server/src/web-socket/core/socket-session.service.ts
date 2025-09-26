@@ -232,8 +232,14 @@ export class SocketSessionService {
     const updatedClientData: Partial<SocketClientData> = {
       clientConditions: updatedConditions,
       conditionWaitTimers: remainingTimers,
-      ...(contentType === ContentDataType.FLOW && { flowSession: session }),
-      ...(contentType === ContentDataType.CHECKLIST && { checklistSession: session }),
+      ...(contentType === ContentDataType.FLOW && {
+        flowSession: session,
+        lastDismissedFlowId: undefined,
+      }),
+      ...(contentType === ContentDataType.CHECKLIST && {
+        checklistSession: session,
+        lastDismissedChecklistId: undefined,
+      }),
     };
 
     // Get condition IDs to cleanup for atomic operation
