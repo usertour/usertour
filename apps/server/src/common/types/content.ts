@@ -74,6 +74,7 @@ export interface CancelSessionParams {
   socket: Socket;
   socketClientData: SocketClientData;
   sessionId: string;
+  shouldUnsetSession?: boolean;
 }
 
 export interface ActivateSessionParams {

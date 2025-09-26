@@ -101,12 +101,14 @@ export class SocketSessionService {
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
    * @param sessionId - The session id to cleanup
+   * @param shouldUnsetSession - Whether to execute unsetSocketSession, defaults to true
    * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
   async cleanupSocketSession(
     socket: Socket,
     socketClientData: SocketClientData,
     sessionId: string,
+    shouldUnsetSession = true,
   ): Promise<boolean> {
     const { clientConditions, flowSession, checklistSession, conditionWaitTimers } =
       socketClientData;
@@ -115,12 +117,15 @@ export class SocketSessionService {
     if (!contentType) {
       return false;
     }
-    // Send WebSocket messages first, return false if any fails
-    const targetSessionId =
-      contentType === ContentDataType.FLOW ? flowSession.id : checklistSession.id;
-    const isUnset = await this.unsetSocketSession(socket, targetSessionId, contentType);
-    if (!isUnset) {
-      return false;
+
+    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
+    if (shouldUnsetSession) {
+      const targetSessionId =
+        contentType === ContentDataType.FLOW ? flowSession.id : checklistSession.id;
+      const isUnset = await this.unsetSocketSession(socket, targetSessionId, contentType);
+      if (!isUnset) {
+        return false;
+      }
     }
 
     // Process condition cleanup operations in parallel

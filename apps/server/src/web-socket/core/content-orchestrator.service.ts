@@ -173,7 +173,7 @@ export class ContentOrchestratorService {
     };
 
     // Cleanup socket session
-    await this.cancelSocketSession(cancelSessionParams);
+    await this.cancelSocketSession({ ...cancelSessionParams, shouldUnsetSession: false });
 
     // Cleanup other sockets in room
     if (cancelOtherSessions) {
@@ -188,7 +188,7 @@ export class ContentOrchestratorService {
    * @returns True if the session was canceled successfully
    */
   private async cancelSocketSession(params: CancelSessionParams) {
-    const { server, socket, sessionId, socketClientData } = params;
+    const { server, socket, sessionId, socketClientData, shouldUnsetSession = true } = params;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
     const currentSession = extractSessionByContentType(socketClientData, contentType);
     const context = {
@@ -210,6 +210,8 @@ export class ContentOrchestratorService {
       excludeContentIds,
     );
 
+    this.logger.debug(`CancelSocketSession strategy result: ${JSON.stringify(strategyResult)}`);
+
     // If the strategy result is successful and the session is not null, return the strategy result
     if (strategyResult.success && strategyResult.session) {
       return await this.handleSuccessfulSession(context, {
@@ -224,7 +226,9 @@ export class ContentOrchestratorService {
       socket,
       socketClientData,
       sessionId,
+      shouldUnsetSession,
     );
+    this.logger.debug(`CleanupCurrentSessionIfNeeded result: ${JSON.stringify(cleanupResult)}`);
     if (!cleanupResult.success) {
       return false;
     }
@@ -253,6 +257,7 @@ export class ContentOrchestratorService {
     socket: Socket,
     socketClientData: SocketClientData,
     sessionId: string,
+    shouldUnsetSession = true,
   ): Promise<{ success: boolean; updatedClientData?: SocketClientData }> {
     if (!currentSession) {
       return { success: true };
@@ -262,6 +267,7 @@ export class ContentOrchestratorService {
       socket,
       socketClientData,
       sessionId,
+      shouldUnsetSession,
     );
 
     if (!isCleaned) {
