@@ -12,6 +12,15 @@ export class DistributedLockService {
   constructor(private readonly redisService: RedisService) {}
 
   /**
+   * Build the Redis key for a lock
+   * @param key - The original key
+   * @returns The Redis key with prefix
+   */
+  private buildLockKey(key: string): string {
+    return `lock:${key}`;
+  }
+
+  /**
    * Acquire a distributed lock
    * @param key - The lock key (should be unique for the resource)
    * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
@@ -225,15 +234,6 @@ export class DistributedLockService {
       // Always release the lock
       await this.releaseLock(key);
     }
-  }
-
-  /**
-   * Build the Redis key for a lock
-   * @param key - The original key
-   * @returns The Redis key with prefix
-   */
-  private buildLockKey(key: string): string {
-    return `lock:${key}`;
   }
 
   /**
