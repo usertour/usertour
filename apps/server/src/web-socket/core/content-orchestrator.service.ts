@@ -124,12 +124,7 @@ export class ContentOrchestratorService {
       );
       return await this.handleContentStartResult(context, strategyResult);
     } catch (error) {
-      this.logger.error(`Failed to start singleton content: ${error.message}`, {
-        contentType,
-        options,
-        stack: error.stack,
-      });
-
+      this.logger.error(`Failed to start singleton content: ${error.message}`);
       return false;
     }
   }
@@ -510,15 +505,16 @@ export class ContentOrchestratorService {
       return true;
     }
     const sessionId = session.id;
-    const sessionVersion = await this.getEvaluatedContentVersions(
+    const evaluatedVersions = await this.getEvaluatedContentVersions(
       socketClientData,
       contentType,
       session.version.id,
-    )?.[0];
+    );
+    const sessionVersion = evaluatedVersions?.[0];
 
     if (!sessionVersion || isActivedHideRules(sessionVersion)) {
       this.logger.debug(
-        `Hide rules are activated, canceling session, sessionVersion: ${sessionVersion?.content.name}, sessionId: ${sessionId}, isActivedHideRules: ${isActivedHideRules(sessionVersion)}`,
+        `Hide rules are activated, canceling session, sessionVersion: ${sessionVersion?.content.name}, sessionId: ${sessionId}`,
       );
       // Cleanup socket session
       return await this.cancelSocketSession({
@@ -652,11 +648,12 @@ export class ContentOrchestratorService {
           reason: 'Content not found or not published',
         };
       }
-      const evaluatedContentVersion = await this.getEvaluatedContentVersions(
+      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
         socketClientData,
         contentType,
         publishedVersionId,
-      )?.[0];
+      );
+      const evaluatedContentVersion = evaluatedContentVersions?.[0];
       if (!evaluatedContentVersion) {
         return {
           success: false,
@@ -733,11 +730,12 @@ export class ContentOrchestratorService {
       latestActivatedContentVersionId &&
       evaluatedContentVersion.id !== latestActivatedContentVersionId
     ) {
-      const activatedContentVersion = await this.getEvaluatedContentVersions(
+      const activatedContentVersions = await this.getEvaluatedContentVersions(
         socketClientData,
         contentType,
         latestActivatedContentVersionId,
-      )?.[0];
+      );
+      const activatedContentVersion = activatedContentVersions?.[0];
       if (activatedContentVersion) {
         return activatedContentVersion;
       }
@@ -755,11 +753,12 @@ export class ContentOrchestratorService {
     const { contentType, socketClientData } = context;
     const { clientConditions } = socketClientData;
 
-    const latestActivatedContentVersion = findLatestActivatedCustomContentVersions(
+    const latestActivatedContentVersions = findLatestActivatedCustomContentVersions(
       evaluatedContentVersions,
       contentType,
       clientConditions,
-    )?.[0];
+    );
+    const latestActivatedContentVersion = latestActivatedContentVersions?.[0];
 
     // Check if content version is allowed by hide rules
     if (!latestActivatedContentVersion) {
@@ -795,13 +794,14 @@ export class ContentOrchestratorService {
       ?.filter((conditionWaitTimer) => conditionWaitTimer.activated)
       .map((conditionWaitTimer) => conditionWaitTimer.versionId);
 
-    const autoStartContentVersion = filterAvailableAutoStartContentVersions(
+    const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType,
       clientConditions,
       true,
       firedWaitTimerVersionIds,
-    )?.[0];
+    );
+    const autoStartContentVersion = autoStartContentVersions?.[0];
 
     if (!autoStartContentVersion) {
       return {
@@ -835,10 +835,6 @@ export class ContentOrchestratorService {
       contentType,
       clientConditions,
       false,
-    );
-
-    this.logger.debug(
-      `autoStartContentVersionsWithoutWaitTimer: ${autoStartContentVersionsWithoutWaitTimer.length}`,
     );
 
     const conditionWaitTimers = extractClientConditionWaitTimers(
@@ -975,7 +971,6 @@ export class ContentOrchestratorService {
       stepCvid ||
       (contentId && firstStepCvid) ||
       findLatestStepCvid(session.latestSession?.bizEvent);
-    console.log(currentStepCvid, session.latestSession);
 
     if (!sessionId) {
       return {
