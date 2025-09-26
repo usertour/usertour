@@ -100,7 +100,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   // Cleanup when a socket disconnects for any reason
   async handleDisconnect(socket: Socket): Promise<void> {
     try {
-      await this.socketRedisService.removeClientData(socket.id);
+      await this.socketRedisService.cleanup(socket.id);
       this.logger.debug(`Cleaned up client data for disconnected socket ${socket.id}`);
     } catch (error) {
       this.logger.error(

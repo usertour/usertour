@@ -212,11 +212,11 @@ export class SocketRedisService {
   }
 
   /**
-   * Remove socket data from Redis
+   * Cleanup socket data and condition reports from Redis
    * @param socketId - The socket ID
-   * @returns Promise<boolean> - True if the data was removed successfully
+   * @returns Promise<boolean> - True if the data was cleaned up successfully
    */
-  async removeClientData(socketId: string): Promise<boolean> {
+  async cleanup(socketId: string): Promise<boolean> {
     try {
       const key = this.buildClientDataKey(socketId);
       const reportsKey = this.buildClientConditionReportsKey(socketId);
