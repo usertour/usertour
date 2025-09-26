@@ -72,20 +72,17 @@ export class ContentOrchestratorService {
   /**
    * Main entry point for starting singleton content
    * Implements multiple strategies for content activation and coordinates the start process
+   * Uses retry mechanism to handle lock contention
    */
   async startContent(context: ContentStartContext): Promise<boolean> {
     const { socket } = context;
     const socketId = socket.id;
 
-    // Use distributed lock to prevent concurrent startContent calls
+    // Use distributed lock with retry mechanism to prevent concurrent startContent calls
     const lockKey = this.generateSocketLockKey(socketId);
-    return await this.distributedLockService.withLock(
-      lockKey,
-      async () => {
-        return await this.executeStartContent(context);
-      },
-      5000, // 5 seconds timeout
-    );
+    return await this.distributedLockService.withRetryLock(lockKey, async () => {
+      return await this.executeStartContent(context);
+    });
   }
 
   /**
@@ -138,15 +135,11 @@ export class ContentOrchestratorService {
     const { socket } = context;
     const socketId = socket.id;
 
-    // Use distributed lock to prevent concurrent cancelContent calls
+    // Use distributed lock with retry mechanism to prevent concurrent cancelContent calls
     const lockKey = this.generateSocketLockKey(socketId);
-    return await this.distributedLockService.withLock(
-      lockKey,
-      async () => {
-        return await this.executeCancelContent(context);
-      },
-      5000, // 5 seconds timeout
-    );
+    return await this.distributedLockService.withRetryLock(lockKey, async () => {
+      return await this.executeCancelContent(context);
+    });
   }
 
   /**

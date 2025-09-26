@@ -487,7 +487,9 @@ export class WebSocketV2Service {
 
     if (!clientData) return false;
 
-    await this.contentOrchestratorService.startContent({
+    // Start content asynchronously without waiting for completion
+    // This allows toggleContents to return immediately while startContent runs in background
+    this.contentOrchestratorService.startContent({
       server,
       socket,
       contentType: ContentDataType.FLOW,
@@ -496,6 +498,7 @@ export class WebSocketV2Service {
         startReason: contentStartReason.START_FROM_CONDITION,
       },
     });
+
     return true;
   }
 

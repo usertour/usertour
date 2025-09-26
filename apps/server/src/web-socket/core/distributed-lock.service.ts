@@ -14,11 +14,11 @@ export class DistributedLockService {
   /**
    * Acquire a distributed lock
    * @param key - The lock key (should be unique for the resource)
-   * @param timeoutMs - Lock timeout in milliseconds (default: 30000ms)
+   * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
    * @param lockValue - Optional custom lock value for identification
    * @returns Promise<boolean> - True if lock was acquired successfully
    */
-  async acquireLock(key: string, timeoutMs = 30000, lockValue?: string): Promise<boolean> {
+  async acquireLock(key: string, timeoutMs = 10000, lockValue?: string): Promise<boolean> {
     const lockKey = this.buildLockKey(key);
     const value = lockValue || `${Date.now()}-${Math.random()}`;
 
@@ -135,10 +135,10 @@ export class DistributedLockService {
    * Execute a function with a distributed lock
    * @param key - The lock key
    * @param fn - The function to execute while holding the lock
-   * @param timeoutMs - Lock timeout in milliseconds (default: 30000ms)
+   * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
    * @returns Promise<T | null> - The result of the function execution, or null if lock could not be acquired
    */
-  async withLock<T>(key: string, fn: () => Promise<T>, timeoutMs = 30000): Promise<T | null> {
+  async withLock<T>(key: string, fn: () => Promise<T>, timeoutMs = 10000): Promise<T | null> {
     // Check if already locked
     if (await this.isLocked(key)) {
       this.logger.debug(`Resource ${key} is already locked, skipping operation`);
@@ -167,14 +167,14 @@ export class DistributedLockService {
    * @param key - The lock key
    * @param maxRetries - Maximum number of retry attempts (default: 3)
    * @param retryDelayMs - Delay between retries in milliseconds (default: 1000ms)
-   * @param timeoutMs - Lock timeout in milliseconds (default: 30000ms)
+   * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
    * @returns Promise<boolean> - True if lock was acquired successfully
    */
   async acquireLockWithRetry(
     key: string,
     maxRetries = 3,
     retryDelayMs = 1000,
-    timeoutMs = 30000,
+    timeoutMs = 10000,
   ): Promise<boolean> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const acquired = await this.acquireLock(key, timeoutMs);
@@ -192,6 +192,39 @@ export class DistributedLockService {
 
     this.logger.warn(`Failed to acquire lock for ${key} after ${maxRetries} attempts`);
     return false;
+  }
+
+  /**
+   * Execute a function with a distributed lock and retry mechanism
+   * @param key - The lock key
+   * @param fn - The function to execute while holding the lock
+   * @param maxRetries - Maximum number of retry attempts (default: 5)
+   * @param retryDelayMs - Delay between retries in milliseconds (default: 1000ms)
+   * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
+   * @returns Promise<T | null> - The result of the function execution, or null if lock could not be acquired
+   */
+  async withRetryLock<T>(
+    key: string,
+    fn: () => Promise<T>,
+    maxRetries = 5,
+    retryDelayMs = 1000,
+    timeoutMs = 10000,
+  ): Promise<T | null> {
+    // Try to acquire lock with retry mechanism
+    const lockAcquired = await this.acquireLockWithRetry(key, maxRetries, retryDelayMs, timeoutMs);
+
+    if (!lockAcquired) {
+      this.logger.warn(`Failed to acquire lock for ${key} after ${maxRetries} attempts`);
+      return null;
+    }
+
+    try {
+      // Execute the function while holding the lock
+      return await fn();
+    } finally {
+      // Always release the lock
+      await this.releaseLock(key);
+    }
   }
 
   /**
