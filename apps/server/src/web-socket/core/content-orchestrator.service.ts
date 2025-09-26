@@ -166,11 +166,18 @@ export class ContentOrchestratorService {
     };
 
     // Cleanup socket session
-    await this.cancelSocketSession({ ...cancelSessionParams, shouldUnsetSession: false });
+    await this.cancelSocketSession({
+      ...cancelSessionParams,
+      shouldUnsetSession: false,
+      shouldSetLastDismissedId: true,
+    });
 
     // Cleanup other sockets in room
     if (cancelOtherSessions) {
-      await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
+      await this.cancelOtherSocketSessionsInRoom(roomId, {
+        ...cancelSessionParams,
+        shouldSetLastDismissedId: true,
+      });
     }
     return true;
   }
@@ -181,7 +188,7 @@ export class ContentOrchestratorService {
    * @returns True if the session was canceled successfully
    */
   private async cancelSocketSession(params: CancelSessionParams) {
-    const { server, socket, sessionId, socketClientData, shouldUnsetSession = true } = params;
+    const { server, socket, sessionId, socketClientData } = params;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
     const currentSession = extractSessionByContentType(socketClientData, contentType);
     const context = {
@@ -214,13 +221,7 @@ export class ContentOrchestratorService {
     }
 
     // Cleanup current session if exists
-    const cleanupResult = await this.cleanupCurrentSessionIfNeeded(
-      currentSession,
-      socket,
-      socketClientData,
-      sessionId,
-      shouldUnsetSession,
-    );
+    const cleanupResult = await this.cleanupCurrentSessionIfNeeded(currentSession, params);
     this.logger.debug(`CleanupCurrentSessionIfNeeded result: ${JSON.stringify(cleanupResult)}`);
     if (!cleanupResult.success) {
       return false;
@@ -247,20 +248,24 @@ export class ContentOrchestratorService {
    */
   private async cleanupCurrentSessionIfNeeded(
     currentSession: SDKContentSession | null,
-    socket: Socket,
-    socketClientData: SocketClientData,
-    sessionId: string,
-    shouldUnsetSession = true,
+    params: CancelSessionParams,
   ): Promise<{ success: boolean; updatedClientData?: SocketClientData }> {
     if (!currentSession) {
       return { success: true };
     }
+    const {
+      socket,
+      socketClientData,
+      sessionId,
+      shouldUnsetSession = true,
+      shouldSetLastDismissedId = false,
+    } = params;
 
     const isCleaned = await this.socketSessionService.cleanupSocketSession(
       socket,
       socketClientData,
       sessionId,
-      { shouldUnsetSession },
+      { shouldUnsetSession, shouldSetLastDismissedId },
     );
 
     if (!isCleaned) {

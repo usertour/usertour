@@ -23,6 +23,8 @@ import {
 interface CleanupSocketSessionOptions {
   /** Whether to execute unsetSocketSession, defaults to true */
   shouldUnsetSession?: boolean;
+  /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
+  shouldSetLastDismissedId?: boolean;
 }
 
 /**
@@ -118,7 +120,7 @@ export class SocketSessionService {
     sessionId: string,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
-    const { shouldUnsetSession = true } = options;
+    const { shouldUnsetSession = true, shouldSetLastDismissedId = false } = options;
     const { clientConditions, flowSession, checklistSession, conditionWaitTimers } =
       socketClientData;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
@@ -157,11 +159,11 @@ export class SocketSessionService {
       clientConditions: remainingConditions,
       conditionWaitTimers: remainingTimers,
       ...(contentType === ContentDataType.FLOW && {
-        lastActivatedFlowId: flowSession.content.id,
+        ...(shouldSetLastDismissedId && { lastDismissedFlowId: flowSession.content.id }),
         flowSession: undefined,
       }),
       ...(contentType === ContentDataType.CHECKLIST && {
-        lastActivatedChecklistId: checklistSession.content.id,
+        ...(shouldSetLastDismissedId && { lastDismissedChecklistId: checklistSession.content.id }),
         checklistSession: undefined,
       }),
     };

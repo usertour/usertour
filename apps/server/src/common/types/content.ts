@@ -36,8 +36,8 @@ export interface SocketClientData {
   conditionWaitTimers?: ConditionWaitTimer[];
   flowSession?: SDKContentSession;
   checklistSession?: SDKContentSession;
-  lastActivatedFlowId?: string;
-  lastActivatedChecklistId?: string;
+  lastDismissedFlowId?: string;
+  lastDismissedChecklistId?: string;
   lastUpdated: number;
   socketId: string;
 }
@@ -75,6 +75,7 @@ export interface CancelSessionParams {
   socketClientData: SocketClientData;
   sessionId: string;
   shouldUnsetSession?: boolean;
+  shouldSetLastDismissedId?: boolean;
 }
 
 export interface ActivateSessionParams {

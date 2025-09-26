@@ -73,11 +73,11 @@ export const extractExcludedContentIds = (
   socketClientData: SocketClientData,
   contentType: ContentDataType,
 ): string[] => {
-  const { lastActivatedFlowId, lastActivatedChecklistId } = socketClientData;
+  const { lastDismissedFlowId, lastDismissedChecklistId } = socketClientData;
 
   return [
-    contentType === ContentDataType.FLOW && lastActivatedFlowId,
-    contentType === ContentDataType.CHECKLIST && lastActivatedChecklistId,
+    contentType === ContentDataType.FLOW && lastDismissedFlowId,
+    contentType === ContentDataType.CHECKLIST && lastDismissedChecklistId,
   ].filter(Boolean) as string[];
 };
 
