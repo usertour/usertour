@@ -389,6 +389,13 @@ export class ContentOrchestratorService {
     }
   }
 
+  /**
+   * Try to auto start content
+   * @param context - The content start context
+   * @param contentType - The content type
+   * @param isActivateOtherSockets - Whether to activate other sockets
+   * @returns Promise<boolean> - True if the content was started successfully
+   */
   private async tryAutoStartContent(
     context: ContentStartContext,
     contentType: ContentDataType,
