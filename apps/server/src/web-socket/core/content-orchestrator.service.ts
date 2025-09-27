@@ -18,7 +18,6 @@ import {
   buildExternalUserRoomId,
   extractContentTypeBySessionId,
   extractSessionByContentType,
-  extractExcludedContentIds,
 } from '@/utils/websocket-utils';
 import {
   StartContentOptions,
@@ -110,14 +109,11 @@ export class ContentOrchestratorService {
         return await this.handleSuccessfulSession(context, existingSessionResult);
       }
 
-      // Extract excluded content IDs based on current content type
-      const excludeContentIds = extractExcludedContentIds(socketClientData, contentType);
       // Execute content start strategies and handle the result
       const strategyResult = await this.executeContentStartStrategies(
         context,
         socketClientData,
         contentType,
-        excludeContentIds,
       );
       return await this.handleContentStartResult(context, strategyResult);
     } catch (error) {
@@ -163,21 +159,14 @@ export class ContentOrchestratorService {
       socket,
       socketClientData,
       sessionId,
+      shouldSetLastDismissedId: true,
     };
 
     // Cleanup socket session
-    await this.cancelSocketSession({
-      ...cancelSessionParams,
-      shouldUnsetSession: false,
-      shouldSetLastDismissedId: true,
-    });
-
+    await this.cancelSocketSession({ ...cancelSessionParams, shouldUnsetSession: false });
     // Cleanup other sockets in room
     if (cancelOtherSessions) {
-      await this.cancelOtherSocketSessionsInRoom(roomId, {
-        ...cancelSessionParams,
-        shouldSetLastDismissedId: true,
-      });
+      await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
     }
     return true;
   }
