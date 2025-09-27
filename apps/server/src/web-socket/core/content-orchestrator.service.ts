@@ -110,7 +110,7 @@ export class ContentOrchestratorService {
         return await this.handleSuccessfulSession(context, existingSessionResult);
       }
 
-      // Execute content start strategies and handle the result
+      // Strategy 3: Try to auto start content
       return await this.tryAutoStartContent(context, contentType);
     } catch (error) {
       this.logger.error(`Failed to start singleton content: ${error.message}`);
