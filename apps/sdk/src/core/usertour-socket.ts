@@ -42,6 +42,8 @@ export interface AuthCredentials {
   token: string;
   clientContext?: ClientContext;
   clientConditions?: ClientCondition[];
+  flowSessionId?: string;
+  checklistSessionId?: string;
 }
 
 /**

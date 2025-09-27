@@ -60,6 +60,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         const clientContext = auth.clientContext as ClientContext;
         const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
         const token = String(auth.token ?? '');
+        const flowSessionId = String(auth.flowSessionId ?? '');
 
         if (!externalUserId || !token) {
           return next(new SDKAuthenticationError());
@@ -71,14 +72,22 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         }
 
         // Store validated data in socket
-        const clientData = {
+        const clientData: SocketClientData = {
           environment,
           externalUserId,
           clientContext,
           clientConditions,
           externalCompanyId,
           conditionWaitTimers: [],
+          lastUpdated: Date.now(),
+          socketId: socket.id,
         };
+        if (flowSessionId) {
+          const flowSession = await this.service.initializeSessionById(clientData, flowSessionId);
+          if (flowSession) {
+            clientData.flowSession = flowSession;
+          }
+        }
         if (!(await this.socketRedisService.setClientData(socket.id, clientData))) {
           this.logger.error(`Failed to persist client data for socket ${socket.id}`);
           return next(new ServiceUnavailableError());

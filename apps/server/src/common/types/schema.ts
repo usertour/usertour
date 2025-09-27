@@ -25,3 +25,7 @@ export type BizSessionWithBizUserAndVersion = BizSession & {
   bizUser: BizUser;
   version: VersionWithSteps;
 };
+export type BizSessionWithContentAndVersion = BizSession & {
+  content: Content;
+  version: Version;
+};

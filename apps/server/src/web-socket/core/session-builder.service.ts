@@ -28,6 +28,7 @@ import {
   Step,
   Theme,
   BizSession,
+  BizSessionWithContentAndVersion,
 } from '@/common/types';
 import { DataResolverService } from './data-resolver.service';
 
@@ -558,5 +559,22 @@ export class SessionBuilderService {
     }
 
     return null;
+  }
+
+  /**
+   * Get biz session
+   * @param sessionId - The session ID
+   * @returns The biz session or null if not found
+   */
+  async getBizSessionWithContentAndVersion(
+    sessionId: string,
+  ): Promise<BizSessionWithContentAndVersion | null> {
+    return await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        content: true,
+        version: true,
+      },
+    });
   }
 }

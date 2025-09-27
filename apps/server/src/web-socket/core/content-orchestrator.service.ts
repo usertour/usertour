@@ -1197,4 +1197,36 @@ export class ContentOrchestratorService {
       return null;
     }
   }
+
+  /**
+   * Initialize content session by session ID
+   * @param sessionId - The session ID
+   * @returns The content session or null if not found
+   */
+  async initializeSessionById(
+    socketClientData: SocketClientData,
+    sessionId: string,
+  ): Promise<SDKContentSession | null> {
+    const session = await this.sessionBuilderService.getBizSessionWithContentAndVersion(sessionId);
+    if (!session) {
+      return null;
+    }
+    const contentType = session.content.type as ContentDataType;
+    const customContentVersions = await this.getEvaluatedContentVersions(
+      socketClientData,
+      contentType,
+      session.version.id,
+    );
+    const customContentVersion = customContentVersions?.[0];
+    if (!customContentVersion || customContentVersion.session.latestSession.id !== sessionId) {
+      return null;
+    }
+    const sessionResult = await this.initializeSession(
+      customContentVersion,
+      socketClientData,
+      undefined,
+      false,
+    );
+    return sessionResult.session;
+  }
 }

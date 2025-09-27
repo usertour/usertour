@@ -12,7 +12,7 @@ import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
-import { UsertourSocket } from '@/core/usertour-socket';
+import { AuthCredentials, UsertourSocket } from '@/core/usertour-socket';
 import { UsertourAttributeManager } from '@/core/usertour-attribute-manager';
 import {
   ConditionStateChangeEvent,
@@ -336,7 +336,11 @@ export class UsertourCore extends Evented {
 
     // Set up event listeners on UsertourSocket (which extends Evented)
     this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
-      return this.setFlowSession(session as SDKContentSession);
+      const success = this.setFlowSession(session as SDKContentSession);
+      if (success) {
+        this.updateSocketAuthInfo({ flowSessionId: (session as SDKContentSession).id });
+      }
+      return success;
     });
     this.socketService.on(WebSocketEvents.FORCE_GO_TO_STEP, (message: unknown) => {
       const data = message as { sessionId: string; stepId: string };
@@ -347,7 +351,11 @@ export class UsertourCore extends Evented {
     });
     this.socketService.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
       const data = message as { sessionId: string };
-      return this.unsetFlowSession(data.sessionId);
+      const success = this.unsetFlowSession(data.sessionId);
+      if (success) {
+        this.updateSocketAuthInfo({ flowSessionId: undefined });
+      }
+      return success;
     });
     this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
       return this.trackClientCondition(condition as TrackCondition);
@@ -792,7 +800,7 @@ export class UsertourCore extends Evented {
   /**
    * Updates the socket auth info
    */
-  private updateSocketAuthInfo() {
+  private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
     const clientConditions = this.conditionsMonitor?.getClientConditions();
     const externalCompanyId = this.externalCompanyId;
     const clientContext = getClientContext();
@@ -800,6 +808,7 @@ export class UsertourCore extends Evented {
       clientConditions,
       externalCompanyId,
       clientContext,
+      ...authInfo,
     });
   }
 
