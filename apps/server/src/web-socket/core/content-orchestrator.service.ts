@@ -33,6 +33,7 @@ import {
   CancelSessionParams,
   ActivateSessionParams,
   ContentStartResult,
+  TryAutoStartContentOptions,
 } from '@/common/types';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
@@ -187,26 +188,23 @@ export class ContentOrchestratorService {
       return false;
     }
     const excludeContentIds = [currentSession?.content?.id].filter(Boolean) as string[];
-    // Execute content start strategies and handle the result
-    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-      socketClientData,
-      contentType,
-    );
-    const strategyResult = await this.executeContentStartStrategies(
-      context,
-      contentType,
-      evaluatedContentVersions,
-      excludeContentIds,
-    );
+    const tryAutoStartContentOptions: TryAutoStartContentOptions = {
+      isActivateOtherSockets: false,
+    };
 
-    this.logger.debug(`CancelSocketSession strategy result: ${JSON.stringify(strategyResult)}`);
+    // Execute content start strategies with fallback behavior
+    const strategyResult = await this.tryAutoStartContent(context, contentType, {
+      ...tryAutoStartContentOptions,
+      excludeContentIds: excludeContentIds,
+      allowConditionWaitTimers: false,
+      fallback: false,
+    });
 
-    // If the strategy result is successful and the session is not null, return the strategy result
-    if (strategyResult.success && strategyResult.session) {
-      return await this.handleSuccessfulSession(context, {
-        ...strategyResult,
-        isActivateOtherSockets: false,
-      });
+    this.logger.debug(`CancelSocketSession strategy result: ${strategyResult}`);
+
+    // If the strategy result is successful, return it
+    if (strategyResult) {
+      return true;
     }
 
     // Cleanup current session if exists
@@ -221,7 +219,7 @@ export class ContentOrchestratorService {
     return await this.tryAutoStartContent(
       { ...context, socketClientData: cleanupResult.updatedClientData },
       contentType,
-      false,
+      tryAutoStartContentOptions,
     );
   }
 
@@ -395,19 +393,24 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Try to auto start content
+   * Try to auto start content with configurable fallback behavior
    * @param context - The content start context
    * @param contentType - The content type
-   * @param isActivateOtherSockets - Whether to activate other sockets
+   * @param options - Configuration options for the strategy execution
    * @returns Promise<boolean> - True if the content was started successfully
    */
   private async tryAutoStartContent(
     context: ContentStartContext,
     contentType: ContentDataType,
-    isActivateOtherSockets = true,
+    options: TryAutoStartContentOptions = {},
   ): Promise<boolean> {
     const { socketClientData } = context;
-    const dismissedContentIds = extractExcludedContentIds(socketClientData, contentType);
+    const {
+      excludeContentIds = extractExcludedContentIds(socketClientData, contentType),
+      isActivateOtherSockets = true,
+      allowConditionWaitTimers = true,
+      fallback = true,
+    } = options;
 
     // Get evaluated content versions once and reuse for both strategy executions
     const evaluatedContentVersions = await this.getEvaluatedContentVersions(
@@ -416,17 +419,26 @@ export class ContentOrchestratorService {
     );
 
     // First attempt: Try with excluded content IDs if any exist
-    if (dismissedContentIds.length > 0) {
+    if (excludeContentIds.length > 0) {
       const result = await this.executeContentStartStrategies(
         context,
         contentType,
         evaluatedContentVersions,
-        dismissedContentIds,
+        excludeContentIds,
       );
 
-      if (result.success && (result.session || result.conditionWaitTimers?.length > 0)) {
+      const shouldReturn =
+        result.success &&
+        (result.session || (allowConditionWaitTimers && result.conditionWaitTimers?.length > 0));
+
+      if (shouldReturn) {
         return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
       }
+    }
+
+    // Skip second attempt if fallback is disabled
+    if (!fallback) {
+      return false;
     }
 
     // Second attempt: Try with all content versions (no exclusions)

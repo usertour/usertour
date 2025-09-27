@@ -86,3 +86,13 @@ export interface ActivateSessionParams {
   trackHideConditions: TrackCondition[] | undefined;
   forceGoToStep: boolean;
 }
+
+/**
+ * Configuration options for tryAutoStartContent method
+ */
+export interface TryAutoStartContentOptions {
+  excludeContentIds?: string[];
+  isActivateOtherSockets?: boolean;
+  allowConditionWaitTimers?: boolean;
+  fallback?: boolean;
+}
