@@ -188,9 +188,14 @@ export class ContentOrchestratorService {
     }
     const excludeContentIds = [currentSession?.content?.id].filter(Boolean) as string[];
     // Execute content start strategies and handle the result
+    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      socketClientData,
+      contentType,
+    );
     const strategyResult = await this.executeContentStartStrategies(
       context,
       contentType,
+      evaluatedContentVersions,
       excludeContentIds,
     );
 
@@ -402,12 +407,21 @@ export class ContentOrchestratorService {
     isActivateOtherSockets = true,
   ): Promise<boolean> {
     const { socketClientData } = context;
-    const lastDismissedContentIds = extractExcludedContentIds(socketClientData, contentType);
-    if (lastDismissedContentIds.length > 0) {
+    const dismissedContentIds = extractExcludedContentIds(socketClientData, contentType);
+
+    // Get evaluated content versions once and reuse for both strategy executions
+    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      socketClientData,
+      contentType,
+    );
+
+    // First attempt: Try with excluded content IDs if any exist
+    if (dismissedContentIds.length > 0) {
       const result = await this.executeContentStartStrategies(
         context,
         contentType,
-        lastDismissedContentIds,
+        evaluatedContentVersions,
+        dismissedContentIds,
       );
 
       if (result.success && (result.session || result.conditionWaitTimers?.length > 0)) {
@@ -415,25 +429,26 @@ export class ContentOrchestratorService {
       }
     }
 
-    const result = await this.executeContentStartStrategies(context, contentType);
+    // Second attempt: Try with all content versions (no exclusions)
+    const result = await this.executeContentStartStrategies(
+      context,
+      contentType,
+      evaluatedContentVersions,
+    );
 
     return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
   }
-
   /**
-   * Execute content start strategies (strategies 3-6) and return the result
+   * Execute content start strategies with pre-fetched content versions
+   * This method avoids duplicate database queries by accepting pre-fetched versions
    */
   private async executeContentStartStrategies(
     context: ContentStartContext,
     contentType: ContentDataType,
+    evaluatedContentVersions: CustomContentVersion[],
     excludeContentIds: string[] = [],
   ): Promise<ContentStartResult> {
     const { socketClientData } = context;
-    // Get evaluated content versions for remaining strategies
-    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-      socketClientData,
-      contentType,
-    );
 
     // Filter out excluded content IDs if provided
     const filteredContentVersions =
