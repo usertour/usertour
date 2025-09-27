@@ -17,6 +17,7 @@ import {
 import {
   buildExternalUserRoomId,
   extractContentTypeBySessionId,
+  extractExcludedContentIds,
   extractSessionByContentType,
 } from '@/utils/websocket-utils';
 import {
@@ -90,7 +91,7 @@ export class ContentOrchestratorService {
    * @returns Promise<boolean> - True if content was started successfully
    */
   private async executeStartContent(context: ContentStartContext): Promise<boolean> {
-    const { contentType, options, socketClientData } = context;
+    const { contentType, options } = context;
     const contentId = options?.contentId;
 
     try {
@@ -110,12 +111,7 @@ export class ContentOrchestratorService {
       }
 
       // Execute content start strategies and handle the result
-      const strategyResult = await this.executeContentStartStrategies(
-        context,
-        socketClientData,
-        contentType,
-      );
-      return await this.handleContentStartResult(context, strategyResult);
+      return await this.tryAutoStartContent(context, contentType);
     } catch (error) {
       this.logger.error(`Failed to start singleton content: ${error.message}`);
       return false;
@@ -194,7 +190,6 @@ export class ContentOrchestratorService {
     // Execute content start strategies and handle the result
     const strategyResult = await this.executeContentStartStrategies(
       context,
-      socketClientData,
       contentType,
       excludeContentIds,
     );
@@ -218,16 +213,11 @@ export class ContentOrchestratorService {
     }
 
     // Execute content start strategies and handle the result
-    const newStrategyResult = await this.executeContentStartStrategies(
-      context,
-      cleanupResult.updatedClientData,
+    return await this.tryAutoStartContent(
+      { ...context, socketClientData: cleanupResult.updatedClientData },
       contentType,
+      false,
     );
-
-    return await this.handleContentStartResult(context, {
-      ...newStrategyResult,
-      isActivateOtherSockets: false,
-    });
   }
 
   /**
@@ -399,15 +389,39 @@ export class ContentOrchestratorService {
     }
   }
 
+  private async tryAutoStartContent(
+    context: ContentStartContext,
+    contentType: ContentDataType,
+    isActivateOtherSockets = true,
+  ): Promise<boolean> {
+    const { socketClientData } = context;
+    const lastDismissedContentIds = extractExcludedContentIds(socketClientData, contentType);
+    if (lastDismissedContentIds.length > 0) {
+      const result = await this.executeContentStartStrategies(
+        context,
+        contentType,
+        lastDismissedContentIds,
+      );
+
+      if (result.success && (result.session || result.conditionWaitTimers?.length > 0)) {
+        return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
+      }
+    }
+
+    const result = await this.executeContentStartStrategies(context, contentType);
+
+    return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
+  }
+
   /**
    * Execute content start strategies (strategies 3-6) and return the result
    */
   private async executeContentStartStrategies(
     context: ContentStartContext,
-    socketClientData: SocketClientData,
     contentType: ContentDataType,
     excludeContentIds: string[] = [],
   ): Promise<ContentStartResult> {
+    const { socketClientData } = context;
     // Get evaluated content versions for remaining strategies
     const evaluatedContentVersions = await this.getEvaluatedContentVersions(
       socketClientData,
