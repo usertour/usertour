@@ -212,17 +212,20 @@ export class ContentOrchestratorService {
     // Cleanup current session if exists
     const cleanupResult = await this.cleanupCurrentSessionIfNeeded(currentSession, params);
     this.logger.debug(`CleanupCurrentSessionIfNeeded result: ${JSON.stringify(cleanupResult)}`);
-    if (!cleanupResult.success) {
+
+    if (!cleanupResult.success || !cleanupResult.updatedClientData) {
       return false;
     }
 
-    // Update context with fresh client data if session was cleaned
-    if (cleanupResult.updatedClientData) {
-      context.socketClientData = cleanupResult.updatedClientData;
-    }
+    // Execute content start strategies and handle the result
+    const newStrategyResult = await this.executeContentStartStrategies(
+      context,
+      cleanupResult.updatedClientData,
+      contentType,
+    );
 
     return await this.handleContentStartResult(context, {
-      ...strategyResult,
+      ...newStrategyResult,
       isActivateOtherSockets: false,
     });
   }
@@ -452,8 +455,7 @@ export class ContentOrchestratorService {
       return waitTimerResult;
     }
 
-    // Strategy 6: Setup tracking conditions for future activation
-    return await this.setupTrackingConditions(contentType, filteredContentVersions);
+    return await this.extractClientConditions(contentType, filteredContentVersions);
   }
 
   /**
@@ -851,7 +853,7 @@ export class ContentOrchestratorService {
   /**
    * Strategy 6: Setup tracking conditions for future activation
    */
-  private async setupTrackingConditions(
+  private async extractClientConditions(
     contentType: ContentDataType,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
