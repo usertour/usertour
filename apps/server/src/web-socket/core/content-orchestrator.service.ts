@@ -211,16 +211,15 @@ export class ContentOrchestratorService {
     const cleanupResult = await this.cleanupCurrentSessionIfNeeded(currentSession, params);
     this.logger.debug(`CleanupCurrentSessionIfNeeded result: ${JSON.stringify(cleanupResult)}`);
 
-    if (!cleanupResult.success || !cleanupResult.updatedClientData) {
+    if (!cleanupResult.success) {
       return false;
     }
-
+    // Update context with updated client data
+    if (cleanupResult.updatedClientData) {
+      context.socketClientData = cleanupResult.updatedClientData;
+    }
     // Execute content start strategies and handle the result
-    return await this.tryAutoStartContent(
-      { ...context, socketClientData: cleanupResult.updatedClientData },
-      contentType,
-      tryAutoStartContentOptions,
-    );
+    return await this.tryAutoStartContent(context, contentType, tryAutoStartContentOptions);
   }
 
   /**
