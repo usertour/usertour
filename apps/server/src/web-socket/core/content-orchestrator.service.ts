@@ -427,12 +427,15 @@ export class ContentOrchestratorService {
         excludeContentIds,
       );
 
-      const shouldReturn =
-        result.success &&
-        (result.session || (allowConditionWaitTimers && result.conditionWaitTimers?.length > 0));
-
-      if (shouldReturn) {
-        return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
+      const { success, session, conditionWaitTimers } = result;
+      if (success) {
+        const allowWaitTimers = allowConditionWaitTimers && conditionWaitTimers?.length;
+        if (session || allowWaitTimers) {
+          return await this.handleContentStartResult(context, {
+            ...result,
+            isActivateOtherSockets,
+          });
+        }
       }
     }
 
