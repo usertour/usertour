@@ -705,7 +705,7 @@ export class ContentOrchestratorService {
           reason: 'Content version not available or not activated',
         };
       }
-      const latestActivatedContentVersion = await this.findLatestActivatedCustomContentVersion(
+      const latestActivatedContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
         socketClientData,
         contentType,
         evaluatedContentVersion,
@@ -761,7 +761,7 @@ export class ContentOrchestratorService {
   /**
    * Find the latest activated content version, potentially updated by latest session version
    */
-  private async findLatestActivatedCustomContentVersion(
+  private async findAndUpdateActivatedCustomContentVersion(
     socketClientData: SocketClientData,
     contentType: ContentDataType,
     evaluatedContentVersion: CustomContentVersion,
@@ -813,9 +813,15 @@ export class ContentOrchestratorService {
       };
     }
 
+    const customContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
+      socketClientData,
+      contentType,
+      latestActivatedContentVersion,
+    );
+
     const result = await this.handleContentVersion(
       context,
-      latestActivatedContentVersion,
+      customContentVersion,
       false, // don't create new session
     );
 
@@ -1109,12 +1115,6 @@ export class ContentOrchestratorService {
         reason: 'Failed to create content session',
       };
     }
-
-    // Update session version
-    await this.dataResolverService.updateSessionVersion(
-      sessionResult.sessionId!,
-      customContentVersion.id,
-    );
 
     return {
       success: true,

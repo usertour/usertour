@@ -1179,17 +1179,4 @@ export class DataResolverService {
       return null;
     }
   }
-
-  /**
-   * Update session version
-   * @param sessionId - The session ID
-   * @param versionId - The version ID
-   * @returns Promise that resolves when update is complete
-   */
-  async updateSessionVersion(sessionId: string, versionId: string): Promise<void> {
-    await this.prisma.bizSession.update({
-      where: { id: sessionId },
-      data: { versionId },
-    });
-  }
 }
