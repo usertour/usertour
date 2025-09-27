@@ -85,6 +85,16 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         }
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);
+
+        // Check room size limit before joining
+        const socketsInRoom = await this.server.in(room).fetchSockets();
+        if (socketsInRoom.length >= 100) {
+          this.logger.warn(
+            `Room ${room} has reached maximum capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
+          );
+          return next(new ServiceUnavailableError('Room capacity exceeded'));
+        }
+
         // Join user room for targeted messaging
         await socket.join(room);
 
