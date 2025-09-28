@@ -428,7 +428,7 @@ export class UsertourCore extends Evented {
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
    */
-  setFlowSession(session: SDKContentSession): boolean {
+  private setFlowSession(session: SDKContentSession): boolean {
     if (!session?.content?.id) {
       logger.warn('Invalid session data provided to setFlowSession');
       return false;
@@ -473,7 +473,7 @@ export class UsertourCore extends Evented {
    * Unsets the flow session and destroys the tour
    * @param sessionId - The session ID to unset
    */
-  unsetFlowSession(sessionId: string): boolean {
+  private unsetFlowSession(sessionId: string): boolean {
     const tourToDestroy = this.tours.find((tour) => tour.getSessionId() === sessionId);
 
     if (!tourToDestroy) {
@@ -494,7 +494,7 @@ export class UsertourCore extends Evented {
    * @param stepId - The step ID to force go to step
    * @returns True if the step was forced to be shown, false otherwise
    */
-  forceGoToStep(sessionId: string, stepId: string): boolean {
+  private forceGoToStep(sessionId: string, stepId: string): boolean {
     const existingTour = this.tours.find((tour) => tour.getSessionId() === sessionId);
     if (!existingTour) {
       return false;
@@ -519,7 +519,7 @@ export class UsertourCore extends Evented {
     this.tours = this.tours.filter((tour) => tour.getContentId() === keepContentId);
   }
 
-  setChecklistSession(session: SDKContentSession): boolean {
+  private setChecklistSession(session: SDKContentSession): boolean {
     console.log('setChecklistSession', session as SDKContentSession);
     return true;
   }
