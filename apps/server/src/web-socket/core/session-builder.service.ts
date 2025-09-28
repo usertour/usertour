@@ -570,7 +570,7 @@ export class SessionBuilderService {
     sessionId: string,
   ): Promise<BizSessionWithContentAndVersion | null> {
     return await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
+      where: { id: sessionId, state: 0 },
       include: {
         content: true,
         version: true,
