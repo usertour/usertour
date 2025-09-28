@@ -7,7 +7,6 @@ import {
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
   extractClientTrackConditions,
-  ConditionExtractionMode,
   evaluateCustomContentVersion,
   findAvailableSessionId,
   findLatestStepCvid,
@@ -34,6 +33,7 @@ import {
   ActivateSessionParams,
   ContentStartResult,
   TryAutoStartContentOptions,
+  ConditionExtractionMode,
 } from '@/common/types';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';

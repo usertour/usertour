@@ -12,13 +12,20 @@ import {
   ThemeVariation,
   EventAttributes,
 } from '@usertour/types';
-import type {
+import {
   SessionAttribute,
   SessionTheme,
   SessionStep,
   ConditionWaitTimer,
   ClientCondition,
-} from '@/common/types/sdk';
+  ConditionExtractionMode,
+  CustomContentVersion,
+  BizEventWithEvent,
+  BizSessionWithEvents,
+  ContentWithContentOnEnvironments,
+  Step,
+  TrackCondition,
+} from '@/common/types';
 import {
   differenceInDays,
   differenceInHours,
@@ -26,13 +33,6 @@ import {
   differenceInSeconds,
   isAfter,
 } from 'date-fns';
-import { CustomContentVersion } from '@/common/types/content';
-import {
-  BizEventWithEvent,
-  BizSessionWithEvents,
-  ContentWithContentOnEnvironments,
-  Step,
-} from '@/common/types/schema';
 import {
   isUndefined,
   isConditionsActived,
@@ -41,7 +41,6 @@ import {
   cuid,
   isEqual,
 } from '@usertour/helpers';
-import { TrackCondition } from '@/common/types/sdk';
 
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
@@ -712,15 +711,6 @@ export const getPublishedVersionId = (
     (item) => item.environmentId === environmentId && item.published,
   )?.publishedVersionId;
 };
-
-/**
- * Enum for condition extraction mode
- */
-export enum ConditionExtractionMode {
-  AUTO_START_ONLY = 'auto_start_only',
-  HIDE_ONLY = 'hide_only',
-  BOTH = 'both',
-}
 
 /**
  * Extracts all track conditions from custom content versions grouped by content version
