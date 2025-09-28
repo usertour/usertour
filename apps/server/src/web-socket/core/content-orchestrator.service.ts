@@ -1210,7 +1210,7 @@ export class ContentOrchestratorService {
     const customContentVersions = await this.getEvaluatedContentVersions(
       socketClientData,
       contentType,
-      session.version.id,
+      session.versionId,
     );
     const customContentVersion = customContentVersions?.[0];
     if (!customContentVersion || customContentVersion.session.latestSession.id !== sessionId) {
