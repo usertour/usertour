@@ -1173,29 +1173,24 @@ export class ContentOrchestratorService {
    * @returns Promise<SocketClientData | null> - The resolved socket data or null if not found
    */
   async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
-    try {
-      // Get raw data from Redis (pure operation)
-      const rawClientData = await this.socketRedisService.getClientData(socketId);
-      if (!rawClientData) {
-        return null;
-      }
-
-      // Apply business logic: merge with condition reports
-      const clientConditionReports =
-        await this.socketRedisService.getClientConditionReports(socketId);
-      const clientConditions = resolveConditionStates(
-        rawClientData.clientConditions || [],
-        clientConditionReports,
-      );
-
-      return {
-        ...rawClientData,
-        clientConditions,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to get processed socket data for socket ${socketId}:`, error);
+    // Get raw data from Redis (pure operation)
+    const rawClientData = await this.socketRedisService.getClientData(socketId);
+    if (!rawClientData) {
       return null;
     }
+
+    // Apply business logic: merge with condition reports
+    const clientConditionReports =
+      await this.socketRedisService.getClientConditionReports(socketId);
+    const clientConditions = resolveConditionStates(
+      rawClientData.clientConditions || [],
+      clientConditionReports,
+    );
+
+    return {
+      ...rawClientData,
+      clientConditions,
+    };
   }
 
   /**
