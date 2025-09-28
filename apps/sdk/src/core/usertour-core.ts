@@ -82,6 +82,8 @@ export class UsertourCore extends Evented {
   private waitTimerMonitor: ConditionWaitTimersMonitor | null = null;
   // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
+  // Socket event listeners initialization flag
+  private socketEventListenersInitialized = false;
 
   constructor() {
     super();
@@ -95,6 +97,7 @@ export class UsertourCore extends Evented {
     });
     this.id = uuidV4();
     this.initializeEventListeners();
+    // Socket event listeners will be initialized after socket is ready
     this.initializeConditionsMonitor();
     this.initializeWaitTimerMonitor();
     this.initializeURLMonitor();
@@ -298,7 +301,7 @@ export class UsertourCore extends Evented {
       customNavigate(url);
     } else {
       // Use default behavior
-      window?.top?.open(url, data.openType === 'same' ? '_self' : '_blank');
+      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
     }
   }
 
@@ -323,18 +326,45 @@ export class UsertourCore extends Evented {
 
   /**
    * Initialize Socket connection with given credentials
-   * @param userId - External user ID
+   * @param externalUserId - External user ID
    * @param token - Authentication token
    */
-  private async initializeSocket(externalUserId: string, token: string): Promise<void> {
-    // Initialize SocketService with connection parameters
-    await this.socketService.initialize({
-      externalUserId,
-      token,
-      wsUri: getWsUri(),
-    });
+  private async initializeSocket(externalUserId: string, token: string): Promise<boolean> {
+    try {
+      // Initialize SocketService with connection parameters
+      await this.socketService.initialize({
+        externalUserId,
+        token,
+        wsUri: getWsUri(),
+      });
 
-    // Set up event listeners on UsertourSocket (which extends Evented)
+      // Initialize socket event listeners after socket is ready (only once)
+      if (!this.socketEventListenersInitialized) {
+        this.initializeSocketEventListeners();
+        this.socketEventListenersInitialized = true;
+      }
+      return true;
+    } catch (error) {
+      logger.error('Failed to initialize socket:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Initialize socket event listeners
+   * This method sets up all WebSocket event handlers after socket is initialized
+   */
+  private initializeSocketEventListeners(): void {
+    this.setupFlowSessionListeners();
+    this.setupChecklistSessionListeners();
+    this.setupConditionListeners();
+    this.setupWaitTimerListeners();
+  }
+
+  /**
+   * Set up flow session related event listeners
+   */
+  private setupFlowSessionListeners(): void {
     this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
       const success = this.setFlowSession(session as SDKContentSession);
       if (success) {
@@ -342,13 +372,12 @@ export class UsertourCore extends Evented {
       }
       return success;
     });
+
     this.socketService.on(WebSocketEvents.FORCE_GO_TO_STEP, (message: unknown) => {
       const data = message as { sessionId: string; stepId: string };
       return this.forceGoToStep(data.sessionId, data.stepId);
     });
-    this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
-      return this.setChecklistSession(session as SDKContentSession);
-    });
+
     this.socketService.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
       const data = message as { sessionId: string };
       const success = this.unsetFlowSession(data.sessionId);
@@ -357,16 +386,39 @@ export class UsertourCore extends Evented {
       }
       return success;
     });
+  }
+
+  /**
+   * Set up checklist session related event listeners
+   */
+  private setupChecklistSessionListeners(): void {
+    this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
+      return this.setChecklistSession(session as SDKContentSession);
+    });
+  }
+
+  /**
+   * Set up condition related event listeners
+   */
+  private setupConditionListeners(): void {
     this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
       return this.trackClientCondition(condition as TrackCondition);
     });
+
     this.socketService.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
       const untrackedCondition = message as UnTrackedCondition;
       return this.removeConditions([untrackedCondition.conditionId]);
     });
+  }
+
+  /**
+   * Set up wait timer related event listeners
+   */
+  private setupWaitTimerListeners(): void {
     this.socketService.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (condition: unknown) => {
       return this.startConditionWaitTimer(condition as ConditionWaitTimer);
     });
+
     this.socketService.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (condition: unknown) => {
       return this.cancelConditionWaitTimer(condition as ConditionWaitTimer);
     });
@@ -485,9 +537,13 @@ export class UsertourCore extends Evented {
 
     this.reset();
     this.startConditionsMonitor();
+    this.startURLMonitor();
 
     // Use dedicated initialization method
-    await this.initializeSocket(userId, token);
+    if (!(await this.initializeSocket(userId, token))) {
+      logger.error('Failed to initialize socket');
+      return;
+    }
 
     // First call API with new attributes
     const result = await this.socketService.upsertUser(
@@ -612,7 +668,7 @@ export class UsertourCore extends Evented {
     // Only update local state after successful API call
     this.externalCompanyId = companyId;
     // Update socket auth info
-    this.updateSocketAuthInfo();
+    this.updateSocketAuthInfo({ externalCompanyId: companyId });
     if (attributes) {
       this.attributeManager.setCompanyAttributes(attributes);
     }
@@ -702,35 +758,26 @@ export class UsertourCore extends Evented {
    * Resets the application state
    */
   reset() {
-    this.externalUserId = undefined;
-    this.externalCompanyId = undefined;
-    // Clear all attributes using the attribute manager
-    this.attributeManager.clear();
-    this.tours = [];
-    timerManager.clear();
+    // Cleanup user data
+    this.cleanupUserData();
+    // Cleanup all tours
+    this.cleanupTours();
+    // Cleanup condition monitor
+    this.cleanupConditionsMonitor();
+    // Cleanup wait timer monitor
+    this.cleanupWaitTimerMonitor();
+    // Stop URL monitor
+    this.cleanupURLMonitor();
+    // Cleanup time manager
+    this.cleanupTimeManager();
+    // Reset socket event listeners flag
+    this.socketEventListenersInitialized = false;
   }
 
   /**
    * Ends all active content and resets the application
    */
   async endAll() {
-    // Destroy condition monitor
-    this.destroyConditionsMonitor();
-
-    // Destroy wait timer monitor
-    this.destroyWaitTimerMonitor();
-
-    // Destroy URL monitor
-    this.destroyURLMonitor();
-
-    // Destroy all tours
-    for (const tour of this.tours) {
-      tour.destroy();
-    }
-
-    // Destroy UI manager
-    this.uiManager.destroy();
-
     this.reset();
   }
 
@@ -738,10 +785,6 @@ export class UsertourCore extends Evented {
    * Creates and initializes condition monitor
    */
   private initializeConditionsMonitor() {
-    if (this.conditionsMonitor) {
-      this.conditionsMonitor.destroy();
-    }
-
     this.conditionsMonitor = new UsertourConditionsMonitor({ autoStart: false });
 
     // Listen for condition state change events
@@ -767,10 +810,6 @@ export class UsertourCore extends Evented {
    * Creates and initializes wait timer monitor
    */
   private initializeWaitTimerMonitor() {
-    if (this.waitTimerMonitor) {
-      this.waitTimerMonitor.destroy();
-    }
-
     this.waitTimerMonitor = new ConditionWaitTimersMonitor({ autoStart: true });
 
     // Listen for wait timer state change events
@@ -798,15 +837,29 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Creates and initializes URL monitor
+   */
+  private initializeURLMonitor() {
+    this.urlMonitor = new UsertourURLMonitor({
+      autoStart: true,
+      interval: 500,
+    });
+
+    // Listen for URL change events
+    this.urlMonitor.on('url-changed', () => {
+      const clientContext = getClientContext();
+      this.socketService.updateClientContext(clientContext, { batch: true });
+    });
+  }
+
+  /**
    * Updates the socket auth info
    */
   private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
     const clientConditions = this.conditionsMonitor?.getClientConditions();
-    const externalCompanyId = this.externalCompanyId;
     const clientContext = getClientContext();
     this.socketService.updateCredentials({
       clientConditions,
-      externalCompanyId,
       clientContext,
       ...authInfo,
     });
@@ -856,52 +909,58 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Destroys the condition monitor
+   * Starts the URL monitor
    */
-  private destroyConditionsMonitor(): void {
-    if (this.conditionsMonitor) {
-      this.conditionsMonitor.destroy();
-      this.conditionsMonitor = null;
-    }
+  private startURLMonitor() {
+    this.urlMonitor?.start();
   }
 
   /**
-   * Destroys the wait timer monitor
+   * Cleans up user-related data including external IDs and attributes
    */
-  private destroyWaitTimerMonitor(): void {
-    if (this.waitTimerMonitor) {
-      this.waitTimerMonitor.destroy();
-      this.waitTimerMonitor = null;
-    }
+  private cleanupUserData() {
+    this.externalUserId = undefined;
+    this.externalCompanyId = undefined;
+    // Cleanup all attributes using the attribute manager
+    this.attributeManager.cleanup();
   }
 
   /**
-   * Creates and initializes URL monitor
+   * Cleans up all tours from the application
    */
-  private initializeURLMonitor() {
-    if (this.urlMonitor) {
-      this.urlMonitor.destroy();
+  private cleanupTours() {
+    // Destroy all tours
+    for (const tour of this.tours) {
+      tour.destroy();
     }
-
-    this.urlMonitor = new UsertourURLMonitor({
-      autoStart: true,
-      interval: 500,
-    });
-
-    // Listen for URL change events
-    this.urlMonitor.on('url-changed', () => {
-      const clientContext = getClientContext();
-      this.socketService.updateClientContext(clientContext, { batch: true });
-    });
+    this.tours = [];
   }
 
   /**
-   * Destroys the URL monitor
+   * Cleans up the condition monitor
    */
-  private destroyURLMonitor(): void {
-    if (this.urlMonitor) {
-      this.urlMonitor.destroy();
-      this.urlMonitor = null;
-    }
+  private cleanupConditionsMonitor(): void {
+    this.conditionsMonitor?.cleanup();
+  }
+
+  /**
+   * Cleans up the wait timer monitor
+   */
+  private cleanupWaitTimerMonitor(): void {
+    this.waitTimerMonitor?.cleanup();
+  }
+
+  /**
+   * Clean up the URL monitor
+   */
+  private cleanupURLMonitor(): void {
+    this.urlMonitor?.cleanup();
+  }
+
+  /**
+   * Clean up the timer manager
+   */
+  private cleanupTimeManager(): void {
+    timerManager.cleanup();
   }
 }

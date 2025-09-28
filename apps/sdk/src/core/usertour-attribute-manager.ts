@@ -128,9 +128,9 @@ export class UsertourAttributeManager extends Evented {
   }
 
   /**
-   * Clear all attributes
+   * Cleans up all attributes
    */
-  clear(): void {
+  cleanup(): void {
     this.userAttributes = {};
     this.companyAttributes = {};
     this.membershipAttributes = {};

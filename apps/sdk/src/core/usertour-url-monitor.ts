@@ -3,6 +3,7 @@ import { autoBind } from '@/utils';
 import { timerManager } from '@/utils/timer-manager';
 import { uuidV4 } from '@usertour/helpers';
 import { window } from '@/utils/globals';
+import { on, off } from '@/utils/listener';
 
 /**
  * Options for URL monitoring
@@ -59,9 +60,13 @@ export class UsertourURLMonitor extends Evented {
     this.isListening = true;
     this.currentUrl = window.location.href;
 
+    // Remove existing listeners first to prevent duplicates
+    off(window, 'popstate', this.handlePopState);
+    off(window, 'hashchange', this.handleHashChange);
+
     // Listen for browser navigation events
-    window.addEventListener('popstate', this.handlePopState, { passive: true });
-    window.addEventListener('hashchange', this.handleHashChange, { passive: true });
+    on(window, 'popstate', this.handlePopState, { passive: true });
+    on(window, 'hashchange', this.handleHashChange, { passive: true });
 
     // Poll for SPA navigation changes
     this.intervalId = `${this.id}-url-monitor`;
@@ -79,8 +84,8 @@ export class UsertourURLMonitor extends Evented {
     if (!this.isListening || !window) return;
 
     this.isListening = false;
-    window.removeEventListener('popstate', this.handlePopState);
-    window.removeEventListener('hashchange', this.handleHashChange);
+    off(window, 'popstate', this.handlePopState);
+    off(window, 'hashchange', this.handleHashChange);
 
     if (this.intervalId) {
       timerManager.clearInterval(this.intervalId);
@@ -112,11 +117,33 @@ export class UsertourURLMonitor extends Evented {
     }
   }
 
+  /**
+   * Gets the current URL
+   */
   getCurrentUrl(): string {
     return this.currentUrl;
   }
 
-  destroy(): void {
+  /**
+   * Cleans up the URL monitor
+   */
+  cleanup(): void {
+    this.currentUrl = '';
     this.stop();
+  }
+
+  /**
+   * Gets monitoring statistics
+   */
+  getStats(): {
+    isListening: boolean;
+    intervalId: string | null;
+    currentUrl: string;
+  } {
+    return {
+      isListening: this.isListening,
+      intervalId: this.intervalId,
+      currentUrl: this.currentUrl,
+    };
   }
 }

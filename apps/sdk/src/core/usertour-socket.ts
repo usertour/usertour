@@ -116,39 +116,47 @@ export class UsertourSocket implements IUsertourSocket {
       namespace = WEBSOCKET_NAMESPACES_V2,
     } = options;
 
-    // Check if Socket connection needs to be recreated
-    if (this.shouldRecreateSocket(externalUserId, token)) {
+    // If socket exists and credentials haven't changed, no need to do anything
+    if (this.socket && !this.credentialsChanged(externalUserId, token)) {
+      return;
+    }
+
+    // If socket exists but credentials changed, update and reconnect
+    if (this.socket && this.credentialsChanged(externalUserId, token)) {
+      // Disconnect first
       this.disconnect();
+      // Update credentials after disconnect
+      this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
+      // Trigger reconnection with new credentials
+      this.connect();
+      return;
     }
 
-    if (!this.socket) {
-      const clientContext: ClientContext = getClientContext();
+    // Create new socket if it doesn't exist
+    const clientContext: ClientContext = getClientContext();
+    this.authCredentials = { externalUserId, token, clientContext };
 
-      // Store current connection auth info for comparison
-      this.authCredentials = { externalUserId, token, clientContext };
-
-      this.socket = new Socket({
-        wsUri,
-        namespace,
-        socketConfig: {
-          // Use function for auth to ensure latest info on reconnection
-          auth: (cb) => {
-            cb(this.authCredentials || {});
-          },
+    this.socket = new Socket({
+      wsUri,
+      namespace,
+      socketConfig: {
+        // Use function for auth to ensure latest info on reconnection
+        auth: (cb) => {
+          cb(this.authCredentials || {});
         },
-      });
-    }
+      },
+    });
   }
 
   /**
-   * Check if Socket connection needs to be recreated due to credential changes
+   * Check if credentials have changed
    */
-  private shouldRecreateSocket(externalUserId: string, token: string): boolean {
+  private credentialsChanged(externalUserId: string, token: string): boolean {
     if (!this.socket || !this.authCredentials) {
       return false;
     }
 
-    // Recreate if externalUserId or token has changed
+    // Check if externalUserId or token has changed
     return (
       this.authCredentials.externalUserId !== externalUserId || this.authCredentials.token !== token
     );
@@ -245,11 +253,7 @@ export class UsertourSocket implements IUsertourSocket {
   }
 
   disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = undefined;
-      this.authCredentials = undefined;
-    }
+    this.socket?.disconnect();
   }
 
   // Socket status methods

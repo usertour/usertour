@@ -208,10 +208,10 @@ export class TimerManager {
   }
 
   /**
-   * Clear all timers and tasks but keep the instance alive
+   * Cleanup all timers and tasks but keep the instance alive
    * Useful for resetting the timer manager without destroying the singleton
    */
-  clear(): void {
+  cleanup(): void {
     this.stopLoop();
 
     // Clear all timeouts
@@ -235,7 +235,7 @@ export class TimerManager {
    * Clear all timers and stop the loop, then destroy the instance
    */
   destroy(): void {
-    this.clear();
+    this.cleanup();
     TimerManager.instance = null;
   }
 

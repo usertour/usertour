@@ -243,9 +243,9 @@ export class UsertourConditionsMonitor extends Evented {
   }
 
   /**
-   * Destroys the monitor and cleans up resources
+   * Cleans up the monitor and cleans up resources
    */
-  destroy(): void {
+  cleanup(): void {
     this.stop();
     this.clearConditions();
   }
