@@ -55,7 +55,6 @@ interface AppStartOptions {
 
 export class UsertourCore extends Evented {
   socketService: UsertourSocket;
-  activeTour: UsertourTour | undefined;
   startOptions: AppStartOptions = {
     environmentId: '',
     token: '',
