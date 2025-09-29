@@ -109,6 +109,42 @@ export class UsertourSocket implements IUsertourSocket {
    * Initialize Socket connection with given credentials
    */
   async initialize(options: SocketInitOptions): Promise<void> {
+    const { externalUserId, token } = options;
+
+    // Handle different socket states
+    if (this.socket) {
+      // Socket exists - check if credentials changed
+      if (this.credentialsChanged(externalUserId, token)) {
+        this.handleCredentialChange(externalUserId, token);
+      }
+      // If socket exists and credentials haven't changed, no action needed
+      return;
+    }
+
+    // Socket doesn't exist - create new one
+    this.createNewSocket(options);
+  }
+
+  /**
+   * Handle credential change by reconnecting with new credentials
+   */
+  private handleCredentialChange(externalUserId: string, token: string): void {
+    logger.info('Credentials changed, reconnecting socket...');
+
+    // Disconnect first
+    this.disconnect();
+
+    // Update credentials after disconnect
+    this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
+
+    // Trigger reconnection with new credentials
+    this.connect();
+  }
+
+  /**
+   * Create a new socket instance with given options
+   */
+  private createNewSocket(options: SocketInitOptions): void {
     const {
       externalUserId,
       token,
@@ -116,23 +152,6 @@ export class UsertourSocket implements IUsertourSocket {
       namespace = WEBSOCKET_NAMESPACES_V2,
     } = options;
 
-    // If socket exists and credentials haven't changed, no need to do anything
-    if (this.socket && !this.credentialsChanged(externalUserId, token)) {
-      return;
-    }
-
-    // If socket exists but credentials changed, update and reconnect
-    if (this.socket && this.credentialsChanged(externalUserId, token)) {
-      // Disconnect first
-      this.disconnect();
-      // Update credentials after disconnect
-      this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
-      // Trigger reconnection with new credentials
-      this.connect();
-      return;
-    }
-
-    // Create new socket if it doesn't exist
     const clientContext: ClientContext = getClientContext();
     this.authCredentials = { externalUserId, token, clientContext };
 
