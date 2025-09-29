@@ -27,14 +27,6 @@ export interface BatchOptions {
   endBatch?: boolean;
 }
 
-// Socket initialization options
-export interface SocketInitOptions {
-  externalUserId: string;
-  token: string;
-  wsUri?: string;
-  namespace?: string;
-}
-
 // Auth credentials for authentication
 export interface AuthCredentials {
   externalUserId: string;
@@ -80,8 +72,7 @@ export interface IUsertourSocket {
   // Convenience methods
 
   // Connection management
-  initialize(options: SocketInitOptions): Promise<void>;
-  connect(): void;
+  connect(externalUserId: string, token: string): Promise<boolean>;
   disconnect(): void;
   isConnected(): boolean;
   isInBatch(): boolean;
@@ -102,27 +93,90 @@ export interface IUsertourSocket {
  * Now manages the Socket lifecycle internally
  */
 export class UsertourSocket implements IUsertourSocket {
-  private socket: Socket | undefined;
+  private socket: Socket;
   private authCredentials: AuthCredentials | undefined;
 
-  /**
-   * Initialize Socket connection with given credentials
-   */
-  async initialize(options: SocketInitOptions): Promise<void> {
-    const { externalUserId, token } = options;
+  constructor() {
+    // Create socket instance but don't auto-connect
+    this.socket = new Socket({
+      wsUri: getWsUri(),
+      namespace: WEBSOCKET_NAMESPACES_V2,
+      socketConfig: {
+        autoConnect: false,
+        // Use function for auth to ensure latest info on reconnection
+        auth: (cb) => {
+          cb(this.authCredentials || {});
+        },
+      },
+    });
+  }
 
-    // Handle different socket states
-    if (this.socket) {
-      // Socket exists - check if credentials changed
+  /**
+   * Connect Socket with given credentials
+   */
+  async connect(externalUserId: string, token: string): Promise<boolean> {
+    try {
+      // Check if credentials changed
       if (this.credentialsChanged(externalUserId, token)) {
         this.handleCredentialChange(externalUserId, token);
+        return true;
       }
-      // If socket exists and credentials haven't changed, no action needed
-      return;
-    }
 
-    // Socket doesn't exist - create new one
-    this.createNewSocket(options);
+      // If credentials haven't changed and already connected, no action needed
+      if (this.isConnected()) {
+        return true;
+      }
+
+      // Set credentials and connect
+      this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
+
+      // Connect and wait for connection result
+      return await this.connectWithPromise();
+    } catch (error) {
+      logger.error('Failed to connect socket:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Connect socket and return a promise that resolves when connection is established
+   */
+  private connectWithPromise(): Promise<boolean> {
+    return new Promise((resolve) => {
+      // Set up one-time event listeners
+      const onConnect = () => {
+        this.socket.off('connect', onConnect);
+        this.socket.off('connect_error', onConnectError);
+        resolve(true);
+      };
+
+      const onConnectError = (error: Error) => {
+        this.socket.off('connect', onConnect);
+        this.socket.off('connect_error', onConnectError);
+        logger.error('Socket connection failed:', error);
+        resolve(false);
+      };
+
+      // Listen for connection events
+      this.socket.on('connect', onConnect);
+      this.socket.on('connect_error', onConnectError);
+
+      // Start connection
+      this.socket.connect();
+    });
+  }
+
+  /**
+   * Disconnect socket and clear auth credentials
+   */
+  disconnect(): void {
+    logger.info('Disconnecting socket and clearing credentials...');
+
+    // Disconnect the socket
+    this.socket.disconnect();
+
+    // Clear auth credentials
+    this.authCredentials = undefined;
   }
 
   /**
@@ -132,39 +186,13 @@ export class UsertourSocket implements IUsertourSocket {
     logger.info('Credentials changed, reconnecting socket...');
 
     // Disconnect first
-    this.disconnect();
+    this.socket.disconnect();
 
     // Update credentials after disconnect
     this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
 
-    // Trigger reconnection with new credentials
-    this.connect();
-  }
-
-  /**
-   * Create a new socket instance with given options
-   */
-  private createNewSocket(options: SocketInitOptions): void {
-    const {
-      externalUserId,
-      token,
-      wsUri = getWsUri(),
-      namespace = WEBSOCKET_NAMESPACES_V2,
-    } = options;
-
-    const clientContext: ClientContext = getClientContext();
-    this.authCredentials = { externalUserId, token, clientContext };
-
-    this.socket = new Socket({
-      wsUri,
-      namespace,
-      socketConfig: {
-        // Use function for auth to ensure latest info on reconnection
-        auth: (cb) => {
-          cb(this.authCredentials || {});
-        },
-      },
-    });
+    // Connect with new credentials
+    this.socket.connect();
   }
 
   /**
@@ -264,15 +292,6 @@ export class UsertourSocket implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
     return await this.socket.send(WebSocketEvents.FIRE_CONDITION_WAIT_TIMER, params, options);
-  }
-
-  // Socket connection management
-  connect(): void {
-    this.socket?.connect();
-  }
-
-  disconnect(): void {
-    this.socket?.disconnect();
   }
 
   // Socket status methods

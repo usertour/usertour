@@ -35,7 +35,6 @@ import {
   timerManager,
 } from '@/utils';
 import { buildNavigateUrl, getClientContext } from '@/core/usertour-helper';
-import { getWsUri } from '@/core/usertour-env';
 import {
   WebSocketEvents,
   ErrorMessages,
@@ -82,7 +81,6 @@ export class UsertourCore extends Evented {
   // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
   // Socket event listeners initialization flag
-  private socketEventListenersInitialized = false;
 
   constructor() {
     super();
@@ -96,7 +94,8 @@ export class UsertourCore extends Evented {
     });
     this.id = uuidV4();
     this.initializeEventListeners();
-    // Socket event listeners will be initialized after socket is ready
+    // Initialize socket event listeners immediately since socket is created in constructor
+    this.initializeSocketEventListeners();
     this.initializeConditionsMonitor();
     this.initializeWaitTimerMonitor();
     this.initializeURLMonitor();
@@ -324,32 +323,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Initialize Socket connection with given credentials
-   * @param externalUserId - External user ID
-   * @param token - Authentication token
-   */
-  private async initializeSocket(externalUserId: string, token: string): Promise<boolean> {
-    try {
-      // Initialize SocketService with connection parameters
-      await this.socketService.initialize({
-        externalUserId,
-        token,
-        wsUri: getWsUri(),
-      });
-
-      // Initialize socket event listeners after socket is ready (only once)
-      if (!this.socketEventListenersInitialized) {
-        this.initializeSocketEventListeners();
-        this.socketEventListenersInitialized = true;
-      }
-      return true;
-    } catch (error) {
-      logger.error('Failed to initialize socket:', error);
-      return false;
-    }
-  }
-
-  /**
    * Initialize socket event listeners
    * This method sets up all WebSocket event handlers after socket is initialized
    */
@@ -539,7 +512,7 @@ export class UsertourCore extends Evented {
     this.startURLMonitor();
 
     // Use dedicated initialization method
-    if (!(await this.initializeSocket(userId, token))) {
+    if (!(await this.socketService.connect(userId, token))) {
       logger.error('Failed to initialize socket');
       return;
     }
@@ -769,8 +742,6 @@ export class UsertourCore extends Evented {
     this.cleanupURLMonitor();
     // Cleanup time manager
     this.cleanupTimeManager();
-    // Reset socket event listeners flag
-    this.socketEventListenersInitialized = false;
   }
 
   /**
