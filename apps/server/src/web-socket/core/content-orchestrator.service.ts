@@ -240,7 +240,6 @@ export class ContentOrchestratorService {
     const {
       socket,
       socketClientData,
-      sessionId,
       shouldUnsetSession = true,
       shouldSetLastDismissedId = false,
     } = params;
@@ -248,7 +247,7 @@ export class ContentOrchestratorService {
     const isCleaned = await this.socketSessionService.cleanupSocketSession(
       socket,
       socketClientData,
-      sessionId,
+      currentSession,
       { shouldUnsetSession, shouldSetLastDismissedId },
     );
 

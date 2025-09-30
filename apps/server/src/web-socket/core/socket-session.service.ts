@@ -12,7 +12,6 @@ import { SocketRedisService } from './socket-redis.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { SocketParallelService } from './socket-parallel.service';
 import {
-  extractContentTypeBySessionId,
   categorizeClientConditions,
   calculateRemainingClientConditions,
   calculateRemainingConditionWaitTimers,
@@ -165,78 +164,6 @@ export class SocketSessionService {
   }
 
   /**
-   * Cleanup socket session and associated conditions
-   * @param socket - The socket instance
-   * @param socketClientData - The socket client data
-   * @param sessionId - The session id to cleanup
-   * @param options - Options for cleanup behavior
-   * @returns Promise<boolean> - True if the session was cleaned up successfully
-   */
-  async cleanupSocketSession(
-    socket: Socket,
-    socketClientData: SocketClientData,
-    sessionId: string,
-    options: CleanupSocketSessionOptions = {},
-  ): Promise<boolean> {
-    const {
-      shouldUnsetSession = true,
-      shouldSetLastDismissedId = false,
-      contentTypeFilter,
-    } = options;
-    const { clientConditions, flowSession, checklistSession, conditionWaitTimers } =
-      socketClientData;
-    const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
-    // If the session is not found, return false
-    if (!contentType) {
-      return false;
-    }
-
-    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (shouldUnsetSession) {
-      const targetSessionId =
-        contentType === ContentDataType.FLOW ? flowSession?.id : checklistSession?.id;
-      const isUnset = await this.unsetSocketSession(socket, targetSessionId, contentType);
-      if (!isUnset) {
-        return false;
-      }
-    }
-
-    // Emit condition cleanup efficiently
-    const conditionCleanup = await this.emitConditionCleanup(
-      socket,
-      clientConditions,
-      conditionWaitTimers,
-      contentTypeFilter,
-    );
-
-    // Update client data with session clearing and remaining conditions/timers in one call
-    const updatedClientData = {
-      ...conditionCleanup,
-      ...(contentType === ContentDataType.FLOW && {
-        ...(shouldSetLastDismissedId && { lastDismissedFlowId: flowSession.content.id }),
-        flowSession: undefined,
-      }),
-      ...(contentType === ContentDataType.CHECKLIST && {
-        ...(shouldSetLastDismissedId && { lastDismissedChecklistId: checklistSession.content.id }),
-        checklistSession: undefined,
-      }),
-    };
-
-    // Get condition IDs to cleanup for atomic operation
-    const conditionIdsToRemove = await this.extractRemovedConditionIds(
-      socket,
-      conditionCleanup.clientConditions,
-    );
-
-    // Use atomic operation to update client data and cleanup conditions
-    return await this.socketRedisService.updateAndCleanup(
-      socket.id,
-      updatedClientData,
-      conditionIdsToRemove,
-    );
-  }
-
-  /**
    * Filter and preserve client conditions based on content type filter
    * @param clientConditions - All client conditions
    * @param contentTypeFilter - Optional array of content types to filter by
@@ -310,6 +237,68 @@ export class SocketSessionService {
       clientConditions: [...updatedConditions, ...preservedClientConditions],
       conditionWaitTimers: remainingTimers,
     };
+  }
+
+  /**
+   * Cleanup socket session and associated conditions
+   * @param socket - The socket instance
+   * @param socketClientData - The socket client data
+   * @param session - The session to cleanup
+   * @param options - Options for cleanup behavior
+   * @returns Promise<boolean> - True if the session was cleaned up successfully
+   */
+  async cleanupSocketSession(
+    socket: Socket,
+    socketClientData: SocketClientData,
+    session: SDKContentSession,
+    options: CleanupSocketSessionOptions = {},
+  ): Promise<boolean> {
+    const {
+      shouldUnsetSession = true,
+      shouldSetLastDismissedId = false,
+      contentTypeFilter,
+    } = options;
+    const { clientConditions, conditionWaitTimers } = socketClientData;
+    const contentType = session.content.type;
+
+    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
+    if (shouldUnsetSession && !(await this.unsetSocketSession(socket, session.id, contentType))) {
+      return false;
+    }
+
+    // Emit condition cleanup efficiently
+    const conditionCleanup = await this.emitConditionCleanup(
+      socket,
+      clientConditions,
+      conditionWaitTimers,
+      contentTypeFilter,
+    );
+
+    // Update client data with session clearing and remaining conditions/timers in one call
+    const updatedClientData = {
+      ...conditionCleanup,
+      ...(contentType === ContentDataType.FLOW && {
+        ...(shouldSetLastDismissedId && { lastDismissedFlowId: session.content.id }),
+        flowSession: undefined,
+      }),
+      ...(contentType === ContentDataType.CHECKLIST && {
+        ...(shouldSetLastDismissedId && { lastDismissedChecklistId: session.content.id }),
+        checklistSession: undefined,
+      }),
+    };
+
+    // Get condition IDs to cleanup for atomic operation
+    const conditionIdsToRemove = await this.extractRemovedConditionIds(
+      socket,
+      conditionCleanup.clientConditions,
+    );
+
+    // Use atomic operation to update client data and cleanup conditions
+    return await this.socketRedisService.updateAndCleanup(
+      socket.id,
+      updatedClientData,
+      conditionIdsToRemove,
+    );
   }
 
   /**
