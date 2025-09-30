@@ -38,7 +38,7 @@ import {
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
-import { SocketSessionService } from './socket-session.service';
+import { ActivateSocketSessionOptions, SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
 import { SocketRedisService } from './socket-redis.service';
 import { DistributedLockService } from './distributed-lock.service';
@@ -323,12 +323,15 @@ export class ContentOrchestratorService {
     if (!socketClientData) {
       return false;
     }
+    const options: ActivateSocketSessionOptions = {
+      trackConditions: trackHideConditions,
+      forceGoToStep,
+    };
     return await this.socketSessionService.activateSocketSession(
       socket as unknown as Socket,
       socketClientData,
       session,
-      trackHideConditions,
-      forceGoToStep,
+      options,
     );
   }
 

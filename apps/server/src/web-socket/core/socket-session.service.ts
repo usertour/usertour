@@ -6,6 +6,7 @@ import {
   TrackCondition,
   SocketClientData,
   ClientCondition,
+  ConditionWaitTimer,
 } from '@/common/types';
 import { SocketRedisService } from './socket-redis.service';
 import { SocketEmitterService } from './socket-emitter.service';
@@ -20,11 +21,22 @@ import {
 /**
  * Options for cleaning up socket session
  */
-interface CleanupSocketSessionOptions {
+export interface CleanupSocketSessionOptions {
   /** Whether to execute unsetSocketSession, defaults to true */
   shouldUnsetSession?: boolean;
   /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
   shouldSetLastDismissedId?: boolean;
+  /** Optional array of content types to filter client conditions by */
+  contentTypeFilter?: ContentDataType[];
+}
+
+export interface ActivateSocketSessionOptions {
+  /** The conditions to track */
+  trackConditions?: TrackCondition[];
+  /** Whether to force go to step, defaults to false */
+  forceGoToStep?: boolean;
+  /** Optional array of content types to filter client conditions by */
+  contentTypeFilter?: ContentDataType[];
 }
 
 /**
@@ -107,6 +119,52 @@ export class SocketSessionService {
   }
 
   /**
+   * Emit condition cleanup operations efficiently with parallel processing
+   * @param socket - The socket
+   * @param clientConditions - All client conditions
+   * @param conditionWaitTimers - Condition wait timers to cleanup
+   * @param contentTypeFilter - Optional array of content types to filter client conditions by
+   * @returns Object containing remaining conditions and timers after cleanup
+   */
+  private async emitConditionCleanup(
+    socket: Socket,
+    clientConditions: ClientCondition[] | undefined,
+    conditionWaitTimers: ConditionWaitTimer[],
+    contentTypeFilter?: ContentDataType[],
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'conditionWaitTimers'>> {
+    // Filter client conditions by content type if filter is provided
+    const filteredClientConditions = contentTypeFilter
+      ? clientConditions?.filter((c) => contentTypeFilter.includes(c.contentType))
+      : clientConditions;
+
+    // Get preserved conditions (those not in contentTypeFilter)
+    const preservedClientConditions = contentTypeFilter
+      ? (clientConditions?.filter((c) => !contentTypeFilter.includes(c.contentType)) ?? [])
+      : [];
+
+    // Process condition cleanup operations in parallel
+    const [untrackedConditions, cancelledTimers] = await Promise.all([
+      this.socketParallelService.untrackClientConditions(socket, filteredClientConditions ?? []),
+      this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+    ]);
+
+    // Calculate remaining conditions and timers (those that failed to process)
+    const remainingConditions = calculateRemainingClientConditions(
+      filteredClientConditions ?? [],
+      untrackedConditions,
+    );
+    const remainingTimers = calculateRemainingConditionWaitTimers(
+      conditionWaitTimers,
+      cancelledTimers,
+    );
+
+    return {
+      clientConditions: [...remainingConditions, ...preservedClientConditions],
+      conditionWaitTimers: remainingTimers,
+    };
+  }
+
+  /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
@@ -120,7 +178,11 @@ export class SocketSessionService {
     sessionId: string,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
-    const { shouldUnsetSession = true, shouldSetLastDismissedId = false } = options;
+    const {
+      shouldUnsetSession = true,
+      shouldSetLastDismissedId = false,
+      contentTypeFilter,
+    } = options;
     const { clientConditions, flowSession, checklistSession, conditionWaitTimers } =
       socketClientData;
     const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
@@ -132,32 +194,24 @@ export class SocketSessionService {
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
     if (shouldUnsetSession) {
       const targetSessionId =
-        contentType === ContentDataType.FLOW ? flowSession.id : checklistSession.id;
+        contentType === ContentDataType.FLOW ? flowSession?.id : checklistSession?.id;
       const isUnset = await this.unsetSocketSession(socket, targetSessionId, contentType);
       if (!isUnset) {
         return false;
       }
     }
 
-    // Process condition cleanup operations in parallel
-    const [untrackedConditions, cancelledTimers] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, clientConditions),
-      this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
-    ]);
-
-    // Calculate remaining conditions and timers (those that failed to process)
-    const remainingConditions = calculateRemainingClientConditions(
+    // Emit condition cleanup efficiently
+    const conditionCleanup = await this.emitConditionCleanup(
+      socket,
       clientConditions,
-      untrackedConditions,
-    );
-    const remainingTimers = calculateRemainingConditionWaitTimers(
       conditionWaitTimers,
-      cancelledTimers,
+      contentTypeFilter,
     );
+
     // Update client data with session clearing and remaining conditions/timers in one call
     const updatedClientData = {
-      clientConditions: remainingConditions,
-      conditionWaitTimers: remainingTimers,
+      ...conditionCleanup,
       ...(contentType === ContentDataType.FLOW && {
         ...(shouldSetLastDismissedId && { lastDismissedFlowId: flowSession.content.id }),
         flowSession: undefined,
@@ -169,7 +223,10 @@ export class SocketSessionService {
     };
 
     // Get condition IDs to cleanup for atomic operation
-    const conditionIdsToRemove = await this.extractRemovedConditionIds(socket, remainingConditions);
+    const conditionIdsToRemove = await this.extractRemovedConditionIds(
+      socket,
+      conditionCleanup.clientConditions,
+    );
 
     // Use atomic operation to update client data and cleanup conditions
     return await this.socketRedisService.updateAndCleanup(
@@ -180,34 +237,55 @@ export class SocketSessionService {
   }
 
   /**
-   * Activate socket session
-   * @param socket - The socket
-   * @param socketClientData - The socket client data
-   * @param session - The session to activate
-   * @param trackConditions - The conditions to track
-   * @param forceGoToStep - Whether to force go to step
-   * @returns Promise<boolean> - True if the session was activated successfully
+   * Filter and preserve client conditions based on content type filter
+   * @param clientConditions - All client conditions
+   * @param contentTypeFilter - Optional array of content types to filter by
+   * @returns Object containing filtered and preserved conditions
    */
-  async activateSocketSession(
-    socket: Socket,
-    socketClientData: SocketClientData,
-    session: SDKContentSession,
-    trackConditions: TrackCondition[] | undefined,
-    forceGoToStep: boolean,
-  ): Promise<boolean> {
-    const { clientConditions, conditionWaitTimers } = socketClientData;
-    const isSetSession = await this.setSocketSession(socket, session);
-    const contentType = session.content.type as ContentDataType;
-    if (!isSetSession) {
-      return false;
-    }
-    if (forceGoToStep && session.currentStep?.id) {
-      await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
-    }
+  private filterAndPreserveConditions(
+    clientConditions: ClientCondition[] | undefined,
+    contentTypeFilter?: ContentDataType[],
+  ): {
+    filteredConditions: ClientCondition[] | undefined;
+    preservedConditions: ClientCondition[];
+  } {
+    const filteredConditions = contentTypeFilter
+      ? clientConditions?.filter((c) => contentTypeFilter.includes(c.contentType))
+      : clientConditions;
 
-    // Process condition updates efficiently
+    const preservedConditions = contentTypeFilter
+      ? (clientConditions?.filter((c) => !contentTypeFilter.includes(c.contentType)) ?? [])
+      : [];
+
+    return {
+      filteredConditions,
+      preservedConditions,
+    };
+  }
+
+  /**
+   * Emit condition changes efficiently with parallel operations
+   * @param socket - The socket
+   * @param clientConditions - All client conditions
+   * @param conditionWaitTimers - Current condition wait timers
+   * @param trackConditions - New conditions to track
+   * @param contentTypeFilter - Optional array of content types to filter client conditions by
+   * @returns Object containing updated conditions and remaining timers
+   */
+  private async emitConditionChanges(
+    socket: Socket,
+    clientConditions: ClientCondition[] | undefined,
+    conditionWaitTimers: ConditionWaitTimer[],
+    trackConditions: TrackCondition[] | undefined,
+    contentTypeFilter?: ContentDataType[],
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'conditionWaitTimers'>> {
+    // Filter and preserve client conditions based on content type filter
+    const { filteredConditions, preservedConditions: preservedClientConditions } =
+      this.filterAndPreserveConditions(clientConditions, contentTypeFilter);
+
+    // Categorize client conditions into preserved, untrack, and track groups
     const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
-      categorizeClientConditions(clientConditions, trackConditions);
+      categorizeClientConditions(filteredConditions, trackConditions);
 
     // Execute all condition operations in parallel
     const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
@@ -228,10 +306,49 @@ export class SocketSessionService {
 
     const updatedConditions = [...preservedConditions, ...remainingConditions, ...newConditions];
 
+    return {
+      clientConditions: [...updatedConditions, ...preservedClientConditions],
+      conditionWaitTimers: remainingTimers,
+    };
+  }
+
+  /**
+   * Activate socket session
+   * @param socket - The socket
+   * @param socketClientData - The socket client data
+   * @param session - The session to activate
+   * @param options - Options for activation behavior
+   * @returns Promise<boolean> - True if the session was activated successfully
+   */
+  async activateSocketSession(
+    socket: Socket,
+    socketClientData: SocketClientData,
+    session: SDKContentSession,
+    options: ActivateSocketSessionOptions = {},
+  ): Promise<boolean> {
+    const { trackConditions, forceGoToStep = false, contentTypeFilter } = options;
+    const { clientConditions, conditionWaitTimers } = socketClientData;
+    const isSetSession = await this.setSocketSession(socket, session);
+    const contentType = session.content.type as ContentDataType;
+    if (!isSetSession) {
+      return false;
+    }
+    if (forceGoToStep && session.currentStep?.id) {
+      await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
+    }
+
+    // Emit condition changes efficiently
+    const conditionChanges = await this.emitConditionChanges(
+      socket,
+      clientConditions,
+      conditionWaitTimers,
+      trackConditions,
+      contentTypeFilter,
+    );
+
     // Update client data with session and all condition changes in one call
     const updatedClientData: Partial<SocketClientData> = {
-      clientConditions: updatedConditions,
-      conditionWaitTimers: remainingTimers,
+      ...conditionChanges,
       ...(contentType === ContentDataType.FLOW && {
         flowSession: session,
         lastDismissedFlowId: undefined,
@@ -243,7 +360,10 @@ export class SocketSessionService {
     };
 
     // Get condition IDs to cleanup for atomic operation
-    const conditionIdsToRemove = await this.extractRemovedConditionIds(socket, updatedConditions);
+    const conditionIdsToRemove = await this.extractRemovedConditionIds(
+      socket,
+      conditionChanges.clientConditions,
+    );
 
     // Use atomic operation to update client data and cleanup conditions
     return await this.socketRedisService.updateAndCleanup(
