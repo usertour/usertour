@@ -84,20 +84,20 @@ export const extractExcludedContentIds = (
 /**
  * Categorize client conditions into preserved, untrack, and track groups
  * @param clientConditions - Current client conditions
- * @param trackHideConditions - New conditions to track
+ * @param trackConditions - New conditions to track
  * @returns Object with categorized conditions
  */
 export const categorizeClientConditions = (
   clientConditions: ClientCondition[] | undefined,
-  trackHideConditions: TrackCondition[] | undefined,
+  trackConditions: TrackCondition[] | undefined,
 ) => {
-  const trackHideIds = new Set(trackHideConditions?.map((c) => c.condition.id) ?? []);
+  const trackIds = new Set(trackConditions?.map((c) => c.condition.id) ?? []);
   const clientIds = new Set(clientConditions?.map((c) => c.conditionId) ?? []);
 
   return {
-    preservedConditions: clientConditions?.filter((c) => trackHideIds.has(c.conditionId)) ?? [],
-    conditionsToUntrack: clientConditions?.filter((c) => !trackHideIds.has(c.conditionId)) ?? [],
-    conditionsToTrack: trackHideConditions?.filter((c) => !clientIds.has(c.condition.id)) ?? [],
+    preservedConditions: clientConditions?.filter((c) => trackIds.has(c.conditionId)) ?? [],
+    conditionsToUntrack: clientConditions?.filter((c) => !trackIds.has(c.conditionId)) ?? [],
+    conditionsToTrack: trackConditions?.filter((c) => !clientIds.has(c.condition.id)) ?? [],
   };
 };
 
