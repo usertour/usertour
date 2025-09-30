@@ -197,6 +197,7 @@ export class SocketSessionService {
   ): Promise<boolean> {
     const { clientConditions, conditionWaitTimers } = socketClientData;
     const isSetSession = await this.setSocketSession(socket, session);
+    const contentType = session.content.type as ContentDataType;
     if (!isSetSession) {
       return false;
     }
@@ -228,7 +229,6 @@ export class SocketSessionService {
     const updatedConditions = [...preservedConditions, ...remainingConditions, ...newConditions];
 
     // Update client data with session and all condition changes in one call
-    const contentType = session.content.type as ContentDataType;
     const updatedClientData: Partial<SocketClientData> = {
       clientConditions: updatedConditions,
       conditionWaitTimers: remainingTimers,
