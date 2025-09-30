@@ -489,15 +489,19 @@ export class WebSocketV2Service {
 
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
-    this.contentOrchestratorService.startContent({
-      server,
-      socket,
-      contentType: ContentDataType.FLOW,
-      socketClientData: clientData,
-      options: {
-        startReason: contentStartReason.START_FROM_CONDITION,
-      },
-    });
+    const contentTypes = [ContentDataType.FLOW];
+
+    for (const contentType of contentTypes) {
+      this.contentOrchestratorService.startContent({
+        server,
+        socket,
+        contentType,
+        socketClientData: clientData,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      });
+    }
 
     return true;
   }
@@ -522,11 +526,7 @@ export class WebSocketV2Service {
     );
 
     // Use atomic Redis Hash operation to avoid race conditions
-    return await this.socketRedisService.updateClientConditionReport(
-      socket.id,
-      conditionId,
-      isActive,
-    );
+    return await this.socketRedisService.updateClientConditionReport(socket.id, clientCondition);
   }
 
   /**

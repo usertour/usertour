@@ -124,15 +124,13 @@ export class SocketRedisService {
   /**
    * Atomically update a single client condition report using Redis Hash
    * @param socketId - The socket ID
-   * @param conditionId - The condition ID to update
-   * @param isActive - The new active state
+   * @param condition - The client condition to update
    * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the update was successful
    */
   async updateClientConditionReport(
     socketId: string,
-    conditionId: string,
-    isActive: boolean,
+    condition: ClientCondition,
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
@@ -145,11 +143,12 @@ export class SocketRedisService {
       }
 
       // Use Redis Hash to atomically update a single condition
-      await client.hset(reportsKey, conditionId, isActive.toString());
+      // Store the entire condition object as JSON
+      await client.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
       await client.expire(reportsKey, ttlSeconds);
 
       this.logger.debug(
-        `Updated condition report: socket=${socketId}, condition=${conditionId}, isActive=${isActive}`,
+        `Updated condition report: socket=${socketId}, condition=${condition.conditionId}, contentType=${condition.contentType}, isActive=${condition.isActive}`,
       );
       return true;
     } catch (error) {
@@ -201,12 +200,12 @@ export class SocketRedisService {
       }
 
       const reports = await client.hgetall(reportsKey);
-      return Object.entries(reports).map(([conditionId, isActive]) => ({
-        conditionId,
-        isActive: isActive === 'true',
-      }));
-    } catch (error) {
-      this.logger.error(`Failed to get client condition reports for socket ${socketId}:`, error);
+      return Object.values(reports).map((conditionData) => {
+        // Parse JSON data
+        return JSON.parse(conditionData) as ClientCondition;
+      });
+    } catch {
+      // Return empty array on any error
       return [];
     }
   }

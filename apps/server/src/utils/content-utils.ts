@@ -1089,31 +1089,6 @@ export const conditionsIsReady = (
 };
 
 /**
- * Upsert (update or insert) a condition in the conditions array
- * @param conditions - Current conditions array
- * @param conditionId - Condition ID to upsert
- * @param isActive - New active state
- * @returns Updated conditions array
- */
-export const upsertCondition = (
-  conditions: ClientCondition[],
-  conditionId: string,
-  isActive: boolean,
-): ClientCondition[] => {
-  const existingIndex = conditions.findIndex((c) => c.conditionId === conditionId);
-
-  if (existingIndex >= 0) {
-    // Update existing condition
-    return conditions.map((condition, index) =>
-      index === existingIndex ? { ...condition, isActive } : condition,
-    );
-  }
-
-  // Add new condition
-  return [...conditions, { conditionId, isActive }];
-};
-
-/**
  * Resolve clientConditions with latest states from clientConditionReports
  * @param clientConditions - Business conditions (metadata)
  * @param clientConditionReports - Client feedback conditions

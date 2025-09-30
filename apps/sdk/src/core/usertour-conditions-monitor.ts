@@ -1,11 +1,10 @@
-import { RulesCondition } from '@usertour/types';
 import { evaluateConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
-import { ClientCondition } from '@/types';
+import { TrackCondition } from '@/types';
 
 /**
  * Options for condition monitoring
@@ -21,17 +20,17 @@ interface ConditionsMonitorOptions {
  * Event data for condition state change
  */
 export type ConditionStateChangeEvent = {
-  condition: RulesCondition;
+  trackCondition: TrackCondition;
   timestamp: number;
   state: 'activated' | 'deactivated';
 };
 
 /**
  * UsertourConditionsMonitor handles dynamic conditions monitoring and reporting
- * Monitors an array of RulesCondition and reports when they become active or inactive
+ * Monitors an array of TrackCondition and reports when they become active or inactive
  */
 export class UsertourConditionsMonitor extends Evented {
-  private conditions: RulesCondition[] = [];
+  private conditions: TrackCondition[] = [];
   private activeConditions: Set<string> = new Set(); // Track currently active conditions
   private readonly id: string;
   private readonly options: ConditionsMonitorOptions;
@@ -56,20 +55,22 @@ export class UsertourConditionsMonitor extends Evented {
 
   /**
    * Adds conditions to monitor
-   * @param conditions - Array of conditions to add
+   * @param conditions - Array of TrackCondition objects to add
    */
-  addConditions(conditions: RulesCondition[]): void {
-    for (const condition of conditions) {
+  addConditions(conditions: TrackCondition[]): void {
+    for (const trackCondition of conditions) {
       // Remove existing condition with same ID if it exists
-      const existingIndex = this.conditions.findIndex((c) => c.id === condition.id);
+      const existingIndex = this.conditions.findIndex(
+        (c) => c.condition.id === trackCondition.condition.id,
+      );
       if (existingIndex !== -1) {
         this.conditions.splice(existingIndex, 1);
         // Also remove from active conditions to prevent memory leaks
-        this.activeConditions.delete(condition.id);
+        this.activeConditions.delete(trackCondition.condition.id);
       }
 
       // Add new condition
-      this.conditions.push(condition);
+      this.conditions.push(trackCondition);
     }
 
     // Immediately check the initial state of newly added conditions
@@ -83,20 +84,13 @@ export class UsertourConditionsMonitor extends Evented {
    * @param conditionIds - Array of condition IDs to remove
    */
   removeConditions(conditionIds: string[]): void {
-    this.conditions = this.conditions.filter((condition) => !conditionIds.includes(condition.id));
+    this.conditions = this.conditions.filter(
+      (trackCondition) => !conditionIds.includes(trackCondition.condition.id),
+    );
     // Also remove from active conditions to prevent memory leaks
     for (const id of conditionIds) {
       this.activeConditions.delete(id);
     }
-  }
-
-  /**
-   * Removes conditions from monitoring by condition objects (using their IDs)
-   * @param conditions - Array of conditions to remove
-   */
-  removeConditionsByObjects(conditions: RulesCondition[]): void {
-    const conditionIds = conditions.map((condition) => condition.id);
-    this.removeConditions(conditionIds);
   }
 
   /**
@@ -110,7 +104,7 @@ export class UsertourConditionsMonitor extends Evented {
   /**
    * Gets current conditions
    */
-  getConditions(): RulesCondition[] {
+  getConditions(): TrackCondition[] {
     return [...this.conditions];
   }
 
@@ -144,12 +138,13 @@ export class UsertourConditionsMonitor extends Evented {
 
   /**
    * Checks the initial state of newly added conditions
-   * @param conditions - Array of conditions to check
+   * @param conditions - Array of TrackCondition objects to check
    */
-  private async checkInitialConditionStates(conditions: RulesCondition[]): Promise<void> {
+  private async checkInitialConditionStates(conditions: TrackCondition[]): Promise<void> {
     try {
-      // Process the new conditions to get their current state
-      const activatedConditions = await evaluateConditions(conditions);
+      // Extract RulesCondition from TrackCondition for evaluation
+      const rulesConditions = conditions.map((trackCondition) => trackCondition.condition);
+      const activatedConditions = await evaluateConditions(rulesConditions);
 
       for (const condition of activatedConditions) {
         const isActive = isConditionsActived([condition]);
@@ -158,12 +153,19 @@ export class UsertourConditionsMonitor extends Evented {
           // Condition is currently active
           if (!this.activeConditions.has(condition.id)) {
             this.activeConditions.add(condition.id);
-            await this.reportConditionStateChange(condition, 'activated');
+            // Find the corresponding TrackCondition to get contentType
+            const trackCondition = conditions.find((tc) => tc.condition.id === condition.id);
+            if (trackCondition) {
+              await this.reportConditionStateChange(trackCondition, 'activated');
+            }
           }
         } else {
           // Condition is currently inactive - report deactivated for initial state
           if (!this.activeConditions.has(condition.id)) {
-            await this.reportConditionStateChange(condition, 'deactivated');
+            const trackCondition = conditions.find((tc) => tc.condition.id === condition.id);
+            if (trackCondition) {
+              await this.reportConditionStateChange(trackCondition, 'deactivated');
+            }
           }
         }
       }
@@ -179,8 +181,9 @@ export class UsertourConditionsMonitor extends Evented {
     if (this.conditions.length === 0) return;
 
     try {
-      // Process all conditions to get their active state in one batch
-      const activatedConditions = await evaluateConditions(this.conditions);
+      // Extract RulesCondition from TrackCondition for evaluation
+      const rulesConditions = this.conditions.map((trackCondition) => trackCondition.condition);
+      const activatedConditions = await evaluateConditions(rulesConditions);
 
       // Check which conditions are active in one batch
       const activeConditions = activatedConditions.filter((condition) =>
@@ -197,18 +200,24 @@ export class UsertourConditionsMonitor extends Evented {
         if (!this.activeConditions.has(condition.id)) {
           // Update state first, then trigger event
           this.activeConditions.add(condition.id);
-          await this.reportConditionStateChange(condition, 'activated');
+          // Find the corresponding TrackCondition to get contentType
+          const trackCondition = this.conditions.find((tc) => tc.condition.id === condition.id);
+          if (trackCondition) {
+            await this.reportConditionStateChange(trackCondition, 'activated');
+          }
         }
       }
 
       // Check for conditions that became inactive
       for (const activeConditionId of this.activeConditions) {
         if (!currentActiveConditionIds.has(activeConditionId)) {
-          const condition = this.conditions.find((c) => c.id === activeConditionId);
-          if (condition) {
+          const trackCondition = this.conditions.find(
+            (tc) => tc.condition.id === activeConditionId,
+          );
+          if (trackCondition) {
             // Update state first, then trigger event
             this.activeConditions.delete(activeConditionId);
-            await this.reportConditionStateChange(condition, 'deactivated');
+            await this.reportConditionStateChange(trackCondition, 'deactivated');
           }
         }
       }
@@ -222,12 +231,12 @@ export class UsertourConditionsMonitor extends Evented {
    * This method can be overridden or extended for custom reporting logic
    */
   protected async reportConditionStateChange(
-    condition: RulesCondition,
+    trackCondition: TrackCondition,
     state: 'activated' | 'deactivated',
   ): Promise<void> {
     try {
       const eventData: ConditionStateChangeEvent = {
-        condition,
+        trackCondition,
         timestamp: Date.now(),
         state,
       };
@@ -251,13 +260,10 @@ export class UsertourConditionsMonitor extends Evented {
   }
 
   /**
-   * Gets client conditions
+   * Gets set of active condition IDs
    */
-  getClientConditions(): ClientCondition[] {
-    return this.conditions.map((condition) => ({
-      conditionId: condition.id,
-      isActive: this.activeConditions.has(condition.id),
-    }));
+  getActiveConditionIds(): Set<string> {
+    return new Set(this.activeConditions);
   }
 
   /**

@@ -5,7 +5,7 @@ import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
-import { contentEndReason, Step } from '@usertour/types';
+import { ChecklistData, contentEndReason, Step } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { SDKContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 
@@ -215,6 +215,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected getVersionTheme(): SessionTheme | undefined {
     return this.session.getVersionTheme();
+  }
+
+  /**
+   * Gets the checklist data from session
+   */
+  protected getChecklistData(): ChecklistData | undefined {
+    return this.session.getChecklistData();
   }
 
   /**

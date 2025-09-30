@@ -42,6 +42,7 @@ import {
   TrackCondition,
   UnTrackedCondition,
   ConditionWaitTimer,
+  ClientCondition,
 } from '@/types';
 
 interface AppStartOptions {
@@ -175,6 +176,23 @@ export class UsertourCore extends Evented {
    */
   getMembershipAttributes(): UserTourTypes.Attributes {
     return this.attributeManager.getMembershipAttributes();
+  }
+
+  /**
+   * Gets client conditions from conditions monitor
+   * @returns Array of client conditions with their current state
+   */
+  getClientConditions(): ClientCondition[] {
+    if (!this.conditionsMonitor) return [];
+
+    const conditions = this.conditionsMonitor.getConditions();
+    const activeIds = this.conditionsMonitor.getActiveConditionIds();
+
+    return conditions.map((trackCondition) => ({
+      conditionId: trackCondition.condition.id,
+      contentType: trackCondition.contentType,
+      isActive: activeIds.has(trackCondition.condition.id),
+    }));
   }
 
   /**
@@ -760,16 +778,20 @@ export class UsertourCore extends Evented {
     // Listen for condition state change events
     this.conditionsMonitor.on('condition-state-changed', (eventData: unknown) => {
       const changeEvent = eventData as ConditionStateChangeEvent;
-      if (!changeEvent?.condition?.id) {
+      const { trackCondition, state } = changeEvent;
+
+      if (!trackCondition?.condition?.id) {
         return;
       }
+
       // Update socket auth info
       this.updateSocketAuthInfo();
       // Toggle client condition
       this.socketService.toggleClientCondition(
         {
-          conditionId: changeEvent?.condition?.id,
-          isActive: changeEvent?.state === 'activated',
+          conditionId: trackCondition.condition.id,
+          contentType: trackCondition.contentType,
+          isActive: state === 'activated',
         },
         { batch: true },
       );
@@ -826,7 +848,7 @@ export class UsertourCore extends Evented {
    * Updates the socket auth info
    */
   private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
-    const clientConditions = this.conditionsMonitor?.getClientConditions();
+    const clientConditions = this.getClientConditions();
     const clientContext = getClientContext();
     this.socketService.updateCredentials({
       clientConditions,
@@ -847,7 +869,7 @@ export class UsertourCore extends Evented {
    * @param condition - The condition to track
    */
   private trackClientCondition(condition: TrackCondition): boolean {
-    this.conditionsMonitor?.addConditions([condition.condition]);
+    this.conditionsMonitor?.addConditions([condition]);
     return true;
   }
 

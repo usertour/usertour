@@ -24,7 +24,7 @@ export type TourStore = BaseStore & {
 // Checklist store type
 export type ChecklistStore = BaseStore & {
   // content: SDKContent | undefined;
-  checklistData: ChecklistData;
+  checklistData?: ChecklistData;
   expanded: boolean;
 };
 

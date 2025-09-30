@@ -72,5 +72,6 @@ export type UnTrackedCondition = {
 
 export type ClientCondition = {
   conditionId: string;
+  contentType: ContentDataType;
   isActive?: boolean;
 };
