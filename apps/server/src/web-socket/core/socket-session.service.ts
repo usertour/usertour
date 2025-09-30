@@ -184,7 +184,7 @@ export class SocketSessionService {
    * @param socket - The socket
    * @param socketClientData - The socket client data
    * @param session - The session to activate
-   * @param trackHideConditions - The hide conditions to track
+   * @param trackConditions - The conditions to track
    * @param forceGoToStep - Whether to force go to step
    * @returns Promise<boolean> - True if the session was activated successfully
    */
@@ -192,7 +192,7 @@ export class SocketSessionService {
     socket: Socket,
     socketClientData: SocketClientData,
     session: SDKContentSession,
-    trackHideConditions: TrackCondition[] | undefined,
+    trackConditions: TrackCondition[] | undefined,
     forceGoToStep: boolean,
   ): Promise<boolean> {
     const { clientConditions, conditionWaitTimers } = socketClientData;
@@ -207,7 +207,7 @@ export class SocketSessionService {
 
     // Process condition updates efficiently
     const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
-      categorizeClientConditions(clientConditions, trackHideConditions);
+      categorizeClientConditions(clientConditions, trackConditions);
 
     // Execute all condition operations in parallel
     const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
