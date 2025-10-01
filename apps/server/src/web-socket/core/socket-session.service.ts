@@ -78,15 +78,12 @@ export class SocketSessionService {
   /**
    * Emit unset socket session event with acknowledgment
    * @param socket - The socket instance
-   * @param sessionId - The session id to unset
-   * @param contentType - The content type
+   * @param session - The session to unset
    * @returns Promise<boolean> - True if the session was unset and acknowledged by client
    */
-  private async unsetSocketSession(
-    socket: Socket,
-    sessionId: string,
-    contentType: ContentDataType,
-  ): Promise<boolean> {
+  private async unsetSocketSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+    const contentType = session.content.type as ContentDataType;
+    const sessionId = session.id;
     switch (contentType) {
       case ContentDataType.FLOW:
         return await this.socketEmitterService.unsetFlowSession(socket, sessionId);
@@ -230,7 +227,7 @@ export class SocketSessionService {
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (shouldUnsetSession && !(await this.unsetSocketSession(socket, session.id, contentType))) {
+    if (shouldUnsetSession && !(await this.unsetSocketSession(socket, session))) {
       return false;
     }
 
