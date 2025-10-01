@@ -15,6 +15,7 @@ import {
   categorizeClientConditions,
   calculateRemainingClientConditions,
   calculateRemainingConditionWaitTimers,
+  filterAndPreserveConditions,
 } from '@/utils/websocket-utils';
 
 /**
@@ -127,29 +128,23 @@ export class SocketSessionService {
    */
   private async emitConditionCleanup(
     socket: Socket,
-    clientConditions: ClientCondition[] | undefined,
+    clientConditions: ClientCondition[],
     conditionWaitTimers: ConditionWaitTimer[],
     contentTypeFilter?: ContentDataType[],
   ): Promise<Pick<SocketClientData, 'clientConditions' | 'conditionWaitTimers'>> {
-    // Filter client conditions by content type if filter is provided
-    const filteredClientConditions = contentTypeFilter
-      ? clientConditions?.filter((c) => contentTypeFilter.includes(c.contentType))
-      : clientConditions;
-
-    // Get preserved conditions (those not in contentTypeFilter)
-    const preservedClientConditions = contentTypeFilter
-      ? (clientConditions?.filter((c) => !contentTypeFilter.includes(c.contentType)) ?? [])
-      : [];
+    // Filter and preserve client conditions based on content type filter
+    const { filteredConditions, preservedConditions: preservedClientConditions } =
+      filterAndPreserveConditions(clientConditions, contentTypeFilter);
 
     // Process condition cleanup operations in parallel
     const [untrackedConditions, cancelledTimers] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, filteredClientConditions ?? []),
+      this.socketParallelService.untrackClientConditions(socket, filteredConditions),
       this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
     ]);
 
     // Calculate remaining conditions and timers (those that failed to process)
     const remainingConditions = calculateRemainingClientConditions(
-      filteredClientConditions ?? [],
+      filteredConditions,
       untrackedConditions,
     );
     const remainingTimers = calculateRemainingConditionWaitTimers(
@@ -164,33 +159,6 @@ export class SocketSessionService {
   }
 
   /**
-   * Filter and preserve client conditions based on content type filter
-   * @param clientConditions - All client conditions
-   * @param contentTypeFilter - Optional array of content types to filter by
-   * @returns Object containing filtered and preserved conditions
-   */
-  private filterAndPreserveConditions(
-    clientConditions: ClientCondition[] | undefined,
-    contentTypeFilter?: ContentDataType[],
-  ): {
-    filteredConditions: ClientCondition[] | undefined;
-    preservedConditions: ClientCondition[];
-  } {
-    const filteredConditions = contentTypeFilter
-      ? clientConditions?.filter((c) => contentTypeFilter.includes(c.contentType))
-      : clientConditions;
-
-    const preservedConditions = contentTypeFilter
-      ? (clientConditions?.filter((c) => !contentTypeFilter.includes(c.contentType)) ?? [])
-      : [];
-
-    return {
-      filteredConditions,
-      preservedConditions,
-    };
-  }
-
-  /**
    * Emit condition changes efficiently with parallel operations
    * @param socket - The socket
    * @param clientConditions - All client conditions
@@ -201,14 +169,14 @@ export class SocketSessionService {
    */
   private async emitConditionChanges(
     socket: Socket,
-    clientConditions: ClientCondition[] | undefined,
+    clientConditions: ClientCondition[],
     conditionWaitTimers: ConditionWaitTimer[],
-    trackConditions: TrackCondition[] | undefined,
+    trackConditions: TrackCondition[],
     contentTypeFilter?: ContentDataType[],
   ): Promise<Pick<SocketClientData, 'clientConditions' | 'conditionWaitTimers'>> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
-      this.filterAndPreserveConditions(clientConditions, contentTypeFilter);
+      filterAndPreserveConditions(clientConditions, contentTypeFilter);
 
     // Categorize client conditions into preserved, untrack, and track groups
     const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
@@ -258,7 +226,7 @@ export class SocketSessionService {
       shouldSetLastDismissedId = false,
       contentTypeFilter,
     } = options;
-    const { clientConditions, conditionWaitTimers } = socketClientData;
+    const { clientConditions = [], conditionWaitTimers = [] } = socketClientData;
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
@@ -315,8 +283,8 @@ export class SocketSessionService {
     session: SDKContentSession,
     options: ActivateSocketSessionOptions = {},
   ): Promise<boolean> {
-    const { trackConditions, forceGoToStep = false, contentTypeFilter } = options;
-    const { clientConditions, conditionWaitTimers } = socketClientData;
+    const { trackConditions = [], forceGoToStep = false, contentTypeFilter } = options;
+    const { clientConditions = [], conditionWaitTimers = [] } = socketClientData;
     const isSetSession = await this.setSocketSession(socket, session);
     const contentType = session.content.type as ContentDataType;
     if (!isSetSession) {

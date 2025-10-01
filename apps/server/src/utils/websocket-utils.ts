@@ -131,3 +131,30 @@ export const calculateRemainingConditionWaitTimers = (
     (timer) => !processedTimers.some((processed) => processed.versionId === timer.versionId),
   );
 };
+
+/**
+ * Filter and preserve client conditions based on content type filter
+ * @param clientConditions - All client conditions
+ * @param contentTypeFilter - Optional array of content types to filter by
+ * @returns Object containing filtered and preserved conditions (always returns arrays, never undefined)
+ */
+export const filterAndPreserveConditions = (
+  clientConditions: ClientCondition[],
+  contentTypeFilter?: ContentDataType[],
+): {
+  filteredConditions: ClientCondition[];
+  preservedConditions: ClientCondition[];
+} => {
+  const filteredConditions = contentTypeFilter
+    ? clientConditions.filter((c) => contentTypeFilter.includes(c.contentType))
+    : clientConditions;
+
+  const preservedConditions = contentTypeFilter
+    ? clientConditions.filter((c) => !contentTypeFilter.includes(c.contentType))
+    : [];
+
+  return {
+    filteredConditions,
+    preservedConditions,
+  };
+};
