@@ -60,11 +60,11 @@ export class UsertourCore extends Evented {
     token: '',
     mode: SDKSettingsMode.NORMAL,
   };
-  tours: UsertourTour[] = [];
+  toursStore = new ExternalStore<UsertourTour[]>([]);
+  activatedTour: UsertourTour | null = null;
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
-  toursStore = new ExternalStore<UsertourTour[]>([]);
 
   private baseZIndex = 1000000;
   private targetMissingSeconds = 6;
@@ -426,30 +426,23 @@ export class UsertourCore extends Evented {
 
     const contentId = session.content.id;
 
-    // Find existing tour for this content
-    const existingTour = this.tours.find((tour) => tour.getContentId() === contentId);
-
-    // Destroy all other tours to ensure single tour focus
-    this.destroyOtherTours(contentId);
-
-    // Update existing tour if found
-    if (existingTour) {
-      existingTour.updateSession(session);
-      existingTour.refreshStore();
-      return true;
+    if (this.activatedTour) {
+      if (this.activatedTour.getContentId() === contentId) {
+        this.activatedTour.updateSession(session);
+        this.activatedTour.refreshStore();
+        return true;
+      }
+      this.cleanupActivatedTour();
     }
 
     // Create new tour
     const targetTour = new UsertourTour(this, new UsertourSession(session));
-    targetTour.on(TOUR_CLOSED, (eventData: unknown) => {
-      const closeEvent = eventData as { sessionId: string };
-      this.tours = this.tours.filter((tour) => tour.getSessionId() !== closeEvent.sessionId);
-      this.syncToursStore();
+    targetTour.on(TOUR_CLOSED, () => {
+      this.cleanupActivatedTour();
     });
-    // Add new tour to the tours array
-    this.tours.push(targetTour);
+    this.activatedTour = targetTour;
     // Sync store
-    this.syncToursStore();
+    this.syncToursStore([this.activatedTour]);
     // Show tour from the session current step
     if (session.currentStep?.cvid) {
       targetTour.showStepByCvid(session.currentStep?.cvid);
@@ -464,17 +457,10 @@ export class UsertourCore extends Evented {
    * @param sessionId - The session ID to unset
    */
   private unsetFlowSession(sessionId: string): boolean {
-    const tourToDestroy = this.tours.find((tour) => tour.getSessionId() === sessionId);
-
-    if (!tourToDestroy) {
+    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
-    tourToDestroy.destroy();
-
-    // Keep only the tour with the specified session ID
-    this.tours = this.tours.filter((tour) => tour.getSessionId() !== sessionId);
-    // Sync store
-    this.syncToursStore();
+    this.cleanupActivatedTour();
     return true;
   }
 
@@ -485,28 +471,11 @@ export class UsertourCore extends Evented {
    * @returns True if the step was forced to be shown, false otherwise
    */
   private forceGoToStep(sessionId: string, stepId: string): boolean {
-    const existingTour = this.tours.find((tour) => tour.getSessionId() === sessionId);
-    if (!existingTour) {
+    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
-    existingTour.showStepById(stepId);
+    this.activatedTour.showStepById(stepId);
     return true;
-  }
-
-  /**
-   * Destroys all tours except the one with the specified content ID
-   * @param keepContentId - The content ID of the tour to keep
-   */
-  private destroyOtherTours(keepContentId: string): void {
-    const toursToDestroy = this.tours.filter((tour) => tour.getContentId() !== keepContentId);
-
-    // Destroy other tours - let errors bubble up for critical failures
-    for (const tour of toursToDestroy) {
-      tour.destroy();
-    }
-
-    // Keep only the tour with the specified content ID
-    this.tours = this.tours.filter((tour) => tour.getContentId() === keepContentId);
   }
 
   private setChecklistSession(session: SDKContentSession): boolean {
@@ -733,15 +702,13 @@ export class UsertourCore extends Evented {
   /**
    * Synchronizes all stores with current data
    */
-  private syncAllStores() {
-    this.syncToursStore();
-  }
+  private syncAllStores() {}
 
   /**
    * Synchronizes tours store
    */
-  private syncToursStore() {
-    this.toursStore.setData([...this.tours]);
+  private syncToursStore(tours: UsertourTour[]) {
+    this.toursStore.setData([...tours]);
   }
 
   /**
@@ -750,8 +717,8 @@ export class UsertourCore extends Evented {
   reset() {
     // Cleanup user data
     this.cleanupUserData();
-    // Cleanup all tours
-    this.cleanupTours();
+    // Cleanup activated tour
+    this.cleanupActivatedTour();
     // Cleanup condition monitor
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
@@ -920,12 +887,11 @@ export class UsertourCore extends Evented {
   /**
    * Cleans up all tours from the application
    */
-  private cleanupTours() {
+  private cleanupActivatedTour() {
     // Destroy all tours
-    for (const tour of this.tours) {
-      tour.destroy();
-    }
-    this.tours = [];
+    this.activatedTour?.destroy();
+    this.activatedTour = null;
+    this.toursStore.setData(undefined);
   }
 
   /**
