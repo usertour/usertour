@@ -489,17 +489,20 @@ export class WebSocketV2Service {
 
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
-    const contentTypes = [ContentDataType.FLOW];
+    const contentTypes = [ContentDataType.CHECKLIST];
+    const context = {
+      server,
+      socket,
+      socketClientData: clientData,
+      options: {
+        startReason: contentStartReason.START_FROM_CONDITION,
+      },
+    };
 
     for (const contentType of contentTypes) {
-      this.contentOrchestratorService.startContent({
-        server,
-        socket,
+      await this.contentOrchestratorService.startContent({
+        ...context,
         contentType,
-        socketClientData: clientData,
-        options: {
-          startReason: contentStartReason.START_FROM_CONDITION,
-        },
       });
     }
 
