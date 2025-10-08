@@ -1,14 +1,14 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import { PopperMadeWith } from '@usertour-packages/sdk';
-import { ChecklistProgress } from '@usertour-packages/sdk';
 import {
+  PopperMadeWith,
+  ChecklistProgress,
   ChecklistDismiss,
   ChecklistDropdown,
   ChecklistItems,
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-packages/sdk/src/checklist';
+} from '@usertour-packages/sdk';
 import {
   ContentEditorClickableElement,
   ContentEditorSerialize,
