@@ -92,7 +92,7 @@ export class ContentOrchestratorService {
    * @returns Promise<boolean> - True if content was started successfully
    */
   private async executeStartContent(context: ContentStartContext): Promise<boolean> {
-    const { contentType, options } = context;
+    const { options } = context;
     const contentId = options?.contentId;
 
     try {
@@ -112,7 +112,7 @@ export class ContentOrchestratorService {
       }
 
       // Strategy 3: Try to auto start content
-      return await this.tryAutoStartContent(context, contentType);
+      return await this.tryAutoStartContent(context);
     } catch (error) {
       this.logger.error(`Failed to start singleton content: ${error.message}`);
       return false;
@@ -193,7 +193,7 @@ export class ContentOrchestratorService {
     };
 
     // Execute content start strategies with fallback behavior
-    const strategyResult = await this.tryAutoStartContent(context, contentType, {
+    const strategyResult = await this.tryAutoStartContent(context, {
       ...tryAutoStartContentOptions,
       excludeContentIds: excludeContentIds,
       allowConditionWaitTimers: false,
@@ -219,7 +219,7 @@ export class ContentOrchestratorService {
       context.socketClientData = cleanupResult.updatedClientData;
     }
     // Execute content start strategies and handle the result
-    return await this.tryAutoStartContent(context, contentType, tryAutoStartContentOptions);
+    return await this.tryAutoStartContent(context, tryAutoStartContentOptions);
   }
 
   /**
@@ -402,10 +402,9 @@ export class ContentOrchestratorService {
    */
   private async tryAutoStartContent(
     context: ContentStartContext,
-    contentType: ContentDataType,
     options: TryAutoStartContentOptions = {},
   ): Promise<boolean> {
-    const { socketClientData } = context;
+    const { socketClientData, contentType } = context;
     const {
       excludeContentIds = extractExcludedContentIds(socketClientData, contentType),
       isActivateOtherSockets = true,
