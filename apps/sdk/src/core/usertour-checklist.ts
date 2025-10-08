@@ -224,7 +224,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
 
     // Combine all store data with proper defaults
     return {
-      triggerRef: null, // Reset trigger reference
       removeBranding,
       ...themeData,
       userAttributes,
