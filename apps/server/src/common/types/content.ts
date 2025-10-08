@@ -68,6 +68,7 @@ export interface ContentCancelContext {
 
 export interface ContentStartResult {
   success: boolean;
+  activate?: boolean;
   session?: SDKContentSession;
   trackConditions?: TrackCondition[];
   trackHideConditions?: TrackCondition[];

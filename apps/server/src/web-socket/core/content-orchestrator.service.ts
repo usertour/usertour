@@ -540,14 +540,13 @@ export class ContentOrchestratorService {
   /**
    * Checks hide conditions and cancels content if necessary
    */
-  private async checkHideConditions(context: ContentStartContext): Promise<boolean> {
+  private async checkHideConditions(
+    context: ContentStartContext,
+    session: SDKContentSession,
+  ): Promise<boolean> {
     const { socket, server, contentType } = context;
     const socketClientData = await this.getClientDataResolved(socket.id);
     if (!socketClientData) {
-      return true;
-    }
-    const session = extractSessionByContentType(socketClientData, contentType);
-    if (!session) {
       return true;
     }
     const sessionId = session.id;
@@ -651,6 +650,7 @@ export class ContentOrchestratorService {
       trackHideConditions,
       forceGoToStep = false,
       isActivateOtherSockets = true,
+      activate = true,
     } = result;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const activateSessionParams = {
@@ -662,7 +662,11 @@ export class ContentOrchestratorService {
       forceGoToStep,
     };
 
-    if (session) {
+    if (!session) {
+      return false;
+    }
+
+    if (activate) {
       if (!(await this.activateSocketSession(activateSessionParams))) {
         return false;
       }
@@ -671,7 +675,7 @@ export class ContentOrchestratorService {
       }
     }
     // Check hide conditions and cancel content if necessary
-    return await this.checkHideConditions(context);
+    return await this.checkHideConditions(context, session);
   }
 
   /**
@@ -754,8 +758,9 @@ export class ContentOrchestratorService {
     // Handle active session cases
     return {
       success: true,
+      activate: isSessionChanged,
       reason: isSessionChanged ? 'Existing active session with changes' : 'Existing active session',
-      ...(isSessionChanged && { session: refreshedSession }),
+      session: refreshedSession,
     };
   }
 
