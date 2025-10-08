@@ -195,12 +195,10 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
     const theme = this.getVersionTheme();
-    // If the version has a theme, use it
-    if (theme) {
-      return await UsertourTheme.getThemeSettings(theme);
+    if (!theme) {
+      return null;
     }
-    // If no theme is found, return null
-    return null;
+    return await UsertourTheme.getThemeSettings(theme);
   }
 
   /**
