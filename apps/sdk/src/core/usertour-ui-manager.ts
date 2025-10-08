@@ -10,11 +10,17 @@ import { ExternalStore } from '@/utils/store';
 import { document, loadCSSResource, logger } from '@/utils';
 import { getMainCss } from '@/core/usertour-env';
 import { UsertourTour } from '@/core/usertour-tour';
+import { UsertourChecklist } from './usertour-checklist';
 
 export interface UIManagerConfig {
   containerId?: string;
   maxRetries?: number;
   retryDelay?: number;
+}
+
+interface UIManagerInitializeProps {
+  toursStore: ExternalStore<UsertourTour[]>;
+  checklistsStore: ExternalStore<UsertourChecklist[]>;
 }
 
 /**
@@ -41,7 +47,7 @@ export class UsertourUIManager extends Evented {
    * Initialize the UI manager with all required resources
    * @param toursStore - The tours store to pass to the React root
    */
-  async initialize(toursStore: ExternalStore<UsertourTour[]>): Promise<boolean> {
+  async initialize(props: UIManagerInitializeProps): Promise<boolean> {
     if (this.isInitialized) {
       return true;
     }
@@ -70,7 +76,7 @@ export class UsertourUIManager extends Evented {
       }
 
       // Step 3: Create React root
-      const rootCreated = await this.createRoot(toursStore);
+      const rootCreated = await this.createRoot(props);
       if (!rootCreated) {
         throw new Error('Failed to create React root');
       }
@@ -151,7 +157,7 @@ export class UsertourUIManager extends Evented {
   /**
    * Create React root with proper error handling
    */
-  private async createRoot(toursStore: ExternalStore<UsertourTour[]>): Promise<boolean> {
+  private async createRoot(props: UIManagerInitializeProps): Promise<boolean> {
     if (!this.container) {
       logger.error('Container not available for React root creation');
       return false;
@@ -162,7 +168,7 @@ export class UsertourUIManager extends Evented {
         this.root = ReactDOM.createRoot(this.container);
       }
 
-      await render(this.root, { toursStore });
+      await render(this.root, props);
       return true;
     } catch (error) {
       logger.error('Failed to create React root:', error);

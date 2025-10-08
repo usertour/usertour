@@ -489,7 +489,7 @@ export class WebSocketV2Service {
 
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
-    const contentTypes = [ContentDataType.FLOW];
+    const contentTypes = [ContentDataType.CHECKLIST];
     const context = {
       server,
       socket,

@@ -44,6 +44,7 @@ import {
   ConditionWaitTimer,
   ClientCondition,
 } from '@/types';
+import { UsertourChecklist } from './usertour-checklist';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -61,7 +62,9 @@ export class UsertourCore extends Evented {
     mode: SDKSettingsMode.NORMAL,
   };
   toursStore = new ExternalStore<UsertourTour[]>([]);
+  checklistsStore = new ExternalStore<UsertourChecklist[]>([]);
   activatedTour: UsertourTour | null = null;
+  activatedChecklist: UsertourChecklist | null = null;
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
@@ -208,7 +211,10 @@ export class UsertourCore extends Evented {
    */
   private initializeEventListeners() {
     this.once(SDK_DOM_LOADED, async () => {
-      const initialized = await this.uiManager.initialize(this.toursStore);
+      const initialized = await this.uiManager.initialize({
+        toursStore: this.toursStore,
+        checklistsStore: this.checklistsStore,
+      });
       if (!initialized) {
         logger.error('Failed to initialize UI manager');
       }
@@ -479,7 +485,28 @@ export class UsertourCore extends Evented {
   }
 
   private setChecklistSession(session: SDKContentSession): boolean {
-    console.log('setChecklistSession', session as SDKContentSession);
+    if (!session?.content?.id) {
+      logger.warn('Invalid session data provided to setChecklistSession');
+      return false;
+    }
+
+    const contentId = session.content.id;
+
+    if (this.activatedChecklist) {
+      if (this.activatedChecklist.getContentId() === contentId) {
+        this.activatedChecklist.updateSession(session);
+        this.activatedChecklist.refreshStore();
+        return true;
+      }
+      this.cleanupActivatedChecklist();
+    }
+
+    // Create new checklist
+    this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
+    // Sync store
+    this.syncChecklistsStore([this.activatedChecklist]);
+    // Show checklist
+    this.activatedChecklist.show();
     return true;
   }
 
@@ -711,6 +738,10 @@ export class UsertourCore extends Evented {
     this.toursStore.setData([...tours]);
   }
 
+  private syncChecklistsStore(checklists: UsertourChecklist[]) {
+    this.checklistsStore.setData([...checklists]);
+  }
+
   /**
    * Resets the application state
    */
@@ -719,6 +750,8 @@ export class UsertourCore extends Evented {
     this.cleanupUserData();
     // Cleanup activated tour
     this.cleanupActivatedTour();
+    // Cleanup activated checklist
+    this.cleanupActivatedChecklist();
     // Cleanup condition monitor
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
@@ -892,6 +925,16 @@ export class UsertourCore extends Evented {
     this.activatedTour?.destroy();
     this.activatedTour = null;
     this.toursStore.setData(undefined);
+  }
+
+  /**
+   * Cleans up the activated checklist
+   */
+  private cleanupActivatedChecklist() {
+    // Destroy the checklist
+    this.activatedChecklist?.destroy();
+    this.activatedChecklist = null;
+    this.checklistsStore.setData(undefined);
   }
 
   /**
