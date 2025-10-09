@@ -477,10 +477,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Handles the close event
-   * @param reason - The reason for closing the tour, defaults to USER_CLOSED
+   * Handles the dismiss event
+   * @param reason - The reason for dismissing the tour, defaults to USER_CLOSED
    */
-  async handleClose(reason?: contentEndReason) {
+  async handleDismiss(reason?: contentEndReason) {
     await this.close(reason);
   }
 
@@ -527,7 +527,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
         await this.instance.startTour(action.data.contentId, { cvid: action.data.stepCvid });
         break;
       case ContentActionsItemType.FLOW_DISMIS:
-        await this.handleClose(contentEndReason.USER_CLOSED);
+        await this.handleDismiss(contentEndReason.USER_CLOSED);
         break;
       case ContentActionsItemType.JAVASCRIPT_EVALUATE:
         evalCode(action.data.value);

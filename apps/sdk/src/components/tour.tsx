@@ -40,7 +40,7 @@ type TourBaseProps = {
   totalSteps: number;
   removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
-  handleClose: () => void;
+  handleDismiss: () => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -58,7 +58,7 @@ type PopperContentProps = {
   totalSteps: number;
   themeSettings: ThemeTypesSetting;
   removeBranding: boolean;
-  handleClose: () => void;
+  handleDismiss: () => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -112,7 +112,7 @@ const PopperContent = (props: PopperContentProps) => {
     totalSteps,
     themeSettings,
     removeBranding,
-    handleClose,
+    handleDismiss,
     handleOnClick,
   } = props;
   const { themeSetting } = useSettingsStyles(themeSettings);
@@ -131,7 +131,7 @@ const PopperContent = (props: PopperContentProps) => {
   return (
     <PopperContentFrame>
       {currentStep.setting.skippable && (
-        <PopperClose onClick={handleClose} className="cursor-pointer" />
+        <PopperClose onClick={handleDismiss} className="cursor-pointer" />
       )}
       {showTopProgress && (
         <PopperProgress
@@ -191,7 +191,7 @@ const TourPopper = (props: TourPopperProps) => {
     currentStepIndex,
     totalSteps,
     removeBranding,
-    handleClose,
+    handleDismiss,
     handleOnClick,
     handleActions,
   } = props;
@@ -251,7 +251,7 @@ const TourPopper = (props: TourPopperProps) => {
           totalSteps={totalSteps}
           themeSettings={themeSettings}
           removeBranding={removeBranding}
-          handleClose={handleClose}
+          handleDismiss={handleDismiss}
           handleOnClick={handleOnClick}
         />
       </PopperContentPotal>
@@ -271,7 +271,7 @@ const TourModal = (props: TourModalProps) => {
     totalSteps,
     themeSettings,
     removeBranding,
-    handleClose,
+    handleDismiss,
     handleOnClick,
   } = props;
 
@@ -297,7 +297,7 @@ const TourModal = (props: TourModalProps) => {
           totalSteps={totalSteps}
           themeSettings={themeSettings}
           removeBranding={removeBranding}
-          handleClose={handleClose}
+          handleDismiss={handleDismiss}
           handleOnClick={handleOnClick}
         />
       </PopperModalContentPotal>
@@ -313,11 +313,11 @@ export const TourWidget = (props: { tour: UsertourTour }) => {
     return <></>;
   }
 
-  const { handleClose, handleOnClick, handleActions } = tour;
+  const { handleDismiss, handleOnClick, handleActions } = tour;
 
   const commonProps: TourBaseProps = {
     ...storeData,
-    handleClose,
+    handleDismiss,
     handleOnClick,
   };
   const stepType = storeData.currentStep.type;

@@ -1,10 +1,8 @@
 import {
-  BizEvents,
   ChecklistInitialDisplay,
   ChecklistItemType,
   ContentActionsItemType,
   ContentEditorClickableElement,
-  EventAttributes,
   RulesCondition,
   ThemeTypesSetting,
   contentEndReason,
@@ -74,7 +72,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Refreshes the store data for the tour
+   * Refreshes the store data for the checklist
    */
   async refreshStore(): Promise<void> {
     const newStore = await this.buildStoreData();
@@ -138,10 +136,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param item - The checklist item that was clicked
    */
   async handleItemClick(item: ChecklistItemType) {
-    // Update item clicked state in store
-    this.updateItemClickedState(item.id);
-
-    //handle actions after state update is complete
+    // Report the task click event
+    await this.reportTaskClickEvent(item);
+    // Handle actions after state update is complete
     await this.handleActions(item.clickedActions);
   }
 
@@ -202,7 +199,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Builds the store data for the tour
+   * Builds the store data for the checklist
    * This method combines the base store info with the current step data
    * and sets default values for required fields
    *
@@ -244,29 +241,21 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     const currentStore = this.getStoreData();
     const currentThemeSettings = currentStore?.themeSettings;
 
-    // Check if theme settings have changed using isEqual for deep comparison
-    if (!isEqual(currentThemeSettings, themeSettings)) {
-      this.updateStore({
-        themeSettings,
-      });
+    if (isEqual(currentThemeSettings, themeSettings)) {
+      return;
     }
+
+    // Update theme settings in store
+    this.updateStore({ themeSettings });
   }
 
   /**
-   * Calculates the z-index for the tour
+   * Calculates the z-index for the checklist
    * @private
    */
   private getCalculatedZIndex(): number {
     const baseZIndex = this.instance.getBaseZIndex() ?? 0;
     return baseZIndex + UsertourChecklist.Z_INDEX_OFFSET;
-  }
-
-  /**
-   * Handles the close event
-   * @param reason - The reason for closing the tour, defaults to USER_CLOSED
-   */
-  async handleClose(reason?: contentEndReason) {
-    await this.close(reason);
   }
 
   /**
@@ -321,17 +310,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Ends the flow
-   * @param reason - The reason for the end
-   */
-  private async endFlow(reason: contentEndReason) {
-    await this.socketService.endContent({
-      sessionId: this.getSessionId(),
-      reason,
-    });
-  }
-
-  /**
    * Resets the tour
    */
   reset() {
@@ -349,8 +327,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * Reports the checklist dismiss event.
    */
   private async reportDismissEvent(reason: contentEndReason = contentEndReason.USER_CLOSED) {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_DISMISSED, {
-      [EventAttributes.CHECKLIST_END_REASON]: reason,
+    await this.socketService.endContent({
+      sessionId: this.getSessionId(),
+      reason: reason.toString(),
     });
   }
 
@@ -358,14 +337,24 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * Reports the checklist seen event.
    */
   private async reportSeenEvent() {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_SEEN);
+    await this.socketService.showChecklist(
+      {
+        sessionId: this.getSessionId(),
+      },
+      { batch: true },
+    );
   }
 
   /**
    * Reports the checklist hidden event.
    */
   private async reportHiddenEvent() {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_HIDDEN);
+    await this.socketService.hideChecklist(
+      {
+        sessionId: this.getSessionId(),
+      },
+      { batch: true },
+    );
   }
 
   /**
@@ -373,33 +362,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param {ChecklistItemType} item - The clicked checklist item
    */
   private async reportTaskClickEvent(item: ChecklistItemType) {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_TASK_CLICKED, {
-      [EventAttributes.CHECKLIST_TASK_ID]: item.id,
-      [EventAttributes.CHECKLIST_TASK_NAME]: item.name,
-    });
-  }
-
-  /**
-   * Reports the checklist task complete event.
-   * @param {ChecklistItemType} item - The completed checklist item
-   */
-  private async reportTaskCompleteEvent(item: ChecklistItemType) {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_TASK_COMPLETED, {
-      [EventAttributes.CHECKLIST_TASK_ID]: item.id,
-      [EventAttributes.CHECKLIST_TASK_NAME]: item.name,
-    });
-  }
-
-  /**
-   * Reports a checklist event with session and additional data.
-   * @param {BizEvents} eventName - The event name
-   * @param {Partial<Record<EventAttributes, any>>} additionalData - Additional event data
-   * @param {ReportEventOptions} options - Reporting options
-   */
-  private async reportChecklistEvent(
-    eventName: BizEvents,
-    additionalData: Partial<Record<EventAttributes, any>> = {},
-  ) {
-    console.log(eventName, additionalData);
+    await this.socketService.clickChecklistTask(
+      {
+        sessionId: this.getSessionId(),
+        taskId: item.id,
+      },
+      { batch: true },
+    );
   }
 }
