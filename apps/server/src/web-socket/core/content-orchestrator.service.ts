@@ -953,7 +953,7 @@ export class ContentOrchestratorService {
     createNewSession = false,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
     if (createNewSession) {
-      return await this.createNewSession(customContentVersion, clientData, startOptions);
+      return await this.createBizSession(customContentVersion, clientData, startOptions);
     }
 
     return this.findExistingSession(customContentVersion, startOptions);
@@ -962,7 +962,7 @@ export class ContentOrchestratorService {
   /**
    * Create a new business session
    */
-  private async createNewSession(
+  private async createBizSession(
     customContentVersion: CustomContentVersion,
     clientData: SocketClientData,
     startOptions?: StartContentOptions,
