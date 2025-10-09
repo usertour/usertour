@@ -10,7 +10,7 @@ import {
 import { ClientContext, ContentConfigObject, ContentDataType } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 
-export type CustomContentSession = {
+export type ContentSessionCollection = {
   contentId: string;
   latestSession?: BizSessionWithEvents;
   totalSessions: number;
@@ -29,7 +29,7 @@ export enum ConditionExtractionMode {
 }
 
 export type CustomContentVersion = Omit<VersionWithStepsAndContent, 'config'> & {
-  session: CustomContentSession;
+  session: ContentSessionCollection;
   config: ContentConfigObject;
 };
 

@@ -23,7 +23,7 @@ import {
   ProjectConfig,
 } from '@usertour/types';
 import { getPublishedVersionId, flowIsDismissed, checklistIsDimissed } from '@/utils/content-utils';
-import { CustomContentVersion, CustomContentSession } from '@/common/types/content';
+import { CustomContentVersion, ContentSessionCollection } from '@/common/types/content';
 import { ConfigService } from '@nestjs/config';
 import { LicenseService } from '@/license/license.service';
 
@@ -858,7 +858,7 @@ export class DataResolverService {
     environment: Environment,
     bizUser: BizUser,
     attributes: Attribute[],
-    session: CustomContentSession,
+    session: ContentSessionCollection,
     externalCompanyId?: string,
   ): Promise<CustomContentVersion> {
     if (!version) {
@@ -901,8 +901,8 @@ export class DataResolverService {
   private async getBatchContentSession(
     contentIds: string[],
     bizUserId: string,
-  ): Promise<Map<string, CustomContentSession>> {
-    const contentSessionMap = new Map<string, CustomContentSession>();
+  ): Promise<Map<string, ContentSessionCollection>> {
+    const contentSessionMap = new Map<string, ContentSessionCollection>();
 
     // Batch fetch latest sessions for all contents using distinct
     const latestSessions = await this.prisma.bizSession.findMany({
