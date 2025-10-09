@@ -249,38 +249,87 @@ export class SessionBuilderService {
       },
     };
     if (contentType === ContentDataType.CHECKLIST) {
-      session.version.checklist = customContentVersion.data as unknown as ChecklistData;
-    } else if (contentType === ContentDataType.FLOW) {
-      const steps = customContentVersion.steps;
-
-      const attributes = await this.extractStepsAttributes(
-        steps,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      const currentStep = steps.find((step) => step.cvid === stepCvid);
-      if (!currentStep) {
-        this.logger.error(`Current step not found for stepCvid ${stepCvid}`);
-        return null;
-      }
-      const versionSteps = customContentVersion.steps as unknown as SDKStep[];
-      const sessionSteps = await this.createSessionSteps(
-        versionSteps,
+      return this.processChecklistSession(session, customContentVersion);
+    }
+    if (contentType === ContentDataType.FLOW) {
+      return this.processFlowSession(
+        session,
+        customContentVersion,
         themes,
         environment,
         externalUserId,
         externalCompanyId,
+        stepCvid,
       );
-
-      session.version.steps = sessionSteps;
-      session.currentStep = {
-        cvid: currentStep.cvid,
-        id: currentStep.id,
-      };
-      session.attributes = attributes;
     }
+    return session;
+  }
+
+  /**
+   * Process CHECKLIST content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @returns The processed session
+   */
+  private processChecklistSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+  ): CustomContentSession {
+    session.version.checklist = customContentVersion.data as unknown as ChecklistData;
+    return session;
+  }
+
+  /**
+   * Process FLOW content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param themes - The themes array
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param stepCvid - The step CVID
+   * @returns The processed session or null if current step not found
+   */
+  private async processFlowSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    themes: Theme[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+    stepCvid?: string,
+  ): Promise<CustomContentSession | null> {
+    const steps = customContentVersion.steps;
+
+    const attributes = await this.extractStepsAttributes(
+      steps,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    const currentStep = steps.find((step) => step.cvid === stepCvid);
+    if (!currentStep) {
+      this.logger.error(`Current step not found for stepCvid ${stepCvid}`);
+      return null;
+    }
+
+    const versionSteps = customContentVersion.steps as unknown as SDKStep[];
+    const sessionSteps = await this.createSessionSteps(
+      versionSteps,
+      themes,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    session.version.steps = sessionSteps;
+    session.currentStep = {
+      cvid: currentStep.cvid,
+      id: currentStep.id,
+    };
+    session.attributes = attributes;
+
     return session;
   }
 
