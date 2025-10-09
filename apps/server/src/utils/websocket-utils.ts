@@ -1,6 +1,6 @@
 import { ContentDataType } from '@usertour/types';
 import {
-  SDKContentSession,
+  CustomContentSession,
   TrackCondition,
   ClientCondition,
   ConditionWaitTimer,
@@ -30,7 +30,7 @@ export function buildExternalUserRoomId(environmentId: string, externalUserId: s
 export function extractSessionByContentType(
   socketClientData: SocketClientData,
   contentType: ContentDataType,
-): SDKContentSession | null {
+): CustomContentSession | null {
   const { flowSession, checklistSession } = socketClientData;
   switch (contentType) {
     case ContentDataType.FLOW:

@@ -7,7 +7,7 @@ import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
 import { ChecklistData, contentEndReason, Step } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { SDKContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
+import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 
 /**
  * Options for component initialization
@@ -101,7 +101,7 @@ export abstract class UsertourComponent<TStore> extends Evented {
    * Updates the session
    * @param session - The new session data
    */
-  updateSession(session: SDKContentSession) {
+  updateSession(session: CustomContentSession) {
     this.session.update(session);
   }
 

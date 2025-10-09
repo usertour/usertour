@@ -22,7 +22,7 @@ import {
 import {
   StartContentOptions,
   TrackCondition,
-  SDKContentSession,
+  CustomContentSession,
   ConditionWaitTimer,
   ClientCondition,
   SocketClientData,
@@ -231,7 +231,7 @@ export class ContentOrchestratorService {
    * @returns Cleanup result with success status and updated client data
    */
   private async cleanupCurrentSessionIfNeeded(
-    currentSession: SDKContentSession | null,
+    currentSession: CustomContentSession | null,
     params: CancelSessionParams,
   ): Promise<{ success: boolean; updatedClientData?: SocketClientData }> {
     if (!currentSession) {
@@ -542,7 +542,7 @@ export class ContentOrchestratorService {
    */
   private async checkHideConditions(
     context: ContentStartContext,
-    session: SDKContentSession,
+    session: CustomContentSession,
   ): Promise<boolean> {
     const { socket, server, contentType } = context;
     const socketClientData = await this.getClientDataResolved(socket.id);
@@ -1094,7 +1094,7 @@ export class ContentOrchestratorService {
     socketClientData: SocketClientData,
     options?: StartContentOptions,
     createNewSession = false,
-  ): Promise<{ success: boolean; session?: SDKContentSession; reason?: string }> {
+  ): Promise<{ success: boolean; session?: CustomContentSession; reason?: string }> {
     // Handle session management
     const sessionResult = await this.handleSessionManagement(
       customContentVersion,
@@ -1207,7 +1207,7 @@ export class ContentOrchestratorService {
   async initializeSessionById(
     socketClientData: SocketClientData,
     sessionId: string,
-  ): Promise<SDKContentSession | null> {
+  ): Promise<CustomContentSession | null> {
     const session = await this.sessionBuilderService.getBizSessionWithContentAndVersion(sessionId);
     if (!session) {
       return null;

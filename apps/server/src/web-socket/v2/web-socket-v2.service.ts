@@ -30,7 +30,7 @@ import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { ClientCondition, SDKContentSession } from '@/common/types/sdk';
+import { ClientCondition, CustomContentSession } from '@/common/types/sdk';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -572,7 +572,7 @@ export class WebSocketV2Service {
   async initializeSessionById(
     socketClientData: SocketClientData,
     sessionId: string,
-  ): Promise<SDKContentSession | null> {
+  ): Promise<CustomContentSession | null> {
     return await this.contentOrchestratorService.initializeSessionById(socketClientData, sessionId);
   }
 }

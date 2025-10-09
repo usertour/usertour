@@ -1,13 +1,13 @@
-import { SDKContentSession, SessionStep, SessionTheme } from '@/types/sdk';
+import { CustomContentSession, SessionStep, SessionTheme } from '@/types/sdk';
 
 /**
  * Session data access class
  * Provides common getter methods for session data
  */
 export class UsertourSession {
-  private session: SDKContentSession;
+  private session: CustomContentSession;
 
-  constructor(session: SDKContentSession) {
+  constructor(session: CustomContentSession) {
     this.session = session;
   }
 
@@ -15,7 +15,7 @@ export class UsertourSession {
    * Updates the session data
    * @param session - New session data to update
    */
-  update(session: SDKContentSession): void {
+  update(session: CustomContentSession): void {
     this.session = session;
   }
 

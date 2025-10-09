@@ -38,7 +38,7 @@ import { buildNavigateUrl, getClientContext } from '@/core/usertour-helper';
 import {
   WebSocketEvents,
   ErrorMessages,
-  SDKContentSession,
+  CustomContentSession,
   TrackCondition,
   UnTrackedCondition,
   ConditionWaitTimer,
@@ -362,9 +362,9 @@ export class UsertourCore extends Evented {
    */
   private setupFlowSessionListeners(): void {
     this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
-      const success = this.setFlowSession(session as SDKContentSession);
+      const success = this.setFlowSession(session as CustomContentSession);
       if (success) {
-        this.updateSocketAuthInfo({ flowSessionId: (session as SDKContentSession).id });
+        this.updateSocketAuthInfo({ flowSessionId: (session as CustomContentSession).id });
       }
       return success;
     });
@@ -389,7 +389,7 @@ export class UsertourCore extends Evented {
    */
   private setupChecklistSessionListeners(): void {
     this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
-      return this.setChecklistSession(session as SDKContentSession);
+      return this.setChecklistSession(session as CustomContentSession);
     });
   }
 
@@ -424,7 +424,7 @@ export class UsertourCore extends Evented {
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
    */
-  private setFlowSession(session: SDKContentSession): boolean {
+  private setFlowSession(session: CustomContentSession): boolean {
     if (!session?.content?.id) {
       logger.warn('Invalid session data provided to setFlowSession');
       return false;
@@ -484,7 +484,7 @@ export class UsertourCore extends Evented {
     return true;
   }
 
-  private setChecklistSession(session: SDKContentSession): boolean {
+  private setChecklistSession(session: CustomContentSession): boolean {
     if (!session?.content?.id) {
       logger.warn('Invalid session data provided to setChecklistSession');
       return false;

@@ -26,7 +26,7 @@ export type SessionStep = Step & {
   theme?: SessionTheme;
 };
 
-export type SDKContentSession = {
+export type CustomContentSession = {
   id: string;
   type: ContentDataType;
   draftMode: boolean;

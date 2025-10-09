@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { ContentDataType } from '@usertour/types';
 import {
-  SDKContentSession,
+  CustomContentSession,
   TrackCondition,
   SocketClientData,
   ClientCondition,
@@ -61,7 +61,7 @@ export class SocketSessionService {
    * @param session - The session data to set
    * @returns Promise<boolean> - True if the session was set and acknowledged by client
    */
-  private async setSocketSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+  private async setSocketSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
     const contentType = session.content.type as ContentDataType;
 
     switch (contentType) {
@@ -81,7 +81,10 @@ export class SocketSessionService {
    * @param session - The session to unset
    * @returns Promise<boolean> - True if the session was unset and acknowledged by client
    */
-  private async unsetSocketSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+  private async unsetSocketSession(
+    socket: Socket,
+    session: CustomContentSession,
+  ): Promise<boolean> {
     const contentType = session.content.type as ContentDataType;
     const sessionId = session.id;
     switch (contentType) {
@@ -215,7 +218,7 @@ export class SocketSessionService {
   async cleanupSocketSession(
     socket: Socket,
     socketClientData: SocketClientData,
-    session: SDKContentSession,
+    session: CustomContentSession,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
     const {
@@ -277,7 +280,7 @@ export class SocketSessionService {
   async activateSocketSession(
     socket: Socket,
     socketClientData: SocketClientData,
-    session: SDKContentSession,
+    session: CustomContentSession,
     options: ActivateSocketSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, contentTypeFilter } = options;

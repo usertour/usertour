@@ -21,7 +21,7 @@ import {
   SessionAttribute,
   CustomContentVersion,
   SocketClientData,
-  SDKContentSession,
+  CustomContentSession,
   SessionTheme,
   SessionStep,
   Environment,
@@ -212,7 +212,7 @@ export class SessionBuilderService {
     customContentVersion: CustomContentVersion,
     clientData: SocketClientData,
     stepCvid?: string,
-  ): Promise<SDKContentSession | null> {
+  ): Promise<CustomContentSession | null> {
     const { environment, externalUserId, externalCompanyId } = clientData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.dataResolverService.getConfig(environment);
@@ -229,7 +229,7 @@ export class SessionBuilderService {
       externalCompanyId,
     );
 
-    const session: SDKContentSession = {
+    const session: CustomContentSession = {
       id: sessionId,
       type: contentType,
       content: {
@@ -293,11 +293,11 @@ export class SessionBuilderService {
    * @returns Updated content session or null if refresh fails
    */
   async refreshContentSession(
-    contentSession: SDKContentSession,
+    contentSession: CustomContentSession,
     environment: Environment,
     externalUserId: string,
     externalCompanyId?: string,
-  ): Promise<SDKContentSession | null> {
+  ): Promise<CustomContentSession | null> {
     // Get version to find themeId
     const version = await this.prisma.version.findUnique({
       where: { id: contentSession.version.id },
@@ -330,7 +330,7 @@ export class SessionBuilderService {
     }
 
     // Create a deep copy of the content session to avoid mutating the original
-    const refreshedSession: SDKContentSession = {
+    const refreshedSession: CustomContentSession = {
       ...contentSession,
       version: {
         ...contentSession.version,
@@ -375,7 +375,10 @@ export class SessionBuilderService {
    * @param newSession - The updated content session
    * @returns True if there are changes in theme, attributes, or steps theme
    */
-  compareContentSessions(oldSession: SDKContentSession, newSession: SDKContentSession): boolean {
+  compareContentSessions(
+    oldSession: CustomContentSession,
+    newSession: CustomContentSession,
+  ): boolean {
     // Basic validation - should be comparing the same session
     if (oldSession.id !== newSession.id || oldSession.type !== ContentDataType.FLOW) {
       return true;

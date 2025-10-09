@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SDKContentSession, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
+import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
 
 /**
  * Socket emitter service
@@ -46,7 +46,7 @@ export class SocketEmitterService {
    * @param session - The session to set
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async setFlowSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+  async setFlowSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
     return await this.emitEventWithTimeout(socket, 'set-flow-session', session);
   }
 
@@ -56,7 +56,7 @@ export class SocketEmitterService {
    * @param session - The session to set
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async setChecklistSession(socket: Socket, session: SDKContentSession): Promise<boolean> {
+  async setChecklistSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
     return await this.emitEventWithTimeout(socket, 'set-checklist-session', session);
   }
 

@@ -2,7 +2,7 @@ import { BizSessionWithEvents, VersionWithStepsAndContent } from './schema';
 import {
   ClientCondition,
   Environment,
-  SDKContentSession,
+  CustomContentSession,
   ConditionWaitTimer,
   TrackCondition,
   StartContentOptions,
@@ -43,8 +43,8 @@ export interface SocketClientData {
   clientContext: ClientContext;
   clientConditions?: ClientCondition[];
   conditionWaitTimers?: ConditionWaitTimer[];
-  flowSession?: SDKContentSession;
-  checklistSession?: SDKContentSession;
+  flowSession?: CustomContentSession;
+  checklistSession?: CustomContentSession;
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
   lastUpdated: number;
@@ -69,12 +69,12 @@ export interface ContentCancelContext {
 export interface ContentStartResult {
   success: boolean;
   activate?: boolean;
-  session?: SDKContentSession;
+  session?: CustomContentSession;
   trackConditions?: TrackCondition[];
   trackHideConditions?: TrackCondition[];
   conditionWaitTimers?: ConditionWaitTimer[];
   reason?: string;
-  invalidSession?: SDKContentSession;
+  invalidSession?: CustomContentSession;
   forceGoToStep?: boolean;
   isActivateOtherSockets?: boolean;
 }
@@ -92,7 +92,7 @@ export interface ActivateSessionParams {
   server: Server;
   socket: Socket;
   socketClientData?: SocketClientData;
-  session: SDKContentSession;
+  session: CustomContentSession;
   trackHideConditions: TrackCondition[] | undefined;
   forceGoToStep: boolean;
 }
