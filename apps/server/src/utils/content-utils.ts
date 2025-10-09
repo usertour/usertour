@@ -1290,19 +1290,18 @@ const canCompleteChecklistItem = (
 };
 
 /**
- * Processes checklist items
- * @param content - The content to process
- * @returns The processed items and if any changes occurred
+ * Evaluates checklist items including completion, visibility, and animation status
+ * @param customContentVersion - The content version to process
+ * @returns The evaluated items with updated properties
  */
-export const processChecklistItems = async (customContentVersion: CustomContentVersion) => {
+export const evaluateChecklistItems = async (customContentVersion: CustomContentVersion) => {
   const checklistData = customContentVersion.data as unknown as ChecklistData;
-
   const items = checklistData.items;
 
   // Process items sequentially to handle ordered completion dependency
-  const updatedItems: ChecklistItemType[] = [];
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+  const processedItems: ChecklistItemType[] = [];
+
+  for (const item of items) {
     const isClicked = checklistItemIsClicked(customContentVersion, item) || item.isClicked || false;
 
     // Check completion conditions using item's isClicked state
@@ -1315,8 +1314,11 @@ export const processChecklistItems = async (customContentVersion: CustomContentV
     const isShowAnimation = checklistIsShowAnimation(customContentVersion, item);
 
     // For ordered completion, we need to check against the current state of items
-    // Use the updated items processed so far plus the original remaining items
-    const currentItemsState: ChecklistItemType[] = [...updatedItems, ...items.slice(i)];
+    // Use the processed items so far plus the original remaining items
+    const currentItemsState: ChecklistItemType[] = [
+      ...processedItems,
+      ...items.slice(processedItems.length),
+    ];
 
     const isCompleted: boolean =
       item.isCompleted ||
@@ -1333,7 +1335,7 @@ export const processChecklistItems = async (customContentVersion: CustomContentV
     }
 
     // Add updated item to the array
-    updatedItems.push({
+    processedItems.push({
       ...item,
       isShowAnimation,
       isCompleted,
@@ -1341,8 +1343,21 @@ export const processChecklistItems = async (customContentVersion: CustomContentV
     });
   }
 
+  return processedItems;
+};
+
+/**
+ * Checks if a checklist items have changes
+ * @param items - The items to check
+ * @param updatedItems - The updated items
+ * @returns True if the checklist items have changes, false otherwise
+ */
+export const checklistItemsHasChanges = (
+  items: ChecklistItemType[],
+  updatedItems: ChecklistItemType[],
+) => {
   // Check if any changes occurred
-  const hasChanges = items.some((item) => {
+  return items.some((item) => {
     const updatedItem = updatedItems.find((updated) => updated.id === item.id);
     return (
       updatedItem &&
@@ -1351,8 +1366,6 @@ export const processChecklistItems = async (customContentVersion: CustomContentV
         item.isShowAnimation !== updatedItem.isShowAnimation)
     );
   });
-
-  return { items: updatedItems, hasChanges };
 };
 
 /**
