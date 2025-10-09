@@ -1292,9 +1292,13 @@ const canCompleteChecklistItem = (
 /**
  * Evaluates checklist items including completion, visibility, and animation status
  * @param customContentVersion - The content version to process
+ * @param options - The options to evaluate the checklist items
  * @returns The evaluated items with updated properties
  */
-export const evaluateChecklistItems = async (customContentVersion: CustomContentVersion) => {
+export const evaluateChecklistItems = async (
+  customContentVersion: CustomContentVersion,
+  options: RulesEvaluationOptions,
+) => {
   const checklistData = customContentVersion.data as unknown as ChecklistData;
   const items = checklistData.items;
 
@@ -1306,6 +1310,7 @@ export const evaluateChecklistItems = async (customContentVersion: CustomContent
 
     // Check completion conditions using item's isClicked state
     const activeConditions = await evaluateRulesConditions(item.completeConditions, {
+      ...options,
       customEvaluators: {
         [RulesType.TASK_IS_CLICKED]: () => isClicked,
       },
@@ -1330,7 +1335,7 @@ export const evaluateChecklistItems = async (customContentVersion: CustomContent
     // Check visibility conditions
     let isVisible = true;
     if (item.onlyShowTask) {
-      const visibleConditions = await evaluateRulesConditions(item.onlyShowTaskConditions);
+      const visibleConditions = await evaluateRulesConditions(item.onlyShowTaskConditions, options);
       isVisible = isConditionsActived(visibleConditions);
     }
 
