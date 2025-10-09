@@ -11,6 +11,9 @@ import {
   ContentEditorElementType,
   ThemeVariation,
   EventAttributes,
+  ChecklistItemType,
+  ChecklistData,
+  ChecklistInitialDisplay,
 } from '@usertour/types';
 import {
   SessionAttribute,
@@ -1111,4 +1114,282 @@ export const resolveConditionStates = (
       isActive: reportValue !== undefined ? reportValue : condition.isActive,
     };
   });
+};
+
+/**=========================== CHECKLIST UTILITIES ================================**/
+
+/**
+ * Gets the initial display of a checklist
+ * @param checklist - The checklist to get the initial display of
+ * @returns The initial display of the checklist
+ */
+export const getChecklistInitialDisplay = (
+  customContentVersion: CustomContentVersion,
+): ChecklistInitialDisplay => {
+  const latestSession = customContentVersion.session.latestSession;
+  const checklistData = customContentVersion.data as unknown as ChecklistData;
+  if (!latestSession || checklistIsDimissed(latestSession.bizEvent)) {
+    return checklistData.initialDisplay;
+  }
+  // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
+  const hiddenOrSeenEvents = latestSession.bizEvent?.filter(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_HIDDEN ||
+      event.event?.codeName === BizEvents.CHECKLIST_SEEN,
+  );
+
+  if (!hiddenOrSeenEvents || hiddenOrSeenEvents.length === 0) {
+    return checklistData.initialDisplay;
+  }
+
+  // Get the latest hidden or seen event
+  const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
+    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+  });
+  if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_SEEN) {
+    return ChecklistInitialDisplay.EXPANDED;
+  }
+
+  return ChecklistInitialDisplay.BUTTON;
+};
+
+/**
+ * Checks if a checklist item is clicked
+ * @param content - The content to check
+ * @param checklistItem - The checklist item to check
+ * @returns True if the checklist item is clicked, false otherwise
+ */
+const checklistItemIsClicked = (
+  customContentVersion: CustomContentVersion,
+  checklistItem: ChecklistItemType,
+) => {
+  const latestSession = customContentVersion.session.latestSession;
+  if (!latestSession) {
+    return false;
+  }
+  const bizEvents = latestSession.bizEvent || [];
+  return !!bizEvents.find(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_TASK_CLICKED &&
+      (event.data as any)?.checklist_task_id === checklistItem.id,
+  );
+};
+
+/**
+ * Checks if a checklist item should show animation
+ * @param checklist - The checklist to check
+ * @param checklistItem - The checklist item to check
+ * @returns True if the checklist item should show animation, false otherwise
+ */
+const checklistIsShowAnimation = (
+  customContentVersion: CustomContentVersion,
+  checklistItem: ChecklistItemType,
+) => {
+  const latestSession = customContentVersion.session.latestSession;
+  // If there is no latest session or the checklist is dismissed, don't show animation
+  if (!latestSession || checklistIsDimissed(latestSession.bizEvent)) {
+    return false;
+  }
+
+  const bizEvents = latestSession.bizEvent || [];
+
+  const taskCompletedEvents = bizEvents.filter(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
+      (event.data as any)?.checklist_task_id === checklistItem.id,
+  );
+
+  // If there are no task completed events, don't show animation
+  if (taskCompletedEvents.length === 0) {
+    return false;
+  }
+
+  // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
+  const hiddenOrSeenEvents = bizEvents.filter(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_HIDDEN ||
+      event.event?.codeName === BizEvents.CHECKLIST_SEEN,
+  );
+
+  // If there are no hidden or seen events, show animation, because the checklist item is completed
+  if (!hiddenOrSeenEvents || hiddenOrSeenEvents.length === 0) {
+    return true;
+  }
+
+  // Get the latest hidden or seen event
+  const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
+    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+  });
+
+  // If the latest event is CHECKLIST_SEEN, don't show animation
+  if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_SEEN) {
+    return false;
+  }
+
+  // If the latest event is CHECKLIST_HIDDEN, check if there's a CHECKLIST_TASK_COMPLETED
+  // event for this specific item that occurred after the last SEEN event
+  if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_HIDDEN) {
+    // Get the last SEEN event
+    const lastCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
+      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    });
+
+    // Check if the task was completed after the last SEEN event
+    const lastCompletedTime = new Date(lastCompletedEvent.createdAt);
+    const lastHiddenTime = new Date(latestHiddenOrSeenEvent.createdAt);
+
+    return lastCompletedTime >= lastHiddenTime;
+  }
+
+  return false;
+};
+
+/**
+ * Checks if a checklist item is completed
+ * @param content - The content to check
+ * @param checklistItem - The checklist item to check
+ * @returns True if the checklist item is completed, false otherwise
+ */
+const checklistItemIsCompleted = (
+  bizEvents: BizEventWithEvent[] | undefined,
+  checklistItem: ChecklistItemType,
+) => {
+  return !!bizEvents?.find(
+    (event) =>
+      event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
+      (event.data as any)?.checklist_task_id === checklistItem.id,
+  );
+};
+
+/**
+ * Checks if a checklist item can be completed based on completion order and item status
+ * @param completionOrder - The completion order
+ * @param items - The items to check
+ * @param currentItem - The current item to check
+ * @returns True if the checklist item can be completed, false otherwise
+ */
+const canCompleteChecklistItem = (
+  completionOrder: 'any' | 'ordered',
+  items: ChecklistItemType[],
+  currentItem: ChecklistItemType,
+): boolean => {
+  const currentIndex = items.findIndex((item) => item.id === currentItem.id);
+
+  // For 'any' order, items can be completed in any order
+  if (completionOrder === 'any') {
+    return true;
+  }
+
+  // For 'ordered' completion, check if all previous items are completed
+  if (completionOrder === 'ordered') {
+    const previousItems = items.slice(0, currentIndex);
+    return previousItems.every((item) => item.isCompleted);
+  }
+
+  return false;
+};
+
+/**
+ * Processes checklist items
+ * @param content - The content to process
+ * @returns The processed items and if any changes occurred
+ */
+export const processChecklistItems = async (customContentVersion: CustomContentVersion) => {
+  const checklistData = customContentVersion.data as unknown as ChecklistData;
+
+  const items = checklistData.items;
+
+  // Process items sequentially to handle ordered completion dependency
+  const updatedItems: ChecklistItemType[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const isClicked = checklistItemIsClicked(customContentVersion, item) || item.isClicked || false;
+
+    // Check completion conditions using item's isClicked state
+    const activeConditions = await evaluateRulesConditions(item.completeConditions, {
+      customEvaluators: {
+        [RulesType.TASK_IS_CLICKED]: () => isClicked,
+      },
+    });
+
+    const isShowAnimation = checklistIsShowAnimation(customContentVersion, item);
+
+    // For ordered completion, we need to check against the current state of items
+    // Use the updated items processed so far plus the original remaining items
+    const currentItemsState: ChecklistItemType[] = [...updatedItems, ...items.slice(i)];
+
+    const isCompleted: boolean =
+      item.isCompleted ||
+      checklistItemIsCompleted(customContentVersion.session.latestSession?.bizEvent, item)
+        ? true
+        : canCompleteChecklistItem(checklistData.completionOrder, currentItemsState, item) &&
+          isConditionsActived(activeConditions);
+
+    // Check visibility conditions
+    let isVisible = true;
+    if (item.onlyShowTask) {
+      const visibleConditions = await evaluateRulesConditions(item.onlyShowTaskConditions);
+      isVisible = isConditionsActived(visibleConditions);
+    }
+
+    // Add updated item to the array
+    updatedItems.push({
+      ...item,
+      isShowAnimation,
+      isCompleted,
+      isVisible,
+    });
+  }
+
+  // Check if any changes occurred
+  const hasChanges = items.some((item) => {
+    const updatedItem = updatedItems.find((updated) => updated.id === item.id);
+    return (
+      updatedItem &&
+      (item.isCompleted !== updatedItem.isCompleted ||
+        item.isVisible !== updatedItem.isVisible ||
+        item.isShowAnimation !== updatedItem.isShowAnimation)
+    );
+  });
+
+  return { items: updatedItems, hasChanges };
+};
+
+/**
+ * Checks if a checklist has show animation items
+ * @param items - The items to check
+ * @returns True if the checklist has show animation items, false otherwise
+ */
+export const checklistHasShowAnimationItems = (items: ChecklistItemType[]) => {
+  return items.some((item) => item.isCompleted && item.isVisible && item.isShowAnimation);
+};
+
+/**
+ * Checks if a checklist has new completed items
+ * @param currentItems - The current items
+ * @param previousItems - The previous items
+ * @returns True if the checklist has new completed items, false otherwise
+ */
+export const checklistHasNewCompletedItems = (
+  currentItems: ChecklistItemType[],
+  previousItems: ChecklistItemType[],
+): boolean => {
+  // Get visible completed item IDs from previous collapsed state
+  const previousCompletedIds = new Set(
+    previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+  );
+
+  // Get visible completed item IDs from current state
+  const currentCompletedIds = new Set(
+    currentItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+  );
+
+  // Check if there are any new completed items (items that are completed now but weren't before)
+  for (const itemId of currentCompletedIds) {
+    if (!previousCompletedIds.has(itemId)) {
+      return true;
+    }
+  }
+
+  return false;
 };

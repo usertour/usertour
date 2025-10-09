@@ -222,11 +222,7 @@ export class WebSocketV2Service {
     if (!bizSession) return false;
     const content = bizSession.content;
     const version = bizSession.version;
-    const step = version.steps.find((s) =>
-      (s.data as unknown as ChecklistData)?.items?.find((item) => item.id === params.taskId),
-    );
-    if (!step) return false;
-    const checklistData = step.data as unknown as ChecklistData;
+    const checklistData = version.data as unknown as ChecklistData;
     const checklistItem = checklistData.items.find((item) => item.id === params.taskId);
     if (!checklistItem) return false;
 
