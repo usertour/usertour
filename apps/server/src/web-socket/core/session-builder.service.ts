@@ -4,6 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   ChecklistData,
   ContentDataType,
+  RulesType,
   Step as SDKStep,
   ThemeTypesSetting,
   ThemeVariation,
@@ -16,6 +17,7 @@ import {
   compareSessionAttributes,
   compareSessionThemes,
   compareSessionSteps,
+  evaluateChecklistItems,
 } from '@/utils/content-utils';
 import {
   SessionAttribute,
@@ -29,6 +31,7 @@ import {
   Theme,
   BizSession,
   BizSessionWithContentAndVersion,
+  ClientCondition,
 } from '@/common/types';
 import { DataResolverService } from './data-resolver.service';
 
@@ -249,16 +252,14 @@ export class SessionBuilderService {
       },
     };
     if (contentType === ContentDataType.CHECKLIST) {
-      return this.processChecklistSession(session, customContentVersion);
+      return await this.processChecklistSession(session, customContentVersion, clientData);
     }
     if (contentType === ContentDataType.FLOW) {
-      return this.processFlowSession(
+      return await this.processFlowSession(
         session,
         customContentVersion,
         themes,
-        environment,
-        externalUserId,
-        externalCompanyId,
+        clientData,
         stepCvid,
       );
     }
@@ -269,13 +270,37 @@ export class SessionBuilderService {
    * Process CHECKLIST content type session
    * @param session - The content session
    * @param customContentVersion - The custom content version
+   * @param clientData - The client data
    * @returns The processed session
    */
-  private processChecklistSession(
+  private async processChecklistSession(
     session: CustomContentSession,
     customContentVersion: CustomContentVersion,
-  ): CustomContentSession {
-    session.version.checklist = customContentVersion.data as unknown as ChecklistData;
+    clientData: SocketClientData,
+  ): Promise<CustomContentSession> {
+    const { clientContext, clientConditions } = clientData;
+
+    // Extract activated and deactivated condition IDs
+    const activatedIds = clientConditions
+      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === true)
+      .map((clientCondition: ClientCondition) => clientCondition.conditionId);
+
+    const deactivatedIds = clientConditions
+      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
+      .map((clientCondition: ClientCondition) => clientCondition.conditionId);
+
+    // Evaluate content versions with proper conditions
+    const items = await evaluateChecklistItems(customContentVersion, {
+      typeControl: {
+        [RulesType.CURRENT_PAGE]: true,
+        [RulesType.TIME]: true,
+      },
+      clientContext,
+      activatedIds,
+      deactivatedIds,
+    });
+    const checklistData = customContentVersion.data as unknown as ChecklistData;
+    session.version.checklist = { ...checklistData, items };
     return session;
   }
 
@@ -294,12 +319,11 @@ export class SessionBuilderService {
     session: CustomContentSession,
     customContentVersion: CustomContentVersion,
     themes: Theme[],
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
+    clientData: SocketClientData,
     stepCvid?: string,
   ): Promise<CustomContentSession | null> {
     const steps = customContentVersion.steps;
+    const { environment, externalUserId, externalCompanyId } = clientData;
 
     const attributes = await this.extractStepsAttributes(
       steps,
