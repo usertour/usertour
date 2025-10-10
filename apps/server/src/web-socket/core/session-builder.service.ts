@@ -358,14 +358,14 @@ export class SessionBuilderService {
   }
 
   /**
-   * Refresh content session with updated data
+   * Rebuild content session with regenerated data
    * @param contentSession - The existing content session
    * @param environment - The environment
    * @param externalUserId - The external user ID
    * @param externalCompanyId - The external company ID (optional)
-   * @returns Updated content session or null if refresh fails
+   * @returns Rebuilt content session or null if rebuild fails
    */
-  async refreshContentSession(
+  async rebuildContentSession(
     contentSession: CustomContentSession,
     environment: Environment,
     externalUserId: string,
@@ -403,7 +403,7 @@ export class SessionBuilderService {
     }
 
     // Create a deep copy of the content session to avoid mutating the original
-    const refreshedSession: CustomContentSession = {
+    const newSession: CustomContentSession = {
       ...contentSession,
       version: {
         ...contentSession.version,
@@ -432,14 +432,14 @@ export class SessionBuilderService {
         externalCompanyId,
       );
 
-      refreshedSession.attributes = attributes;
-      refreshedSession.version = {
-        ...refreshedSession.version,
+      newSession.attributes = attributes;
+      newSession.version = {
+        ...newSession.version,
         steps: sessionSteps,
       };
     }
 
-    return refreshedSession;
+    return newSession;
   }
 
   /**

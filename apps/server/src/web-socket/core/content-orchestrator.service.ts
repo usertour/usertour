@@ -741,8 +741,8 @@ export class ContentOrchestratorService {
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
-    // Refresh session
-    const refreshedSession = await this.sessionBuilderService.refreshContentSession(
+    // Rebuild session
+    const rebuiltSession = await this.sessionBuilderService.rebuildContentSession(
       session,
       environment,
       externalUserId,
@@ -752,7 +752,7 @@ export class ContentOrchestratorService {
     // Compare session to detect changes
     const isSessionChanged = this.sessionBuilderService.compareContentSessions(
       session,
-      refreshedSession,
+      rebuiltSession,
     );
 
     // Handle active session cases
@@ -760,7 +760,7 @@ export class ContentOrchestratorService {
       success: true,
       activate: isSessionChanged,
       reason: isSessionChanged ? 'Existing active session with changes' : 'Existing active session',
-      session: refreshedSession,
+      session: rebuiltSession,
     };
   }
 
