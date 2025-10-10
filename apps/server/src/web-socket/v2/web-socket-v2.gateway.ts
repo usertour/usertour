@@ -61,6 +61,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
         const token = String(auth.token ?? '');
         const flowSessionId = String(auth.flowSessionId ?? '');
+        const checklistSessionId = String(auth.checklistSessionId ?? '');
 
         if (!externalUserId || !token) {
           return next(new SDKAuthenticationError());
@@ -86,6 +87,15 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           const flowSession = await this.service.initializeSessionById(clientData, flowSessionId);
           if (flowSession) {
             clientData.flowSession = flowSession;
+          }
+        }
+        if (checklistSessionId) {
+          const checklistSession = await this.service.initializeSessionById(
+            clientData,
+            checklistSessionId,
+          );
+          if (checklistSession) {
+            clientData.checklistSession = checklistSession;
           }
         }
         if (!(await this.socketRedisService.setClientData(socket.id, clientData))) {
