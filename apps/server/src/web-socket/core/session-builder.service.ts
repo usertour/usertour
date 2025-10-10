@@ -428,9 +428,11 @@ export class SessionBuilderService {
     if (oldSession.id !== newSession.id) {
       return true;
     }
+    const oldVersion = oldSession.version;
+    const newVersion = newSession.version;
 
     // Compare version theme using utility function
-    if (compareSessionThemes(oldSession.version.theme, newSession.version.theme)) {
+    if (compareSessionThemes(oldVersion.theme, newVersion.theme)) {
       return true;
     }
 
@@ -440,15 +442,12 @@ export class SessionBuilderService {
     }
 
     // Compare steps using utility function
-    if (compareSessionSteps(oldSession.version.steps || [], newSession.version.steps || [])) {
+    if (compareSessionSteps(oldVersion.steps || [], newVersion.steps || [])) {
       return true;
     }
 
     if (
-      compareChecklistItems(
-        oldSession.version.checklist?.items || [],
-        newSession.version.checklist?.items || [],
-      )
+      compareChecklistItems(oldVersion.checklist?.items || [], newVersion.checklist?.items || [])
     ) {
       return true;
     }
