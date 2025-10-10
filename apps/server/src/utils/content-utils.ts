@@ -1066,6 +1066,32 @@ export const compareSessionSteps = (oldSteps: SessionStep[], newSteps: SessionSt
 };
 
 /**
+ * Compare checklist items
+ * @param oldItems - The old items
+ * @param newItems - The new items
+ * @returns True if there are differences
+ */
+export const compareChecklistItems = (
+  oldItems: ChecklistItemType[],
+  newItems: ChecklistItemType[],
+) => {
+  if (oldItems.length !== newItems.length) {
+    return true;
+  }
+
+  // Check if any changes occurred
+  return oldItems.some((item) => {
+    const newItem = newItems.find((newItem) => newItem.id === item.id);
+    return (
+      newItem &&
+      (item.isCompleted !== newItem.isCompleted ||
+        item.isVisible !== newItem.isVisible ||
+        item.isShowAnimation !== newItem.isShowAnimation)
+    );
+  });
+};
+
+/**
  * Checks if all condition IDs in rules conditions exist and are ready in client conditions
  * @param conditions - Array of rules conditions (hideRules, autoStartRules, etc.)
  * @param clientConditions - Array of client conditions from Redis socket data
@@ -1349,28 +1375,6 @@ export const evaluateChecklistItems = async (
   }
 
   return processedItems;
-};
-
-/**
- * Checks if a checklist items have changes
- * @param items - The items to check
- * @param updatedItems - The updated items
- * @returns True if the checklist items have changes, false otherwise
- */
-export const checklistItemsHasChanges = (
-  items: ChecklistItemType[],
-  updatedItems: ChecklistItemType[],
-) => {
-  // Check if any changes occurred
-  return items.some((item) => {
-    const updatedItem = updatedItems.find((updated) => updated.id === item.id);
-    return (
-      updatedItem &&
-      (item.isCompleted !== updatedItem.isCompleted ||
-        item.isVisible !== updatedItem.isVisible ||
-        item.isShowAnimation !== updatedItem.isShowAnimation)
-    );
-  });
 };
 
 /**
