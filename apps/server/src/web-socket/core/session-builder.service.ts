@@ -258,8 +258,8 @@ export class SessionBuilderService {
       return await this.processFlowSession(
         session,
         customContentVersion,
-        themes,
         clientData,
+        themes,
         stepCvid,
       );
     }
@@ -318,8 +318,8 @@ export class SessionBuilderService {
   private async processFlowSession(
     session: CustomContentSession,
     customContentVersion: CustomContentVersion,
-    themes: Theme[],
     clientData: SocketClientData,
+    themes: Theme[],
     stepCvid?: string,
   ): Promise<CustomContentSession | null> {
     const steps = customContentVersion.steps;
@@ -393,6 +393,7 @@ export class SessionBuilderService {
       this.logger.error(`Failed to create session theme for themeId ${themeId}`);
       return null;
     }
+    const contentType = contentSession.type as ContentDataType;
 
     // Create a deep copy of the content session to avoid mutating the original
     const newSession: CustomContentSession = {
@@ -402,8 +403,11 @@ export class SessionBuilderService {
         theme: sessionTheme,
       },
     };
-    if (contentSession.type === ContentDataType.FLOW) {
-      return await this.processFlowSession(newSession, customContentVersion, themes, clientData);
+    if (contentType === ContentDataType.FLOW) {
+      return await this.processFlowSession(newSession, customContentVersion, clientData, themes);
+    }
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.processChecklistSession(newSession, customContentVersion, clientData);
     }
 
     return newSession;
