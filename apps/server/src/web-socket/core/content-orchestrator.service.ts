@@ -953,22 +953,6 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Handle session management (create new or find existing)
-   */
-  private async handleSessionManagement(
-    customContentVersion: CustomContentVersion,
-    clientData: SocketClientData,
-    startOptions?: StartContentOptions,
-    createNewSession = false,
-  ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    if (createNewSession) {
-      return await this.createBizSession(customContentVersion, clientData, startOptions);
-    }
-
-    return this.findExistingSession(customContentVersion, startOptions);
-  }
-
-  /**
    * Create a new business session
    */
   private async createBizSession(
@@ -1104,13 +1088,9 @@ export class ContentOrchestratorService {
     options?: StartContentOptions,
     createNewSession = false,
   ): Promise<{ success: boolean; session?: CustomContentSession; reason?: string }> {
-    // Handle session management
-    const sessionResult = await this.handleSessionManagement(
-      customContentVersion,
-      socketClientData,
-      options,
-      createNewSession,
-    );
+    const sessionResult = createNewSession
+      ? await this.createBizSession(customContentVersion, socketClientData, options)
+      : this.findExistingSession(customContentVersion, options);
 
     if (!sessionResult.success) {
       return sessionResult;
