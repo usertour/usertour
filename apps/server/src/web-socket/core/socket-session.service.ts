@@ -99,6 +99,19 @@ export class SocketSessionService {
   }
 
   /**
+   * Emit checklist task completed event
+   * @param socket - The socket instance
+   * @param taskIds - The task ids to complete
+   * @returns True if the event was emitted successfully
+   */
+  async emitChecklistTasksCompleted(socket: Socket, taskIds: string[]) {
+    for (const taskId of taskIds) {
+      this.socketEmitterService.checklistTaskCompleted(socket, taskId);
+    }
+    return true;
+  }
+
+  /**
    * Calculate condition IDs that are no longer needed and should be removed
    * @param socket - The socket instance
    * @param currentConditions - The current conditions to compare against

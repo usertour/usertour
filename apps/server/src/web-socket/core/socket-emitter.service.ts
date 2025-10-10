@@ -96,6 +96,20 @@ export class SocketEmitterService {
   }
 
   // ============================================================================
+  // Checklist Control
+  // ============================================================================
+
+  /**
+   * Checklist task completed
+   * @param socket - The socket
+   * @param taskId - The task id to complete
+   * @returns True if the event was emitted successfully
+   */
+  checklistTaskCompleted(socket: Socket, taskId: string): boolean {
+    return socket.emit('checklist-task-completed', { taskId });
+  }
+
+  // ============================================================================
   // Wait Timer Conditions
   // ============================================================================
 

@@ -12,6 +12,7 @@ import {
   findLatestStepCvid,
   extractClientConditionWaitTimers,
   sessionIsAvailable,
+  extractChecklistNewCompletedItems,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -318,14 +319,58 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateSocketSession(params: ActivateSessionParams) {
-    const { socket, session, trackHideConditions, forceGoToStep, socketClientData } = params;
-    if (!socketClientData) {
+    const { socketClientData, session } = params;
+    if (!socketClientData || !session) {
       return false;
     }
+    const contentType = session.content.type as ContentDataType;
+    if (contentType === ContentDataType.FLOW) {
+      return await this.activateFlowSession(params);
+    }
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.activateChecklistSession(params);
+    }
+    return false;
+  }
+
+  /**
+   * Activate flow session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateFlowSession(params: ActivateSessionParams) {
+    const { socket, session, trackHideConditions, forceGoToStep, socketClientData } = params;
     const options: ActivateSocketSessionOptions = {
       trackConditions: trackHideConditions,
       forceGoToStep,
     };
+    return await this.socketSessionService.activateSocketSession(
+      socket as unknown as Socket,
+      socketClientData,
+      session,
+      options,
+    );
+  }
+
+  /**
+   * Activate checklist session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateChecklistSession(params: ActivateSessionParams) {
+    const { socket, session, trackHideConditions, socketClientData } = params;
+    const options: ActivateSocketSessionOptions = {
+      trackConditions: trackHideConditions,
+      forceGoToStep: false,
+    };
+    const currentSession = extractSessionByContentType(socketClientData, ContentDataType.CHECKLIST);
+    const newCompletedItems = extractChecklistNewCompletedItems(
+      session.version.checklist?.items || [],
+      currentSession?.version.checklist?.items || [],
+    );
+    if (newCompletedItems.length > 0) {
+      this.socketSessionService.emitChecklistTasksCompleted(socket, newCompletedItems);
+    }
     return await this.socketSessionService.activateSocketSession(
       socket as unknown as Socket,
       socketClientData,

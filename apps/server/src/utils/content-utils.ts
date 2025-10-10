@@ -1415,3 +1415,27 @@ export const checklistHasNewCompletedItems = (
 
   return false;
 };
+
+/**
+ * Extracts new completed items from a checklist
+ * @param currentItems - The current items
+ * @param previousItems - The previous items
+ * @returns The new completed items
+ */
+
+export const extractChecklistNewCompletedItems = (
+  currentItems: ChecklistItemType[],
+  previousItems: ChecklistItemType[],
+) => {
+  // Get visible completed item IDs from previous collapsed state
+  const previousCompletedIds = new Set<string>(
+    previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+  );
+
+  // Get visible completed item IDs from current state
+  const currentCompletedIds = new Set<string>(
+    currentItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+  );
+
+  return Array.from(currentCompletedIds).filter((id) => !previousCompletedIds.has(id));
+};
