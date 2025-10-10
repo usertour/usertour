@@ -759,16 +759,13 @@ export class ContentOrchestratorService {
     );
 
     // Compare session to detect changes
-    const isSessionChanged = this.sessionBuilderService.compareContentSessions(
-      session,
-      rebuiltSession,
-    );
+    const isChanged = this.sessionBuilderService.compareContentSessions(session, rebuiltSession);
 
     // Handle active session cases
     return {
       success: true,
-      activate: isSessionChanged,
-      reason: isSessionChanged ? 'Existing active session with changes' : 'Existing active session',
+      activate: isChanged,
+      reason: isChanged ? 'Existing active session with changes' : 'Existing active session',
       session: rebuiltSession,
     };
   }
