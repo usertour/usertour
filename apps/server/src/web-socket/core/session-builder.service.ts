@@ -18,6 +18,7 @@ import {
   compareSessionThemes,
   compareSessionSteps,
   evaluateChecklistItems,
+  compareChecklistItems,
 } from '@/utils/content-utils';
 import {
   SessionAttribute,
@@ -424,7 +425,7 @@ export class SessionBuilderService {
     newSession: CustomContentSession,
   ): boolean {
     // Basic validation - should be comparing the same session
-    if (oldSession.id !== newSession.id || oldSession.type !== ContentDataType.FLOW) {
+    if (oldSession.id !== newSession.id) {
       return true;
     }
 
@@ -440,6 +441,15 @@ export class SessionBuilderService {
 
     // Compare steps using utility function
     if (compareSessionSteps(oldSession.version.steps || [], newSession.version.steps || [])) {
+      return true;
+    }
+
+    if (
+      compareChecklistItems(
+        oldSession.version.checklist?.items || [],
+        newSession.version.checklist?.items || [],
+      )
+    ) {
       return true;
     }
 
