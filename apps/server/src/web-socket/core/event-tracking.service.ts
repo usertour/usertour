@@ -714,4 +714,48 @@ export class EventTrackingService {
       clientContext,
     );
   }
+
+  /**
+   * Track checklist dismissed event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param endReason - The end reason
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistDismissedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    endReason: string,
+  ): Promise<boolean> {
+    if (!environment) return false;
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+      [EventAttributes.CHECKLIST_END_REASON]: endReason,
+    };
+
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return Boolean(
+      await this.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_DISMISSED,
+        bizSession.id,
+        eventData,
+        clientContext,
+      ),
+    );
+  }
 }

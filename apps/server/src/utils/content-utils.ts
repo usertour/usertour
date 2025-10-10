@@ -1439,3 +1439,12 @@ export const extractChecklistNewCompletedItems = (
 
   return Array.from(currentCompletedIds).filter((id) => !previousCompletedIds.has(id));
 };
+
+/**
+ * Extracts show animation items from a checklist
+ * @param items - The items
+ * @returns The show animation items
+ */
+export const extractChecklistShowAnimationItems = (items: ChecklistItemType[]) => {
+  return items?.filter((item) => item.isShowAnimation).map((item) => item.id);
+};

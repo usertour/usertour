@@ -13,6 +13,7 @@ import {
   extractClientConditionWaitTimers,
   sessionIsAvailable,
   extractChecklistNewCompletedItems,
+  extractChecklistShowAnimationItems,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -364,10 +365,13 @@ export class ContentOrchestratorService {
       forceGoToStep: false,
     };
     const currentSession = extractSessionByContentType(socketClientData, ContentDataType.CHECKLIST);
-    const newCompletedItems = extractChecklistNewCompletedItems(
-      session.version.checklist?.items || [],
-      currentSession?.version.checklist?.items || [],
-    );
+    const newCompletedItems = currentSession
+      ? extractChecklistNewCompletedItems(
+          session.version.checklist?.items || [],
+          currentSession?.version.checklist?.items || [],
+        )
+      : extractChecklistShowAnimationItems(session.version.checklist?.items || []);
+
     if (newCompletedItems.length > 0) {
       this.socketSessionService.emitChecklistTasksCompleted(socket, newCompletedItems);
     }

@@ -444,18 +444,27 @@ export class WebSocketV2Service {
     });
     if (!bizSession) return false;
     const contentType = bizSession.content.type as ContentDataType;
-    if (contentType !== ContentDataType.FLOW) {
-      return false;
+    if (contentType === ContentDataType.FLOW) {
+      // Track flow ended event
+      const trackResult = await this.eventTrackingService.trackFlowEndedEvent(
+        bizSession,
+        environment,
+        externalUserId,
+        reason,
+        clientContext,
+      );
+      if (!trackResult) return false;
     }
-    // Track flow ended event
-    const trackResult = await this.eventTrackingService.trackFlowEndedEvent(
-      bizSession,
-      environment,
-      externalUserId,
-      reason,
-      clientContext,
-    );
-    if (!trackResult) return false;
+    if (contentType === ContentDataType.CHECKLIST) {
+      // Track checklist dismissed event
+      const trackResult = await this.eventTrackingService.trackChecklistDismissedEvent(
+        sessionId,
+        environment,
+        clientContext,
+        reason,
+      );
+      if (!trackResult) return false;
+    }
     return await this.contentOrchestratorService.cancelContent({
       server,
       socket,
