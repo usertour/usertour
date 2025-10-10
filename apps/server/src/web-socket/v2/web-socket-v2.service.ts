@@ -386,7 +386,7 @@ export class WebSocketV2Service {
     socket: Socket,
     socketClientData: SocketClientData,
   ): Promise<boolean> {
-    return await this.toggleContents(server, socket, socketClientData);
+    return await this.toggleContents(server, socket, [ContentDataType.CHECKLIST], socketClientData);
   }
 
   /**
@@ -475,6 +475,7 @@ export class WebSocketV2Service {
   async toggleContents(
     server: Server,
     socket: Socket,
+    contentTypes: ContentDataType[],
     socketClientData?: SocketClientData,
   ): Promise<boolean> {
     // If socketClientData is not provided, fetch it using getClientDataResolved
@@ -485,7 +486,6 @@ export class WebSocketV2Service {
 
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
-    const contentTypes = [ContentDataType.CHECKLIST];
     const context = {
       server,
       socket,

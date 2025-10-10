@@ -29,7 +29,7 @@ import {
 } from './web-socket-v2.dto';
 import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
-import { ClientContext } from '@usertour/types';
+import { ClientContext, ContentDataType } from '@usertour/types';
 import { buildExternalUserRoomId } from '../../utils/websocket-utils';
 import { WebSocketClientData } from '../web-socket.decorator';
 import { ClientCondition } from '@/common/types/sdk';
@@ -255,10 +255,20 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('click-checklist-task')
   async clickChecklistTask(
+    @ConnectedSocket() socket: Socket,
     @WebSocketClientData() socketClientData: SocketClientData,
     @MessageBody() clickChecklistTaskDto: ClickChecklistTaskDto,
   ): Promise<boolean> {
-    return await this.service.clickChecklistTask(socketClientData, clickChecklistTaskDto);
+    const result = await this.service.clickChecklistTask(socketClientData, clickChecklistTaskDto);
+    if (result) {
+      this.service.toggleContents(
+        this.server,
+        socket,
+        [ContentDataType.CHECKLIST],
+        socketClientData,
+      );
+    }
+    return result;
   }
 
   @SubscribeMessage('hide-checklist')
