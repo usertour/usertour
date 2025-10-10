@@ -331,12 +331,7 @@ export class SessionBuilderService {
       externalUserId,
       externalCompanyId,
     );
-
-    const currentStep = steps.find((step) => step.cvid === stepCvid);
-    if (!currentStep) {
-      this.logger.error(`Current step not found for stepCvid ${stepCvid}`);
-      return null;
-    }
+    session.attributes = attributes;
 
     const versionSteps = customContentVersion.steps as unknown as SDKStep[];
     const sessionSteps = await this.createSessionSteps(
@@ -346,13 +341,19 @@ export class SessionBuilderService {
       externalUserId,
       externalCompanyId,
     );
-
     session.version.steps = sessionSteps;
-    session.currentStep = {
-      cvid: currentStep.cvid,
-      id: currentStep.id,
-    };
-    session.attributes = attributes;
+
+    if (stepCvid) {
+      const currentStep = steps.find((step) => step.cvid === stepCvid);
+      if (!currentStep) {
+        this.logger.error(`Current step not found for stepCvid ${stepCvid}`);
+        return null;
+      }
+      session.currentStep = {
+        cvid: currentStep.cvid,
+        id: currentStep.id,
+      };
+    }
 
     return session;
   }
@@ -360,26 +361,16 @@ export class SessionBuilderService {
   /**
    * Rebuild content session with regenerated data
    * @param contentSession - The existing content session
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param externalCompanyId - The external company ID (optional)
+   * @param customContentVersion - The custom content version
+   * @param clientData - The client data
    * @returns Rebuilt content session or null if rebuild fails
    */
   async rebuildContentSession(
+    customContentVersion: CustomContentVersion,
     contentSession: CustomContentSession,
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
+    clientData: SocketClientData,
   ): Promise<CustomContentSession | null> {
-    // Get version to find themeId
-    const version = await this.prisma.version.findUnique({
-      where: { id: contentSession.version.id },
-    });
-
-    if (!version?.themeId) {
-      this.logger.error(`Version or themeId not found for version ${contentSession.version.id}`);
-      return null;
-    }
+    const { environment, externalUserId, externalCompanyId } = clientData;
 
     // Get themes for session theme creation
     const themes = await this.dataResolverService.fetchThemes(
@@ -387,18 +378,19 @@ export class SessionBuilderService {
       externalUserId,
       externalCompanyId,
     );
+    const themeId = customContentVersion.themeId;
 
     // Regenerate session theme
     const sessionTheme = await this.createSessionTheme(
       themes,
-      version.themeId,
+      themeId,
       environment,
       externalUserId,
       externalCompanyId,
     );
 
     if (!sessionTheme) {
-      this.logger.error(`Failed to create session theme for themeId ${version.themeId}`);
+      this.logger.error(`Failed to create session theme for themeId ${themeId}`);
       return null;
     }
 
@@ -410,33 +402,8 @@ export class SessionBuilderService {
         theme: sessionTheme,
       },
     };
-
-    // Handle FLOW type - update attributes and steps
-    if (contentSession.type === ContentDataType.FLOW && contentSession.version.steps) {
-      const steps = contentSession.version.steps as unknown as Step[];
-
-      // Regenerate attributes
-      const attributes = await this.extractStepsAttributes(
-        steps,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      // Regenerate session steps with updated themes
-      const sessionSteps = await this.createSessionSteps(
-        contentSession.version.steps,
-        themes,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      newSession.attributes = attributes;
-      newSession.version = {
-        ...newSession.version,
-        steps: sessionSteps,
-      };
+    if (contentSession.type === ContentDataType.FLOW) {
+      return await this.processFlowSession(newSession, customContentVersion, themes, clientData);
     }
 
     return newSession;

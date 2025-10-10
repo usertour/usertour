@@ -735,18 +735,27 @@ export class ContentOrchestratorService {
    */
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
     const { contentType, socketClientData } = context;
-    const { environment, externalUserId, externalCompanyId } = socketClientData;
 
     const session = extractSessionByContentType(socketClientData, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
+
+    const customContentVersions = await this.getEvaluatedContentVersions(
+      socketClientData,
+      contentType,
+      session.version.id,
+    );
+    const customContentVersion = customContentVersions?.[0];
+    if (!customContentVersion) {
+      return { success: false, reason: 'No custom content version found' };
+    }
+
     // Rebuild session
     const rebuiltSession = await this.sessionBuilderService.rebuildContentSession(
+      customContentVersion,
       session,
-      environment,
-      externalUserId,
-      externalCompanyId,
+      socketClientData,
     );
 
     // Compare session to detect changes
