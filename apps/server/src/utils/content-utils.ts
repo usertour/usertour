@@ -1377,6 +1377,57 @@ export const evaluateChecklistItems = async (
   return processedItems;
 };
 
+export const extractChecklistTrackConditions = (
+  customContentVersion: CustomContentVersion,
+  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
+): TrackCondition[] => {
+  // Pre-allocate array with estimated capacity to reduce memory reallocations
+  const trackConditions: TrackCondition[] = [];
+  // Extract metadata once to avoid repeated property access
+  const contentId = customContentVersion.contentId;
+  const contentType = customContentVersion.content.type as ContentDataType;
+  const versionId = customContentVersion.id;
+
+  if (contentType !== ContentDataType.CHECKLIST) {
+    return trackConditions;
+  }
+
+  const trackConditionBase = {
+    contentId,
+    contentType,
+    versionId,
+  };
+
+  const checklistData = customContentVersion.data as unknown as ChecklistData;
+  const items = checklistData.items;
+  // Process all conditions in a single pass
+  for (const item of items) {
+    // Process complete conditions if they exist and the item is not completed
+    if (item?.completeConditions?.length > 0 && !item.isCompleted) {
+      const completeConditions = flattenConditions(item.completeConditions, allowedTypes);
+      for (const condition of completeConditions) {
+        trackConditions.push({
+          ...trackConditionBase,
+          condition,
+        });
+      }
+    }
+
+    // Process only show task conditions if they exist
+    if (item.onlyShowTask && item.onlyShowTaskConditions?.length > 0) {
+      const onlyShowTaskConditions = flattenConditions(item.onlyShowTaskConditions, allowedTypes);
+      for (const condition of onlyShowTaskConditions) {
+        trackConditions.push({
+          ...trackConditionBase,
+          condition,
+        });
+      }
+    }
+  }
+
+  return trackConditions;
+};
+
 /**
  * Checks if a checklist has show animation items
  * @param items - The items to check

@@ -14,6 +14,7 @@ import {
   sessionIsAvailable,
   extractChecklistNewCompletedItems,
   extractChecklistShowAnimationItems,
+  extractChecklistTrackConditions,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -1104,10 +1105,13 @@ export class ContentOrchestratorService {
       }
 
       // Extract tracking conditions for hide conditions
-      const postTracks = extractClientTrackConditions(
+      const hideConditions = extractClientTrackConditions(
         [customContentVersion],
         ConditionExtractionMode.HIDE_ONLY,
       );
+      // Extract tracking conditions for checklist conditions
+      const checklistConditions = extractChecklistTrackConditions(customContentVersion);
+      const postTracks = [...hideConditions, ...checklistConditions];
 
       return {
         success: true,
