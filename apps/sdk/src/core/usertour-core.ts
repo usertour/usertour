@@ -496,6 +496,9 @@ export class UsertourCore extends Evented {
       if (this.activatedChecklist.getContentId() === contentId) {
         this.activatedChecklist.updateSession(session);
         this.activatedChecklist.refreshStore();
+        if (!this.activatedTour) {
+          this.activatedChecklist.expand(true);
+        }
         return true;
       }
       this.cleanupActivatedChecklist();
