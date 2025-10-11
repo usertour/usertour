@@ -74,7 +74,6 @@ export interface ContentStartResult {
   trackHideConditions?: TrackCondition[];
   conditionWaitTimers?: ConditionWaitTimer[];
   reason?: string;
-  invalidSession?: CustomContentSession;
   forceGoToStep?: boolean;
   isActivateOtherSockets?: boolean;
 }
