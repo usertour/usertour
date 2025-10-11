@@ -70,8 +70,8 @@ export interface ContentStartResult {
   success: boolean;
   activate?: boolean;
   session?: CustomContentSession;
-  conditionsBeforeStart?: TrackCondition[];
-  conditionsAfterStart?: TrackCondition[];
+  preTracks?: TrackCondition[];
+  postTracks?: TrackCondition[];
   waitTimers?: ConditionWaitTimer[];
   reason?: string;
   forceGoToStep?: boolean;
@@ -92,7 +92,7 @@ export interface ActivateSessionParams {
   socket: Socket;
   socketClientData?: SocketClientData;
   session: CustomContentSession;
-  conditionsAfterStart: TrackCondition[] | undefined;
+  postTracks: TrackCondition[] | undefined;
   forceGoToStep: boolean;
 }
 

@@ -340,9 +340,9 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateFlowSession(params: ActivateSessionParams) {
-    const { socket, session, conditionsAfterStart, forceGoToStep, socketClientData } = params;
+    const { socket, session, postTracks, forceGoToStep, socketClientData } = params;
     const options: ActivateSocketSessionOptions = {
-      trackConditions: conditionsAfterStart,
+      trackConditions: postTracks,
       forceGoToStep,
     };
     return await this.socketSessionService.activateSocketSession(
@@ -359,9 +359,9 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
-    const { socket, session, conditionsAfterStart, socketClientData } = params;
+    const { socket, session, postTracks, socketClientData } = params;
     const options: ActivateSocketSessionOptions = {
-      trackConditions: conditionsAfterStart,
+      trackConditions: postTracks,
       forceGoToStep: false,
     };
     const currentSession = extractSessionByContentType(socketClientData, ContentDataType.CHECKLIST);
@@ -566,7 +566,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { success, conditionsBeforeStart, waitTimers } = result;
+    const { success, preTracks, waitTimers } = result;
 
     // Early return if operation failed
     if (!success) {
@@ -574,8 +574,8 @@ export class ContentOrchestratorService {
     }
 
     // Handle tracking conditions
-    if (conditionsBeforeStart && conditionsBeforeStart.length > 0) {
-      return await this.handleTrackingConditions(context, conditionsBeforeStart);
+    if (preTracks && preTracks.length > 0) {
+      return await this.handleTrackingConditions(context, preTracks);
     }
 
     // Handle condition wait timers
@@ -696,7 +696,7 @@ export class ContentOrchestratorService {
     const { environment, externalUserId } = socketClientData;
     const {
       session,
-      conditionsAfterStart,
+      postTracks,
       forceGoToStep = false,
       isActivateOtherSockets = true,
       activate = true,
@@ -707,7 +707,7 @@ export class ContentOrchestratorService {
       socket,
       session,
       socketClientData,
-      conditionsAfterStart,
+      postTracks,
       forceGoToStep,
     };
 
@@ -975,17 +975,17 @@ export class ContentOrchestratorService {
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
 
-    const conditionsBeforeStart = extractClientTrackConditions(
+    const preTracks = extractClientTrackConditions(
       trackCustomContentVersions,
       ConditionExtractionMode.BOTH,
     );
 
-    if (conditionsBeforeStart.length > 0) {
+    if (preTracks.length > 0) {
       // This would need to be implemented in the calling service
       // as it involves WebSocket-specific operations
       return {
         success: true,
-        conditionsBeforeStart,
+        preTracks,
         reason: 'Setup tracking conditions for future activation',
       };
     }
@@ -1104,7 +1104,7 @@ export class ContentOrchestratorService {
       }
 
       // Extract tracking conditions for hide conditions
-      const conditionsAfterStart = extractClientTrackConditions(
+      const postTracks = extractClientTrackConditions(
         [customContentVersion],
         ConditionExtractionMode.HIDE_ONLY,
       );
@@ -1112,7 +1112,7 @@ export class ContentOrchestratorService {
       return {
         success: true,
         session: sessionResult.session,
-        conditionsAfterStart,
+        postTracks,
         reason: 'Content session created successfully',
       };
     } catch (error) {
