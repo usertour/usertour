@@ -77,7 +77,6 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           environment,
           externalUserId,
           clientContext,
-          clientConditions,
           externalCompanyId,
           waitTimers: [],
           lastUpdated: Date.now(),
@@ -98,9 +97,20 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
             clientData.checklistSession = checklistSession;
           }
         }
-        if (!(await this.socketRedisService.setClientData(socket.id, clientData))) {
+        const isSetClientData = await this.socketRedisService.setClientData(socket.id, clientData);
+        if (!isSetClientData) {
           this.logger.error(`Failed to persist client data for socket ${socket.id}`);
           return next(new ServiceUnavailableError());
+        }
+        if (clientConditions.length > 0) {
+          const isSetClientConditions = await this.socketRedisService.setClientConditions(
+            socket.id,
+            clientConditions,
+          );
+          if (!isSetClientConditions) {
+            this.logger.error(`Failed to persist client conditions for socket ${socket.id}`);
+            return next(new ServiceUnavailableError());
+          }
         }
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);
