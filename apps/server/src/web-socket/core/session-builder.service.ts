@@ -19,6 +19,7 @@ import {
   compareSessionSteps,
   evaluateChecklistItems,
   compareChecklistItems,
+  getChecklistInitialDisplay,
 } from '@/utils/content-utils';
 import {
   SessionAttribute,
@@ -301,7 +302,9 @@ export class SessionBuilderService {
       deactivatedIds,
     });
     const checklistData = customContentVersion.data as unknown as ChecklistData;
-    session.version.checklist = { ...checklistData, items };
+
+    const initialDisplay = getChecklistInitialDisplay(customContentVersion);
+    session.version.checklist = { ...checklistData, items, initialDisplay };
     return session;
   }
 
