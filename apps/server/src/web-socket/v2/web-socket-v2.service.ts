@@ -550,10 +550,10 @@ export class WebSocketV2Service {
     fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
     const { versionId } = fireConditionWaitTimerDto;
-    const { conditionWaitTimers = [] } = socketClientData;
+    const { waitTimers = [] } = socketClientData;
 
     // Check if condition exists
-    const targetCondition = conditionWaitTimers.find((c) => c.versionId === versionId);
+    const targetCondition = waitTimers.find((c) => c.versionId === versionId);
     if (!targetCondition) {
       return false;
     }
@@ -566,7 +566,7 @@ export class WebSocketV2Service {
 
     // Update socket data
     return await this.socketRedisService.updateClientData(socket.id, {
-      conditionWaitTimers: conditionWaitTimers.map((condition) =>
+      waitTimers: waitTimers.map((condition) =>
         condition.versionId === versionId ? updatedCondition : condition,
       ),
     });

@@ -198,7 +198,7 @@ export class ContentOrchestratorService {
     const strategyResult = await this.tryAutoStartContent(context, {
       ...tryAutoStartContentOptions,
       excludeContentIds: excludeContentIds,
-      allowConditionWaitTimers: false,
+      allowWaitTimers: false,
       fallback: false,
     });
 
@@ -340,9 +340,9 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateFlowSession(params: ActivateSessionParams) {
-    const { socket, session, trackHideConditions, forceGoToStep, socketClientData } = params;
+    const { socket, session, conditionsAfterStart, forceGoToStep, socketClientData } = params;
     const options: ActivateSocketSessionOptions = {
-      trackConditions: trackHideConditions,
+      trackConditions: conditionsAfterStart,
       forceGoToStep,
     };
     return await this.socketSessionService.activateSocketSession(
@@ -359,9 +359,9 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
-    const { socket, session, trackHideConditions, socketClientData } = params;
+    const { socket, session, conditionsAfterStart, socketClientData } = params;
     const options: ActivateSocketSessionOptions = {
-      trackConditions: trackHideConditions,
+      trackConditions: conditionsAfterStart,
       forceGoToStep: false,
     };
     const currentSession = extractSessionByContentType(socketClientData, ContentDataType.CHECKLIST);
@@ -457,7 +457,7 @@ export class ContentOrchestratorService {
     const {
       excludeContentIds = extractExcludedContentIds(socketClientData, contentType),
       isActivateOtherSockets = true,
-      allowConditionWaitTimers = true,
+      allowWaitTimers = true,
       fallback = true,
     } = options;
 
@@ -476,10 +476,10 @@ export class ContentOrchestratorService {
         excludeContentIds,
       );
 
-      const { success, session, conditionWaitTimers } = result;
+      const { success, session, waitTimers } = result;
       if (success) {
-        const allowWaitTimers = allowConditionWaitTimers && conditionWaitTimers?.length;
-        if (session || allowWaitTimers) {
+        const shouldAllowWaitTimers = allowWaitTimers && waitTimers?.length;
+        if (session || shouldAllowWaitTimers) {
           return await this.handleContentStartResult(context, {
             ...result,
             isActivateOtherSockets,
@@ -566,7 +566,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { success, trackConditions, conditionWaitTimers } = result;
+    const { success, conditionsBeforeStart, waitTimers } = result;
 
     // Early return if operation failed
     if (!success) {
@@ -574,13 +574,13 @@ export class ContentOrchestratorService {
     }
 
     // Handle tracking conditions
-    if (trackConditions && trackConditions.length > 0) {
-      return await this.handleTrackingConditions(context, trackConditions);
+    if (conditionsBeforeStart && conditionsBeforeStart.length > 0) {
+      return await this.handleTrackingConditions(context, conditionsBeforeStart);
     }
 
     // Handle condition wait timers
-    if (conditionWaitTimers && conditionWaitTimers.length > 0) {
-      return await this.handleConditionWaitTimers(context, conditionWaitTimers);
+    if (waitTimers && waitTimers.length > 0) {
+      return await this.handleConditionWaitTimers(context, waitTimers);
     }
 
     return await this.handleSuccessfulSession(context, result);
@@ -660,25 +660,25 @@ export class ContentOrchestratorService {
    */
   private async handleConditionWaitTimers(
     context: ContentStartContext,
-    conditionWaitTimers: ConditionWaitTimer[],
+    waitTimers: ConditionWaitTimer[],
   ): Promise<boolean> {
     const { socket, socketClientData } = context;
-    const { conditionWaitTimers: existingTimers = [] } = socketClientData;
+    const { waitTimers: existingTimers = [] } = socketClientData;
 
-    const newConditionWaitTimers = conditionWaitTimers?.filter(
-      (conditionWaitTimer) =>
-        !existingTimers.some((waitTimer) => waitTimer.versionId === conditionWaitTimer.versionId),
+    const newWaitTimers = waitTimers?.filter(
+      (waitTimer) =>
+        !existingTimers.some((existingTimer) => existingTimer.versionId === waitTimer.versionId),
     );
 
     const startedTimers = await this.socketParallelService.startConditionWaitTimers(
       socket,
-      newConditionWaitTimers,
+      newWaitTimers,
     );
 
     // Update socket data with successfully started timers
     if (startedTimers.length > 0) {
       return await this.socketRedisService.updateClientData(socket.id, {
-        conditionWaitTimers: [...existingTimers, ...startedTimers],
+        waitTimers: [...existingTimers, ...startedTimers],
       });
     }
 
@@ -696,7 +696,7 @@ export class ContentOrchestratorService {
     const { environment, externalUserId } = socketClientData;
     const {
       session,
-      trackHideConditions,
+      conditionsAfterStart,
       forceGoToStep = false,
       isActivateOtherSockets = true,
       activate = true,
@@ -707,7 +707,7 @@ export class ContentOrchestratorService {
       socket,
       session,
       socketClientData,
-      trackHideConditions,
+      conditionsAfterStart,
       forceGoToStep,
     };
 
@@ -900,11 +900,11 @@ export class ContentOrchestratorService {
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
     const { contentType, socketClientData } = context;
-    const { conditionWaitTimers } = socketClientData;
+    const { waitTimers } = socketClientData;
     const { clientConditions } = socketClientData;
-    const firedWaitTimerVersionIds = conditionWaitTimers
-      ?.filter((conditionWaitTimer) => conditionWaitTimer.activated)
-      .map((conditionWaitTimer) => conditionWaitTimer.versionId);
+    const firedWaitTimerVersionIds = waitTimers
+      ?.filter((waitTimer) => waitTimer.activated)
+      .map((waitTimer) => waitTimer.versionId);
 
     const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
@@ -949,14 +949,12 @@ export class ContentOrchestratorService {
       false,
     );
 
-    const conditionWaitTimers = extractClientConditionWaitTimers(
-      autoStartContentVersionsWithoutWaitTimer,
-    );
+    const waitTimers = extractClientConditionWaitTimers(autoStartContentVersionsWithoutWaitTimer);
 
-    if (conditionWaitTimers.length > 0) {
+    if (waitTimers.length > 0) {
       return {
         success: true,
-        conditionWaitTimers,
+        waitTimers,
         reason: 'Setup wait timer conditions for future activation',
       };
     }
@@ -977,17 +975,17 @@ export class ContentOrchestratorService {
     const trackCustomContentVersions: CustomContentVersion[] =
       filterActivatedContentWithoutClientConditions(evaluatedContentVersions, contentType);
 
-    const trackConditions = extractClientTrackConditions(
+    const conditionsBeforeStart = extractClientTrackConditions(
       trackCustomContentVersions,
       ConditionExtractionMode.BOTH,
     );
 
-    if (trackConditions.length > 0) {
+    if (conditionsBeforeStart.length > 0) {
       // This would need to be implemented in the calling service
       // as it involves WebSocket-specific operations
       return {
         success: true,
-        trackConditions,
+        conditionsBeforeStart,
         reason: 'Setup tracking conditions for future activation',
       };
     }
@@ -1106,7 +1104,7 @@ export class ContentOrchestratorService {
       }
 
       // Extract tracking conditions for hide conditions
-      const trackHideConditions = extractClientTrackConditions(
+      const conditionsAfterStart = extractClientTrackConditions(
         [customContentVersion],
         ConditionExtractionMode.HIDE_ONLY,
       );
@@ -1114,7 +1112,7 @@ export class ContentOrchestratorService {
       return {
         success: true,
         session: sessionResult.session,
-        trackHideConditions,
+        conditionsAfterStart,
         reason: 'Content session created successfully',
       };
     } catch (error) {

@@ -42,7 +42,7 @@ export interface SocketClientData {
   externalCompanyId?: string;
   clientContext: ClientContext;
   clientConditions?: ClientCondition[];
-  conditionWaitTimers?: ConditionWaitTimer[];
+  waitTimers?: ConditionWaitTimer[];
   flowSession?: CustomContentSession;
   checklistSession?: CustomContentSession;
   lastDismissedFlowId?: string;
@@ -70,9 +70,9 @@ export interface ContentStartResult {
   success: boolean;
   activate?: boolean;
   session?: CustomContentSession;
-  trackConditions?: TrackCondition[];
-  trackHideConditions?: TrackCondition[];
-  conditionWaitTimers?: ConditionWaitTimer[];
+  conditionsBeforeStart?: TrackCondition[];
+  conditionsAfterStart?: TrackCondition[];
+  waitTimers?: ConditionWaitTimer[];
   reason?: string;
   forceGoToStep?: boolean;
   isActivateOtherSockets?: boolean;
@@ -92,7 +92,7 @@ export interface ActivateSessionParams {
   socket: Socket;
   socketClientData?: SocketClientData;
   session: CustomContentSession;
-  trackHideConditions: TrackCondition[] | undefined;
+  conditionsAfterStart: TrackCondition[] | undefined;
   forceGoToStep: boolean;
 }
 
@@ -102,6 +102,6 @@ export interface ActivateSessionParams {
 export interface TryAutoStartContentOptions {
   excludeContentIds?: string[];
   isActivateOtherSockets?: boolean;
-  allowConditionWaitTimers?: boolean;
+  allowWaitTimers?: boolean;
   fallback?: boolean;
 }

@@ -79,7 +79,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           clientContext,
           clientConditions,
           externalCompanyId,
-          conditionWaitTimers: [],
+          waitTimers: [],
           lastUpdated: Date.now(),
           socketId: socket.id,
         };

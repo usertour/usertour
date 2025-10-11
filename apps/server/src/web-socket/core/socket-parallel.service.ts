@@ -112,21 +112,21 @@ export class SocketParallelService {
   /**
    * Start multiple wait timer conditions in parallel with acknowledgment
    * @param socket - The socket instance
-   * @param conditionWaitTimers - Array of wait timer conditions to start
+   * @param waitTimers - Array of wait timer conditions to start
    * @returns Promise<ConditionWaitTimer[]> - Array of successfully started conditions
    */
   async startConditionWaitTimers(
     socket: Socket,
-    conditionWaitTimers: ConditionWaitTimer[],
+    waitTimers: ConditionWaitTimer[],
   ): Promise<ConditionWaitTimer[]> {
-    const operations = conditionWaitTimers.map(
+    const operations = waitTimers.map(
       (condition) => () => this.socketEmitterService.startConditionWaitTimer(socket, condition),
     );
 
     return await this.executeParallelOperations(
       socket,
       operations,
-      conditionWaitTimers,
+      waitTimers,
       'startConditionWaitTimers',
     );
   }
@@ -134,21 +134,21 @@ export class SocketParallelService {
   /**
    * Cancel multiple wait timer conditions in parallel with acknowledgment
    * @param socket - The socket instance
-   * @param conditionWaitTimers - Array of wait timer conditions to cancel
+   * @param waitTimers - Array of wait timer conditions to cancel
    * @returns Promise<ConditionWaitTimer[]> - Array of successfully cancelled conditions
    */
   async cancelConditionWaitTimers(
     socket: Socket,
-    conditionWaitTimers: ConditionWaitTimer[],
+    waitTimers: ConditionWaitTimer[],
   ): Promise<ConditionWaitTimer[]> {
-    const operations = conditionWaitTimers.map(
+    const operations = waitTimers.map(
       (condition) => () => this.socketEmitterService.cancelConditionWaitTimer(socket, condition),
     );
 
     return await this.executeParallelOperations(
       socket,
       operations,
-      conditionWaitTimers,
+      waitTimers,
       'cancelConditionWaitTimers',
     );
   }

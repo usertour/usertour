@@ -135,16 +135,16 @@ export class SocketSessionService {
    * Emit condition cleanup operations efficiently with parallel processing
    * @param socket - The socket
    * @param clientConditions - All client conditions
-   * @param conditionWaitTimers - Condition wait timers to cleanup
+   * @param waitTimers - Condition wait timers to cleanup
    * @param contentTypeFilter - Optional array of content types to filter client conditions by
    * @returns Object containing remaining conditions and timers after cleanup
    */
   private async emitConditionCleanup(
     socket: Socket,
     clientConditions: ClientCondition[],
-    conditionWaitTimers: ConditionWaitTimer[],
+    waitTimers: ConditionWaitTimer[],
     contentTypeFilter?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'conditionWaitTimers'>> {
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, contentTypeFilter);
@@ -152,7 +152,7 @@ export class SocketSessionService {
     // Process condition cleanup operations in parallel
     const [untrackedConditions, cancelledTimers] = await Promise.all([
       this.socketParallelService.untrackClientConditions(socket, filteredConditions),
-      this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
     ]);
 
     // Calculate remaining conditions and timers (those that failed to process)
@@ -160,14 +160,11 @@ export class SocketSessionService {
       filteredConditions,
       untrackedConditions,
     );
-    const remainingTimers = calculateRemainingConditionWaitTimers(
-      conditionWaitTimers,
-      cancelledTimers,
-    );
+    const remainingTimers = calculateRemainingConditionWaitTimers(waitTimers, cancelledTimers);
 
     return {
       clientConditions: [...remainingConditions, ...preservedClientConditions],
-      conditionWaitTimers: remainingTimers,
+      waitTimers: remainingTimers,
     };
   }
 
@@ -175,7 +172,7 @@ export class SocketSessionService {
    * Emit condition changes efficiently with parallel operations
    * @param socket - The socket
    * @param clientConditions - All client conditions
-   * @param conditionWaitTimers - Current condition wait timers
+   * @param waitTimers - Current condition wait timers
    * @param trackConditions - New conditions to track
    * @param contentTypeFilter - Optional array of content types to filter client conditions by
    * @returns Object containing updated conditions and remaining timers
@@ -183,10 +180,10 @@ export class SocketSessionService {
   private async emitConditionChanges(
     socket: Socket,
     clientConditions: ClientCondition[],
-    conditionWaitTimers: ConditionWaitTimer[],
+    waitTimers: ConditionWaitTimer[],
     trackConditions: TrackCondition[],
     contentTypeFilter?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'conditionWaitTimers'>> {
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, contentTypeFilter);
@@ -198,7 +195,7 @@ export class SocketSessionService {
     // Execute all condition operations in parallel
     const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
       this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
-      this.socketParallelService.cancelConditionWaitTimers(socket, conditionWaitTimers),
+      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
       this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
     ]);
 
@@ -207,16 +204,13 @@ export class SocketSessionService {
       conditionsToUntrack,
       untrackedConditions,
     );
-    const remainingTimers = calculateRemainingConditionWaitTimers(
-      conditionWaitTimers,
-      cancelledTimers,
-    );
+    const remainingTimers = calculateRemainingConditionWaitTimers(waitTimers, cancelledTimers);
 
     const updatedConditions = [...preservedConditions, ...remainingConditions, ...newConditions];
 
     return {
       clientConditions: [...updatedConditions, ...preservedClientConditions],
-      conditionWaitTimers: remainingTimers,
+      waitTimers: remainingTimers,
     };
   }
 
@@ -239,7 +233,7 @@ export class SocketSessionService {
       shouldSetLastDismissedId = false,
       contentTypeFilter,
     } = options;
-    const { clientConditions = [], conditionWaitTimers = [] } = socketClientData;
+    const { clientConditions = [], waitTimers = [] } = socketClientData;
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
@@ -251,7 +245,7 @@ export class SocketSessionService {
     const conditionCleanup = await this.emitConditionCleanup(
       socket,
       clientConditions,
-      conditionWaitTimers,
+      waitTimers,
       contentTypeFilter,
     );
 
@@ -297,7 +291,7 @@ export class SocketSessionService {
     options: ActivateSocketSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, contentTypeFilter } = options;
-    const { clientConditions = [], conditionWaitTimers = [] } = socketClientData;
+    const { clientConditions = [], waitTimers = [] } = socketClientData;
     const isSetSession = await this.setSocketSession(socket, session);
     const contentType = session.content.type as ContentDataType;
     if (!isSetSession) {
@@ -311,7 +305,7 @@ export class SocketSessionService {
     const conditionChanges = await this.emitConditionChanges(
       socket,
       clientConditions,
-      conditionWaitTimers,
+      waitTimers,
       trackConditions,
       contentTypeFilter,
     );

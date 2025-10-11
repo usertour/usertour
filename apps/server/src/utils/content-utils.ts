@@ -794,19 +794,19 @@ export const extractClientTrackConditions = (
 export const extractClientConditionWaitTimers = (
   customContentVersions: CustomContentVersion[],
 ): ConditionWaitTimer[] => {
-  const conditionWaitTimers: ConditionWaitTimer[] = [];
+  const waitTimers: ConditionWaitTimer[] = [];
   for (const customContentVersion of customContentVersions) {
     if (
       isEnabledAutoStartRules(customContentVersion) &&
       customContentVersion.config.autoStartRulesSetting.wait > 0
     ) {
-      conditionWaitTimers.push({
+      waitTimers.push({
         versionId: customContentVersion.id,
         waitTime: customContentVersion.config.autoStartRulesSetting.wait,
       });
     }
   }
-  return conditionWaitTimers;
+  return waitTimers;
 };
 
 /**
