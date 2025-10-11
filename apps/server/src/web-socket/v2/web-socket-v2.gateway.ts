@@ -189,10 +189,9 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   @SubscribeMessage('toggle-client-condition')
   async toggleClientCondition(
     @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
     @MessageBody() clientCondition: ClientCondition,
   ): Promise<boolean> {
-    return await this.service.toggleClientCondition(socket, socketClientData, clientCondition);
+    return await this.service.toggleClientCondition(socket, clientCondition);
   }
 
   @SubscribeMessage('fire-condition-wait-timer')

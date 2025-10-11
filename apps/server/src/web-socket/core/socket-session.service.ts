@@ -39,6 +39,12 @@ export interface ActivateSocketSessionOptions {
   contentTypeFilter?: ContentDataType[];
 }
 
+interface ConditionChangesResult {
+  clientConditions: ClientCondition[];
+  untrackedConditions: ClientCondition[];
+  waitTimers: ConditionWaitTimer[];
+}
+
 /**
  * Content session manager service
  * Handles content session management for Flow and Checklist content types
@@ -121,9 +127,7 @@ export class SocketSessionService {
     socket: Socket,
     currentConditions: ClientCondition[],
   ): Promise<string[]> {
-    const clientConditionReports = await this.socketRedisService.getClientConditionReports(
-      socket.id,
-    );
+    const clientConditionReports = await this.socketRedisService.getClientConditions(socket.id);
     const obsoleteReports = calculateRemainingClientConditions(
       clientConditionReports,
       currentConditions,
@@ -144,7 +148,7 @@ export class SocketSessionService {
     clientConditions: ClientCondition[],
     waitTimers: ConditionWaitTimer[],
     contentTypeFilter?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
+  ): Promise<ConditionChangesResult> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, contentTypeFilter);
@@ -164,6 +168,7 @@ export class SocketSessionService {
 
     return {
       clientConditions: [...remainingConditions, ...preservedClientConditions],
+      untrackedConditions,
       waitTimers: remainingTimers,
     };
   }
@@ -183,7 +188,7 @@ export class SocketSessionService {
     waitTimers: ConditionWaitTimer[],
     trackConditions: TrackCondition[],
     contentTypeFilter?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
+  ): Promise<ConditionChangesResult> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, contentTypeFilter);
@@ -210,6 +215,7 @@ export class SocketSessionService {
 
     return {
       clientConditions: [...updatedConditions, ...preservedClientConditions],
+      untrackedConditions,
       waitTimers: remainingTimers,
     };
   }
@@ -242,7 +248,7 @@ export class SocketSessionService {
     }
 
     // Emit condition cleanup efficiently
-    const conditionCleanup = await this.emitConditionCleanup(
+    const conditionChanges = await this.emitConditionCleanup(
       socket,
       clientConditions,
       waitTimers,
@@ -251,7 +257,7 @@ export class SocketSessionService {
 
     // Update client data with session clearing and remaining conditions/timers in one call
     const updatedClientData = {
-      ...conditionCleanup,
+      waitTimers: conditionChanges.waitTimers,
       ...(contentType === ContentDataType.FLOW && {
         ...(shouldSetLastDismissedId && { lastDismissedFlowId: session.content.id }),
         flowSession: undefined,
@@ -262,16 +268,15 @@ export class SocketSessionService {
       }),
     };
 
-    // Get condition IDs to cleanup for atomic operation
-    const conditionIdsToRemove = await this.extractRemovedConditionIds(
-      socket,
-      conditionCleanup.clientConditions,
+    const conditionIdsToRemove = conditionChanges.untrackedConditions.map(
+      (condition) => condition.conditionId,
     );
 
     // Use atomic operation to update client data and cleanup conditions
     return await this.socketRedisService.updateAndCleanup(
       socket.id,
       updatedClientData,
+      conditionChanges.clientConditions,
       conditionIdsToRemove,
     );
   }
@@ -312,7 +317,7 @@ export class SocketSessionService {
 
     // Update client data with session and all condition changes in one call
     const updatedClientData: Partial<SocketClientData> = {
-      ...conditionChanges,
+      waitTimers: conditionChanges.waitTimers,
       ...(contentType === ContentDataType.FLOW && {
         flowSession: session,
         lastDismissedFlowId: undefined,
@@ -323,16 +328,15 @@ export class SocketSessionService {
       }),
     };
 
-    // Get condition IDs to cleanup for atomic operation
-    const conditionIdsToRemove = await this.extractRemovedConditionIds(
-      socket,
-      conditionChanges.clientConditions,
+    const conditionIdsToRemove = conditionChanges.untrackedConditions.map(
+      (condition) => condition.conditionId,
     );
 
     // Use atomic operation to update client data and cleanup conditions
     return await this.socketRedisService.updateAndCleanup(
       socket.id,
       updatedClientData,
+      conditionChanges.clientConditions,
       conditionIdsToRemove,
     );
   }

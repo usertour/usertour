@@ -45,7 +45,6 @@ import { ActivateSocketSessionOptions, SocketSessionService } from './socket-ses
 import { SocketParallelService } from './socket-parallel.service';
 import { SocketRedisService } from './socket-redis.service';
 import { DistributedLockService } from './distributed-lock.service';
-import { resolveConditionStates } from '@/utils/content-utils';
 
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
@@ -1222,13 +1221,7 @@ export class ContentOrchestratorService {
       return null;
     }
 
-    // Apply business logic: merge with condition reports
-    const clientConditionReports =
-      await this.socketRedisService.getClientConditionReports(socketId);
-    const clientConditions = resolveConditionStates(
-      rawClientData.clientConditions || [],
-      clientConditionReports,
-    );
+    const clientConditions = await this.socketRedisService.getClientConditions(socketId);
 
     return {
       ...rawClientData,

@@ -122,13 +122,60 @@ export class SocketRedisService {
   }
 
   /**
-   * Atomically update a single client condition report using Redis Hash
+   * Atomically set multiple client conditions using Redis Hash
    * @param socketId - The socket ID
-   * @param condition - The client condition to update
+   * @param conditions - Array of client conditions to set
+   * @param removeConditions - Array of condition IDs to remove
    * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the update was successful
    */
-  async updateClientConditionReport(
+  async setClientConditions(
+    socketId: string,
+    conditions: ClientCondition[],
+    removeConditions: string[] = [],
+    ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
+  ): Promise<boolean> {
+    try {
+      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const client = this.redisService.getClient();
+
+      if (!client) {
+        this.logger.error('Redis client not available');
+        return false;
+      }
+
+      // Use Redis Pipeline for atomic operations
+      const pipeline = client.pipeline();
+
+      // Add/update conditions
+      for (const condition of conditions) {
+        pipeline.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
+      }
+
+      // Remove specified conditions
+      if (removeConditions.length > 0) {
+        pipeline.hdel(reportsKey, ...removeConditions);
+      }
+
+      pipeline.expire(reportsKey, ttlSeconds);
+
+      await pipeline.exec();
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to set client conditions for socket ${socketId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Update a single client condition
+   * @param socketId - The socket ID
+   * @param condition - The client condition to update
+   * @param ttlSeconds - Optional TTL in seconds
+   * @returns Promise<boolean> - True if the condition was updated successfully, false if condition doesn't exist
+   */
+  async updateClientCondition(
     socketId: string,
     condition: ClientCondition,
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
@@ -142,28 +189,34 @@ export class SocketRedisService {
         return false;
       }
 
-      // Use Redis Hash to atomically update a single condition
-      // Store the entire condition object as JSON
+      // Check if condition exists
+      const existing = await client.hget(reportsKey, condition.conditionId);
+      if (!existing) {
+        this.logger.warn(`Condition ${condition.conditionId} not found for socket ${socketId}`);
+        return false;
+      }
+
+      // Update the condition
       await client.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
       await client.expire(reportsKey, ttlSeconds);
 
       this.logger.debug(
-        `Updated condition report: socket=${socketId}, condition=${condition.conditionId}, contentType=${condition.contentType}, isActive=${condition.isActive}`,
+        `Updated client condition: socket=${socketId}, condition=${condition.conditionId}, isActive=${condition.isActive}`,
       );
       return true;
     } catch (error) {
-      this.logger.error(`Failed to update client condition report for socket ${socketId}:`, error);
+      this.logger.error(`Failed to update client condition for socket ${socketId}:`, error);
       return false;
     }
   }
 
   /**
-   * Remove client condition reports
+   * Remove client conditions
    * @param socketId - The socket ID
    * @param conditionIds - Array of condition IDs to remove
    * @returns Promise<number> - Number of conditions that were removed
    */
-  async removeClientConditionReports(socketId: string, conditionIds: string[]): Promise<number> {
+  async removeClientConditions(socketId: string, conditionIds: string[]): Promise<number> {
     try {
       const reportsKey = this.buildClientConditionReportsKey(socketId);
       const client = this.redisService.getClient();
@@ -176,21 +229,21 @@ export class SocketRedisService {
       const result = await client.hdel(reportsKey, ...conditionIds);
 
       this.logger.debug(
-        `Removed ${result} condition reports: socket=${socketId}, conditions=${conditionIds.join(',')}`,
+        `Removed ${result} client conditions: socket=${socketId}, conditions=${conditionIds.join(',')}`,
       );
       return result;
     } catch (error) {
-      this.logger.error(`Failed to remove client condition reports for socket ${socketId}:`, error);
+      this.logger.error(`Failed to remove client conditions for socket ${socketId}:`, error);
       return 0;
     }
   }
 
   /**
-   * Get all client condition reports for a socket
+   * Get all client conditions for a socket
    * @param socketId - The socket ID
-   * @returns Promise<ClientCondition[]> - Array of client condition reports
+   * @returns Promise<ClientCondition[]> - Array of client conditions
    */
-  async getClientConditionReports(socketId: string): Promise<ClientCondition[]> {
+  async getClientConditions(socketId: string): Promise<ClientCondition[]> {
     try {
       const reportsKey = this.buildClientConditionReportsKey(socketId);
       const client = this.redisService.getClient();
@@ -236,10 +289,11 @@ export class SocketRedisService {
   }
 
   /**
-   * Atomically update client data and cleanup condition reports using Lua script
+   * Atomically update client data and cleanup condition reports using Pipeline
    * This method ensures true atomicity - either all operations succeed or all fail
    * @param socketId - The socket ID
    * @param updates - Partial socket data to update
+   * @param conditions - Array of client conditions to update
    * @param conditionIdsToRemove - Array of condition IDs to remove
    * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the operation was successful
@@ -247,6 +301,7 @@ export class SocketRedisService {
   async updateAndCleanup(
     socketId: string,
     updates: Partial<SocketClientData>,
+    conditions: ClientCondition[],
     conditionIdsToRemove: string[],
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
@@ -275,32 +330,23 @@ export class SocketRedisService {
       const dataKey = this.buildClientDataKey(socketId);
       const reportsKey = this.buildClientConditionReportsKey(socketId);
 
-      // Use Lua script for atomic operations
-      const script = `
-        -- Update client data
-        redis.call('SETEX', KEYS[1], ARGV[1], ARGV[2])
-        
-        -- Remove condition reports if any
-        if ARGV[3] ~= '' then
-          redis.call('HDEL', KEYS[2], unpack(cjson.decode(ARGV[3])))
-        end
-        
-        return 1
-      `;
+      // Use Pipeline for atomic operations
+      const pipeline = client.pipeline();
 
-      // Pass empty string if no condition IDs to remove, avoiding unpack() issues
-      const conditionIdsArg =
-        conditionIdsToRemove.length > 0 ? JSON.stringify(conditionIdsToRemove) : '';
+      // Update client data
+      pipeline.setex(dataKey, ttlSeconds, JSON.stringify(mergedData));
 
-      await client.eval(
-        script,
-        2,
-        dataKey,
-        reportsKey,
-        ttlSeconds.toString(),
-        JSON.stringify(mergedData),
-        conditionIdsArg,
-      );
+      // Add/update conditions
+      for (const condition of conditions) {
+        pipeline.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
+      }
+
+      // Remove condition reports if any
+      if (conditionIdsToRemove.length > 0) {
+        pipeline.hdel(reportsKey, ...conditionIdsToRemove);
+      }
+
+      await pipeline.exec();
 
       this.logger.debug(
         `Atomically updated client data and cleaned up ${conditionIdsToRemove.length} conditions for socket ${socketId}`,

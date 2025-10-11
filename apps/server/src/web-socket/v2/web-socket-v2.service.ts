@@ -522,19 +522,9 @@ export class WebSocketV2Service {
    * @param clientCondition - The client condition
    * @returns True if the condition was toggled successfully
    */
-  async toggleClientCondition(
-    socket: Socket,
-    _socketClientData: SocketClientData,
-    clientCondition: ClientCondition,
-  ): Promise<boolean> {
-    const { conditionId, isActive } = clientCondition;
-
-    this.logger.debug(
-      `Updating condition report: socket=${socket.id}, condition=${conditionId}, isActive=${isActive}`,
-    );
-
+  async toggleClientCondition(socket: Socket, clientCondition: ClientCondition): Promise<boolean> {
     // Use atomic Redis Hash operation to avoid race conditions
-    return await this.socketRedisService.updateClientConditionReport(socket.id, clientCondition);
+    return await this.socketRedisService.updateClientCondition(socket.id, clientCondition);
   }
 
   /**
