@@ -757,7 +757,11 @@ const ChecklistItem = (props: ChecklistItemProps) => {
     <div
       className={cn(
         'flex items-center cursor-pointer px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
-        isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+        isClickable
+          ? item.isCompleted
+            ? 'cursor-default'
+            : 'cursor-pointer'
+          : 'cursor-not-allowed opacity-50',
       )}
       onClick={() => (isClickable ? onClick(item, index) : undefined)}
     >
