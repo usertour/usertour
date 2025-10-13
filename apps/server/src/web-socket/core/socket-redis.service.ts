@@ -60,20 +60,22 @@ export class SocketRedisService {
 
   /**
    * Build Redis key for socket data
+   * Uses hash tag to ensure cluster compatibility
    * @param socketId - The socket ID
    * @returns The Redis key
    */
   private buildClientDataKey(socketId: string): string {
-    return `client_data:${socketId}`;
+    return `{${socketId}}:client_data`;
   }
 
   /**
-   * Build Redis key for client condition reports
+   * Build Redis key for client conditions
+   * Uses hash tag to ensure cluster compatibility
    * @param socketId - The socket ID
    * @returns Redis key string
    */
-  private buildClientConditionReportsKey(socketId: string): string {
-    return `socket:reports:${socketId}`;
+  private buildClientConditionsKey(socketId: string): string {
+    return `{${socketId}}:conditions`;
   }
 
   /**
@@ -179,7 +181,7 @@ export class SocketRedisService {
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
-      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
       if (!client) {
@@ -198,7 +200,7 @@ export class SocketRedisService {
       }
 
       // Execute Lua script atomically
-      const result = await client.eval(SET_CONDITIONS_SCRIPT, 1, reportsKey, ...args);
+      const result = await client.eval(SET_CONDITIONS_SCRIPT, 1, conditionsKey, ...args);
 
       this.logger.debug(`Set ${result} new client conditions for socket ${socketId}`);
       return true;
@@ -217,7 +219,7 @@ export class SocketRedisService {
    */
   async updateClientCondition(socketId: string, condition: ClientCondition): Promise<boolean> {
     try {
-      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
       if (!client) {
@@ -229,7 +231,7 @@ export class SocketRedisService {
       const result = await client.eval(
         UPDATE_IF_EXISTS_SCRIPT,
         1,
-        reportsKey,
+        conditionsKey,
         condition.conditionId,
         JSON.stringify(condition),
       );
@@ -253,7 +255,7 @@ export class SocketRedisService {
    */
   async removeClientConditions(socketId: string, conditionIds: string[]): Promise<boolean> {
     try {
-      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
       if (!client || conditionIds.length === 0) {
@@ -261,7 +263,7 @@ export class SocketRedisService {
       }
 
       // Use HDEL to remove multiple conditions from Hash
-      await client.hdel(reportsKey, ...conditionIds);
+      await client.hdel(conditionsKey, ...conditionIds);
 
       return true;
     } catch (error) {
@@ -277,15 +279,15 @@ export class SocketRedisService {
    */
   async getClientConditions(socketId: string): Promise<ClientCondition[]> {
     try {
-      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
       if (!client) {
         return [];
       }
 
-      const reports = await client.hgetall(reportsKey);
-      return Object.values(reports).map((conditionData) => {
+      const conditions = await client.hgetall(conditionsKey);
+      return Object.values(conditions).map((conditionData) => {
         // Parse JSON data
         return JSON.parse(conditionData) as ClientCondition;
       });
@@ -296,20 +298,20 @@ export class SocketRedisService {
   }
 
   /**
-   * Cleanup socket data and condition reports from Redis
+   * Cleanup socket data and conditions from Redis
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data was cleaned up successfully
    */
   async cleanup(socketId: string): Promise<boolean> {
     try {
       const key = this.buildClientDataKey(socketId);
-      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
       if (client) {
-        // Remove both main data and condition reports
+        // Remove both main data and conditions
         await client.del(key);
-        await client.del(reportsKey);
+        await client.del(conditionsKey);
       }
 
       this.logger.debug(`Removed socket data for socket ${socketId}`);
@@ -321,7 +323,7 @@ export class SocketRedisService {
   }
 
   /**
-   * Atomically update client data and cleanup condition reports using Pipeline
+   * Atomically update client data and cleanup conditions using Pipeline
    * This method ensures true atomicity - either all operations succeed or all fail
    * @param socketId - The socket ID
    * @param updates - Partial socket data to update
@@ -360,7 +362,7 @@ export class SocketRedisService {
       };
 
       const dataKey = this.buildClientDataKey(socketId);
-      const reportsKey = this.buildClientConditionReportsKey(socketId);
+      const conditionsKey = this.buildClientConditionsKey(socketId);
 
       // Use Pipeline for atomic operations
       const pipeline = client.pipeline();
@@ -370,12 +372,12 @@ export class SocketRedisService {
 
       // Add/update conditions
       for (const condition of conditions) {
-        pipeline.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
+        pipeline.hset(conditionsKey, condition.conditionId, JSON.stringify(condition));
       }
 
-      // Remove condition reports if any
+      // Remove conditions if any
       if (conditionIdsToRemove.length > 0) {
-        pipeline.hdel(reportsKey, ...conditionIdsToRemove);
+        pipeline.hdel(conditionsKey, ...conditionIdsToRemove);
       }
 
       await pipeline.exec();
