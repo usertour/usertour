@@ -125,14 +125,12 @@ export class SocketRedisService {
    * Atomically set multiple client conditions using Redis Hash
    * @param socketId - The socket ID
    * @param conditions - Array of client conditions to set
-   * @param removeConditions - Array of condition IDs to remove
    * @param ttlSeconds - Optional TTL in seconds
    * @returns Promise<boolean> - True if the update was successful
    */
   async setClientConditions(
     socketId: string,
     conditions: ClientCondition[],
-    removeConditions: string[] = [],
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
@@ -150,11 +148,6 @@ export class SocketRedisService {
       // Add/update conditions
       for (const condition of conditions) {
         pipeline.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
-      }
-
-      // Remove specified conditions
-      if (removeConditions.length > 0) {
-        pipeline.hdel(reportsKey, ...removeConditions);
       }
 
       pipeline.expire(reportsKey, ttlSeconds);
