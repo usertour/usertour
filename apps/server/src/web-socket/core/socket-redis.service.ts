@@ -41,7 +41,7 @@ export class SocketRedisService {
    */
   async setClientData(
     socketId: string,
-    clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
+    clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId' | 'clientConditions'>,
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
@@ -95,7 +95,7 @@ export class SocketRedisService {
    */
   async updateClientData(
     socketId: string,
-    updates: Partial<SocketClientData>,
+    updates: Partial<Omit<SocketClientData, 'clientConditions'>>,
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
