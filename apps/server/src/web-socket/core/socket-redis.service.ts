@@ -189,14 +189,8 @@ export class SocketRedisService {
         return false;
       }
 
-      // Update the condition
-      await client.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
-      await client.expire(reportsKey, ttlSeconds);
-
-      this.logger.debug(
-        `Updated client condition: socket=${socketId}, condition=${condition.conditionId}, isActive=${condition.isActive}`,
-      );
-      return true;
+      // Reuse setClientConditions to update the condition
+      return await this.setClientConditions(socketId, [condition], ttlSeconds);
     } catch (error) {
       this.logger.error(`Failed to update client condition for socket ${socketId}:`, error);
       return false;
