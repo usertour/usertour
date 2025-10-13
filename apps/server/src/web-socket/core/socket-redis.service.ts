@@ -4,6 +4,22 @@ import { SocketClientData } from '@/common/types/content';
 import { ClientCondition } from '@/common/types/sdk';
 
 /**
+ * Lua script for atomic "update if exists" operation
+ * KEYS[1]: hash key
+ * ARGV[1]: field name
+ * ARGV[2]: field value
+ * Returns: 1 if updated, 0 if field doesn't exist
+ */
+const UPDATE_IF_EXISTS_SCRIPT = `
+  if redis.call('hexists', KEYS[1], ARGV[1]) == 1 then
+    redis.call('hset', KEYS[1], ARGV[1], ARGV[2])
+    return 1
+  else
+    return 0
+  end
+`;
+
+/**
  * Socket Redis storage service
  * Handles all Redis data operations for socket management
  */
@@ -163,12 +179,11 @@ export class SocketRedisService {
   }
 
   /**
-   * Update a single client condition (creates if not exists)
-   * Uses HSET to update existing condition or create new one
-   * This handles timing issues where conditions may arrive before being tracked
+   * Update a single client condition
+   * Only updates if the condition already exists (atomic operation using Lua script)
    * @param socketId - The socket ID
    * @param condition - The client condition to update
-   * @returns Promise<boolean> - True if the condition was updated successfully
+   * @returns Promise<boolean> - True if the condition was updated successfully, false if condition doesn't exist
    */
   async updateClientCondition(socketId: string, condition: ClientCondition): Promise<boolean> {
     try {
@@ -180,8 +195,18 @@ export class SocketRedisService {
         return false;
       }
 
-      // Update or create condition (HSET)
-      await client.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
+      // Use Lua script for atomic "update if exists" operation
+      const result = await client.eval(
+        UPDATE_IF_EXISTS_SCRIPT,
+        1,
+        reportsKey,
+        condition.conditionId,
+        JSON.stringify(condition),
+      );
+
+      if (result === 0) {
+        return false;
+      }
 
       return true;
     } catch (error) {
