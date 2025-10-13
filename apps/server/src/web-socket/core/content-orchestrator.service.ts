@@ -629,28 +629,16 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     trackConditions: TrackCondition[],
   ): Promise<boolean> {
-    const { socket, socketClientData } = context;
-    const { clientConditions } = socketClientData;
-
-    // Track the client conditions, because no content was found to start
-    const newTrackConditions = trackConditions?.filter(
-      (trackCondition) =>
-        !clientConditions?.some(
-          (clientCondition) => clientCondition.conditionId === trackCondition.condition.id,
-        ),
-    );
+    const { socket } = context;
 
     const trackedConditions = await this.socketParallelService.trackClientConditions(
       socket,
-      newTrackConditions,
+      trackConditions,
     );
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
-      return await this.socketRedisService.setClientConditions(socket.id, [
-        ...clientConditions,
-        ...trackedConditions,
-      ]);
+      return await this.socketRedisService.setClientConditions(socket.id, trackedConditions);
     }
 
     return true;
