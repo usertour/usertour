@@ -33,10 +33,6 @@ export class DistributedLockService {
 
     try {
       const client = this.redisService.getClient();
-      if (!client) {
-        this.logger.warn(`Redis client not available for lock: ${key}`);
-        return false;
-      }
 
       // Try to acquire lock with expiration using SET with NX and PX options
       const result = await client.set(lockKey, value, 'PX', timeoutMs, 'NX');
@@ -65,10 +61,6 @@ export class DistributedLockService {
 
     try {
       const client = this.redisService.getClient();
-      if (!client) {
-        this.logger.warn(`Redis client not available for lock release: ${key}`);
-        return false;
-      }
 
       // If lockValue is provided, use Lua script to ensure we only release our own lock
       if (lockValue) {
@@ -106,9 +98,6 @@ export class DistributedLockService {
 
     try {
       const client = this.redisService.getClient();
-      if (!client) {
-        return false;
-      }
 
       const result = await client.exists(lockKey);
       return result === 1;
@@ -128,9 +117,6 @@ export class DistributedLockService {
 
     try {
       const client = this.redisService.getClient();
-      if (!client) {
-        return null;
-      }
 
       const result = await client.get(lockKey);
       return result;

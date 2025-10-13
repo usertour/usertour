@@ -173,17 +173,12 @@ export class SocketRedisService {
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
-      const conditionsKey = this.buildClientConditionsKey(socketId);
-      const client = this.redisService.getClient();
-
-      if (!client) {
-        this.logger.error('Redis client not available');
-        return false;
-      }
-
       if (conditions.length === 0) {
         return true;
       }
+
+      const conditionsKey = this.buildClientConditionsKey(socketId);
+      const client = this.redisService.getClient();
 
       // Prepare arguments for Lua script: [ttl, conditionId1, conditionData1, conditionId2, conditionData2, ...]
       const args: (string | number)[] = [ttlSeconds];
@@ -214,11 +209,6 @@ export class SocketRedisService {
       const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
-      if (!client) {
-        this.logger.error('Redis client not available');
-        return false;
-      }
-
       // Use Lua script for atomic "update if exists" operation
       const result = await client.eval(
         UPDATE_IF_EXISTS_SCRIPT,
@@ -247,12 +237,12 @@ export class SocketRedisService {
    */
   async removeClientConditions(socketId: string, conditionIds: string[]): Promise<boolean> {
     try {
-      const conditionsKey = this.buildClientConditionsKey(socketId);
-      const client = this.redisService.getClient();
-
-      if (!client || conditionIds.length === 0) {
+      if (conditionIds.length === 0) {
         return false;
       }
+
+      const conditionsKey = this.buildClientConditionsKey(socketId);
+      const client = this.redisService.getClient();
 
       // Use HDEL to remove multiple conditions from Hash
       await client.hdel(conditionsKey, ...conditionIds);
@@ -273,10 +263,6 @@ export class SocketRedisService {
     try {
       const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
-
-      if (!client) {
-        return [];
-      }
 
       const conditions = await client.hgetall(conditionsKey);
       return Object.values(conditions).map((conditionData) => {
@@ -300,11 +286,9 @@ export class SocketRedisService {
       const conditionsKey = this.buildClientConditionsKey(socketId);
       const client = this.redisService.getClient();
 
-      if (client) {
-        // Remove both main data and conditions
-        await client.del(key);
-        await client.del(conditionsKey);
-      }
+      // Remove both main data and conditions
+      await client.del(key);
+      await client.del(conditionsKey);
 
       this.logger.debug(`Removed socket data for socket ${socketId}`);
       return true;
@@ -332,12 +316,6 @@ export class SocketRedisService {
     ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
   ): Promise<boolean> {
     try {
-      const client = this.redisService.getClient();
-      if (!client) {
-        this.logger.error('Redis client not available');
-        return false;
-      }
-
       // Get existing data first
       const existingData = await this.getClientData(socketId);
       if (!existingData) {
@@ -355,6 +333,7 @@ export class SocketRedisService {
 
       const dataKey = this.buildClientDataKey(socketId);
       const conditionsKey = this.buildClientConditionsKey(socketId);
+      const client = this.redisService.getClient();
 
       // Use Pipeline for atomic operations
       const pipeline = client.pipeline();
