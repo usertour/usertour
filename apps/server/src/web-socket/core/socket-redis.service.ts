@@ -20,6 +20,34 @@ const UPDATE_IF_EXISTS_SCRIPT = `
 `;
 
 /**
+ * Lua script for atomically setting multiple client conditions
+ * KEYS[1]: hash key for condition reports
+ * ARGV[1]: TTL in seconds
+ * ARGV[2..n]: alternating conditionId and condition JSON pairs
+ * Returns: number of conditions set
+ */
+const SET_CONDITIONS_SCRIPT = `
+  local count = 0
+  local key = KEYS[1]
+  local ttl = tonumber(ARGV[1])
+  
+  -- Set each condition only if it doesn't exist (HSETNX behavior)
+  for i = 2, #ARGV, 2 do
+    local conditionId = ARGV[i]
+    local conditionData = ARGV[i + 1]
+    local result = redis.call('hsetnx', key, conditionId, conditionData)
+    count = count + result
+  end
+  
+  -- Set TTL for the hash key
+  if count > 0 or redis.call('exists', key) == 1 then
+    redis.call('expire', key, ttl)
+  end
+  
+  return count
+`;
+
+/**
  * Socket Redis storage service
  * Handles all Redis data operations for socket management
  */
@@ -138,7 +166,7 @@ export class SocketRedisService {
   }
 
   /**
-   * Atomically set multiple client conditions using Redis Hash
+   * Atomically set multiple client conditions using Lua script
    * Uses HSETNX to only set conditions that don't exist yet
    * @param socketId - The socket ID
    * @param conditions - Array of client conditions to set
@@ -159,18 +187,20 @@ export class SocketRedisService {
         return false;
       }
 
-      // Use Redis Pipeline for atomic operations
-      const pipeline = client.pipeline();
-
-      // Only set conditions that don't exist (HSETNX)
-      for (const condition of conditions) {
-        pipeline.hsetnx(reportsKey, condition.conditionId, JSON.stringify(condition));
+      if (conditions.length === 0) {
+        return true;
       }
 
-      pipeline.expire(reportsKey, ttlSeconds);
+      // Prepare arguments for Lua script: [ttl, conditionId1, conditionData1, conditionId2, conditionData2, ...]
+      const args: (string | number)[] = [ttlSeconds];
+      for (const condition of conditions) {
+        args.push(condition.conditionId, JSON.stringify(condition));
+      }
 
-      await pipeline.exec();
+      // Execute Lua script atomically
+      const result = await client.eval(SET_CONDITIONS_SCRIPT, 1, reportsKey, ...args);
 
+      this.logger.debug(`Set ${result} new client conditions for socket ${socketId}`);
       return true;
     } catch (error) {
       this.logger.error(`Failed to set client conditions for socket ${socketId}:`, error);

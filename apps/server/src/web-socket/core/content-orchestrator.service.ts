@@ -647,9 +647,10 @@ export class ContentOrchestratorService {
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
-      return await this.socketRedisService.updateClientData(socket.id, {
-        clientConditions: [...clientConditions, ...trackedConditions],
-      });
+      return await this.socketRedisService.setClientConditions(socket.id, [
+        ...clientConditions,
+        ...trackedConditions,
+      ]);
     }
 
     return true;
