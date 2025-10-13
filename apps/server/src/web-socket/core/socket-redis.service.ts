@@ -123,10 +123,11 @@ export class SocketRedisService {
 
   /**
    * Atomically set multiple client conditions using Redis Hash
+   * Uses HSETNX to only set conditions that don't exist yet
    * @param socketId - The socket ID
    * @param conditions - Array of client conditions to set
    * @param ttlSeconds - Optional TTL in seconds
-   * @returns Promise<boolean> - True if the update was successful
+   * @returns Promise<boolean> - True if the operation was successful
    */
   async setClientConditions(
     socketId: string,
@@ -145,9 +146,9 @@ export class SocketRedisService {
       // Use Redis Pipeline for atomic operations
       const pipeline = client.pipeline();
 
-      // Add/update conditions
+      // Only set conditions that don't exist (HSETNX)
       for (const condition of conditions) {
-        pipeline.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
+        pipeline.hsetnx(reportsKey, condition.conditionId, JSON.stringify(condition));
       }
 
       pipeline.expire(reportsKey, ttlSeconds);
@@ -162,17 +163,14 @@ export class SocketRedisService {
   }
 
   /**
-   * Update a single client condition
+   * Update a single client condition (creates if not exists)
+   * Uses HSET to update existing condition or create new one
+   * This handles timing issues where conditions may arrive before being tracked
    * @param socketId - The socket ID
    * @param condition - The client condition to update
-   * @param ttlSeconds - Optional TTL in seconds
-   * @returns Promise<boolean> - True if the condition was updated successfully, false if condition doesn't exist
+   * @returns Promise<boolean> - True if the condition was updated successfully
    */
-  async updateClientCondition(
-    socketId: string,
-    condition: ClientCondition,
-    ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
-  ): Promise<boolean> {
+  async updateClientCondition(socketId: string, condition: ClientCondition): Promise<boolean> {
     try {
       const reportsKey = this.buildClientConditionReportsKey(socketId);
       const client = this.redisService.getClient();
@@ -182,15 +180,10 @@ export class SocketRedisService {
         return false;
       }
 
-      // Check if condition exists
-      const existing = await client.hget(reportsKey, condition.conditionId);
-      if (!existing) {
-        this.logger.warn(`Condition ${condition.conditionId} not found for socket ${socketId}`);
-        return false;
-      }
+      // Update or create condition (HSET)
+      await client.hset(reportsKey, condition.conditionId, JSON.stringify(condition));
 
-      // Reuse setClientConditions to update the condition
-      return await this.setClientConditions(socketId, [condition], ttlSeconds);
+      return true;
     } catch (error) {
       this.logger.error(`Failed to update client condition for socket ${socketId}:`, error);
       return false;
@@ -201,27 +194,24 @@ export class SocketRedisService {
    * Remove client conditions
    * @param socketId - The socket ID
    * @param conditionIds - Array of condition IDs to remove
-   * @returns Promise<number> - Number of conditions that were removed
+   * @returns Promise<boolean> - True if the operation was successful
    */
-  async removeClientConditions(socketId: string, conditionIds: string[]): Promise<number> {
+  async removeClientConditions(socketId: string, conditionIds: string[]): Promise<boolean> {
     try {
       const reportsKey = this.buildClientConditionReportsKey(socketId);
       const client = this.redisService.getClient();
 
       if (!client || conditionIds.length === 0) {
-        return 0;
+        return false;
       }
 
       // Use HDEL to remove multiple conditions from Hash
-      const result = await client.hdel(reportsKey, ...conditionIds);
+      await client.hdel(reportsKey, ...conditionIds);
 
-      this.logger.debug(
-        `Removed ${result} client conditions: socket=${socketId}, conditions=${conditionIds.join(',')}`,
-      );
-      return result;
+      return true;
     } catch (error) {
       this.logger.error(`Failed to remove client conditions for socket ${socketId}:`, error);
-      return 0;
+      return false;
     }
   }
 
