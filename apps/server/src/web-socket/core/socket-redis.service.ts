@@ -21,30 +21,22 @@ const UPDATE_IF_EXISTS_SCRIPT = `
 
 /**
  * Lua script for atomically setting multiple client conditions
- * KEYS[1]: hash key for condition reports
+ * KEYS[1]: hash key for conditions
  * ARGV[1]: TTL in seconds
  * ARGV[2..n]: alternating conditionId and condition JSON pairs
- * Returns: number of conditions set
+ * Returns: 1 on success
  */
 const SET_CONDITIONS_SCRIPT = `
-  local count = 0
   local key = KEYS[1]
   local ttl = tonumber(ARGV[1])
   
-  -- Set each condition only if it doesn't exist (HSETNX behavior)
-  for i = 2, #ARGV, 2 do
-    local conditionId = ARGV[i]
-    local conditionData = ARGV[i + 1]
-    local result = redis.call('hsetnx', key, conditionId, conditionData)
-    count = count + result
-  end
+  -- Batch set all fields using hset (supports multiple field-value pairs)
+  redis.call('hset', key, unpack(ARGV, 2))
   
   -- Set TTL for the hash key
-  if count > 0 or redis.call('exists', key) == 1 then
-    redis.call('expire', key, ttl)
-  end
+  redis.call('expire', key, ttl)
   
-  return count
+  return 1
 `;
 
 /**
@@ -200,9 +192,9 @@ export class SocketRedisService {
       }
 
       // Execute Lua script atomically
-      const result = await client.eval(SET_CONDITIONS_SCRIPT, 1, conditionsKey, ...args);
+      await client.eval(SET_CONDITIONS_SCRIPT, 1, conditionsKey, ...args);
 
-      this.logger.debug(`Set ${result} new client conditions for socket ${socketId}`);
+      this.logger.debug(`Set ${conditions.length} client conditions for socket ${socketId}`);
       return true;
     } catch (error) {
       this.logger.error(`Failed to set client conditions for socket ${socketId}:`, error);
@@ -379,6 +371,9 @@ export class SocketRedisService {
       if (conditionIdsToRemove.length > 0) {
         pipeline.hdel(conditionsKey, ...conditionIdsToRemove);
       }
+
+      // Update TTL for conditions key
+      pipeline.expire(conditionsKey, ttlSeconds);
 
       await pipeline.exec();
 
