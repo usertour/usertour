@@ -53,10 +53,7 @@ export class WebSocketV2MessageHandler {
     });
 
     this.handlers.set(ClientMessageKind.BEGIN_BATCH, {
-      handle: async () => {
-        // BeginBatch is a no-op, just return success
-        return true;
-      },
+      handle: async () => true,
     });
 
     this.handlers.set(ClientMessageKind.END_BATCH, {
