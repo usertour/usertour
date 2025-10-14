@@ -132,6 +132,60 @@ export class WebSocketV2Service {
   }
 
   /**
+   * Initialize and validate client data from socket handshake auth
+   * @param auth - Authentication data from socket handshake
+   * @returns Initialized SocketClientData or null if validation fails
+   */
+  async initializeClientData(auth: Record<string, unknown>): Promise<SocketClientData | null> {
+    const externalUserId = String(auth.externalUserId ?? '');
+    const externalCompanyId = String(auth.externalCompanyId ?? '');
+    const clientContext = auth.clientContext as ClientContext;
+    const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
+    const token = String(auth.token ?? '');
+    const flowSessionId = String(auth.flowSessionId ?? '');
+    const checklistSessionId = String(auth.checklistSessionId ?? '');
+
+    // Validate required fields
+    if (!externalUserId || !token) {
+      return null;
+    }
+
+    // Fetch and validate environment
+    const environment = await this.fetchEnvironmentByToken(token);
+    if (!environment) {
+      return null;
+    }
+
+    // Build base client data
+    const clientData: SocketClientData = {
+      environment,
+      externalUserId,
+      clientContext,
+      externalCompanyId,
+      waitTimers: [],
+      clientConditions,
+    };
+
+    // Initialize flow session if provided
+    if (flowSessionId) {
+      const flowSession = await this.initializeSessionById(clientData, flowSessionId);
+      if (flowSession) {
+        clientData.flowSession = flowSession;
+      }
+    }
+
+    // Initialize checklist session if provided
+    if (checklistSessionId) {
+      const checklistSession = await this.initializeSessionById(clientData, checklistSessionId);
+      if (checklistSession) {
+        clientData.checklistSession = checklistSession;
+      }
+    }
+
+    return clientData;
+  }
+
+  /**
    * Go to step
    * @param socket - The socket instance
    * @param params - The parameters for the go to step event

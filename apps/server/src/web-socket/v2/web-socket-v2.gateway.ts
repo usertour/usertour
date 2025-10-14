@@ -13,10 +13,7 @@ import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageDto } from './web-socket-v2.dto';
-import { SocketClientData } from '@/common/types/content';
-import { ClientContext } from '@usertour/types';
 import { buildExternalUserRoomId, setSocketClientData } from '@/utils/websocket-utils';
-import { ClientCondition } from '@/common/types/sdk';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 
@@ -42,53 +39,18 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     server.use(async (socket: Socket, next) => {
       try {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
-        const externalUserId = String(auth.externalUserId ?? '');
-        const externalCompanyId = String(auth.externalCompanyId ?? '');
-        const clientContext = auth.clientContext as ClientContext;
-        const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
-        const token = String(auth.token ?? '');
-        const flowSessionId = String(auth.flowSessionId ?? '');
-        const checklistSessionId = String(auth.checklistSessionId ?? '');
 
-        if (!externalUserId || !token) {
+        // Initialize and validate client data
+        const clientData = await this.service.initializeClientData(auth);
+        if (!clientData) {
           return next(new SDKAuthenticationError());
         }
 
-        const environment = await this.service.fetchEnvironmentByToken(token);
-        if (!environment) {
-          return next(new SDKAuthenticationError());
-        }
-
-        // Store validated data in socket
-        const clientData: SocketClientData = {
-          environment,
-          externalUserId,
-          clientContext,
-          externalCompanyId,
-          waitTimers: [],
-          clientConditions,
-        };
-        if (flowSessionId) {
-          const flowSession = await this.service.initializeSessionById(clientData, flowSessionId);
-          if (flowSession) {
-            clientData.flowSession = flowSession;
-          }
-        }
-        if (checklistSessionId) {
-          const checklistSession = await this.service.initializeSessionById(
-            clientData,
-            checklistSessionId,
-          );
-          if (checklistSession) {
-            clientData.checklistSession = checklistSession;
-          }
-        }
-        // Store client data directly on socket object
+        // Store client data on socket
         setSocketClientData(socket, clientData);
 
-        const room = buildExternalUserRoomId(environment.id, externalUserId);
-
-        // Check room size limit before joining
+        // Build room ID and check capacity
+        const room = buildExternalUserRoomId(clientData.environment.id, clientData.externalUserId);
         const socketsInRoom = await this.server.in(room).fetchSockets();
         if (socketsInRoom.length >= 100) {
           this.logger.warn(
@@ -100,7 +62,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         // Join user room for targeted messaging
         await socket.join(room);
 
-        this.logger.log(`Socket ${socket.id} authenticated for user ${externalUserId}`);
+        this.logger.log(`Socket ${socket.id} authenticated for user ${clientData.externalUserId}`);
         return next();
       } catch (error: unknown) {
         this.logger.error(`Auth error: ${(error as Error)?.message ?? 'Unknown error'}`);
