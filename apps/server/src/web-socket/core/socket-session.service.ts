@@ -8,7 +8,6 @@ import {
   ClientCondition,
   ConditionWaitTimer,
 } from '@/common/types';
-import { SocketRedisService } from './socket-redis.service';
 import { SocketEmitterService } from './socket-emitter.service';
 import { SocketParallelService } from './socket-parallel.service';
 import {
@@ -16,6 +15,7 @@ import {
   calculateRemainingClientConditions,
   calculateRemainingConditionWaitTimers,
   filterAndPreserveConditions,
+  updateSocketClientData,
 } from '@/utils/websocket-utils';
 
 /**
@@ -56,7 +56,6 @@ export class SocketSessionService {
   private readonly logger = new Logger(SocketSessionService.name);
 
   constructor(
-    private readonly socketRedisService: SocketRedisService,
     private readonly socketEmitterService: SocketEmitterService,
     private readonly socketParallelService: SocketParallelService,
   ) {}
@@ -115,25 +114,6 @@ export class SocketSessionService {
       this.socketEmitterService.checklistTaskCompleted(socket, taskId);
     }
     return true;
-  }
-
-  /**
-   * Calculate condition IDs that are no longer needed and should be removed
-   * @param socket - The socket instance
-   * @param currentConditions - The current conditions to compare against
-   * @returns Promise<string[]> - Array of condition IDs to remove
-   */
-  private async extractRemovedConditionIds(
-    socket: Socket,
-    currentConditions: ClientCondition[],
-  ): Promise<string[]> {
-    const clientData = await this.socketRedisService.getClientData(socket.id);
-    const clientConditionReports = clientData?.clientConditions || [];
-    const obsoleteReports = calculateRemainingClientConditions(
-      clientConditionReports,
-      currentConditions,
-    );
-    return obsoleteReports.map((report) => report.conditionId);
   }
 
   /**
@@ -271,7 +251,7 @@ export class SocketSessionService {
       }),
     };
 
-    return await this.socketRedisService.updateClientData(socket.id, updatedClientData);
+    return updateSocketClientData(socket, updatedClientData);
   }
 
   /**
@@ -323,6 +303,6 @@ export class SocketSessionService {
       }),
     };
 
-    return await this.socketRedisService.updateClientData(socket.id, updatedClientData);
+    return updateSocketClientData(socket, updatedClientData);
   }
 }

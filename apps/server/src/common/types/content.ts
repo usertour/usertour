@@ -47,8 +47,6 @@ export interface SocketClientData {
   checklistSession?: CustomContentSession;
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
-  lastUpdated: number;
-  socketId: string;
 }
 
 export interface ContentStartContext {

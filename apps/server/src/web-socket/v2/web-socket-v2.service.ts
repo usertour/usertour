@@ -26,7 +26,7 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
+import { getSocketClientData, updateSocketClientData } from '@/utils/websocket-utils';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
@@ -40,7 +40,6 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
-    private readonly socketRedisService: SocketRedisService,
   ) {}
 
   /**
@@ -63,7 +62,7 @@ export class WebSocketV2Service {
       socketClientData.environment.id,
     );
     if (!bizUser) return false;
-    return await this.socketRedisService.updateClientData(socket.id, { externalUserId });
+    return updateSocketClientData(socket, { externalUserId });
   }
 
   /**
@@ -90,7 +89,7 @@ export class WebSocketV2Service {
     );
 
     if (!bizCompany) return false;
-    return await this.socketRedisService.updateClientData(socket.id, { externalCompanyId });
+    return updateSocketClientData(socket, { externalCompanyId });
   }
 
   /**
@@ -100,7 +99,7 @@ export class WebSocketV2Service {
    * @returns True if the socket context was updated successfully
    */
   async updateClientContext(socket: Socket, clientContext: ClientContext): Promise<boolean> {
-    return await this.socketRedisService.updateClientData(socket.id, { clientContext });
+    return updateSocketClientData(socket, { clientContext });
   }
 
   /**
@@ -488,8 +487,7 @@ export class WebSocketV2Service {
     socketClientData?: SocketClientData,
   ): Promise<boolean> {
     // If socketClientData is not provided, fetch it using getClientDataResolved
-    const clientData =
-      socketClientData ?? (await this.contentOrchestratorService.getClientDataResolved(socket.id));
+    const clientData = socketClientData ?? getSocketClientData(socket);
 
     if (!clientData) return false;
 
@@ -524,7 +522,7 @@ export class WebSocketV2Service {
    * @returns True if the condition was toggled successfully
    */
   async toggleClientCondition(socket: Socket, clientCondition: ClientCondition): Promise<boolean> {
-    const currentData = await this.socketRedisService.getClientData(socket.id);
+    const currentData = getSocketClientData(socket);
     if (!currentData) {
       return false;
     }
@@ -541,7 +539,7 @@ export class WebSocketV2Service {
         )
       : [...existingConditions, clientCondition];
 
-    return await this.socketRedisService.updateClientData(socket.id, {
+    return updateSocketClientData(socket, {
       clientConditions: updatedConditions,
     });
   }
@@ -574,7 +572,7 @@ export class WebSocketV2Service {
     };
 
     // Update socket data
-    return await this.socketRedisService.updateClientData(socket.id, {
+    return updateSocketClientData(socket, {
       waitTimers: waitTimers.map((condition) =>
         condition.versionId === versionId ? updatedCondition : condition,
       ),
@@ -599,7 +597,12 @@ export class WebSocketV2Service {
    * @param socketId - The socket ID
    * @returns The resolved client data or null
    */
-  async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
-    return await this.contentOrchestratorService.getClientDataResolved(socketId);
+  /**
+   * Get socket client data by socket
+   * @param socket - The socket instance
+   * @returns The socket data or null if not found
+   */
+  getClientDataResolved(socket: Socket): SocketClientData | null {
+    return getSocketClientData(socket);
   }
 }

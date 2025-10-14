@@ -14,10 +14,9 @@ import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageDto } from './web-socket-v2.dto';
-import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { ClientContext } from '@usertour/types';
-import { buildExternalUserRoomId } from '../../utils/websocket-utils';
+import { buildExternalUserRoomId, setSocketClientData } from '@/utils/websocket-utils';
 import { ClientCondition } from '@/common/types/sdk';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
@@ -33,7 +32,6 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
   constructor(
     private readonly service: WebSocketV2Service,
-    private readonly socketRedisService: SocketRedisService,
     private readonly messageHandler: WebSocketV2MessageHandler,
     private readonly queueService: SocketMessageQueueService,
   ) {}
@@ -69,8 +67,6 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           clientContext,
           externalCompanyId,
           waitTimers: [],
-          lastUpdated: Date.now(),
-          socketId: socket.id,
           clientConditions,
         };
         if (flowSessionId) {
@@ -88,11 +84,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
             clientData.checklistSession = checklistSession;
           }
         }
-        const isSetClientData = await this.socketRedisService.setClientData(socket.id, clientData);
-        if (!isSetClientData) {
-          this.logger.error(`Failed to persist client data for socket ${socket.id}`);
-          return next(new ServiceUnavailableError());
-        }
+        // Store client data directly on socket object
+        setSocketClientData(socket, clientData);
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);
 
@@ -123,10 +116,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       // Clear the message queue to prevent memory leaks
       this.queueService.clearQueue(socket.id);
 
-      // Clean up Redis data
-      await this.socketRedisService.cleanup(socket.id);
-
-      this.logger.debug(`Cleaned up queue and client data for disconnected socket ${socket.id}`);
+      // Note: socket.data is automatically cleaned up when socket disconnects
+      this.logger.debug(`Cleaned up queue for disconnected socket ${socket.id}`);
     } catch (error) {
       this.logger.error(
         `Failed to cleanup for disconnected socket ${socket.id}: ` +
@@ -153,8 +144,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
     // All messages are executed in order to maintain Socket.IO's ordering semantics
     return await this.queueService.executeInOrder(socket.id, async () => {
-      // Fetch fresh data to avoid stale data issues
-      const clientData = await this.service.getClientDataResolved(socket.id);
+      // Get client data from socket
+      const clientData = this.service.getClientDataResolved(socket);
 
       if (!clientData) {
         this.logger.warn(`No client data found for socket ${socket.id}, message kind: ${kind}`);

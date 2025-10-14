@@ -21,6 +21,8 @@ import {
   extractContentTypeBySessionId,
   extractExcludedContentIds,
   extractSessionByContentType,
+  getSocketClientData,
+  updateSocketClientData,
 } from '@/utils/websocket-utils';
 import {
   StartContentOptions,
@@ -43,7 +45,7 @@ import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { ActivateSocketSessionOptions, SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
-import { SocketRedisService } from './socket-redis.service';
+
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
  */
@@ -57,7 +59,6 @@ export class ContentOrchestratorService {
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
-    private readonly socketRedisService: SocketRedisService,
   ) {}
 
   /**
@@ -102,7 +103,7 @@ export class ContentOrchestratorService {
   async cancelContent(context: ContentCancelContext): Promise<boolean> {
     const { server, socket, sessionId, cancelOtherSessions = true } = context;
 
-    const socketClientData = await this.getClientDataResolved(socket.id);
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData) {
       return false;
     }
@@ -214,7 +215,7 @@ export class ContentOrchestratorService {
       return { success: false };
     }
 
-    const updatedClientData = await this.getClientDataResolved(socket.id);
+    const updatedClientData = getSocketClientData(socket);
     if (!updatedClientData) {
       return { success: false };
     }
@@ -229,7 +230,7 @@ export class ContentOrchestratorService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const socketClientData = await this.getClientDataResolved(socket.id);
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData) {
       return false;
     }
@@ -347,7 +348,7 @@ export class ContentOrchestratorService {
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
     const { socket, session } = params;
-    const socketClientData = await this.getClientDataResolved(socket.id);
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData) {
       return false;
     }
@@ -551,7 +552,7 @@ export class ContentOrchestratorService {
     session: CustomContentSession,
   ): Promise<boolean> {
     const { socket, server, contentType } = context;
-    const socketClientData = await this.getClientDataResolved(socket.id);
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData) {
       return true;
     }
@@ -595,7 +596,7 @@ export class ContentOrchestratorService {
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
-      return await this.socketRedisService.updateClientData(socket.id, {
+      return updateSocketClientData(socket, {
         clientConditions: trackedConditions,
       });
     }
@@ -625,7 +626,7 @@ export class ContentOrchestratorService {
 
     // Update socket data with successfully started timers
     if (startedTimers.length > 0) {
-      return await this.socketRedisService.updateClientData(socket.id, {
+      return updateSocketClientData(socket, {
         waitTimers: [...existingTimers, ...startedTimers],
       });
     }
@@ -1154,17 +1155,6 @@ export class ContentOrchestratorService {
       activatedIds,
       deactivatedIds,
     });
-  }
-
-  /**
-   * Get socket client data with condition states resolved (merged with condition reports)
-   * This method handles the business logic that was previously in SocketRedisService.getClientData
-   * @param socketId - The socket ID
-   * @returns Promise<SocketClientData | null> - The resolved socket data or null if not found
-   */
-  async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
-    // Get data from Redis (clientConditions now included in SocketClientData)
-    return await this.socketRedisService.getClientData(socketId);
   }
 
   /**

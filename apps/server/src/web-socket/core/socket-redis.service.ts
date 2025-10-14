@@ -102,8 +102,6 @@ export class SocketRedisService {
       const mergedData: SocketClientData = {
         ...existingData,
         ...updates,
-        lastUpdated: Date.now(),
-        socketId,
       };
 
       return await this.setClientData(socketId, mergedData, ttlSeconds);
