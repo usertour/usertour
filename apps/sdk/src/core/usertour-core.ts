@@ -40,7 +40,6 @@ import {
   ErrorMessages,
   CustomContentSession,
   TrackCondition,
-  UnTrackedCondition,
   ConditionWaitTimer,
   ClientCondition,
 } from '@/types';
@@ -351,73 +350,61 @@ export class UsertourCore extends Evented {
    * This method sets up all WebSocket event handlers after socket is initialized
    */
   private initializeSocketEventListeners(): void {
-    this.setupFlowSessionListeners();
-    this.setupChecklistSessionListeners();
-    this.setupConditionListeners();
-    this.setupWaitTimerListeners();
+    this.setupServerMessageHandler();
   }
 
   /**
-   * Set up flow session related event listeners
+   * Set up unified server message handler
+   * All server-to-client messages go through this single handler
    */
-  private setupFlowSessionListeners(): void {
-    this.socketService.on(WebSocketEvents.SET_FLOW_SESSION, (session: unknown) => {
-      const success = this.setFlowSession(session as CustomContentSession);
-      if (success) {
-        this.updateSocketAuthInfo({ flowSessionId: (session as CustomContentSession).id });
-      }
-      return success;
-    });
-
-    this.socketService.on(WebSocketEvents.FORCE_GO_TO_STEP, (message: unknown) => {
-      const data = message as { sessionId: string; stepId: string };
-      return this.forceGoToStep(data.sessionId, data.stepId);
-    });
-
-    this.socketService.on(WebSocketEvents.UNSET_FLOW_SESSION, (message: unknown) => {
-      const data = message as { sessionId: string };
-      const success = this.unsetFlowSession(data.sessionId);
-      if (success) {
-        this.updateSocketAuthInfo({ flowSessionId: undefined });
-      }
-      return success;
+  private setupServerMessageHandler(): void {
+    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
+      const { kind, payload } = message as { kind: string; payload: any };
+      return this.handleServerMessage(kind, payload);
     });
   }
 
   /**
-   * Set up checklist session related event listeners
+   * Handle server message by routing to appropriate handler based on kind
    */
-  private setupChecklistSessionListeners(): void {
-    this.socketService.on(WebSocketEvents.SET_CHECKLIST_SESSION, (session: unknown) => {
-      return this.setChecklistSession(session as CustomContentSession);
-    });
-  }
+  private async handleServerMessage(kind: string, payload: any): Promise<boolean> {
+    const handlers: Record<string, (payload: any) => boolean | Promise<boolean>> = {
+      SetFlowSession: (session) => {
+        const success = this.setFlowSession(session as CustomContentSession);
+        if (success) {
+          this.updateSocketAuthInfo({ flowSessionId: (session as CustomContentSession).id });
+        }
+        return success;
+      },
+      ForceGoToStep: (data) => this.forceGoToStep(data.sessionId, data.stepId),
+      UnsetFlowSession: (data) => {
+        const success = this.unsetFlowSession(data.sessionId);
+        if (success) {
+          this.updateSocketAuthInfo({ flowSessionId: undefined });
+        }
+        return success;
+      },
+      SetChecklistSession: (session) => this.setChecklistSession(session as CustomContentSession),
+      TrackClientCondition: (condition) => this.trackClientCondition(condition as TrackCondition),
+      UntrackClientCondition: (data) => this.removeConditions([data.conditionId]),
+      StartConditionWaitTimer: (condition) =>
+        this.startConditionWaitTimer(condition as ConditionWaitTimer),
+      CancelConditionWaitTimer: (condition) =>
+        this.cancelConditionWaitTimer(condition as ConditionWaitTimer),
+    };
 
-  /**
-   * Set up condition related event listeners
-   */
-  private setupConditionListeners(): void {
-    this.socketService.on(WebSocketEvents.TRACK_CLIENT_CONDITION, (condition: unknown) => {
-      return this.trackClientCondition(condition as TrackCondition);
-    });
+    const handler = handlers[kind];
+    if (!handler) {
+      logger.warn(`No handler found for server message kind: ${kind}`);
+      return false;
+    }
 
-    this.socketService.on(WebSocketEvents.UNTRACK_CLIENT_CONDITION, (message: unknown) => {
-      const untrackedCondition = message as UnTrackedCondition;
-      return this.removeConditions([untrackedCondition.conditionId]);
-    });
-  }
-
-  /**
-   * Set up wait timer related event listeners
-   */
-  private setupWaitTimerListeners(): void {
-    this.socketService.on(WebSocketEvents.START_CONDITION_WAIT_TIMER, (condition: unknown) => {
-      return this.startConditionWaitTimer(condition as ConditionWaitTimer);
-    });
-
-    this.socketService.on(WebSocketEvents.CANCEL_CONDITION_WAIT_TIMER, (condition: unknown) => {
-      return this.cancelConditionWaitTimer(condition as ConditionWaitTimer);
-    });
+    try {
+      return await handler(payload);
+    } catch (error) {
+      logger.error(`Error handling server message kind ${kind}:`, error);
+      return false;
+    }
   }
 
   /**

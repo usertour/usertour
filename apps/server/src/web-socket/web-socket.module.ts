@@ -18,6 +18,8 @@ import { SocketRedisService } from './core/socket-redis.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { DistributedLockService } from './core/distributed-lock.service';
+import { SocketMessageQueueService } from './core/socket-message-queue.service';
+import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
 @Module({
   imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
@@ -36,7 +38,9 @@ import { DistributedLockService } from './core/distributed-lock.service';
     SocketRedisService,
     SocketEmitterService,
     SocketParallelService,
-    DistributedLockService,
+    DistributedLockService, // Kept for potential future use
+    SocketMessageQueueService,
+    WebSocketV2MessageHandler,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

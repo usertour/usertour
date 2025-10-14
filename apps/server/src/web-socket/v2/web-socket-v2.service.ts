@@ -517,14 +517,33 @@ export class WebSocketV2Service {
   /**
    * Toggle the isActive status of a specific socket condition by condition ID
    * Handles timing issues by creating the condition if it doesn't exist yet
+   * Now simplified as message queue ensures ordered execution
    * @param socket - The socket instance
    * @param socketClientData - The socket client data
    * @param clientCondition - The client condition
    * @returns True if the condition was toggled successfully
    */
   async toggleClientCondition(socket: Socket, clientCondition: ClientCondition): Promise<boolean> {
-    // Use atomic Redis Hash operation to avoid race conditions
-    return await this.socketRedisService.updateClientCondition(socket.id, clientCondition);
+    const currentData = await this.socketRedisService.getClientData(socket.id);
+    if (!currentData) {
+      return false;
+    }
+
+    const existingConditions = currentData.clientConditions || [];
+    const conditionExists = existingConditions.some(
+      (c) => c.conditionId === clientCondition.conditionId,
+    );
+
+    // Update existing condition or add new one
+    const updatedConditions = conditionExists
+      ? existingConditions.map((c) =>
+          c.conditionId === clientCondition.conditionId ? clientCondition : c,
+        )
+      : [...existingConditions, clientCondition];
+
+    return await this.socketRedisService.updateClientData(socket.id, {
+      clientConditions: updatedConditions,
+    });
   }
 
   /**
@@ -573,5 +592,14 @@ export class WebSocketV2Service {
     sessionId: string,
   ): Promise<CustomContentSession | null> {
     return await this.contentOrchestratorService.initializeSessionById(socketClientData, sessionId);
+  }
+
+  /**
+   * Get client data resolved (exposed for Gateway to fetch fresh data)
+   * @param socketId - The socket ID
+   * @returns The resolved client data or null
+   */
+  async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
+    return await this.contentOrchestratorService.getClientDataResolved(socketId);
   }
 }

@@ -44,8 +44,6 @@ import { EventTrackingService } from './event-tracking.service';
 import { ActivateSocketSessionOptions, SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
 import { SocketRedisService } from './socket-redis.service';
-import { DistributedLockService } from './distributed-lock.service';
-
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
  */
@@ -60,40 +58,14 @@ export class ContentOrchestratorService {
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
     private readonly socketRedisService: SocketRedisService,
-    private readonly distributedLockService: DistributedLockService,
   ) {}
-
-  /**
-   * Generate a standardized lock key for socket operations
-   * @param socketId - The socket ID
-   * @returns The lock key string
-   */
-  private generateSocketLockKey(socketId: string): string {
-    return `socket:${socketId}`;
-  }
 
   /**
    * Main entry point for starting singleton content
    * Implements multiple strategies for content activation and coordinates the start process
-   * Uses retry mechanism to handle lock contention
+   * No longer needs distributed lock as message queue ensures ordered execution
    */
   async startContent(context: ContentStartContext): Promise<boolean> {
-    const { socket } = context;
-    const socketId = socket.id;
-
-    // Use distributed lock with retry mechanism to prevent concurrent startContent calls
-    const lockKey = this.generateSocketLockKey(socketId);
-    return await this.distributedLockService.withRetryLock(lockKey, async () => {
-      return await this.executeStartContent(context);
-    });
-  }
-
-  /**
-   * Execute the actual startContent logic without lock management
-   * @param context - The content start context
-   * @returns Promise<boolean> - True if content was started successfully
-   */
-  private async executeStartContent(context: ContentStartContext): Promise<boolean> {
     const { options } = context;
     const contentId = options?.contentId;
 
@@ -123,26 +95,11 @@ export class ContentOrchestratorService {
 
   /**
    * Cancel content
+   * No longer needs distributed lock as message queue ensures ordered execution
    * @param context - The content cancel context
    * @returns True if the content was canceled successfully
    */
   async cancelContent(context: ContentCancelContext): Promise<boolean> {
-    const { socket } = context;
-    const socketId = socket.id;
-
-    // Use distributed lock with retry mechanism to prevent concurrent cancelContent calls
-    const lockKey = this.generateSocketLockKey(socketId);
-    return await this.distributedLockService.withRetryLock(lockKey, async () => {
-      return await this.executeCancelContent(context);
-    });
-  }
-
-  /**
-   * Execute the actual cancelContent logic without lock management
-   * @param context - The content cancel context
-   * @returns True if the content was canceled successfully
-   */
-  private async executeCancelContent(context: ContentCancelContext): Promise<boolean> {
     const { server, socket, sessionId, cancelOtherSessions = true } = context;
 
     const socketClientData = await this.getClientDataResolved(socket.id);
@@ -638,7 +595,9 @@ export class ContentOrchestratorService {
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
-      return await this.socketRedisService.setClientConditions(socket.id, trackedConditions);
+      return await this.socketRedisService.updateClientData(socket.id, {
+        clientConditions: trackedConditions,
+      });
     }
 
     return true;
@@ -1204,18 +1163,8 @@ export class ContentOrchestratorService {
    * @returns Promise<SocketClientData | null> - The resolved socket data or null if not found
    */
   async getClientDataResolved(socketId: string): Promise<SocketClientData | null> {
-    // Get raw data from Redis (pure operation)
-    const rawClientData = await this.socketRedisService.getClientData(socketId);
-    if (!rawClientData) {
-      return null;
-    }
-
-    const clientConditions = await this.socketRedisService.getClientConditions(socketId);
-
-    return {
-      ...rawClientData,
-      clientConditions,
-    };
+    // Get data from Redis (clientConditions now included in SocketClientData)
+    return await this.socketRedisService.getClientData(socketId);
   }
 
   /**

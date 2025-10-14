@@ -13,26 +13,14 @@ import { WebSocketClientDataInterceptor } from '../web-socket-client-data.interc
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import {
-  TrackEventDto,
-  UpsertCompanyDto,
-  UpsertUserDto,
-  AnswerQuestionDto,
-  ClickChecklistTaskDto,
-  GoToStepDto,
-  HideChecklistDto,
-  ShowChecklistDto,
-  TooltipTargetMissingDto,
-  StartContentDto,
-  EndContentDto,
-  FireConditionWaitTimerDto,
-} from './web-socket-v2.dto';
+import { ClientMessageDto } from './web-socket-v2.dto';
 import { SocketRedisService } from '@/web-socket/core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
-import { ClientContext, ContentDataType } from '@usertour/types';
+import { ClientContext } from '@usertour/types';
 import { buildExternalUserRoomId } from '../../utils/websocket-utils';
-import { WebSocketClientData } from '../web-socket.decorator';
 import { ClientCondition } from '@/common/types/sdk';
+import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
+import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -46,6 +34,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   constructor(
     private readonly service: WebSocketV2Service,
     private readonly socketRedisService: SocketRedisService,
+    private readonly messageHandler: WebSocketV2MessageHandler,
+    private readonly queueService: SocketMessageQueueService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -81,6 +71,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           waitTimers: [],
           lastUpdated: Date.now(),
           socketId: socket.id,
+          clientConditions,
         };
         if (flowSessionId) {
           const flowSession = await this.service.initializeSessionById(clientData, flowSessionId);
@@ -101,16 +92,6 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         if (!isSetClientData) {
           this.logger.error(`Failed to persist client data for socket ${socket.id}`);
           return next(new ServiceUnavailableError());
-        }
-        if (clientConditions.length > 0) {
-          const isSetClientConditions = await this.socketRedisService.setClientConditions(
-            socket.id,
-            clientConditions,
-          );
-          if (!isSetClientConditions) {
-            this.logger.error(`Failed to persist client conditions for socket ${socket.id}`);
-            return next(new ServiceUnavailableError());
-          }
         }
 
         const room = buildExternalUserRoomId(environment.id, externalUserId);
@@ -139,160 +120,48 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   // Cleanup when a socket disconnects for any reason
   async handleDisconnect(socket: Socket): Promise<void> {
     try {
+      // Clear the message queue to prevent memory leaks
+      this.queueService.clearQueue(socket.id);
+
+      // Clean up Redis data
       await this.socketRedisService.cleanup(socket.id);
-      this.logger.debug(`Cleaned up client data for disconnected socket ${socket.id}`);
+
+      this.logger.debug(`Cleaned up queue and client data for disconnected socket ${socket.id}`);
     } catch (error) {
       this.logger.error(
-        `Failed to cleanup client data for disconnected socket ${socket.id}: ` +
+        `Failed to cleanup for disconnected socket ${socket.id}: ` +
           `${(error as Error)?.message ?? 'Unknown error'}`,
       );
     }
   }
 
-  @SubscribeMessage('begin-batch')
-  async beginBatch(): Promise<boolean> {
-    return true;
-  }
-
-  @SubscribeMessage('end-batch')
-  async endBatch(
-    @WebSocketClientData() socketClientData: SocketClientData,
+  /**
+   * Unified client message entry point
+   * All client messages go through this single handler
+   * Messages are routed based on 'kind' field and executed in order
+   */
+  @SubscribeMessage('client-message')
+  async handleClientMessage(
     @ConnectedSocket() socket: Socket,
+    @MessageBody() message: ClientMessageDto,
   ): Promise<boolean> {
-    return await this.service.endBatch(this.server, socket, socketClientData);
-  }
+    const { kind, payload, requestId } = message;
 
-  @SubscribeMessage('upsert-user')
-  async upsertBizUsers(
-    @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() upsertUserDto: UpsertUserDto,
-  ): Promise<boolean> {
-    return await this.service.upsertBizUsers(socket, socketClientData, upsertUserDto);
-  }
-
-  @SubscribeMessage('upsert-company')
-  async upsertBizCompanies(
-    @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() upsertCompanyDto: UpsertCompanyDto,
-  ): Promise<boolean> {
-    return await this.service.upsertBizCompanies(socket, socketClientData, upsertCompanyDto);
-  }
-
-  @SubscribeMessage('update-client-context')
-  async updateClientContext(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() context: ClientContext,
-  ): Promise<boolean> {
-    return await this.service.updateClientContext(socket, context);
-  }
-
-  @SubscribeMessage('track-event')
-  async trackEvent(
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() trackEventDto: TrackEventDto,
-  ): Promise<boolean> {
-    return await this.service.trackEvent(socketClientData, trackEventDto);
-  }
-
-  @SubscribeMessage('toggle-client-condition')
-  async toggleClientCondition(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() clientCondition: ClientCondition,
-  ): Promise<boolean> {
-    return await this.service.toggleClientCondition(socket, clientCondition);
-  }
-
-  @SubscribeMessage('fire-condition-wait-timer')
-  async fireConditionWaitTimer(
-    @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() fireConditionWaitTimerDto: FireConditionWaitTimerDto,
-  ): Promise<boolean> {
-    return await this.service.fireConditionWaitTimer(
-      socket,
-      socketClientData,
-      fireConditionWaitTimerDto,
+    this.logger.debug(
+      `Received client message: kind=${kind}, socketId=${socket.id}, requestId=${requestId || 'N/A'}`,
     );
-  }
 
-  @SubscribeMessage('start-content')
-  async startContent(
-    @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() startContentDto: StartContentDto,
-  ): Promise<boolean> {
-    return await this.service.startContent(this.server, socket, socketClientData, startContentDto);
-  }
+    // All messages are executed in order to maintain Socket.IO's ordering semantics
+    return await this.queueService.executeInOrder(socket.id, async () => {
+      // Fetch fresh data to avoid stale data issues
+      const clientData = await this.service.getClientDataResolved(socket.id);
 
-  @SubscribeMessage('end-content')
-  async endContent(
-    @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() endContentDto: EndContentDto,
-  ): Promise<boolean> {
-    return await this.service.endContent(this.server, socket, socketClientData, endContentDto);
-  }
+      if (!clientData) {
+        this.logger.warn(`No client data found for socket ${socket.id}, message kind: ${kind}`);
+        return false;
+      }
 
-  @SubscribeMessage('go-to-step')
-  async goToStep(
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() goToStepDto: GoToStepDto,
-  ): Promise<boolean> {
-    return await this.service.goToStep(socketClientData, goToStepDto);
-  }
-
-  @SubscribeMessage('report-tooltip-target-missing')
-  async reportTooltipTargetMissing(
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() reportTooltipTargetMissingDto: TooltipTargetMissingDto,
-  ): Promise<boolean> {
-    return await this.service.reportTooltipTargetMissing(
-      socketClientData,
-      reportTooltipTargetMissingDto,
-    );
-  }
-
-  @SubscribeMessage('answer-question')
-  async answerQuestion(
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() answerQuestionDto: AnswerQuestionDto,
-  ): Promise<boolean> {
-    return await this.service.answerQuestion(socketClientData, answerQuestionDto);
-  }
-
-  @SubscribeMessage('click-checklist-task')
-  async clickChecklistTask(
-    @ConnectedSocket() socket: Socket,
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() clickChecklistTaskDto: ClickChecklistTaskDto,
-  ): Promise<boolean> {
-    const result = await this.service.clickChecklistTask(socketClientData, clickChecklistTaskDto);
-    if (result) {
-      this.service.toggleContents(
-        this.server,
-        socket,
-        [ContentDataType.CHECKLIST],
-        socketClientData,
-      );
-    }
-    return result;
-  }
-
-  @SubscribeMessage('hide-checklist')
-  async hideChecklist(
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() hideChecklistDto: HideChecklistDto,
-  ): Promise<boolean> {
-    return await this.service.hideChecklist(socketClientData, hideChecklistDto);
-  }
-
-  @SubscribeMessage('show-checklist')
-  async showChecklist(
-    @WebSocketClientData() socketClientData: SocketClientData,
-    @MessageBody() showChecklistDto: ShowChecklistDto,
-  ): Promise<boolean> {
-    return await this.service.showChecklist(socketClientData, showChecklistDto);
+      return await this.messageHandler.handle(this.server, socket, clientData, kind, payload);
+    });
   }
 }

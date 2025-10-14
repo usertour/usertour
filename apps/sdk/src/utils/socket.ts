@@ -26,9 +26,6 @@ interface SocketOptions {
 export class Socket {
   private readonly socket: SocketIO;
   private readonly options: SocketOptions;
-  private inBatch = false;
-  private endBatchTimeout?: number;
-  private readonly BATCH_TIMEOUT = 50; // ms
 
   constructor(options: SocketOptions) {
     autoBind(this);
@@ -93,66 +90,21 @@ export class Socket {
   }
 
   /**
-   * Send message with batch support (similar to userflow implementation)
+   * Emit an event without waiting for acknowledgment (fire-and-forget)
    * @param event - Event name to emit
    * @param data - Data to send with the event
-   * @param options - Batch options
-   * @returns Promise with the response
    */
-  async send<T>(
-    event: string,
-    data: any,
-    { batch = false, endBatch = false }: { batch?: boolean; endBatch?: boolean } = {},
-  ): Promise<T> {
-    // Start batch if requested and not already in batch
-    if (batch && !this.inBatch) {
-      this.inBatch = true;
-      await this.emitWithTimeout('begin-batch', {});
-    }
-
-    // Handle batch timeout
-    if (this.inBatch) {
-      // Clear existing timeout
-      if (this.endBatchTimeout) {
-        window.clearTimeout(this.endBatchTimeout);
-      }
-
-      if (endBatch) {
-        // End batch immediately
-        await this.endBatch();
-      } else {
-        // Set timeout to auto-end batch
-        this.endBatchTimeout = window.setTimeout(() => {
-          this.endBatch();
-        }, this.BATCH_TIMEOUT);
-      }
-    }
-
-    // Send the actual message
-    return await this.emitWithTimeout<T>(event, data);
+  emit(event: string, data: any): void {
+    this.socket.emit(event, data);
   }
 
   /**
-   * End current batch
-   */
-  async endBatch(): Promise<void> {
-    if (this.inBatch) {
-      this.inBatch = false;
-      if (this.endBatchTimeout) {
-        window.clearTimeout(this.endBatchTimeout);
-        this.endBatchTimeout = undefined;
-      }
-      await this.emitWithTimeout('end-batch', {});
-    }
-  }
-
-  /**
-   * Emit an event and wait for acknowledgment (internal method)
+   * Emit an event and wait for acknowledgment
    * @param event - Event name to emit
    * @param data - Data to send with the event
    * @returns Promise with the response
    */
-  private async emitWithTimeout<T>(event: string, data: any): Promise<T> {
+  async emitWithAck<T>(event: string, data: any): Promise<T> {
     return await this.socket.emitWithAck(event, data);
   }
 
@@ -176,13 +128,5 @@ export class Socket {
    */
   isConnected(): boolean {
     return this.socket.connected;
-  }
-
-  /**
-   * Check if currently in a batch
-   * @returns True if in batch mode, false otherwise
-   */
-  isInBatch(): boolean {
-    return this.inBatch;
   }
 }

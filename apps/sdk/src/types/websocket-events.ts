@@ -2,30 +2,49 @@
  * WebSocket event names used for communication between client and server
  */
 export enum WebSocketEvents {
-  // Incoming events (from server)
-  SET_FLOW_SESSION = 'set-flow-session',
-  FORCE_GO_TO_STEP = 'force-go-to-step',
-  UNSET_FLOW_SESSION = 'unset-flow-session',
-  SET_CHECKLIST_SESSION = 'set-checklist-session',
-  UNSET_CHECKLIST_SESSION = 'unset-checklist-session',
-  TRACK_CLIENT_CONDITION = 'track-client-condition',
-  UNTRACK_CLIENT_CONDITION = 'untrack-client-condition',
-  START_CONDITION_WAIT_TIMER = 'start-condition-wait-timer',
-  CANCEL_CONDITION_WAIT_TIMER = 'cancel-condition-wait-timer',
+  // Unified incoming event (from server)
+  SERVER_MESSAGE = 'server-message',
 
-  // Outgoing events (to server)
-  UPSERT_USER = 'upsert-user',
-  UPSERT_COMPANY = 'upsert-company',
-  TRACK_EVENT = 'track-event',
-  START_CONTENT = 'start-content',
-  END_CONTENT = 'end-content',
-  GO_TO_STEP = 'go-to-step',
-  ANSWER_QUESTION = 'answer-question',
-  CLICK_CHECKLIST_TASK = 'click-checklist-task',
-  HIDE_CHECKLIST = 'hide-checklist',
-  SHOW_CHECKLIST = 'show-checklist',
-  UPDATE_CLIENT_CONTEXT = 'update-client-context',
-  REPORT_TOOLTIP_TARGET_MISSING = 'report-tooltip-target-missing',
-  TOGGLE_CLIENT_CONDITION = 'toggle-client-condition',
-  FIRE_CONDITION_WAIT_TIMER = 'fire-condition-wait-timer',
+  // Unified outgoing event (to server)
+  CLIENT_MESSAGE = 'client-message',
+}
+
+/**
+ * Message kinds for client-message event (Client -> Server)
+ * Using PascalCase for consistency
+ */
+export enum ClientMessageKind {
+  UPSERT_USER = 'UpsertUser',
+  UPSERT_COMPANY = 'UpsertCompany',
+  TRACK_EVENT = 'TrackEvent',
+  START_CONTENT = 'StartContent',
+  END_CONTENT = 'EndContent',
+  GO_TO_STEP = 'GoToStep',
+  ANSWER_QUESTION = 'AnswerQuestion',
+  CLICK_CHECKLIST_TASK = 'ClickChecklistTask',
+  HIDE_CHECKLIST = 'HideChecklist',
+  SHOW_CHECKLIST = 'ShowChecklist',
+  UPDATE_CLIENT_CONTEXT = 'UpdateClientContext',
+  REPORT_TOOLTIP_TARGET_MISSING = 'ReportTooltipTargetMissing',
+  TOGGLE_CLIENT_CONDITION = 'ToggleClientCondition',
+  FIRE_CONDITION_WAIT_TIMER = 'FireConditionWaitTimer',
+  BEGIN_BATCH = 'BeginBatch',
+  END_BATCH = 'EndBatch',
+}
+
+/**
+ * Message kinds for server-message event (Server -> Client)
+ * Using PascalCase for consistency
+ */
+export enum ServerMessageKind {
+  SET_FLOW_SESSION = 'SetFlowSession',
+  SET_CHECKLIST_SESSION = 'SetChecklistSession',
+  UNSET_FLOW_SESSION = 'UnsetFlowSession',
+  UNSET_CHECKLIST_SESSION = 'UnsetChecklistSession',
+  FORCE_GO_TO_STEP = 'ForceGoToStep',
+  TRACK_CLIENT_CONDITION = 'TrackClientCondition',
+  UNTRACK_CLIENT_CONDITION = 'UntrackClientCondition',
+  START_CONDITION_WAIT_TIMER = 'StartConditionWaitTimer',
+  CANCEL_CONDITION_WAIT_TIMER = 'CancelConditionWaitTimer',
+  CHECKLIST_TASK_COMPLETED = 'ChecklistTaskCompleted',
 }

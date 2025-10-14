@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
+import { ServerMessageKind } from '@/web-socket/v2/web-socket-v2.dto';
 
 /**
  * Socket emitter service
@@ -11,6 +12,7 @@ import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@/comm
 export class SocketEmitterService {
   private readonly logger = new Logger(SocketEmitterService.name);
   private readonly DEFAULT_TIMEOUT = 2000; // 2 seconds timeout for real-time communication
+  private readonly SERVER_MESSAGE_EVENT = 'server-message';
 
   // ============================================================================
   // Client Event Tracking
@@ -23,7 +25,11 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async trackClientEvent(socket: Socket, condition: TrackCondition): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'track-client-condition', condition);
+    return await this.sendServerMessage(
+      socket,
+      ServerMessageKind.TRACK_CLIENT_CONDITION,
+      condition,
+    );
   }
 
   /**
@@ -33,7 +39,9 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async untrackClientEvent(socket: Socket, conditionId: string): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'untrack-client-condition', { conditionId });
+    return await this.sendServerMessage(socket, ServerMessageKind.UNTRACK_CLIENT_CONDITION, {
+      conditionId,
+    });
   }
 
   // ============================================================================
@@ -47,7 +55,7 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async setFlowSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'set-flow-session', session);
+    return await this.sendServerMessage(socket, ServerMessageKind.SET_FLOW_SESSION, session);
   }
 
   /**
@@ -57,7 +65,7 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async setChecklistSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'set-checklist-session', session);
+    return await this.sendServerMessage(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
   }
 
   /**
@@ -67,7 +75,9 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async unsetFlowSession(socket: Socket, sessionId: string): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'unset-flow-session', { sessionId });
+    return await this.sendServerMessage(socket, ServerMessageKind.UNSET_FLOW_SESSION, {
+      sessionId,
+    });
   }
 
   /**
@@ -77,7 +87,9 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async unsetChecklistSession(socket: Socket, sessionId: string): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'unset-checklist-session', { sessionId });
+    return await this.sendServerMessage(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, {
+      sessionId,
+    });
   }
 
   // ============================================================================
@@ -92,7 +104,10 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
   async forceGoToStep(socket: Socket, sessionId: string, stepId: string): Promise<boolean> {
-    return await this.emitEventWithTimeout(socket, 'force-go-to-step', { sessionId, stepId });
+    return await this.sendServerMessage(socket, ServerMessageKind.FORCE_GO_TO_STEP, {
+      sessionId,
+      stepId,
+    });
   }
 
   // ============================================================================
@@ -106,7 +121,12 @@ export class SocketEmitterService {
    * @returns True if the event was emitted successfully
    */
   checklistTaskCompleted(socket: Socket, taskId: string): boolean {
-    return socket.emit('checklist-task-completed', { taskId });
+    // Fire-and-forget, no acknowledgment needed
+    return socket.emit(this.SERVER_MESSAGE_EVENT, {
+      kind: ServerMessageKind.CHECKLIST_TASK_COMPLETED,
+      payload: { taskId },
+      messageId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    });
   }
 
   // ============================================================================
@@ -123,9 +143,9 @@ export class SocketEmitterService {
     socket: Socket,
     conditionWaitTimer: ConditionWaitTimer,
   ): Promise<boolean> {
-    return await this.emitEventWithTimeout(
+    return await this.sendServerMessage(
       socket,
-      'start-condition-wait-timer',
+      ServerMessageKind.START_CONDITION_WAIT_TIMER,
       conditionWaitTimer,
     );
   }
@@ -140,9 +160,9 @@ export class SocketEmitterService {
     socket: Socket,
     conditionWaitTimer: ConditionWaitTimer,
   ): Promise<boolean> {
-    return await this.emitEventWithTimeout(
+    return await this.sendServerMessage(
       socket,
-      'cancel-condition-wait-timer',
+      ServerMessageKind.CANCEL_CONDITION_WAIT_TIMER,
       conditionWaitTimer,
     );
   }
@@ -152,7 +172,40 @@ export class SocketEmitterService {
   // ============================================================================
 
   /**
+   * Send server message with unified format
+   * @param socket - The socket
+   * @param kind - The message kind
+   * @param payload - The message payload
+   * @param timeout - Timeout in milliseconds
+   * @returns Promise<boolean> - True if the client successfully processed the message
+   * @private
+   */
+  private async sendServerMessage(
+    socket: Socket,
+    kind: ServerMessageKind,
+    payload?: any,
+    timeout = this.DEFAULT_TIMEOUT,
+  ): Promise<boolean> {
+    try {
+      const message = {
+        kind,
+        payload,
+        messageId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      };
+      const success = await socket.timeout(timeout).emitWithAck(this.SERVER_MESSAGE_EVENT, message);
+      if (!success) {
+        this.logger.warn(`Client failed to process ${kind} for socket ${socket.id}`);
+      }
+      return !!success;
+    } catch (error) {
+      this.logger.error(`Failed to emit ${kind} for socket ${socket.id}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Emit a generic event to a socket with timeout and handle acknowledgment
+   * @deprecated Use sendServerMessage instead
    * @param socket - The socket
    * @param eventName - The event name
    * @param data - The data to emit

@@ -17,7 +17,7 @@ import {
 import { Socket, logger } from '@/utils';
 import { ClientCondition } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
-import { WebSocketEvents } from '@/types';
+import { WebSocketEvents, ClientMessageKind } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
 import { getClientContext } from '@/core/usertour-helper';
 
@@ -95,6 +95,9 @@ export interface IUsertourSocket {
 export class UsertourSocket implements IUsertourSocket {
   private socket: Socket;
   private authCredentials: AuthCredentials | undefined;
+  private inBatch = false;
+  private endBatchTimeout?: number;
+  private readonly BATCH_TIMEOUT = 50; // ms
 
   constructor() {
     // Create socket instance but don't auto-connect
@@ -209,43 +212,93 @@ export class UsertourSocket implements IUsertourSocket {
     );
   }
 
+  /**
+   * Send a client message with unified format
+   */
+  private async sendClientMessage(
+    kind: ClientMessageKind,
+    payload: any,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    if (!this.socket) return false;
+
+    // Handle batch options
+    if (options?.batch && !this.inBatch) {
+      await this.beginBatchInternal();
+    }
+
+    if (this.inBatch) {
+      // Clear existing timeout
+      if (this.endBatchTimeout) {
+        window.clearTimeout(this.endBatchTimeout);
+      }
+
+      if (options?.endBatch) {
+        // End batch immediately after sending this message
+        const result = (await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+          kind,
+          payload,
+          requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        })) as boolean;
+        await this.endBatch();
+        return result;
+      }
+
+      // Set timeout to auto-end batch
+      this.endBatchTimeout = window.setTimeout(() => {
+        this.endBatch();
+      }, this.BATCH_TIMEOUT);
+    }
+
+    return await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+      kind,
+      payload,
+      requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    });
+  }
+
+  /**
+   * Begin batch internally (send BeginBatch message)
+   */
+  private async beginBatchInternal(): Promise<void> {
+    this.inBatch = true;
+    await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+      kind: ClientMessageKind.BEGIN_BATCH,
+      payload: {},
+      requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    });
+  }
+
   // User and Company operations
   async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.UPSERT_USER, params, options);
+    return await this.sendClientMessage(ClientMessageKind.UPSERT_USER, params, options);
   }
 
   async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.UPSERT_COMPANY, params, options);
+    return await this.sendClientMessage(ClientMessageKind.UPSERT_COMPANY, params, options);
   }
 
   // Event tracking
   async trackEvent(params: TrackEventDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.TRACK_EVENT, params, options);
+    return await this.sendClientMessage(ClientMessageKind.TRACK_EVENT, params, options);
   }
 
   // Content operations
   async startContent(params: StartContentDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.START_CONTENT, params, options);
+    return await this.sendClientMessage(ClientMessageKind.START_CONTENT, params, options);
   }
 
   async endContent(params: EndContentDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.END_CONTENT, params, options);
+    return await this.sendClientMessage(ClientMessageKind.END_CONTENT, params, options);
   }
 
   async goToStep(params: GoToStepDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.GO_TO_STEP, params, options);
+    return await this.sendClientMessage(ClientMessageKind.GO_TO_STEP, params, options);
   }
 
   // Question operations
   async answerQuestion(params: AnswerQuestionDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.ANSWER_QUESTION, params, options);
+    return await this.sendClientMessage(ClientMessageKind.ANSWER_QUESTION, params, options);
   }
 
   // Checklist operations
@@ -253,45 +306,46 @@ export class UsertourSocket implements IUsertourSocket {
     params: ClickChecklistTaskDto,
     options?: BatchOptions,
   ): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.CLICK_CHECKLIST_TASK, params, options);
+    return await this.sendClientMessage(ClientMessageKind.CLICK_CHECKLIST_TASK, params, options);
   }
 
   async hideChecklist(params: HideChecklistDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.HIDE_CHECKLIST, params, options);
+    return await this.sendClientMessage(ClientMessageKind.HIDE_CHECKLIST, params, options);
   }
 
   async showChecklist(params: ShowChecklistDto, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.SHOW_CHECKLIST, params, options);
+    return await this.sendClientMessage(ClientMessageKind.SHOW_CHECKLIST, params, options);
   }
 
   // Context and reporting
   async updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.UPDATE_CLIENT_CONTEXT, params, options);
+    return await this.sendClientMessage(ClientMessageKind.UPDATE_CLIENT_CONTEXT, params, options);
   }
 
   async reportTooltipTargetMissing(
     params: TooltipTargetMissingDto,
     options?: BatchOptions,
   ): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.REPORT_TOOLTIP_TARGET_MISSING, params, options);
+    return await this.sendClientMessage(
+      ClientMessageKind.REPORT_TOOLTIP_TARGET_MISSING,
+      params,
+      options,
+    );
   }
 
   async toggleClientCondition(params: ClientCondition, options?: BatchOptions): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.TOGGLE_CLIENT_CONDITION, params, options);
+    return await this.sendClientMessage(ClientMessageKind.TOGGLE_CLIENT_CONDITION, params, options);
   }
 
   async fireConditionWaitTimer(
     params: FireConditionWaitTimerDto,
     options?: BatchOptions,
   ): Promise<boolean> {
-    if (!this.socket) return false;
-    return await this.socket.send(WebSocketEvents.FIRE_CONDITION_WAIT_TIMER, params, options);
+    return await this.sendClientMessage(
+      ClientMessageKind.FIRE_CONDITION_WAIT_TIMER,
+      params,
+      options,
+    );
   }
 
   // Socket status methods
@@ -300,11 +354,22 @@ export class UsertourSocket implements IUsertourSocket {
   }
 
   isInBatch(): boolean {
-    return this.socket?.isInBatch() ?? false;
+    return this.inBatch;
   }
 
   async endBatch(): Promise<void> {
-    await this.socket?.endBatch();
+    if (this.inBatch) {
+      this.inBatch = false;
+      if (this.endBatchTimeout) {
+        window.clearTimeout(this.endBatchTimeout);
+        this.endBatchTimeout = undefined;
+      }
+      await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+        kind: ClientMessageKind.END_BATCH,
+        payload: {},
+        requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      });
+    }
   }
 
   /**
