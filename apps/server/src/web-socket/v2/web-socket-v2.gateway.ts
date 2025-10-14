@@ -9,7 +9,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
-import { WebSocketClientDataInterceptor } from '../web-socket-client-data.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
@@ -27,7 +26,7 @@ import { SocketMessageQueueService } from '../core/socket-message-queue.service'
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
-@UseInterceptors(WebSocketPerformanceInterceptor, WebSocketClientDataInterceptor)
+@UseInterceptors(WebSocketPerformanceInterceptor)
 export class WebSocketV2Gateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;

@@ -14,15 +14,13 @@ import { Socket } from 'socket.io';
  * and automatic cleanup when socket disconnects
  */
 
-const DATA_KEY = 'clientData';
-
 /**
  * Set client data on socket
  * @param socket - The socket instance
  * @param clientData - The client data to store
  */
 export const setSocketClientData = (socket: Socket, clientData: SocketClientData): void => {
-  socket.data[DATA_KEY] = clientData;
+  socket.data.socketClientData = clientData;
 };
 
 /**
@@ -31,7 +29,7 @@ export const setSocketClientData = (socket: Socket, clientData: SocketClientData
  * @returns The client data or null if not found
  */
 export const getSocketClientData = (socket: Socket): SocketClientData | null => {
-  return socket.data[DATA_KEY] || null;
+  return socket.data.socketClientData || null;
 };
 
 /**
@@ -50,7 +48,7 @@ export const updateSocketClientData = (
     return false;
   }
 
-  socket.data[DATA_KEY] = { ...existing, ...updates };
+  socket.data.socketClientData = { ...existing, ...updates };
   return true;
 };
 
