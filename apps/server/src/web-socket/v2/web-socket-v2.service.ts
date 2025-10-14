@@ -47,14 +47,11 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(
-    socket: Socket,
-    socketClientData: SocketClientData,
-    data: UpsertUserDto,
-  ): Promise<boolean> {
-    const { externalUserId, attributes } = data;
+  async upsertBizUsers(socket: Socket, data: UpsertUserDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData?.environment) return false;
 
+    const { externalUserId, attributes } = data;
     const bizUser = await this.bizService.upsertBizUsers(
       this.prisma,
       externalUserId,
@@ -71,14 +68,11 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(
-    socket: Socket,
-    socketClientData: SocketClientData,
-    data: UpsertCompanyDto,
-  ): Promise<boolean> {
-    const { externalCompanyId, externalUserId, attributes, membership } = data;
+  async upsertBizCompanies(socket: Socket, data: UpsertCompanyDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData?.environment) return false;
 
+    const { externalCompanyId, externalUserId, attributes, membership } = data;
     const bizCompany = await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
@@ -108,10 +102,10 @@ export class WebSocketV2Service {
    * @param trackEventDto - The track event DTO
    * @returns True if the event was tracked successfully
    */
-  async trackEvent(
-    socketClientData: SocketClientData,
-    trackEventDto: TrackEventDto,
-  ): Promise<boolean> {
+  async trackEvent(socket: Socket, trackEventDto: TrackEventDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { environment, externalUserId, clientContext } = socketClientData;
     if (!environment || !externalUserId) return false;
     const { eventName, sessionId, eventData } = trackEventDto;
@@ -139,11 +133,12 @@ export class WebSocketV2Service {
 
   /**
    * Go to step
-   * @param socketClientData - The socket socket data
+   * @param socket - The socket instance
    * @param params - The parameters for the go to step event
    * @returns True if the event was tracked successfully
    */
-  async goToStep(socketClientData: SocketClientData, params: GoToStepDto): Promise<boolean> {
+  async goToStep(socket: Socket, params: GoToStepDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
     if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
 
@@ -157,14 +152,14 @@ export class WebSocketV2Service {
 
   /**
    * Answer question
-   * @param socketClientData - The socket socket data
+   * @param socket - The socket instance
    * @param params - The parameters for the answer question event
    * @returns True if the event was tracked successfully
    */
-  async answerQuestion(
-    socketClientData: SocketClientData,
-    params: AnswerQuestionDto,
-  ): Promise<boolean> {
+  async answerQuestion(socket: Socket, params: AnswerQuestionDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { environment, clientContext } = socketClientData;
     if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -204,14 +199,14 @@ export class WebSocketV2Service {
 
   /**
    * Click checklist task
-   * @param socketClientData - The socket socket data
+   * @param socket - The socket instance
    * @param params - The parameters for the click checklist task event
    * @returns True if the event was tracked successfully
    */
-  async clickChecklistTask(
-    socketClientData: SocketClientData,
-    params: ClickChecklistTaskDto,
-  ): Promise<boolean> {
+  async clickChecklistTask(socket: Socket, params: ClickChecklistTaskDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { environment, clientContext } = socketClientData;
     if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -249,14 +244,14 @@ export class WebSocketV2Service {
 
   /**
    * Hide checklist
-   * @param socketClientData - The socket socket data
+   * @param socket - The socket instance
    * @param params - The parameters for the hide checklist event
    * @returns True if the event was tracked successfully
    */
-  async hideChecklist(
-    socketClientData: SocketClientData,
-    params: HideChecklistDto,
-  ): Promise<boolean> {
+  async hideChecklist(socket: Socket, params: HideChecklistDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { environment, clientContext } = socketClientData;
     if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -293,10 +288,10 @@ export class WebSocketV2Service {
    * @param params - The parameters for the show checklist event
    * @returns True if the event was tracked successfully
    */
-  async showChecklist(
-    socketClientData: SocketClientData,
-    params: ShowChecklistDto,
-  ): Promise<boolean> {
+  async showChecklist(socket: Socket, params: ShowChecklistDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { environment, clientContext } = socketClientData;
     if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
@@ -329,14 +324,17 @@ export class WebSocketV2Service {
 
   /**
    * Report tooltip target missing
-   * @param socketClientData - The socket socket data
+   * @param socket - The socket instance
    * @param params - The parameters for the tooltip target missing event
    * @returns True if the event was tracked successfully
    */
   async reportTooltipTargetMissing(
-    socketClientData: SocketClientData,
+    socket: Socket,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { environment, clientContext } = socketClientData;
     if (!environment) return false;
     const { sessionId, stepId } = params;
@@ -380,11 +378,10 @@ export class WebSocketV2Service {
    * @param socket - The socket instance
    * @returns True if the batch was ended successfully
    */
-  async endBatch(
-    server: Server,
-    socket: Socket,
-    socketClientData: SocketClientData,
-  ): Promise<boolean> {
+  async endBatch(server: Server, socket: Socket): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     return await this.toggleContents(server, socket, [ContentDataType.CHECKLIST], socketClientData);
   }
 
@@ -398,9 +395,11 @@ export class WebSocketV2Service {
   async startContent(
     server: Server,
     socket: Socket,
-    socketClientData: SocketClientData,
     startContentDto: StartContentDto,
   ): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { contentId } = startContentDto;
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
@@ -411,7 +410,6 @@ export class WebSocketV2Service {
     const contentType = content.type as ContentDataType;
     // Only allow FLOW and CHECKLIST content types
     if (!allowedTypes.includes(contentType)) return false;
-    if (!socketClientData) return false;
     // Start the content
     return await this.contentOrchestratorService.startContent({
       server,
@@ -428,12 +426,10 @@ export class WebSocketV2Service {
    * @param endContentDto - The end content DTO
    * @returns True if the event was tracked successfully
    */
-  async endContent(
-    server: Server,
-    socket: Socket,
-    socketClientData: SocketClientData,
-    endContentDto: EndContentDto,
-  ): Promise<boolean> {
+  async endContent(server: Server, socket: Socket, endContentDto: EndContentDto): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { sessionId, reason } = endContentDto;
     const { externalUserId, environment, clientContext } = socketClientData;
     if (!externalUserId || !environment) return false;
@@ -553,9 +549,11 @@ export class WebSocketV2Service {
    */
   async fireConditionWaitTimer(
     socket: Socket,
-    socketClientData: SocketClientData,
     fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
+    const socketClientData = getSocketClientData(socket);
+    if (!socketClientData) return false;
+
     const { versionId } = fireConditionWaitTimerDto;
     const { waitTimers = [] } = socketClientData;
 

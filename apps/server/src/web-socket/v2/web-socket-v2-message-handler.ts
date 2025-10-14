@@ -1,16 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { SocketClientData } from '@/common/types/content';
 import { ClientMessageKind } from './web-socket-v2.dto';
 
 export interface MessageHandler {
-  handle(
-    server: Server,
-    socket: Socket,
-    socketClientData: SocketClientData,
-    payload?: any,
-  ): Promise<boolean>;
+  handle(server: Server, socket: Socket, payload?: any): Promise<boolean>;
 }
 
 /**
@@ -29,32 +23,32 @@ export class WebSocketV2MessageHandler {
   private registerHandlers(): void {
     // State modification messages
     this.handlers.set(ClientMessageKind.UPSERT_USER, {
-      handle: async (_server, socket, socketClientData, payload) => {
-        return await this.service.upsertBizUsers(socket, socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.upsertBizUsers(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.UPSERT_COMPANY, {
-      handle: async (_server, socket, socketClientData, payload) => {
-        return await this.service.upsertBizCompanies(socket, socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.upsertBizCompanies(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.UPDATE_CLIENT_CONTEXT, {
-      handle: async (_server, socket, _socketClientData, payload) => {
+      handle: async (_server, socket, payload) => {
         return await this.service.updateClientContext(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.START_CONTENT, {
-      handle: async (server, socket, socketClientData, payload) => {
-        return await this.service.startContent(server, socket, socketClientData, payload);
+      handle: async (server, socket, payload) => {
+        return await this.service.startContent(server, socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.END_CONTENT, {
-      handle: async (server, socket, socketClientData, payload) => {
-        return await this.service.endContent(server, socket, socketClientData, payload);
+      handle: async (server, socket, payload) => {
+        return await this.service.endContent(server, socket, payload);
       },
     });
 
@@ -66,74 +60,68 @@ export class WebSocketV2MessageHandler {
     });
 
     this.handlers.set(ClientMessageKind.END_BATCH, {
-      handle: async (server, socket, socketClientData) => {
-        return await this.service.endBatch(server, socket, socketClientData);
+      handle: async (server, socket) => {
+        return await this.service.endBatch(server, socket);
       },
     });
 
     this.handlers.set(ClientMessageKind.TOGGLE_CLIENT_CONDITION, {
-      handle: async (_server, socket, _socketClientData, payload) => {
+      handle: async (_server, socket, payload) => {
         return await this.service.toggleClientCondition(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.FIRE_CONDITION_WAIT_TIMER, {
-      handle: async (_server, socket, socketClientData, payload) => {
-        return await this.service.fireConditionWaitTimer(socket, socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.fireConditionWaitTimer(socket, payload);
       },
     });
 
     // Read-only messages
     this.handlers.set(ClientMessageKind.TRACK_EVENT, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.trackEvent(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.trackEvent(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.GO_TO_STEP, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.goToStep(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.goToStep(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.ANSWER_QUESTION, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.answerQuestion(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.answerQuestion(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.CLICK_CHECKLIST_TASK, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.clickChecklistTask(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.clickChecklistTask(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.HIDE_CHECKLIST, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.hideChecklist(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.hideChecklist(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.SHOW_CHECKLIST, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.showChecklist(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.showChecklist(socket, payload);
       },
     });
 
     this.handlers.set(ClientMessageKind.REPORT_TOOLTIP_TARGET_MISSING, {
-      handle: async (_server, _socket, socketClientData, payload) => {
-        return await this.service.reportTooltipTargetMissing(socketClientData, payload);
+      handle: async (_server, socket, payload) => {
+        return await this.service.reportTooltipTargetMissing(socket, payload);
       },
     });
   }
 
-  async handle(
-    server: Server,
-    socket: Socket,
-    socketClientData: SocketClientData,
-    kind: string,
-    payload: any,
-  ): Promise<boolean> {
+  async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<boolean> {
     const handler = this.handlers.get(kind);
 
     if (!handler) {
@@ -142,7 +130,7 @@ export class WebSocketV2MessageHandler {
     }
 
     try {
-      return await handler.handle(server, socket, socketClientData, payload);
+      return await handler.handle(server, socket, payload);
     } catch (error) {
       this.logger.error(`Error handling message kind ${kind}: ${error.message}`);
       return false;
