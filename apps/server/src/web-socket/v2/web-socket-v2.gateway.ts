@@ -16,7 +16,11 @@ import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageDto } from './web-socket-v2.dto';
 import { SocketClientData } from '@/common/types/content';
 import { ClientContext } from '@usertour/types';
-import { buildExternalUserRoomId, setSocketClientData } from '@/utils/websocket-utils';
+import {
+  buildExternalUserRoomId,
+  getSocketClientData,
+  setSocketClientData,
+} from '@/utils/websocket-utils';
 import { ClientCondition } from '@/common/types/sdk';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
@@ -145,7 +149,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     // All messages are executed in order to maintain Socket.IO's ordering semantics
     return await this.queueService.executeInOrder(socket.id, async () => {
       // Get client data from socket
-      const clientData = this.service.getClientDataResolved(socket);
+      const clientData = getSocketClientData(socket);
 
       if (!clientData) {
         this.logger.warn(`No client data found for socket ${socket.id}, message kind: ${kind}`);

@@ -591,18 +591,4 @@ export class WebSocketV2Service {
   ): Promise<CustomContentSession | null> {
     return await this.contentOrchestratorService.initializeSessionById(socketClientData, sessionId);
   }
-
-  /**
-   * Get client data resolved (exposed for Gateway to fetch fresh data)
-   * @param socketId - The socket ID
-   * @returns The resolved client data or null
-   */
-  /**
-   * Get socket client data by socket
-   * @param socket - The socket instance
-   * @returns The socket data or null if not found
-   */
-  getClientDataResolved(socket: Socket): SocketClientData | null {
-    return getSocketClientData(socket);
-  }
 }
