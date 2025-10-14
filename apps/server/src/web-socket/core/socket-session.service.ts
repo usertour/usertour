@@ -42,7 +42,7 @@ export interface ActivateSocketSessionOptions {
 interface ConditionChangesResult {
   clientConditions: ClientCondition[];
   untrackedConditions: ClientCondition[];
-  waitTimers: ConditionWaitTimer[];
+  remainingTimers: ConditionWaitTimer[];
 }
 
 /**
@@ -150,7 +150,7 @@ export class SocketSessionService {
     return {
       clientConditions: [...remainingConditions, ...preservedClientConditions],
       untrackedConditions,
-      waitTimers: remainingTimers,
+      remainingTimers,
     };
   }
 
@@ -197,7 +197,7 @@ export class SocketSessionService {
     return {
       clientConditions: [...updatedConditions, ...preservedClientConditions],
       untrackedConditions,
-      waitTimers: remainingTimers,
+      remainingTimers,
     };
   }
 
@@ -239,7 +239,7 @@ export class SocketSessionService {
     // Update client data with session clearing and remaining conditions/timers
     // Now simplified as message queue ensures ordered execution
     const updatedClientData = {
-      waitTimers: conditionChanges.waitTimers,
+      waitTimers: conditionChanges.remainingTimers,
       clientConditions: conditionChanges.clientConditions,
       ...(contentType === ContentDataType.FLOW && {
         ...(shouldSetLastDismissedId && { lastDismissedFlowId: session.content.id }),
@@ -291,7 +291,7 @@ export class SocketSessionService {
     // Update client data with session and all condition changes
     // Now simplified as message queue ensures ordered execution
     const updatedClientData: Partial<SocketClientData> = {
-      waitTimers: conditionChanges.waitTimers,
+      waitTimers: conditionChanges.remainingTimers,
       clientConditions: conditionChanges.clientConditions,
       ...(contentType === ContentDataType.FLOW && {
         flowSession: session,
