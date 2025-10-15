@@ -153,7 +153,6 @@ export class WebSocketV2Service {
    * @returns The environment or null if not found
    */
   async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
-    if (!token) return null;
     return await this.prisma.environment.findFirst({ where: { token } });
   }
 
