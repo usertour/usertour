@@ -22,6 +22,7 @@ import {
   extractContentTypeBySessionId,
   extractExcludedContentIds,
   extractSessionByContentType,
+  buildSocketLockKey,
 } from '@/utils/websocket-utils';
 import { SocketRedisService } from './socket-redis.service';
 import {
@@ -254,7 +255,7 @@ export class ContentOrchestratorService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const lockKey = `socket:${socket.id}`;
+    const lockKey = buildSocketLockKey(socket.id);
 
     return (
       (await this.distributedLockService.withRetryLock(
@@ -384,7 +385,7 @@ export class ContentOrchestratorService {
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
     const { socket } = params;
-    const lockKey = `socket:${socket.id}`;
+    const lockKey = buildSocketLockKey(socket.id);
 
     return (
       (await this.distributedLockService.withRetryLock(

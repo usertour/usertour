@@ -13,6 +13,16 @@ import { SocketClientData } from '@/common/types/content';
  */
 
 /**
+ * Build the socket lock key for distributed locking
+ * Uses hash tag to ensure cluster compatibility
+ * @param socketId - The socket ID
+ * @returns The socket lock key
+ */
+export function buildSocketLockKey(socketId: string): string {
+  return `{${socketId}}:socket_lock`;
+}
+
+/**
  * Build the external user room ID
  * @param environmentId - The environment id
  * @param externalUserId - The external user id

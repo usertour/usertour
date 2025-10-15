@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageKind, WebSocketContext } from './web-socket-v2.dto';
 import { DistributedLockService } from '../core/distributed-lock.service';
+import { buildSocketLockKey } from '@/utils/websocket-utils';
 
 interface MessageHandler {
   handle(context: WebSocketContext, payload?: any): Promise<boolean>;
@@ -116,7 +117,7 @@ export class WebSocketV2MessageHandler {
   }
 
   async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<boolean> {
-    const lockKey = `socket:${socket.id}`;
+    const lockKey = buildSocketLockKey(socket.id);
 
     const result = await this.distributedLockService.withRetryLock(
       lockKey,
