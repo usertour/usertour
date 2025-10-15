@@ -637,17 +637,26 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     trackConditions: TrackCondition[],
   ): Promise<boolean> {
-    const { socket } = context;
+    const { socket, socketClientData } = context;
+    const { clientConditions } = socketClientData;
+
+    // Track the client conditions, because no content was found to start
+    const newTrackConditions = trackConditions?.filter(
+      (trackCondition) =>
+        !clientConditions?.some(
+          (clientCondition) => clientCondition.conditionId === trackCondition.condition.id,
+        ),
+    );
 
     const trackedConditions = await this.socketParallelService.trackClientConditions(
       socket,
-      trackConditions,
+      newTrackConditions,
     );
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
       return await this.updateSocketClientData(socket, {
-        clientConditions: trackedConditions,
+        clientConditions: [...clientConditions, ...trackedConditions],
       });
     }
 
