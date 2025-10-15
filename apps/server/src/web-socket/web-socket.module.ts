@@ -17,6 +17,7 @@ import { SocketSessionService } from './core/socket-session.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
+import { SocketRedisService } from './core/socket-redis.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
 @Module({
@@ -36,6 +37,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     SocketEmitterService,
     SocketParallelService,
     SocketMessageQueueService,
+    SocketRedisService,
     WebSocketV2MessageHandler,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],

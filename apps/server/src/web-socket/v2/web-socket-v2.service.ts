@@ -26,7 +26,7 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { getSocketClientData, updateSocketClientData } from '@/utils/websocket-utils';
+import { SocketRedisService } from '../core/socket-redis.service';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
@@ -40,7 +40,30 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
+    private readonly socketRedisService: SocketRedisService,
   ) {}
+
+  /**
+   * Get socket client data from Redis
+   * @param socket - The socket instance
+   * @returns Promise<SocketClientData | null>
+   */
+  private async getSocketClientData(socket: Socket): Promise<SocketClientData | null> {
+    return await this.socketRedisService.getClientData(socket.id);
+  }
+
+  /**
+   * Update socket client data in Redis
+   * @param socket - The socket instance
+   * @param updates - Partial data to update
+   * @returns Promise<boolean>
+   */
+  private async updateSocketClientData(
+    socket: Socket,
+    updates: Partial<SocketClientData>,
+  ): Promise<boolean> {
+    return await this.socketRedisService.updateClientData(socket.id, updates);
+  }
 
   /**
    * Upsert business users
@@ -48,7 +71,7 @@ export class WebSocketV2Service {
    * @returns The upserted business users
    */
   async upsertBizUsers(socket: Socket, data: UpsertUserDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData?.environment) return false;
 
     const { externalUserId, attributes } = data;
@@ -59,7 +82,7 @@ export class WebSocketV2Service {
       socketClientData.environment.id,
     );
     if (!bizUser) return false;
-    return updateSocketClientData(socket, { externalUserId });
+    return await this.updateSocketClientData(socket, { externalUserId });
   }
 
   /**
@@ -69,7 +92,7 @@ export class WebSocketV2Service {
    * @returns The upserted business companies
    */
   async upsertBizCompanies(socket: Socket, data: UpsertCompanyDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData?.environment) return false;
 
     const { externalCompanyId, externalUserId, attributes, membership } = data;
@@ -83,7 +106,7 @@ export class WebSocketV2Service {
     );
 
     if (!bizCompany) return false;
-    return updateSocketClientData(socket, { externalCompanyId });
+    return await this.updateSocketClientData(socket, { externalCompanyId });
   }
 
   /**
@@ -93,7 +116,7 @@ export class WebSocketV2Service {
    * @returns True if the socket context was updated successfully
    */
   async updateClientContext(socket: Socket, clientContext: ClientContext): Promise<boolean> {
-    return updateSocketClientData(socket, { clientContext });
+    return await this.updateSocketClientData(socket, { clientContext });
   }
 
   /**
@@ -103,7 +126,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async trackEvent(socket: Socket, trackEventDto: TrackEventDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { environment, externalUserId, clientContext } = socketClientData;
@@ -192,7 +215,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async goToStep(socket: Socket, params: GoToStepDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData?.environment) return false;
     const { environment, clientContext } = socketClientData;
 
@@ -211,7 +234,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async answerQuestion(socket: Socket, params: AnswerQuestionDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { environment, clientContext } = socketClientData;
@@ -258,7 +281,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async clickChecklistTask(socket: Socket, params: ClickChecklistTaskDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { environment, clientContext } = socketClientData;
@@ -303,7 +326,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async hideChecklist(socket: Socket, params: HideChecklistDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { environment, clientContext } = socketClientData;
@@ -343,7 +366,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async showChecklist(socket: Socket, params: ShowChecklistDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { environment, clientContext } = socketClientData;
@@ -386,7 +409,7 @@ export class WebSocketV2Service {
     socket: Socket,
     params: TooltipTargetMissingDto,
   ): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { environment, clientContext } = socketClientData;
@@ -433,10 +456,10 @@ export class WebSocketV2Service {
    * @returns True if the batch was ended successfully
    */
   async endBatch(server: Server, socket: Socket): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
-    return await this.toggleContents(server, socket, [ContentDataType.CHECKLIST], socketClientData);
+    return await this.toggleContents(server, socket, [ContentDataType.FLOW], socketClientData);
   }
 
   /**
@@ -451,7 +474,7 @@ export class WebSocketV2Service {
     socket: Socket,
     startContentDto: StartContentDto,
   ): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { contentId } = startContentDto;
@@ -481,7 +504,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async endContent(server: Server, socket: Socket, endContentDto: EndContentDto): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { sessionId, reason } = endContentDto;
@@ -537,7 +560,7 @@ export class WebSocketV2Service {
     socketClientData?: SocketClientData,
   ): Promise<boolean> {
     // If socketClientData is not provided, fetch it using getClientDataResolved
-    const clientData = socketClientData ?? getSocketClientData(socket);
+    const clientData = socketClientData ?? (await this.getSocketClientData(socket));
 
     if (!clientData) return false;
 
@@ -572,7 +595,7 @@ export class WebSocketV2Service {
    * @returns True if the condition was toggled successfully
    */
   async toggleClientCondition(socket: Socket, clientCondition: ClientCondition): Promise<boolean> {
-    const currentData = getSocketClientData(socket);
+    const currentData = await this.getSocketClientData(socket);
     if (!currentData) {
       return false;
     }
@@ -589,7 +612,7 @@ export class WebSocketV2Service {
         )
       : [...existingConditions, clientCondition];
 
-    return updateSocketClientData(socket, {
+    return await this.updateSocketClientData(socket, {
       clientConditions: updatedConditions,
     });
   }
@@ -605,7 +628,7 @@ export class WebSocketV2Service {
     socket: Socket,
     fireConditionWaitTimerDto: FireConditionWaitTimerDto,
   ): Promise<boolean> {
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) return false;
 
     const { versionId } = fireConditionWaitTimerDto;
@@ -624,7 +647,7 @@ export class WebSocketV2Service {
     };
 
     // Update socket data
-    return updateSocketClientData(socket, {
+    return await this.updateSocketClientData(socket, {
       waitTimers: waitTimers.map((condition) =>
         condition.versionId === versionId ? updatedCondition : condition,
       ),

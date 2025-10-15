@@ -6,51 +6,6 @@ import {
   ConditionWaitTimer,
 } from '@/common/types/sdk';
 import { SocketClientData } from '@/common/types/content';
-import { Socket } from 'socket.io';
-
-/**
- * Helper functions for managing socket client data
- * Data is stored directly on the socket object for maximum performance
- * and automatic cleanup when socket disconnects
- */
-
-/**
- * Set client data on socket
- * @param socket - The socket instance
- * @param clientData - The client data to store
- */
-export const setSocketClientData = (socket: Socket, clientData: SocketClientData): void => {
-  socket.data.socketClientData = clientData;
-};
-
-/**
- * Get client data from socket
- * @param socket - The socket instance
- * @returns The client data or null if not found
- */
-export const getSocketClientData = (socket: Socket): SocketClientData | null => {
-  return socket.data.socketClientData || null;
-};
-
-/**
- * Update client data on socket
- * @param socket - The socket instance
- * @param updates - Partial updates to apply
- * @returns true if update succeeded, false if no existing data
- */
-export const updateSocketClientData = (
-  socket: Socket,
-  updates: Partial<SocketClientData>,
-): boolean => {
-  const existing = getSocketClientData(socket);
-
-  if (!existing) {
-    return false;
-  }
-
-  socket.data.socketClientData = { ...existing, ...updates };
-  return true;
-};
 
 /**
  * WebSocket utility functions

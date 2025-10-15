@@ -13,7 +13,8 @@ import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageDto } from './web-socket-v2.dto';
-import { buildExternalUserRoomId, setSocketClientData } from '@/utils/websocket-utils';
+import { buildExternalUserRoomId } from '@/utils/websocket-utils';
+import { SocketRedisService } from '../core/socket-redis.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 
@@ -30,6 +31,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly service: WebSocketV2Service,
     private readonly messageHandler: WebSocketV2MessageHandler,
     private readonly queueService: SocketMessageQueueService,
+    private readonly socketRedisService: SocketRedisService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -46,8 +48,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           return next(new SDKAuthenticationError());
         }
 
-        // Store client data on socket
-        setSocketClientData(socket, clientData);
+        // Store client data in Redis
+        await this.socketRedisService.setClientData(socket.id, clientData);
 
         // Build room ID and check capacity
         const room = buildExternalUserRoomId(clientData.environment.id, clientData.externalUserId);
@@ -77,8 +79,10 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       // Clear the message queue to prevent memory leaks
       this.queueService.clearQueue(socket.id);
 
-      // Note: socket.data is automatically cleaned up when socket disconnects
-      this.logger.debug(`Cleaned up queue for disconnected socket ${socket.id}`);
+      // Cleanup Redis data
+      await this.socketRedisService.cleanup(socket.id);
+
+      this.logger.debug(`Cleaned up queue and Redis data for disconnected socket ${socket.id}`);
     } catch (error) {
       this.logger.error(
         `Failed to cleanup for disconnected socket ${socket.id}: ` +

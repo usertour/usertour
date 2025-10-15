@@ -21,9 +21,8 @@ import {
   extractContentTypeBySessionId,
   extractExcludedContentIds,
   extractSessionByContentType,
-  getSocketClientData,
-  updateSocketClientData,
 } from '@/utils/websocket-utils';
+import { SocketRedisService } from './socket-redis.service';
 import {
   StartContentOptions,
   TrackCondition,
@@ -59,7 +58,30 @@ export class ContentOrchestratorService {
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
+    private readonly socketRedisService: SocketRedisService,
   ) {}
+
+  /**
+   * Get socket client data from Redis
+   * @param socket - The socket instance
+   * @returns Promise<SocketClientData | null>
+   */
+  private async getSocketClientData(socket: Socket): Promise<SocketClientData | null> {
+    return await this.socketRedisService.getClientData(socket.id);
+  }
+
+  /**
+   * Update socket client data in Redis
+   * @param socket - The socket instance
+   * @param updates - Partial data to update
+   * @returns Promise<boolean>
+   */
+  private async updateSocketClientData(
+    socket: Socket,
+    updates: Partial<SocketClientData>,
+  ): Promise<boolean> {
+    return await this.socketRedisService.updateClientData(socket.id, updates);
+  }
 
   /**
    * Main entry point for starting singleton content
@@ -103,7 +125,7 @@ export class ContentOrchestratorService {
   async cancelContent(context: ContentCancelContext): Promise<boolean> {
     const { server, socket, sessionId, cancelOtherSessions = true } = context;
 
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) {
       return false;
     }
@@ -215,7 +237,7 @@ export class ContentOrchestratorService {
       return { success: false };
     }
 
-    const updatedClientData = getSocketClientData(socket);
+    const updatedClientData = await this.getSocketClientData(socket);
     if (!updatedClientData) {
       return { success: false };
     }
@@ -230,7 +252,7 @@ export class ContentOrchestratorService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) {
       return false;
     }
@@ -348,7 +370,7 @@ export class ContentOrchestratorService {
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
     const { socket, session } = params;
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) {
       return false;
     }
@@ -552,7 +574,7 @@ export class ContentOrchestratorService {
     session: CustomContentSession,
   ): Promise<boolean> {
     const { socket, server, contentType } = context;
-    const socketClientData = getSocketClientData(socket);
+    const socketClientData = await this.getSocketClientData(socket);
     if (!socketClientData) {
       return true;
     }
@@ -596,7 +618,7 @@ export class ContentOrchestratorService {
 
     // Update socket data with successfully tracked conditions
     if (trackedConditions.length > 0) {
-      return updateSocketClientData(socket, {
+      return await this.updateSocketClientData(socket, {
         clientConditions: trackedConditions,
       });
     }
@@ -626,7 +648,7 @@ export class ContentOrchestratorService {
 
     // Update socket data with successfully started timers
     if (startedTimers.length > 0) {
-      return updateSocketClientData(socket, {
+      return await this.updateSocketClientData(socket, {
         waitTimers: [...existingTimers, ...startedTimers],
       });
     }
