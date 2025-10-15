@@ -1,5 +1,7 @@
 import { contentStartReason } from '@usertour/types';
 import { IsString, IsObject, IsOptional } from 'class-validator';
+import { Server, Socket } from 'socket.io';
+import { SocketClientData } from '@/common/types/content';
 
 export type ProjectConfig = {
   removeBranding: boolean;
@@ -152,3 +154,13 @@ export type TooltipTargetMissingDto = {
 export type FireConditionWaitTimerDto = {
   versionId: string;
 };
+
+/**
+ * WebSocket context containing server, socket, and client data
+ * Used to pass common parameters to message handlers
+ */
+export interface WebSocketContext {
+  server: Server;
+  socket: Socket;
+  socketClientData: SocketClientData;
+}

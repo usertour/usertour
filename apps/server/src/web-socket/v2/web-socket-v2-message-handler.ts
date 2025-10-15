@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { ClientMessageKind } from './web-socket-v2.dto';
+import { ClientMessageKind, WebSocketContext } from './web-socket-v2.dto';
 
 export interface MessageHandler {
-  handle(server: Server, socket: Socket, payload?: any): Promise<boolean>;
+  handle(context: WebSocketContext, payload?: any): Promise<boolean>;
 }
 
 /**
@@ -21,100 +21,93 @@ export class WebSocketV2MessageHandler {
   }
 
   private registerHandlers(): void {
+    const register = (
+      kind: ClientMessageKind,
+      handler: (context: WebSocketContext, payload: any) => Promise<boolean>,
+    ) => {
+      this.handlers.set(kind, { handle: handler });
+    };
+
     // State modification messages
-    this.handlers.set(ClientMessageKind.UPSERT_USER, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.upsertBizUsers(socket, payload);
-      },
-    });
+    register(
+      ClientMessageKind.UPSERT_USER,
+      async (context, payload) => await this.service.upsertBizUsers(context, payload),
+    );
 
-    this.handlers.set(ClientMessageKind.UPSERT_COMPANY, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.upsertBizCompanies(socket, payload);
-      },
-    });
+    register(
+      ClientMessageKind.UPSERT_COMPANY,
+      async (context, payload) => await this.service.upsertBizCompanies(context, payload),
+    );
 
-    this.handlers.set(ClientMessageKind.UPDATE_CLIENT_CONTEXT, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.updateClientContext(socket, payload);
-      },
-    });
+    register(
+      ClientMessageKind.UPDATE_CLIENT_CONTEXT,
+      async (context, payload) => await this.service.updateClientContext(context, payload),
+    );
 
-    this.handlers.set(ClientMessageKind.START_CONTENT, {
-      handle: async (server, socket, payload) => {
-        return await this.service.startContent(server, socket, payload);
-      },
-    });
+    register(
+      ClientMessageKind.START_CONTENT,
+      async (context, payload) => await this.service.startContent(context, payload),
+    );
 
-    this.handlers.set(ClientMessageKind.END_CONTENT, {
-      handle: async (server, socket, payload) => {
-        return await this.service.endContent(server, socket, payload);
-      },
-    });
+    register(
+      ClientMessageKind.END_CONTENT,
+      async (context, payload) => await this.service.endContent(context, payload),
+    );
 
+    register(
+      ClientMessageKind.TOGGLE_CLIENT_CONDITION,
+      async (context, payload) => await this.service.toggleClientCondition(context, payload),
+    );
+
+    register(
+      ClientMessageKind.FIRE_CONDITION_WAIT_TIMER,
+      async (context, payload) => await this.service.fireConditionWaitTimer(context, payload),
+    );
+
+    register(
+      ClientMessageKind.TRACK_EVENT,
+      async (context, payload) => await this.service.trackEvent(context, payload),
+    );
+
+    // Event tracking messages
+    register(
+      ClientMessageKind.GO_TO_STEP,
+      async (context, payload) => await this.service.goToStep(context, payload),
+    );
+
+    register(
+      ClientMessageKind.ANSWER_QUESTION,
+      async (context, payload) => await this.service.answerQuestion(context, payload),
+    );
+
+    register(
+      ClientMessageKind.CLICK_CHECKLIST_TASK,
+      async (context, payload) => await this.service.clickChecklistTask(context, payload),
+    );
+
+    register(
+      ClientMessageKind.HIDE_CHECKLIST,
+      async (context, payload) => await this.service.hideChecklist(context, payload),
+    );
+
+    register(
+      ClientMessageKind.SHOW_CHECKLIST,
+      async (context, payload) => await this.service.showChecklist(context, payload),
+    );
+
+    register(
+      ClientMessageKind.REPORT_TOOLTIP_TARGET_MISSING,
+      async (context, payload) => await this.service.reportTooltipTargetMissing(context, payload),
+    );
+
+    register(
+      ClientMessageKind.END_BATCH,
+      async (context, _payload) => await this.service.endBatch(context),
+    );
+
+    // Special handlers
     this.handlers.set(ClientMessageKind.BEGIN_BATCH, {
-      handle: async () => true,
-    });
-
-    this.handlers.set(ClientMessageKind.END_BATCH, {
-      handle: async (server, socket) => {
-        return await this.service.endBatch(server, socket);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.TOGGLE_CLIENT_CONDITION, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.toggleClientCondition(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.FIRE_CONDITION_WAIT_TIMER, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.fireConditionWaitTimer(socket, payload);
-      },
-    });
-
-    // Read-only messages
-    this.handlers.set(ClientMessageKind.TRACK_EVENT, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.trackEvent(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.GO_TO_STEP, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.goToStep(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.ANSWER_QUESTION, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.answerQuestion(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.CLICK_CHECKLIST_TASK, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.clickChecklistTask(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.HIDE_CHECKLIST, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.hideChecklist(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.SHOW_CHECKLIST, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.showChecklist(socket, payload);
-      },
-    });
-
-    this.handlers.set(ClientMessageKind.REPORT_TOOLTIP_TARGET_MISSING, {
-      handle: async (_server, socket, payload) => {
-        return await this.service.reportTooltipTargetMissing(socket, payload);
-      },
+      handle: async (_context, _payload) => true,
     });
   }
 
@@ -127,7 +120,20 @@ export class WebSocketV2MessageHandler {
     }
 
     try {
-      return await handler.handle(server, socket, payload);
+      // Pre-load socket client data for all handlers
+      const socketClientData = await this.service.getSocketClientData(socket);
+      if (!socketClientData) {
+        this.logger.warn(`No client data found for socket ${socket.id}`);
+        return false;
+      }
+
+      const context: WebSocketContext = {
+        server,
+        socket,
+        socketClientData,
+      };
+
+      return await handler.handle(context, payload);
     } catch (error) {
       this.logger.error(`Error handling message kind ${kind}: ${error.message}`);
       return false;
