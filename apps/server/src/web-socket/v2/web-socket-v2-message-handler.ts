@@ -3,7 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageKind, WebSocketContext } from './web-socket-v2.dto';
 
-export interface MessageHandler {
+interface MessageHandler {
   handle(context: WebSocketContext, payload?: any): Promise<boolean>;
 }
 
