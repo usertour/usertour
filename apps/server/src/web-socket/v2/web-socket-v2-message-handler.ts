@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageKind, WebSocketContext } from './web-socket-v2.dto';
+import { DistributedLockService } from '../core/distributed-lock.service';
 
 interface MessageHandler {
   handle(context: WebSocketContext, payload?: any): Promise<boolean>;
@@ -16,7 +17,10 @@ export class WebSocketV2MessageHandler {
   private readonly logger = new Logger(WebSocketV2MessageHandler.name);
   private handlers = new Map<string, MessageHandler>();
 
-  constructor(private readonly service: WebSocketV2Service) {
+  constructor(
+    private readonly service: WebSocketV2Service,
+    private readonly distributedLockService: DistributedLockService,
+  ) {
     this.registerHandlers();
   }
 
@@ -112,6 +116,25 @@ export class WebSocketV2MessageHandler {
   }
 
   async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<boolean> {
+    const lockKey = `socket:${socket.id}`;
+
+    const result = await this.distributedLockService.withRetryLock(
+      lockKey,
+      () => this.handleMessage(server, socket, kind, payload),
+      3, // Retry 3 times
+      100, // Retry interval 100ms
+      5000, // Lock timeout 5 seconds
+    );
+
+    return result ?? false;
+  }
+
+  private async handleMessage(
+    server: Server,
+    socket: Socket,
+    kind: string,
+    payload: any,
+  ): Promise<boolean> {
     const handler = this.handlers.get(kind);
 
     if (!handler) {

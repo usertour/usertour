@@ -18,6 +18,7 @@ import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
 import { SocketRedisService } from './core/socket-redis.service';
+import { DistributedLockService } from './core/distributed-lock.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
 @Module({
@@ -38,6 +39,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     SocketParallelService,
     SocketMessageQueueService,
     SocketRedisService,
+    DistributedLockService,
     WebSocketV2MessageHandler,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],

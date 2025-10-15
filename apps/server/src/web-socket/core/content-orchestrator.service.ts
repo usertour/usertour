@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { DistributedLockService } from './distributed-lock.service';
 import { ContentDataType, RulesType } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -59,6 +60,7 @@ export class ContentOrchestratorService {
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
     private readonly socketRedisService: SocketRedisService,
+    private readonly distributedLockService: DistributedLockService,
   ) {}
 
   /**
@@ -252,14 +254,26 @@ export class ContentOrchestratorService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const socketClientData = await this.getSocketClientData(socket);
-    if (!socketClientData) {
-      return false;
-    }
-    return await this.cancelSocketSession({
-      ...params,
-      socketClientData,
-    });
+    const lockKey = `socket:${socket.id}`;
+
+    return (
+      (await this.distributedLockService.withRetryLock(
+        lockKey,
+        async () => {
+          const socketClientData = await this.getSocketClientData(socket);
+          if (!socketClientData) {
+            return false;
+          }
+          return await this.cancelSocketSession({
+            ...params,
+            socketClientData,
+          });
+        },
+        3, // Retry 3 times
+        100, // Retry interval 100ms
+        5000, // Lock timeout 5 seconds
+      )) ?? false
+    );
   }
 
   /**
@@ -369,20 +383,33 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
-    const { socket, session } = params;
-    const socketClientData = await this.getSocketClientData(socket);
-    if (!socketClientData) {
-      return false;
-    }
-    const contentType = session.content.type;
-    // If the session is already activated, return false
-    if (extractSessionByContentType(socketClientData, contentType)) {
-      return false;
-    }
-    return await this.activateSocketSession({
-      ...params,
-      socketClientData,
-    });
+    const { socket } = params;
+    const lockKey = `socket:${socket.id}`;
+
+    return (
+      (await this.distributedLockService.withRetryLock(
+        lockKey,
+        async () => {
+          const { session } = params;
+          const socketClientData = await this.getSocketClientData(socket);
+          if (!socketClientData) {
+            return false;
+          }
+          const contentType = session.content.type;
+          // If the session is already activated, return false
+          if (extractSessionByContentType(socketClientData, contentType)) {
+            return false;
+          }
+          return await this.activateSocketSession({
+            ...params,
+            socketClientData,
+          });
+        },
+        3, // Retry 3 times
+        100, // Retry interval 100ms
+        5000, // Lock timeout 5 seconds
+      )) ?? false
+    );
   }
 
   /**
