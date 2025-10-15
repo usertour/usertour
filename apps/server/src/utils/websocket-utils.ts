@@ -18,9 +18,9 @@ import { SocketClientData } from '@/common/types/content';
  * @param socketId - The socket ID
  * @returns The socket lock key
  */
-export function buildSocketLockKey(socketId: string): string {
+export const buildSocketLockKey = (socketId: string): string => {
   return `{${socketId}}:socket_lock`;
-}
+};
 
 /**
  * Build the external user room ID
@@ -28,9 +28,9 @@ export function buildSocketLockKey(socketId: string): string {
  * @param externalUserId - The external user id
  * @returns The external user room ID
  */
-export function buildExternalUserRoomId(environmentId: string, externalUserId: string): string {
+export const buildExternalUserRoomId = (environmentId: string, externalUserId: string): string => {
   return `user:${environmentId}:${externalUserId}`;
-}
+};
 
 /**
  * Extract content session from socket client data by content type
@@ -38,10 +38,10 @@ export function buildExternalUserRoomId(environmentId: string, externalUserId: s
  * @param contentType - The content type
  * @returns The content session or null
  */
-export function extractSessionByContentType(
+export const extractSessionByContentType = (
   socketClientData: SocketClientData,
   contentType: ContentDataType,
-): CustomContentSession | null {
+): CustomContentSession | null => {
   const { flowSession, checklistSession } = socketClientData;
   switch (contentType) {
     case ContentDataType.FLOW:
@@ -51,7 +51,7 @@ export function extractSessionByContentType(
     default:
       return null;
   }
-}
+};
 
 /**
  * Extract content type by session id
