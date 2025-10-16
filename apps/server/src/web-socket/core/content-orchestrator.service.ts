@@ -367,7 +367,7 @@ export class ContentOrchestratorService {
       : extractChecklistShowAnimationItems(session.version.checklist?.items || []);
 
     if (newCompletedItems.length > 0) {
-      this.socketSessionService.emitChecklistTasksCompleted(socket, newCompletedItems);
+      this.socketParallelService.emitChecklistTasksCompleted(socket, newCompletedItems);
     }
     return await this.socketSessionService.activateChecklistSession(
       socket as unknown as Socket,
