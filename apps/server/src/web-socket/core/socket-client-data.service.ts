@@ -3,12 +3,12 @@ import { RedisService } from '@/shared/redis.service';
 import { SocketClientData } from '@/common/types/content';
 
 /**
- * Socket Redis storage service
- * Handles all Redis data operations for socket management
+ * Socket client data storage service
+ * Handles all Redis data operations for SocketClientData management
  */
 @Injectable()
-export class SocketRedisService {
-  private readonly logger = new Logger(SocketRedisService.name);
+export class SocketClientDataService {
+  private readonly logger = new Logger(SocketClientDataService.name);
   private readonly DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
   constructor(private readonly redisService: RedisService) {}
@@ -19,32 +19,41 @@ export class SocketRedisService {
    * @param socketId - The socket ID
    * @returns The Redis key
    */
-  private buildClientDataKey(socketId: string): string {
+  private key(socketId: string): string {
     return `{${socketId}}:client_data`;
   }
 
   /**
    * Set socket data in Redis
    * @param socketId - The socket ID
-   * @param clientData - The socket data to store
-   * @param ttlSeconds - Optional TTL in seconds
+   * @param clientData - The socket data to store (can be partial for updates)
+   * @param exists - If true, only set if key already exists (for updates)
    * @returns Promise<boolean> - True if the data was set successfully
    */
-  async setClientData(
+  async set(
     socketId: string,
-    clientData: Omit<SocketClientData, 'lastUpdated' | 'socketId'>,
-    ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
+    clientData: SocketClientData | Partial<SocketClientData>,
+    exists = false,
   ): Promise<boolean> {
     try {
-      const key = this.buildClientDataKey(socketId);
-      const dataWithTimestamp = {
+      const key = this.key(socketId);
+
+      // Get existing data if exists=true
+      const existingData = exists ? await this.get(socketId) : null;
+      if (exists && !existingData) {
+        this.logger.warn(`No existing data found for socket ${socketId}, cannot update`);
+        return false;
+      }
+
+      // Merge data and add metadata
+      const finalData = {
+        ...existingData,
         ...clientData,
         lastUpdated: Date.now(),
         socketId,
       };
 
-      await this.redisService.setex(key, ttlSeconds, JSON.stringify(dataWithTimestamp));
-
+      await this.redisService.setex(key, this.DEFAULT_TTL_SECONDS, JSON.stringify(finalData));
       this.logger.debug(`Client data set for socket ${socketId}`);
       return true;
     } catch (error) {
@@ -58,9 +67,9 @@ export class SocketRedisService {
    * @param socketId - The socket ID
    * @returns Promise<ClientData | null> - The socket data or null if not found
    */
-  async getClientData(socketId: string): Promise<SocketClientData | null> {
+  async get(socketId: string): Promise<SocketClientData | null> {
     try {
-      const key = this.buildClientDataKey(socketId);
+      const key = this.key(socketId);
       const value = await this.redisService.get(key);
 
       if (!value) {
@@ -78,48 +87,14 @@ export class SocketRedisService {
   }
 
   /**
-   * Update specific fields in socket data
-   * Now simplified as message queue ensures ordered execution
-   * @param socketId - The socket ID
-   * @param updates - Partial socket data to update
-   * @param ttlSeconds - Optional TTL in seconds
-   * @returns Promise<boolean> - True if the data was updated successfully
-   */
-  async updateClientData(
-    socketId: string,
-    updates: Partial<SocketClientData>,
-    ttlSeconds: number = this.DEFAULT_TTL_SECONDS,
-  ): Promise<boolean> {
-    try {
-      // Get existing data
-      const existingData = await this.getClientData(socketId);
-      if (!existingData) {
-        this.logger.warn(`No existing data found for socket ${socketId}, cannot update`);
-        return false;
-      }
-
-      // Merge with updates
-      const mergedData: SocketClientData = {
-        ...existingData,
-        ...updates,
-      };
-
-      return await this.setClientData(socketId, mergedData, ttlSeconds);
-    } catch (error) {
-      this.logger.error(`Failed to update socket data for socket ${socketId}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Cleanup socket data from Redis
+   * Delete socket data from Redis
    * Simplified as clientConditions are now stored within SocketClientData
    * @param socketId - The socket ID
-   * @returns Promise<boolean> - True if the data was cleaned up successfully
+   * @returns Promise<boolean> - True if the data was deleted successfully
    */
-  async cleanup(socketId: string): Promise<boolean> {
+  async delete(socketId: string): Promise<boolean> {
     try {
-      const key = this.buildClientDataKey(socketId);
+      const key = this.key(socketId);
       const client = this.redisService.getClient();
 
       // Remove socket data

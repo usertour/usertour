@@ -16,7 +16,7 @@ import {
   calculateRemainingConditionWaitTimers,
   filterAndPreserveConditions,
 } from '@/utils/websocket-utils';
-import { SocketRedisService } from './socket-redis.service';
+import { SocketClientDataService } from './socket-client-data.service';
 
 /**
  * Options for cleaning up socket session
@@ -58,7 +58,7 @@ export class SocketSessionService {
   constructor(
     private readonly socketEmitterService: SocketEmitterService,
     private readonly socketParallelService: SocketParallelService,
-    private readonly socketRedisService: SocketRedisService,
+    private readonly socketClientDataService: SocketClientDataService,
   ) {}
 
   /**
@@ -252,7 +252,7 @@ export class SocketSessionService {
       }),
     };
 
-    return await this.socketRedisService.updateClientData(socket.id, updatedClientData);
+    return await this.socketClientDataService.set(socket.id, updatedClientData, true);
   }
 
   /**
@@ -304,6 +304,6 @@ export class SocketSessionService {
       }),
     };
 
-    return await this.socketRedisService.updateClientData(socket.id, updatedClientData);
+    return await this.socketClientDataService.set(socket.id, updatedClientData, true);
   }
 }

@@ -24,7 +24,7 @@ import {
   extractSessionByContentType,
   buildSocketLockKey,
 } from '@/utils/websocket-utils';
-import { SocketRedisService } from './socket-redis.service';
+import { SocketClientDataService } from './socket-client-data.service';
 import {
   StartContentOptions,
   TrackCondition,
@@ -60,7 +60,7 @@ export class ContentOrchestratorService {
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketSessionService: SocketSessionService,
     private readonly socketParallelService: SocketParallelService,
-    private readonly socketRedisService: SocketRedisService,
+    private readonly socketClientDataService: SocketClientDataService,
     private readonly distributedLockService: DistributedLockService,
   ) {}
 
@@ -70,7 +70,7 @@ export class ContentOrchestratorService {
    * @returns Promise<SocketClientData | null>
    */
   private async getSocketClientData(socket: Socket): Promise<SocketClientData | null> {
-    return await this.socketRedisService.getClientData(socket.id);
+    return await this.socketClientDataService.get(socket.id);
   }
 
   /**
@@ -83,7 +83,7 @@ export class ContentOrchestratorService {
     socket: Socket,
     updates: Partial<SocketClientData>,
   ): Promise<boolean> {
-    return await this.socketRedisService.updateClientData(socket.id, updates);
+    return await this.socketClientDataService.set(socket.id, updates, true);
   }
 
   /**

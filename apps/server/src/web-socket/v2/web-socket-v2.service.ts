@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { Server, Socket } from 'socket.io';
-import { SocketRedisService } from '../core/socket-redis.service';
+import { SocketClientDataService } from '../core/socket-client-data.service';
 import { SocketClientData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
@@ -41,7 +41,7 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
-    private readonly socketRedisService: SocketRedisService,
+    private readonly socketClientDataService: SocketClientDataService,
   ) {}
 
   /**
@@ -50,7 +50,7 @@ export class WebSocketV2Service {
    * @returns Promise<SocketClientData | null>
    */
   async getSocketClientData(socket: Socket): Promise<SocketClientData | null> {
-    return await this.socketRedisService.getClientData(socket.id);
+    return await this.socketClientDataService.get(socket.id);
   }
 
   /**
@@ -63,7 +63,7 @@ export class WebSocketV2Service {
     socket: Socket,
     updates: Partial<SocketClientData>,
   ): Promise<boolean> {
-    return await this.socketRedisService.updateClientData(socket.id, updates);
+    return await this.socketClientDataService.set(socket.id, updates, true);
   }
 
   /**
@@ -588,12 +588,15 @@ export class WebSocketV2Service {
       (c) => c.conditionId === clientCondition.conditionId,
     );
 
-    // Update existing condition or add new one
-    const updatedConditions = conditionExists
-      ? existingConditions.map((c) =>
-          c.conditionId === clientCondition.conditionId ? clientCondition : c,
-        )
-      : [...existingConditions, clientCondition];
+    // Only update if condition exists, don't add new ones
+    if (!conditionExists) {
+      return false;
+    }
+
+    // Update existing condition
+    const updatedConditions = existingConditions.map((c) =>
+      c.conditionId === clientCondition.conditionId ? clientCondition : c,
+    );
 
     return await this.updateSocketClientData(socket, {
       clientConditions: updatedConditions,

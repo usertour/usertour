@@ -14,7 +14,7 @@ import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageDto } from './web-socket-v2.dto';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
-import { SocketRedisService } from '../core/socket-redis.service';
+import { SocketClientDataService } from '../core/socket-client-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 
@@ -31,7 +31,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly service: WebSocketV2Service,
     private readonly messageHandler: WebSocketV2MessageHandler,
     private readonly queueService: SocketMessageQueueService,
-    private readonly socketRedisService: SocketRedisService,
+    private readonly socketClientDataService: SocketClientDataService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -49,7 +49,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         }
 
         // Store client data in Redis
-        await this.socketRedisService.setClientData(socket.id, clientData);
+        await this.socketClientDataService.set(socket.id, clientData);
 
         // Build room ID and check capacity
         const room = buildExternalUserRoomId(clientData.environment.id, clientData.externalUserId);
@@ -80,7 +80,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       this.queueService.clearQueue(socket.id);
 
       // Cleanup Redis data
-      await this.socketRedisService.cleanup(socket.id);
+      await this.socketClientDataService.delete(socket.id);
 
       this.logger.debug(`Cleaned up queue and Redis data for disconnected socket ${socket.id}`);
     } catch (error) {
