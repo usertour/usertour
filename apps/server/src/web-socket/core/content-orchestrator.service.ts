@@ -209,12 +209,12 @@ export class ContentOrchestratorService {
 
   /**
    * Cleanup socket session
-   * @param currentSession - The current session to cleanup
+   * @param session - The session to cleanup
    * @param params - The cleanup session parameters
    * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
   private async cleanupSocketSession(
-    currentSession: CustomContentSession | null,
+    session: CustomContentSession | null,
     params: CancelSessionParams,
   ): Promise<boolean> {
     const {
@@ -224,12 +224,10 @@ export class ContentOrchestratorService {
       shouldSetLastDismissedId = false,
     } = params;
 
-    return await this.socketSessionService.cleanupSocketSession(
-      socket,
-      socketClientData,
-      currentSession,
-      { shouldUnsetSession, shouldSetLastDismissedId },
-    );
+    return await this.socketSessionService.cleanupSocketSession(socket, socketClientData, session, {
+      shouldUnsetSession,
+      shouldSetLastDismissedId,
+    });
   }
 
   /**
