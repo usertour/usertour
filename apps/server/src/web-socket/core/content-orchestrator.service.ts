@@ -193,35 +193,30 @@ export class ContentOrchestratorService {
     }
 
     // Cleanup current session if exists
-    const cleanupResult = await this.cleanupCurrentSessionIfNeeded(currentSession, params);
-    this.logger.debug(`CleanupCurrentSessionIfNeeded result: ${JSON.stringify(cleanupResult)}`);
-
-    if (!cleanupResult.success) {
-      return false;
-    }
-    // Update context with updated client data
-    if (cleanupResult.updatedClientData) {
-      context.socketClientData = cleanupResult.updatedClientData;
+    if (currentSession) {
+      if (!(await this.cleanupSocketSession(currentSession, params))) {
+        return false;
+      }
+      const newClientData = await this.getSocketClientData(socket);
+      if (!newClientData) {
+        return false;
+      }
+      context.socketClientData = newClientData;
     }
     // Execute content start strategies and handle the result
     return await this.tryAutoStartContent(context, tryAutoStartContentOptions);
   }
 
   /**
-   * Cleanup current session if it exists and return updated client data
+   * Cleanup socket session
    * @param currentSession - The current session to cleanup
-   * @param socket - The socket instance
-   * @param socketClientData - The current socket client data
-   * @param sessionId - The session ID to cleanup
-   * @returns Cleanup result with success status and updated client data
+   * @param params - The cleanup session parameters
+   * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
-  private async cleanupCurrentSessionIfNeeded(
+  private async cleanupSocketSession(
     currentSession: CustomContentSession | null,
     params: CancelSessionParams,
-  ): Promise<{ success: boolean; updatedClientData?: SocketClientData }> {
-    if (!currentSession) {
-      return { success: true };
-    }
+  ): Promise<boolean> {
     const {
       socket,
       socketClientData,
@@ -229,23 +224,12 @@ export class ContentOrchestratorService {
       shouldSetLastDismissedId = false,
     } = params;
 
-    const isCleaned = await this.socketSessionService.cleanupSocketSession(
+    return await this.socketSessionService.cleanupSocketSession(
       socket,
       socketClientData,
       currentSession,
       { shouldUnsetSession, shouldSetLastDismissedId },
     );
-
-    if (!isCleaned) {
-      return { success: false };
-    }
-
-    const updatedClientData = await this.getSocketClientData(socket);
-    if (!updatedClientData) {
-      return { success: false };
-    }
-
-    return { success: true, updatedClientData };
   }
 
   /**
