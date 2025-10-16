@@ -48,7 +48,6 @@ export interface ActivateChecklistSessionOptions {
 
 interface ConditionChangesResult {
   clientConditions: ClientCondition[];
-  untrackedConditions: ClientCondition[];
   remainingTimers: ConditionWaitTimer[];
 }
 
@@ -106,25 +105,21 @@ export class SocketSessionService {
     contentTypeFilter?: ContentDataType[],
   ): Promise<ConditionChangesResult> {
     // Filter and preserve client conditions based on content type filter
-    const { filteredConditions, preservedConditions: preservedClientConditions } =
-      filterAndPreserveConditions(clientConditions, contentTypeFilter);
+    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
+      clientConditions,
+      contentTypeFilter,
+    );
 
     // Process condition cleanup operations in parallel
-    const [untrackedConditions, cancelledTimers] = await Promise.all([
+    const [, cancelledTimers] = await Promise.all([
       this.socketParallelService.untrackClientConditions(socket, filteredConditions),
       this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
     ]);
 
-    // Calculate remaining conditions and timers (those that failed to process)
-    const remainingConditions = calculateRemainingClientConditions(
-      filteredConditions,
-      untrackedConditions,
-    );
     const remainingTimers = calculateRemainingConditionWaitTimers(waitTimers, cancelledTimers);
 
     return {
-      clientConditions: [...remainingConditions, ...preservedClientConditions],
-      untrackedConditions,
+      clientConditions: preservedConditions,
       remainingTimers,
     };
   }
@@ -171,7 +166,6 @@ export class SocketSessionService {
 
     return {
       clientConditions: [...updatedConditions, ...preservedClientConditions],
-      untrackedConditions,
       remainingTimers,
     };
   }
