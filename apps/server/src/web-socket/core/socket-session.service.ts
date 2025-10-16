@@ -30,11 +30,18 @@ export interface CleanupSocketSessionOptions {
   contentTypeFilter?: ContentDataType[];
 }
 
-export interface ActivateSocketSessionOptions {
+export interface ActivateFlowSessionOptions {
   /** The conditions to track */
   trackConditions?: TrackCondition[];
   /** Whether to force go to step, defaults to false */
   forceGoToStep?: boolean;
+  /** Optional array of content types to filter client conditions by */
+  contentTypeFilter?: ContentDataType[];
+}
+
+export interface ActivateChecklistSessionOptions {
+  /** The conditions to track */
+  trackConditions?: TrackCondition[];
   /** Optional array of content types to filter client conditions by */
   contentTypeFilter?: ContentDataType[];
 }
@@ -60,26 +67,6 @@ export class SocketSessionService {
     private readonly socketParallelService: SocketParallelService,
     private readonly socketClientDataService: SocketClientDataService,
   ) {}
-
-  /**
-   * Emit set socket session event with acknowledgment
-   * @param socket - The socket instance
-   * @param session - The session data to set
-   * @returns Promise<boolean> - True if the session was set and acknowledged by client
-   */
-  private async setSocketSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    const contentType = session.content.type as ContentDataType;
-
-    switch (contentType) {
-      case ContentDataType.FLOW:
-        return await this.socketEmitterService.setFlowSession(socket, session);
-      case ContentDataType.CHECKLIST:
-        return await this.socketEmitterService.setChecklistSession(socket, session);
-      default:
-        this.logger.warn(`Unsupported content type: ${contentType}`);
-        return false;
-    }
-  }
 
   /**
    * Emit unset socket session event with acknowledgment
@@ -256,29 +243,29 @@ export class SocketSessionService {
   }
 
   /**
-   * Activate socket session
+   * Activate Flow session
    * @param socket - The socket
    * @param socketClientData - The socket client data
-   * @param session - The session to activate
-   * @param options - Options for activation behavior
+   * @param session - The Flow session to activate
+   * @param options - Options for Flow activation behavior
    * @returns Promise<boolean> - True if the session was activated successfully
    */
-  async activateSocketSession(
+  async activateFlowSession(
     socket: Socket,
     socketClientData: SocketClientData,
     session: CustomContentSession,
-    options: ActivateSocketSessionOptions = {},
+    options: ActivateFlowSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, contentTypeFilter } = options;
     const { clientConditions = [], waitTimers = [] } = socketClientData;
-    const contentType = session.content.type as ContentDataType;
 
-    // Set session
-    const isSetSession = await this.setSocketSession(socket, session);
+    // Set Flow session
+    const isSetSession = await this.socketEmitterService.setFlowSession(socket, session);
     if (!isSetSession) {
       return false;
     }
-    // Force go to step if needed
+
+    // Force go to step if needed (Flow-specific logic)
     if (forceGoToStep && session.currentStep?.id) {
       await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
     }
@@ -292,19 +279,55 @@ export class SocketSessionService {
       contentTypeFilter,
     );
 
-    // Update client data with session and all condition changes
-    // Now simplified as message queue ensures ordered execution
+    // Update client data with Flow session and all condition changes
     const updatedClientData: Partial<SocketClientData> = {
       waitTimers: conditionChanges.remainingTimers,
       clientConditions: conditionChanges.clientConditions,
-      ...(contentType === ContentDataType.FLOW && {
-        flowSession: session,
-        lastDismissedFlowId: undefined,
-      }),
-      ...(contentType === ContentDataType.CHECKLIST && {
-        checklistSession: session,
-        lastDismissedChecklistId: undefined,
-      }),
+      flowSession: session,
+      lastDismissedFlowId: undefined,
+    };
+
+    return await this.socketClientDataService.set(socket.id, updatedClientData, true);
+  }
+
+  /**
+   * Activate Checklist session
+   * @param socket - The socket
+   * @param socketClientData - The socket client data
+   * @param session - The Checklist session to activate
+   * @param options - Options for Checklist activation behavior
+   * @returns Promise<boolean> - True if the session was activated successfully
+   */
+  async activateChecklistSession(
+    socket: Socket,
+    socketClientData: SocketClientData,
+    session: CustomContentSession,
+    options: ActivateChecklistSessionOptions = {},
+  ): Promise<boolean> {
+    const { trackConditions = [], contentTypeFilter } = options;
+    const { clientConditions = [], waitTimers = [] } = socketClientData;
+
+    // Set Checklist session
+    const isSetSession = await this.socketEmitterService.setChecklistSession(socket, session);
+    if (!isSetSession) {
+      return false;
+    }
+
+    // Emit condition changes efficiently
+    const conditionChanges = await this.emitConditionChanges(
+      socket,
+      clientConditions,
+      waitTimers,
+      trackConditions,
+      contentTypeFilter,
+    );
+
+    // Update client data with Checklist session and all condition changes
+    const updatedClientData: Partial<SocketClientData> = {
+      waitTimers: conditionChanges.remainingTimers,
+      clientConditions: conditionChanges.clientConditions,
+      checklistSession: session,
+      lastDismissedChecklistId: undefined,
     };
 
     return await this.socketClientDataService.set(socket.id, updatedClientData, true);

@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { DistributedLockService } from './distributed-lock.service';
 import { ContentDataType, RulesType } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -24,7 +23,6 @@ import {
   extractSessionByContentType,
   buildSocketLockKey,
 } from '@/utils/websocket-utils';
-import { SocketClientDataService } from './socket-client-data.service';
 import {
   StartContentOptions,
   TrackCondition,
@@ -41,11 +39,13 @@ import {
   TryAutoStartContentOptions,
   ConditionExtractionMode,
 } from '@/common/types';
+import { DistributedLockService } from './distributed-lock.service';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
-import { ActivateSocketSessionOptions, SocketSessionService } from './socket-session.service';
+import { SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
+import { SocketClientDataService } from './socket-client-data.service';
 
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
@@ -336,11 +336,11 @@ export class ContentOrchestratorService {
    */
   private async activateFlowSession(params: ActivateSessionParams) {
     const { socket, session, postTracks, forceGoToStep, socketClientData } = params;
-    const options: ActivateSocketSessionOptions = {
+    const options = {
       trackConditions: postTracks,
       forceGoToStep,
     };
-    return await this.socketSessionService.activateSocketSession(
+    return await this.socketSessionService.activateFlowSession(
       socket as unknown as Socket,
       socketClientData,
       session,
@@ -355,9 +355,8 @@ export class ContentOrchestratorService {
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
     const { socket, session, postTracks, socketClientData } = params;
-    const options: ActivateSocketSessionOptions = {
+    const options = {
       trackConditions: postTracks,
-      forceGoToStep: false,
     };
     const currentSession = extractSessionByContentType(socketClientData, ContentDataType.CHECKLIST);
     const newCompletedItems = currentSession
@@ -370,7 +369,7 @@ export class ContentOrchestratorService {
     if (newCompletedItems.length > 0) {
       this.socketSessionService.emitChecklistTasksCompleted(socket, newCompletedItems);
     }
-    return await this.socketSessionService.activateSocketSession(
+    return await this.socketSessionService.activateChecklistSession(
       socket as unknown as Socket,
       socketClientData,
       session,
