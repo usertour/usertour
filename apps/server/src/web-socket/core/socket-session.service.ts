@@ -271,11 +271,14 @@ export class SocketSessionService {
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, contentTypeFilter } = options;
     const { clientConditions = [], waitTimers = [] } = socketClientData;
-    const isSetSession = await this.setSocketSession(socket, session);
     const contentType = session.content.type as ContentDataType;
+
+    // Set session
+    const isSetSession = await this.setSocketSession(socket, session);
     if (!isSetSession) {
       return false;
     }
+    // Force go to step if needed
     if (forceGoToStep && session.currentStep?.id) {
       await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
     }
