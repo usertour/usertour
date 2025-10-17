@@ -44,6 +44,7 @@ export class SessionBuilderService {
     private readonly prisma: PrismaService,
     private readonly dataResolverService: DataResolverService,
   ) {}
+
   /**
    * Create a biz session
    * @param environment - The environment
