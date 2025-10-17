@@ -25,9 +25,7 @@ import {
 } from '@/utils/websocket-utils';
 import {
   StartContentOptions,
-  TrackCondition,
   CustomContentSession,
-  ConditionWaitTimer,
   ClientCondition,
   SocketClientData,
   CustomContentVersion,
@@ -43,10 +41,8 @@ import { DistributedLockService } from './distributed-lock.service';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
-import { SocketSessionService } from './socket-session.service';
-import { SocketParallelService } from './socket-parallel.service';
+import { SocketOperationService } from './socket-operation.service';
 import { SocketClientDataService } from './socket-client-data.service';
-import { SocketEmitterService } from './socket-emitter.service';
 
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
@@ -59,11 +55,9 @@ export class ContentOrchestratorService {
     private readonly dataResolverService: DataResolverService,
     private readonly sessionBuilderService: SessionBuilderService,
     private readonly eventTrackingService: EventTrackingService,
-    private readonly socketSessionService: SocketSessionService,
-    private readonly socketParallelService: SocketParallelService,
+    private readonly socketOperationService: SocketOperationService,
     private readonly socketClientDataService: SocketClientDataService,
     private readonly distributedLockService: DistributedLockService,
-    private readonly socketEmitterService: SocketEmitterService,
   ) {}
 
   /**
@@ -73,19 +67,6 @@ export class ContentOrchestratorService {
    */
   private async getSocketClientData(socket: Socket): Promise<SocketClientData | null> {
     return await this.socketClientDataService.get(socket.id);
-  }
-
-  /**
-   * Update socket client data in Redis
-   * @param socket - The socket instance
-   * @param updates - Partial data to update
-   * @returns Promise<boolean>
-   */
-  private async updateSocketClientData(
-    socket: Socket,
-    updates: Partial<SocketClientData>,
-  ): Promise<boolean> {
-    return await this.socketClientDataService.set(socket.id, updates, true);
   }
 
   /**
@@ -226,10 +207,15 @@ export class ContentOrchestratorService {
       shouldSetLastDismissedId = false,
     } = params;
 
-    return await this.socketSessionService.cleanupSocketSession(socket, socketClientData, session, {
-      shouldUnsetSession,
-      shouldSetLastDismissedId,
-    });
+    return await this.socketOperationService.cleanupSocketSession(
+      socket,
+      socketClientData,
+      session,
+      {
+        shouldUnsetSession,
+        shouldSetLastDismissedId,
+      },
+    );
   }
 
   /**
@@ -324,7 +310,7 @@ export class ContentOrchestratorService {
       trackConditions: postTracks,
       forceGoToStep,
     };
-    return await this.socketSessionService.activateFlowSession(
+    return await this.socketOperationService.activateFlowSession(
       socket as unknown as Socket,
       socketClientData,
       session,
@@ -351,11 +337,9 @@ export class ContentOrchestratorService {
       : extractChecklistShowAnimationItems(session.version.checklist?.items || []);
 
     if (newCompletedItems.length > 0) {
-      newCompletedItems.map((taskId) =>
-        this.socketEmitterService.checklistTaskCompleted(socket, taskId),
-      );
+      this.socketOperationService.emitChecklistTasksCompleted(socket, newCompletedItems);
     }
-    return await this.socketSessionService.activateChecklistSession(
+    return await this.socketOperationService.activateChecklistSession(
       socket as unknown as Socket,
       socketClientData,
       session,
@@ -560,6 +544,7 @@ export class ContentOrchestratorService {
     result: ContentStartResult,
   ): Promise<boolean> {
     const { success, preTracks, waitTimers } = result;
+    const { socket, socketClientData } = context;
 
     // Early return if operation failed
     if (!success) {
@@ -568,12 +553,20 @@ export class ContentOrchestratorService {
 
     // Handle tracking conditions
     if (preTracks && preTracks.length > 0) {
-      return await this.handleTrackingConditions(context, preTracks);
+      return await this.socketOperationService.trackClientConditions(
+        socket,
+        socketClientData,
+        preTracks,
+      );
     }
 
     // Handle condition wait timers
     if (waitTimers && waitTimers.length > 0) {
-      return await this.handleConditionWaitTimers(context, waitTimers);
+      return await this.socketOperationService.startConditionWaitTimers(
+        socket,
+        socketClientData,
+        waitTimers,
+      );
     }
 
     return await this.handleSuccessfulSession(context, result);
@@ -609,69 +602,6 @@ export class ContentOrchestratorService {
         socket,
         socketClientData,
         sessionId,
-      });
-    }
-
-    return true;
-  }
-
-  /**
-   * Handles tracking conditions when no content was found to start
-   */
-  private async handleTrackingConditions(
-    context: ContentStartContext,
-    trackConditions: TrackCondition[],
-  ): Promise<boolean> {
-    const { socket, socketClientData } = context;
-    const { clientConditions } = socketClientData;
-
-    // Track the client conditions, because no content was found to start
-    const newTrackConditions = trackConditions?.filter(
-      (trackCondition) =>
-        !clientConditions?.some(
-          (clientCondition) => clientCondition.conditionId === trackCondition.condition.id,
-        ),
-    );
-
-    const trackedConditions = await this.socketParallelService.trackClientConditions(
-      socket,
-      newTrackConditions,
-    );
-
-    // Update socket data with successfully tracked conditions
-    if (trackedConditions.length > 0) {
-      return await this.updateSocketClientData(socket, {
-        clientConditions: [...clientConditions, ...trackedConditions],
-      });
-    }
-
-    return true;
-  }
-
-  /**
-   * Handles condition wait timers for future content activation
-   */
-  private async handleConditionWaitTimers(
-    context: ContentStartContext,
-    waitTimers: ConditionWaitTimer[],
-  ): Promise<boolean> {
-    const { socket, socketClientData } = context;
-    const { waitTimers: existingTimers = [] } = socketClientData;
-
-    const newWaitTimers = waitTimers?.filter(
-      (waitTimer) =>
-        !existingTimers.some((existingTimer) => existingTimer.versionId === waitTimer.versionId),
-    );
-
-    const startedTimers = await this.socketParallelService.startConditionWaitTimers(
-      socket,
-      newWaitTimers,
-    );
-
-    // Update socket data with successfully started timers
-    if (startedTimers.length > 0) {
-      return await this.updateSocketClientData(socket, {
-        waitTimers: [...existingTimers, ...startedTimers],
       });
     }
 

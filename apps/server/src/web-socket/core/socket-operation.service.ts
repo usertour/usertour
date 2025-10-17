@@ -53,14 +53,14 @@ interface ConditionChangesResult {
 }
 
 /**
- * Content session manager service
- * Handles content session management for Flow and Checklist content types
- * Focused on session lifecycle management, data persistence, and WebSocket communication
+ * Socket operation service
+ * Handles socket operations for content sessions and client conditions
+ * Focused on session lifecycle management, condition tracking, and WebSocket communication
  * Delegates session creation and manipulation to SessionBuilderService
  */
 @Injectable()
-export class SocketSessionService {
-  private readonly logger = new Logger(SocketSessionService.name);
+export class SocketOperationService {
+  private readonly logger = new Logger(SocketOperationService.name);
 
   constructor(
     private readonly socketEmitterService: SocketEmitterService,
@@ -323,5 +323,98 @@ export class SocketSessionService {
     };
 
     return await this.socketClientDataService.set(socket.id, updatedClientData, true);
+  }
+
+  /**
+   * Track client conditions
+   * @param socket - The socket
+   * @param socketClientData - The socket client data
+   * @param trackConditions - The conditions to track
+   * @returns Promise<boolean> - True if the conditions were tracked successfully
+   */
+  async trackClientConditions(
+    socket: Socket,
+    socketClientData: SocketClientData,
+    trackConditions: TrackCondition[],
+  ): Promise<boolean> {
+    const { clientConditions } = socketClientData;
+    // Track the client conditions, because no content was found to start
+    const newTrackConditions = trackConditions?.filter(
+      (trackCondition) =>
+        !clientConditions?.some(
+          (clientCondition) => clientCondition.conditionId === trackCondition.condition.id,
+        ),
+    );
+    if (newTrackConditions.length === 0) {
+      return false;
+    }
+    const trackedConditions = await this.socketParallelService.trackClientConditions(
+      socket,
+      newTrackConditions,
+    );
+
+    if (trackedConditions.length === 0) {
+      return false;
+    }
+
+    const newClientConditions = [...clientConditions, ...trackedConditions];
+
+    return await this.socketClientDataService.set(
+      socket.id,
+      {
+        clientConditions: newClientConditions,
+      },
+      true,
+    );
+  }
+
+  /**
+   * Start condition wait timers
+   * @param socket - The socket
+   * @param socketClientData - The socket client data
+   * @param waitTimers - The wait timers to start
+   * @returns Promise<boolean> - True if the wait timers were started successfully
+   */
+  async startConditionWaitTimers(
+    socket: Socket,
+    socketClientData: SocketClientData,
+    waitTimers: ConditionWaitTimer[],
+  ): Promise<boolean> {
+    const { waitTimers: existingTimers = [] } = socketClientData;
+
+    const newWaitTimers = waitTimers?.filter(
+      (waitTimer) =>
+        !existingTimers.some((existingTimer) => existingTimer.versionId === waitTimer.versionId),
+    );
+
+    const startedTimers = await this.socketParallelService.startConditionWaitTimers(
+      socket,
+      newWaitTimers,
+    );
+
+    // Update socket data with successfully started timers
+    if (startedTimers.length > 0) {
+      return await this.socketClientDataService.set(
+        socket.id,
+        {
+          waitTimers: [...existingTimers, ...startedTimers],
+        },
+        true,
+      );
+    }
+
+    return true;
+  }
+
+  /**
+   * Emit checklist tasks completed events
+   * @param socket - The socket
+   * @param taskIds - The task IDs to emit completed events for
+   * @returns string[] - The task IDs that were successfully emitted
+   */
+  emitChecklistTasksCompleted(socket: Socket, taskIds: string[]): string[] {
+    return taskIds.filter((taskId) =>
+      this.socketEmitterService.checklistTaskCompleted(socket, taskId),
+    );
   }
 }

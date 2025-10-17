@@ -13,7 +13,7 @@ import { EventTrackingService } from './core/event-tracking.service';
 import { DataResolverService } from './core/data-resolver.service';
 import { SessionBuilderService } from './core/session-builder.service';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
-import { SocketSessionService } from './core/socket-session.service';
+import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
@@ -34,7 +34,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     DataResolverService,
     SessionBuilderService,
     ContentOrchestratorService,
-    SocketSessionService,
+    SocketOperationService,
     SocketEmitterService,
     SocketParallelService,
     SocketMessageQueueService,
