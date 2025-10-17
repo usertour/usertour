@@ -47,11 +47,6 @@ export interface ActivateChecklistSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
-interface ConditionChangesResult {
-  clientConditions: ClientCondition[];
-  remainingTimers: ConditionWaitTimer[];
-}
-
 /**
  * Socket operation service
  * Handles socket operations for content sessions and client conditions
@@ -105,7 +100,7 @@ export class SocketOperationService {
     clientConditions: ClientCondition[],
     waitTimers: ConditionWaitTimer[],
     cleanupContentTypes?: ContentDataType[],
-  ): Promise<ConditionChangesResult> {
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
       clientConditions,
@@ -125,7 +120,7 @@ export class SocketOperationService {
     );
     return {
       clientConditions: preservedConditions,
-      remainingTimers: preservedWaitTimers,
+      waitTimers: preservedWaitTimers,
     };
   }
 
@@ -144,7 +139,7 @@ export class SocketOperationService {
     waitTimers: ConditionWaitTimer[],
     trackConditions: TrackCondition[],
     cleanupContentTypes?: ContentDataType[],
-  ): Promise<ConditionChangesResult> {
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, cleanupContentTypes);
@@ -171,7 +166,7 @@ export class SocketOperationService {
 
     return {
       clientConditions: [...updatedConditions, ...preservedClientConditions],
-      remainingTimers,
+      waitTimers: remainingTimers,
     };
   }
 
@@ -209,8 +204,7 @@ export class SocketOperationService {
     // Update client data with session clearing and remaining conditions/timers
     // Now simplified as message queue ensures ordered execution
     const updatedClientData = {
-      waitTimers: conditionChanges.remainingTimers,
-      clientConditions: conditionChanges.clientConditions,
+      ...conditionChanges,
       ...(contentType === ContentDataType.FLOW && {
         ...(setLastDismissedId && { lastDismissedFlowId: session.content.id }),
         flowSession: undefined,
@@ -267,8 +261,7 @@ export class SocketOperationService {
 
     // Update client data with Flow session and all condition changes
     const updatedClientData: Partial<SocketClientData> = {
-      waitTimers: conditionChanges.remainingTimers,
-      clientConditions: conditionChanges.clientConditions,
+      ...conditionChanges,
       flowSession: session,
       lastDismissedFlowId: undefined,
     };
@@ -313,8 +306,7 @@ export class SocketOperationService {
 
     // Update client data with Checklist session and all condition changes
     const updatedClientData: Partial<SocketClientData> = {
-      waitTimers: conditionChanges.remainingTimers,
-      clientConditions: conditionChanges.clientConditions,
+      ...conditionChanges,
       checklistSession: session,
       lastDismissedChecklistId: undefined,
     };
