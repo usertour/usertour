@@ -801,6 +801,8 @@ export const extractClientConditionWaitTimers = (
       customContentVersion.config.autoStartRulesSetting.wait > 0
     ) {
       waitTimers.push({
+        contentId: customContentVersion.contentId,
+        contentType: customContentVersion.content.type as ContentDataType,
         versionId: customContentVersion.id,
         waitTime: customContentVersion.config.autoStartRulesSetting.wait,
       });

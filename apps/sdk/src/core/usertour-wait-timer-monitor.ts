@@ -170,9 +170,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     for (const waitTimerItem of this.waitTimers.values()) {
       if (waitTimerItem.isActive) {
         activeTimers.push({
-          versionId: waitTimerItem.versionId,
-          waitTime: waitTimerItem.waitTime,
-          activated: waitTimerItem.activated,
+          ...waitTimerItem,
         });
       }
     }
@@ -190,11 +188,7 @@ export class ConditionWaitTimersMonitor extends Evented {
       return null;
     }
 
-    return {
-      versionId: waitTimerItem.versionId,
-      waitTime: waitTimerItem.waitTime,
-      activated: waitTimerItem.activated,
-    };
+    return waitTimerItem;
   }
 
   /**

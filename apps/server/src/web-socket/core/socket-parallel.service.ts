@@ -79,6 +79,8 @@ export class SocketParallelService {
     return successfulConditions.map((condition) => ({
       conditionId: condition.condition.id,
       contentType: condition.contentType,
+      versionId: condition.versionId,
+      contentId: condition.contentId,
     }));
   }
 

@@ -47,6 +47,12 @@ export type CustomContentSession = {
   };
 };
 
+export type StartContentOptions = {
+  startReason: contentStartReason;
+  contentId?: string;
+  stepCvid?: string;
+};
+
 export type TrackCondition = {
   contentId: string;
   contentType: ContentDataType;
@@ -55,23 +61,21 @@ export type TrackCondition = {
 };
 
 export type ConditionWaitTimer = {
+  contentId: string;
+  contentType: ContentDataType;
   versionId: string;
   waitTime: number;
   activated?: boolean;
 };
 
-export type StartContentOptions = {
-  startReason: contentStartReason;
-  contentId?: string;
-  stepCvid?: string;
+export type ClientCondition = {
+  contentId: string;
+  contentType: ContentDataType;
+  versionId: string;
+  conditionId: string;
+  isActive?: boolean;
 };
 
 export type UnTrackedCondition = {
   conditionId: string;
-};
-
-export type ClientCondition = {
-  conditionId: string;
-  contentType: ContentDataType;
-  isActive?: boolean;
 };

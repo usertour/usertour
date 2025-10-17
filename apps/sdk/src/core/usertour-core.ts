@@ -191,8 +191,10 @@ export class UsertourCore extends Evented {
     const activeIds = this.conditionsMonitor.getActiveConditionIds();
 
     return conditions.map((trackCondition) => ({
-      conditionId: trackCondition.condition.id,
+      contentId: trackCondition.contentId,
+      versionId: trackCondition.versionId,
       contentType: trackCondition.contentType,
+      conditionId: trackCondition.condition.id,
       isActive: activeIds.has(trackCondition.condition.id),
     }));
   }
@@ -779,6 +781,8 @@ export class UsertourCore extends Evented {
       // Toggle client condition
       this.socketService.toggleClientCondition(
         {
+          contentId: trackCondition.contentId,
+          versionId: trackCondition.versionId,
           conditionId: trackCondition.condition.id,
           contentType: trackCondition.contentType,
           isActive: state === 'activated',
