@@ -27,8 +27,8 @@ export interface CleanupSocketSessionOptions {
   unsetSession?: boolean;
   /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
   setLastDismissedId?: boolean;
-  /** Optional array of content types to filter client conditions by */
-  contentTypeFilter?: ContentDataType[];
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes?: ContentDataType[];
 }
 
 export interface ActivateFlowSessionOptions {
@@ -36,15 +36,15 @@ export interface ActivateFlowSessionOptions {
   trackConditions?: TrackCondition[];
   /** Whether to force go to step, defaults to false */
   forceGoToStep?: boolean;
-  /** Optional array of content types to filter client conditions by */
-  contentTypeFilter?: ContentDataType[];
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes?: ContentDataType[];
 }
 
 export interface ActivateChecklistSessionOptions {
   /** The conditions to track */
   trackConditions?: TrackCondition[];
-  /** Optional array of content types to filter client conditions by */
-  contentTypeFilter?: ContentDataType[];
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes?: ContentDataType[];
 }
 
 interface ConditionChangesResult {
@@ -97,24 +97,24 @@ export class SocketOperationService {
    * @param socket - The socket
    * @param clientConditions - All client conditions
    * @param waitTimers - Condition wait timers to cleanup
-   * @param contentTypeFilter - Optional array of content types to filter client conditions by
+   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing remaining conditions and timers after cleanup
    */
   private async emitConditionCleanup(
     socket: Socket,
     clientConditions: ClientCondition[],
     waitTimers: ConditionWaitTimer[],
-    contentTypeFilter?: ContentDataType[],
+    cleanupContentTypes?: ContentDataType[],
   ): Promise<ConditionChangesResult> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
       clientConditions,
-      contentTypeFilter,
+      cleanupContentTypes,
     );
     // Filter and preserve wait timers based on content type filter
     const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
       waitTimers,
-      contentTypeFilter,
+      cleanupContentTypes,
     );
     // Un-track client conditions
     filteredConditions.map((condition) =>
@@ -135,7 +135,7 @@ export class SocketOperationService {
    * @param clientConditions - All client conditions
    * @param waitTimers - Current condition wait timers
    * @param trackConditions - New conditions to track
-   * @param contentTypeFilter - Optional array of content types to filter client conditions by
+   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing updated conditions and remaining timers
    */
   private async emitConditionChanges(
@@ -143,11 +143,11 @@ export class SocketOperationService {
     clientConditions: ClientCondition[],
     waitTimers: ConditionWaitTimer[],
     trackConditions: TrackCondition[],
-    contentTypeFilter?: ContentDataType[],
+    cleanupContentTypes?: ContentDataType[],
   ): Promise<ConditionChangesResult> {
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
-      filterAndPreserveConditions(clientConditions, contentTypeFilter);
+      filterAndPreserveConditions(clientConditions, cleanupContentTypes);
 
     // Categorize client conditions into preserved, untrack, and track groups
     const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
@@ -189,7 +189,7 @@ export class SocketOperationService {
     session: CustomContentSession,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
-    const { unsetSession = true, setLastDismissedId = false, contentTypeFilter } = options;
+    const { unsetSession = true, setLastDismissedId = false, cleanupContentTypes } = options;
     const { clientConditions = [], waitTimers = [] } = socketClientData;
     const contentType = session.content.type;
 
@@ -203,7 +203,7 @@ export class SocketOperationService {
       socket,
       clientConditions,
       waitTimers,
-      contentTypeFilter,
+      cleanupContentTypes,
     );
 
     // Update client data with session clearing and remaining conditions/timers
@@ -238,7 +238,7 @@ export class SocketOperationService {
     session: CustomContentSession,
     options: ActivateFlowSessionOptions = {},
   ): Promise<boolean> {
-    const { trackConditions = [], forceGoToStep = false, contentTypeFilter } = options;
+    const { trackConditions = [], forceGoToStep = false, cleanupContentTypes } = options;
     const { clientConditions = [], waitTimers = [] } = socketClientData;
 
     // Set Flow session
@@ -262,7 +262,7 @@ export class SocketOperationService {
       clientConditions,
       waitTimers,
       trackConditions,
-      contentTypeFilter,
+      cleanupContentTypes,
     );
 
     // Update client data with Flow session and all condition changes
@@ -290,7 +290,7 @@ export class SocketOperationService {
     session: CustomContentSession,
     options: ActivateChecklistSessionOptions = {},
   ): Promise<boolean> {
-    const { trackConditions = [], contentTypeFilter } = options;
+    const { trackConditions = [], cleanupContentTypes } = options;
     const { clientConditions = [], waitTimers = [] } = socketClientData;
 
     // Set Checklist session
@@ -308,7 +308,7 @@ export class SocketOperationService {
       clientConditions,
       waitTimers,
       trackConditions,
-      contentTypeFilter,
+      cleanupContentTypes,
     );
 
     // Update client data with Checklist session and all condition changes

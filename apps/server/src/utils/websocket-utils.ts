@@ -146,22 +146,22 @@ export const calculateRemainingConditionWaitTimers = (
 /**
  * Filter and preserve client conditions based on content type filter
  * @param clientConditions - All client conditions
- * @param contentTypeFilter - Optional array of content types to filter by
+ * @param cleanupContentTypes - Optional array of content types to cleanup for
  * @returns Object containing filtered and preserved conditions (always returns arrays, never undefined)
  */
 export const filterAndPreserveConditions = (
   clientConditions: ClientCondition[],
-  contentTypeFilter?: ContentDataType[],
+  cleanupContentTypes?: ContentDataType[],
 ): {
   filteredConditions: ClientCondition[];
   preservedConditions: ClientCondition[];
 } => {
-  const filteredConditions = contentTypeFilter
-    ? clientConditions.filter((c) => contentTypeFilter.includes(c.contentType))
+  const filteredConditions = cleanupContentTypes
+    ? clientConditions.filter((c) => cleanupContentTypes.includes(c.contentType))
     : clientConditions;
 
-  const preservedConditions = contentTypeFilter
-    ? clientConditions.filter((c) => !contentTypeFilter.includes(c.contentType))
+  const preservedConditions = cleanupContentTypes
+    ? clientConditions.filter((c) => !cleanupContentTypes.includes(c.contentType))
     : [];
 
   return {
@@ -173,22 +173,22 @@ export const filterAndPreserveConditions = (
 /**
  * Filter and preserve condition wait timers based on content type filter
  * @param waitTimers - All condition wait timers
- * @param contentTypeFilter - Optional array of content types to filter by
+ * @param cleanupContentTypes - Optional array of content types to cleanup for
  * @returns Object containing filtered and preserved wait timers (always returns arrays, never undefined)
  */
 export const filterAndPreserveWaitTimers = (
   waitTimers: ConditionWaitTimer[],
-  contentTypeFilter?: ContentDataType[],
+  cleanupContentTypes?: ContentDataType[],
 ): {
   filteredWaitTimers: ConditionWaitTimer[];
   preservedWaitTimers: ConditionWaitTimer[];
 } => {
-  const filteredWaitTimers = contentTypeFilter
-    ? waitTimers.filter((t) => contentTypeFilter.includes(t.contentType))
+  const filteredWaitTimers = cleanupContentTypes
+    ? waitTimers.filter((t) => cleanupContentTypes.includes(t.contentType))
     : waitTimers;
 
-  const preservedWaitTimers = contentTypeFilter
-    ? waitTimers.filter((t) => !contentTypeFilter.includes(t.contentType))
+  const preservedWaitTimers = cleanupContentTypes
+    ? waitTimers.filter((t) => !cleanupContentTypes.includes(t.contentType))
     : [];
 
   return {
