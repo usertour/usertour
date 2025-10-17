@@ -347,7 +347,7 @@ export class SocketOperationService {
         ),
     );
     if (newTrackConditions.length === 0) {
-      return false;
+      return true;
     }
     const trackedConditions = await this.socketParallelService.trackClientConditions(
       socket,
