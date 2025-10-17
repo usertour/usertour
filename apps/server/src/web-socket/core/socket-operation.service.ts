@@ -80,15 +80,16 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const contentType = session.content.type as ContentDataType;
     const sessionId = session.id;
-    switch (contentType) {
-      case ContentDataType.FLOW:
-        return await this.socketEmitterService.unsetFlowSessionWithAck(socket, sessionId);
-      case ContentDataType.CHECKLIST:
-        return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, sessionId);
-      default:
-        this.logger.warn(`Unsupported content type: ${contentType}`);
-        return false;
+
+    if (contentType === ContentDataType.FLOW) {
+      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, sessionId);
     }
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, sessionId);
+    }
+
+    this.logger.warn(`Unsupported content type: ${contentType}`);
+    return false;
   }
 
   /**
