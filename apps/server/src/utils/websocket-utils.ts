@@ -169,3 +169,30 @@ export const filterAndPreserveConditions = (
     preservedConditions,
   };
 };
+
+/**
+ * Filter and preserve condition wait timers based on content type filter
+ * @param waitTimers - All condition wait timers
+ * @param contentTypeFilter - Optional array of content types to filter by
+ * @returns Object containing filtered and preserved wait timers (always returns arrays, never undefined)
+ */
+export const filterAndPreserveWaitTimers = (
+  waitTimers: ConditionWaitTimer[],
+  contentTypeFilter?: ContentDataType[],
+): {
+  filteredWaitTimers: ConditionWaitTimer[];
+  preservedWaitTimers: ConditionWaitTimer[];
+} => {
+  const filteredWaitTimers = contentTypeFilter
+    ? waitTimers.filter((t) => contentTypeFilter.includes(t.contentType))
+    : waitTimers;
+
+  const preservedWaitTimers = contentTypeFilter
+    ? waitTimers.filter((t) => !contentTypeFilter.includes(t.contentType))
+    : [];
+
+  return {
+    filteredWaitTimers,
+    preservedWaitTimers,
+  };
+};

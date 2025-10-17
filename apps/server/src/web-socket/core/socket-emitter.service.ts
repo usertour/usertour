@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
 import { ServerMessageKind } from '@/web-socket/v2/web-socket-v2.dto';
+import { uuidV4 } from '@usertour/helpers';
 
 /**
  * Socket emitter service
@@ -24,12 +25,8 @@ export class SocketEmitterService {
    * @param condition - The condition to emit
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async trackClientEvent(socket: Socket, condition: TrackCondition): Promise<boolean> {
-    return await this.sendServerMessage(
-      socket,
-      ServerMessageKind.TRACK_CLIENT_CONDITION,
-      condition,
-    );
+  async trackClientEventWithAck(socket: Socket, condition: TrackCondition): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.TRACK_CLIENT_CONDITION, condition);
   }
 
   /**
@@ -38,8 +35,20 @@ export class SocketEmitterService {
    * @param conditionId - The condition id to un-track
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async untrackClientEvent(socket: Socket, conditionId: string): Promise<boolean> {
-    return await this.sendServerMessage(socket, ServerMessageKind.UNTRACK_CLIENT_CONDITION, {
+  async untrackClientEventWithAck(socket: Socket, conditionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.UNTRACK_CLIENT_CONDITION, {
+      conditionId,
+    });
+  }
+
+  /**
+   * Un-track a socket event without waiting for acknowledgment
+   * @param socket - The socket
+   * @param conditionId - The condition id to un-track
+   * @returns boolean - True if the event was sent successfully
+   */
+  untrackClientEvent(socket: Socket, conditionId: string): boolean {
+    return this.emit(socket, ServerMessageKind.UNTRACK_CLIENT_CONDITION, {
       conditionId,
     });
   }
@@ -54,8 +63,8 @@ export class SocketEmitterService {
    * @param session - The session to set
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async setFlowSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.sendServerMessage(socket, ServerMessageKind.SET_FLOW_SESSION, session);
+  async setFlowSessionWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.SET_FLOW_SESSION, session);
   }
 
   /**
@@ -64,8 +73,11 @@ export class SocketEmitterService {
    * @param session - The session to set
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async setChecklistSession(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.sendServerMessage(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
+  async setChecklistSessionWithAck(
+    socket: Socket,
+    session: CustomContentSession,
+  ): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
   }
 
   /**
@@ -74,8 +86,8 @@ export class SocketEmitterService {
    * @param sessionId - The session id to unset
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async unsetFlowSession(socket: Socket, sessionId: string): Promise<boolean> {
-    return await this.sendServerMessage(socket, ServerMessageKind.UNSET_FLOW_SESSION, {
+  async unsetFlowSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.UNSET_FLOW_SESSION, {
       sessionId,
     });
   }
@@ -86,8 +98,8 @@ export class SocketEmitterService {
    * @param sessionId - The session id to unset
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async unsetChecklistSession(socket: Socket, sessionId: string): Promise<boolean> {
-    return await this.sendServerMessage(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, {
+  async unsetChecklistSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, {
       sessionId,
     });
   }
@@ -103,8 +115,8 @@ export class SocketEmitterService {
    * @param stepId - The step id to force go to step
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async forceGoToStep(socket: Socket, sessionId: string, stepId: string): Promise<boolean> {
-    return await this.sendServerMessage(socket, ServerMessageKind.FORCE_GO_TO_STEP, {
+  async forceGoToStepWithAck(socket: Socket, sessionId: string, stepId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.FORCE_GO_TO_STEP, {
       sessionId,
       stepId,
     });
@@ -118,15 +130,10 @@ export class SocketEmitterService {
    * Checklist task completed
    * @param socket - The socket
    * @param taskId - The task id to complete
-   * @returns True if the event was emitted successfully
+   * @returns boolean - True if the event was sent successfully
    */
   checklistTaskCompleted(socket: Socket, taskId: string): boolean {
-    // Fire-and-forget, no acknowledgment needed
-    return socket.emit(this.SERVER_MESSAGE_EVENT, {
-      kind: ServerMessageKind.CHECKLIST_TASK_COMPLETED,
-      payload: { taskId },
-      messageId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    });
+    return this.emit(socket, ServerMessageKind.CHECKLIST_TASK_COMPLETED, { taskId });
   }
 
   // ============================================================================
@@ -139,11 +146,11 @@ export class SocketEmitterService {
    * @param conditionWaitTimer - The wait timer condition to start
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async startConditionWaitTimer(
+  async startConditionWaitTimerWithAck(
     socket: Socket,
     conditionWaitTimer: ConditionWaitTimer,
   ): Promise<boolean> {
-    return await this.sendServerMessage(
+    return await this.emitWithAck(
       socket,
       ServerMessageKind.START_CONDITION_WAIT_TIMER,
       conditionWaitTimer,
@@ -156,15 +163,25 @@ export class SocketEmitterService {
    * @param conditionWaitTimer - The wait timer condition to cancel
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async cancelConditionWaitTimer(
+  async cancelConditionWaitTimerWithAck(
     socket: Socket,
     conditionWaitTimer: ConditionWaitTimer,
   ): Promise<boolean> {
-    return await this.sendServerMessage(
+    return await this.emitWithAck(
       socket,
       ServerMessageKind.CANCEL_CONDITION_WAIT_TIMER,
       conditionWaitTimer,
     );
+  }
+
+  /**
+   * Cancel condition wait timer without waiting for acknowledgment
+   * @param socket - The socket
+   * @param conditionWaitTimer - The wait timer condition to cancel
+   * @returns boolean - True if the event was sent successfully
+   */
+  cancelConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
+    return this.emit(socket, ServerMessageKind.CANCEL_CONDITION_WAIT_TIMER, conditionWaitTimer);
   }
 
   // ============================================================================
@@ -172,7 +189,7 @@ export class SocketEmitterService {
   // ============================================================================
 
   /**
-   * Send server message with unified format
+   * Emit server message with acknowledgment
    * @param socket - The socket
    * @param kind - The message kind
    * @param payload - The message payload
@@ -180,7 +197,7 @@ export class SocketEmitterService {
    * @returns Promise<boolean> - True if the client successfully processed the message
    * @private
    */
-  private async sendServerMessage(
+  private async emitWithAck(
     socket: Socket,
     kind: ServerMessageKind,
     payload?: any,
@@ -190,7 +207,7 @@ export class SocketEmitterService {
       const message = {
         kind,
         payload,
-        messageId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        messageId: uuidV4(), // Generate a unique message ID for idempotency
       };
       const success = await socket.timeout(timeout).emitWithAck(this.SERVER_MESSAGE_EVENT, message);
       if (!success) {
@@ -204,52 +221,24 @@ export class SocketEmitterService {
   }
 
   /**
-   * Emit a generic event to a socket with timeout and handle acknowledgment
-   * @deprecated Use sendServerMessage instead
+   * Emit server message without waiting for acknowledgment
    * @param socket - The socket
-   * @param eventName - The event name
-   * @param data - The data to emit
-   * @param timeout - Timeout in milliseconds (default: 5000)
-   * @returns Promise<boolean> - True if the client successfully processed the event
+   * @param kind - The message kind
+   * @param payload - The message payload
+   * @returns boolean - True if the message was sent successfully
    * @private
    */
-  private async emitEventWithTimeout(
-    socket: Socket,
-    eventName: string,
-    data?: any,
-    timeout = this.DEFAULT_TIMEOUT,
-  ): Promise<boolean> {
+  private emit(socket: Socket, kind: ServerMessageKind, payload?: any): boolean {
     try {
-      const success = await socket.timeout(timeout).emitWithAck(eventName, data);
-      if (!success) {
-        this.logger.warn(`Client failed to process ${eventName} for socket ${socket.id}`);
-      }
-      return !!success;
+      const success = socket.emit(this.SERVER_MESSAGE_EVENT, {
+        kind,
+        payload,
+        messageId: uuidV4(), // Generate a unique message ID for idempotency
+      });
+      return success;
     } catch (error) {
-      this.logger.error(`Failed to emit ${eventName} for socket ${socket.id}:`, error);
+      this.logger.error(`Failed to emit ${kind} for socket ${socket.id}:`, error);
       return false;
     }
-  }
-
-  /**
-   * Emit an event to multiple sockets with timeout
-   * @param sockets - Array of sockets
-   * @param eventName - The event name
-   * @param data - The data to emit
-   * @returns Promise<number> - Number of successful emissions
-   * @private
-   */
-  private async emitToMultipleSockets(
-    sockets: Socket[],
-    eventName: string,
-    data?: any,
-  ): Promise<number> {
-    let successCount = 0;
-    for (const socket of sockets) {
-      if (await this.emitEventWithTimeout(socket, eventName, data)) {
-        successCount++;
-      }
-    }
-    return successCount;
   }
 }

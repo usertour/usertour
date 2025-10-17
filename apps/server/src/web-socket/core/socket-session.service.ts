@@ -15,6 +15,7 @@ import {
   calculateRemainingClientConditions,
   calculateRemainingConditionWaitTimers,
   filterAndPreserveConditions,
+  filterAndPreserveWaitTimers,
 } from '@/utils/websocket-utils';
 import { SocketClientDataService } from './socket-client-data.service';
 
@@ -81,9 +82,9 @@ export class SocketSessionService {
     const sessionId = session.id;
     switch (contentType) {
       case ContentDataType.FLOW:
-        return await this.socketEmitterService.unsetFlowSession(socket, sessionId);
+        return await this.socketEmitterService.unsetFlowSessionWithAck(socket, sessionId);
       case ContentDataType.CHECKLIST:
-        return await this.socketEmitterService.unsetChecklistSession(socket, sessionId);
+        return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, sessionId);
       default:
         this.logger.warn(`Unsupported content type: ${contentType}`);
         return false;
@@ -109,18 +110,21 @@ export class SocketSessionService {
       clientConditions,
       contentTypeFilter,
     );
-
-    // Process condition cleanup operations in parallel
-    const [, cancelledTimers] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, filteredConditions),
-      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
-    ]);
-
-    const remainingTimers = calculateRemainingConditionWaitTimers(waitTimers, cancelledTimers);
-
+    // Filter and preserve wait timers based on content type filter
+    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
+      waitTimers,
+      contentTypeFilter,
+    );
+    // Un-track client conditions
+    filteredConditions.map((condition) =>
+      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
+    );
+    filteredWaitTimers.map((timer) =>
+      this.socketEmitterService.cancelConditionWaitTimer(socket, timer),
+    );
     return {
       clientConditions: preservedConditions,
-      remainingTimers,
+      remainingTimers: preservedWaitTimers,
     };
   }
 
@@ -241,14 +245,18 @@ export class SocketSessionService {
     const { clientConditions = [], waitTimers = [] } = socketClientData;
 
     // Set Flow session
-    const isSetSession = await this.socketEmitterService.setFlowSession(socket, session);
+    const isSetSession = await this.socketEmitterService.setFlowSessionWithAck(socket, session);
     if (!isSetSession) {
       return false;
     }
 
     // Force go to step if needed (Flow-specific logic)
     if (forceGoToStep && session.currentStep?.id) {
-      await this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
+      await this.socketEmitterService.forceGoToStepWithAck(
+        socket,
+        session.id,
+        session.currentStep.id,
+      );
     }
 
     // Emit condition changes efficiently
@@ -289,7 +297,10 @@ export class SocketSessionService {
     const { clientConditions = [], waitTimers = [] } = socketClientData;
 
     // Set Checklist session
-    const isSetSession = await this.socketEmitterService.setChecklistSession(socket, session);
+    const isSetSession = await this.socketEmitterService.setChecklistSessionWithAck(
+      socket,
+      session,
+    );
     if (!isSetSession) {
       return false;
     }

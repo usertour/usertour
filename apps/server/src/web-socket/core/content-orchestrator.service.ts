@@ -46,6 +46,7 @@ import { EventTrackingService } from './event-tracking.service';
 import { SocketSessionService } from './socket-session.service';
 import { SocketParallelService } from './socket-parallel.service';
 import { SocketClientDataService } from './socket-client-data.service';
+import { SocketEmitterService } from './socket-emitter.service';
 
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
@@ -62,6 +63,7 @@ export class ContentOrchestratorService {
     private readonly socketParallelService: SocketParallelService,
     private readonly socketClientDataService: SocketClientDataService,
     private readonly distributedLockService: DistributedLockService,
+    private readonly socketEmitterService: SocketEmitterService,
   ) {}
 
   /**
@@ -349,7 +351,9 @@ export class ContentOrchestratorService {
       : extractChecklistShowAnimationItems(session.version.checklist?.items || []);
 
     if (newCompletedItems.length > 0) {
-      this.socketParallelService.emitChecklistTasksCompleted(socket, newCompletedItems);
+      newCompletedItems.map((taskId) =>
+        this.socketEmitterService.checklistTaskCompleted(socket, taskId),
+      );
     }
     return await this.socketSessionService.activateChecklistSession(
       socket as unknown as Socket,

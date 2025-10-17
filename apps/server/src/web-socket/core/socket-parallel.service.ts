@@ -66,7 +66,7 @@ export class SocketParallelService {
     trackConditions: TrackCondition[],
   ): Promise<ClientCondition[]> {
     const operations = trackConditions.map(
-      (condition) => () => this.socketEmitterService.trackClientEvent(socket, condition),
+      (condition) => () => this.socketEmitterService.trackClientEventWithAck(socket, condition),
     );
 
     const successfulConditions = await this.executeParallelOperations(
@@ -96,7 +96,7 @@ export class SocketParallelService {
   ): Promise<ClientCondition[]> {
     const operations = clientConditions.map(
       (condition) => () =>
-        this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
+        this.socketEmitterService.untrackClientEventWithAck(socket, condition.conditionId),
     );
 
     return await this.executeParallelOperations(
@@ -105,41 +105,6 @@ export class SocketParallelService {
       clientConditions,
       'untrackClientConditions',
     );
-  }
-
-  // ============================================================================
-  // Checklist Tasks
-  // ============================================================================
-
-  /**
-   * Emit multiple checklist task completed events
-   * @param socket - The socket instance
-   * @param taskIds - Array of task IDs to complete
-   * @returns Promise<string[]> - Array of successfully processed task IDs
-   */
-  async emitChecklistTasksCompleted(socket: Socket, taskIds: string[]): Promise<string[]> {
-    try {
-      if (!taskIds?.length) return [];
-
-      const successfulTaskIds: string[] = [];
-
-      // Process each task completion
-      for (const taskId of taskIds) {
-        const success = this.socketEmitterService.checklistTaskCompleted(socket, taskId);
-        if (success) {
-          successfulTaskIds.push(taskId);
-        }
-      }
-
-      this.logger.debug(
-        `emitChecklistTasksCompleted: ${successfulTaskIds.length}/${taskIds.length} tasks completed for socket ${socket.id}`,
-      );
-
-      return successfulTaskIds;
-    } catch (error) {
-      this.logger.error(`Failed to emit checklist tasks completed for socket ${socket.id}:`, error);
-      return [];
-    }
   }
 
   // ============================================================================
@@ -157,7 +122,8 @@ export class SocketParallelService {
     waitTimers: ConditionWaitTimer[],
   ): Promise<ConditionWaitTimer[]> {
     const operations = waitTimers.map(
-      (condition) => () => this.socketEmitterService.startConditionWaitTimer(socket, condition),
+      (condition) => () =>
+        this.socketEmitterService.startConditionWaitTimerWithAck(socket, condition),
     );
 
     return await this.executeParallelOperations(
@@ -179,7 +145,8 @@ export class SocketParallelService {
     waitTimers: ConditionWaitTimer[],
   ): Promise<ConditionWaitTimer[]> {
     const operations = waitTimers.map(
-      (condition) => () => this.socketEmitterService.cancelConditionWaitTimer(socket, condition),
+      (condition) => () =>
+        this.socketEmitterService.cancelConditionWaitTimerWithAck(socket, condition),
     );
 
     return await this.executeParallelOperations(
