@@ -124,11 +124,11 @@ export class ContentOrchestratorService {
       socket,
       socketClientData,
       sessionId,
-      shouldSetLastDismissedId: true,
+      setLastDismissedId: true,
     };
 
     // Cleanup socket session
-    await this.cancelSocketSession({ ...cancelSessionParams, shouldUnsetSession: false });
+    await this.cancelSocketSession({ ...cancelSessionParams, unsetSession: false });
     // Cleanup other sockets in room
     if (cancelOtherSessions) {
       await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
@@ -200,20 +200,15 @@ export class ContentOrchestratorService {
     session: CustomContentSession | null,
     params: CancelSessionParams,
   ): Promise<boolean> {
-    const {
-      socket,
-      socketClientData,
-      shouldUnsetSession = true,
-      shouldSetLastDismissedId = false,
-    } = params;
+    const { socket, socketClientData, unsetSession = true, setLastDismissedId = false } = params;
 
     return await this.socketOperationService.cleanupSocketSession(
       socket,
       socketClientData,
       session,
       {
-        shouldUnsetSession,
-        shouldSetLastDismissedId,
+        unsetSession,
+        setLastDismissedId,
       },
     );
   }

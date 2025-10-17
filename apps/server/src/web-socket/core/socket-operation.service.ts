@@ -24,9 +24,9 @@ import { SocketClientDataService } from './socket-client-data.service';
  */
 export interface CleanupSocketSessionOptions {
   /** Whether to execute unsetSocketSession, defaults to true */
-  shouldUnsetSession?: boolean;
+  unsetSession?: boolean;
   /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
-  shouldSetLastDismissedId?: boolean;
+  setLastDismissedId?: boolean;
   /** Optional array of content types to filter client conditions by */
   contentTypeFilter?: ContentDataType[];
 }
@@ -189,16 +189,12 @@ export class SocketOperationService {
     session: CustomContentSession,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
-    const {
-      shouldUnsetSession = true,
-      shouldSetLastDismissedId = false,
-      contentTypeFilter,
-    } = options;
+    const { unsetSession = true, setLastDismissedId = false, contentTypeFilter } = options;
     const { clientConditions = [], waitTimers = [] } = socketClientData;
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (shouldUnsetSession && !(await this.unsetSocketSession(socket, session))) {
+    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
       return false;
     }
 
@@ -216,11 +212,11 @@ export class SocketOperationService {
       waitTimers: conditionChanges.remainingTimers,
       clientConditions: conditionChanges.clientConditions,
       ...(contentType === ContentDataType.FLOW && {
-        ...(shouldSetLastDismissedId && { lastDismissedFlowId: session.content.id }),
+        ...(setLastDismissedId && { lastDismissedFlowId: session.content.id }),
         flowSession: undefined,
       }),
       ...(contentType === ContentDataType.CHECKLIST && {
-        ...(shouldSetLastDismissedId && { lastDismissedChecklistId: session.content.id }),
+        ...(setLastDismissedId && { lastDismissedChecklistId: session.content.id }),
         checklistSession: undefined,
       }),
     };

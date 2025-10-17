@@ -81,8 +81,8 @@ export interface CancelSessionParams {
   socket: Socket;
   socketClientData: SocketClientData;
   sessionId: string;
-  shouldUnsetSession?: boolean;
-  shouldSetLastDismissedId?: boolean;
+  unsetSession?: boolean;
+  setLastDismissedId?: boolean;
 }
 
 export interface ActivateSessionParams {
