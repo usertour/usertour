@@ -353,7 +353,12 @@ export class SocketOperationService {
       newTrackConditions,
     );
 
-    if (trackedConditions.length === 0) {
+    // If not all conditions were tracked, log an error and return false
+    if (trackedConditions.length !== newTrackConditions.length) {
+      this.logger.error(
+        `Failed to track all conditions: ${newTrackConditions.length} conditions to track,
+         ${trackedConditions.length} conditions tracked`,
+      );
       return false;
     }
 
@@ -392,18 +397,22 @@ export class SocketOperationService {
       newWaitTimers,
     );
 
-    // Update socket data with successfully started timers
-    if (startedTimers.length > 0) {
-      return await this.socketClientDataService.set(
-        socket.id,
-        {
-          waitTimers: [...existingTimers, ...startedTimers],
-        },
-        true,
+    // If not all wait timers were started, log an error and return false
+    if (startedTimers.length !== newWaitTimers.length) {
+      this.logger.error(
+        `Failed to start all wait timers: ${newWaitTimers.length} wait timers to start,
+         ${startedTimers.length} wait timers started`,
       );
+      return false;
     }
 
-    return true;
+    return await this.socketClientDataService.set(
+      socket.id,
+      {
+        waitTimers: [...existingTimers, ...startedTimers],
+      },
+      true,
+    );
   }
 
   /**
