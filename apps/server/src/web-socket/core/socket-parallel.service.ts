@@ -59,29 +59,22 @@ export class SocketParallelService {
    * Track multiple client conditions in parallel with acknowledgment
    * @param socket - The socket instance
    * @param trackConditions - Array of conditions to track
-   * @returns Promise<ClientCondition[]> - Array of successfully tracked conditions
+   * @returns Promise<TrackCondition[]> - Array of successfully tracked conditions
    */
   async trackClientConditions(
     socket: Socket,
     trackConditions: TrackCondition[],
-  ): Promise<ClientCondition[]> {
+  ): Promise<TrackCondition[]> {
     const operations = trackConditions.map(
       (condition) => () => this.socketEmitterService.trackClientEventWithAck(socket, condition),
     );
 
-    const successfulConditions = await this.executeParallelOperations(
+    return await this.executeParallelOperations(
       socket,
       operations,
       trackConditions,
       'trackClientConditions',
     );
-
-    return successfulConditions.map((condition) => ({
-      conditionId: condition.condition.id,
-      contentType: condition.contentType,
-      versionId: condition.versionId,
-      contentId: condition.contentId,
-    }));
   }
 
   /**

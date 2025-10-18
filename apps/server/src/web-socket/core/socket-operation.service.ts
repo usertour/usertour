@@ -12,10 +12,9 @@ import { SocketEmitterService } from './socket-emitter.service';
 import { SocketParallelService } from './socket-parallel.service';
 import {
   categorizeClientConditions,
-  calculateRemainingClientConditions,
-  calculateRemainingConditionWaitTimers,
   filterAndPreserveConditions,
   filterAndPreserveWaitTimers,
+  convertToClientConditions,
 } from '@/utils/websocket-utils';
 import { SocketClientDataService } from './socket-client-data.service';
 
@@ -88,19 +87,19 @@ export class SocketOperationService {
   }
 
   /**
-   * Emit condition cleanup operations efficiently with parallel processing
+   * Cleanup conditions efficiently with parallel processing
    * @param socket - The socket
    * @param clientConditions - All client conditions
    * @param waitTimers - Condition wait timers to cleanup
    * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing remaining conditions and timers after cleanup
    */
-  private async emitConditionCleanup(
+  private async cleanupConditions(
     socket: Socket,
-    clientConditions: ClientCondition[],
-    waitTimers: ConditionWaitTimer[],
+    socketClientData: SocketClientData,
     cleanupContentTypes?: ContentDataType[],
   ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
+    const { clientConditions = [], waitTimers = [] } = socketClientData;
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
       clientConditions,
@@ -125,21 +124,57 @@ export class SocketOperationService {
   }
 
   /**
-   * Emit condition changes efficiently with parallel operations
+   * Execute and validate parallel condition operations
+   * @param socket - The socket instance
+   * @param conditionsToUntrack - Conditions to untrack
+   * @param waitTimers - Wait timers to cancel
+   * @param conditionsToTrack - Conditions to track
+   * @returns True if all operations completed successfully
+   */
+  private async executeParallelConditionOperations(
+    socket: Socket,
+    conditionsToUntrack: ClientCondition[],
+    waitTimers: ConditionWaitTimer[],
+    conditionsToTrack: TrackCondition[],
+  ): Promise<boolean> {
+    // Execute all condition operations in parallel
+    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
+      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
+      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
+      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
+    ]);
+
+    // Validate results
+    if (
+      untrackedConditions.length !== conditionsToUntrack.length ||
+      cancelledTimers.length !== waitTimers.length ||
+      newConditions.length !== conditionsToTrack.length
+    ) {
+      this.logger.error(
+        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
+         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Emit conditions efficiently with parallel operations
    * @param socket - The socket
-   * @param clientConditions - All client conditions
-   * @param waitTimers - Current condition wait timers
+   * @param socketClientData - The socket client data
    * @param trackConditions - New conditions to track
    * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing updated conditions and remaining timers
    */
-  private async emitConditionChanges(
+  private async emitConditions(
     socket: Socket,
-    clientConditions: ClientCondition[],
-    waitTimers: ConditionWaitTimer[],
+    socketClientData: SocketClientData,
     trackConditions: TrackCondition[],
     cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
+  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'> | null> {
+    const { clientConditions = [], waitTimers = [] } = socketClientData;
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, cleanupContentTypes);
@@ -148,25 +183,34 @@ export class SocketOperationService {
     const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
       categorizeClientConditions(filteredConditions, trackConditions);
 
-    // Execute all condition operations in parallel
-    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
-      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
-      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
-    ]);
-
-    // Calculate remaining conditions and timers (those that failed to process)
-    const remainingConditions = calculateRemainingClientConditions(
-      conditionsToUntrack,
-      untrackedConditions,
+    // Filter and preserve wait timers based on content type filter
+    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
+      waitTimers,
+      cleanupContentTypes,
     );
-    const remainingTimers = calculateRemainingConditionWaitTimers(waitTimers, cancelledTimers);
 
-    const updatedConditions = [...preservedConditions, ...remainingConditions, ...newConditions];
+    // Execute and validate parallel condition operations
+    const isSuccess = await this.executeParallelConditionOperations(
+      socket,
+      conditionsToUntrack,
+      filteredWaitTimers,
+      conditionsToTrack,
+    );
+    if (!isSuccess) {
+      return null;
+    }
+
+    const trackedClientConditions = convertToClientConditions(conditionsToTrack);
+
+    const updatedConditions = [
+      ...preservedClientConditions,
+      ...preservedConditions,
+      ...trackedClientConditions,
+    ];
 
     return {
-      clientConditions: [...updatedConditions, ...preservedClientConditions],
-      waitTimers: remainingTimers,
+      clientConditions: updatedConditions,
+      waitTimers: preservedWaitTimers,
     };
   }
 
@@ -185,7 +229,6 @@ export class SocketOperationService {
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
     const { unsetSession = true, setLastDismissedId = false, cleanupContentTypes } = options;
-    const { clientConditions = [], waitTimers = [] } = socketClientData;
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
@@ -193,11 +236,10 @@ export class SocketOperationService {
       return false;
     }
 
-    // Emit condition cleanup efficiently
-    const conditionChanges = await this.emitConditionCleanup(
+    // Cleanup conditions efficiently
+    const conditionChanges = await this.cleanupConditions(
       socket,
-      clientConditions,
-      waitTimers,
+      socketClientData,
       cleanupContentTypes,
     );
 
@@ -233,8 +275,6 @@ export class SocketOperationService {
     options: ActivateFlowSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, cleanupContentTypes } = options;
-    const { clientConditions = [], waitTimers = [] } = socketClientData;
-
     // Set Flow session
     const isSetSession = await this.socketEmitterService.setFlowSessionWithAck(socket, session);
     if (!isSetSession) {
@@ -251,13 +291,15 @@ export class SocketOperationService {
     }
 
     // Emit condition changes efficiently
-    const conditionChanges = await this.emitConditionChanges(
+    const conditionChanges = await this.emitConditions(
       socket,
-      clientConditions,
-      waitTimers,
+      socketClientData,
       trackConditions,
       cleanupContentTypes,
     );
+    if (!conditionChanges) {
+      return false;
+    }
 
     // Update client data with Flow session and all condition changes
     const updatedClientData: Partial<SocketClientData> = {
@@ -284,7 +326,6 @@ export class SocketOperationService {
     options: ActivateChecklistSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
-    const { clientConditions = [], waitTimers = [] } = socketClientData;
 
     // Set Checklist session
     const isSetSession = await this.socketEmitterService.setChecklistSessionWithAck(
@@ -296,13 +337,15 @@ export class SocketOperationService {
     }
 
     // Emit condition changes efficiently
-    const conditionChanges = await this.emitConditionChanges(
+    const conditionChanges = await this.emitConditions(
       socket,
-      clientConditions,
-      waitTimers,
+      socketClientData,
       trackConditions,
       cleanupContentTypes,
     );
+    if (!conditionChanges) {
+      return false;
+    }
 
     // Update client data with Checklist session and all condition changes
     const updatedClientData: Partial<SocketClientData> = {
@@ -341,6 +384,7 @@ export class SocketOperationService {
       socket,
       newTrackConditions,
     );
+    const trackedClientConditions = convertToClientConditions(trackedConditions);
 
     // If not all conditions were tracked, log an error and return false
     if (trackedConditions.length !== newTrackConditions.length) {
@@ -351,7 +395,7 @@ export class SocketOperationService {
       return false;
     }
 
-    const newClientConditions = [...clientConditions, ...trackedConditions];
+    const newClientConditions = [...clientConditions, ...trackedClientConditions];
 
     return await this.socketClientDataService.set(
       socket.id,

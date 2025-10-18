@@ -196,3 +196,18 @@ export const filterAndPreserveWaitTimers = (
     preservedWaitTimers,
   };
 };
+
+/**
+ * Convert TrackCondition array to ClientCondition array
+ * @param trackConditions - Array of track conditions to convert
+ * @returns Array of client conditions
+ */
+export const convertToClientConditions = (trackConditions: TrackCondition[]): ClientCondition[] => {
+  return trackConditions.map((trackCondition) => ({
+    contentId: trackCondition.contentId,
+    contentType: trackCondition.contentType,
+    versionId: trackCondition.versionId,
+    conditionId: trackCondition.condition.id,
+    isActive: false, // Default to inactive state
+  }));
+};
