@@ -161,14 +161,14 @@ export class SocketOperationService {
   }
 
   /**
-   * Emit conditions efficiently with parallel operations
+   * Emit conditions efficiently with parallel operations on session activation
    * @param socket - The socket
    * @param socketClientData - The socket client data
    * @param trackConditions - New conditions to track
    * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing updated conditions and remaining timers
    */
-  private async emitConditions(
+  private async emitConditionsOnActivation(
     socket: Socket,
     socketClientData: SocketClientData,
     trackConditions: TrackCondition[],
@@ -291,7 +291,7 @@ export class SocketOperationService {
     }
 
     // Emit condition changes efficiently
-    const conditionChanges = await this.emitConditions(
+    const conditionChanges = await this.emitConditionsOnActivation(
       socket,
       socketClientData,
       trackConditions,
@@ -337,7 +337,7 @@ export class SocketOperationService {
     }
 
     // Emit condition changes efficiently
-    const conditionChanges = await this.emitConditions(
+    const conditionChanges = await this.emitConditionsOnActivation(
       socket,
       socketClientData,
       trackConditions,
