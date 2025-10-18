@@ -21,7 +21,7 @@ import { SocketClientDataService } from './socket-client-data.service';
 /**
  * Options for cleaning up socket session
  */
-export interface CleanupSocketSessionOptions {
+interface CleanupSocketSessionOptions {
   /** Whether to execute unsetSocketSession, defaults to true */
   unsetSession?: boolean;
   /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
@@ -30,7 +30,7 @@ export interface CleanupSocketSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
-export interface ActivateFlowSessionOptions {
+interface ActivateFlowSessionOptions {
   /** The conditions to track */
   trackConditions?: TrackCondition[];
   /** Whether to force go to step, defaults to false */
@@ -39,7 +39,7 @@ export interface ActivateFlowSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
-export interface ActivateChecklistSessionOptions {
+interface ActivateChecklistSessionOptions {
   /** The conditions to track */
   trackConditions?: TrackCondition[];
   /** Optional array of content types to cleanup client conditions for */
