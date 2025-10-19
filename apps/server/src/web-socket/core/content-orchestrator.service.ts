@@ -279,6 +279,7 @@ export class ContentOrchestratorService {
     if (!socketData || !session) {
       return false;
     }
+    this.logger.debug(`activateSocketSession postTracks: ${JSON.stringify(params.postTracks)}`);
     const contentType = session.content.type as ContentDataType;
     if (contentType === ContentDataType.FLOW) {
       return await this.activateFlowSession(params);
@@ -711,22 +712,23 @@ export class ContentOrchestratorService {
       return { success: false, reason: 'No custom content version found' };
     }
 
-    // Rebuild session
-    const rebuiltSession = await this.sessionBuilderService.rebuildContentSession(
+    const result = await this.handleContentVersion(
+      context,
       customContentVersion,
-      session,
-      socketData,
+      false, // don't create new session
     );
+    if (!result.success) {
+      return result;
+    }
 
     // Compare session to detect changes
-    const isChanged = this.sessionBuilderService.compareContentSessions(session, rebuiltSession);
+    const isChanged = this.sessionBuilderService.compareContentSessions(session, result.session);
 
     // Handle active session cases
     return {
-      success: true,
+      ...result,
       activate: isChanged,
       reason: isChanged ? 'Existing active session with changes' : 'Existing active session',
-      session: rebuiltSession,
     };
   }
 
@@ -1020,7 +1022,7 @@ export class ContentOrchestratorService {
         ConditionExtractionMode.HIDE_ONLY,
       );
       // Extract tracking conditions for checklist conditions
-      const checklistConditions = extractChecklistTrackConditions(customContentVersion);
+      const checklistConditions = extractChecklistTrackConditions(sessionResult.session);
       const postTracks = [...hideConditions, ...checklistConditions];
 
       return {

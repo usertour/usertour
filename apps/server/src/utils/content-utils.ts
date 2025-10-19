@@ -28,6 +28,7 @@ import {
   ContentWithContentOnEnvironments,
   Step,
   TrackCondition,
+  CustomContentSession,
 } from '@/common/types';
 import {
   differenceInDays,
@@ -1380,15 +1381,15 @@ export const evaluateChecklistItems = async (
 };
 
 export const extractChecklistTrackConditions = (
-  customContentVersion: CustomContentVersion,
+  customContentSession: CustomContentSession,
   allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
 ): TrackCondition[] => {
   // Pre-allocate array with estimated capacity to reduce memory reallocations
   const trackConditions: TrackCondition[] = [];
   // Extract metadata once to avoid repeated property access
-  const contentId = customContentVersion.contentId;
-  const contentType = customContentVersion.content.type as ContentDataType;
-  const versionId = customContentVersion.id;
+  const contentId = customContentSession.content.id;
+  const contentType = customContentSession.content.type as ContentDataType;
+  const versionId = customContentSession.version.id;
 
   if (contentType !== ContentDataType.CHECKLIST) {
     return trackConditions;
@@ -1400,7 +1401,7 @@ export const extractChecklistTrackConditions = (
     versionId,
   };
 
-  const checklistData = customContentVersion.data as unknown as ChecklistData;
+  const checklistData = customContentSession.version.checklist;
   const items = checklistData.items;
   // Process all conditions in a single pass
   for (const item of items) {
