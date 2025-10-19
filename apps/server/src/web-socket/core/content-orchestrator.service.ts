@@ -299,6 +299,7 @@ export class ContentOrchestratorService {
     const options = {
       trackConditions: postTracks,
       forceGoToStep,
+      cleanupContentTypes: [ContentDataType.FLOW],
     };
     return await this.socketOperationService.activateFlowSession(
       socket as unknown as Socket,
@@ -317,6 +318,7 @@ export class ContentOrchestratorService {
     const { socket, session, postTracks, socketData } = params;
     const options = {
       trackConditions: postTracks,
+      cleanupContentTypes: [ContentDataType.CHECKLIST],
     };
     const currentSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
     const newCompletedItems = currentSession

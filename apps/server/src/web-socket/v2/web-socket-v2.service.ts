@@ -443,7 +443,12 @@ export class WebSocketV2Service {
   async endBatch(context: WebSocketContext): Promise<boolean> {
     const { server, socket, socketData } = context;
 
-    return await this.toggleContents(server, socket, [ContentDataType.FLOW], socketData);
+    return await this.toggleContents(
+      server,
+      socket,
+      [ContentDataType.FLOW, ContentDataType.CHECKLIST],
+      socketData,
+    );
   }
 
   /**
