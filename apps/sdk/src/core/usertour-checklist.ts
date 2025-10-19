@@ -105,35 +105,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   };
 
   /**
-   * Updates the clicked state of a specific checklist item in the store.
-   * @param {string} itemId - The ID of the item to update
-   */
-  private updateItemClickedState(itemId: string) {
-    const checklistData = this.getStoreData()?.checklistData;
-    if (!checklistData) return;
-
-    const updatedItems = checklistData.items.map((storeItem) =>
-      storeItem.id === itemId ? { ...storeItem, isClicked: true } : storeItem,
-    );
-
-    this.updateStore({
-      checklistData: {
-        ...checklistData,
-        items: updatedItems,
-      },
-    });
-  }
-
-  /**
-   * Checks if a checklist item is completed
-   * @param item - The checklist item to check
-   * @returns True if the item is completed, false otherwise
-   */
-  async itemIsCompleted(item: ChecklistItemType) {
-    return !!item;
-  }
-
-  /**
    * Handles the click event of a checklist item
    * @param item - The checklist item that was clicked
    */
