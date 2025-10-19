@@ -18,7 +18,8 @@ import {
   BizUser,
   Environment,
   Event,
-  BizSessionWithBizUserAndVersion,
+  VersionWithSteps,
+  Step,
 } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
@@ -501,24 +502,19 @@ export class EventTrackingService {
    * @returns Object containing event data and completion status, or null if validation fails
    */
   private async buildGoToStepEventData(
-    bizSession: BizSessionWithBizUserAndVersion,
+    version: VersionWithSteps,
     stepId: string,
   ): Promise<{
     eventData: Record<string, any>;
     isComplete: boolean;
   } | null> {
-    const version = bizSession.version;
-    const step = version.steps.find((s: any) => s.id === stepId);
+    const stepIndex = version.steps.findIndex((step: Step) => step.id === stepId);
 
-    if (!step) {
-      return null;
-    }
-
-    const stepIndex = version.steps.findIndex((s: any) => s.id === step.id);
     if (stepIndex === -1) {
       return null;
     }
 
+    const step = version.steps[stepIndex];
     const total = version.steps.length;
     const progress = Math.round(((stepIndex + 1) / total) * 100);
     const isExplicitCompletionStep = (step.setting as StepSettings).explicitCompletionStep;
@@ -565,7 +561,7 @@ export class EventTrackingService {
       return;
     }
     // Build go to step event data
-    const eventDataResult = await this.buildGoToStepEventData(bizSession, stepId);
+    const eventDataResult = await this.buildGoToStepEventData(bizSession.version, stepId);
     if (!eventDataResult) {
       return;
     }
@@ -614,7 +610,7 @@ export class EventTrackingService {
     environment: Environment,
     externalUserId: string,
     startReason: string,
-    stepId: string,
+    stepId: string | null,
     clientContext: ClientContext,
   ): Promise<boolean> {
     // Input validation
@@ -634,14 +630,15 @@ export class EventTrackingService {
           startReason,
           clientContext,
         );
-
-        await this.excuteGoToStepEvent(tx, bizSession.id, stepId, environment, clientContext);
+        if (stepId) {
+          await this.excuteGoToStepEvent(tx, bizSession.id, stepId, environment, clientContext);
+        }
 
         return true;
       });
     } catch (error) {
       // Log error for debugging
-      this.logger.error('Failed to track go to step events', error.message);
+      this.logger.error('Failed to track auto start events', error.message);
       return false;
     }
   }

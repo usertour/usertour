@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { ContentDataType, RulesType } from '@usertour/types';
+import { ContentDataType, contentStartReason, RulesType } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
   findLatestActivatedCustomContentVersions,
@@ -150,6 +150,9 @@ export class ContentOrchestratorService {
       socket,
       socketData,
       contentType,
+      options: {
+        startReason: contentStartReason.START_FROM_CONDITION,
+      },
     };
     // If the current session is not the same as the session id, return false
     if (currentSession && currentSession.id !== sessionId) {
@@ -167,8 +170,6 @@ export class ContentOrchestratorService {
       allowWaitTimers: false,
       fallback: false,
     });
-
-    this.logger.debug(`CancelSocketSession strategy result: ${strategyResult}`);
 
     // If the strategy result is successful, return it
     if (strategyResult) {
@@ -279,7 +280,6 @@ export class ContentOrchestratorService {
     if (!socketData || !session) {
       return false;
     }
-    this.logger.debug(`activateSocketSession postTracks: ${JSON.stringify(params.postTracks)}`);
     const contentType = session.content.type as ContentDataType;
     if (contentType === ContentDataType.FLOW) {
       return await this.activateFlowSession(params);
@@ -918,11 +918,8 @@ export class ContentOrchestratorService {
     startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
     const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
-    const stepCvid = startOptions?.stepCvid;
     const startReason = startOptions?.startReason;
     const versionId = customContentVersion.id;
-    const steps = customContentVersion.steps;
-    const currentStepCvid = stepCvid || steps?.[0]?.cvid;
     const bizSession = await this.sessionBuilderService.createBizSession(
       environment,
       externalUserId,
@@ -936,7 +933,10 @@ export class ContentOrchestratorService {
         reason: 'Failed to create business session',
       };
     }
-    const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id;
+    const steps = customContentVersion?.steps ?? [];
+    const stepCvid = startOptions?.stepCvid;
+    const currentStepCvid = stepCvid || steps?.[0]?.cvid;
+    const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id ?? null;
 
     const result = await this.eventTrackingService.trackAutoStartEvent(
       customContentVersion,
@@ -1055,13 +1055,14 @@ export class ContentOrchestratorService {
     if (!sessionResult.success) {
       return sessionResult;
     }
+    const currentStepCvid = sessionResult.currentStepCvid ?? undefined;
 
     // Create content session
     const contentSession = await this.sessionBuilderService.createContentSession(
       sessionResult.sessionId!,
       customContentVersion,
       socketData,
-      sessionResult.currentStepCvid!,
+      currentStepCvid,
     );
 
     if (!contentSession) {
