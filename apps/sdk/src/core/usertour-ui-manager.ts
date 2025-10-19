@@ -44,8 +44,9 @@ export class UsertourUIManager extends Evented {
   }
 
   /**
-   * Initialize the UI manager with all required resources
-   * @param toursStore - The tours store to pass to the React root
+   * Initializes the UI manager
+   * @param props - The properties to pass to the React root
+   * @returns True if the UI manager is initialized, false otherwise
    */
   async initialize(props: UIManagerInitializeProps): Promise<boolean> {
     if (this.isInitialized) {
