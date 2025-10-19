@@ -158,7 +158,7 @@ export class WebSocketV2Service {
    * @param auth - Authentication data from socket handshake
    * @returns Initialized SocketData or null if validation fails
    */
-  async initializeClientData(auth: Record<string, unknown>): Promise<SocketData | null> {
+  async initializeSocketData(auth: Record<string, unknown>): Promise<SocketData | null> {
     const externalUserId = String(auth.externalUserId ?? '');
     const externalCompanyId = String(auth.externalCompanyId ?? '');
     const clientContext = auth.clientContext as ClientContext;
@@ -539,7 +539,7 @@ export class WebSocketV2Service {
     contentTypes: ContentDataType[],
     socketData?: SocketData,
   ): Promise<boolean> {
-    // If socketData is not provided, fetch it using getClientDataResolved
+    // If socketData is not provided, fetch it using getSocketDataResolved
     const resolvedSocketData = socketData ?? (await this.getSocketData(socket));
 
     if (!resolvedSocketData) return false;

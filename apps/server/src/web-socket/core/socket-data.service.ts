@@ -65,7 +65,7 @@ export class SocketDataService {
   /**
    * Get socket data from Redis
    * @param socketId - The socket ID
-   * @returns Promise<ClientData | null> - The socket data or null if not found
+   * @returns Promise<SocketData | null> - The socket data or null if not found
    */
   async get(socketId: string): Promise<SocketData | null> {
     try {

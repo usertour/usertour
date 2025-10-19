@@ -240,7 +240,7 @@ export class SocketOperationService {
 
     // Update client data with session clearing and remaining conditions/timers
     // Now simplified as message queue ensures ordered execution
-    const updatedClientData = {
+    const updatedSocketData = {
       ...conditionChanges,
       ...(contentType === ContentDataType.FLOW && {
         ...(setLastDismissedId && { lastDismissedFlowId: session.content.id }),
@@ -252,7 +252,7 @@ export class SocketOperationService {
       }),
     };
 
-    return await this.socketDataService.set(socket.id, updatedClientData, true);
+    return await this.socketDataService.set(socket.id, updatedSocketData, true);
   }
 
   /**
@@ -297,13 +297,13 @@ export class SocketOperationService {
     }
 
     // Update client data with Flow session and all condition changes
-    const updatedClientData: Partial<SocketData> = {
+    const updatedSocketData: Partial<SocketData> = {
       ...conditionChanges,
       flowSession: session,
       lastDismissedFlowId: undefined,
     };
 
-    return await this.socketDataService.set(socket.id, updatedClientData, true);
+    return await this.socketDataService.set(socket.id, updatedSocketData, true);
   }
 
   /**
@@ -343,13 +343,13 @@ export class SocketOperationService {
     }
 
     // Update client data with Checklist session and all condition changes
-    const updatedClientData: Partial<SocketData> = {
+    const updatedSocketData: Partial<SocketData> = {
       ...conditionChanges,
       checklistSession: session,
       lastDismissedChecklistId: undefined,
     };
 
-    return await this.socketDataService.set(socket.id, updatedClientData, true);
+    return await this.socketDataService.set(socket.id, updatedSocketData, true);
   }
 
   /**

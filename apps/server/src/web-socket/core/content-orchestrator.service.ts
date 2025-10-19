@@ -180,11 +180,11 @@ export class ContentOrchestratorService {
       if (!(await this.cleanupSocketSession(currentSession, params))) {
         return false;
       }
-      const newClientData = await this.getSocketData(socket);
-      if (!newClientData) {
+      const newSocketData = await this.getSocketData(socket);
+      if (!newSocketData) {
         return false;
       }
-      context.socketData = newClientData;
+      context.socketData = newSocketData;
     }
     // Execute content start strategies and handle the result
     return await this.tryAutoStartContent(context, tryAutoStartContentOptions);

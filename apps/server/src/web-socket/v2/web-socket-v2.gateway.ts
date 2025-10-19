@@ -43,7 +43,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
         // Initialize and validate client data
-        const socketData = await this.service.initializeClientData(auth);
+        const socketData = await this.service.initializeSocketData(auth);
         if (!socketData) {
           return next(new SDKAuthenticationError());
         }
