@@ -711,14 +711,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Checks if the app is ready to start
-   * @returns true if the app is ready to start, false otherwise
-   */
-  isReady() {
-    return this.uiManager.isReady() && this.externalUserId;
-  }
-
-  /**
    * Synchronizes all stores with current data
    */
   private syncAllStores() {}
