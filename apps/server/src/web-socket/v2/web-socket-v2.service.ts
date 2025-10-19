@@ -446,7 +446,7 @@ export class WebSocketV2Service {
     return await this.toggleContents(
       server,
       socket,
-      [ContentDataType.FLOW, ContentDataType.CHECKLIST],
+      [ContentDataType.CHECKLIST, ContentDataType.FLOW],
       socketData,
     );
   }

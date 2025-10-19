@@ -27,7 +27,7 @@ interface CleanupSocketSessionOptions {
   /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
   setLastDismissedId?: boolean;
   /** Optional array of content types to cleanup client conditions for */
-  cleanupContentTypes?: ContentDataType[];
+  // cleanupContentTypes?: ContentDataType[];
 }
 
 interface ActivateFlowSessionOptions {
@@ -227,7 +227,7 @@ export class SocketOperationService {
     session: CustomContentSession,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
-    const { unsetSession = true, setLastDismissedId = false, cleanupContentTypes } = options;
+    const { unsetSession = true, setLastDismissedId = false } = options;
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
@@ -236,7 +236,7 @@ export class SocketOperationService {
     }
 
     // Cleanup conditions efficiently
-    const conditionChanges = await this.cleanupConditions(socket, socketData, cleanupContentTypes);
+    const conditionChanges = await this.cleanupConditions(socket, socketData, [contentType]);
 
     // Update client data with session clearing and remaining conditions/timers
     // Now simplified as message queue ensures ordered execution
