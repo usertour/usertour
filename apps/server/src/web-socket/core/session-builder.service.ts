@@ -24,7 +24,7 @@ import {
 import {
   SessionAttribute,
   CustomContentVersion,
-  SocketClientData,
+  SocketData,
   CustomContentSession,
   SessionTheme,
   SessionStep,
@@ -216,10 +216,10 @@ export class SessionBuilderService {
   async createContentSession(
     sessionId: string,
     customContentVersion: CustomContentVersion,
-    clientData: SocketClientData,
+    socketData: SocketData,
     stepCvid?: string,
   ): Promise<CustomContentSession | null> {
-    const { environment, externalUserId, externalCompanyId } = clientData;
+    const { environment, externalUserId, externalCompanyId } = socketData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.dataResolverService.getConfig(environment);
     const themes = await this.dataResolverService.fetchThemes(
@@ -255,13 +255,13 @@ export class SessionBuilderService {
       },
     };
     if (contentType === ContentDataType.CHECKLIST) {
-      return await this.processChecklistSession(session, customContentVersion, clientData);
+      return await this.processChecklistSession(session, customContentVersion, socketData);
     }
     if (contentType === ContentDataType.FLOW) {
       return await this.processFlowSession(
         session,
         customContentVersion,
-        clientData,
+        socketData,
         themes,
         stepCvid,
       );
@@ -273,15 +273,15 @@ export class SessionBuilderService {
    * Process CHECKLIST content type session
    * @param session - The content session
    * @param customContentVersion - The custom content version
-   * @param clientData - The client data
+   * @param socketData - The client data
    * @returns The processed session
    */
   private async processChecklistSession(
     session: CustomContentSession,
     customContentVersion: CustomContentVersion,
-    clientData: SocketClientData,
+    socketData: SocketData,
   ): Promise<CustomContentSession> {
-    const { clientContext, clientConditions } = clientData;
+    const { clientContext, clientConditions } = socketData;
 
     // Extract activated and deactivated condition IDs
     const activatedIds = clientConditions
@@ -323,12 +323,12 @@ export class SessionBuilderService {
   private async processFlowSession(
     session: CustomContentSession,
     customContentVersion: CustomContentVersion,
-    clientData: SocketClientData,
+    socketData: SocketData,
     themes: Theme[],
     stepCvid?: string,
   ): Promise<CustomContentSession | null> {
     const steps = customContentVersion.steps;
-    const { environment, externalUserId, externalCompanyId } = clientData;
+    const { environment, externalUserId, externalCompanyId } = socketData;
 
     const attributes = await this.extractStepsAttributes(
       steps,
@@ -367,15 +367,15 @@ export class SessionBuilderService {
    * Rebuild content session with regenerated data
    * @param contentSession - The existing content session
    * @param customContentVersion - The custom content version
-   * @param clientData - The client data
+   * @param socketData - The client data
    * @returns Rebuilt content session or null if rebuild fails
    */
   async rebuildContentSession(
     customContentVersion: CustomContentVersion,
     contentSession: CustomContentSession,
-    clientData: SocketClientData,
+    socketData: SocketData,
   ): Promise<CustomContentSession | null> {
-    const { environment, externalUserId, externalCompanyId } = clientData;
+    const { environment, externalUserId, externalCompanyId } = socketData;
 
     // Get themes for session theme creation
     const themes = await this.dataResolverService.fetchThemes(
@@ -409,10 +409,10 @@ export class SessionBuilderService {
       },
     };
     if (contentType === ContentDataType.FLOW) {
-      return await this.processFlowSession(newSession, customContentVersion, clientData, themes);
+      return await this.processFlowSession(newSession, customContentVersion, socketData, themes);
     }
     if (contentType === ContentDataType.CHECKLIST) {
-      return await this.processChecklistSession(newSession, customContentVersion, clientData);
+      return await this.processChecklistSession(newSession, customContentVersion, socketData);
     }
 
     return newSession;

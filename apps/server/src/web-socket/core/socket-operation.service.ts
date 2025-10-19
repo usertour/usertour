@@ -4,7 +4,7 @@ import { ContentDataType } from '@usertour/types';
 import {
   CustomContentSession,
   TrackCondition,
-  SocketClientData,
+  SocketData,
   ClientCondition,
   ConditionWaitTimer,
 } from '@/common/types';
@@ -16,7 +16,7 @@ import {
   filterAndPreserveWaitTimers,
   convertToClientConditions,
 } from '@/utils/websocket-utils';
-import { SocketClientDataService } from './socket-client-data.service';
+import { SocketDataService } from './socket-data.service';
 
 /**
  * Options for cleaning up socket session
@@ -59,7 +59,7 @@ export class SocketOperationService {
   constructor(
     private readonly socketEmitterService: SocketEmitterService,
     private readonly socketParallelService: SocketParallelService,
-    private readonly socketClientDataService: SocketClientDataService,
+    private readonly socketDataService: SocketDataService,
   ) {}
 
   /**
@@ -95,10 +95,10 @@ export class SocketOperationService {
    */
   private async cleanupConditions(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'>> {
-    const { clientConditions = [], waitTimers = [] } = socketClientData;
+  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'>> {
+    const { clientConditions = [], waitTimers = [] } = socketData;
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
       clientConditions,
@@ -162,18 +162,18 @@ export class SocketOperationService {
   /**
    * Emit conditions efficiently with parallel operations on session activation
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param socketData - The socket client data
    * @param trackConditions - New conditions to track
    * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing updated conditions and remaining timers
    */
   private async emitConditionsOnActivation(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     trackConditions: TrackCondition[],
     cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketClientData, 'clientConditions' | 'waitTimers'> | null> {
-    const { clientConditions = [], waitTimers = [] } = socketClientData;
+  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'> | null> {
+    const { clientConditions = [], waitTimers = [] } = socketData;
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
       filterAndPreserveConditions(clientConditions, cleanupContentTypes);
@@ -216,14 +216,14 @@ export class SocketOperationService {
   /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
-   * @param socketClientData - The socket client data
+   * @param socketData - The socket client data
    * @param session - The session to cleanup
    * @param options - Options for cleanup behavior
    * @returns Promise<boolean> - True if the session was cleaned up successfully
    */
   async cleanupSocketSession(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     session: CustomContentSession,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
@@ -236,11 +236,7 @@ export class SocketOperationService {
     }
 
     // Cleanup conditions efficiently
-    const conditionChanges = await this.cleanupConditions(
-      socket,
-      socketClientData,
-      cleanupContentTypes,
-    );
+    const conditionChanges = await this.cleanupConditions(socket, socketData, cleanupContentTypes);
 
     // Update client data with session clearing and remaining conditions/timers
     // Now simplified as message queue ensures ordered execution
@@ -256,20 +252,20 @@ export class SocketOperationService {
       }),
     };
 
-    return await this.socketClientDataService.set(socket.id, updatedClientData, true);
+    return await this.socketDataService.set(socket.id, updatedClientData, true);
   }
 
   /**
    * Activate Flow session
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param socketData - The socket client data
    * @param session - The Flow session to activate
    * @param options - Options for Flow activation behavior
    * @returns Promise<boolean> - True if the session was activated successfully
    */
   async activateFlowSession(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     session: CustomContentSession,
     options: ActivateFlowSessionOptions = {},
   ): Promise<boolean> {
@@ -292,7 +288,7 @@ export class SocketOperationService {
     // Emit condition changes efficiently
     const conditionChanges = await this.emitConditionsOnActivation(
       socket,
-      socketClientData,
+      socketData,
       trackConditions,
       cleanupContentTypes,
     );
@@ -301,26 +297,26 @@ export class SocketOperationService {
     }
 
     // Update client data with Flow session and all condition changes
-    const updatedClientData: Partial<SocketClientData> = {
+    const updatedClientData: Partial<SocketData> = {
       ...conditionChanges,
       flowSession: session,
       lastDismissedFlowId: undefined,
     };
 
-    return await this.socketClientDataService.set(socket.id, updatedClientData, true);
+    return await this.socketDataService.set(socket.id, updatedClientData, true);
   }
 
   /**
    * Activate Checklist session
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param socketData - The socket client data
    * @param session - The Checklist session to activate
    * @param options - Options for Checklist activation behavior
    * @returns Promise<boolean> - True if the session was activated successfully
    */
   async activateChecklistSession(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     session: CustomContentSession,
     options: ActivateChecklistSessionOptions = {},
   ): Promise<boolean> {
@@ -338,7 +334,7 @@ export class SocketOperationService {
     // Emit condition changes efficiently
     const conditionChanges = await this.emitConditionsOnActivation(
       socket,
-      socketClientData,
+      socketData,
       trackConditions,
       cleanupContentTypes,
     );
@@ -347,28 +343,28 @@ export class SocketOperationService {
     }
 
     // Update client data with Checklist session and all condition changes
-    const updatedClientData: Partial<SocketClientData> = {
+    const updatedClientData: Partial<SocketData> = {
       ...conditionChanges,
       checklistSession: session,
       lastDismissedChecklistId: undefined,
     };
 
-    return await this.socketClientDataService.set(socket.id, updatedClientData, true);
+    return await this.socketDataService.set(socket.id, updatedClientData, true);
   }
 
   /**
    * Track client conditions
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param socketData - The socket client data
    * @param trackConditions - The conditions to track
    * @returns Promise<boolean> - True if the conditions were tracked successfully
    */
   async trackClientConditions(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     trackConditions: TrackCondition[],
   ): Promise<boolean> {
-    const { clientConditions } = socketClientData;
+    const { clientConditions } = socketData;
     // Track the client conditions, because no content was found to start
     const newTrackConditions = trackConditions?.filter(
       (trackCondition) =>
@@ -396,7 +392,7 @@ export class SocketOperationService {
 
     const newClientConditions = [...clientConditions, ...trackedClientConditions];
 
-    return await this.socketClientDataService.set(
+    return await this.socketDataService.set(
       socket.id,
       {
         clientConditions: newClientConditions,
@@ -408,16 +404,16 @@ export class SocketOperationService {
   /**
    * Start condition wait timers
    * @param socket - The socket
-   * @param socketClientData - The socket client data
+   * @param socketData - The socket client data
    * @param waitTimers - The wait timers to start
    * @returns Promise<boolean> - True if the wait timers were started successfully
    */
   async startConditionWaitTimers(
     socket: Socket,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     waitTimers: ConditionWaitTimer[],
   ): Promise<boolean> {
-    const { waitTimers: existingTimers = [] } = socketClientData;
+    const { waitTimers: existingTimers = [] } = socketData;
 
     const newWaitTimers = waitTimers?.filter(
       (waitTimer) =>
@@ -438,7 +434,7 @@ export class SocketOperationService {
       return false;
     }
 
-    return await this.socketClientDataService.set(
+    return await this.socketDataService.set(
       socket.id,
       {
         waitTimers: [...existingTimers, ...startedTimers],

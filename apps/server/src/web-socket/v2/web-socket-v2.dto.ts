@@ -1,7 +1,7 @@
 import { contentStartReason } from '@usertour/types';
 import { IsString, IsObject, IsOptional } from 'class-validator';
 import { Server, Socket } from 'socket.io';
-import { SocketClientData } from '@/common/types/content';
+import { SocketData } from '@/common/types/content';
 
 export type ProjectConfig = {
   removeBranding: boolean;
@@ -162,5 +162,5 @@ export type FireConditionWaitTimerDto = {
 export interface WebSocketContext {
   server: Server;
   socket: Socket;
-  socketClientData: SocketClientData;
+  socketData: SocketData;
 }

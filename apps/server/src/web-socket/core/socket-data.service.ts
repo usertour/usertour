@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
-import { SocketClientData } from '@/common/types/content';
+import { SocketData } from '@/common/types/content';
 
 /**
- * Socket client data storage service
- * Handles all Redis data operations for SocketClientData management
+ * Socket data storage service
+ * Handles all Redis data operations for SocketData management
  */
 @Injectable()
-export class SocketClientDataService {
-  private readonly logger = new Logger(SocketClientDataService.name);
+export class SocketDataService {
+  private readonly logger = new Logger(SocketDataService.name);
   private readonly DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
   constructor(private readonly redisService: RedisService) {}
@@ -26,13 +26,13 @@ export class SocketClientDataService {
   /**
    * Set socket data in Redis
    * @param socketId - The socket ID
-   * @param clientData - The socket data to store (can be partial for updates)
+   * @param socketData - The socket data to store (can be partial for updates)
    * @param exists - If true, only set if key already exists (for updates)
    * @returns Promise<boolean> - True if the data was set successfully
    */
   async set(
     socketId: string,
-    clientData: SocketClientData | Partial<SocketClientData>,
+    socketData: SocketData | Partial<SocketData>,
     exists = false,
   ): Promise<boolean> {
     try {
@@ -48,7 +48,7 @@ export class SocketClientDataService {
       // Merge data and add metadata
       const finalData = {
         ...existingData,
-        ...clientData,
+        ...socketData,
         lastUpdated: Date.now(),
         socketId,
       };
@@ -67,7 +67,7 @@ export class SocketClientDataService {
    * @param socketId - The socket ID
    * @returns Promise<ClientData | null> - The socket data or null if not found
    */
-  async get(socketId: string): Promise<SocketClientData | null> {
+  async get(socketId: string): Promise<SocketData | null> {
     try {
       const key = this.key(socketId);
       const value = await this.redisService.get(key);
@@ -77,9 +77,9 @@ export class SocketClientDataService {
         return null;
       }
 
-      const clientData = JSON.parse(value) as SocketClientData;
+      const socketData = JSON.parse(value) as SocketData;
       this.logger.debug(`Retrieved socket data for socket ${socketId}`);
-      return clientData;
+      return socketData;
     } catch (error) {
       this.logger.error(`Failed to get socket data for socket ${socketId}:`, error);
       return null;
@@ -88,7 +88,7 @@ export class SocketClientDataService {
 
   /**
    * Delete socket data from Redis
-   * Simplified as clientConditions are now stored within SocketClientData
+   * Simplified as clientConditions are now stored within SocketData
    * @param socketId - The socket ID
    * @returns Promise<boolean> - True if the data was deleted successfully
    */

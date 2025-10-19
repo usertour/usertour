@@ -5,7 +5,7 @@ import {
   ClientCondition,
   ConditionWaitTimer,
 } from '@/common/types/sdk';
-import { SocketClientData } from '@/common/types/content';
+import { SocketData } from '@/common/types/content';
 
 /**
  * WebSocket utility functions
@@ -34,15 +34,15 @@ export const buildExternalUserRoomId = (environmentId: string, externalUserId: s
 
 /**
  * Extract content session from socket client data by content type
- * @param socketClientData - The socket client data
+ * @param socketData - The socket client data
  * @param contentType - The content type
  * @returns The content session or null
  */
 export const extractSessionByContentType = (
-  socketClientData: SocketClientData,
+  socketData: SocketData,
   contentType: ContentDataType,
 ): CustomContentSession | null => {
-  const { flowSession, checklistSession } = socketClientData;
+  const { flowSession, checklistSession } = socketData;
   switch (contentType) {
     case ContentDataType.FLOW:
       return flowSession ?? null;
@@ -55,15 +55,15 @@ export const extractSessionByContentType = (
 
 /**
  * Extract content type by session id
- * @param socketClientData - The socket client data
+ * @param socketData - The socket client data
  * @param sessionId - The session id
  * @returns The content type or null
  */
 export const extractContentTypeBySessionId = (
-  socketClientData: SocketClientData,
+  socketData: SocketData,
   sessionId: string,
 ): ContentDataType | null => {
-  const { flowSession, checklistSession } = socketClientData;
+  const { flowSession, checklistSession } = socketData;
   if (flowSession?.id === sessionId) {
     return ContentDataType.FLOW;
   }
@@ -76,15 +76,15 @@ export const extractContentTypeBySessionId = (
 /**
  * Extract excluded content IDs based on current content type and client data
  * Only excludes the same content type to avoid conflicts between different content types
- * @param socketClientData - The socket client data
+ * @param socketData - The socket client data
  * @param contentType - The current content type
  * @returns Array of content IDs to exclude
  */
 export const extractExcludedContentIds = (
-  socketClientData: SocketClientData,
+  socketData: SocketData,
   contentType: ContentDataType,
 ): string[] => {
-  const { lastDismissedFlowId, lastDismissedChecklistId } = socketClientData;
+  const { lastDismissedFlowId, lastDismissedChecklistId } = socketData;
 
   return [
     contentType === ContentDataType.FLOW && lastDismissedFlowId,

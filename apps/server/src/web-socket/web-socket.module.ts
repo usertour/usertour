@@ -17,7 +17,7 @@ import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
-import { SocketClientDataService } from './core/socket-client-data.service';
+import { SocketDataService } from './core/socket-data.service';
 import { DistributedLockService } from './core/distributed-lock.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
@@ -38,7 +38,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     SocketEmitterService,
     SocketParallelService,
     SocketMessageQueueService,
-    SocketClientDataService,
+    SocketDataService,
     DistributedLockService,
     WebSocketV2MessageHandler,
   ],

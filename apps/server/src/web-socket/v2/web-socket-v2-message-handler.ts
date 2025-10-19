@@ -144,9 +144,9 @@ export class WebSocketV2MessageHandler {
     }
 
     try {
-      // Pre-load socket client data for all handlers
-      const socketClientData = await this.service.getSocketClientData(socket);
-      if (!socketClientData) {
+      // Pre-load socket data for all handlers
+      const socketData = await this.service.getSocketData(socket);
+      if (!socketData) {
         this.logger.warn(`No client data found for socket ${socket.id}`);
         return false;
       }
@@ -154,7 +154,7 @@ export class WebSocketV2MessageHandler {
       const context: WebSocketContext = {
         server,
         socket,
-        socketClientData,
+        socketData,
       };
 
       return await handler.handle(context, payload);

@@ -27,7 +27,7 @@ import {
   StartContentOptions,
   CustomContentSession,
   ClientCondition,
-  SocketClientData,
+  SocketData,
   CustomContentVersion,
   ContentStartContext,
   ContentCancelContext,
@@ -42,7 +42,7 @@ import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
-import { SocketClientDataService } from './socket-client-data.service';
+import { SocketDataService } from './socket-data.service';
 
 /**
  * Service responsible for managing content (flows, checklists) with various strategies
@@ -56,17 +56,17 @@ export class ContentOrchestratorService {
     private readonly sessionBuilderService: SessionBuilderService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketOperationService: SocketOperationService,
-    private readonly socketClientDataService: SocketClientDataService,
+    private readonly socketDataService: SocketDataService,
     private readonly distributedLockService: DistributedLockService,
   ) {}
 
   /**
-   * Get socket client data from Redis
+   * Get socket data from Redis
    * @param socket - The socket instance
-   * @returns Promise<SocketClientData | null>
+   * @returns Promise<SocketData | null>
    */
-  private async getSocketClientData(socket: Socket): Promise<SocketClientData | null> {
-    return await this.socketClientDataService.get(socket.id);
+  private async getSocketData(socket: Socket): Promise<SocketData | null> {
+    return await this.socketDataService.get(socket.id);
   }
 
   /**
@@ -111,18 +111,18 @@ export class ContentOrchestratorService {
   async cancelContent(context: ContentCancelContext): Promise<boolean> {
     const { server, socket, sessionId, cancelOtherSessions = true } = context;
 
-    const socketClientData = await this.getSocketClientData(socket);
-    if (!socketClientData) {
+    const socketData = await this.getSocketData(socket);
+    if (!socketData) {
       return false;
     }
-    const { environment, externalUserId } = socketClientData;
+    const { environment, externalUserId } = socketData;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
 
     // Define common cancel session parameters
     const cancelSessionParams: CancelSessionParams = {
       server,
       socket,
-      socketClientData,
+      socketData,
       sessionId,
       setLastDismissedId: true,
     };
@@ -142,13 +142,13 @@ export class ContentOrchestratorService {
    * @returns True if the session was canceled successfully
    */
   private async cancelSocketSession(params: CancelSessionParams) {
-    const { server, socket, sessionId, socketClientData } = params;
-    const contentType = extractContentTypeBySessionId(socketClientData, sessionId);
-    const currentSession = extractSessionByContentType(socketClientData, contentType);
+    const { server, socket, sessionId, socketData } = params;
+    const contentType = extractContentTypeBySessionId(socketData, sessionId);
+    const currentSession = extractSessionByContentType(socketData, contentType);
     const context = {
       server,
       socket,
-      socketClientData,
+      socketData,
       contentType,
     };
     // If the current session is not the same as the session id, return false
@@ -180,11 +180,11 @@ export class ContentOrchestratorService {
       if (!(await this.cleanupSocketSession(currentSession, params))) {
         return false;
       }
-      const newClientData = await this.getSocketClientData(socket);
+      const newClientData = await this.getSocketData(socket);
       if (!newClientData) {
         return false;
       }
-      context.socketClientData = newClientData;
+      context.socketData = newClientData;
     }
     // Execute content start strategies and handle the result
     return await this.tryAutoStartContent(context, tryAutoStartContentOptions);
@@ -200,17 +200,12 @@ export class ContentOrchestratorService {
     session: CustomContentSession | null,
     params: CancelSessionParams,
   ): Promise<boolean> {
-    const { socket, socketClientData, unsetSession = true, setLastDismissedId = false } = params;
+    const { socket, socketData, unsetSession = true, setLastDismissedId = false } = params;
 
-    return await this.socketOperationService.cleanupSocketSession(
-      socket,
-      socketClientData,
-      session,
-      {
-        unsetSession,
-        setLastDismissedId,
-      },
-    );
+    return await this.socketOperationService.cleanupSocketSession(socket, socketData, session, {
+      unsetSession,
+      setLastDismissedId,
+    });
   }
 
   /**
@@ -226,13 +221,13 @@ export class ContentOrchestratorService {
       (await this.distributedLockService.withRetryLock(
         lockKey,
         async () => {
-          const socketClientData = await this.getSocketClientData(socket);
-          if (!socketClientData) {
+          const socketData = await this.getSocketData(socket);
+          if (!socketData) {
             return false;
           }
           return await this.cancelSocketSession({
             ...params,
-            socketClientData,
+            socketData,
           });
         },
         3, // Retry 3 times
@@ -280,8 +275,8 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateSocketSession(params: ActivateSessionParams) {
-    const { socketClientData, session } = params;
-    if (!socketClientData || !session) {
+    const { socketData, session } = params;
+    if (!socketData || !session) {
       return false;
     }
     const contentType = session.content.type as ContentDataType;
@@ -300,14 +295,14 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateFlowSession(params: ActivateSessionParams) {
-    const { socket, session, postTracks, forceGoToStep, socketClientData } = params;
+    const { socket, session, postTracks, forceGoToStep, socketData } = params;
     const options = {
       trackConditions: postTracks,
       forceGoToStep,
     };
     return await this.socketOperationService.activateFlowSession(
       socket as unknown as Socket,
-      socketClientData,
+      socketData,
       session,
       options,
     );
@@ -319,11 +314,11 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
-    const { socket, session, postTracks, socketClientData } = params;
+    const { socket, session, postTracks, socketData } = params;
     const options = {
       trackConditions: postTracks,
     };
-    const currentSession = extractSessionByContentType(socketClientData, ContentDataType.CHECKLIST);
+    const currentSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
     const newCompletedItems = currentSession
       ? extractChecklistNewCompletedItems(
           session.version.checklist?.items || [],
@@ -336,7 +331,7 @@ export class ContentOrchestratorService {
     }
     return await this.socketOperationService.activateChecklistSession(
       socket as unknown as Socket,
-      socketClientData,
+      socketData,
       session,
       options,
     );
@@ -356,18 +351,18 @@ export class ContentOrchestratorService {
         lockKey,
         async () => {
           const { session } = params;
-          const socketClientData = await this.getSocketClientData(socket);
-          if (!socketClientData) {
+          const socketData = await this.getSocketData(socket);
+          if (!socketData) {
             return false;
           }
           const contentType = session.content.type;
           // If the session is already activated, return false
-          if (extractSessionByContentType(socketClientData, contentType)) {
+          if (extractSessionByContentType(socketData, contentType)) {
             return false;
           }
           return await this.activateSocketSession({
             ...params,
-            socketClientData,
+            socketData,
           });
         },
         3, // Retry 3 times
@@ -425,9 +420,9 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     options: TryAutoStartContentOptions = {},
   ): Promise<boolean> {
-    const { socketClientData, contentType } = context;
+    const { socketData, contentType } = context;
     const {
-      excludeContentIds = extractExcludedContentIds(socketClientData, contentType),
+      excludeContentIds = extractExcludedContentIds(socketData, contentType),
       isActivateOtherSockets = true,
       allowWaitTimers = true,
       fallback = true,
@@ -435,7 +430,7 @@ export class ContentOrchestratorService {
 
     // Get evaluated content versions once and reuse for both strategy executions
     const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-      socketClientData,
+      socketData,
       contentType,
     );
 
@@ -484,7 +479,7 @@ export class ContentOrchestratorService {
     evaluatedContentVersions: CustomContentVersion[],
     excludeContentIds: string[] = [],
   ): Promise<ContentStartResult> {
-    const { socketClientData } = context;
+    const { socketData } = context;
 
     // Filter out excluded content IDs if provided
     const filteredContentVersions =
@@ -520,7 +515,7 @@ export class ContentOrchestratorService {
     const waitTimerResult = this.prepareConditionWaitTimersResult(
       filteredContentVersions,
       contentType,
-      socketClientData.clientConditions,
+      socketData.clientConditions,
     );
     this.logger.debug(`Wait timer result: ${waitTimerResult.reason}`);
     if (waitTimerResult.success) {
@@ -539,7 +534,7 @@ export class ContentOrchestratorService {
     result: ContentStartResult,
   ): Promise<boolean> {
     const { success, preTracks, waitTimers } = result;
-    const { socket, socketClientData } = context;
+    const { socket, socketData } = context;
 
     // Early return if operation failed
     if (!success) {
@@ -548,18 +543,14 @@ export class ContentOrchestratorService {
 
     // Handle tracking conditions
     if (preTracks && preTracks.length > 0) {
-      return await this.socketOperationService.trackClientConditions(
-        socket,
-        socketClientData,
-        preTracks,
-      );
+      return await this.socketOperationService.trackClientConditions(socket, socketData, preTracks);
     }
 
     // Handle condition wait timers
     if (waitTimers && waitTimers.length > 0) {
       return await this.socketOperationService.startConditionWaitTimers(
         socket,
-        socketClientData,
+        socketData,
         waitTimers,
       );
     }
@@ -575,13 +566,13 @@ export class ContentOrchestratorService {
     session: CustomContentSession,
   ): Promise<boolean> {
     const { socket, server, contentType } = context;
-    const socketClientData = await this.getSocketClientData(socket);
-    if (!socketClientData) {
+    const socketData = await this.getSocketData(socket);
+    if (!socketData) {
       return true;
     }
     const sessionId = session.id;
     const evaluatedVersions = await this.getEvaluatedContentVersions(
-      socketClientData,
+      socketData,
       contentType,
       session.version.id,
     );
@@ -595,7 +586,7 @@ export class ContentOrchestratorService {
       return await this.cancelSocketSession({
         server,
         socket,
-        socketClientData,
+        socketData,
         sessionId,
       });
     }
@@ -610,8 +601,8 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { server, socketClientData, socket } = context;
-    const { environment, externalUserId } = socketClientData;
+    const { server, socketData, socket } = context;
+    const { environment, externalUserId } = socketData;
     const {
       session,
       postTracks,
@@ -624,7 +615,7 @@ export class ContentOrchestratorService {
       server,
       socket,
       session,
-      socketClientData,
+      socketData,
       postTracks,
       forceGoToStep,
     };
@@ -649,9 +640,9 @@ export class ContentOrchestratorService {
    * Strategy 1: Try to start content by specific contentId
    */
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
-    const { contentType, options, socketClientData } = context;
+    const { contentType, options, socketData } = context;
     const { contentId } = options!;
-    const { environment } = socketClientData;
+    const { environment } = socketData;
 
     try {
       // Get published version ID for the specific content
@@ -666,7 +657,7 @@ export class ContentOrchestratorService {
         };
       }
       const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-        socketClientData,
+        socketData,
         contentType,
         publishedVersionId,
       );
@@ -678,7 +669,7 @@ export class ContentOrchestratorService {
         };
       }
       const latestActivatedContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
-        socketClientData,
+        socketData,
         contentType,
         evaluatedContentVersion,
       );
@@ -701,15 +692,15 @@ export class ContentOrchestratorService {
    * Strategy 2: Handle existing session validation
    */
   private async handleExistingSession(context: ContentStartContext): Promise<ContentStartResult> {
-    const { contentType, socketClientData } = context;
+    const { contentType, socketData } = context;
 
-    const session = extractSessionByContentType(socketClientData, contentType);
+    const session = extractSessionByContentType(socketData, contentType);
     if (!session) {
       return { success: false, reason: 'No existing session' };
     }
 
     const customContentVersions = await this.getEvaluatedContentVersions(
-      socketClientData,
+      socketData,
       contentType,
       session.version.id,
     );
@@ -722,7 +713,7 @@ export class ContentOrchestratorService {
     const rebuiltSession = await this.sessionBuilderService.rebuildContentSession(
       customContentVersion,
       session,
-      socketClientData,
+      socketData,
     );
 
     // Compare session to detect changes
@@ -741,7 +732,7 @@ export class ContentOrchestratorService {
    * Find the latest activated content version, potentially updated by latest session version
    */
   private async findAndUpdateActivatedCustomContentVersion(
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     contentType: ContentDataType,
     evaluatedContentVersion: CustomContentVersion,
   ): Promise<CustomContentVersion> {
@@ -755,7 +746,7 @@ export class ContentOrchestratorService {
       evaluatedContentVersion.id !== latestActivatedContentVersionId
     ) {
       const activatedContentVersions = await this.getEvaluatedContentVersions(
-        socketClientData,
+        socketData,
         contentType,
         latestActivatedContentVersionId,
       );
@@ -774,8 +765,8 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
-    const { contentType, socketClientData } = context;
-    const { clientConditions } = socketClientData;
+    const { contentType, socketData } = context;
+    const { clientConditions } = socketData;
 
     const latestActivatedContentVersions = findLatestActivatedCustomContentVersions(
       evaluatedContentVersions,
@@ -793,7 +784,7 @@ export class ContentOrchestratorService {
     }
 
     const customContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
-      socketClientData,
+      socketData,
       contentType,
       latestActivatedContentVersion,
     );
@@ -817,9 +808,9 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
-    const { contentType, socketClientData } = context;
-    const { waitTimers } = socketClientData;
-    const { clientConditions } = socketClientData;
+    const { contentType, socketData } = context;
+    const { waitTimers } = socketData;
+    const { clientConditions } = socketData;
     const firedWaitTimerVersionIds = waitTimers
       ?.filter((waitTimer) => waitTimer.activated)
       .map((waitTimer) => waitTimer.versionId);
@@ -919,10 +910,10 @@ export class ContentOrchestratorService {
    */
   private async createBizSession(
     customContentVersion: CustomContentVersion,
-    clientData: SocketClientData,
+    socketData: SocketData,
     startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    const { environment, externalUserId, externalCompanyId, clientContext } = clientData;
+    const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
     const stepCvid = startOptions?.stepCvid;
     const startReason = startOptions?.startReason;
     const versionId = customContentVersion.id;
@@ -1006,13 +997,13 @@ export class ContentOrchestratorService {
     customContentVersion: CustomContentVersion,
     createNewSession = false,
   ): Promise<ContentStartResult> {
-    const { options, socketClientData } = context;
+    const { options, socketData } = context;
 
     try {
       // Handle session initialization
       const sessionResult = await this.initializeSession(
         customContentVersion,
-        socketClientData,
+        socketData,
         options,
         createNewSession,
       );
@@ -1049,12 +1040,12 @@ export class ContentOrchestratorService {
    */
   private async initializeSession(
     customContentVersion: CustomContentVersion,
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     options?: StartContentOptions,
     createNewSession = false,
   ): Promise<{ success: boolean; session?: CustomContentSession; reason?: string }> {
     const sessionResult = createNewSession
-      ? await this.createBizSession(customContentVersion, socketClientData, options)
+      ? await this.createBizSession(customContentVersion, socketData, options)
       : this.findExistingSession(customContentVersion, options);
 
     if (!sessionResult.success) {
@@ -1065,7 +1056,7 @@ export class ContentOrchestratorService {
     const contentSession = await this.sessionBuilderService.createContentSession(
       sessionResult.sessionId!,
       customContentVersion,
-      socketClientData,
+      socketData,
       sessionResult.currentStepCvid!,
     );
 
@@ -1086,13 +1077,13 @@ export class ContentOrchestratorService {
    * Get evaluated content versions
    */
   private async getEvaluatedContentVersions(
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     contentType: ContentDataType,
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
-    const { environment, externalUserId, externalCompanyId, clientContext } = socketClientData;
+    const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
 
-    const { clientConditions } = socketClientData;
+    const { clientConditions } = socketData;
 
     // Extract activated and deactivated condition IDs
     const activatedIds = clientConditions
@@ -1132,7 +1123,7 @@ export class ContentOrchestratorService {
    * @returns The content session or null if not found
    */
   async initializeSessionById(
-    socketClientData: SocketClientData,
+    socketData: SocketData,
     sessionId: string,
   ): Promise<CustomContentSession | null> {
     const session = await this.sessionBuilderService.getBizSessionWithContentAndVersion(sessionId);
@@ -1141,7 +1132,7 @@ export class ContentOrchestratorService {
     }
     const contentType = session.content.type as ContentDataType;
     const customContentVersions = await this.getEvaluatedContentVersions(
-      socketClientData,
+      socketData,
       contentType,
       session.versionId,
     );
@@ -1151,7 +1142,7 @@ export class ContentOrchestratorService {
     }
     const sessionResult = await this.initializeSession(
       customContentVersion,
-      socketClientData,
+      socketData,
       undefined,
       false,
     );

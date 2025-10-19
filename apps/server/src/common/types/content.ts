@@ -34,9 +34,9 @@ export type CustomContentVersion = Omit<VersionWithStepsAndContent, 'config'> & 
 };
 
 /**
- * Socket client data type for storage
+ * Socket data type for storage
  */
-export interface SocketClientData {
+export interface SocketData {
   environment: Environment;
   externalUserId: string;
   externalCompanyId?: string;
@@ -53,7 +53,7 @@ export interface ContentStartContext {
   server: Server;
   socket: Socket;
   contentType: ContentDataType;
-  socketClientData: SocketClientData;
+  socketData: SocketData;
   options?: StartContentOptions;
 }
 
@@ -79,7 +79,7 @@ export interface ContentStartResult {
 export interface CancelSessionParams {
   server: Server;
   socket: Socket;
-  socketClientData: SocketClientData;
+  socketData: SocketData;
   sessionId: string;
   unsetSession?: boolean;
   setLastDismissedId?: boolean;
@@ -88,7 +88,7 @@ export interface CancelSessionParams {
 export interface ActivateSessionParams {
   server: Server;
   socket: Socket;
-  socketClientData?: SocketClientData;
+  socketData?: SocketData;
   session: CustomContentSession;
   postTracks: TrackCondition[] | undefined;
   forceGoToStep: boolean;

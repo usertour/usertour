@@ -14,7 +14,7 @@ import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { ClientMessageDto } from './web-socket-v2.dto';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
-import { SocketClientDataService } from '../core/socket-client-data.service';
+import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 
@@ -31,7 +31,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly service: WebSocketV2Service,
     private readonly messageHandler: WebSocketV2MessageHandler,
     private readonly queueService: SocketMessageQueueService,
-    private readonly socketClientDataService: SocketClientDataService,
+    private readonly socketDataService: SocketDataService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -43,16 +43,16 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
         // Initialize and validate client data
-        const clientData = await this.service.initializeClientData(auth);
-        if (!clientData) {
+        const socketData = await this.service.initializeClientData(auth);
+        if (!socketData) {
           return next(new SDKAuthenticationError());
         }
 
         // Store client data in Redis
-        await this.socketClientDataService.set(socket.id, clientData);
+        await this.socketDataService.set(socket.id, socketData);
 
         // Build room ID and check capacity
-        const room = buildExternalUserRoomId(clientData.environment.id, clientData.externalUserId);
+        const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
         const socketsInRoom = await this.server.in(room).fetchSockets();
         if (socketsInRoom.length >= 100) {
           this.logger.warn(
@@ -64,7 +64,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         // Join user room for targeted messaging
         await socket.join(room);
 
-        this.logger.log(`Socket ${socket.id} authenticated for user ${clientData.externalUserId}`);
+        this.logger.log(`Socket ${socket.id} authenticated for user ${socketData.externalUserId}`);
         return next();
       } catch (error: unknown) {
         this.logger.error(`Auth error: ${(error as Error)?.message ?? 'Unknown error'}`);
@@ -80,7 +80,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       this.queueService.clearQueue(socket.id);
 
       // Cleanup Redis data
-      await this.socketClientDataService.delete(socket.id);
+      await this.socketDataService.delete(socket.id);
 
       this.logger.debug(`Cleaned up queue and Redis data for disconnected socket ${socket.id}`);
     } catch (error) {
