@@ -13,6 +13,7 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { logger } from '@/utils';
 import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
+import { CHECKLIST_CLOSED } from '@usertour-packages/constants';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   // Tour-specific constants
@@ -157,6 +158,8 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     await this.reportDismissEvent(reason);
     // Destroy the checklist
     this.destroy();
+    // Trigger the checklist closed event
+    this.trigger(CHECKLIST_CLOSED, { sessionId: this.getSessionId() });
   }
 
   /**

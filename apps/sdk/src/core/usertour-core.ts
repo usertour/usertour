@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_CLOSED,
   MESSAGE_START_FLOW_WITH_TOKEN,
   SDK_DOM_LOADED,
   STORAGE_IDENTIFY_ANONYMOUS,
@@ -387,6 +388,13 @@ export class UsertourCore extends Evented {
         return success;
       },
       SetChecklistSession: (session) => this.setChecklistSession(session as CustomContentSession),
+      UnsetChecklistSession: (data) => {
+        const success = this.unsetChecklistSession(data.sessionId);
+        if (success) {
+          this.updateSocketAuthInfo({ checklistSessionId: undefined });
+        }
+        return success;
+      },
       TrackClientCondition: (condition) => this.trackClientCondition(condition as TrackCondition),
       UntrackClientCondition: (data) => this.removeConditions([data.conditionId]),
       StartConditionWaitTimer: (condition) =>
@@ -495,10 +503,25 @@ export class UsertourCore extends Evented {
 
     // Create new checklist
     this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
+    this.activatedChecklist.on(CHECKLIST_CLOSED, () => {
+      this.cleanupActivatedChecklist();
+    });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist
     this.activatedChecklist.show();
+    return true;
+  }
+
+  /**
+   * Unsets the checklist session and destroys the checklist
+   * @param sessionId - The session ID to unset
+   */
+  private unsetChecklistSession(sessionId: string): boolean {
+    if (!this.activatedChecklist || this.activatedChecklist.getSessionId() !== sessionId) {
+      return false;
+    }
+    this.cleanupActivatedChecklist();
     return true;
   }
 
