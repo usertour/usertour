@@ -973,12 +973,12 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
 // ===== SESSION COMPARISON UTILITIES =====
 
 /**
- * Compare two SessionAttribute arrays by ID and value
+ * Check if session attributes have changes
  * @param oldAttributes - The original attributes
  * @param newAttributes - The new attributes
  * @returns True if there are differences
  */
-export const compareSessionAttributes = (
+export const hasSessionAttributeChanges = (
   oldAttributes: SessionAttribute[],
   newAttributes: SessionAttribute[],
 ): boolean => {
@@ -993,12 +993,12 @@ export const compareSessionAttributes = (
 };
 
 /**
- * Compare theme variations by ID
+ * Check if theme variations have changes
  * @param oldVariations - The original variations
  * @param newVariations - The new variations
  * @returns True if there are differences
  */
-export const compareThemeVariations = (
+const hasThemeVariationChanges = (
   oldVariations: ThemeVariation[] | undefined,
   newVariations: ThemeVariation[] | undefined,
 ): boolean => {
@@ -1016,12 +1016,12 @@ export const compareThemeVariations = (
 };
 
 /**
- * Compare two SessionTheme objects with smart comparison for variations and attributes
+ * Check if session themes have changes with smart comparison for variations and attributes
  * @param oldTheme - The original theme
  * @param newTheme - The new theme
  * @returns True if there are differences
  */
-export const compareSessionThemes = (
+export const hasSessionThemeChanges = (
   oldTheme: SessionTheme | null | undefined,
   newTheme: SessionTheme | null | undefined,
 ): boolean => {
@@ -1038,13 +1038,13 @@ export const compareSessionThemes = (
     return true;
   }
 
-  // Compare variations by ID
-  if (compareThemeVariations(oldTheme.variations, newTheme.variations)) {
+  // Check variations changes by ID
+  if (hasThemeVariationChanges(oldTheme.variations, newTheme.variations)) {
     return true;
   }
 
-  // Compare theme attributes
-  if (compareSessionAttributes(oldTheme.attributes || [], newTheme.attributes || [])) {
+  // Check theme attributes changes
+  if (hasSessionAttributeChanges(oldTheme.attributes || [], newTheme.attributes || [])) {
     return true;
   }
 
@@ -1052,12 +1052,15 @@ export const compareSessionThemes = (
 };
 
 /**
- * Compare session steps with smart theme comparison
+ * Check if session steps have changes with smart theme comparison
  * @param oldSteps - The original steps
  * @param newSteps - The new steps
  * @returns True if there are differences
  */
-export const compareSessionSteps = (oldSteps: SessionStep[], newSteps: SessionStep[]): boolean => {
+export const hasSessionStepChanges = (
+  oldSteps: SessionStep[],
+  newSteps: SessionStep[],
+): boolean => {
   if (oldSteps.length !== newSteps.length) {
     return true;
   }
@@ -1069,12 +1072,12 @@ export const compareSessionSteps = (oldSteps: SessionStep[], newSteps: SessionSt
 };
 
 /**
- * Compare checklist items
+ * Check if checklist items have changes
  * @param oldItems - The old items
  * @param newItems - The new items
  * @returns True if there are differences
  */
-export const compareChecklistItems = (
+export const hasChecklistItemChanges = (
   oldItems: ChecklistItemType[],
   newItems: ChecklistItemType[],
 ) => {
@@ -1501,4 +1504,45 @@ export const extractChecklistNewCompletedItems = (
  */
 export const extractChecklistShowAnimationItems = (items: ChecklistItemType[]) => {
   return items?.filter((item) => item.isShowAnimation).map((item) => item.id);
+};
+
+/**
+ * Check if content sessions have changes in key data
+ * @param oldSession - The original content session
+ * @param newSession - The updated content session
+ * @returns True if there are changes in theme, attributes, or steps theme
+ */
+export const hasContentSessionChanges = (
+  oldSession: CustomContentSession,
+  newSession: CustomContentSession,
+): boolean => {
+  // Basic validation - should be comparing the same session
+  if (oldSession.id !== newSession.id) {
+    return true;
+  }
+  const oldVersion = oldSession.version;
+  const newVersion = newSession.version;
+
+  // Check version theme changes using utility function
+  if (hasSessionThemeChanges(oldVersion.theme, newVersion.theme)) {
+    return true;
+  }
+
+  // Check attributes changes using utility function
+  if (hasSessionAttributeChanges(oldSession.attributes || [], newSession.attributes || [])) {
+    return true;
+  }
+
+  // Check steps changes using utility function
+  if (hasSessionStepChanges(oldVersion.steps || [], newVersion.steps || [])) {
+    return true;
+  }
+
+  if (
+    hasChecklistItemChanges(oldVersion.checklist?.items || [], newVersion.checklist?.items || [])
+  ) {
+    return true;
+  }
+
+  return false;
 };

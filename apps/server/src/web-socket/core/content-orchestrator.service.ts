@@ -15,6 +15,7 @@ import {
   extractChecklistNewCompletedItems,
   extractChecklistShowAnimationItems,
   extractChecklistTrackConditions,
+  hasContentSessionChanges,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -721,8 +722,8 @@ export class ContentOrchestratorService {
       return result;
     }
 
-    // Compare session to detect changes
-    const isChanged = this.sessionBuilderService.compareContentSessions(session, result.session);
+    // Check if session has changes
+    const isChanged = hasContentSessionChanges(session, result.session);
 
     // Handle active session cases
     return {

@@ -14,11 +14,7 @@ import {
   extractStepContentAttrCodes,
   extractThemeVariationsAttributeIds,
   getAttributeValue,
-  compareSessionAttributes,
-  compareSessionThemes,
-  compareSessionSteps,
   evaluateChecklistItems,
-  compareChecklistItems,
   getChecklistInitialDisplay,
 } from '@/utils/content-utils';
 import {
@@ -416,47 +412,6 @@ export class SessionBuilderService {
     }
 
     return newSession;
-  }
-
-  /**
-   * Compare two content sessions to detect changes in key data
-   * @param oldSession - The original content session
-   * @param newSession - The updated content session
-   * @returns True if there are changes in theme, attributes, or steps theme
-   */
-  compareContentSessions(
-    oldSession: CustomContentSession,
-    newSession: CustomContentSession,
-  ): boolean {
-    // Basic validation - should be comparing the same session
-    if (oldSession.id !== newSession.id) {
-      return true;
-    }
-    const oldVersion = oldSession.version;
-    const newVersion = newSession.version;
-
-    // Compare version theme using utility function
-    if (compareSessionThemes(oldVersion.theme, newVersion.theme)) {
-      return true;
-    }
-
-    // Compare attributes using utility function
-    if (compareSessionAttributes(oldSession.attributes || [], newSession.attributes || [])) {
-      return true;
-    }
-
-    // Compare steps using utility function
-    if (compareSessionSteps(oldVersion.steps || [], newVersion.steps || [])) {
-      return true;
-    }
-
-    if (
-      compareChecklistItems(oldVersion.checklist?.items || [], newVersion.checklist?.items || [])
-    ) {
-      return true;
-    }
-
-    return false;
   }
 
   /**
