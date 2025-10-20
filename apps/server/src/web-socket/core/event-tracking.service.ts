@@ -18,7 +18,6 @@ import {
   BizEvent,
   BizUser,
   Environment,
-  Event,
   VersionWithSteps,
   Step,
 } from '@/common/types/schema';
@@ -219,13 +218,6 @@ export class EventTrackingService {
   }
 
   /**
-   * Check if required entities are valid for event tracking
-   */
-  private areTrackingEntitiesValid(bizUser: BizUser, bizSession: BizSession, event: Event) {
-    return bizUser && bizSession && bizSession.state !== 1 && event;
-  }
-
-  /**
    * Handle question answer creation or update for question answered events
    */
   private async handleQuestionAnswer(
@@ -316,7 +308,7 @@ export class EventTrackingService {
     ]);
 
     // Validate entities
-    if (!this.areTrackingEntitiesValid(bizUser, bizSession, event)) {
+    if (!bizUser || !bizSession || bizSession.state === 1 || !event) {
       return false;
     }
 
