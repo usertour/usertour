@@ -583,9 +583,7 @@ export class ContentOrchestratorService {
     const sessionVersion = evaluatedVersions?.[0];
 
     if (!sessionVersion || isActivedHideRules(sessionVersion)) {
-      this.logger.debug(
-        `Hide rules are activated, canceling session, sessionVersion: ${sessionVersion?.content.name}, sessionId: ${sessionId}`,
-      );
+      this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
       // Cleanup socket session
       return await this.cancelSocketSession({
         server,
