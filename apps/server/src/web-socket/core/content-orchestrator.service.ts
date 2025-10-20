@@ -473,6 +473,7 @@ export class ContentOrchestratorService {
 
     return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
   }
+
   /**
    * Execute content start strategies with pre-fetched content versions
    * This method avoids duplicate database queries by accepting pre-fetched versions
