@@ -197,14 +197,15 @@ export class EventTrackingService {
    * Add client context to event data
    */
   private addClientContextToEventData(data: Record<string, unknown>, clientContext: ClientContext) {
-    return clientContext
-      ? {
-          ...data,
-          [EventAttributes.PAGE_URL]: clientContext.pageUrl,
-          [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
-          [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
-        }
-      : data;
+    if (clientContext) {
+      return {
+        ...data,
+        [EventAttributes.PAGE_URL]: clientContext.pageUrl,
+        [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
+        [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+      };
+    }
+    return data;
   }
 
   /**
