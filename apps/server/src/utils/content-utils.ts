@@ -1022,8 +1022,8 @@ const hasThemeVariationChanges = (
  * @returns True if there are differences
  */
 export const hasSessionThemeChanges = (
-  oldTheme: SessionTheme | null | undefined,
-  newTheme: SessionTheme | null | undefined,
+  oldTheme: SessionTheme | undefined,
+  newTheme: SessionTheme | undefined,
 ): boolean => {
   // Handle null/undefined cases
   if (!oldTheme && !newTheme) {
