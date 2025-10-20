@@ -241,7 +241,7 @@ export class EventTrackingService {
       },
     });
 
-    const answerData: any = {
+    const answerData: Record<string, any> = {
       bizEventId: bizEventId,
       contentId,
       cvid,
@@ -270,7 +270,7 @@ export class EventTrackingService {
       });
     } else {
       // Create new answer
-      await tx.bizAnswer.create({ data: answerData });
+      await tx.bizAnswer.create({ data: answerData as any });
     }
   }
 
