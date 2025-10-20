@@ -10,6 +10,7 @@ import {
   UserAttributes,
   ClientContext,
   StepSettings,
+  ChecklistData,
 } from '@usertour/types';
 import {
   BizCompany,
@@ -23,6 +24,20 @@ import {
 } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
+import { isUndefined } from '@usertour/helpers';
+
+/**
+ * Parameters for tracking question answered events
+ */
+type QuestionAnsweredParams = {
+  sessionId: string;
+  questionCvid: string;
+  questionName: string;
+  questionType: string;
+  listAnswer?: string[];
+  numberAnswer?: number;
+  textAnswer?: string;
+};
 
 @Injectable()
 export class EventTrackingService {
@@ -753,6 +768,228 @@ export class EventTrackingService {
         eventData,
         clientContext,
       ),
+    );
+  }
+
+  /**
+   * Track question answered event
+   * @param params - The parameters for the question answered event
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackQuestionAnsweredEvent(
+    params: QuestionAnsweredParams,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: params.sessionId },
+      include: { bizUser: true },
+    });
+    if (!bizSession) return false;
+
+    const eventData: any = {
+      [EventAttributes.QUESTION_CVID]: params.questionCvid,
+      [EventAttributes.QUESTION_NAME]: params.questionName,
+      [EventAttributes.QUESTION_TYPE]: params.questionType,
+    };
+
+    if (!isUndefined(params.listAnswer)) {
+      eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
+    }
+    if (!isUndefined(params.numberAnswer)) {
+      eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
+    }
+    if (!isUndefined(params.textAnswer)) {
+      eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
+    }
+    const externalUserId = String(bizSession.bizUser.externalId);
+
+    return Boolean(
+      await this.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.QUESTION_ANSWERED,
+        bizSession.id,
+        eventData,
+        clientContext,
+      ),
+    );
+  }
+
+  /**
+   * Track checklist task clicked event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param taskId - The task ID
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistTaskClickedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    taskId: string,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+    const checklistData = version.data as unknown as ChecklistData;
+    const checklistItem = checklistData.items.find((item) => item.id === taskId);
+    if (!checklistItem) return false;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+      [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
+      [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
+    };
+    const externalUserId = String(bizSession.bizUser.externalId);
+
+    return Boolean(
+      await this.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_TASK_CLICKED,
+        bizSession.id,
+        eventData,
+        clientContext,
+      ),
+    );
+  }
+
+  /**
+   * Track checklist hidden event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistHiddenEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+    };
+
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return Boolean(
+      await this.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_HIDDEN,
+        bizSession.id,
+        eventData,
+        clientContext,
+      ),
+    );
+  }
+
+  /**
+   * Track checklist seen event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistSeenEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+    };
+
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return Boolean(
+      await this.trackEvent(
+        environment,
+        externalUserId,
+        BizEvents.CHECKLIST_SEEN,
+        bizSession.id,
+        eventData,
+        clientContext,
+      ),
+    );
+  }
+
+  /**
+   * Track tooltip target missing event
+   * @param sessionId - The session ID
+   * @param stepId - The step ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackTooltipTargetMissingEvent(
+    sessionId: string,
+    stepId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const version = bizSession.version;
+    const step = version.steps.find((s) => s.id === stepId);
+    if (!step) return false;
+    const stepIndex = version.steps.findIndex((s) => s.id === step.id);
+    if (stepIndex === -1) return false;
+
+    const total = version.steps.length;
+    const progress = Math.round(((stepIndex + 1) / total) * 100);
+
+    const eventData = {
+      [EventAttributes.FLOW_VERSION_ID]: version.id,
+      [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
+      [EventAttributes.FLOW_STEP_CVID]: step.cvid,
+      [EventAttributes.FLOW_STEP_NAME]: step.name,
+      [EventAttributes.FLOW_STEP_PROGRESS]: progress,
+    };
+
+    const externalUserId = String(bizSession.bizUser.externalId);
+    await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.TOOLTIP_TARGET_MISSING,
+      bizSession.id,
+      eventData,
+      clientContext,
     );
   }
 }
