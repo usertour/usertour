@@ -624,6 +624,10 @@ export class ContentOrchestratorService {
       forceGoToStep,
     };
 
+    this.logger.debug(
+      `Handle successful session, session: ${session.id}, reason: ${result.reason}`,
+    );
+
     if (!session) {
       return false;
     }
