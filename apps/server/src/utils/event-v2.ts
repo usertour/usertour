@@ -11,24 +11,24 @@ type BizSession = Prisma.BizSessionGetPayload<{
   };
 }>;
 
-export const getEventProgress = (eventName: string, customProgress: number) => {
-  if (eventName === BizEvents.FLOW_COMPLETED) {
+export const getEventProgress = (eventCodeName: string, customProgress: number) => {
+  if (eventCodeName === BizEvents.FLOW_COMPLETED) {
     return 100;
   }
-  if (eventName === BizEvents.FLOW_STEP_SEEN) {
+  if (eventCodeName === BizEvents.FLOW_STEP_SEEN) {
     return customProgress;
   }
   return 0;
 };
 
-export const getEventState = (eventName: string) => {
-  if (eventName === BizEvents.FLOW_ENDED) {
+export const getEventState = (eventCodeName: string) => {
+  if (eventCodeName === BizEvents.FLOW_ENDED) {
     return 1;
   }
-  if (eventName === BizEvents.CHECKLIST_DISMISSED) {
+  if (eventCodeName === BizEvents.CHECKLIST_DISMISSED) {
     return 1;
   }
-  if (eventName === BizEvents.LAUNCHER_DISMISSED) {
+  if (eventCodeName === BizEvents.LAUNCHER_DISMISSED) {
     return 1;
   }
   return 0;

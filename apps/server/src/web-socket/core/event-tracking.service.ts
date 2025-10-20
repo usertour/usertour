@@ -15,11 +15,11 @@ import {
 import {
   BizCompany,
   BizSession,
-  BizEvent,
   BizUser,
   Environment,
   VersionWithSteps,
   Step,
+  BizSessionWithEvents,
 } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
@@ -222,15 +222,16 @@ export class EventTrackingService {
    */
   private async handleQuestionAnswer(
     tx: Prisma.TransactionClient,
-    bizEvent: BizEvent,
+    bizEventId: string,
+    bizSession: BizSessionWithEvents,
     events: Record<string, unknown>,
-    contentId: string,
-    versionId: string,
-    bizUserId: string,
-    bizSessionId: string,
-    environmentId: string,
   ) {
     const cvid = events[EventAttributes.QUESTION_CVID] as string;
+    const bizUserId = bizSession.bizUserId;
+    const environmentId = bizSession.environmentId;
+    const contentId = bizSession.contentId;
+    const versionId = bizSession.versionId;
+    const bizSessionId = bizSession.id;
 
     // First, try to find existing answer by cvid and bizSessionId
     const existingAnswer = await tx.bizAnswer.findFirst({
@@ -241,7 +242,7 @@ export class EventTrackingService {
     });
 
     const answerData: any = {
-      bizEventId: bizEvent.id,
+      bizEventId: bizEventId,
       contentId,
       cvid,
       versionId,
@@ -274,20 +275,66 @@ export class EventTrackingService {
   }
 
   /**
+   * Process event creation
+   * @param tx - Database transaction client
+   * @param sessionId - Session ID
+   * @param eventName - Event name
+   * @param events - Event data
+   * @param eventId - Event ID
+   * @returns True if the event was created successfully
+   */
+  private async handleEventCreation(
+    tx: Prisma.TransactionClient,
+    sessionId: string,
+    eventId: string,
+    eventCodeName: string,
+    events: Record<string, any>,
+  ): Promise<boolean> {
+    // Re-fetch session with latest events
+    const bizSession = await tx.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizEvent: { include: { event: true } } },
+    });
+
+    if (!bizSession || bizSession.state === 1) {
+      return false;
+    }
+
+    // Validate event
+    if (!isValidEvent(eventCodeName, bizSession, events)) {
+      return false;
+    }
+    const bizUserId = bizSession.bizUserId;
+    // Create business event
+    const bizEvent = await tx.bizEvent.create({
+      data: {
+        bizUserId,
+        eventId,
+        data: events,
+        bizSessionId: sessionId,
+      },
+    });
+
+    // Handle question answered event
+    if (eventCodeName === BizEvents.QUESTION_ANSWERED) {
+      await this.handleQuestionAnswer(tx, bizEvent.id, bizSession, events);
+    }
+    return true;
+  }
+
+  /**
    * Execute event tracking transaction
    */
   private async executeEventTransaction(
     tx: Prisma.TransactionClient,
     environment: Environment,
     externalUserId: string,
-    eventName: string,
+    eventCodeName: string,
     sessionId: string,
     data: Record<string, any>,
     clientContext: ClientContext,
   ) {
     const { id: environmentId, projectId } = environment;
-
-    const eventData = this.addClientContextToEventData(data, clientContext);
 
     // Fetch required entities
     const [bizUser, bizSession, event] = await Promise.all([
@@ -303,7 +350,7 @@ export class EventTrackingService {
         },
       }),
       tx.event.findFirst({
-        where: { codeName: eventName, projectId },
+        where: { codeName: eventCodeName, projectId },
       }),
     ]);
 
@@ -312,70 +359,77 @@ export class EventTrackingService {
       return false;
     }
 
+    const eventData = this.addClientContextToEventData(data, clientContext);
     // Filter event data
     const events = await this.filterEventDataByAttributes(event.id, eventData);
     if (!events) {
       return false;
     }
 
-    // Calculate progress and state
-    const progress =
-      events?.flow_step_progress !== undefined
-        ? getEventProgress(eventName, events.flow_step_progress)
-        : undefined;
-    const state = getEventState(eventName);
-    // Re-fetch session with latest events
-    const latestBizSession = await tx.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizEvent: { include: { event: true } } },
-    });
+    // Create and validate business event
+    const isEventCreated = await this.handleEventCreation(
+      tx,
+      sessionId,
+      event.id,
+      eventCodeName,
+      events,
+    );
 
-    if (!latestBizSession || latestBizSession.state === 1) {
-      return false;
-    }
-
-    // Validate event
-    if (!isValidEvent(eventName, latestBizSession, events)) {
+    if (!isEventCreated) {
       return false;
     }
 
     // Update seen attributes
     await this.updateSeenAttributes(tx, bizUser, bizSession);
 
-    // Create business event
-    const bizEvent = await tx.bizEvent.create({
-      data: {
-        bizUserId: bizUser.id,
-        eventId: event.id,
-        data: events,
-        bizSessionId: bizSession.id,
-      },
-    });
+    // Update session progress and state
+    await this.updateSessionProgressAndState(tx, bizSession, eventCodeName, events);
 
-    // Update session
-    await tx.bizSession.update({
-      where: { id: bizSession.id },
-      data: {
-        ...(progress !== undefined && { progress: Math.max(progress, bizSession.progress) }),
-        state,
-      },
-    });
+    return true;
+  }
 
-    // Handle question answered event
-    if (eventName === BizEvents.QUESTION_ANSWERED) {
-      await this.handleQuestionAnswer(
-        tx,
-        bizEvent,
-        events,
-        bizSession.contentId,
-        bizSession.versionId,
-        bizUser.id,
-        bizSession.id,
-        environmentId,
-      );
+  /**
+   * Update session progress and state based on event data
+   * @param tx - Prisma transaction
+   * @param bizSession - Business session to update
+   * @param eventCodeName - Event code name
+   * @param events - Event data containing flow_step_progress
+   * @returns Promise<void>
+   */
+  private async updateSessionProgressAndState(
+    tx: Prisma.TransactionClient,
+    bizSession: { id: string; progress: number; state: number },
+    eventCodeName: string,
+    events?: { flow_step_progress?: number },
+  ): Promise<void> {
+    // Calculate progress and state
+    const newProgress =
+      events?.flow_step_progress !== undefined
+        ? getEventProgress(eventCodeName, events.flow_step_progress)
+        : null;
+    const newState = getEventState(eventCodeName);
+
+    // Prepare update data only if there are changes
+    const updateData: Partial<{ progress: number; state: number }> = {};
+
+    if (newProgress !== null) {
+      const maxProgress = Math.max(newProgress, bizSession.progress);
+      if (maxProgress !== bizSession.progress) {
+        updateData.progress = maxProgress;
+      }
     }
 
-    return bizEvent;
+    if (newState !== bizSession.state) {
+      updateData.state = newState;
+    }
+
+    // Update session only if there are changes
+    if (Object.keys(updateData).length > 0) {
+      await tx.bizSession.update({
+        where: { id: bizSession.id },
+        data: updateData,
+      });
+    }
   }
 
   /**
@@ -385,7 +439,7 @@ export class EventTrackingService {
    * @param eventName - The event name
    * @param sessionId - The session ID
    * @param data - The event data
-   * @returns The tracked event
+   * @returns True if the event was tracked successfully
    */
   async trackEvent(
     environment: Environment,
@@ -394,8 +448,8 @@ export class EventTrackingService {
     sessionId: string,
     data: Record<string, any>,
     clientContext: ClientContext,
-  ): Promise<BizEvent | false> {
-    return this.prisma.$transaction(async (tx) => {
+  ): Promise<boolean> {
+    return await this.prisma.$transaction(async (tx) => {
       return await this.executeEventTransaction(
         tx,
         environment,
@@ -691,7 +745,7 @@ export class EventTrackingService {
     externalUserId: string,
     endReason: string,
     clientContext: ClientContext,
-  ): Promise<BizEvent | false> {
+  ): Promise<boolean> {
     const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
       where: {
         bizSessionId: bizSession.id,

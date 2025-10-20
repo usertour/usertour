@@ -373,14 +373,14 @@ export class WebSocketV2Service {
     const contentType = bizSession.content.type as ContentDataType;
     if (contentType === ContentDataType.FLOW) {
       // Track flow ended event
-      const trackResult = await this.eventTrackingService.trackFlowEndedEvent(
+      const isEventTracked = await this.eventTrackingService.trackFlowEndedEvent(
         bizSession,
         environment,
         externalUserId,
         reason,
         clientContext,
       );
-      if (!trackResult) return false;
+      if (!isEventTracked) return false;
     }
     if (contentType === ContentDataType.CHECKLIST) {
       // Track checklist dismissed event
