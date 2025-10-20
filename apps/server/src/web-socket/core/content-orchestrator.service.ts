@@ -86,13 +86,13 @@ export class ContentOrchestratorService {
         if (!result.success) {
           return false;
         }
-        return await this.handleSuccessfulSession(context, { ...result, forceGoToStep: true });
+        return await this.handleContentStartResult(context, { ...result, forceGoToStep: true });
       }
 
       // Strategy 2: Handle existing session
       const existingSessionResult = await this.handleExistingSession(context);
       if (existingSessionResult.success) {
-        return await this.handleSuccessfulSession(context, existingSessionResult);
+        return await this.handleContentStartResult(context, existingSessionResult);
       }
 
       // Strategy 3: Try to auto start content
