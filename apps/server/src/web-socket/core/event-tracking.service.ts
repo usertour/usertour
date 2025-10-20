@@ -92,14 +92,14 @@ export class EventTrackingService {
   }
 
   /**
-   * Update seen attributes for a data record
+   * Update seen timestamps for a data record
    * @param data - Current data record
    * @param firstSeenKey - Key for first seen timestamp
    * @param lastSeenKey - Key for last seen timestamp
    * @param currentTime - Current timestamp
-   * @returns Updated data with seen attributes
+   * @returns Updated data with seen timestamps
    */
-  private updateSeenAttributesData(
+  private updateSeenTimestamps(
     data: Record<string, unknown>,
     firstSeenKey: string,
     lastSeenKey: string,
@@ -127,7 +127,7 @@ export class EventTrackingService {
     currentTime: string,
   ): Promise<BizUser> {
     const userData = (user.data as Record<string, unknown>) || {};
-    const updatedUserData = this.updateSeenAttributesData(
+    const updatedUserData = this.updateSeenTimestamps(
       userData,
       UserAttributes.FIRST_SEEN_AT,
       UserAttributes.LAST_SEEN_AT,
@@ -161,7 +161,7 @@ export class EventTrackingService {
     }
 
     const companyData = (company.data as Record<string, unknown>) || {};
-    const updatedCompanyData = this.updateSeenAttributesData(
+    const updatedCompanyData = this.updateSeenTimestamps(
       companyData,
       CompanyAttributes.FIRST_SEEN_AT,
       CompanyAttributes.LAST_SEEN_AT,
@@ -205,9 +205,9 @@ export class EventTrackingService {
   }
 
   /**
-   * Enrich event data with socket context
+   * Add client context to event data
    */
-  private enrichEventData(data: Record<string, unknown>, clientContext: ClientContext) {
+  private addClientContextToEventData(data: Record<string, unknown>, clientContext: ClientContext) {
     return clientContext
       ? {
           ...data,
@@ -219,9 +219,9 @@ export class EventTrackingService {
   }
 
   /**
-   * Validate required entities for event tracking
+   * Check if required entities are valid for event tracking
    */
-  private validateTrackingEntities(bizUser: BizUser, bizSession: BizSession, event: Event) {
+  private areTrackingEntitiesValid(bizUser: BizUser, bizSession: BizSession, event: Event) {
     return bizUser && bizSession && bizSession.state !== 1 && event;
   }
 
@@ -295,7 +295,7 @@ export class EventTrackingService {
   ) {
     const { id: environmentId, projectId } = environment;
 
-    const eventData = this.enrichEventData(data, clientContext);
+    const eventData = this.addClientContextToEventData(data, clientContext);
 
     // Fetch required entities
     const [bizUser, bizSession, event] = await Promise.all([
@@ -316,7 +316,7 @@ export class EventTrackingService {
     ]);
 
     // Validate entities
-    if (!this.validateTrackingEntities(bizUser, bizSession, event)) {
+    if (!this.areTrackingEntitiesValid(bizUser, bizSession, event)) {
       return false;
     }
 
@@ -559,7 +559,7 @@ export class EventTrackingService {
    * @param clientContext - The client context
    * @returns Void
    */
-  private async excuteGoToStepEvent(
+  private async executeGoToStepEvent(
     tx: Prisma.TransactionClient,
     sessionId: string,
     stepId: string,
@@ -646,7 +646,7 @@ export class EventTrackingService {
           clientContext,
         );
         if (stepId) {
-          await this.excuteGoToStepEvent(tx, bizSession.id, stepId, environment, clientContext);
+          await this.executeGoToStepEvent(tx, bizSession.id, stepId, environment, clientContext);
         }
 
         return true;
@@ -675,7 +675,7 @@ export class EventTrackingService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         // Track the FLOW_STEP_SEEN event
-        await this.excuteGoToStepEvent(tx, sessionId, stepId, environment, clientContext);
+        await this.executeGoToStepEvent(tx, sessionId, stepId, environment, clientContext);
         return true;
       });
     } catch (error) {
