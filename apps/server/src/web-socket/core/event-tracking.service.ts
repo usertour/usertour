@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
+import { Tx } from '@/common/types/schema';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event-v2';
 import {
   BizEvents,
@@ -120,11 +120,7 @@ export class EventTrackingService {
    * @param currentTime - Current timestamp
    * @returns Promise for user update operation
    */
-  private updateUserSeenAttributes(
-    tx: Prisma.TransactionClient,
-    user: BizUser,
-    currentTime: string,
-  ): Promise<BizUser> {
+  private updateUserSeenAttributes(tx: Tx, user: BizUser, currentTime: string): Promise<BizUser> {
     const userData = (user.data as Record<string, unknown>) || {};
     const updatedUserData = this.updateSeenTimestamps(
       userData,
@@ -147,7 +143,7 @@ export class EventTrackingService {
    * @returns Promise for company update operation or null
    */
   private async updateCompanySeenAttributes(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     bizCompanyId: string,
     currentTime: string,
   ): Promise<BizCompany | null> {
@@ -180,11 +176,7 @@ export class EventTrackingService {
    * @param bizSession - Business session
    * @returns Promise<void>
    */
-  private async updateSeenAttributes(
-    tx: Prisma.TransactionClient,
-    user: BizUser,
-    bizSession: { bizCompanyId: string | null },
-  ): Promise<void> {
+  private async updateSeenAttributes(tx: Tx, user: BizUser, bizCompanyId?: string): Promise<void> {
     const currentTime = new Date().toISOString();
 
     // Prepare update operations
@@ -193,10 +185,8 @@ export class EventTrackingService {
     ];
 
     // Add company update operation if company exists
-    if (bizSession.bizCompanyId) {
-      updateOperations.push(
-        this.updateCompanySeenAttributes(tx, bizSession.bizCompanyId, currentTime),
-      );
+    if (bizCompanyId) {
+      updateOperations.push(this.updateCompanySeenAttributes(tx, bizCompanyId, currentTime));
     }
 
     // Execute all updates in parallel within the transaction
@@ -221,7 +211,7 @@ export class EventTrackingService {
    * Handle question answer creation or update for question answered events
    */
   private async handleQuestionAnswer(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     bizEventId: string,
     bizSession: BizSessionWithEvents,
     events: Record<string, unknown>,
@@ -284,7 +274,7 @@ export class EventTrackingService {
    * @returns True if the event was created successfully
    */
   private async handleEventCreation(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     sessionId: string,
     eventId: string,
     eventCodeName: string,
@@ -326,7 +316,7 @@ export class EventTrackingService {
    * Execute event tracking transaction
    */
   private async executeEventTransaction(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     environment: Environment,
     externalUserId: string,
     eventCodeName: string,
@@ -380,7 +370,7 @@ export class EventTrackingService {
     }
 
     // Update seen attributes
-    await this.updateSeenAttributes(tx, bizUser, bizSession);
+    await this.updateSeenAttributes(tx, bizUser, bizSession.bizCompanyId);
 
     // Update session progress and state
     await this.updateSessionProgressAndState(tx, bizSession, eventCodeName, events);
@@ -397,7 +387,7 @@ export class EventTrackingService {
    * @returns Promise<void>
    */
   private async updateSessionProgressAndState(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     bizSession: { id: string; progress: number; state: number },
     eventCodeName: string,
     events?: { flow_step_progress?: number },
@@ -535,7 +525,7 @@ export class EventTrackingService {
    * @returns True if the event was tracked successfully
    */
   private async executeAutoStartEvent(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     customContentVersion: CustomContentVersion,
     bizSession: BizSession,
     environment: Environment,
@@ -606,7 +596,7 @@ export class EventTrackingService {
    * @returns Void
    */
   private async executeGoToStepEvent(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     sessionId: string,
     stepId: string,
     environment: Environment,

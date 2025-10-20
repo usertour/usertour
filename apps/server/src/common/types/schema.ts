@@ -1,19 +1,38 @@
-import * as Prisma from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import {
+  Event,
+  BizEvent,
+  BizSession,
+  BizCompany,
+  BizUser,
+  Step,
+  Version,
+  Theme,
+  Content,
+  Environment,
+  AttributeOnEvent,
+  Attribute,
+  BizAnswer,
+  ContentOnEnvironment,
+} from '@prisma/client';
 
-export type Event = Prisma.Event;
-export type BizEvent = Prisma.BizEvent;
-export type BizSession = Prisma.BizSession;
-export type BizCompany = Prisma.BizCompany;
-export type BizUser = Prisma.BizUser;
-export type Step = Prisma.Step;
-export type Version = Prisma.Version;
-export type Theme = Prisma.Theme;
-export type Content = Prisma.Content;
-export type Environment = Prisma.Environment;
-export type AttributeOnEvent = Prisma.AttributeOnEvent;
-export type Attribute = Prisma.Attribute;
-export type BizAnswer = Prisma.BizAnswer;
-export type ContentOnEnvironment = Prisma.ContentOnEnvironment;
+// Re-export Prisma types for convenience
+export {
+  Event,
+  BizEvent,
+  BizSession,
+  BizCompany,
+  BizUser,
+  Step,
+  Version,
+  Theme,
+  Content,
+  Environment,
+  AttributeOnEvent,
+  Attribute,
+  BizAnswer,
+  ContentOnEnvironment,
+};
 
 export type BizEventWithEvent = BizEvent & { event: Event };
 export type BizSessionWithEvents = BizSession & { bizEvent: BizEventWithEvent[] };
@@ -30,3 +49,6 @@ export type BizSessionWithContentAndVersion = BizSession & {
   content: Content;
   version: Version;
 };
+
+// Transaction client type alias for shorter usage
+export type Tx = Prisma.TransactionClient;
