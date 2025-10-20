@@ -559,7 +559,53 @@ export class ContentOrchestratorService {
       );
     }
 
-    return await this.handleSuccessfulSession(context, result);
+    return await this.handleSessionActivation(context, result);
+  }
+
+  /**
+   * Handles session activation and setup
+   */
+  private async handleSessionActivation(
+    context: ContentStartContext,
+    result: ContentStartResult,
+  ): Promise<boolean> {
+    const { server, socketData, socket } = context;
+    const { environment, externalUserId } = socketData;
+    const {
+      session,
+      postTracks,
+      forceGoToStep = false,
+      isActivateOtherSockets = true,
+      activate = true,
+    } = result;
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+    const activateSessionParams = {
+      server,
+      socket,
+      session,
+      socketData,
+      postTracks,
+      forceGoToStep,
+    };
+
+    this.logger.debug(
+      `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
+    );
+
+    if (!session) {
+      return false;
+    }
+
+    if (activate) {
+      if (!(await this.activateSocketSession(activateSessionParams))) {
+        return false;
+      }
+      if (isActivateOtherSockets) {
+        await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
+      }
+    }
+    // Check hide conditions and cancel content if necessary
+    return await this.checkHideConditions(context, session);
   }
 
   /**
@@ -594,52 +640,6 @@ export class ContentOrchestratorService {
     }
 
     return true;
-  }
-
-  /**
-   * Handles successful session creation and setup
-   */
-  private async handleSuccessfulSession(
-    context: ContentStartContext,
-    result: ContentStartResult,
-  ): Promise<boolean> {
-    const { server, socketData, socket } = context;
-    const { environment, externalUserId } = socketData;
-    const {
-      session,
-      postTracks,
-      forceGoToStep = false,
-      isActivateOtherSockets = true,
-      activate = true,
-    } = result;
-    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
-    const activateSessionParams = {
-      server,
-      socket,
-      session,
-      socketData,
-      postTracks,
-      forceGoToStep,
-    };
-
-    this.logger.debug(
-      `Handle successful session, session: ${session.id}, reason: ${result.reason}`,
-    );
-
-    if (!session) {
-      return false;
-    }
-
-    if (activate) {
-      if (!(await this.activateSocketSession(activateSessionParams))) {
-        return false;
-      }
-      if (isActivateOtherSockets) {
-        await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
-      }
-    }
-    // Check hide conditions and cancel content if necessary
-    return await this.checkHideConditions(context, session);
   }
 
   /**
