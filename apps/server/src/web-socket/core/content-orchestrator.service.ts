@@ -573,6 +573,14 @@ export class ContentOrchestratorService {
       isActivateOtherSockets = true,
       activate = true,
     } = result;
+
+    if (!session) {
+      this.logger.warn(
+        `Handle session activation, session: null, result: ${JSON.stringify(result)}`,
+      );
+      return false;
+    }
+
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const activateSessionParams = {
       server,
@@ -586,10 +594,6 @@ export class ContentOrchestratorService {
     this.logger.debug(
       `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
     );
-
-    if (!session) {
-      return false;
-    }
 
     if (activate) {
       if (!(await this.activateSocketSession(activateSessionParams))) {

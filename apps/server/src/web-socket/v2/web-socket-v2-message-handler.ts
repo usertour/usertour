@@ -159,7 +159,8 @@ export class WebSocketV2MessageHandler {
 
       return await handler.handle(context, payload);
     } catch (error) {
-      this.logger.error(`Error handling message kind ${kind}: ${error.message}`, {
+      this.logger.error({
+        message: `Error handling message kind ${kind}: ${error.message}`,
         stack: error.stack,
         socketId: socket.id,
         payload: payload,
