@@ -354,14 +354,8 @@ export class ContentOrchestratorService {
       (await this.distributedLockService.withRetryLock(
         lockKey,
         async () => {
-          const { session } = params;
           const socketData = await this.getSocketData(socket);
           if (!socketData) {
-            return false;
-          }
-          const contentType = session.content.type;
-          // If the session is already activated, return false
-          if (extractSessionByContentType(socketData, contentType)) {
             return false;
           }
           return await this.activateSocketSession({
