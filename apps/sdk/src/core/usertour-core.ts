@@ -366,19 +366,8 @@ export class UsertourCore extends Evented {
   private setupServerMessageHandler(): void {
     this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
       const { kind, payload } = message as { kind: string; payload: unknown };
-      return this.handleServerMessage(kind, payload);
+      return this.messageHandler.handleMessage(kind, payload);
     });
-  }
-
-  /**
-   * Handle server message by delegating to UsertourServerMessageHandler
-   * This method acts as a bridge between the socket service and the message handler
-   * @param kind - The message type identifier
-   * @param payload - The message payload data
-   * @returns Promise<boolean> - True if message was handled successfully
-   */
-  private async handleServerMessage(kind: string, payload: unknown): Promise<boolean> {
-    return this.messageHandler.handleMessage(kind, payload);
   }
 
   /**
