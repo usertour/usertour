@@ -381,10 +381,10 @@ export class UsertourSocket implements IUsertourSocket {
     this.socket?.on(event, async (message: unknown, callback: (success: boolean) => void) => {
       try {
         const result = await handler(message);
-        callback(result);
+        callback?.(result);
       } catch (error) {
-        logger.error(`Failed to process ${event}:`, error);
-        callback(false);
+        logger.error(`Failed to process ${event}:`, error, message);
+        callback?.(false);
       }
     });
   }

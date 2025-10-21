@@ -372,35 +372,35 @@ export class UsertourCore extends Evented {
    */
   private async handleServerMessage(kind: string, payload: any): Promise<boolean> {
     const handlers: Record<string, (payload: any) => boolean | Promise<boolean>> = {
-      SetFlowSession: (session) => {
-        const success = this.setFlowSession(session as CustomContentSession);
+      SetFlowSession: (payload) => {
+        const success = this.setFlowSession(payload as CustomContentSession);
         if (success) {
-          this.updateSocketAuthInfo({ flowSessionId: (session as CustomContentSession).id });
+          this.updateSocketAuthInfo({ flowSessionId: (payload as CustomContentSession).id });
         }
         return success;
       },
-      ForceGoToStep: (data) => this.forceGoToStep(data.sessionId, data.stepId),
-      UnsetFlowSession: (data) => {
-        const success = this.unsetFlowSession(data.sessionId);
+      ForceGoToStep: (payload) => this.forceGoToStep(payload.sessionId, payload.stepId),
+      UnsetFlowSession: (payload) => {
+        const success = this.unsetFlowSession(payload.sessionId);
         if (success) {
           this.updateSocketAuthInfo({ flowSessionId: undefined });
         }
         return success;
       },
-      SetChecklistSession: (session) => this.setChecklistSession(session as CustomContentSession),
-      UnsetChecklistSession: (data) => {
-        const success = this.unsetChecklistSession(data.sessionId);
+      SetChecklistSession: (payload) => this.setChecklistSession(payload as CustomContentSession),
+      UnsetChecklistSession: (payload) => {
+        const success = this.unsetChecklistSession(payload.sessionId);
         if (success) {
           this.updateSocketAuthInfo({ checklistSessionId: undefined });
         }
         return success;
       },
-      TrackClientCondition: (condition) => this.trackClientCondition(condition as TrackCondition),
-      UntrackClientCondition: (data) => this.removeConditions([data.conditionId]),
-      StartConditionWaitTimer: (condition) =>
-        this.startConditionWaitTimer(condition as ConditionWaitTimer),
-      CancelConditionWaitTimer: (condition) =>
-        this.cancelConditionWaitTimer(condition as ConditionWaitTimer),
+      TrackClientCondition: (payload) => this.trackClientCondition(payload as TrackCondition),
+      UntrackClientCondition: (payload) => this.removeConditions([payload.conditionId]),
+      StartConditionWaitTimer: (payload) =>
+        this.startConditionWaitTimer(payload as ConditionWaitTimer),
+      CancelConditionWaitTimer: (payload) =>
+        this.cancelConditionWaitTimer(payload as ConditionWaitTimer),
     };
 
     const handler = handlers[kind];
