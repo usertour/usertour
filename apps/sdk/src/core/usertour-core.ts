@@ -778,11 +778,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Synchronizes all stores with current data
-   */
-  private syncAllStores() {}
-
-  /**
    * Synchronizes tours store
    */
   private syncToursStore(tours: UsertourTour[]) {
