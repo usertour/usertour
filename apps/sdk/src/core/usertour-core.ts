@@ -45,6 +45,7 @@ import {
   ClientCondition,
 } from '@/types';
 import { UsertourChecklist } from './usertour-checklist';
+import { UsertourServerMessageHandler } from './usertour-server-message-handler';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -85,6 +86,7 @@ export class UsertourCore extends Evented {
   // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
   // Socket event listeners initialization flag
+  private messageHandler: UsertourServerMessageHandler;
 
   constructor() {
     super();
@@ -97,6 +99,7 @@ export class UsertourCore extends Evented {
       retryDelay: 1000,
     });
     this.id = uuidV4();
+    this.messageHandler = new UsertourServerMessageHandler(this);
     this.initializeEventListeners();
     // Initialize socket event listeners immediately since socket is created in constructor
     this.initializeSocketEventListeners();
@@ -362,71 +365,27 @@ export class UsertourCore extends Evented {
    */
   private setupServerMessageHandler(): void {
     this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
-      const { kind, payload } = message as { kind: string; payload: any };
+      const { kind, payload } = message as { kind: string; payload: unknown };
       return this.handleServerMessage(kind, payload);
     });
   }
 
   /**
-   * Handle server message by routing to appropriate handler based on kind
+   * Handle server message by delegating to UsertourServerMessageHandler
+   * This method acts as a bridge between the socket service and the message handler
+   * @param kind - The message type identifier
+   * @param payload - The message payload data
+   * @returns Promise<boolean> - True if message was handled successfully
    */
-  private async handleServerMessage(kind: string, payload: any): Promise<boolean> {
-    const handlers: Record<string, (payload: any) => boolean | Promise<boolean>> = {
-      SetFlowSession: (payload) => {
-        const success = this.setFlowSession(payload as CustomContentSession);
-        if (success) {
-          this.updateSocketAuthInfo({ flowSessionId: (payload as CustomContentSession).id });
-        }
-        return success;
-      },
-      ForceGoToStep: (payload) => this.forceGoToStep(payload.sessionId, payload.stepId),
-      UnsetFlowSession: (payload) => {
-        const success = this.unsetFlowSession(payload.sessionId);
-        if (success) {
-          this.updateSocketAuthInfo({ flowSessionId: undefined });
-        }
-        return success;
-      },
-      SetChecklistSession: (payload) => this.setChecklistSession(payload as CustomContentSession),
-      UnsetChecklistSession: (payload) => {
-        const success = this.unsetChecklistSession(payload.sessionId);
-        if (success) {
-          this.updateSocketAuthInfo({ checklistSessionId: undefined });
-        }
-        return success;
-      },
-      TrackClientCondition: (payload) => this.trackClientCondition(payload as TrackCondition),
-      UntrackClientCondition: (payload) => this.removeConditions([payload.conditionId]),
-      StartConditionWaitTimer: (payload) =>
-        this.startConditionWaitTimer(payload as ConditionWaitTimer),
-      CancelConditionWaitTimer: (payload) =>
-        this.cancelConditionWaitTimer(payload as ConditionWaitTimer),
-    };
-
-    const handler = handlers[kind];
-    if (!handler) {
-      logger.warn(`No handler found for server message kind: ${kind}`);
-      return false;
-    }
-
-    try {
-      return await handler(payload);
-    } catch (error) {
-      logger.error(`Error handling server message kind ${kind}:`, error);
-      return false;
-    }
+  private async handleServerMessage(kind: string, payload: unknown): Promise<boolean> {
+    return this.messageHandler.handleMessage(kind, payload);
   }
 
   /**
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
    */
-  private setFlowSession(session: CustomContentSession): boolean {
-    if (!session?.content?.id) {
-      logger.warn('Invalid session data provided to setFlowSession');
-      return false;
-    }
-
+  setFlowSession(session: CustomContentSession): boolean {
     const contentId = session.content.id;
 
     if (this.activatedTour) {
@@ -459,7 +418,7 @@ export class UsertourCore extends Evented {
    * Unsets the flow session and destroys the tour
    * @param sessionId - The session ID to unset
    */
-  private unsetFlowSession(sessionId: string): boolean {
+  unsetFlowSession(sessionId: string): boolean {
     if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
@@ -473,7 +432,7 @@ export class UsertourCore extends Evented {
    * @param stepId - The step ID to force go to step
    * @returns True if the step was forced to be shown, false otherwise
    */
-  private forceGoToStep(sessionId: string, stepId: string): boolean {
+  forceGoToStep(sessionId: string, stepId: string): boolean {
     if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
@@ -481,12 +440,7 @@ export class UsertourCore extends Evented {
     return true;
   }
 
-  private setChecklistSession(session: CustomContentSession): boolean {
-    if (!session?.content?.id) {
-      logger.warn('Invalid session data provided to setChecklistSession');
-      return false;
-    }
-
+  setChecklistSession(session: CustomContentSession): boolean {
     const contentId = session.content.id;
 
     if (this.activatedChecklist) {
@@ -517,7 +471,7 @@ export class UsertourCore extends Evented {
    * Unsets the checklist session and destroys the checklist
    * @param sessionId - The session ID to unset
    */
-  private unsetChecklistSession(sessionId: string): boolean {
+  unsetChecklistSession(sessionId: string): boolean {
     if (!this.activatedChecklist || this.activatedChecklist.getSessionId() !== sessionId) {
       return false;
     }
@@ -856,7 +810,7 @@ export class UsertourCore extends Evented {
   /**
    * Updates the socket auth info
    */
-  private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
+  updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
     const clientConditions = this.getClientConditions();
     const clientContext = getClientContext();
     this.socketService.updateCredentials({
@@ -877,7 +831,7 @@ export class UsertourCore extends Evented {
    * Tracks a client condition
    * @param condition - The condition to track
    */
-  private trackClientCondition(condition: TrackCondition): boolean {
+  trackClientCondition(condition: TrackCondition): boolean {
     this.conditionsMonitor?.addConditions([condition]);
     return true;
   }
@@ -886,7 +840,7 @@ export class UsertourCore extends Evented {
    * Removes conditions from the condition monitor
    * @param conditionIds - The IDs of the conditions to remove
    */
-  private removeConditions(conditionIds: string[]): boolean {
+  removeConditions(conditionIds: string[]): boolean {
     this.conditionsMonitor?.removeConditions(conditionIds);
     return true;
   }
@@ -895,7 +849,7 @@ export class UsertourCore extends Evented {
    * Starts a wait timer condition
    * @param condition - The condition to start
    */
-  private startConditionWaitTimer(condition: ConditionWaitTimer): boolean {
+  startConditionWaitTimer(condition: ConditionWaitTimer): boolean {
     this.waitTimerMonitor?.addWaitTimer(condition);
     return true;
   }
@@ -904,7 +858,7 @@ export class UsertourCore extends Evented {
    * Cancels a wait timer condition
    * @param condition - The condition to cancel
    */
-  private cancelConditionWaitTimer(condition: ConditionWaitTimer): boolean {
+  cancelConditionWaitTimer(condition: ConditionWaitTimer): boolean {
     this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
     return true;
   }
