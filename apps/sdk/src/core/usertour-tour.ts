@@ -469,11 +469,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async close(reason: contentEndReason = contentEndReason.USER_CLOSED) {
     const sessionId = this.getSessionId();
-    // End flow
-    await this.endFlow(reason);
     // Destroy the tour
     this.destroy();
     this.trigger(TOUR_CLOSED, { sessionId });
+    // End flow
+    await this.endFlow(reason);
   }
 
   /**
