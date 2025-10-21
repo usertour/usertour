@@ -1040,14 +1040,14 @@ export class ContentOrchestratorService {
     const currentStepCvid = sessionResult.currentStepCvid ?? undefined;
 
     // Create content session
-    const contentSession = await this.sessionBuilderService.createContentSession(
+    const session = await this.sessionBuilderService.createContentSession(
       sessionResult.sessionId!,
       customContentVersion,
       socketData,
       currentStepCvid,
     );
 
-    if (!contentSession) {
+    if (!session) {
       return {
         success: false,
         reason: 'Failed to create content session',
@@ -1056,7 +1056,7 @@ export class ContentOrchestratorService {
 
     return {
       success: true,
-      session: contentSession,
+      session,
     };
   }
 
