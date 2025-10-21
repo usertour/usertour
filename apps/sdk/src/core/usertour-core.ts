@@ -98,7 +98,6 @@ export class UsertourCore extends Evented {
     });
     this.id = uuidV4();
     this.initializeEventListeners();
-    // Initialize socket event listeners immediately since socket is created in constructor
     this.initializeSocketEventListeners();
     this.initializeConditionsMonitor();
     this.initializeWaitTimerMonitor();
