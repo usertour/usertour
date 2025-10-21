@@ -45,7 +45,6 @@ import {
   ClientCondition,
 } from '@/types';
 import { UsertourChecklist } from './usertour-checklist';
-import { UsertourServerMessageHandler } from './usertour-server-message-handler';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -86,7 +85,6 @@ export class UsertourCore extends Evented {
   // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
   // Socket event listeners initialization flag
-  private messageHandler: UsertourServerMessageHandler;
 
   constructor() {
     super();
@@ -99,168 +97,12 @@ export class UsertourCore extends Evented {
       retryDelay: 1000,
     });
     this.id = uuidV4();
-    this.messageHandler = new UsertourServerMessageHandler(this);
     this.initializeEventListeners();
     // Initialize socket event listeners immediately since socket is created in constructor
     this.initializeSocketEventListeners();
     this.initializeConditionsMonitor();
     this.initializeWaitTimerMonitor();
     this.initializeURLMonitor();
-  }
-
-  /**
-   * Sets the base z-index for UI elements
-   * @param baseZIndex - The base z-index value to set
-   */
-  setBaseZIndex(baseZIndex: number) {
-    this.baseZIndex = baseZIndex;
-  }
-
-  /**
-   * Gets the current base z-index value
-   * @returns The current base z-index
-   */
-  getBaseZIndex() {
-    return this.baseZIndex;
-  }
-
-  /**
-   * Sets the time allowed for target element to be missing
-   * @param seconds - Time in seconds
-   * @throws {Error} If seconds is greater than 10
-   */
-  setTargetMissingSeconds(seconds: number) {
-    if (seconds > 10) {
-      throw new Error('Target missing time cannot exceed 10 seconds');
-    }
-    this.targetMissingSeconds = seconds;
-  }
-
-  /**
-   * Gets the time allowed for target element to be missing
-   * @returns Time in seconds
-   */
-  getTargetMissingSeconds() {
-    return this.targetMissingSeconds;
-  }
-
-  /**
-   * Sets a custom navigation function to override default window.location.href behavior
-   * @param customNavigate - Function taking a single string url parameter, or null to use default behavior
-   */
-  setCustomNavigate(customNavigate: ((url: string) => void) | null) {
-    this.customNavigate = customNavigate;
-  }
-
-  /**
-   * Gets the current custom navigation function
-   * @returns The current custom navigation function or null if using default behavior
-   */
-  getCustomNavigate(): ((url: string) => void) | null {
-    return this.customNavigate;
-  }
-
-  /**
-   * Gets user attributes from attribute manager
-   * @returns Current user attributes
-   */
-  getUserAttributes(): UserTourTypes.Attributes {
-    return this.attributeManager.getUserAttributes();
-  }
-
-  /**
-   * Gets company attributes from attribute manager
-   * @returns Current company attributes
-   */
-  getCompanyAttributes(): UserTourTypes.Attributes {
-    return this.attributeManager.getCompanyAttributes();
-  }
-
-  /**
-   * Gets membership attributes from attribute manager
-   * @returns Current membership attributes
-   */
-  getMembershipAttributes(): UserTourTypes.Attributes {
-    return this.attributeManager.getMembershipAttributes();
-  }
-
-  /**
-   * Gets client conditions from conditions monitor
-   * @returns Array of client conditions with their current state
-   */
-  getClientConditions(): ClientCondition[] {
-    if (!this.conditionsMonitor) return [];
-
-    const conditions = this.conditionsMonitor.getConditions();
-    const activeIds = this.conditionsMonitor.getActiveConditionIds();
-
-    return conditions.map((trackCondition) => ({
-      contentId: trackCondition.contentId,
-      versionId: trackCondition.versionId,
-      contentType: trackCondition.contentType,
-      conditionId: trackCondition.condition.id,
-      isActive: activeIds.has(trackCondition.condition.id),
-    }));
-  }
-
-  /**
-   * Gets attribute manager instance
-   * @returns The attribute manager instance
-   */
-  getAttributeManager(): UsertourAttributeManager {
-    return this.attributeManager;
-  }
-
-  /**
-   * Initializes DOM event listeners for the application
-   */
-  private initializeEventListeners() {
-    this.once(SDK_DOM_LOADED, async () => {
-      const initialized = await this.uiManager.initialize({
-        toursStore: this.toursStore,
-        checklistsStore: this.checklistsStore,
-      });
-      if (!initialized) {
-        logger.error('Failed to initialize UI manager');
-      }
-    });
-
-    if (document?.readyState !== 'loading') {
-      this.trigger(SDK_DOM_LOADED);
-    } else if (document) {
-      on(document, 'DOMContentLoaded', () => {
-        this.trigger(SDK_DOM_LOADED);
-      });
-    }
-    if (window) {
-      on(window, 'message', this.handlePreviewMessage);
-    }
-  }
-
-  /**
-   * Handles preview messages from the builder
-   * @param e - Message event containing preview data
-   */
-  private handlePreviewMessage(e: MessageEvent) {
-    const message = getValidMessage(e);
-    if (!message) {
-      return;
-    }
-    const { environmentId, contentId, idempotentKey } = message;
-    const { versionId, testUser, token } = message;
-    if (message.kind !== MESSAGE_START_FLOW_WITH_TOKEN) {
-      return;
-    }
-    // send success message to builder
-    sendPreviewSuccessMessage(idempotentKey);
-    this.preview({
-      token,
-      environmentId,
-      contentId,
-      versionId,
-      mode: SDKSettingsMode.PREVIEW,
-      userId: testUser.id,
-    });
   }
 
   /**
@@ -271,193 +113,6 @@ export class UsertourCore extends Evented {
     if (!this.isPreview()) {
       this.startOptions = Object.assign({}, startOptions);
     }
-  }
-
-  /**
-   * Previews content with specified options and test user
-   * @param startOptions - Preview configuration options including test user ID
-   */
-  async preview(startOptions: AppStartOptions & { userId: string }) {
-    this.startOptions = Object.assign({}, startOptions);
-    //reset
-    this.reset();
-  }
-
-  /**
-   * Starts a content
-   * @param contentId - The content ID to start
-   * @param opts - The options for starting the content
-   * @returns A promise that resolves when the content is started
-   */
-  async startContent(
-    contentId: string,
-    startReason: contentStartReason,
-    opts?: UserTourTypes.StartOptions,
-  ) {
-    // Build start options
-    const startOptions = {
-      stepCvid: opts?.cvid,
-      startReason,
-      contentId,
-    };
-    // Start the content
-    await this.socketService.startContent(startOptions, { batch: true });
-  }
-
-  /**
-   * Starts a tour with given content ID
-   * @param contentId - content ID to start specific tour
-   * @param opts - Optional start options
-   */
-  async startTour(contentId: string, opts?: UserTourTypes.StartOptions) {
-    await this.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
-  }
-
-  /**
-   * Handles the navigation
-   * @param data - The data to navigate
-   */
-  handleNavigate(data: any) {
-    const userAttributes = this.getUserAttributes();
-    const url = buildNavigateUrl(data.value, userAttributes);
-
-    // Check if custom navigation function is set
-    const customNavigate = this.getCustomNavigate();
-    if (customNavigate) {
-      // Use custom navigation function
-      customNavigate(url);
-    } else {
-      // Use default behavior
-      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
-    }
-  }
-
-  /**
-   * Checks if app is in preview mode
-   * @returns True if in preview mode, false otherwise
-   */
-  isPreview() {
-    return this.startOptions.mode === SDKSettingsMode.PREVIEW;
-  }
-
-  /**
-   * Determines if current user should be used
-   * @returns False if in preview mode, true otherwise
-   */
-  useCurrentUser() {
-    if (this.isPreview()) {
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Initialize socket event listeners
-   * This method sets up all WebSocket event handlers after socket is initialized
-   */
-  private initializeSocketEventListeners(): void {
-    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
-      const { kind, payload } = message as { kind: string; payload: unknown };
-      return this.messageHandler.handleMessage(kind, payload);
-    });
-  }
-
-  /**
-   * Sets the flow session and manages tour lifecycle
-   * @param session - The SDK content session to set
-   */
-  setFlowSession(session: CustomContentSession): boolean {
-    const contentId = session.content.id;
-
-    if (this.activatedTour) {
-      if (this.activatedTour.getContentId() === contentId) {
-        this.activatedTour.updateSession(session);
-        this.activatedTour.refreshStore();
-        return true;
-      }
-      this.cleanupActivatedTour();
-    }
-
-    // Create new tour
-    const targetTour = new UsertourTour(this, new UsertourSession(session));
-    targetTour.on(TOUR_CLOSED, () => {
-      this.cleanupActivatedTour();
-    });
-    this.activatedTour = targetTour;
-    // Sync store
-    this.syncToursStore([this.activatedTour]);
-    // Show tour from the session current step
-    if (session.currentStep?.cvid) {
-      targetTour.showStepByCvid(session.currentStep?.cvid);
-    } else {
-      targetTour.showStepByIndex(0);
-    }
-    return true;
-  }
-
-  /**
-   * Unsets the flow session and destroys the tour
-   * @param sessionId - The session ID to unset
-   */
-  unsetFlowSession(sessionId: string): boolean {
-    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
-      return false;
-    }
-    this.cleanupActivatedTour();
-    return true;
-  }
-
-  /**
-   * Forces a step to be shown in the tour
-   * @param sessionId - The session ID to force go to step
-   * @param stepId - The step ID to force go to step
-   * @returns True if the step was forced to be shown, false otherwise
-   */
-  forceGoToStep(sessionId: string, stepId: string): boolean {
-    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
-      return false;
-    }
-    this.activatedTour.showStepById(stepId);
-    return true;
-  }
-
-  setChecklistSession(session: CustomContentSession): boolean {
-    const contentId = session.content.id;
-
-    if (this.activatedChecklist) {
-      if (this.activatedChecklist.getContentId() === contentId) {
-        this.activatedChecklist.updateSession(session);
-        this.activatedChecklist.refreshStore();
-        if (!this.activatedTour) {
-          this.activatedChecklist.expand(true);
-        }
-        return true;
-      }
-      this.cleanupActivatedChecklist();
-    }
-
-    // Create new checklist
-    this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
-    this.activatedChecklist.on(CHECKLIST_CLOSED, () => {
-      this.cleanupActivatedChecklist();
-    });
-    // Sync store
-    this.syncChecklistsStore([this.activatedChecklist]);
-    // Show checklist
-    this.activatedChecklist.show();
-    return true;
-  }
-
-  /**
-   * Unsets the checklist session and destroys the checklist
-   * @param sessionId - The session ID to unset
-   */
-  unsetChecklistSession(sessionId: string): boolean {
-    if (!this.activatedChecklist || this.activatedChecklist.getSessionId() !== sessionId) {
-      return false;
-    }
-    this.cleanupActivatedChecklist();
-    return true;
   }
 
   /**
@@ -536,6 +191,16 @@ export class UsertourCore extends Evented {
   isStarted(contentId: string) {
     console.log('isStarted', contentId);
     return false;
+  }
+
+  /**
+   * Previews content with specified options and test user
+   * @param startOptions - Preview configuration options including test user ID
+   */
+  async preview(startOptions: AppStartOptions & { userId: string }) {
+    this.startOptions = Object.assign({}, startOptions);
+    //reset
+    this.reset();
   }
 
   /**
@@ -662,6 +327,451 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Ends all active content and resets the application
+   */
+  async endAll() {
+    this.reset();
+  }
+
+  /**
+   * Starts a content
+   * @param contentId - The content ID to start
+   * @param opts - The options for starting the content
+   * @returns A promise that resolves when the content is started
+   */
+  async startContent(
+    contentId: string,
+    startReason: contentStartReason,
+    opts?: UserTourTypes.StartOptions,
+  ) {
+    // Build start options
+    const startOptions = {
+      stepCvid: opts?.cvid,
+      startReason,
+      contentId,
+    };
+    // Start the content
+    await this.socketService.startContent(startOptions, { batch: true });
+  }
+
+  /**
+   * Starts a tour with given content ID
+   * @param contentId - content ID to start specific tour
+   * @param opts - Optional start options
+   */
+  async startTour(contentId: string, opts?: UserTourTypes.StartOptions) {
+    await this.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
+  }
+
+  /**
+   * Handles the navigation
+   * @param data - The data to navigate
+   */
+  handleNavigate(data: any) {
+    const userAttributes = this.getUserAttributes();
+    const url = buildNavigateUrl(data.value, userAttributes);
+
+    // Check if custom navigation function is set
+    const customNavigate = this.getCustomNavigate();
+    if (customNavigate) {
+      // Use custom navigation function
+      customNavigate(url);
+    } else {
+      // Use default behavior
+      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
+    }
+  }
+
+  /**
+   * Checks if app is in preview mode
+   * @returns True if in preview mode, false otherwise
+   */
+  isPreview() {
+    return this.startOptions.mode === SDKSettingsMode.PREVIEW;
+  }
+
+  /**
+   * Determines if current user should be used
+   * @returns False if in preview mode, true otherwise
+   */
+  useCurrentUser() {
+    if (this.isPreview()) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Sets the base z-index for UI elements
+   * @param baseZIndex - The base z-index value to set
+   */
+  setBaseZIndex(baseZIndex: number) {
+    this.baseZIndex = baseZIndex;
+  }
+
+  /**
+   * Gets the current base z-index value
+   * @returns The current base z-index
+   */
+  getBaseZIndex() {
+    return this.baseZIndex;
+  }
+
+  /**
+   * Sets the time allowed for target element to be missing
+   * @param seconds - Time in seconds
+   * @throws {Error} If seconds is greater than 10
+   */
+  setTargetMissingSeconds(seconds: number) {
+    if (seconds > 10) {
+      throw new Error('Target missing time cannot exceed 10 seconds');
+    }
+    this.targetMissingSeconds = seconds;
+  }
+
+  /**
+   * Gets the time allowed for target element to be missing
+   * @returns Time in seconds
+   */
+  getTargetMissingSeconds() {
+    return this.targetMissingSeconds;
+  }
+
+  /**
+   * Sets a custom navigation function to override default window.location.href behavior
+   * @param customNavigate - Function taking a single string url parameter, or null to use default behavior
+   */
+  setCustomNavigate(customNavigate: ((url: string) => void) | null) {
+    this.customNavigate = customNavigate;
+  }
+
+  /**
+   * Gets the current custom navigation function
+   * @returns The current custom navigation function or null if using default behavior
+   */
+  getCustomNavigate(): ((url: string) => void) | null {
+    return this.customNavigate;
+  }
+
+  /**
+   * Gets user attributes from attribute manager
+   * @returns Current user attributes
+   */
+  getUserAttributes(): UserTourTypes.Attributes {
+    return this.attributeManager.getUserAttributes();
+  }
+
+  /**
+   * Gets client conditions from conditions monitor
+   * @returns Array of client conditions with their current state
+   */
+  getClientConditions(): ClientCondition[] {
+    if (!this.conditionsMonitor) return [];
+
+    const conditions = this.conditionsMonitor.getConditions();
+    const activeIds = this.conditionsMonitor.getActiveConditionIds();
+
+    return conditions.map((trackCondition) => ({
+      contentId: trackCondition.contentId,
+      versionId: trackCondition.versionId,
+      contentType: trackCondition.contentType,
+      conditionId: trackCondition.condition.id,
+      isActive: activeIds.has(trackCondition.condition.id),
+    }));
+  }
+
+  /**
+   * Initializes DOM event listeners for the application
+   */
+  private initializeEventListeners() {
+    this.once(SDK_DOM_LOADED, async () => {
+      const initialized = await this.uiManager.initialize({
+        toursStore: this.toursStore,
+        checklistsStore: this.checklistsStore,
+      });
+      if (!initialized) {
+        logger.error('Failed to initialize UI manager');
+      }
+    });
+
+    if (document?.readyState !== 'loading') {
+      this.trigger(SDK_DOM_LOADED);
+    } else if (document) {
+      on(document, 'DOMContentLoaded', () => {
+        this.trigger(SDK_DOM_LOADED);
+      });
+    }
+    if (window) {
+      on(window, 'message', this.handlePreviewMessage);
+    }
+  }
+
+  /**
+   * Handles preview messages from the builder
+   * @param e - Message event containing preview data
+   */
+  private handlePreviewMessage(e: MessageEvent) {
+    const message = getValidMessage(e);
+    if (!message) {
+      return;
+    }
+    const { environmentId, contentId, idempotentKey } = message;
+    const { versionId, testUser, token } = message;
+    if (message.kind !== MESSAGE_START_FLOW_WITH_TOKEN) {
+      return;
+    }
+    // send success message to builder
+    sendPreviewSuccessMessage(idempotentKey);
+    this.preview({
+      token,
+      environmentId,
+      contentId,
+      versionId,
+      mode: SDKSettingsMode.PREVIEW,
+      userId: testUser.id,
+    });
+  }
+
+  /**
+   * Initialize socket event listeners
+   * This method sets up all WebSocket event handlers after socket is initialized
+   */
+  private initializeSocketEventListeners(): void {
+    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
+      const { kind, payload } = message as { kind: string; payload: unknown };
+      return this.handleServerMessage(kind, payload);
+    });
+  }
+
+  /**
+   * Handle server message by routing to appropriate handler
+   * @param kind - The message type identifier
+   * @param payload - The message payload data
+   * @returns Promise<boolean> - True if message was handled successfully
+   */
+  private async handleServerMessage(kind: string, payload: unknown): Promise<boolean> {
+    const handlers: Record<string, (payload: unknown) => boolean | Promise<boolean>> = {
+      SetFlowSession: (payload) => this.handleSetFlowSession(payload),
+      ForceGoToStep: (payload) => this.handleForceGoToStep(payload),
+      UnsetFlowSession: (payload) => this.handleUnsetFlowSession(payload),
+      SetChecklistSession: (payload) => this.handleSetChecklistSession(payload),
+      UnsetChecklistSession: (payload) => this.handleUnsetChecklistSession(payload),
+      TrackClientCondition: (payload) => this.handleTrackClientCondition(payload),
+      UntrackClientCondition: (payload) => this.handleUntrackClientCondition(payload),
+      StartConditionWaitTimer: (payload) => this.handleStartConditionWaitTimer(payload),
+      CancelConditionWaitTimer: (payload) => this.handleCancelConditionWaitTimer(payload),
+    };
+
+    const handler = handlers[kind];
+    if (!handler) {
+      logger.warn(`No handler found for server message kind: ${kind}`);
+      return false;
+    }
+
+    try {
+      return await handler(payload);
+    } catch (error) {
+      logger.error(`Error handling server message kind ${kind}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Handles SetFlowSession message - creates or updates a flow session
+   * @param payload - The flow session data
+   * @returns boolean - True if session was set successfully
+   */
+  private handleSetFlowSession(payload: unknown): boolean {
+    const success = this.setFlowSession(payload as CustomContentSession);
+    if (success) {
+      this.updateSocketAuthInfo({ flowSessionId: (payload as CustomContentSession).id });
+    }
+    return success;
+  }
+
+  /**
+   * Handles ForceGoToStep message - forces navigation to a specific step
+   * @param payload - Contains sessionId and stepId
+   * @returns boolean - True if step navigation was successful
+   */
+  private handleForceGoToStep(payload: unknown): boolean {
+    const { sessionId, stepId } = payload as { sessionId: string; stepId: string };
+    return this.forceGoToStep(sessionId, stepId);
+  }
+
+  /**
+   * Handles UnsetFlowSession message - removes a flow session
+   * @param payload - Contains sessionId to remove
+   * @returns boolean - True if session was removed successfully
+   */
+  private handleUnsetFlowSession(payload: unknown): boolean {
+    const { sessionId } = payload as { sessionId: string };
+    const success = this.unsetFlowSession(sessionId);
+    if (success) {
+      this.updateSocketAuthInfo({ flowSessionId: undefined });
+    }
+    return success;
+  }
+
+  /**
+   * Handles SetChecklistSession message - creates or updates a checklist session
+   * @param payload - The checklist session data
+   * @returns boolean - True if session was set successfully
+   */
+  private handleSetChecklistSession(payload: unknown): boolean {
+    return this.setChecklistSession(payload as CustomContentSession);
+  }
+
+  /**
+   * Handles UnsetChecklistSession message - removes a checklist session
+   * @param payload - Contains sessionId to remove
+   * @returns boolean - True if session was removed successfully
+   */
+  private handleUnsetChecklistSession(payload: unknown): boolean {
+    const { sessionId } = payload as { sessionId: string };
+    const success = this.unsetChecklistSession(sessionId);
+    if (success) {
+      this.updateSocketAuthInfo({ checklistSessionId: undefined });
+    }
+    return success;
+  }
+
+  /**
+   * Handles TrackClientCondition message - starts tracking a client condition
+   * @param payload - The condition to track
+   * @returns boolean - True if condition tracking was started successfully
+   */
+  private handleTrackClientCondition(payload: unknown): boolean {
+    return this.trackClientCondition(payload as TrackCondition);
+  }
+
+  /**
+   * Handles UntrackClientCondition message - stops tracking a client condition
+   * @param payload - Contains conditionId to stop tracking
+   * @returns boolean - True if condition tracking was stopped successfully
+   */
+  private handleUntrackClientCondition(payload: unknown): boolean {
+    const { conditionId } = payload as { conditionId: string };
+    return this.removeConditions([conditionId]);
+  }
+
+  /**
+   * Handles StartConditionWaitTimer message - starts a condition wait timer
+   * @param payload - The wait timer configuration
+   * @returns boolean - True if timer was started successfully
+   */
+  private handleStartConditionWaitTimer(payload: unknown): boolean {
+    return this.startConditionWaitTimer(payload as ConditionWaitTimer);
+  }
+
+  /**
+   * Handles CancelConditionWaitTimer message - cancels a condition wait timer
+   * @param payload - The wait timer configuration to cancel
+   * @returns boolean - True if timer was cancelled successfully
+   */
+  private handleCancelConditionWaitTimer(payload: unknown): boolean {
+    return this.cancelConditionWaitTimer(payload as ConditionWaitTimer);
+  }
+
+  /**
+   * Sets the flow session and manages tour lifecycle
+   * @param session - The SDK content session to set
+   */
+  private setFlowSession(session: CustomContentSession): boolean {
+    const contentId = session.content.id;
+
+    if (this.activatedTour) {
+      if (this.activatedTour.getContentId() === contentId) {
+        this.activatedTour.updateSession(session);
+        this.activatedTour.refreshStore();
+        return true;
+      }
+      this.cleanupActivatedTour();
+    }
+
+    // Create new tour
+    const targetTour = new UsertourTour(this, new UsertourSession(session));
+    targetTour.on(TOUR_CLOSED, () => {
+      this.cleanupActivatedTour();
+    });
+    this.activatedTour = targetTour;
+    // Sync store
+    this.syncToursStore([this.activatedTour]);
+    // Show tour from the session current step
+    if (session.currentStep?.cvid) {
+      targetTour.showStepByCvid(session.currentStep?.cvid);
+    } else {
+      targetTour.showStepByIndex(0);
+    }
+    return true;
+  }
+
+  /**
+   * Unsets the flow session and destroys the tour
+   * @param sessionId - The session ID to unset
+   */
+  private unsetFlowSession(sessionId: string): boolean {
+    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
+      return false;
+    }
+    this.cleanupActivatedTour();
+    return true;
+  }
+
+  /**
+   * Forces a step to be shown in the tour
+   * @param sessionId - The session ID to force go to step
+   * @param stepId - The step ID to force go to step
+   * @returns True if the step was forced to be shown, false otherwise
+   */
+  private forceGoToStep(sessionId: string, stepId: string): boolean {
+    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
+      return false;
+    }
+    this.activatedTour.showStepById(stepId);
+    return true;
+  }
+
+  private setChecklistSession(session: CustomContentSession): boolean {
+    const contentId = session.content.id;
+
+    if (this.activatedChecklist) {
+      if (this.activatedChecklist.getContentId() === contentId) {
+        this.activatedChecklist.updateSession(session);
+        this.activatedChecklist.refreshStore();
+        if (!this.activatedTour) {
+          this.activatedChecklist.expand(true);
+        }
+        return true;
+      }
+      this.cleanupActivatedChecklist();
+    }
+
+    // Create new checklist
+    this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
+    this.activatedChecklist.on(CHECKLIST_CLOSED, () => {
+      this.cleanupActivatedChecklist();
+    });
+    // Sync store
+    this.syncChecklistsStore([this.activatedChecklist]);
+    // Show checklist
+    this.activatedChecklist.show();
+    return true;
+  }
+
+  /**
+   * Unsets the checklist session and destroys the checklist
+   * @param sessionId - The session ID to unset
+   */
+  private unsetChecklistSession(sessionId: string): boolean {
+    if (!this.activatedChecklist || this.activatedChecklist.getSessionId() !== sessionId) {
+      return false;
+    }
+    this.cleanupActivatedChecklist();
+    return true;
+  }
+
+  /**
    * Gets the shared SocketService instance
    */
   getSocketService(): UsertourSocket {
@@ -682,33 +792,6 @@ export class UsertourCore extends Evented {
 
   private syncChecklistsStore(checklists: UsertourChecklist[]) {
     this.checklistsStore.setData([...checklists]);
-  }
-
-  /**
-   * Resets the application state
-   */
-  reset() {
-    // Cleanup user data
-    this.cleanupUserData();
-    // Cleanup activated tour
-    this.cleanupActivatedTour();
-    // Cleanup activated checklist
-    this.cleanupActivatedChecklist();
-    // Cleanup condition monitor
-    this.cleanupConditionsMonitor();
-    // Cleanup wait timer monitor
-    this.cleanupWaitTimerMonitor();
-    // Stop URL monitor
-    this.cleanupURLMonitor();
-    // Cleanup time manager
-    this.cleanupTimeManager();
-  }
-
-  /**
-   * Ends all active content and resets the application
-   */
-  async endAll() {
-    this.reset();
   }
 
   /**
@@ -791,7 +874,7 @@ export class UsertourCore extends Evented {
   /**
    * Updates the socket auth info
    */
-  updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
+  private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
     const clientConditions = this.getClientConditions();
     const clientContext = getClientContext();
     this.socketService.updateCredentials({
@@ -812,7 +895,7 @@ export class UsertourCore extends Evented {
    * Tracks a client condition
    * @param condition - The condition to track
    */
-  trackClientCondition(condition: TrackCondition): boolean {
+  private trackClientCondition(condition: TrackCondition): boolean {
     this.conditionsMonitor?.addConditions([condition]);
     return true;
   }
@@ -821,7 +904,7 @@ export class UsertourCore extends Evented {
    * Removes conditions from the condition monitor
    * @param conditionIds - The IDs of the conditions to remove
    */
-  removeConditions(conditionIds: string[]): boolean {
+  private removeConditions(conditionIds: string[]): boolean {
     this.conditionsMonitor?.removeConditions(conditionIds);
     return true;
   }
@@ -830,7 +913,7 @@ export class UsertourCore extends Evented {
    * Starts a wait timer condition
    * @param condition - The condition to start
    */
-  startConditionWaitTimer(condition: ConditionWaitTimer): boolean {
+  private startConditionWaitTimer(condition: ConditionWaitTimer): boolean {
     this.waitTimerMonitor?.addWaitTimer(condition);
     return true;
   }
@@ -839,7 +922,7 @@ export class UsertourCore extends Evented {
    * Cancels a wait timer condition
    * @param condition - The condition to cancel
    */
-  cancelConditionWaitTimer(condition: ConditionWaitTimer): boolean {
+  private cancelConditionWaitTimer(condition: ConditionWaitTimer): boolean {
     this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
     return true;
   }
@@ -907,5 +990,25 @@ export class UsertourCore extends Evented {
    */
   private cleanupTimeManager(): void {
     timerManager.cleanup();
+  }
+
+  /**
+   * Resets the application state
+   */
+  reset() {
+    // Cleanup user data
+    this.cleanupUserData();
+    // Cleanup activated tour
+    this.cleanupActivatedTour();
+    // Cleanup activated checklist
+    this.cleanupActivatedChecklist();
+    // Cleanup condition monitor
+    this.cleanupConditionsMonitor();
+    // Cleanup wait timer monitor
+    this.cleanupWaitTimerMonitor();
+    // Stop URL monitor
+    this.cleanupURLMonitor();
+    // Cleanup time manager
+    this.cleanupTimeManager();
   }
 }
