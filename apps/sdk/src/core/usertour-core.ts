@@ -356,14 +356,6 @@ export class UsertourCore extends Evented {
    * This method sets up all WebSocket event handlers after socket is initialized
    */
   private initializeSocketEventListeners(): void {
-    this.setupServerMessageHandler();
-  }
-
-  /**
-   * Set up unified server message handler
-   * All server-to-client messages go through this single handler
-   */
-  private setupServerMessageHandler(): void {
     this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
       const { kind, payload } = message as { kind: string; payload: unknown };
       return this.messageHandler.handleMessage(kind, payload);
