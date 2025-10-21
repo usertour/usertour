@@ -154,12 +154,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     // Set the checklist as dismissed
     // Hide the checklist
     this.hide();
-    // Report the dismiss event
-    await this.reportDismissEvent(reason);
     // Destroy the checklist
     this.destroy();
     // Trigger the checklist closed event
     this.trigger(CHECKLIST_CLOSED, { sessionId: this.getSessionId() });
+    // Report the dismiss event
+    await this.reportDismissEvent(reason);
   }
 
   /**
