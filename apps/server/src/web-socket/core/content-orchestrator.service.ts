@@ -79,28 +79,23 @@ export class ContentOrchestratorService {
     const { options } = context;
     const contentId = options?.contentId;
 
-    try {
-      // Strategy 1: Try to start by specific contentId
-      if (contentId) {
-        const result = await this.tryStartByContentId(context);
-        if (!result.success) {
-          return false;
-        }
-        return await this.handleContentStartResult(context, { ...result, forceGoToStep: true });
+    // Strategy 1: Try to start by specific contentId
+    if (contentId) {
+      const result = await this.tryStartByContentId(context);
+      if (!result.success) {
+        return false;
       }
-
-      // Strategy 2: Handle existing session
-      const existingSessionResult = await this.handleExistingSession(context);
-      if (existingSessionResult.success) {
-        return await this.handleContentStartResult(context, existingSessionResult);
-      }
-
-      // Strategy 3: Try to auto start content
-      return await this.tryAutoStartContent(context);
-    } catch (error) {
-      this.logger.error(`Failed to start singleton content: ${error.message}`);
-      return false;
+      return await this.handleContentStartResult(context, { ...result, forceGoToStep: true });
     }
+
+    // Strategy 2: Handle existing session
+    const existingSessionResult = await this.handleExistingSession(context);
+    if (existingSessionResult.success) {
+      return await this.handleContentStartResult(context, existingSessionResult);
+    }
+
+    // Strategy 3: Try to auto start content
+    return await this.tryAutoStartContent(context);
   }
 
   /**
@@ -649,48 +644,40 @@ export class ContentOrchestratorService {
     const { contentId } = options!;
     const { environment } = socketData;
 
-    try {
-      // Get published version ID for the specific content
-      const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
-        contentId,
-        environment.id,
-      );
-      if (!publishedVersionId) {
-        return {
-          success: false,
-          reason: 'Content not found or not published',
-        };
-      }
-      const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-        socketData,
-        contentType,
-        publishedVersionId,
-      );
-      const evaluatedContentVersion = evaluatedContentVersions?.[0];
-      if (!evaluatedContentVersion) {
-        return {
-          success: false,
-          reason: 'Content version not available or not activated',
-        };
-      }
-      const latestActivatedContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
-        socketData,
-        contentType,
-        evaluatedContentVersion,
-      );
-
-      return await this.handleContentVersion(
-        context,
-        latestActivatedContentVersion,
-        true, // createNewSession
-      );
-    } catch (error) {
-      this.logger.error(`Error in tryStartByContentId: ${error.message}`);
+    // Get published version ID for the specific content
+    const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
+      contentId,
+      environment.id,
+    );
+    if (!publishedVersionId) {
       return {
         success: false,
-        reason: `Error starting by contentId: ${error.message}`,
+        reason: 'Content not found or not published',
       };
     }
+    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      socketData,
+      contentType,
+      publishedVersionId,
+    );
+    const evaluatedContentVersion = evaluatedContentVersions?.[0];
+    if (!evaluatedContentVersion) {
+      return {
+        success: false,
+        reason: 'Content version not available or not activated',
+      };
+    }
+    const latestActivatedContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
+      socketData,
+      contentType,
+      evaluatedContentVersion,
+    );
+
+    return await this.handleContentVersion(
+      context,
+      latestActivatedContentVersion,
+      true, // createNewSession
+    );
   }
 
   /**
@@ -1005,40 +992,33 @@ export class ContentOrchestratorService {
   ): Promise<ContentStartResult> {
     const { options, socketData } = context;
 
-    try {
-      // Handle session initialization
-      const sessionResult = await this.initializeSession(
-        customContentVersion,
-        socketData,
-        options,
-        createNewSession,
-      );
+    // Handle session initialization
+    const sessionResult = await this.initializeSession(
+      customContentVersion,
+      socketData,
+      options,
+      createNewSession,
+    );
 
-      if (!sessionResult.success) {
-        return sessionResult;
-      }
-
-      // Extract tracking conditions for hide conditions
-      const hideConditions = extractClientTrackConditions(
-        [customContentVersion],
-        ConditionExtractionMode.HIDE_ONLY,
-      );
-      // Extract tracking conditions for checklist conditions
-      const checklistConditions = extractChecklistTrackConditions(sessionResult.session);
-      const postTracks = [...hideConditions, ...checklistConditions];
-
-      return {
-        success: true,
-        session: sessionResult.session,
-        postTracks,
-        reason: 'Content session created successfully',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        reason: `Error initializing content version: ${error.message}`,
-      };
+    if (!sessionResult.success) {
+      return sessionResult;
     }
+
+    // Extract tracking conditions for hide conditions
+    const hideConditions = extractClientTrackConditions(
+      [customContentVersion],
+      ConditionExtractionMode.HIDE_ONLY,
+    );
+    // Extract tracking conditions for checklist conditions
+    const checklistConditions = extractChecklistTrackConditions(sessionResult.session);
+    const postTracks = [...hideConditions, ...checklistConditions];
+
+    return {
+      success: true,
+      session: sessionResult.session,
+      postTracks,
+      reason: 'Content session created successfully',
+    };
   }
 
   /**
