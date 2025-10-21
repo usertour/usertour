@@ -1,11 +1,11 @@
 import { PrismaClient } from '@prisma/client';
-import { migrateVersionRuleIds } from './migration';
+import { migrateConditionIds } from './migration';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Migrate version rule IDs
-  await migrateVersionRuleIds(prisma);
+  // Migrate condition IDs
+  await migrateConditionIds(prisma);
 
   // Step 4: Create initial user if none exists
   const user = await prisma.user.findFirst();
