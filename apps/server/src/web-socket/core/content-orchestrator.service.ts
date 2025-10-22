@@ -798,18 +798,12 @@ export class ContentOrchestratorService {
     evaluatedContentVersions: CustomContentVersion[],
   ): Promise<ContentStartResult> {
     const { contentType, socketData } = context;
-    const { waitTimers } = socketData;
-    const { clientConditions } = socketData;
-    const firedWaitTimerVersionIds = waitTimers
-      ?.filter((waitTimer) => waitTimer.activated)
-      .map((waitTimer) => waitTimer.versionId);
-
+    const { clientConditions, waitTimers } = socketData;
     const autoStartContentVersions = filterAvailableAutoStartContentVersions(
       evaluatedContentVersions,
       contentType,
       clientConditions,
-      true,
-      firedWaitTimerVersionIds,
+      waitTimers,
     );
     const autoStartContentVersion = autoStartContentVersions?.[0];
 
@@ -844,7 +838,6 @@ export class ContentOrchestratorService {
       evaluatedContentVersions,
       contentType,
       clientConditions,
-      false,
     );
 
     const waitTimers = extractClientConditionWaitTimers(autoStartContentVersionsWithoutWaitTimer);

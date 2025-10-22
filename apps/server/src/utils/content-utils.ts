@@ -405,17 +405,19 @@ export const isAllowedByHideRules = (
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
- * @param includeWaitTimer - Whether to include wait timer conditions in the filtering
- * @param firedWaitTimerVersionIds - Optional array of version IDs that have fired wait timers
+ * @param waitTimers - The wait timer conditions
  * @returns The available auto-start custom content versions
  */
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType,
   clientConditions: ClientCondition[],
-  includeWaitTimer: boolean,
-  firedWaitTimerVersionIds?: string[],
+  waitTimers?: ConditionWaitTimer[],
 ) => {
+  const firedWaitTimerVersionIds = waitTimers
+    ?.filter((waitTimer) => waitTimer.activated)
+    .map((waitTimer) => waitTimer.versionId);
+
   return customContentVersions
     .filter((customContentVersion) => {
       // Early return if content type doesn't match
@@ -439,7 +441,7 @@ export const filterAvailableAutoStartContentVersions = (
 
       // Check wait timer conditions if enabled
       if (
-        includeWaitTimer &&
+        waitTimers &&
         !isAllowedByConditionWaitTimers(customContentVersion, firedWaitTimerVersionIds)
       ) {
         return false;
