@@ -12,7 +12,7 @@ import { WebSocketPerformanceInterceptor } from '../web-socket.interceptor';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { ClientMessageDto } from './web-socket-v2.dto';
+import { ClientMessageDto, SocketAuthData } from './web-socket-v2.dto';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
@@ -43,7 +43,9 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
         // Initialize and validate client data
-        const socketData = await this.service.initializeSocketData(auth);
+        const socketData = await this.service.initializeSocketData(
+          auth as unknown as SocketAuthData,
+        );
         if (!socketData) {
           return next(new SDKAuthenticationError());
         }

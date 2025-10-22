@@ -16,6 +16,7 @@ import {
   EndContentDto,
   FireConditionWaitTimerDto,
   WebSocketContext,
+  SocketAuthData,
 } from './web-socket-v2.dto';
 import { ContentDataType, ClientContext, contentStartReason } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
@@ -150,14 +151,16 @@ export class WebSocketV2Service {
    * @param auth - Authentication data from socket handshake
    * @returns Initialized SocketData or null if validation fails
    */
-  async initializeSocketData(auth: Record<string, unknown>): Promise<SocketData | null> {
-    const externalUserId = String(auth.externalUserId ?? '');
-    const externalCompanyId = String(auth.externalCompanyId ?? '');
-    const clientContext = auth.clientContext as ClientContext;
-    const clientConditions = (auth.clientConditions as ClientCondition[]) ?? [];
-    const token = String(auth.token ?? '');
-    const flowSessionId = String(auth.flowSessionId ?? '');
-    const checklistSessionId = String(auth.checklistSessionId ?? '');
+  async initializeSocketData(auth: SocketAuthData): Promise<SocketData | null> {
+    const {
+      externalUserId,
+      externalCompanyId,
+      clientContext,
+      clientConditions = [],
+      token,
+      flowSessionId,
+      checklistSessionId,
+    } = auth;
 
     // Validate required fields
     if (!externalUserId || !token) {

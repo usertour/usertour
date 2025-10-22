@@ -1,12 +1,27 @@
-import { contentStartReason } from '@usertour/types';
+import { contentStartReason, ClientContext } from '@usertour/types';
 import { IsString, IsObject, IsOptional } from 'class-validator';
 import { Server, Socket } from 'socket.io';
 import { SocketData } from '@/common/types/content';
+import { ClientCondition } from '@/common/types/sdk';
 
 export type ProjectConfig = {
   removeBranding: boolean;
   planType: string;
 };
+
+/**
+ * Socket authentication data structure
+ * Defines the expected structure for socket handshake auth data
+ */
+export interface SocketAuthData {
+  clientContext: ClientContext;
+  externalUserId?: string;
+  externalCompanyId?: string;
+  clientConditions?: ClientCondition[];
+  token?: string;
+  flowSessionId?: string;
+  checklistSessionId?: string;
+}
 
 /**
  * Client message kinds (Client -> Server)
