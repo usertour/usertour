@@ -615,12 +615,11 @@ export class ContentOrchestratorService {
       return true;
     }
     const sessionId = session.id;
-    const evaluatedVersions = await this.getEvaluatedContentVersions(
+    const sessionVersion = await this.getEvaluatedContentVersion(
       socketData,
       contentType,
       session.version.id,
     );
-    const sessionVersion = evaluatedVersions?.[0];
 
     if (!sessionVersion || isActivedHideRules(sessionVersion)) {
       this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
@@ -655,12 +654,11 @@ export class ContentOrchestratorService {
         reason: 'Content not found or not published',
       };
     }
-    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+    const evaluatedContentVersion = await this.getEvaluatedContentVersion(
       socketData,
       contentType,
       publishedVersionId,
     );
-    const evaluatedContentVersion = evaluatedContentVersions?.[0];
     if (!evaluatedContentVersion) {
       return {
         success: false,
@@ -691,12 +689,11 @@ export class ContentOrchestratorService {
       return { success: false, reason: 'No existing session' };
     }
 
-    const customContentVersions = await this.getEvaluatedContentVersions(
+    const customContentVersion = await this.getEvaluatedContentVersion(
       socketData,
       contentType,
       session.version.id,
     );
-    const customContentVersion = customContentVersions?.[0];
     if (!customContentVersion) {
       return { success: false, reason: 'No custom content version found' };
     }
@@ -738,12 +735,11 @@ export class ContentOrchestratorService {
       latestActivatedContentVersionId &&
       evaluatedContentVersion.id !== latestActivatedContentVersionId
     ) {
-      const activatedContentVersions = await this.getEvaluatedContentVersions(
+      const activatedContentVersion = await this.getEvaluatedContentVersion(
         socketData,
         contentType,
         latestActivatedContentVersionId,
       );
-      const activatedContentVersion = activatedContentVersions?.[0];
       if (activatedContentVersion) {
         return activatedContentVersion;
       }
@@ -1105,6 +1101,23 @@ export class ContentOrchestratorService {
   }
 
   /**
+   * Get evaluated content version by version ID
+   * This method is optimized for querying a single version by ID
+   */
+  private async getEvaluatedContentVersion(
+    socketData: SocketData,
+    contentType: ContentDataType,
+    versionId: string,
+  ): Promise<CustomContentVersion | null> {
+    const evaluatedVersions = await this.getEvaluatedContentVersions(
+      socketData,
+      contentType,
+      versionId,
+    );
+    return evaluatedVersions?.[0] || null;
+  }
+
+  /**
    * Initialize content session by session ID
    * @param sessionId - The session ID
    * @returns The content session or null if not found
@@ -1118,12 +1131,11 @@ export class ContentOrchestratorService {
       return null;
     }
     const contentType = session.content.type as ContentDataType;
-    const customContentVersions = await this.getEvaluatedContentVersions(
+    const customContentVersion = await this.getEvaluatedContentVersion(
       socketData,
       contentType,
       session.versionId,
     );
-    const customContentVersion = customContentVersions?.[0];
     if (!customContentVersion || customContentVersion.session.latestSession.id !== sessionId) {
       return null;
     }
