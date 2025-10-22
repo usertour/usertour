@@ -51,7 +51,10 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         }
 
         // Store client data in Redis
-        await this.socketDataService.set(socket.id, socketData);
+        const success = await this.socketDataService.set(socket.id, socketData);
+        if (!success) {
+          return next(new SDKAuthenticationError());
+        }
 
         // Build room ID and check capacity
         const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
