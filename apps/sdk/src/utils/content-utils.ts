@@ -73,7 +73,7 @@ export function initializeContentItems<T extends Tour | Launcher | Checklist>(
     const contentId = item.getContent().contentId;
     if (!contentIdMap.has(contentId)) {
       if (contentType === ContentDataType.LAUNCHER) {
-        item.close(contentEndReason.UNPUBLISHED_CONTENT);
+        item.destroy();
       } else {
         item.close(contentEndReason.UNPUBLISHED_CONTENT);
       }
