@@ -13,7 +13,7 @@ import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRenameForm } from '../shared/content-rename-form';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { isPublishedInAllEnvironments } from '@usertour/helpers';
+import { isPublishedInAllEnvironments } from '@/utils/content';
 import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
 
 const navigations = [
