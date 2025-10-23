@@ -56,7 +56,7 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { checklistIsSeen, flowIsSeen } from '../utils/conditions';
+import { checklistIsSeen, flowIsSeen, launcherIsDismissed } from '../utils/conditions';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -867,7 +867,9 @@ export class App extends Evented {
 
     try {
       // Get all auto-start eligible launchers sorted by priority
-      const sortedLaunchers = getAutoStartContentSortedByPriority(this.launchers);
+      const sortedLaunchers = getAutoStartContentSortedByPriority(this.launchers).filter(
+        (launcher) => !launcherIsDismissed(launcher?.getContent()?.latestSession),
+      );
 
       // Early return if no eligible launchers found
       if (!sortedLaunchers.length) {

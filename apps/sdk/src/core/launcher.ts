@@ -7,6 +7,7 @@ import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
 import { BaseContent } from './base-content';
 import { ElementWatcher } from './element-watcher';
+import { launcherIsDismissed } from '../utils/conditions';
 
 export class Launcher extends BaseContent<LauncherStore> {
   private watcher: ElementWatcher | null = null;
@@ -48,7 +49,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     const openState = store?.openState;
 
     // Hide launcher if it's temporarily hidden or target element is not visible
-    if (this.isTemporarilyHidden() || isHidden) {
+    if (!this.isAutoStart() || isHidden) {
       if (openState) {
         this.hide();
       }
@@ -64,10 +65,26 @@ export class Launcher extends BaseContent<LauncherStore> {
 
   /**
    * Gets the reused session ID for the launcher
-   * @returns {string | null} The reused session ID or null if not applicable
+   * A session can be reused if:
+   * 1. The content has data and a latest session
+   * 2. The launcher has not been dismissed
+   *
+   * @returns {string | null} The session ID if it can be reused, null otherwise
    */
-  getReusedSessionId() {
-    return null;
+  getReusedSessionId(): string | null {
+    const content = this.getContent();
+
+    // Check if content has required data
+    if (!content.data || !content.latestSession) {
+      return null;
+    }
+
+    // Check if flow has been dismissed
+    if (launcherIsDismissed(content.latestSession)) {
+      return null;
+    }
+
+    return content.latestSession.id;
   }
 
   /**
@@ -144,7 +161,7 @@ export class Launcher extends BaseContent<LauncherStore> {
 
     // Set up timeout handler
     this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, () => {
-      this.close();
+      this.hide();
     });
 
     // Start element search
