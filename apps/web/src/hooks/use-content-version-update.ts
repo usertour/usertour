@@ -7,6 +7,7 @@ import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { isVersionPublished } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
   const { version, refetch: refetchVersion, setIsSaveing } = useContentVersionContext();
@@ -23,9 +24,8 @@ export const useContentVersionUpdate = () => {
 
       try {
         // Check if we need to create a new version (when published version is being edited)
-        const isPublishedVersion = content.published && content.publishedVersionId === version.id;
 
-        if (isPublishedVersion) {
+        if (isVersionPublished(content, version.id)) {
           const { data } = await createVersion({
             variables: {
               data: {
