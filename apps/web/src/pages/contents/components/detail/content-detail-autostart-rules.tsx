@@ -41,6 +41,7 @@ interface ContentDetailAutoStartRulesProps {
   content: Content;
   setting: autoStartRulesSetting;
   type: ContentDetailAutoStartRulesType;
+  featureTooltip: React.ReactNode;
   showWait?: boolean;
   showFrequency?: boolean;
   showIfCompleted?: boolean;
@@ -57,13 +58,13 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     onDataChange,
     content,
     setting,
-    type,
     showWait = true,
     showFrequency = true,
     showIfCompleted = true,
     showPriority = true,
     showAtLeast = true,
     disabled = false,
+    featureTooltip,
   } = props;
 
   const [enabled, setEnabled] = useState(defaultEnabled);
@@ -133,25 +134,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               <TooltipTrigger asChild>
                 <QuestionMarkCircledIcon className="ml-1 cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                {type === ContentDetailAutoStartRulesType.START_RULES && (
-                  <>
-                    Automatically starts the {contentType} if the user matches the given condition.
-                    Example: Automatically start an {contentType} for all new users. <br />
-                    <br />
-                    Once the {contentType} has started, the auto-start condition has no effect,
-                    meaning if the user no longer matches it, the {contentType} will stay open until
-                    otherwise dismissed.
-                  </>
-                )}
-                {type === ContentDetailAutoStartRulesType.HIDE_RULES && (
-                  <>
-                    Temporarily hides the {contentType} when this condition is true. Once the
-                    condition is no longer true, the {contentType} may be shown again. <br />
-                    Example: Hide a {contentType} on certain pages.
-                  </>
-                )}
-              </TooltipContent>
+              <TooltipContent className="max-w-sm">{featureTooltip}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

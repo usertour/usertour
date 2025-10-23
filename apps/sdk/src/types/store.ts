@@ -38,5 +38,5 @@ export type ChecklistStore = BaseStore & {
 // Launcher store type
 export type LauncherStore = BaseStore & {
   content: SDKContent | undefined;
-  triggerRef: HTMLElement | undefined;
+  triggerRef: any;
 };

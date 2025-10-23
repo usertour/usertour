@@ -174,7 +174,16 @@ const LauncherWidgetCore = ({
   const [open, setOpen] = useState(false);
   const popperRef = useRef<HTMLDivElement>(null);
   const launcherRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLElement>(el);
+  // const triggerRef = useRef<HTMLElement>(el);
+
+  // Create a responsive React.RefObject that updates when triggerRef changes
+  const triggerRef = useMemo(() => {
+    const ref = { current: null as HTMLElement | null };
+    if (el instanceof Element) {
+      ref.current = el as HTMLElement;
+    }
+    return ref;
+  }, [el]);
 
   const handlers = useLauncherHandlers(
     data,
@@ -207,7 +216,12 @@ const LauncherWidgetCore = ({
           popperRef={popperRef}
         />
       </LauncherPopper>
-      <LauncherContentWrapper zIndex={zIndex} referenceRef={triggerRef} ref={launcherRef} />
+      <LauncherContentWrapper
+        zIndex={zIndex}
+        referenceRef={triggerRef}
+        ref={launcherRef}
+        hideWhenDetached={true}
+      />
     </LauncherRoot>
   );
 };
