@@ -23,3 +23,11 @@ export const isPublishedInAllEnvironments = (
 export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
   return Boolean(content?.contentOnEnvironments?.length);
 };
+
+export const isVersionPublished = (content: Content, versionId: string): boolean => {
+  return Boolean(
+    content?.contentOnEnvironments?.find(
+      (env) => env.published && env.publishedVersionId === versionId,
+    ),
+  );
+};
