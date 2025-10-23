@@ -38,11 +38,9 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
   const { isViewOnly, environment } = useAppContext();
 
-  const isPublished =
-    content?.contentOnEnvironments?.find(
-      (item) => item.published && item.environment.id === environment?.id,
-    ) ||
-    (content?.published && content?.environmentId === environment?.id);
+  const isPublished = content?.contentOnEnvironments?.find(
+    (item) => item.published && item.environment.id === environment?.id,
+  );
 
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
