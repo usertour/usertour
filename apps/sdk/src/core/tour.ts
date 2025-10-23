@@ -307,7 +307,7 @@ export class Tour extends BaseContent<TourStore> {
     // Handle element changed
     this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
       if (el instanceof Element) {
-        this.handleElementChanged(el, step, store);
+        this.handleElementChanged(el, step);
       }
     });
     // Start watching
@@ -347,15 +347,14 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  private handleElementChanged(el: Element, step: Step, store: TourStore): void {
+  private handleElementChanged(el: Element, step: Step): void {
     const currentStep = this.getCurrentStep();
-    if (currentStep?.cvid !== step.cvid) {
+    if (currentStep?.id !== step.id) {
       return;
     }
 
     // Update store
-    this.setStore({
-      ...store,
+    this.updateStore({
       triggerRef: el,
     });
   }

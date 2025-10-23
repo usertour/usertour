@@ -1,5 +1,5 @@
 import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
-import { BizEvents, EventAttributes, LauncherData } from '@usertour/types';
+import { BizEvents, EventAttributes, LauncherData, SDKContent } from '@usertour/types';
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { evalCode } from '@usertour/helpers';
 import { LauncherStore } from '../types/store';
@@ -132,7 +132,8 @@ export class Launcher extends BaseContent<LauncherStore> {
    * 4. Set up event handlers for element found and timeout scenarios
    */
   async show() {
-    const data = this.getContent().data as LauncherData;
+    const content = this.getContent();
+    const data = content.data as LauncherData;
 
     // Early return if document or target element is not available
     if (!document || !data.target.element) {
@@ -164,8 +165,27 @@ export class Launcher extends BaseContent<LauncherStore> {
       this.hide();
     });
 
+    // Handle element changed
+    this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
+      if (el instanceof Element) {
+        this.handleElementChanged(el, content);
+      }
+    });
+
     // Start element search
     this.watcher.findElement();
+  }
+
+  private handleElementChanged(el: Element, content: SDKContent): void {
+    const store = this.getStore().getSnapshot();
+    if (store?.content?.id !== content.id) {
+      return;
+    }
+
+    // Update store
+    this.updateStore({
+      triggerRef: el,
+    });
   }
 
   /**
