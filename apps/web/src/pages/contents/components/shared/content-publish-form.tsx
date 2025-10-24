@@ -63,10 +63,6 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
         if (envContent?.published) {
           return envContent?.publishedVersion;
         }
-      } else {
-        if (content?.published && content?.publishedVersion && content.environmentId === envId) {
-          return content?.publishedVersion;
-        }
       }
 
       return null;

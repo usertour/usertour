@@ -315,6 +315,12 @@ export const flowIsDismissed = (latestSession?: BizSession) => {
   return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
 };
 
+export const launcherIsDismissed = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.LAUNCHER_DISMISSED,
+  );
+};
+
 export const flowIsSeen = (latestSession?: BizSession) => {
   return latestSession?.bizEvent?.find(
     (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,

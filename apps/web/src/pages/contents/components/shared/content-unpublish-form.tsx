@@ -62,16 +62,6 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
       });
     }
 
-    // If we have a single published environment
-    if (content?.published) {
-      return environmentList.map((env) => ({
-        environmentId: env.id,
-        environment: env,
-        published: env.id === content.environmentId,
-        publishedVersion: content.publishedVersion,
-      }));
-    }
-
     // If no published content, all environments are unpublished
     return environmentList.map((env) => ({
       environmentId: env.id,

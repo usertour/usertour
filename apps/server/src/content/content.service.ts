@@ -556,11 +556,14 @@ export class ContentService {
     }
     const contentItem = await this.prisma.content.findUnique({
       where: { id: version.contentId, deleted: false },
+      include: { contentOnEnvironments: true },
     });
-    if (
-      contentItem.editedVersionId !== versionId ||
-      (contentItem.published && contentItem.publishedVersionId === version.id)
-    ) {
+
+    const isPublished = contentItem?.contentOnEnvironments?.find(
+      (env) => env.published && env.publishedVersionId === versionId,
+    );
+
+    if (contentItem.editedVersionId !== versionId || isPublished) {
       throw new ParamsError();
     }
 

@@ -18,7 +18,7 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 export const ContentVersionTable = () => {
   const { content, loading: contentLoading } = useContentDetailContext();
   const { versionList, refetch, loading: versionListLoading } = useContentVersionListContext();
-  const { environmentList, loading: environmentLoading } = useEnvironmentListContext();
+  const { loading: environmentLoading } = useEnvironmentListContext();
 
   useEffect(() => {
     refetch();
@@ -37,15 +37,6 @@ export const ContentVersionTable = () => {
       environmentsFromContentOnEnvironments = content?.contentOnEnvironments
         ?.filter((item) => item.published && item.publishedVersionId === versionId)
         .map((item) => item.environment.name);
-    } else if (
-      content?.publishedVersionId === versionId &&
-      content.published &&
-      environmentList?.find((item) => item.id === content.environmentId)?.name
-    ) {
-      const envName = environmentList?.find((item) => item.id === content.environmentId)?.name;
-      if (envName) {
-        environmentsFromContentOnEnvironments.push(envName);
-      }
     }
 
     return environmentsFromContentOnEnvironments;
