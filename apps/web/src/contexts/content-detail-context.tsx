@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { getContent } from '@usertour-ui/gql';
-import { Content } from '@usertour-ui/types';
+import { getContent } from '@usertour-packages/gql';
+import { Content } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 export interface ContentDetailProviderProps {

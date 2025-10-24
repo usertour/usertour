@@ -1,4 +1,4 @@
-import { ScrollArea } from '@usertour-ui/scroll-area';
+import { ScrollArea } from '@usertour-packages/scroll-area';
 import { useParams } from 'react-router-dom';
 import { AdminLayoutNewContent, AdminNewLayout } from './components/admin-layout';
 import { AdminMainNewNav } from './components/admin-main-nav';
@@ -9,12 +9,14 @@ interface SettingsLayoutProps {
 }
 
 export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
-  const { settingType } = useParams();
+  const { settingType, settingSubType } = useParams();
+  const bgClassName =
+    settingType === 'account' || settingType === 'companies' || settingSubType ? 'bg-slate-50' : '';
   return (
     <>
       <AdminNewLayout>
         <AdminMainNewNav />
-        <AdminLayoutNewContent className={settingType === 'account' ? 'bg-slate-50' : ''}>
+        <AdminLayoutNewContent className={bgClassName}>
           <SettingsSidebarNav />
           <ScrollArea className="h-full w-full ">
             <div className="mx-auto max-w-6xl">{children}</div>

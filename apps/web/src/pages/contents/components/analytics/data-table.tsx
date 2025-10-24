@@ -14,14 +14,21 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
 
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useState } from 'react';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 

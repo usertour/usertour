@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/alert-dialog",
+  "name": "@usertour-packages/alert-dialog",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,8 +14,8 @@
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.0.4",
     "class-variance-authority": "^0.4.0",
-    "@usertour-ui/button": "workspace:*",
-    "@usertour-ui/ui-utils": "workspace:*"
+    "@usertour-packages/button": "workspace:*",
+    "@usertour/helpers": "^0.0.1"
   },
   "peerDependencies": {
     "react": "^18.2.0"

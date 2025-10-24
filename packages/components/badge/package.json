@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/badge",
+  "name": "@usertour-packages/badge",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "class-variance-authority": "^0.4.0",
-    "@usertour-ui/ui-utils": "workspace:*"
+    "@usertour/helpers": "^0.0.1"
   },
   "peerDependencies": {
     "react": "^18.2.0"

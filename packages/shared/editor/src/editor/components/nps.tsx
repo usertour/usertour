@@ -1,15 +1,15 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorNPSElement } from '../../types/editor';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { EditorError, EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Constants
@@ -260,22 +260,30 @@ export type ContentEditorNPSSerializeType = {
   className?: string;
   children?: React.ReactNode;
   element: ContentEditorNPSElement;
-  onClick?: (element: ContentEditorNPSElement, value: number) => void;
+  onClick?: (element: ContentEditorNPSElement, value: number) => Promise<void>;
 };
 
 export const ContentEditorNPSSerialize = memo((props: ContentEditorNPSSerializeType) => {
   const { element, onClick } = props;
+  const [loading, setLoading] = useState(false);
 
   const handleClick = useCallback(
-    (value: number) => {
-      onClick?.(element, value);
+    async (value: number) => {
+      if (onClick) {
+        setLoading(true);
+        try {
+          await onClick(element, value);
+        } finally {
+          setLoading(false);
+        }
+      }
     },
     [onClick, element],
   );
 
   return (
     <div className="w-full">
-      <NPSScale onClick={handleClick} forSdk={true} />
+      <NPSScale onClick={loading ? undefined : handleClick} forSdk={true} />
       <NPSLabels lowLabel={element.data.lowLabel} highLabel={element.data.highLabel} />
     </div>
   );

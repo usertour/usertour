@@ -1,7 +1,7 @@
-import { EXTENSION_SELECT } from '@usertour-ui/constants';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { HelpTooltip } from '@usertour-ui/shared-components';
+import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { HelpTooltip } from '@usertour-packages/shared-components';
 import { ChangeEvent, useCallback } from 'react';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
 import { useContentPlacement } from './content-placement-context';

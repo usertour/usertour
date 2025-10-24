@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import { Button } from '@usertour-ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Button } from '@usertour-packages/button';
 
 import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';

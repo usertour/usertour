@@ -16,9 +16,9 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { EDITOR_OVERLAY } from '@usertour-ui/constants';
-import { isUndefined } from '@usertour-ui/shared-utils';
-import { BizUserInfo } from '@usertour-ui/types';
+import { EDITOR_OVERLAY } from '@usertour-packages/constants';
+import { isUndefined } from '@usertour/helpers';
+import { BizUserInfo } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Descendant } from 'slate';
@@ -200,7 +200,7 @@ export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: B
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];
   userInfo?: BizUserInfo;
-  onClick?: (element: ContentEditorClickableElement, value?: any) => void;
+  onClick?: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 }) => {
   const { contents, onClick, userInfo } = props;
   const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;

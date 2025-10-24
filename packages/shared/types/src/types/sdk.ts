@@ -1,16 +1,21 @@
-import { BizEvent } from './biz';
 import { ContentVersion } from './contents';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
+import { Theme } from './theme';
 
-export type SDKContent = ContentVersion & {
-  name: string;
+export type ContentSession = {
+  contentId: string;
+  latestSession?: BizSession;
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;
-  latestSession?: BizSession;
-  events: BizEvent[];
+  seenSessions: number;
 };
+
+export type SDKContent = ContentVersion &
+  ContentSession & {
+    name: string;
+  };
 
 export enum contentEndReason {
   USER_CLOSED = 'user_closed',
@@ -60,4 +65,9 @@ export const flowReasonTitleMap = {
 export interface SDKConfig {
   planType: PlanType;
   removeBranding: boolean;
+}
+
+export interface GetProjectSettingsResponse {
+  config: SDKConfig;
+  themes: Theme[];
 }

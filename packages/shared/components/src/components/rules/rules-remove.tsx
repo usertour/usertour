@@ -1,5 +1,10 @@
-import { CloseIcon } from '@usertour-ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { CloseIcon } from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 
 type RulesRemoveProps = {

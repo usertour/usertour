@@ -1,10 +1,10 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { EDITOR_SELECT } from '@usertour-ui/constants';
-import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+import { Button } from '@usertour-packages/button';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { EDITOR_SELECT } from '@usertour-packages/constants';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -12,9 +12,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { RulesCondition } from '@usertour-ui/types';
+} from '@usertour-packages/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { RulesCondition } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ContentActions } from '../..';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
@@ -360,15 +365,22 @@ export type ContentEditorButtonSerializeType = {
   className?: string;
   children?: React.ReactNode;
   element: ContentEditorButtonElement;
-  onClick?: (element: ContentEditorButtonElement) => void;
+  onClick?: (element: ContentEditorButtonElement) => Promise<void>;
 };
 
 export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerializeType) => {
   const { element, onClick } = props;
 
-  const handleOnClick = useCallback(() => {
+  const [loading, setLoading] = useState(false);
+
+  const handleOnClick = useCallback(async () => {
     if (onClick) {
-      onClick(element);
+      setLoading(true);
+      try {
+        await onClick(element);
+      } finally {
+        setLoading(false);
+      }
     }
   }, [onClick, element]);
 
@@ -381,6 +393,7 @@ export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerialize
       onClick={handleOnClick}
       className="h-fit"
       style={buttonStyle}
+      disabled={loading}
     >
       <span>{element.data?.text}</span>
     </Button>

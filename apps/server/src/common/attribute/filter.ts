@@ -1,7 +1,7 @@
 import { Attribute } from '@/attributes/models/attribute.model';
 import { Prisma } from '@prisma/client';
 import { endOfDay, startOfDay, subDays } from 'date-fns';
-import { BizAttributeTypes } from '../consts/attribute';
+import { BizAttributeTypes } from '@usertour/types';
 
 export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   const { data = {} } = condition;

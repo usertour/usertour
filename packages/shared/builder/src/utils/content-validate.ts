@@ -4,8 +4,8 @@ import {
   ContentEditorQuestionElement,
   ContentEditorRoot,
   isRestrictedType,
-} from '@usertour-ui/shared-editor';
-import { ContentActionsItemType, Step } from '@usertour-ui/types';
+} from '@usertour-packages/shared-editor';
+import { ContentActionsItemType, Step } from '@usertour/types';
 
 export const stepIsReachable = (steps: Step[], currentStep: Step) => {
   if (steps.indexOf(currentStep) === 0) {

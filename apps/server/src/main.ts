@@ -9,6 +9,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
 
+// Import tracer for OpenTelemetry
+import { startTracer } from './tracer';
+import { setTraceID } from './utils/middleware/set-trace-id';
+
 // import { AllExceptionsFilter } from './common/filter';
 
 async function bootstrap() {
@@ -24,6 +28,15 @@ async function bootstrap() {
 
   // Catch all exceptions
   // app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Add error handlers
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+  });
+
+  process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+  });
 
   // Validation
   app.useGlobalPipes(
@@ -55,6 +68,9 @@ async function bootstrap() {
   app.useWebSocketAdapter(adapter);
   app.use(cookieParser());
 
+  // Add trace ID middleware
+  app.use(setTraceID);
+
   /**
    * Limit the number of user's requests
    * 1000 requests per minute
@@ -66,6 +82,9 @@ async function bootstrap() {
   //     max: 1000,
   //   }),
   // );
+
+  // Start tracer
+  startTracer();
 
   await app.listen(configService.get('nest.port'));
   console.log(`Application is running on: ${await app.getUrl()}`);

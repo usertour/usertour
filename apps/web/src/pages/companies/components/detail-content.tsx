@@ -1,32 +1,45 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-ui/icons';
-import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour-ui/types';
+import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
+import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour/types';
 import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { IdCardIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import { Button } from '@usertour-ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
+} from '@usertour-packages/dropdown-menu';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteForm } from './company-delete-form';
 import { TruncatedText } from '@/components/molecules/truncated-text';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour/helpers';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { useQuery } from '@apollo/client';
-import { queryBizUser } from '@usertour-ui/gql';
+import { queryBizUser } from '@usertour-packages/gql';
 import { PaginationState } from '@tanstack/react-table';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { useCallback } from 'react';
 
 // Company User List Context
 interface CompanyUserListContextValue {
@@ -472,9 +485,14 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
     }
   }, [bizCompany, attributeList]);
 
-  const handleDeleteSuccess = () => {
-    navigator(`/env/${environmentId}/companies`);
-  };
+  const handleDeleteSuccess = useCallback(
+    async (success: boolean) => {
+      if (success) {
+        navigator(`/env/${environmentId}/companies`);
+      }
+    },
+    [navigator, environmentId],
+  );
 
   if (!bizCompany) {
     return (

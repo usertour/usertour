@@ -1,10 +1,10 @@
-import { smoothScroll } from '@usertour-ui/dom';
+import { smoothScroll } from '@usertour-packages/dom';
 import {
   ContentEditorClickableElement,
   ContentEditorElementType,
   ContentEditorQuestionElement,
   isQuestionElement,
-} from '@usertour-ui/shared-editor';
+} from '@usertour-packages/shared-editor';
 import {
   BizEvents,
   ContentActionsItemType,
@@ -15,8 +15,8 @@ import {
   StepContentType,
   StepTrigger,
   contentEndReason,
-} from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+} from '@usertour/types';
+import { evalCode } from '@usertour/helpers';
 import { TourStore } from '../types/store';
 import { activedRulesConditions, flowIsDismissed, isActive } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
@@ -44,12 +44,15 @@ export class Tour extends BaseContent<TourStore> {
     try {
       // Always activate content conditions
       await this.activeContentConditions();
+
       // Handle active tour monitoring
       if (this.isActiveTour()) {
         // Check if the current step is visible
         await this.checkStepVisible();
         // Activate any trigger conditions
         await this.activeTriggerConditions();
+        // Check and update theme settings if needed
+        await this.checkAndUpdateThemeSettings();
       }
     } catch (error) {
       logger.error('Error in tour monitoring:', error);
@@ -96,7 +99,7 @@ export class Tour extends BaseContent<TourStore> {
    * while preserving the current trigger state
    * @returns void
    */
-  refresh(): void {
+  async refresh(): Promise<void> {
     const content = this.getContent();
     const currentStep = this.getCurrentStep();
 
@@ -124,7 +127,7 @@ export class Tour extends BaseContent<TourStore> {
     this.setCurrentStep(preservedStep);
 
     // Update store with new data
-    const { openState, triggerRef, progress, ...storeData } = this.buildStoreData();
+    const { openState, triggerRef, progress, ...storeData } = await this.buildStoreData();
     this.updateStore({
       ...storeData,
       currentStep: preservedStep,
@@ -148,7 +151,7 @@ export class Tour extends BaseContent<TourStore> {
     }
 
     // Check if flow has been dismissed
-    if (flowIsDismissed(content)) {
+    if (flowIsDismissed(content.latestSession)) {
       return null;
     }
 
@@ -186,9 +189,9 @@ export class Tour extends BaseContent<TourStore> {
    *
    * @returns {TourStore} The complete store data object
    */
-  private buildStoreData(): TourStore {
+  private async buildStoreData(): Promise<TourStore> {
     // Get base store information
-    const baseInfo = this.getStoreBaseInfo();
+    const baseInfo = await this.getStoreBaseInfo();
     const currentStep = this.getCurrentStep();
     const zIndex = this.getBaseZIndex();
 
@@ -253,7 +256,7 @@ export class Tour extends BaseContent<TourStore> {
     await this.activeTriggerConditions();
 
     // Set up element watcher
-    const store = this.buildStoreData();
+    const store = await this.buildStoreData();
     this.setupElementWatcher(currentStep, store);
 
     const { isComplete } = this.getCurrentStepInfo(currentStep);
@@ -304,7 +307,7 @@ export class Tour extends BaseContent<TourStore> {
     // Handle element changed
     this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
       if (el instanceof Element) {
-        this.handleElementChanged(el, step, store);
+        this.handleElementChanged(el, step);
       }
     });
     // Start watching
@@ -344,15 +347,14 @@ export class Tour extends BaseContent<TourStore> {
     }
   }
 
-  private handleElementChanged(el: Element, step: Step, store: TourStore): void {
+  private handleElementChanged(el: Element, step: Step): void {
     const currentStep = this.getCurrentStep();
-    if (currentStep?.cvid !== step.cvid) {
+    if (currentStep?.id !== step.id) {
       return;
     }
 
     // Update store
-    this.setStore({
-      ...store,
+    this.updateStore({
       triggerRef: el,
     });
   }
@@ -382,7 +384,7 @@ export class Tour extends BaseContent<TourStore> {
    */
   async showModal(currentStep: Step) {
     // Build store data and get step information
-    const store = this.buildStoreData();
+    const store = await this.buildStoreData();
     const { progress, isComplete, index, total } = this.getCurrentStepInfo(currentStep);
 
     // Report that the step has been seen
@@ -509,7 +511,6 @@ export class Tour extends BaseContent<TourStore> {
         });
       }
       await this.reportQuestionAnswer(el, value);
-      await this.refreshContents();
     }
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions);
@@ -800,18 +801,11 @@ export class Tour extends BaseContent<TourStore> {
   }
 
   /**
-   * Reports the auto start event
-   * @param reason - The reason for the auto start
+   * Handle additional logic after content is shown
+   * @param _isNewSession - Whether this is a new session
    */
-  async reportStartEvent(reason?: string) {
-    await this.reportEventWithSession({
-      eventName: BizEvents.FLOW_STARTED,
-      eventData: {
-        [EventAttributes.FLOW_START_REASON]: reason ?? 'auto_start',
-        [EventAttributes.FLOW_VERSION_ID]: this.getContent().id,
-        [EventAttributes.FLOW_VERSION_NUMBER]: this.getContent().sequence,
-      },
-    });
+  async handleAfterShow(_isNewSession?: boolean) {
+    // Tour has no additional logic, can be empty implementation
   }
 
   /**

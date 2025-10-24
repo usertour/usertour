@@ -1,9 +1,10 @@
 import { Table } from '@tanstack/react-table';
-import { Button } from '@usertour-ui/button';
-import { Delete2Icon } from '@usertour-ui/icons';
+import { Button } from '@usertour-packages/button';
+import { Delete2Icon } from '@usertour-packages/icons';
 import { BizCompanyDeleteForm } from './company-delete-form';
 import { useCallback } from 'react';
 import { useState } from 'react';
+import { useCompanyListContext } from '@/contexts/company-list-context';
 
 interface DeleteCompanyFromSegmentProps {
   table: Table<any>;
@@ -14,6 +15,7 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
+  const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
     const rows = table.getFilteredSelectedRowModel().rows;
@@ -26,6 +28,17 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
       setOpenDelete(true);
     }
   }, [table, bizCompanyIds]);
+
+  const handleSubmit = useCallback(
+    async (success: boolean) => {
+      if (success) {
+        setOpenDelete(false);
+        await refetch();
+      }
+    },
+    [refetch],
+  );
+
   return (
     <>
       {' '}
@@ -41,10 +54,7 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
         open={openDelete}
         bizCompanyIds={bizCompanyIds}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
-          setOpenDelete(false);
-          // onSubmit("delete");
-        }}
+        onSubmit={handleSubmit}
       />
     </>
   );

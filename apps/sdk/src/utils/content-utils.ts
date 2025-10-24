@@ -9,11 +9,13 @@ import {
   contentEndReason,
   SDKContent,
   Step,
-} from '@usertour-ui/types';
+  Theme,
+} from '@usertour/types';
 import { Checklist } from '../core/checklist';
 import { Launcher } from '../core/launcher';
 import { Tour } from '../core/tour';
 import {
+  activedContentRulesConditions,
   activedRulesConditions,
   checklistIsDimissed,
   flowIsDismissed,
@@ -21,12 +23,12 @@ import {
   parseUrlParams,
 } from './conditions';
 import { window } from './globals';
-import { PRIORITIES, RulesType } from '@usertour-ui/constants';
+import { PRIORITIES, RulesType } from '@usertour-packages/constants';
 import {
   canCompleteChecklistItem,
   checklistCompletedItemsCount,
   checklistVisibleItemsCount,
-} from '@usertour-ui/sdk';
+} from '@usertour-packages/sdk';
 import { BaseStore } from '../types/store';
 import isEqual from 'fast-deep-equal';
 
@@ -71,7 +73,7 @@ export function initializeContentItems<T extends Tour | Launcher | Checklist>(
     const contentId = item.getContent().contentId;
     if (!contentIdMap.has(contentId)) {
       if (contentType === ContentDataType.LAUNCHER) {
-        item.close(contentEndReason.UNPUBLISHED_CONTENT);
+        item.destroy();
       } else {
         item.close(contentEndReason.UNPUBLISHED_CONTENT);
       }
@@ -137,7 +139,7 @@ export const findLatestActivatedTourAndCvid = (
   tours: Tour[],
   contentId?: string,
 ): { latestActivatedTour: Tour; cvid: string } | undefined => {
-  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent()));
+  const activeTours = tours.filter((tour) => !flowIsDismissed(tour.getContent().latestSession));
   const latestActivatedTour = contentId
     ? activeTours.find((tour) => tour.getContent().contentId === contentId)
     : findLatestActivatedTour(activeTours);
@@ -202,7 +204,7 @@ export const findTourFromUrl = (tours: Tour[]): Tour | undefined => {
  */
 export const findLatestActivatedChecklist = (checklists: Checklist[]): Checklist | undefined => {
   const activeChecklists = checklists.filter(
-    (checklist) => !checklistIsDimissed(checklist.getContent()),
+    (checklist) => !checklistIsDimissed(checklist.getContent().latestSession),
   );
 
   const checklistsWithValidSession = activeChecklists.filter(
@@ -251,7 +253,7 @@ export const findLatestValidActivatedChecklist = (
  */
 export const getChecklistInitialDisplay = (content: SDKContent): ChecklistInitialDisplay => {
   const latestSession = content.latestSession;
-  if (!latestSession || checklistIsDimissed(content)) {
+  if (!latestSession || checklistIsDimissed(content.latestSession)) {
     return content?.data?.initialDisplay;
   }
   // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
@@ -387,7 +389,7 @@ export const checklistItemIsClicked = (content: SDKContent, checklistItem: Check
 export const checklistIsShowAnimation = (content: SDKContent, checklistItem: ChecklistItemType) => {
   const latestSession = content.latestSession;
   // If there is no latest session or the checklist is dismissed, don't show animation
-  if (!latestSession || checklistIsDimissed(content)) {
+  if (!latestSession || checklistIsDimissed(content.latestSession)) {
     return false;
   }
 
@@ -614,9 +616,23 @@ export const baseStoreInfoIsChanged = (currentStore: BaseStore, previousStore: B
     !isEqual(currentStore.userInfo, previousStore.userInfo) ||
     !isEqual(currentStore.assets, previousStore.assets) ||
     !isEqual(currentStore.globalStyle, previousStore.globalStyle) ||
-    !isEqual(currentStore.theme, previousStore.theme) ||
+    !isEqual(currentStore.themeSettings, previousStore.themeSettings) ||
     currentStore.zIndex !== previousStore.zIndex
   );
+};
+
+/**
+ * Checks if attributes have actually changed by comparing current and new attributes
+ * @param currentAttributes - Current attributes object
+ * @param newAttributes - New attributes to merge
+ * @returns True if attributes have changed, false otherwise
+ */
+export const hasAttributesChanged = (
+  currentAttributes: Record<string, any> = {},
+  newAttributes: Record<string, any> = {},
+): boolean => {
+  const mergedAttributes = { ...currentAttributes, ...newAttributes };
+  return !isEqual(currentAttributes, mergedAttributes);
 };
 
 /**
@@ -630,4 +646,174 @@ export const getStepByCvid = (steps: Step[] | undefined, cvid: string): Step | u
     return undefined;
   }
   return steps.find((step) => step.cvid === cvid);
+};
+
+/**
+ * Gets the active theme
+ * @param themes - The themes to search through
+ * @param themeId - The theme id to search for
+ * @returns The active theme or undefined if no theme is found
+ */
+export const getActivedTheme = async (themes: Theme[], themeId: string) => {
+  const theme = themes.find((item) => item.id === themeId);
+  if (!theme || !theme.variations) {
+    return theme;
+  }
+
+  // Process variations asynchronously to check conditions
+  const activeVariations = [];
+  for (const item of theme.variations) {
+    const activatedConditions = await activedRulesConditions(item.conditions);
+    if (isActive(activatedConditions)) {
+      activeVariations.push(item);
+    }
+  }
+
+  if (activeVariations.length === 0) {
+    return theme;
+  }
+  const settings = activeVariations[0].settings;
+  return { ...theme, settings };
+};
+
+/**
+ * Process configuration and return processed config with activated rules
+ * @param content - The content to process
+ * @returns Processed configuration with activated rules
+ */
+const getProcessedConfig = async (content: SDKContent, contents: SDKContent[]): Promise<any> => {
+  const config = content.config;
+
+  const autoStartRules =
+    config.enabledAutoStartRules && config.autoStartRules?.length > 0
+      ? await activedContentRulesConditions(config.autoStartRules, contents)
+      : config.autoStartRules || [];
+
+  const hideRules =
+    config.enabledHideRules && config.hideRules?.length > 0
+      ? await activedContentRulesConditions(config.hideRules, contents)
+      : config.hideRules || [];
+
+  return {
+    ...config,
+    autoStartRules,
+    hideRules,
+  };
+};
+
+/**
+ * Process checklist conditions and return updated items
+ * @param data - Checklist data containing items and conditions
+ * @returns Updated checklist data with processed conditions
+ */
+const activedChecklistConditions = async (
+  data: ChecklistData,
+  contents: SDKContent[],
+): Promise<ChecklistData> => {
+  if (!data?.items?.length) {
+    return data;
+  }
+
+  const items = await Promise.all(
+    data.items.map(async (item) => {
+      const [completeConditions, onlyShowTaskConditions] = await Promise.all([
+        item.completeConditions?.length > 0
+          ? activedContentRulesConditions(item.completeConditions, contents)
+          : Promise.resolve(item.completeConditions || []),
+        item.onlyShowTaskConditions?.length > 0
+          ? activedContentRulesConditions(item.onlyShowTaskConditions, contents)
+          : Promise.resolve(item.onlyShowTaskConditions || []),
+      ]);
+
+      return {
+        ...item,
+        completeConditions,
+        onlyShowTaskConditions,
+      };
+    }),
+  );
+
+  return { ...data, items };
+};
+
+/**
+ * Process step triggers and return updated steps
+ * @param steps - Array of steps to process
+ * @returns Updated steps with processed conditions
+ */
+const activedStepTriggers = async (steps: Step[], contents: SDKContent[]): Promise<Step[]> => {
+  if (!steps?.length) {
+    return steps;
+  }
+
+  const stepsData = await Promise.all(
+    steps.map(async (step) => {
+      if (step.trigger && Array.isArray(step.trigger) && step.trigger.length > 0) {
+        const processedTriggers = await Promise.all(
+          step.trigger.map(async (trigger) => {
+            if (trigger.conditions?.length > 0) {
+              const processedConditions = await activedContentRulesConditions(
+                trigger.conditions,
+                contents,
+              );
+              return {
+                ...trigger,
+                conditions: processedConditions,
+              };
+            }
+            return trigger;
+          }),
+        );
+
+        return {
+          ...step,
+          trigger: processedTriggers,
+        };
+      }
+      return step;
+    }),
+  );
+
+  return stepsData;
+};
+
+/**
+ * Process a single content item and return its configuration
+ * @param content - The content item to process
+ * @returns Processed content configuration
+ */
+const processContent = async (content: SDKContent, contents: SDKContent[]): Promise<SDKContent> => {
+  // Process config and data in parallel
+  const [config, processedData, processedSteps] = await Promise.all([
+    getProcessedConfig(content, contents),
+    content.type === ContentDataType.CHECKLIST
+      ? activedChecklistConditions(content.data as ChecklistData, contents)
+      : Promise.resolve(content.data),
+    content.steps && content.steps.length > 0
+      ? activedStepTriggers(content.steps, contents)
+      : Promise.resolve(content.steps),
+  ]);
+
+  return {
+    ...content,
+    config,
+    data: processedData,
+    steps: processedSteps,
+  };
+};
+
+/**
+ * Processes content rules conditions
+ * @param contents - The contents to process
+ * @returns The processed contents
+ */
+export const activedContentsRulesConditions = async (contents: SDKContent[]) => {
+  // Process all contents in parallel for better performance
+  const processedContents = await Promise.all(
+    contents.map(async (content) => {
+      return await processContent(content, contents);
+    }),
+  );
+
+  return processedContents;
 };

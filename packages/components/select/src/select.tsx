@@ -4,7 +4,7 @@ import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import * as React from 'react';
 
-import { cn } from '@usertour-ui/ui-utils';
+import { cn } from '@usertour/helpers';
 
 const Select = SelectPrimitive.Root;
 
@@ -53,9 +53,9 @@ SelectTriggerNoIcon.displayName = 'SelectTriggerNoIcon';
 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = 'popper', ...props }, ref) => (
-  <SelectPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { withoutPortal?: boolean }
+>(({ className, children, position = 'popper', withoutPortal = false, ...props }, ref) => {
+  const content = (
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
@@ -77,8 +77,10 @@ const SelectContent = React.forwardRef<
         {children}
       </SelectPrimitive.Viewport>
     </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
+  );
+
+  return withoutPortal ? content : <SelectPrimitive.Portal>{content}</SelectPrimitive.Portal>;
+});
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectLabel = React.forwardRef<

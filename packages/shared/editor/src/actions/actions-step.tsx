@@ -1,12 +1,12 @@
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import {
   ArrowRightIcon,
   EyeNoneIcon,
   ModelIcon,
   SpinnerIcon,
   TooltipIcon,
-} from '@usertour-ui/icons';
-import { Badge } from '@usertour-ui/badge';
+} from '@usertour-packages/icons';
+import { Badge } from '@usertour-packages/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuItem,
   DropdownMenuSelectItem,
-} from '@usertour-ui/dropdown-menu';
-import { getStepError } from '@usertour-ui/shared-utils';
-import { Step, ContentVersion } from '@usertour-ui/types';
+} from '@usertour-packages/dropdown-menu';
+import { getStepError } from '@usertour/helpers';
+import { Step, ContentVersion } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
@@ -30,6 +30,8 @@ import {
 } from './actions-error';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour/helpers';
 
 export interface ContentActionsStepProps {
   data?: {
@@ -309,54 +311,64 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
   const dropdownContent = useMemo(
     () => (
       <DropdownMenuRadioGroup value={stepCvid}>
-        {availableSteps.map((item: Step, index: number) => (
-          <StepItem
-            key={item.cvid}
-            item={item}
-            index={index}
-            onSelect={() => handleSelectStep(item.cvid as string)}
-          />
-        ))}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="cursor-pointer">Add new step</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onSelect={() => handleCreateStepWrapper('hidden')}
-            >
-              <EyeNoneIcon className="w-4 h-4 mr-1 flex-none" />
-              Hidden
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onSelect={() => handleCreateStepWrapper('tooltip')}
-            >
-              <TooltipIcon className="w-4 h-4 mr-1 mt-1 flex-none" />
-              Tooltip
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onSelect={() => handleCreateStepWrapper('modal')}
-            >
-              <ModelIcon className="w-4 h-4 mr-1 mt-0.5 flex-none" />
-              Modal
-            </DropdownMenuItem>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="cursor-pointer">Duplicate step</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[240px]">
-            {currentVersion?.steps?.map((item: Step, index: number) => (
-              <DuplicateStepItem
-                key={item.cvid}
-                item={item}
-                index={index}
-                onSelect={() => item.cvid && handleDuplicateStepWrapper(item.cvid)}
-                isCurrentStep={currentStep?.cvid === item.cvid}
-              />
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        <ScrollArea className={cn(availableSteps.length > 9 ? 'h-72' : '')}>
+          {availableSteps.map((item: Step, index: number) => (
+            <StepItem
+              key={item.cvid}
+              item={item}
+              index={index}
+              onSelect={() => handleSelectStep(item.cvid as string)}
+            />
+          ))}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="cursor-pointer">Add new step</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => handleCreateStepWrapper('hidden')}
+              >
+                <EyeNoneIcon className="w-4 h-4 mr-1 flex-none" />
+                Hidden
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => handleCreateStepWrapper('tooltip')}
+              >
+                <TooltipIcon className="w-4 h-4 mr-1 mt-1 flex-none" />
+                Tooltip
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => handleCreateStepWrapper('modal')}
+              >
+                <ModelIcon className="w-4 h-4 mr-1 mt-0.5 flex-none" />
+                Modal
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="cursor-pointer">
+              Duplicate step
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-[240px]">
+              <ScrollArea
+                className={cn(
+                  currentVersion?.steps?.length && currentVersion?.steps?.length > 9 ? 'h-72' : '',
+                )}
+              >
+                {currentVersion?.steps?.map((item: Step, index: number) => (
+                  <DuplicateStepItem
+                    key={item.cvid}
+                    item={item}
+                    index={index}
+                    onSelect={() => item.cvid && handleDuplicateStepWrapper(item.cvid)}
+                    isCurrentStep={currentStep?.cvid === item.cvid}
+                  />
+                ))}
+              </ScrollArea>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </ScrollArea>
       </DropdownMenuRadioGroup>
     ),
     [

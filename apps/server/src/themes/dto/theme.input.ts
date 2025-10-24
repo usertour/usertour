@@ -16,6 +16,9 @@ export class CreateThemeInput {
 
   @Field(() => GraphQLJSON, { nullable: true })
   settings: JsonValue;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  variations?: JsonValue;
 }
 
 @InputType()

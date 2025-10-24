@@ -16,9 +16,16 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { Skeleton } from '@usertour-ui/skeleton';
-import { BizCompany, Segment } from '@usertour-ui/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { Skeleton } from '@usertour-packages/skeleton';
+import { BizCompany, Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns, columnsSystem } from '../components/columns';

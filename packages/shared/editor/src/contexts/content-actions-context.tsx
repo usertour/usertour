@@ -1,11 +1,4 @@
-import {
-  Attribute,
-  Content,
-  ContentVersion,
-  RulesCondition,
-  Segment,
-  Step,
-} from '@usertour-ui/types';
+import { Attribute, Content, ContentVersion, RulesCondition, Segment, Step } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface ContentActionsProviderProps {

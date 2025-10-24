@@ -1,11 +1,16 @@
-import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { TAILWINDCSS_COLORS } from '@usertour-ui/constants';
-import { CheckboxIcon, RemoveColorIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Separator } from '@usertour-ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { cn, isDark } from '@usertour-ui/ui-utils';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { Button } from '@usertour-packages/button';
+import { TAILWINDCSS_COLORS } from '@usertour-packages/constants';
+import { CheckboxIcon, RemoveColorIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Separator } from '@usertour-packages/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { cn, isDark } from '@usertour/helpers';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 const firstLetterToUpperCase = (word: string) => {
@@ -180,8 +185,8 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
   };
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           className={cn(
             'w-full border border-slate-300',
@@ -195,27 +200,25 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
         >
           {isAuto ? 'Auto' : color.toUpperCase()}
         </Button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          sideOffset={5}
-          className="z-50 "
-          style={{
-            filter:
-              'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-          }}
-        >
-          <Picker
-            color={color}
-            isAuto={isAuto}
-            onChange={handleColorChange}
-            showAutoButton={showAutoButton}
-          />
-          {/* <SketchPicker color={color} onChange={handleColorChange} /> */}
-          <Popover.Arrow className="fill-background" width={20} height={10} />
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      </PopoverTrigger>
+      <PopoverContent
+        sideOffset={5}
+        className="z-50 w-full p-0"
+        style={{
+          filter:
+            'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
+        }}
+      >
+        <Picker
+          color={color}
+          isAuto={isAuto}
+          onChange={handleColorChange}
+          showAutoButton={showAutoButton}
+        />
+        {/* <SketchPicker color={color} onChange={handleColorChange} /> */}
+        <PopoverArrow className="fill-background" width={20} height={10} />
+      </PopoverContent>
+    </Popover>
   );
 };
 

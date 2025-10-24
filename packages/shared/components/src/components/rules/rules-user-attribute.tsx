@@ -1,8 +1,7 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { CloseIcon, UserIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-// import * as Popover from "@radix-ui/react-popover";
-import * as Popover from '@usertour-ui/popover';
+import { CloseIcon, UserIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Select,
   SelectContent,
@@ -10,8 +9,8 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/select';
+import { cn } from '@usertour/helpers';
 import { format } from 'date-fns';
 import {
   Dispatch,
@@ -23,32 +22,33 @@ import {
   useState,
 } from 'react';
 
-import { Button } from '@usertour-ui/button';
-import { Calendar } from '@usertour-ui/calendar';
+import { Button } from '@usertour-packages/button';
+import { Calendar } from '@usertour-packages/calendar';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { EXTENSION_CONTENT_RULES } from '@usertour-ui/constants';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { getUserAttrError } from '@usertour-ui/shared-utils';
+} from '@usertour-packages/command';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { getUserAttrError } from '@usertour/helpers';
 import {
   Attribute,
   AttributeBizTypes,
   AttributeDataType,
   RulesUserAttributeData,
   RulesUserAttributeProps,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 
 export const conditionsTypeMapping = {
   [AttributeDataType.Number]: [
@@ -134,8 +134,8 @@ const RulesAttributeDatePicker = (props: {
   const { date, setDate } = props;
 
   return (
-    <Popover.Popover>
-      <Popover.PopoverTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button
           variant={'outline'}
           className={cn(
@@ -146,13 +146,14 @@ const RulesAttributeDatePicker = (props: {
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? format(date, 'yyyy-MM-dd') : <span>Pick a date</span>}
         </Button>
-      </Popover.PopoverTrigger>
-      <Popover.PopoverContent
-        className="w-auto p-0  z-50"
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto p-0 z-50"
         align="start"
         style={{
           zIndex: EXTENSION_CONTENT_RULES,
         }}
+        withoutPortal
       >
         <Calendar
           mode="single"
@@ -161,8 +162,8 @@ const RulesAttributeDatePicker = (props: {
           onSelect={setDate}
           initialFocus
         />
-      </Popover.PopoverContent>
-    </Popover.Popover>
+      </PopoverContent>
+    </Popover>
   );
 };
 
@@ -180,7 +181,10 @@ const RulesUserAttributeName = () => {
     (value: string, search: string) => {
       if (attributes) {
         const attribute = attributes.find((attr) => attr.id === value);
-        if (attribute?.displayName.includes(search)) {
+        if (
+          attribute?.displayName.toLowerCase().includes(search.toLowerCase()) ||
+          attribute?.codeName.toLowerCase().includes(search.toLowerCase())
+        ) {
           return 1;
         }
       }
@@ -197,16 +201,17 @@ const RulesUserAttributeName = () => {
 
   return (
     <div className="flex flex-row">
-      <Popover.Popover open={open} onOpenChange={setOpen}>
-        <Popover.PopoverTrigger asChild>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
           <Button variant="outline" className="flex-1 justify-between ">
             {selectedPreset?.displayName}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
-        </Popover.PopoverTrigger>
-        <Popover.PopoverContent
+        </PopoverTrigger>
+        <PopoverContent
           className="w-[350px] p-0"
           style={{ zIndex: EXTENSION_CONTENT_RULES }}
+          withoutPortal
         >
           <Command filter={handleFilter}>
             <CommandInput placeholder="Search attribute..." />
@@ -288,8 +293,8 @@ const RulesUserAttributeName = () => {
               )}
             </ScrollArea>
           </Command>
-        </Popover.PopoverContent>
-      </Popover.Popover>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
@@ -495,7 +500,7 @@ const RulesUserAttributeInput = () => {
 
 export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   const { index, data, type } = props;
-  const { attributes, isHorizontal } = useRulesContext();
+  const { attributes } = useRulesContext();
   const [selectedPreset, setSelectedPreset] = useState<Attribute | null>(null);
   const { updateConditionData } = useRulesGroupContext();
   const [openError, setOpenError] = useState(false);
@@ -612,7 +617,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   return (
     <RulesUserAttributeContext.Provider value={value}>
       <RulesError open={openError}>
-        <div className={cn('flex flex-row ', isHorizontal ? 'mr-1 mb-1 space-x-1 ' : 'space-x-3 ')}>
+        <RulesContainerWrapper>
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
@@ -620,7 +625,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                 <UserIcon width={16} height={16} />
               </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOpenChange} open={open}>
-                <RulesPopoverTrigger className={cn(isHorizontal ? 'w-auto' : '')}>
+                <RulesPopoverTriggerWrapper>
                   <span className="font-bold">{selectedPreset?.displayName} </span>
                   {displayCondition} <span className="font-bold ">{displayValue}</span>
                   {localData?.logic === 'between' && (
@@ -629,7 +634,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
                       <span className="font-bold ">{localData?.value2}</span>
                     </>
                   )}
-                </RulesPopoverTrigger>
+                </RulesPopoverTriggerWrapper>
                 <RulesPopoverContent>
                   <div className=" flex flex-col space-y-2">
                     <div className=" flex flex-col space-y-1">
@@ -651,7 +656,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
             </RulesConditionRightContent>
           </RulesErrorAnchor>
           <RulesErrorContent>{errorInfo}</RulesErrorContent>
-        </div>
+        </RulesContainerWrapper>
       </RulesError>
     </RulesUserAttributeContext.Provider>
   );

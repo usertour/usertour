@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { ContentListProvider } from '@/contexts/content-list-context';
 import { ThemeListProvider } from '@/contexts/theme-list-context';
-import { ScrollArea } from '@usertour-ui/scroll-area';
+import { ScrollArea } from '@usertour-packages/scroll-area';
 import { useParams } from 'react-router-dom';
 import { BannerListContent } from './components/list/banner-list';
 import { ChecklistListContent } from './components/list/checklist-list';

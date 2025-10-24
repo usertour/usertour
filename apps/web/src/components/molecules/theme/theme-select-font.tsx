@@ -1,19 +1,18 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { PopoverProps } from '@radix-ui/react-popover';
 import { useEffect, useState } from 'react';
 
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { Separator } from '@usertour-ui/separator';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/command';
+import { Popover, PopoverContent, PopoverProps, PopoverTrigger } from '@usertour-packages/popover';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { Separator } from '@usertour-packages/separator';
+import { cn } from '@usertour/helpers';
 
 export interface ThemeSelectFontType {
   id: string;
@@ -30,7 +29,12 @@ const systemItems = [
   { id: 'system-font', name: 'System font' },
   { id: 'custom-font', name: 'Custom font' },
 ];
-export function ThemeSelectFont({ items, defaultValue, onSelect, ...props }: ThemeSelectFontProps) {
+export const ThemeSelectFont = ({
+  items,
+  defaultValue,
+  onSelect,
+  ...props
+}: ThemeSelectFontProps) => {
   const [open, setOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<ThemeSelectFontType>();
 
@@ -112,6 +116,6 @@ export function ThemeSelectFont({ items, defaultValue, onSelect, ...props }: The
       </PopoverContent>
     </Popover>
   );
-}
+};
 
 ThemeSelectFont.displayName = 'ThemeSelectFont';

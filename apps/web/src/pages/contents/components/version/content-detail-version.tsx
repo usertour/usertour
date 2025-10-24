@@ -1,4 +1,4 @@
-import { Separator } from '@usertour-ui/separator';
+import { Separator } from '@usertour-packages/separator';
 import { ContentVersionTable } from './content-version-table';
 
 export const ContentDetailVersion = () => {

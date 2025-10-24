@@ -1,4 +1,4 @@
-import { SpinnerIcon } from '@usertour-ui/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 
 interface WebBuilderLoadingProps {
   message?: string;

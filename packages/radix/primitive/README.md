@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-ui/react-primitive
+$ yarn add @usertour-packages/react-primitive
 # or
-$ npm install @usertour-ui/react-primitive
+$ npm install @usertour-packages/react-primitive
 ```
 
 ## Usage

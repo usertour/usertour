@@ -1,4 +1,4 @@
-import { CloseCircleIcon } from '@usertour-ui/icons';
+import { CloseCircleIcon } from '@usertour-packages/icons';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 

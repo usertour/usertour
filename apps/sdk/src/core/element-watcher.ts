@@ -1,11 +1,11 @@
-import { isVisibleNode } from '@usertour-ui/dom';
-import { finderV2WithIframes } from '@usertour-ui/finder';
-import { ElementSelectorPropsData } from '@usertour-ui/types';
+import { isVisibleNode } from '@usertour-packages/dom';
+import { finderV2WithIframes } from '@usertour-packages/finder';
+import { ElementSelectorPropsData } from '@usertour/types';
 import { isVisible } from '../utils/conditions';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
-import { DEFAULT_TARGET_MISSING_SECONDS } from './common';
 import { Evented } from './evented';
+import { DEFAULT_TARGET_MISSING_SECONDS } from './common';
 
 /**
  * Interface to track element visibility state

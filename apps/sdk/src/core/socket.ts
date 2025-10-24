@@ -2,12 +2,12 @@ import {
   BizCompany,
   BizSession,
   BizUserInfo,
-  SDKConfig,
+  ContentSession,
   SDKContent,
   SDKSettingsMode,
-  Theme,
-} from '@usertour-ui/types';
-import { UserTourTypes } from '@usertour-ui/types';
+  GetProjectSettingsResponse,
+} from '@usertour/types';
+import { UserTourTypes } from '@usertour/types';
 import {
   ManagerOptions,
   Socket as SocketIO,
@@ -163,29 +163,6 @@ export class Socket extends Evented {
   }
 
   /**
-   * Get SDK configuration
-   * @param token - Authentication token
-   * @returns Promise with SDK configuration
-   */
-  async getConfig(token: string): Promise<SDKConfig> {
-    const response = await this.emitWithTimeout('get-config', { token });
-    return response as SDKConfig;
-  }
-
-  /**
-   * List available themes
-   * @param params - Parameters including authentication token
-   * @returns Promise with array of themes
-   */
-  async listThemes(params: { token: string }): Promise<Theme[]> {
-    const response = await this.emitWithTimeout('list-themes', params);
-    if (!Array.isArray(response)) {
-      return [];
-    }
-    return response as Theme[];
-  }
-
-  /**
    * Create a new session
    * @param params - Session parameters including userId, token, and contentId
    * @returns Promise with session information
@@ -195,9 +172,14 @@ export class Socket extends Evented {
     token: string;
     contentId: string;
     companyId?: string;
-  }): Promise<BizSession> {
-    const response = await this.emitWithTimeout('create-session', params);
-    return response as BizSession;
+    reason?: string;
+    context?: {
+      pageUrl?: string;
+      viewportWidth?: number;
+      viewportHeight?: number;
+    };
+  }): Promise<{ session: BizSession; contentSession: ContentSession } | false> {
+    return await this.emitWithTimeout('create-session', params);
   }
 
   /**
@@ -210,7 +192,21 @@ export class Socket extends Evented {
     eventName: string;
     sessionId: string;
     eventData: any;
-  }): Promise<void> {
-    await this.emitWithTimeout('track-event', params);
+  }): Promise<ContentSession | false> {
+    return await this.emitWithTimeout('track-event', params);
+  }
+
+  /**
+   * Get project settings
+   * @param params - Parameters including authentication token, userId, and companyId
+   * @returns Promise with project settings
+   */
+  async getProjectSettings(params: {
+    token: string;
+    userId?: string;
+    companyId?: string;
+  }): Promise<GetProjectSettingsResponse> {
+    const response = await this.emitWithTimeout('get-project-settings', params);
+    return response as GetProjectSettingsResponse;
   }
 }

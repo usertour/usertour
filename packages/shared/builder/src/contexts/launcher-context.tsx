@@ -1,4 +1,4 @@
-import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour-ui/types';
+import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour/types';
 import { isEqual } from 'lodash';
 import {
   ReactNode,
@@ -11,8 +11,8 @@ import {
 } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-ui/shared-hooks';
-import { useToast } from '@usertour-ui/use-toast';
+import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
 
 export interface LauncherProviderProps {
   children: ReactNode;

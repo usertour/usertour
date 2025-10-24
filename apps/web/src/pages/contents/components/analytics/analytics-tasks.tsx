@@ -1,8 +1,15 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { AnalyticsViewsByTask } from '@usertour-ui/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { AnalyticsViewsByTask } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 
 export const AnalyticsTasks = () => {

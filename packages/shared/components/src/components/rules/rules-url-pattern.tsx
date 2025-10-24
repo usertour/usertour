@@ -1,17 +1,23 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { getUrlPatternError } from '@usertour-ui/shared-utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import { Delete2Icon, PagesIcon, PlusIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { getUrlPatternError } from '@usertour/helpers';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 import { useRulesContext } from './rules-context';
+import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 
 export interface RulesUrlPatternProps {
   index: number;
@@ -104,7 +110,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
 
   return (
     <RulesError open={openError}>
-      <div className="flex flex-row space-x-3">
+      <RulesContainerWrapper>
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
@@ -112,10 +118,10 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
               <PagesIcon width={16} height={16} />
             </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger>
+              <RulesPopoverTriggerWrapper>
                 Current page matches <span className="font-bold">{includesValues.join(',')}</span>{' '}
                 and does not match <span className="font-bold">{excludesValues.join(',')}</span>
-              </RulesPopoverTrigger>
+              </RulesPopoverTriggerWrapper>
               <RulesPopoverContent>
                 <div className=" flex flex-col space-y-2">
                   <div className=" flex flex-col space-y-1">
@@ -258,7 +264,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
           </RulesConditionRightContent>
         </RulesErrorAnchor>
         <RulesErrorContent>{errorInfo}</RulesErrorContent>
-      </div>
+      </RulesContainerWrapper>
     </RulesError>
   );
 };

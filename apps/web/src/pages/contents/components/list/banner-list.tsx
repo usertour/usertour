@@ -1,10 +1,10 @@
 import { ContentListSkeleton } from '@/components/molecules/skeleton';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { isInstalledExtension } from '@usertour-ui/builder';
-import { Button } from '@usertour-ui/button';
-import { Separator } from '@usertour-ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-ui/tabs';
+import { isInstalledExtension } from '@usertour-packages/builder';
+import { Button } from '@usertour-packages/button';
+import { Separator } from '@usertour-packages/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { useState } from 'react';
 import { BannerCreateForm } from '../shared/banner-create-form';
 import { EmptyPlaceholder } from '../shared/empty-placeholder';

@@ -1,12 +1,24 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@usertour-ui/types';
+import { Environment } from '@usertour/types';
 import { CopyIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { cn } from '@usertour-ui/ui-utils';
-import { useToast } from '@usertour-ui/use-toast';
+import { Button } from '@usertour-packages/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { cn } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
 import { useCallback, useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
@@ -53,8 +65,9 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
 };
 
 export const EnvironmentListContent = () => {
-  const { environmentList, loading } = useEnvironmentListContext();
-  if (loading) {
+  const { environmentList, loading, isRefetching } = useEnvironmentListContext();
+
+  if (loading || isRefetching) {
     return <ListSkeleton />;
   }
   return (

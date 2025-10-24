@@ -16,10 +16,10 @@ import { UtilitiesModule } from '@/utilities/utilities.module';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { HttpModule } from '@nestjs/axios';
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
-import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
+import { PrismaModule } from 'nestjs-prisma';
 import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './localizations/localizations.module';
 import { TeamModule } from './team/team.module';
@@ -27,8 +27,12 @@ import { BullModule } from '@nestjs/bullmq';
 import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
-import api from '@opentelemetry/api';
+// import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
+import { IntegrationModule } from './integration/integration.module';
+import { LicenseModule } from './license/license.module';
+import { loggingMiddleware } from 'nestjs-prisma';
+import { Logger } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -42,29 +46,35 @@ import { OpenAPIModule } from './openapi/openapi.module';
       isGlobal: true,
       prismaServiceOptions: {
         middlewares: [
-          // configure your prisma middleware
-          loggingMiddleware({
-            logger: new Logger('PrismaMiddleware'),
-            logLevel: 'log',
-          }),
+          // Conditionally enable Prisma logging based on environment variable
+          ...(process.env.ENABLE_PRISMA_LOGGING === 'true'
+            ? [
+                loggingMiddleware({
+                  logger: new Logger('PrismaMiddleware'),
+                  logLevel: 'log',
+                }),
+              ]
+            : []),
         ],
       },
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        redact: {
-          paths: ['pid', 'hostname', 'req.headers'],
-          remove: true,
+    LoggerModule.forRootAsync({
+      useFactory: () => ({
+        pinoHttp: {
+          redact: {
+            paths: ['pid', 'hostname', 'req.headers'],
+            remove: true,
+          },
+          autoLogging: false,
+          genReqId: () => undefined,
+          customSuccessObject: (req) => ({
+            env: process.env.NODE_ENV,
+            uid: (req as any).user?.id || 'anonymous',
+          }),
+          level: 'debug',
+          transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
         },
-        autoLogging: false,
-        genReqId: () => api.trace.getSpan(api.context.active())?.spanContext()?.traceId,
-        customSuccessObject: (req) => ({
-          env: process.env.NODE_ENV,
-          uid: (req as any).user?.id || 'anonymous',
-        }),
-        level: 'debug',
-        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
-      },
+      }),
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -112,6 +122,8 @@ import { OpenAPIModule } from './openapi/openapi.module';
     LocalizationsModule,
     TeamModule,
     SubscriptionModule,
+    IntegrationModule,
+    LicenseModule,
     OpenAPIModule,
   ],
   controllers: [AppController],

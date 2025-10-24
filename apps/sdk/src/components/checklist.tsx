@@ -1,6 +1,6 @@
-import { AssetAttributes } from '@usertour-ui/frame';
-import { PopperMadeWith } from '@usertour-ui/sdk';
-import { ChecklistProgress } from '@usertour-ui/sdk';
+import { AssetAttributes } from '@usertour-packages/frame';
+import { PopperMadeWith } from '@usertour-packages/sdk';
+import { ChecklistProgress } from '@usertour-packages/sdk';
 import {
   ChecklistDismiss,
   ChecklistDropdown,
@@ -8,9 +8,12 @@ import {
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-ui/sdk/src/checklist';
-import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
-import { BizUserInfo, ChecklistData, ChecklistItemType, Theme } from '@usertour-ui/types';
+} from '@usertour-packages/sdk/src/checklist';
+import {
+  ContentEditorClickableElement,
+  ContentEditorSerialize,
+} from '@usertour-packages/shared-editor';
+import { BizUserInfo, ChecklistData, ChecklistItemType, ThemeTypesSetting } from '@usertour/types';
 import { useSyncExternalStore } from 'react';
 import { Checklist } from '../core/checklist';
 
@@ -21,11 +24,11 @@ type ChecklistWidgetProps = {
 
 type ChecklistWidgetCoreProps = {
   data: ChecklistData;
-  theme: Theme;
+  themeSettings: ThemeTypesSetting;
   userInfo: BizUserInfo;
   assets: AssetAttributes[] | undefined;
   handleItemClick: (item: ChecklistItemType, index: number) => void;
-  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   handleDismiss: () => Promise<void>;
   handleExpandedChange: (expanded: boolean) => void;
   reportExpandedChangeEvent: (expanded: boolean) => Promise<void>;
@@ -51,7 +54,7 @@ const ChecklistContent = ({
 
 const ChecklistWidgetCore = ({
   data,
-  theme,
+  themeSettings,
   userInfo,
   assets,
   handleItemClick,
@@ -65,7 +68,7 @@ const ChecklistWidgetCore = ({
 }: ChecklistWidgetCoreProps) => (
   <ChecklistRoot
     data={data}
-    theme={theme}
+    themeSettings={themeSettings}
     expanded={expanded}
     onDismiss={handleDismiss}
     onExpandedChange={handleExpandedChange}
@@ -97,16 +100,17 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     return <></>;
   }
 
-  const { checklistData, theme, userInfo, openState, assets, sdkConfig, zIndex, expanded } = store;
+  const { checklistData, themeSettings, userInfo, openState, assets, sdkConfig, zIndex, expanded } =
+    store;
 
-  if (!theme || !checklistData || !openState || !userInfo) {
+  if (!themeSettings || !checklistData || !openState || !userInfo) {
     return <></>;
   }
 
   return (
     <ChecklistWidgetCore
       data={checklistData}
-      theme={theme}
+      themeSettings={themeSettings}
       userInfo={userInfo}
       assets={assets}
       handleItemClick={checklist.handleItemClick}

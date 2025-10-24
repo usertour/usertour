@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Link } from 'react-router-dom';
 
 export const ResetPasswordSuccess = () => {

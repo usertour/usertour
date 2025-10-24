@@ -1,12 +1,13 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useMutation } from '@apollo/client';
-import { createContentVersion, updateContentVersion } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { ContentConfigObject } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+import { createContentVersion, updateContentVersion } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { ContentConfigObject } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { isVersionPublished } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
   const { version, refetch: refetchVersion, setIsSaveing } = useContentVersionContext();
@@ -23,9 +24,8 @@ export const useContentVersionUpdate = () => {
 
       try {
         // Check if we need to create a new version (when published version is being edited)
-        const isPublishedVersion = content.published && content.publishedVersionId === version.id;
 
-        if (isPublishedVersion) {
+        if (isVersionPublished(content, version.id)) {
           const { data } = await createVersion({
             variables: {
               data: {

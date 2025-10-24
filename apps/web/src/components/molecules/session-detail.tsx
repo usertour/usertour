@@ -1,9 +1,16 @@
 import { Fragment } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { Badge } from '@usertour-ui/badge';
-import { BizEvent } from '@usertour-ui/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour-ui/shared-editor';
-import { cn } from '@usertour-ui/ui-utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { Badge } from '@usertour-packages/badge';
+import { BizEvent } from '@usertour/types';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
+import { cn } from '@usertour/helpers';
 import { QuestionStarRating } from './question';
 
 // Add color utility functions from analytics-nps.tsx

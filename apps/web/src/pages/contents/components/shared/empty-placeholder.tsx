@@ -1,4 +1,4 @@
-import { EmptyPlaceholderIcon } from '@usertour-ui/icons';
+import { EmptyPlaceholderIcon } from '@usertour-packages/icons';
 
 interface EmptyPlaceholderProps {
   children: React.ReactNode;

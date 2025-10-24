@@ -1,6 +1,14 @@
-import { MESSAGE_START_FLOW_WITH_TOKEN, STORAGE_IDENTIFY_ANONYMOUS } from '@usertour-ui/constants';
-import { AssetAttributes } from '@usertour-ui/frame';
-import { autoStartConditions, storage } from '@usertour-ui/shared-utils';
+import {
+  MESSAGE_START_FLOW_WITH_TOKEN,
+  SDK_CSS_LOADED,
+  SDK_CSS_LOADED_FAILED,
+  SDK_DOM_LOADED,
+  SDK_CONTENT_CHANGED,
+  STORAGE_IDENTIFY_ANONYMOUS,
+  SDK_CONTAINER_CREATED,
+} from '@usertour-packages/constants';
+import { AssetAttributes } from '@usertour-packages/frame';
+import { autoStartConditions, storage } from '@usertour/helpers';
 import {
   BizCompany,
   BizUserInfo,
@@ -8,13 +16,16 @@ import {
   PlanType,
   SDKConfig,
   SDKContent,
+  ContentSession,
   SDKSettingsMode,
   Theme,
   contentEndReason,
   contentStartReason,
-} from '@usertour-ui/types';
-import { UserTourTypes } from '@usertour-ui/types';
-import { uuidV4 } from '@usertour-ui/ui-utils';
+  BizSession,
+  GetProjectSettingsResponse,
+} from '@usertour/types';
+import { UserTourTypes } from '@usertour/types';
+import { uuidV4 } from '@usertour/helpers';
 import ReactDOM from 'react-dom/client';
 import { render } from '../components';
 import { ReportEventParams } from '../types/content';
@@ -27,6 +38,9 @@ import {
   findLatestValidActivatedChecklist,
   isSameTour,
   getAutoStartContentSortedByPriority,
+  activedContentsRulesConditions,
+  hasAttributesChanged,
+  isSameChecklist,
 } from '../utils/content-utils';
 import { getMainCss, getWsUri } from '../utils/env';
 import { extensionIsRunning } from '../utils/extension';
@@ -42,8 +56,7 @@ import { Launcher } from './launcher';
 import { Socket } from './socket';
 import { ExternalStore } from './store';
 import { Tour } from './tour';
-import { checklistIsSeen, flowIsSeen } from '../utils/conditions';
-import { isSameChecklist } from '../utils/content-utils';
+import { checklistIsSeen, flowIsSeen, launcherIsDismissed } from '../utils/conditions';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -171,22 +184,22 @@ export class App extends Evented {
    * Initializes DOM event listeners for the application
    */
   initializeEventListeners() {
-    this.once('dom-loaded', () => {
+    this.once(SDK_DOM_LOADED, () => {
       this.loadCss();
     });
-    this.once('css-loaded', () => {
+    this.once(SDK_CSS_LOADED, () => {
       this.createContainer();
       this.createRoot();
     });
     // refresh data when content changed in the server
-    this.socket.on('content-changed', () => {
-      this.refresh();
+    this.socket.on(SDK_CONTENT_CHANGED, () => {
+      this.fetchAndInitContent();
     });
     if (document?.readyState !== 'loading') {
-      this.trigger('dom-loaded');
+      this.trigger(SDK_DOM_LOADED);
     } else if (document) {
       on(document, 'DOMContentLoaded', () => {
-        this.trigger('dom-loaded');
+        this.trigger(SDK_DOM_LOADED);
       });
     }
     if (window) {
@@ -359,6 +372,13 @@ export class App extends Evented {
     if (!this.useCurrentUser()) {
       return;
     }
+
+    // Check if attributes have actually changed
+    if (!hasAttributesChanged(this.userInfo.data, attributes)) {
+      // No changes detected, skip the update
+      return;
+    }
+
     const userId = this.userInfo.externalId;
     const userInfo = await this.socket.upsertUser({
       userId,
@@ -367,7 +387,8 @@ export class App extends Evented {
     });
     if (userInfo?.externalId) {
       this.setUser(userInfo);
-      this.refresh();
+      await this.fetchAndInitContent();
+      await this.fetchProjectSettings();
     }
   }
 
@@ -415,7 +436,7 @@ export class App extends Evented {
     );
     if (companyInfo?.externalId) {
       this.setCompany(companyInfo);
-      this.refresh();
+      this.fetchAndInitContent();
     }
   }
 
@@ -434,6 +455,13 @@ export class App extends Evented {
     ) {
       return;
     }
+
+    // Check if attributes have actually changed
+    if (!hasAttributesChanged(this.companyInfo.data, attributes)) {
+      // No changes detected, skip the update
+      return;
+    }
+
     const userId = this.userInfo.externalId;
     const companyId = this.companyInfo?.externalId;
     const companyInfo = await this.socket.upsertCompany(
@@ -447,7 +475,7 @@ export class App extends Evented {
       return;
     }
     this.setCompany(companyInfo);
-    this.refresh();
+    this.fetchAndInitContent();
   }
 
   /**
@@ -461,9 +489,9 @@ export class App extends Evented {
     }
     const loadMainCss = await loadCSSResource(cssFile, document);
     if (loadMainCss) {
-      this.trigger('css-loaded');
+      this.trigger(SDK_CSS_LOADED);
     } else {
-      this.trigger('css-loaded-failed');
+      this.trigger(SDK_CSS_LOADED_FAILED);
     }
   }
 
@@ -473,11 +501,8 @@ export class App extends Evented {
       return;
     }
     await this.reset();
-    await this.initSdkConfig();
-    await this.initThemeData();
-    await this.initContentData();
-    this.initContents();
-    this.syncAllStores();
+    await this.fetchProjectSettings();
+    await this.fetchAndInitContent();
     await this.startContents();
     await this.startActivityMonitor();
   }
@@ -486,14 +511,45 @@ export class App extends Evented {
     return this.sdkConfig;
   }
 
-  async refresh() {
-    await this.initContentData();
+  /**
+   * Fetches fresh content data from server and initializes content
+   */
+  async fetchAndInitContent(fetch = true) {
+    if (fetch) {
+      await this.fetchContents();
+    }
     if (this.originContents) {
       this.initContents();
       this.syncAllStores();
     }
   }
 
+  /**
+   * Refreshes the content session
+   * @param contentSession - The content session to refresh
+   */
+  async refreshContentSession(contentSession: ContentSession) {
+    if (!this.originContents) {
+      return;
+    }
+
+    const newContents = this.originContents.map((content) => {
+      if (content.contentId === contentSession.contentId) {
+        return {
+          ...content,
+          ...contentSession,
+        };
+      }
+      return content;
+    });
+
+    this.originContents = await activedContentsRulesConditions(newContents);
+
+    await this.fetchAndInitContent(false);
+    if (this.activeChecklist) {
+      await this.activeChecklist.handleItemConditions();
+    }
+  }
   /**
    * Reports an event to the tracking system
    * @param event - Event parameters to report
@@ -512,14 +568,17 @@ export class App extends Evented {
         return;
       }
 
-      await this.socket.trackEvent({
+      const contentSession = await this.socket.trackEvent({
         userId: event.userId,
         token,
         sessionId,
         eventData: event.eventData,
         eventName: event.eventName,
       });
-      await this.refresh();
+
+      if (contentSession) {
+        await this.refreshContentSession(contentSession);
+      }
     } catch (error) {
       logger.error('Failed to report event:', error);
     }
@@ -528,23 +587,33 @@ export class App extends Evented {
   /**
    * Creates a session for a content
    * @param contentId - The content ID to create a session for
+   * @param reason - The reason for starting the content
    * @returns The session ID if successful
    */
-  async createSession(contentId: string) {
+  async createSession(contentId: string, reason = 'auto_start'): Promise<BizSession | null> {
     const { token } = this.startOptions;
     const userId = this.userInfo?.externalId;
     const companyId = this.companyInfo?.externalId;
     if (!userId || !token) {
-      return;
+      return null;
     }
-    const newSesison = await this.socket.createSession({
+    const result = await this.socket.createSession({
       userId,
       contentId,
       token,
       companyId,
+      reason,
+      context: {
+        pageUrl: window?.location?.href,
+        viewportWidth: window?.innerWidth,
+        viewportHeight: window?.innerHeight,
+      },
     });
-    await this.refresh();
-    return newSesison;
+    if (result) {
+      await this.refreshContentSession(result.contentSession);
+      return result.session;
+    }
+    return null;
   }
 
   /**
@@ -566,7 +635,7 @@ export class App extends Evented {
     }
 
     this.container = container;
-    this.trigger('container-created');
+    this.trigger(SDK_CONTAINER_CREATED);
   }
 
   /**
@@ -581,7 +650,7 @@ export class App extends Evented {
   /**
    * Initializes content data based on current settings
    */
-  async initContentData() {
+  async fetchContents() {
     // Validate required params
     if (!this.validateInitParams()) {
       this.originContents = undefined;
@@ -720,7 +789,7 @@ export class App extends Evented {
       return;
     }
 
-    if (opts?.once && checklistIsSeen(activeChecklist.getContent())) {
+    if (opts?.once && checklistIsSeen(activeChecklist.getContent().latestSession)) {
       return;
     }
 
@@ -798,7 +867,9 @@ export class App extends Evented {
 
     try {
       // Get all auto-start eligible launchers sorted by priority
-      const sortedLaunchers = getAutoStartContentSortedByPriority(this.launchers);
+      const sortedLaunchers = getAutoStartContentSortedByPriority(this.launchers).filter(
+        (launcher) => !launcherIsDismissed(launcher?.getContent()?.latestSession),
+      );
 
       // Early return if no eligible launchers found
       if (!sortedLaunchers.length) {
@@ -900,7 +971,7 @@ export class App extends Evented {
       return;
     }
 
-    if (opts?.once && flowIsSeen(activeTour.getContent())) {
+    if (opts?.once && flowIsSeen(activeTour.getContent().latestSession)) {
       return;
     }
 
@@ -1019,23 +1090,25 @@ export class App extends Evented {
     }
   }
 
-  async initSdkConfig() {
-    const sdkConfig = await this.socket.getConfig(this.startOptions.token);
-    if (sdkConfig) {
-      this.sdkConfig = sdkConfig;
-    }
-  }
-
   /**
-   * Initializes theme data from server
+   * Fetches project settings from server
    */
-  async initThemeData() {
+  async fetchProjectSettings() {
     const { token } = this.startOptions;
-    const data = await this.socket.listThemes({ token });
+    if (!token) {
+      return;
+    }
+    const params = {
+      token,
+      userId: this.userInfo?.externalId,
+      companyId: this.companyInfo?.externalId,
+    };
+    const data: GetProjectSettingsResponse | null = await this.socket.getProjectSettings(params);
     if (data) {
-      this.themes = data;
+      this.sdkConfig = data.config;
+      this.themes = data.themes;
     } else {
-      logger.error('Failed to fetch themes!');
+      logger.error('Failed to fetch project settings!');
     }
   }
 

@@ -1,4 +1,4 @@
-import { BizEvents, EventAttributes } from '@/common/consts/attribute';
+import { BizEvents, EventAttributes } from '@usertour/types';
 import { Prisma } from '@prisma/client';
 
 type BizSession = Prisma.BizSessionGetPayload<{

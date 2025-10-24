@@ -1,16 +1,16 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorSingleLineTextElement } from '../../types/editor';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-ui/types';
+import { BizAttributeTypes } from '@usertour/types';
 
 interface ContentEditorSingleLineTextProps {
   element: ContentEditorSingleLineTextElement;
@@ -253,15 +253,16 @@ ContentEditorSingleLineText.displayName = 'ContentEditorSingleLineText';
 
 export const ContentEditorSingleLineTextSerialize = (props: {
   element: ContentEditorSingleLineTextElement;
-  onClick?: (element: ContentEditorSingleLineTextElement, value: string) => void;
+  onClick?: (element: ContentEditorSingleLineTextElement, value: string) => Promise<void> | void;
 }) => {
   const { element, onClick } = props;
   const [value, setValue] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
   // Memoize computed values
   const isDisabled = useMemo(
-    () => element.data.required && isEmptyString(value),
-    [element.data.required, value],
+    () => loading || (element.data.required && isEmptyString(value)),
+    [loading, element.data.required, value],
   );
 
   const defaultValues = useMemo(
@@ -276,8 +277,15 @@ export const ContentEditorSingleLineTextSerialize = (props: {
     setValue(e.target.value);
   }, []);
 
-  const handleSubmit = useCallback(() => {
-    onClick?.(element, value);
+  const handleSubmit = useCallback(async () => {
+    if (onClick) {
+      setLoading(true);
+      try {
+        await onClick(element, value);
+      } finally {
+        setLoading(false);
+      }
+    }
   }, [onClick, element, value]);
 
   return (

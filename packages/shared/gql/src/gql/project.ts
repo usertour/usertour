@@ -8,3 +8,34 @@ export const updateProjectName = gql`
     }
   }
 `;
+
+export const getProjectLicenseInfo = gql`
+  query GetProjectLicenseInfo($projectId: String!) {
+    getProjectLicenseInfo(projectId: $projectId) {
+      license
+      payload {
+        plan
+        sub
+        projectId
+        iat
+        exp
+        issuer
+        features
+      }
+      isValid
+      isExpired
+      error
+      daysRemaining
+    }
+  }
+`;
+
+export const updateProjectLicense = gql`
+  mutation UpdateProjectLicense($projectId: String!, $license: String!) {
+    updateProjectLicense(projectId: $projectId, license: $license) {
+      id
+      name
+      license
+    }
+  }
+`;

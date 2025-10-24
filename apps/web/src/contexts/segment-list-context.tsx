@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { listSegment } from '@usertour-ui/gql';
-import { RulesCondition, Segment } from '@usertour-ui/types';
+import { listSegment } from '@usertour-packages/gql';
+import { RulesCondition, Segment } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -23,19 +23,22 @@ export interface SegmentListContextValue {
   currentConditions: CurrentConditions | undefined;
   setCurrentConditions: React.Dispatch<React.SetStateAction<CurrentConditions | undefined>>;
   loading: boolean;
+  isRefetching: boolean;
 }
 export const SegmentListContext = createContext<SegmentListContextValue | undefined>(undefined);
 
 export function SegmentListProvider(props: SegmentListProviderProps): JSX.Element {
   const { children, environmentId, bizType } = props;
-  const { data, refetch, loading } = useQuery(listSegment, {
+  const { data, refetch, loading, networkStatus } = useQuery(listSegment, {
     variables: { environmentId },
     skip: !environmentId,
+    notifyOnNetworkStatusChange: true,
   });
   const [searchParams, _] = useSearchParams();
   const [currentSegment, setCurrentSegment] = useState<Segment>();
   const [currentConditions, setCurrentConditions] = useState<CurrentConditions | undefined>();
   const [segmentList, setSegmentList] = useState<Segment[] | undefined>();
+  const isRefetching = networkStatus === 4;
 
   useEffect(() => {
     if (data?.listSegment && data.listSegment.length > 0) {
@@ -68,6 +71,7 @@ export function SegmentListProvider(props: SegmentListProviderProps): JSX.Elemen
     currentConditions,
     setCurrentConditions,
     loading,
+    isRefetching,
   };
 
   return <SegmentListContext.Provider value={value}>{children}</SegmentListContext.Provider>;

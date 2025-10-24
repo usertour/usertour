@@ -1,6 +1,5 @@
-import { useQuery } from '@apollo/client';
-import { listThemes } from '@usertour-ui/gql';
-import { Theme } from '@usertour-ui/types';
+import { useListThemesQuery } from '@usertour-packages/shared-hooks';
+import { Theme } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 
 export interface ThemeListProviderProps {
@@ -12,20 +11,19 @@ export interface ThemeListContextValue {
   themeList: Theme[] | null;
   refetch: any;
   loading: boolean;
+  isRefetching: boolean;
 }
 export const ThemeListContext = createContext<ThemeListContextValue | undefined>(undefined);
 
 export function ThemeListProvider(props: ThemeListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { data, refetch, loading } = useQuery(listThemes, {
-    variables: { projectId: projectId },
-  });
+  const { themeList, refetch, loading, isRefetching } = useListThemesQuery(projectId);
 
-  const themeList = data?.listThemes;
   const value: ThemeListContextValue = {
     themeList,
     refetch,
     loading,
+    isRefetching,
   };
 
   return <ThemeListContext.Provider value={value}>{children}</ThemeListContext.Provider>;

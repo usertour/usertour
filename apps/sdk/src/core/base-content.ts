@@ -1,5 +1,5 @@
-import { convertSettings } from '@usertour-ui/shared-utils';
-import { convertToCssVars } from '@usertour-ui/shared-utils';
+import { convertSettings } from '@usertour/helpers';
+import { convertToCssVars } from '@usertour/helpers';
 import {
   BizCompany,
   ContentDataType,
@@ -10,8 +10,7 @@ import {
   Theme,
   UserTourTypes,
   contentStartReason,
-} from '@usertour-ui/types';
-import { isEqual } from 'lodash';
+} from '@usertour/types';
 import { ReportEventParams } from '../types/content';
 import autoBind from '../utils/auto-bind';
 import { findLatestEvent, isValidContent } from '../utils/conditions';
@@ -25,6 +24,8 @@ import { ExternalStore } from './store';
 import { differenceInHours } from 'date-fns';
 import { logger } from '../utils/logger';
 import { BaseStore } from '../types/store';
+import { getActivedTheme } from '../utils/content-utils';
+import isEqual from 'fast-deep-equal';
 
 export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   private readonly instance: App;
@@ -74,17 +75,15 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
    */
   async start(reason?: string, cvid?: string) {
     const reusedSessionId = this.getReusedSessionId();
-    const sessionId = reusedSessionId || (await this.createSessionId());
+    const sessionId = reusedSessionId || (await this.createSessionId(reason));
     if (!sessionId) {
       throw new Error('Failed to create user session.');
     }
     this.sessionId = sessionId;
     this.setStarted(true);
-    // If the session is not reused, trigger the content started event
-    if (!reusedSessionId) {
-      await this.reportStartEvent(reason);
-    }
     await this.show(cvid);
+    // Handle additional logic after content is shown
+    await this.handleAfterShow(!reusedSessionId);
   }
 
   /**
@@ -370,11 +369,11 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
 
   /**
    * Creates a new session ID
-   * @returns {Promise<string>} A promise that resolves to the new session ID
    */
-  async createSessionId() {
-    const session = await this.getInstance().createSession(this.getContent().contentId);
-    return session?.id;
+  async createSessionId(reason = 'auto_start'): Promise<string | null> {
+    const contentId = this.getContent().contentId;
+    const session = await this.getInstance().createSession(contentId, reason);
+    return session ? session.id : null;
   }
 
   /**
@@ -544,42 +543,59 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   }
 
   /**
+   * Get the active theme
+   */
+  async getActivedTheme(): Promise<Theme | undefined> {
+    const themes = this.getThemes() || [];
+    const themeId = this.getCurrentStep()?.themeId || this.getContent()?.themeId;
+    if (!themeId || themes.length === 0) {
+      return undefined;
+    }
+    return await getActivedTheme(themes, themeId);
+  }
+
+  /**
+   * Checks if theme has changed and updates theme settings if needed
+   */
+  protected async checkAndUpdateThemeSettings() {
+    const activeTheme = await this.getActivedTheme();
+    if (!activeTheme?.settings) {
+      return;
+    }
+
+    // Get current theme settings from store
+    const currentStore = this.getStore()?.getSnapshot();
+    const currentThemeSettings = currentStore?.themeSettings;
+
+    // Check if theme settings have changed using isEqual for deep comparison
+    if (!isEqual(currentThemeSettings, activeTheme.settings)) {
+      this.updateStore({
+        themeSettings: activeTheme.settings,
+      } as Partial<T>);
+    }
+  }
+
+  /**
    * Get the base information for the store
    */
-  getStoreBaseInfo(): BaseStore | undefined {
-    const themes = this.getThemes();
+  async getStoreBaseInfo(): Promise<BaseStore | undefined> {
     const userInfo = this.getUserInfo();
     const zIndex = this.getBaseZIndex();
     const sdkConfig = this.getSdkConfig();
-    if (!themes || themes.length === 0) {
-      return undefined;
-    }
-    let theme: Theme | undefined;
-    const currentStep = this.getCurrentStep();
-    if (currentStep?.themeId) {
-      theme = themes.find((item) => item.id === currentStep?.themeId);
-    } else {
-      theme = themes.find((item) => this.getContent()?.themeId === item.id);
-    }
-    if (!theme) {
+
+    const theme = await this.getActivedTheme();
+    if (!theme || !theme.settings) {
       return undefined;
     }
     return {
       sdkConfig,
-      assets: getAssets(theme),
+      assets: getAssets(theme.settings),
       globalStyle: convertToCssVars(convertSettings(theme.settings)),
-      theme,
+      themeSettings: theme.settings,
       zIndex,
       userInfo,
       openState: false,
     };
-  }
-
-  /**
-   * Refreshes the app contents
-   */
-  async refreshContents(): Promise<void> {
-    await this.getInstance().refresh();
   }
 
   /**
@@ -598,5 +614,5 @@ export abstract class BaseContent<T extends BaseStore = any> extends Evented {
   abstract reset(): void;
   abstract refresh(): void;
   abstract initializeEventListeners(): void;
-  abstract reportStartEvent(reason?: string): Promise<void>;
+  abstract handleAfterShow(isNewSession?: boolean): Promise<void>;
 }

@@ -1,15 +1,26 @@
-import { QueryHookOptions, useMutation, useQuery, useLazyQuery } from '@apollo/client';
+import {
+  QueryHookOptions,
+  useMutation,
+  useQuery,
+  useLazyQuery,
+  NetworkStatus,
+} from '@apollo/client';
 import {
   activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
+  deleteAttribute,
+  deleteContent,
+  deleteEnvironments,
+  deleteSegment,
   deleteSession,
   endSession,
   getAuthConfig,
   getInvite,
   getInvites,
   getTeamMembers,
+  getUserEnvironments,
   inviteTeamMember as inviteTeamMemberMutation,
   listAttributes,
   listSegment,
@@ -24,6 +35,7 @@ import {
   signUp,
   updateContent,
   updateContentVersion,
+  updateSegment,
   createCheckoutSession,
   createPortalSession,
   getSubscriptionPlans,
@@ -34,6 +46,19 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   updateProjectName,
+  getProjectLicenseInfo,
+  updateProjectLicense,
+  ListIntegrations,
+  UpdateIntegration,
+  GetSalesforceAuthUrl,
+  GetIntegration,
+  DisconnectIntegration,
+  GetIntegrationObjectMappings,
+  GetIntegrationObjectMapping,
+  UpsertIntegrationObjectMapping,
+  UpdateIntegrationObjectMapping,
+  DeleteIntegrationObjectMapping,
+  GetSalesforceObjectFields,
   getContent,
   getContentVersion,
   addContentSteps,
@@ -43,7 +68,14 @@ import {
   logout,
   createContentVersion,
   resetUserPasswordByCode,
-} from '@usertour-ui/gql';
+  deleteEvent,
+  listEvents,
+  deleteTheme,
+  listThemes,
+  deleteBizUser,
+  deleteBizUserOnSegment,
+} from '@usertour-packages/gql';
+
 import type {
   Content,
   ContentDataType,
@@ -55,10 +87,16 @@ import type {
   BizAttributeTypes,
   AttributeBizTypes,
   Attribute,
+  Environment,
   Subscription,
   GlobalConfig,
+  UpdateIntegrationInput,
+  IntegrationModel,
+  SalesforceObjectFields,
   SessionQuery,
-} from '@usertour-ui/types';
+  Event,
+  Theme,
+} from '@usertour/types';
 
 type UseContentListQueryProps = {
   query: {
@@ -485,13 +523,16 @@ export interface AccessToken {
 }
 
 export const useListAccessTokensQuery = (environmentId: string | undefined) => {
-  const { data, loading, error, refetch } = useQuery(ListAccessTokens, {
+  const { data, loading, error, refetch, networkStatus } = useQuery(ListAccessTokens, {
     variables: { environmentId },
     skip: !environmentId,
+    notifyOnNetworkStatusChange: true,
   });
 
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+
   const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
-  return { accessTokens, loading, error, refetch };
+  return { accessTokens, loading, error, refetch, isRefetching };
 };
 
 export const useDeleteAccessTokenMutation = () => {
@@ -524,6 +565,23 @@ export const useUpdateProjectNameMutation = () => {
   return { invoke, loading, error };
 };
 
+export const useListIntegrationsQuery = (environmentId: string, options?: QueryHookOptions) => {
+  const { data, loading, error, refetch } = useQuery(ListIntegrations, {
+    variables: { environmentId },
+    ...options,
+  });
+  return { data: data?.listIntegrations, loading, error, refetch };
+};
+
+export const useUpdateIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateIntegration);
+  const invoke = async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
+    const response = await mutation({ variables: { environmentId, provider, input } });
+    return response.data?.updateIntegration;
+  };
+  return { invoke, loading, error };
+};
+
 // Builder related hooks
 export const useGetContentLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContent);
@@ -534,11 +592,80 @@ export const useGetContentLazyQuery = () => {
   return { invoke, loading, error };
 };
 
+export const useGetSalesforceAuthUrlQuery = (
+  environmentId: string,
+  provider: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error } = useQuery(GetSalesforceAuthUrl, {
+    variables: { environmentId, provider },
+    ...options,
+  });
+  return { data: data?.getSalesforceAuthUrl, loading, error };
+};
+
+export const useGetIntegrationQuery = (
+  environmentId: string,
+  provider: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegration, {
+    variables: { environmentId, provider },
+    ...options,
+  });
+  return { data: data?.getIntegration as IntegrationModel, loading, error, refetch };
+};
+
+export const useDisconnectIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DisconnectIntegration);
+  const invoke = async (environmentId: string, provider: string) => {
+    const response = await mutation({ variables: { environmentId, provider } });
+    return response.data?.disconnectIntegration;
+  };
+  return { invoke, loading, error };
+};
+
 export const useGetContentVersionLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContentVersion);
   const invoke = async (versionId: string) => {
     const response = await query({ variables: { versionId } });
     return response.data?.getContentVersion;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetIntegrationObjectMappingsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMappings, {
+    variables: { integrationId },
+    ...options,
+  });
+  return { data: data?.getIntegrationObjectMappings, loading, error, refetch };
+};
+
+export const useGetIntegrationObjectMappingQuery = (id: string, options?: QueryHookOptions) => {
+  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMapping, {
+    variables: { id },
+    ...options,
+  });
+  return { data: data?.getIntegrationObjectMapping, loading, error, refetch };
+};
+
+export const useUpsertIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping);
+  const invoke = async (
+    integrationId: string,
+    input: {
+      sourceObjectType: string;
+      destinationObjectType: string;
+      settings?: any;
+      enabled?: boolean;
+    },
+  ) => {
+    const response = await mutation({ variables: { integrationId, input } });
+    return response.data?.upsertIntegrationObjectMapping;
   };
   return { invoke, loading, error };
 };
@@ -557,11 +684,35 @@ export const useAddContentStepsMutation = () => {
   return { invoke, loading, error };
 };
 
+export const useUpdateIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationObjectMapping);
+  const invoke = async (
+    id: string,
+    input: {
+      settings?: any;
+      enabled?: boolean;
+    },
+  ) => {
+    const response = await mutation({ variables: { id, input } });
+    return response.data?.updateIntegrationObjectMapping;
+  };
+  return { invoke, loading, error };
+};
+
 export const useAddContentStepMutation = () => {
   const [mutation, { loading, error }] = useMutation(addContentStep);
   const invoke = async (data: { [key: string]: any; versionId: string }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.addContentStep;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteIntegrationObjectMapping;
   };
   return { invoke, loading, error };
 };
@@ -573,6 +724,22 @@ export const useUpdateContentStepMutation = () => {
     return response.data?.updateContentStep;
   };
   return { invoke, loading, error };
+};
+
+export const useGetSalesforceObjectFieldsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(GetSalesforceObjectFields, {
+    variables: { integrationId },
+    ...options,
+  });
+  return {
+    data: data?.getSalesforceObjectFields as SalesforceObjectFields | undefined,
+    loading,
+    error,
+    refetch,
+  };
 };
 
 export const useGetUserInfoQuery = (uid?: string, options?: QueryHookOptions) => {
@@ -607,5 +774,165 @@ export const useResetUserPasswordByCodeMutation = () => {
     const response = await mutation({ variables: { code, password } });
     return response.data?.resetUserPasswordByCode;
   };
+  return { invoke, loading, error };
+};
+
+export const useDeleteAttributeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteAttribute);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteAttribute?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteSegment);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteSegment?.success;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateSegment);
+  const invoke = async (data: {
+    id: string;
+    data: any;
+    name: string;
+  }): Promise<boolean> => {
+    const response = await mutation({ variables: { data } });
+    return !!response.data?.updateSegment?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteContent);
+  const invoke = async (contentId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { contentId } });
+    return !!response.data?.deleteContent?.success;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteEnvironmentsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteEnvironments);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteEnvironments?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useGetUserEnvironmentsQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(getUserEnvironments, {
+    variables: { projectId },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const environmentList = data?.userEnvironments as Environment[] | null;
+
+  return { environmentList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteEventMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteEvent);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteEvent?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListEventsQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listEvents, {
+    variables: { projectId, bizType: 0 },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const eventList = data?.listEvents as Event[] | undefined;
+  return { eventList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteThemeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteTheme);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.deleteTheme?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useListThemesQuery = (projectId: string | undefined) => {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listThemes, {
+    variables: { projectId },
+    notifyOnNetworkStatusChange: true,
+    skip: !projectId,
+  });
+  const isRefetching = networkStatus === NetworkStatus.refetch;
+  const themeList = data?.listThemes as Theme[] | null;
+  return { themeList, refetch, loading, error, isRefetching };
+};
+
+export const useDeleteBizUserMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizUser);
+  const invoke = async (data: { ids: string[]; environmentId: string }): Promise<{
+    success: boolean;
+    count: number;
+  }> => {
+    const response = await mutation({ variables: { data } });
+    return {
+      success: !!response.data?.deleteBizUser?.success,
+      count: response.data?.deleteBizUser?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizUserOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment);
+  const invoke = async (data: { bizUserIds: string[]; segmentId: string }): Promise<{
+    success: boolean;
+    count: number;
+  }> => {
+    const response = await mutation({ variables: { data } });
+    return {
+      success: !!response.data?.deleteBizUserOnSegment?.success,
+      count: response.data?.deleteBizUserOnSegment?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
+};
+
+// License related hooks
+export const useGetProjectLicenseInfoQuery = (projectId: string) => {
+  const { data, loading, error, refetch } = useQuery(getProjectLicenseInfo, {
+    variables: { projectId },
+    skip: !projectId,
+  });
+
+  return {
+    licenseInfo: data?.getProjectLicenseInfo,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useUpdateProjectLicenseMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectLicense);
+
+  const invoke = async (projectId: string, license: string) => {
+    const response = await mutation({
+      variables: { projectId, license },
+    });
+    return response.data?.updateProjectLicense;
+  };
+
   return { invoke, loading, error };
 };

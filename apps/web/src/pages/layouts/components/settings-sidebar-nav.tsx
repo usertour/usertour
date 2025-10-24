@@ -18,9 +18,10 @@ import {
   FlashlightIcon,
   BankCardIcon,
   ProjectIcon,
-} from '@usertour-ui/icons';
-import { TeamMemberRole } from '@usertour-ui/types';
-import { Key } from 'lucide-react';
+  // PlugIcon,
+  KeyIcon,
+} from '@usertour-packages/icons';
+import { TeamMemberRole } from '@usertour/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants
@@ -28,6 +29,11 @@ const ALL_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER, TeamMemberRole.VI
 const OWNER_ROLES = [TeamMemberRole.OWNER] as const;
 // const ADMIN_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER] as const;
 const ICON_CLASS_NAME = 'w-4 h-4';
+
+enum Mode {
+  CLOUD = 'cloud',
+  SELF_HOSTED = 'self-hosted',
+}
 
 // Types
 enum SidebarNavItemType {
@@ -41,6 +47,7 @@ interface SidebarNavItem {
   role: readonly TeamMemberRole[];
   type: SidebarNavItemType;
   icon: React.ReactNode;
+  mode: readonly Mode[];
 }
 
 // Components
@@ -82,7 +89,7 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
         <NavItem
           key={item.href}
           item={item}
-          isActive={currentPath === item.href}
+          isActive={currentPath.startsWith(item.href)}
           onClick={() => onNavigate(item.href)}
         />
       ))}
@@ -98,6 +105,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <ProjectIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Themes',
@@ -105,6 +113,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <ColorIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Environments',
@@ -112,6 +121,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <BoxIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Attributes',
@@ -119,6 +129,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <AttributeIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Events',
@@ -126,6 +137,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <FlashlightIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Team',
@@ -133,6 +145,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <TeamIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'Billing',
@@ -140,6 +153,15 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <BankCardIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD],
+  },
+  {
+    title: 'Subscription',
+    href: '/settings/subscription',
+    role: OWNER_ROLES,
+    type: SidebarNavItemType.GENERAL,
+    icon: <BankCardIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.SELF_HOSTED],
   },
   {
     title: 'Account',
@@ -147,14 +169,23 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     role: ALL_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <AccountIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
   {
     title: 'API',
     href: '/settings/api',
     role: OWNER_ROLES,
     type: SidebarNavItemType.DEVELOPER,
-    icon: <Key className={ICON_CLASS_NAME} />,
+    icon: <KeyIcon className={ICON_CLASS_NAME} />,
+    mode: [Mode.CLOUD, Mode.SELF_HOSTED],
   },
+  // {
+  //   title: 'Integrations',
+  //   href: '/settings/integrations',
+  //   role: OWNER_ROLES,
+  //   type: SidebarNavItemType.DEVELOPER,
+  //   icon: <PlugIcon className={ICON_CLASS_NAME} />,
+  // },
   // {
   //   title: 'Webhooks',
   //   href: '/settings/webhooks',
@@ -167,7 +198,9 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
 export const SettingsSidebarNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project } = useAppContext();
+  const { project, globalConfig } = useAppContext();
+
+  const isSelfHosted = globalConfig?.isSelfHostedMode;
 
   const filteredItems = sidebarNavItems
     .map((item) => ({
@@ -179,7 +212,11 @@ export const SettingsSidebarNav = () => {
       return projectRole && item.role.includes(projectRole as TeamMemberRole);
     });
 
-  const generalItems = filteredItems.filter((item) => item.type === SidebarNavItemType.GENERAL);
+  const generalItems = filteredItems.filter(
+    (item) =>
+      item.type === SidebarNavItemType.GENERAL &&
+      item.mode.includes(isSelfHosted ? Mode.SELF_HOSTED : Mode.CLOUD),
+  );
   const developerItems = filteredItems.filter((item) => item.type === SidebarNavItemType.DEVELOPER);
 
   const handleNavigate = (href: string) => {

@@ -5,11 +5,12 @@ import {
   WebSocketServer,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketAuthGuard } from './web-socket.guard';
 import { WebSocketEnvironment } from './web-socket.decorator';
+import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import {
   ConfigRequest,
   ConfigResponse,
@@ -21,14 +22,18 @@ import {
   IdentityRequest,
   UpsertUserResponse,
   UpsertCompanyResponse,
-  CreateSessionResponse,
-  TrackEventResponse,
   ContentResponse,
+  ListThemesRequest,
+  ContentSession,
+  CreateSessionResponse,
+  GetProjectSettingsRequest,
+  GetProjectSettingsResponse,
 } from './web-socket.dto';
 import { Environment, Theme } from '@prisma/client';
 
 @WsGateway()
 @UseGuards(WebSocketAuthGuard)
+@UseInterceptors(WebSocketPerformanceInterceptor)
 export class WebSocketGateway {
   private readonly logger = new Logger(WebSocketGateway.name);
   constructor(private service: WebSocketService) {}
@@ -52,8 +57,11 @@ export class WebSocketGateway {
   }
 
   @SubscribeMessage('list-themes')
-  async listThemes(@WebSocketEnvironment() environment: Environment): Promise<Theme[]> {
-    return await this.service.listThemes(environment);
+  async listThemes(
+    @MessageBody() body: ListThemesRequest,
+    @WebSocketEnvironment() environment: Environment,
+  ): Promise<Theme[]> {
+    return await this.service.listThemes(body, environment);
   }
 
   @SubscribeMessage('identity')
@@ -90,16 +98,37 @@ export class WebSocketGateway {
   async createSession(
     @MessageBody() body: CreateSessionRequest,
     @WebSocketEnvironment() environment: Environment,
-  ): Promise<CreateSessionResponse> {
-    return await this.service.createSession(body, environment);
+  ): Promise<CreateSessionResponse | false> {
+    const session = await this.service.createSession(body, environment);
+    if (!session) {
+      return false;
+    }
+    const contentSession = await this.service.getContentSessionBySession(
+      body.userId,
+      session.id,
+      environment,
+    );
+    if (!contentSession) {
+      return false;
+    }
+    return { session, contentSession };
   }
 
   @SubscribeMessage('track-event')
   async sendEvent(
     @MessageBody() body: TrackEventRequest,
     @WebSocketEnvironment() environment: Environment,
-  ): Promise<TrackEventResponse> {
-    return await this.service.trackEvent(body, environment);
+  ): Promise<ContentSession | false> {
+    await this.service.trackEvent(body, environment);
+    return await this.service.getContentSessionBySession(body.userId, body.sessionId, environment);
+  }
+
+  @SubscribeMessage('get-project-settings')
+  async getProjectSettings(
+    @MessageBody() body: GetProjectSettingsRequest,
+    @WebSocketEnvironment() environment: Environment,
+  ): Promise<GetProjectSettingsResponse> {
+    return await this.service.getProjectSettings(body, environment);
   }
 
   /**

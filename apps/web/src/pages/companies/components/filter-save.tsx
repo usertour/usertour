@@ -1,27 +1,26 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { Button } from '@usertour-ui/button';
-import { updateSegment } from '@usertour-ui/gql';
-import { conditionsIsSame, getErrorMessage } from '@usertour-ui/shared-utils';
-import { Segment } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { Button } from '@usertour-packages/button';
+import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
+import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
+import { Segment } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;
-  const [mutation] = useMutation(updateSegment);
-  const { refetch, currentConditions } = useSegmentListContext();
+  const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
+  const { refetch, currentConditions, isRefetching } = useSegmentListContext();
   const { toast } = useToast();
   const { isViewOnly } = useAppContext();
 
@@ -46,13 +45,14 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
       name: currentSegment.name,
     };
     try {
-      const ret = await mutation({ variables: { data } });
-      if (ret.data?.updateSegment?.id) {
+      const success = await updateSegment(data);
+      if (success) {
         await refetch();
         toast({
           variant: 'success',
           title: `The segment ${currentSegment.name} filter has been successfully saved`,
         });
+        setOpen(false);
       }
     } catch (error) {
       toast({
@@ -60,7 +60,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
         title: getErrorMessage(error),
       });
     }
-  }, [currentSegment, currentConditions]);
+  }, [currentSegment, currentConditions, updateSegment, toast, setOpen]);
 
   useEffect(() => {
     if (
@@ -97,7 +97,9 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit}>Yes, save</AlertDialogAction>
+            <LoadingButton onClick={handleSubmit} loading={loading || isRefetching}>
+              Yes, save
+            </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

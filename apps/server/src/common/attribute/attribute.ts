@@ -1,4 +1,4 @@
-import { BizAttributeTypes } from '../consts/attribute';
+import { BizAttributeTypes } from '@usertour/types';
 
 export const isNull = (x: unknown): x is null => {
   // eslint-disable-next-line posthog-js/no-direct-null-check

@@ -1,5 +1,10 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { useCallback } from 'react';
 import { ColorResult, SketchPicker } from 'react-color';
 import { useSlate } from 'slate-react';

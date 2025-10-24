@@ -1,4 +1,4 @@
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 
 interface ElementPreviewProps {
   onClick: () => void;

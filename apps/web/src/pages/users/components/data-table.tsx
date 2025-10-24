@@ -16,9 +16,16 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { Skeleton } from '@usertour-ui/skeleton';
-import { BizUser, Segment } from '@usertour-ui/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { Skeleton } from '@usertour-packages/skeleton';
+import { BizUser, Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns, columnsSystem } from '../components/columns';
@@ -38,7 +45,7 @@ export function DataTable({ segment }: TableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [customColumns, setCustomColumns] = React.useState<typeof columns>(columns);
-  const { setQuery, setPagination, pagination, pageCount, contents, loading } =
+  const { setQuery, setPagination, pagination, pageCount, contents, loading, isRefetching } =
     useUserListContext();
   const { attributeList } = useAttributeListContext();
   const navigate = useNavigate();
@@ -129,7 +136,7 @@ export function DataTable({ segment }: TableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {loading || isRefetching ? (
               // Show loading skeleton using Skeleton component
               Array.from({ length: pagination.pageSize }).map((_, index) => (
                 <TableRow key={`loading-${index}`}>

@@ -1,8 +1,8 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { QuestionTooltip } from '@usertour-ui/tooltip';
-import { cn } from '@usertour-ui/ui-utils';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { cn } from '@usertour/helpers';
 import { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -10,7 +10,7 @@ import { ContentEditorStarRatingElement } from '../../types/editor';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Star SVG path constant to avoid recreation
@@ -337,13 +337,14 @@ ContentEditorStarRating.displayName = 'ContentEditorStarRating';
 
 interface ContentEditorStarRatingSerializeProps {
   element: ContentEditorStarRatingElement;
-  onClick?: (element: ContentEditorStarRatingElement, value: number) => void;
+  onClick?: (element: ContentEditorStarRatingElement, value: number) => Promise<void>;
 }
 
 export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSerializeProps>(
   (props) => {
     const { element, onClick } = props;
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const scaleLength = useMemo(
       () => element.data.highRange - element.data.lowRange + 1,
@@ -359,8 +360,15 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
     }, []);
 
     const handleStarClick = useCallback(
-      (value: number) => {
-        onClick?.(element, value);
+      async (value: number) => {
+        if (onClick) {
+          setLoading(true);
+          try {
+            await onClick(element, value);
+          } finally {
+            setLoading(false);
+          }
+        }
       },
       [onClick, element],
     );
@@ -371,7 +379,7 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
         hoveredIndex={hoveredIndex}
         onStarHover={handleStarHover}
         onStarLeave={handleStarLeave}
-        onStarClick={handleStarClick}
+        onStarClick={loading ? undefined : handleStarClick}
         lowRange={element.data.lowRange}
         lowLabel={element.data.lowLabel}
         highLabel={element.data.highLabel}

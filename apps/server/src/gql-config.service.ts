@@ -23,6 +23,7 @@ export class GqlConfigService implements GqlOptionsFactory {
       installSubscriptionHandlers: true,
       includeStacktraceInErrorResponses: graphqlConfig.debug,
       playground: graphqlConfig.playgroundEnabled,
+
       formatError: (formattedError, error) => {
         // Log the complete error with context
         this.logger.error({
@@ -37,6 +38,15 @@ export class GqlConfigService implements GqlOptionsFactory {
               }
             : {}),
         });
+
+        // Log unknown errors
+        if (error instanceof GraphQLError && !(error.originalError instanceof BaseError)) {
+          this.logger.error({
+            err: error.originalError || error,
+            msg: 'GraphQL unknown error occurred',
+            context: this.constructor.name,
+          });
+        }
 
         // @ts-expect-error allow assign
         formattedError.extensions ??= {};

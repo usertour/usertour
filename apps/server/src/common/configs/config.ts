@@ -41,9 +41,9 @@ const config: Config = {
     password: process.env.Redis_PASS,
   },
   app: {
-    homepageUrl: process.env.APP_HOMEPAGE_URL,
-    apiUrl: process.env.API_URL,
-    docUrl: process.env.DOC_URL,
+    homepageUrl: process.env.APP_HOMEPAGE_URL || '',
+    apiUrl: process.env.API_URL || '',
+    docUrl: process.env.DOC_URL || '',
   },
   aws: {
     s3: {
@@ -105,6 +105,15 @@ const config: Config = {
   globalConfig: {
     enabledBillingUsers: process.env.ENABLED_BILLING_USERS?.split(',') || [],
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
+  },
+  integration: {
+    salesforce: {
+      clientId: process.env.SALESFORCE_CLIENT_ID || '',
+      clientSecret: process.env.SALESFORCE_CLIENT_SECRET || '',
+      callbackUrl: process.env.SALESFORCE_CALLBACK_URL || '',
+      loginUrl: process.env.SALESFORCE_LOGIN_URL || '',
+      sandboxLoginUrl: process.env.SALESFORCE_SANDBOX_LOGIN_URL || 'https://test.salesforce.com',
+    },
   },
 };
 

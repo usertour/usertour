@@ -1,14 +1,14 @@
 'use client';
 
 import { useMutation } from '@apollo/client';
-import { Button } from '@usertour-ui/button';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
-import { resendMagicLink } from '@usertour-ui/gql';
-import { useToast } from '@usertour-ui/use-toast';
+import { Button } from '@usertour-packages/button';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { resendMagicLink } from '@usertour-packages/gql';
+import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 
 import { Icons } from '@/components/atoms/icons';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
+import { getErrorMessage } from '@usertour/helpers';
 
 export type SignUpSuccessProps = {
   registerId: string;

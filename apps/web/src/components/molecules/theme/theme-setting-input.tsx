@@ -1,6 +1,6 @@
-import { Input } from '@usertour-ui/input';
-import { HelpTooltip } from '@usertour-ui/shared-components';
-import { cn } from '@usertour-ui/ui-utils';
+import { Input } from '@usertour-packages/input';
+import { HelpTooltip } from '@usertour-packages/shared-components';
+import { cn } from '@usertour/helpers';
 import { ChangeEvent } from 'react';
 
 type ThemeSettingInputProps = {
@@ -50,7 +50,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
           placeholder={placeholder}
         />
         {!disableUnit && (
-          <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-10 pe-4">
+          <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-1 pe-4">
             <span className="text-gray-500">px</span>
           </div>
         )}

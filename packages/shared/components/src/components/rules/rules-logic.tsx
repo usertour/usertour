@@ -1,6 +1,6 @@
-import { Button } from '@usertour-ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@usertour-ui/tabs';
-import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-packages/button';
+import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import { cn } from '@usertour/helpers';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 
@@ -24,6 +24,9 @@ export const RulesLogic = (props: RulesLogicProps) => {
         If
       </Button>
     );
+  }
+  if (index === 0 && !isShowIf) {
+    return <></>;
   }
   if (disabled) {
     return (

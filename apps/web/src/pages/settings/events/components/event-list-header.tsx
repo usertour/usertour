@@ -1,6 +1,6 @@
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { EventCreateForm } from './event-create-form';
 import { PlusIcon } from 'lucide-react';

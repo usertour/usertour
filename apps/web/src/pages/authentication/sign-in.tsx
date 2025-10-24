@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Link } from 'react-router-dom';
 import {
   SignInSocialProviders,

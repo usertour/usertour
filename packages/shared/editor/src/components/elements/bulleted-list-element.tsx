@@ -1,4 +1,4 @@
-import { cn } from '@usertour-ui/button/src/utils';
+import { cn } from '@usertour-packages/button/src/utils';
 import { RenderElementProps } from 'slate-react';
 
 const BulletedListElement = (props: RenderElementProps & { className?: string }) => {

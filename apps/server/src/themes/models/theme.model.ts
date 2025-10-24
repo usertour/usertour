@@ -19,4 +19,7 @@ export class Theme extends BaseModel {
 
   @Field(() => GraphQLJSON)
   settings: JsonValue;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  variations?: JsonValue;
 }

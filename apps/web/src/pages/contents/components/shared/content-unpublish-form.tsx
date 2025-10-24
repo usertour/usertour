@@ -3,7 +3,7 @@
 import { Icons } from '@/components/atoms/icons';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation } from '@apollo/client';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Dialog,
   DialogClose,
@@ -12,14 +12,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-ui/dialog';
-import { unpublishedContentVersion } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Content } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/dialog';
+import { unpublishedContentVersion } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { Content } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { Label } from '@usertour-ui/label';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { Label } from '@usertour-packages/label';
 
 interface ContentUnpublishFormProps {
   content: Content;
@@ -60,16 +60,6 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
           publishedVersion: envContent?.publishedVersion || null,
         };
       });
-    }
-
-    // If we have a single published environment
-    if (content?.published) {
-      return environmentList.map((env) => ({
-        environmentId: env.id,
-        environment: env,
-        published: env.id === content.environmentId,
-        publishedVersion: content.publishedVersion,
-      }));
     }
 
     // If no published content, all environments are unpublished

@@ -1,19 +1,12 @@
 import { forwardRef, useRef, createContext, useContext } from 'react';
-import { useComposedRefs } from '@usertour-ui/react-compose-refs';
+import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
 import { useFloating, offset, shift, limitShift, hide, flip, size } from '@floating-ui/react-dom';
-import type { Placement } from '@floating-ui/dom';
-import { UserIcon } from '@usertour-ui/icons';
+import type { Middleware, Placement } from '@floating-ui/dom';
+import { UserIcon } from '@usertour-packages/icons';
 import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
-import {
-  Align,
-  LauncherData,
-  LauncherDataType,
-  Side,
-  Theme,
-  ThemeTypesSetting,
-} from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
+import { cn } from '@usertour/helpers';
 import {
   Popper,
   PopperContent,
@@ -21,7 +14,8 @@ import {
   PopperContentProps,
   PopperProps,
 } from './popper';
-import { useThemeStyles } from './hooks';
+import { useSettingsStyles } from './hooks/use-settings-styles';
+import { hiddenStyle } from './utils/content';
 
 function isNotNull<T>(value: T | null): value is T {
   return value !== null;
@@ -58,7 +52,7 @@ interface LauncherContentProps {
 
 interface LauncherRootProps {
   children: React.ReactNode;
-  theme: Theme;
+  themeSettings: ThemeTypesSetting;
   data: LauncherData;
 }
 
@@ -79,8 +73,8 @@ const useLauncherContext = () => {
 };
 
 const LauncherRoot = (props: LauncherRootProps) => {
-  const { children, theme, data } = props;
-  const { globalStyle, themeSetting } = useThemeStyles(theme);
+  const { children, themeSettings, data } = props;
+  const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
   return (
     <LauncherContext.Provider value={{ globalStyle, themeSetting, data }}>
@@ -219,7 +213,34 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     altBoundary: hasExplicitBoundaries,
   };
 
-  const { refs, floatingStyles, isPositioned } = useFloating({
+  // Custom middleware that extends the original hide logic
+  const customHideMiddleware = (options: {
+    strategy?: 'referenceHidden' | 'escaped';
+    padding?: number | Partial<Record<Side, number>>;
+    boundary?: Boundary | Boundary[];
+  }): Middleware => ({
+    name: 'customHide',
+    options,
+    async fn(state) {
+      const { rects } = state;
+      const originalHide = hide({ strategy: 'referenceHidden', ...detectOverflowOptions });
+      const originalResult = await originalHide.fn(state);
+      const { width, height, x, y } = rects.reference;
+      const isInvalid =
+        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
+      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
+      const escaped = originalResult.data?.escaped || false;
+
+      return {
+        data: {
+          referenceHidden,
+          escaped,
+        },
+      };
+    },
+  });
+
+  const { refs, floatingStyles, isPositioned, middlewareData } = useFloating({
     // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
     strategy: 'fixed',
     placement: desiredPlacement,
@@ -248,7 +269,12 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
       size({
         ...detectOverflowOptions,
       }),
-      hideWhenDetached && hide({ strategy: 'referenceHidden', ...detectOverflowOptions }),
+      hideWhenDetached &&
+        customHideMiddleware({
+          strategy: 'referenceHidden',
+          padding: detectOverflowOptions.padding,
+          boundary: detectOverflowOptions.boundary,
+        }),
     ],
   });
 
@@ -286,6 +312,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     zIndex: zIndex + 1,
     transform: isPositioned ? floatingStyles.transform : 'translate(0, -200%)',
     opacity: isPositioned ? '1' : '0',
+    ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : {}),
   };
 
   return (

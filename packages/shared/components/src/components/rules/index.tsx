@@ -1,5 +1,5 @@
-import { hasError } from '@usertour-ui/shared-utils';
-import { Attribute, Content, RulesCondition, Segment } from '@usertour-ui/types';
+import { hasError } from '@usertour/helpers';
+import { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
 import { RulesContext } from './rules-context';
 import { RulesGroup } from './rules-group';
 

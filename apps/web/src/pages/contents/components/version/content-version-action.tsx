@@ -1,21 +1,21 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { PlaneIcon } from '@usertour-ui/icons';
-import { ContentVersion } from '@usertour-ui/types';
+} from '@usertour-packages/dropdown-menu';
+import { PlaneIcon } from '@usertour-packages/icons';
+import { ContentVersion } from '@usertour/types';
 import { useState } from 'react';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
-import { isPublishedInAllEnvironments } from '@usertour-ui/shared-utils';
+import { isPublishedInAllEnvironments } from '@/utils/content';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 
 type ContentVersionActionProps = {

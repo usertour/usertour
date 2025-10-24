@@ -1,7 +1,14 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour-ui/table';
-import { ContentVersion } from '@usertour-ui/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour-packages/table';
+import { ContentVersion } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect } from 'react';
 import { ContentVersionAction } from './content-version-action';
@@ -11,7 +18,7 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 export const ContentVersionTable = () => {
   const { content, loading: contentLoading } = useContentDetailContext();
   const { versionList, refetch, loading: versionListLoading } = useContentVersionListContext();
-  const { environmentList, loading: environmentLoading } = useEnvironmentListContext();
+  const { loading: environmentLoading } = useEnvironmentListContext();
 
   useEffect(() => {
     refetch();
@@ -30,15 +37,6 @@ export const ContentVersionTable = () => {
       environmentsFromContentOnEnvironments = content?.contentOnEnvironments
         ?.filter((item) => item.published && item.publishedVersionId === versionId)
         .map((item) => item.environment.name);
-    } else if (
-      content?.publishedVersionId === versionId &&
-      content.published &&
-      environmentList?.find((item) => item.id === content.environmentId)?.name
-    ) {
-      const envName = environmentList?.find((item) => item.id === content.environmentId)?.name;
-      if (envName) {
-        environmentsFromContentOnEnvironments.push(envName);
-      }
     }
 
     return environmentsFromContentOnEnvironments;

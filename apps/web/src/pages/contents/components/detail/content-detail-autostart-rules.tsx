@@ -1,26 +1,31 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
-import { Label } from '@usertour-ui/label';
+import { Label } from '@usertour-packages/label';
 import {
   Rules,
   RulesFrequency,
   RulesIfCompleted,
   RulesPriority,
   RulesWait,
-} from '@usertour-ui/shared-components';
-import { useContentListQuery } from '@usertour-ui/shared-hooks';
-import { deepClone, getAuthToken } from '@usertour-ui/shared-utils';
-import { conditionsIsSame } from '@usertour-ui/shared-utils';
-import { Switch } from '@usertour-ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
+} from '@usertour-packages/shared-components';
+import { useContentListQuery } from '@usertour-packages/shared-hooks';
+import { deepClone, getAuthToken } from '@usertour/helpers';
+import { conditionsIsSame } from '@usertour/helpers';
+import { Switch } from '@usertour-packages/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import {
   Content,
   ContentPriority,
   Frequency,
   RulesCondition,
   autoStartRulesSetting,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { useCallback, useId, useState, useEffect } from 'react';
 
 export enum ContentDetailAutoStartRulesType {
@@ -36,6 +41,7 @@ interface ContentDetailAutoStartRulesProps {
   content: Content;
   setting: autoStartRulesSetting;
   type: ContentDetailAutoStartRulesType;
+  featureTooltip: React.ReactNode;
   showWait?: boolean;
   showFrequency?: boolean;
   showIfCompleted?: boolean;
@@ -52,13 +58,13 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     onDataChange,
     content,
     setting,
-    type,
     showWait = true,
     showFrequency = true,
     showIfCompleted = true,
     showPriority = true,
     showAtLeast = true,
     disabled = false,
+    featureTooltip,
   } = props;
 
   const [enabled, setEnabled] = useState(defaultEnabled);
@@ -128,25 +134,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               <TooltipTrigger asChild>
                 <QuestionMarkCircledIcon className="ml-1 cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                {type === ContentDetailAutoStartRulesType.START_RULES && (
-                  <>
-                    Automatically starts the {contentType} if the user matches the given condition.
-                    Example: Automatically start an {contentType} for all new users. <br />
-                    <br />
-                    Once the {contentType} has started, the auto-start condition has no effect,
-                    meaning if the user no longer matches it, the {contentType} will stay open until
-                    otherwise dismissed.
-                  </>
-                )}
-                {type === ContentDetailAutoStartRulesType.HIDE_RULES && (
-                  <>
-                    Temporarily hides the {contentType} when this condition is true. Once the
-                    condition is no longer true, the {contentType} may be shown again. <br />
-                    Example: Hide a {contentType} on certain pages.
-                  </>
-                )}
-              </TooltipContent>
+              <TooltipContent className="max-w-sm">{featureTooltip}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

@@ -1,20 +1,23 @@
-import { PopperMadeWith } from '@usertour-ui/sdk';
+import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
   LauncherContentWrapper,
   LauncherPopper,
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-ui/sdk/src/launcher';
-import { ContentEditorClickableElement, ContentEditorSerialize } from '@usertour-ui/shared-editor';
+} from '@usertour-packages/sdk/src/launcher';
+import {
+  ContentEditorClickableElement,
+  ContentEditorSerialize,
+} from '@usertour-packages/shared-editor';
 import {
   BizUserInfo,
   LauncherActionType,
   LauncherData,
   LauncherTriggerElement,
   RulesCondition,
-  Theme,
-} from '@usertour-ui/types';
+  ThemeTypesSetting,
+} from '@usertour/types';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Launcher } from '../core/launcher';
 import { useEventHandlers } from '../hooks/use-event-handlers';
@@ -30,9 +33,9 @@ type LauncherWidgetCoreProps = {
   data: LauncherData;
   handleActions: (actions: RulesCondition[]) => void;
   el: HTMLElement;
-  theme: Theme;
+  themeSettings: ThemeTypesSetting;
   zIndex: number;
-  handleOnClick: ({ type, data }: ContentEditorClickableElement) => void;
+  handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   userInfo: BizUserInfo;
   handleActive: () => void;
   removeBranding: boolean;
@@ -140,7 +143,7 @@ const LauncherTooltip = ({
 }: {
   data: LauncherData;
   userInfo: BizUserInfo;
-  handleOnClick: (element: ContentEditorClickableElement) => void;
+  handleOnClick: (element: ContentEditorClickableElement) => Promise<void>;
   removeBranding: boolean;
   popperRef: React.RefObject<HTMLDivElement>;
 }) => (
@@ -160,7 +163,7 @@ const LauncherWidgetCore = ({
   data,
   handleActions,
   el,
-  theme,
+  themeSettings,
   zIndex,
   handleOnClick,
   userInfo,
@@ -171,7 +174,16 @@ const LauncherWidgetCore = ({
   const [open, setOpen] = useState(false);
   const popperRef = useRef<HTMLDivElement>(null);
   const launcherRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLElement>(el);
+  // const triggerRef = useRef<HTMLElement>(el);
+
+  // Create a responsive React.RefObject that updates when triggerRef changes
+  const triggerRef = useMemo(() => {
+    const ref = { current: null as HTMLElement | null };
+    if (el instanceof Element) {
+      ref.current = el as HTMLElement;
+    }
+    return ref;
+  }, [el]);
 
   const handlers = useLauncherHandlers(
     data,
@@ -186,7 +198,7 @@ const LauncherWidgetCore = ({
   usePopperMouseLeave(popperRef, actionType, setOpen);
 
   return (
-    <LauncherRoot theme={theme} data={data}>
+    <LauncherRoot themeSettings={themeSettings} data={data}>
       <LauncherPopper
         triggerRef={
           data.behavior.triggerElement === LauncherTriggerElement.LAUNCHER
@@ -204,7 +216,12 @@ const LauncherWidgetCore = ({
           popperRef={popperRef}
         />
       </LauncherPopper>
-      <LauncherContentWrapper zIndex={zIndex} referenceRef={triggerRef} ref={launcherRef} />
+      <LauncherContentWrapper
+        zIndex={zIndex}
+        referenceRef={triggerRef}
+        ref={launcherRef}
+        hideWhenDetached={true}
+      />
     </LauncherRoot>
   );
 };
@@ -217,11 +234,11 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
   if (!store) {
     return <></>;
   }
-  const { userInfo, content, zIndex, theme, triggerRef, openState, sdkConfig } = store;
+  const { userInfo, content, zIndex, themeSettings, triggerRef, openState, sdkConfig } = store;
 
   const data = content?.data as LauncherData | undefined;
 
-  if (!theme || !data || !triggerRef || !openState) {
+  if (!themeSettings || !data || !triggerRef || !openState) {
     return <></>;
   }
 
@@ -230,7 +247,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
       data={data}
       handleActive={launcher.handleActive}
       handleActions={launcher.handleActions}
-      theme={theme}
+      themeSettings={themeSettings}
       zIndex={zIndex}
       handleOnClick={launcher.handleOnClick}
       userInfo={userInfo as BizUserInfo}

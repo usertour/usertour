@@ -1,32 +1,29 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useUserListContext } from '@/contexts/user-list-context';
-import { useMutation } from '@apollo/client';
+import { useDeleteBizUserMutation } from '@usertour-packages/shared-hooks';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { deleteBizUser } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 interface BizUserDeleteFormProps {
   bizUserIds: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (success: boolean) => void;
+  onSubmit: (success: boolean) => Promise<void>;
 }
 
 export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
   const { open, onOpenChange, onSubmit, bizUserIds = [] } = props;
-  const [mutation] = useMutation(deleteBizUser);
-  const { refetch } = useUserListContext();
+  const { invoke: deleteBizUser, loading } = useDeleteBizUserMutation();
   const { environment } = useAppContext();
   const { toast } = useToast();
 
@@ -39,16 +36,15 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
       environmentId: environment.id,
     };
     try {
-      const ret = await mutation({ variables: { data } });
-      if (ret.data?.deleteBizUser?.success) {
-        const count = ret.data?.deleteBizUser.count;
+      const ret = await deleteBizUser(data);
+      if (ret.success) {
+        const count = ret.count;
         const userText = count === 1 ? 'user' : 'users';
         toast({
           variant: 'success',
           title: `${count} ${userText} has been successfully deleted`,
         });
-        await refetch();
-        onSubmit(true);
+        await onSubmit(true);
         return;
       }
     } catch (error) {
@@ -80,10 +76,10 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit} variant={'destructive'}>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <LoadingButton onClick={handleDeleteSubmit} loading={loading} variant="destructive">
             {actionText}
-          </AlertDialogAction>
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

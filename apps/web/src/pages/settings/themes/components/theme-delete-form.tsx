@@ -1,18 +1,17 @@
-import { useMutation } from '@apollo/client';
+import { useDeleteThemeMutation } from '@usertour-packages/shared-hooks';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { deleteTheme } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { Theme } from '@usertour-ui/types';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { getErrorMessage } from '@usertour/helpers';
+import { Theme } from '@usertour/types';
+import { useToast } from '@usertour-packages/use-toast';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const ThemeDeleteForm = (props: {
   data: Theme;
@@ -21,7 +20,7 @@ export const ThemeDeleteForm = (props: {
   onSubmit: (success: boolean) => void;
 }) => {
   const { data, open, onOpenChange, onSubmit } = props;
-  const [deleteMutation] = useMutation(deleteTheme);
+  const { invoke: deleteTheme, loading } = useDeleteThemeMutation();
   const { toast } = useToast();
 
   const handleDeleteSubmit = async () => {
@@ -29,12 +28,8 @@ export const ThemeDeleteForm = (props: {
       return;
     }
     try {
-      const ret = await deleteMutation({
-        variables: {
-          id: data.id,
-        },
-      });
-      if (ret.data?.deleteTheme?.id) {
+      const success = await deleteTheme(data.id);
+      if (success) {
         toast({
           variant: 'success',
           title: 'The theme has been successfully deleted',
@@ -57,13 +52,15 @@ export const ThemeDeleteForm = (props: {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your account and remove your
-            data from our servers.
+            This action cannot be undone. This will permanently delete the theme and all its
+            variations.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit}>Submit</AlertDialogAction>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <LoadingButton onClick={handleDeleteSubmit} loading={loading} variant="destructive">
+            Delete
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

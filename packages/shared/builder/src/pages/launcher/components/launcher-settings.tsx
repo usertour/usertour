@@ -1,6 +1,6 @@
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
-import { LauncherTooltipSettings } from '@usertour-ui/types';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
+import { LauncherTooltipSettings } from '@usertour/types';
 import { useCallback, useState } from 'react';
 
 type SettingItem = {

@@ -5,7 +5,7 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import { BizSession, ContentDataType } from '@usertour-ui/types';
+import { BizSession, ContentDataType } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {
@@ -91,7 +91,15 @@ export const columns: ColumnDef<BizSession>[] = [
   {
     accessorKey: 'progress',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Progress" />,
-    cell: ({ row }) => <ProgressColumn {...row} />,
+    cell: ({ row }) => {
+      const { environment } = useAppContext();
+
+      return (
+        <Link to={`/env/${environment?.id}/session/${row.original.id}`}>
+          <ProgressColumn {...row} />
+        </Link>
+      );
+    },
     enableSorting: false,
   },
   {

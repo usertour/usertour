@@ -1,6 +1,6 @@
-import { Button } from '@usertour-ui/button';
-import { UserIcon } from '@usertour-ui/icons';
-import { cn } from '@usertour-ui/ui-utils';
+import { Button } from '@usertour-packages/button';
+import { UserIcon } from '@usertour-packages/icons';
+import { cn } from '@usertour/helpers';
 import { useSlate } from 'slate-react';
 import { inertUserAttributeBlock } from '../../lib/editorHelper';
 

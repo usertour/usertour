@@ -16,9 +16,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { getContentVersion } from '@usertour-ui/gql';
-import { CircleIcon } from '@usertour-ui/icons';
-import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour-ui/types';
+import { getContentVersion } from '@usertour-packages/gql';
+import { CircleIcon } from '@usertour-packages/icons';
+import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -38,11 +38,9 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
   const { isViewOnly, environment } = useAppContext();
 
-  const isPublished =
-    content?.contentOnEnvironments?.find(
-      (item) => item.published && item.environment.id === environment?.id,
-    ) ||
-    (content?.published && content?.environmentId === environment?.id);
+  const isPublished = content?.contentOnEnvironments?.find(
+    (item) => item.published && item.environment.id === environment?.id,
+  );
 
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">

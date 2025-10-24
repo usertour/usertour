@@ -1,14 +1,14 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { CheckboxIcon2, DeleteIcon, PlusIcon } from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { RadioGroup, RadioGroupItem } from '@usertour-ui/radio-group';
-import { Switch } from '@usertour-ui/switch';
-import { TooltipContent } from '@usertour-ui/tooltip';
-import { Tooltip, TooltipTrigger } from '@usertour-ui/tooltip';
-import { TooltipProvider } from '@usertour-ui/tooltip';
+import { Button } from '@usertour-packages/button';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { CheckboxIcon2, DeleteIcon, PlusIcon } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
+import { Switch } from '@usertour-packages/switch';
+import { TooltipContent } from '@usertour-packages/tooltip';
+import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
+import { TooltipProvider } from '@usertour-packages/tooltip';
 import { useCallback, useEffect, useState, useMemo, useRef, memo } from 'react';
 import { ContentActions } from '../../actions';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -19,10 +19,10 @@ import {
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
-import { cn } from '@usertour-ui/ui-utils';
+import { isEmptyString } from '@usertour/helpers';
+import { cn } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-ui/types';
+import { BizAttributeTypes } from '@usertour/types';
 
 // Constants
 const DEFAULT_BUTTON_TEXT = 'Submit';
@@ -685,7 +685,7 @@ OtherOptionSerialize.displayName = 'OtherOptionSerialize';
 export const ContentEditorMultipleChoiceSerialize = memo(
   (props: {
     element: ContentEditorMultipleChoiceElement;
-    onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => void;
+    onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => Promise<void> | void;
   }) => {
     const { element, onClick } = props;
     const [otherValue, setOtherValue] = useState<string>('');
@@ -693,6 +693,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
     const [isOtherChecked, setIsOtherChecked] = useState<boolean>(false);
     const otherInputRef = useRef<HTMLInputElement>(null);
+    const [loading, setLoading] = useState(false);
 
     const options = useMemo(() => {
       if (element.data.shuffleOptions) {
@@ -725,13 +726,18 @@ export const ContentEditorMultipleChoiceSerialize = memo(
         });
       }, []);
 
-      const handleSubmit = useCallback(() => {
-        if (isValidSelection()) {
-          const values = [...selectedValues];
-          if (isOtherChecked && otherValue) {
-            values.push(otherValue);
+      const handleSubmit = useCallback(async () => {
+        if (isValidSelection() && onClick) {
+          setLoading(true);
+          try {
+            const values = [...selectedValues];
+            if (isOtherChecked && otherValue) {
+              values.push(otherValue);
+            }
+            await onClick(element, values);
+          } finally {
+            setLoading(false);
           }
-          onClick?.(element, values);
         }
       }, [isValidSelection, selectedValues, isOtherChecked, otherValue, onClick, element]);
 
@@ -798,7 +804,11 @@ export const ContentEditorMultipleChoiceSerialize = memo(
               )}
             </div>
             <div className="flex justify-center w-full">
-              <Button forSdk={true} disabled={!isValidSelection()} onClick={handleSubmit}>
+              <Button
+                forSdk={true}
+                disabled={!isValidSelection() || loading}
+                onClick={handleSubmit}
+              >
                 {element.data.buttonText || DEFAULT_BUTTON_TEXT}
               </Button>
             </div>

@@ -1,5 +1,5 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour-ui/constants';
-import { useThemeListContext } from '@usertour-ui/contexts';
+import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
+import { useThemeListContext } from '@usertour-packages/contexts';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -11,9 +11,9 @@ import {
   ChecklistProgress,
   ChecklistRoot,
   PopperMadeWith,
-} from '@usertour-ui/sdk';
-import { ContentEditor, ContentEditorRoot } from '@usertour-ui/shared-editor';
-import { ChecklistInitialDisplay, Theme } from '@usertour-ui/types';
+} from '@usertour-packages/sdk';
+import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
+import { ChecklistInitialDisplay, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
 import { useBuilderContext, useChecklistContext } from '../../../contexts';
@@ -77,7 +77,7 @@ export const ChecklistEmbed = () => {
     <>
       <ChecklistRoot
         data={{ ...localData, items }}
-        theme={theme}
+        themeSettings={theme.settings}
         expanded={expanded}
         onExpandedChange={setExpanded}
         zIndex={10000}

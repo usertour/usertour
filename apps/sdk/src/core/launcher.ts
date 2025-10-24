@@ -1,12 +1,13 @@
-import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
-import { BizEvents, EventAttributes, LauncherData } from '@usertour-ui/types';
-import { ContentActionsItemType, RulesCondition } from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
+import { BizEvents, EventAttributes, LauncherData, SDKContent } from '@usertour/types';
+import { ContentActionsItemType, RulesCondition } from '@usertour/types';
+import { evalCode } from '@usertour/helpers';
 import { LauncherStore } from '../types/store';
 import { AppEvents } from '../utils/event';
 import { document } from '../utils/globals';
 import { BaseContent } from './base-content';
 import { ElementWatcher } from './element-watcher';
+import { launcherIsDismissed } from '../utils/conditions';
 
 export class Launcher extends BaseContent<LauncherStore> {
   private watcher: ElementWatcher | null = null;
@@ -22,6 +23,9 @@ export class Launcher extends BaseContent<LauncherStore> {
   async monitor(): Promise<void> {
     // First, check and activate any content conditions
     await this.activeContentConditions();
+
+    // Check and update theme settings if needed
+    await this.checkAndUpdateThemeSettings();
 
     // Then, handle the visibility state based on conditions
     await this.handleVisibilityState();
@@ -45,7 +49,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     const openState = store?.openState;
 
     // Hide launcher if it's temporarily hidden or target element is not visible
-    if (this.isTemporarilyHidden() || isHidden) {
+    if (!this.isAutoStart() || isHidden) {
       if (openState) {
         this.hide();
       }
@@ -61,26 +65,44 @@ export class Launcher extends BaseContent<LauncherStore> {
 
   /**
    * Gets the reused session ID for the launcher
-   * @returns {string | null} The reused session ID or null if not applicable
+   * A session can be reused if:
+   * 1. The content has data and a latest session
+   * 2. The launcher has not been dismissed
+   *
+   * @returns {string | null} The session ID if it can be reused, null otherwise
    */
-  getReusedSessionId() {
-    return null;
+  getReusedSessionId(): string | null {
+    const content = this.getContent();
+
+    // Check if content has required data
+    if (!content.data || !content.latestSession) {
+      return null;
+    }
+
+    // Check if flow has been dismissed
+    if (launcherIsDismissed(content.latestSession)) {
+      return null;
+    }
+
+    return content.latestSession.id;
   }
 
   /**
-   * Reports the start event for the launcher
-   * @returns {Promise<void>} A promise that resolves when the event is reported
+   * Handle additional logic after content is shown
+   * @param _isNewSession - Whether this is a new session
    */
-  async reportStartEvent() {}
+  async handleAfterShow(_isNewSession?: boolean) {
+    // Launcher has no additional logic, can be empty implementation
+  }
 
   /**
    * Builds the store data for the launcher
    * Combines default store data with content-specific data and base information
    * @returns {LauncherStore} The complete store data object
    */
-  private buildStoreData(): LauncherStore {
+  private async buildStoreData(): Promise<LauncherStore> {
     const content = this.getContent();
-    const baseInfo = this.getStoreBaseInfo();
+    const baseInfo = await this.getStoreBaseInfo();
     const { zIndex } = content.data;
 
     return {
@@ -96,8 +118,8 @@ export class Launcher extends BaseContent<LauncherStore> {
    * Refreshes the launcher's store data
    * Updates the store with new data while preserving the current open state and trigger reference
    */
-  refresh() {
-    const { openState, triggerRef, ...storeData } = this.buildStoreData();
+  async refresh() {
+    const { openState, triggerRef, ...storeData } = await this.buildStoreData();
     this.updateStore({ ...storeData });
   }
 
@@ -110,7 +132,8 @@ export class Launcher extends BaseContent<LauncherStore> {
    * 4. Set up event handlers for element found and timeout scenarios
    */
   async show() {
-    const data = this.getContent().data as LauncherData;
+    const content = this.getContent();
+    const data = content.data as LauncherData;
 
     // Early return if document or target element is not available
     if (!document || !data.target.element) {
@@ -123,7 +146,7 @@ export class Launcher extends BaseContent<LauncherStore> {
     }
 
     // Initialize store data and watcher
-    const storeData = this.buildStoreData();
+    const storeData = await this.buildStoreData();
     const store = { ...storeData, openState: false };
     this.setStore({ ...store });
 
@@ -139,11 +162,30 @@ export class Launcher extends BaseContent<LauncherStore> {
 
     // Set up timeout handler
     this.watcher.once(AppEvents.ELEMENT_FOUND_TIMEOUT, () => {
-      this.close();
+      this.hide();
+    });
+
+    // Handle element changed
+    this.watcher.on(AppEvents.ELEMENT_CHANGED, (el) => {
+      if (el instanceof Element) {
+        this.handleElementChanged(el, content);
+      }
     });
 
     // Start element search
     this.watcher.findElement();
+  }
+
+  private handleElementChanged(el: Element, content: SDKContent): void {
+    const store = this.getStore().getSnapshot();
+    if (store?.content?.id !== content.id) {
+      return;
+    }
+
+    // Update store
+    this.updateStore({
+      triggerRef: el,
+    });
   }
 
   /**

@@ -2,22 +2,27 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { UserIcon, UserProfile, Delete2Icon } from '@usertour-ui/icons';
-import { AttributeBizTypes, BizUser } from '@usertour-ui/types';
+import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
+import { AttributeBizTypes, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from './user-sessions';
 import { formatDistanceToNow } from 'date-fns';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour-ui/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-ui/card';
-import { Button } from '@usertour-ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
+} from '@usertour-packages/dropdown-menu';
 import { BizUserDeleteForm } from './bizuser-delete-form';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
@@ -101,7 +106,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
     }
   }, [bizUser, attributeList]);
 
-  const handleDeleteSuccess = () => {
+  const handleDeleteSuccess = async () => {
     navigator(`/env/${environmentId}/users`);
   };
 

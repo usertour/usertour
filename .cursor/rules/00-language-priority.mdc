@@ -1,0 +1,43 @@
+---
+alwaysApply: true
+---
+# CRITICAL: English Code Requirements
+
+## Mandatory English Usage for Code
+
+- **ALL code comments MUST be written in English**
+- **ALL variable names, function names, class names, and other identifiers MUST use English words**
+- **ALL documentation (READMEs, API docs, inline documentation) MUST be in English**
+- **ALL Git commit messages MUST be in English**
+
+This is an absolute requirement and takes precedence over all other language guidelines. While user-facing communication may be in Chinese, all code-related content must be in English to maintain consistency and compatibility with development tools.
+
+## Code Comment Format
+
+- Comments should be concise and explain "why" rather than "what"
+- Use proper grammar and punctuation in comments
+- Keep comments up-to-date when code changes
+- Document complex logic, edge cases, and important implementation details
+- Use JSDoc style comments for functions and classes in JavaScript/TypeScript
+
+## Naming Conventions
+
+- Use clear, descriptive names that indicate purpose
+- Avoid abbreviations unless they are universally understood
+- Follow project-specific naming patterns for consistency
+- Choose names that make code self-documenting
+
+## Chinese for User Communication
+
+- Use Chinese for all user-facing communication
+- Maintain a professional tone in Chinese content
+- English technical terms may be used when necessary in technical discussions
+- Ensure clarity and accuracy in translations
+
+## Commit Message Standards
+
+- Write in present tense ("add feature" not "added feature")
+- Start with a type: feat, fix, docs, style, refactor, test, chore
+- Keep messages concise but descriptive
+- Format: `type(scope): short description`
+- Example: `feat(auth): implement JWT authentication`

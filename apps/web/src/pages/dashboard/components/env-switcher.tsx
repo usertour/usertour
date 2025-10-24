@@ -3,19 +3,19 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { EnvironmentCreateForm } from '@/pages/settings/environments/components/environment-create-form';
-import { Environment } from '@usertour-ui/types';
+import { Environment } from '@usertour/types';
 import { CaretSortIcon, CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour-ui/avatar';
-import { Button } from '@usertour-ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@usertour-packages/avatar';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandGroup,
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour-ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-ui/popover';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { cn } from '@usertour/helpers';
 import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 

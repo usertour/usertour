@@ -1,9 +1,9 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
-import { Switch } from '@usertour-ui/switch';
-import { Textarea } from '@usertour-ui/textarea';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
+import { Switch } from '@usertour-packages/switch';
+import { Textarea } from '@usertour-packages/textarea';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -11,9 +11,9 @@ import { ContentEditorMultiLineTextElement } from '../../types/editor';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour-ui/shared-utils';
+import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour-ui/types';
+import { BizAttributeTypes } from '@usertour/types';
 
 // Constants
 const DEFAULT_PLACEHOLDER = 'Enter text...';
@@ -179,10 +179,22 @@ ContentEditorMultiLineText.displayName = 'ContentEditorMultiLineText';
 
 export const ContentEditorMultiLineTextSerialize = (props: {
   element: ContentEditorMultiLineTextElement;
-  onClick?: (element: ContentEditorMultiLineTextElement, value: string) => void;
+  onClick?: (element: ContentEditorMultiLineTextElement, value: string) => Promise<void> | void;
 }) => {
   const { element, onClick } = props;
   const [value, setValue] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    if (onClick) {
+      setLoading(true);
+      try {
+        await onClick(element, value);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2 items-center w-full">
@@ -195,8 +207,8 @@ export const ContentEditorMultiLineTextSerialize = (props: {
       <div className="flex justify-end w-full">
         <Button
           forSdk={true}
-          onClick={() => onClick?.(element, value)}
-          disabled={element.data.required && isEmptyString(value)}
+          onClick={handleClick}
+          disabled={loading || (element.data.required && isEmptyString(value))}
         >
           {element.data.buttonText || DEFAULT_BUTTON_TEXT}
         </Button>

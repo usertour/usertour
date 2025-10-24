@@ -1,15 +1,15 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
-import { Checkbox } from '@usertour-ui/checkbox';
-import { VideoIcon } from '@usertour-ui/icons';
+import { Button } from '@usertour-packages/button';
+import { Checkbox } from '@usertour-packages/checkbox';
+import { VideoIcon } from '@usertour-packages/icons';
 import {
   ArrowRightIcon,
   DeleteIcon,
   InsertColumnLeftIcon,
   InsertColumnRightIcon,
-} from '@usertour-ui/icons';
-import { Input } from '@usertour-ui/input';
-import { Label } from '@usertour-ui/label';
+} from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
+import { Label } from '@usertour-packages/label';
 import {
   Select,
   SelectContent,
@@ -18,7 +18,7 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-ui/select';
+} from '@usertour-packages/select';
 import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
 /* eslint-disable @next/next/no-img-element */
 import { Path, Transforms } from 'slate';

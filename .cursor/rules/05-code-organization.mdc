@@ -1,0 +1,65 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Code Organization Guidelines
+
+## File Structure
+
+### Component Files
+- Each file should contain only one main component
+- File names should match the component name
+- Organize components by feature rather than type
+- Related components should be placed in the same directory
+- Use index files to export multiple components from a directory
+- Keep component files focused with minimal dependencies
+
+### Import Ordering
+- Group import statements in the following order:
+  1. React/framework libraries
+  2. Third-party libraries
+  3. Internal modules
+  4. Relative path imports (parent directories first, then child directories)
+  5. Type imports
+  6. Style imports
+- Sort imports alphabetically within each group
+- Leave a blank line between import groups
+
+## Component Structure
+
+### Function Component Structure
+- Components should be organized in the following order:
+  1. Import statements
+  2. Type definitions
+  3. Constant declarations
+  4. Component function
+  5. Hook calls
+  6. Event handlers
+  7. Helper render functions
+  8. JSX return statement
+- Extract complex logic into custom hooks
+- Keep components focused on UI rendering, move business logic to hooks or services
+
+### Common Patterns
+- Destructure props in function parameters
+- Explicitly type props interfaces/types
+- Use functional updates for state (e.g., `setCount(prev => prev + 1)`)
+- Use ternary operators or && for conditional rendering
+- Extract repeated JSX patterns into reusable components
+- Follow composition over inheritance principles
+
+## State Management
+
+### Local State
+- Use React state hooks for component internal state
+- Split complex state into multiple state variables
+- Use useReducer for complex state logic
+- Keep state as close as possible to where it's used
+
+### Global State
+- Create separate state modules for related features
+- Use context for sharing state across multiple components
+- Avoid overusing global state
+- Consider adopting a predictable state container for complex applications
+- Document the structure of shared state

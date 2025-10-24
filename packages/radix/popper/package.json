@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-ui/react-popper",
+  "name": "@usertour-packages/react-popper",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
@@ -21,15 +21,15 @@
   "dependencies": {
     "@babel/runtime": "^7.13.10",
     "@floating-ui/react-dom": "^2.0.0",
-    "@usertour-ui/react-arrow": "workspace:*",
-    "@usertour-ui/react-compose-refs": "workspace:*",
-    "@usertour-ui/react-context": "workspace:*",
-    "@usertour-ui/react-primitive": "workspace:*",
-    "@usertour-ui/react-use-callback-ref": "workspace:*",
-    "@usertour-ui/react-use-layout-effect": "workspace:*",
-    "@usertour-ui/react-use-rect": "workspace:*",
-    "@usertour-ui/react-use-size": "workspace:*",
-    "@usertour-ui/rect": "workspace:*"
+    "@usertour-packages/react-arrow": "workspace:*",
+    "@usertour-packages/react-compose-refs": "workspace:*",
+    "@usertour-packages/react-context": "workspace:*",
+    "@usertour-packages/react-primitive": "workspace:*",
+    "@usertour-packages/react-use-callback-ref": "workspace:*",
+    "@usertour-packages/react-use-layout-effect": "workspace:*",
+    "@usertour-packages/react-use-rect": "workspace:*",
+    "@usertour-packages/react-use-size": "workspace:*",
+    "@usertour-packages/rect": "workspace:*"
   },
   "peerDependencies": {
     "@types/react": "*",

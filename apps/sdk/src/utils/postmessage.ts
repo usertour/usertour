@@ -1,4 +1,7 @@
-import { MESSAGE_CONTENT_PREVIEW_SUCCESS, MESSAGE_CRX_SEND_PROXY } from '@usertour-ui/constants';
+import {
+  MESSAGE_CONTENT_PREVIEW_SUCCESS,
+  MESSAGE_CRX_SEND_PROXY,
+} from '@usertour-packages/constants';
 import { window } from './globals';
 
 export const postPageMessage = (message: any, targetOrigin?: string) => {

@@ -4,14 +4,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-ui/dropdown-menu';
-import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour-ui/icons';
-import { Content } from '@usertour-ui/types';
+} from '@usertour-packages/dropdown-menu';
+import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour-packages/icons';
+import { Content } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
-import { isPublishedAtLeastOneEnvironment } from '@usertour-ui/shared-utils';
+import { isPublishedAtLeastOneEnvironment } from '@usertour/helpers';
 
 type ContentEditDropdownMenuProps = {
   content: Content;

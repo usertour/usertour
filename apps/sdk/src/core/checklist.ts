@@ -1,4 +1,4 @@
-import { ContentEditorClickableElement } from '@usertour-ui/shared-editor';
+import { ContentEditorClickableElement } from '@usertour-packages/shared-editor';
 import {
   BizEvents,
   ChecklistInitialDisplay,
@@ -7,8 +7,8 @@ import {
   contentEndReason,
   EventAttributes,
   RulesCondition,
-} from '@usertour-ui/types';
-import { evalCode } from '@usertour-ui/ui-utils';
+} from '@usertour/types';
+import { evalCode } from '@usertour/helpers';
 import { checklistIsDimissed } from '../utils/conditions';
 import { BaseContent } from './base-content';
 import {
@@ -37,11 +37,14 @@ export class Checklist extends BaseContent<ChecklistStore> {
     await this.activeContentConditions();
 
     if (this.isActiveChecklist()) {
-      // Monitor individual item conditions
-      await this.monitorItemConditions();
+      // Handle item conditions
+      await this.handleItemConditions();
 
       // Update visibility state based on checklist status
       this.handleVisibilityState();
+
+      // Check and update theme settings if needed
+      await this.checkAndUpdateThemeSettings();
     }
   }
 
@@ -62,7 +65,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
     }
 
     // Early return if checklist has been dismissed
-    if (checklistIsDimissed(checklistContent)) {
+    if (checklistIsDimissed(checklistContent.latestSession)) {
       return null;
     }
 
@@ -102,7 +105,7 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * This method sets up the initial state of the checklist without displaying it.
    */
   async show() {
-    const baseStoreData = this.getBaseStoreData();
+    const baseStoreData = await this.getBaseStoreData();
     const content = this.getContent();
     if (!baseStoreData || !content) {
       return;
@@ -151,18 +154,18 @@ export class Checklist extends BaseContent<ChecklistStore> {
    */
   async refresh() {
     const currentStore = this.getStore().getSnapshot();
-    const baseStoreData = this.getBaseStoreData();
+    const baseStoreData = await this.getBaseStoreData();
     if (!baseStoreData || !currentStore) {
       return;
     }
     // Create the new store data to compare
-    const { userInfo, assets, globalStyle, theme, zIndex } = baseStoreData;
+    const { userInfo, assets, globalStyle, themeSettings, zIndex } = baseStoreData;
     if (baseStoreInfoIsChanged(currentStore, baseStoreData)) {
       this.updateStore({
         userInfo,
         assets,
         globalStyle,
-        theme,
+        themeSettings,
         zIndex,
       });
     }
@@ -175,10 +178,10 @@ export class Checklist extends BaseContent<ChecklistStore> {
    * 2. Processes checklist items with their completion and visibility states
    * 3. Returns a complete store data object with default values
    */
-  private getBaseStoreData(): Omit<ChecklistStore, 'checklistData'> | undefined {
+  private async getBaseStoreData(): Promise<Omit<ChecklistStore, 'checklistData'> | undefined> {
     // Get base information and content
-    const baseInfo = this.getStoreBaseInfo();
-    const zIndex = baseInfo?.theme?.settings?.checklist?.zIndex || this.getBaseZIndex();
+    const baseInfo = await this.getStoreBaseInfo();
+    const zIndex = baseInfo?.themeSettings?.checklist?.zIndex || this.getBaseZIndex();
     if (!baseInfo) {
       return undefined;
     }
@@ -292,14 +295,18 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Monitors and updates the conditions of checklist items.
+   * Handles the conditions of checklist items.
    * This method:
    * 1. Checks completion and visibility conditions for each item
    * 2. Updates item status and store if changes are detected
-   * 3. Triggers appropriate events for completed items
+   * 3. Triggers appropriate events for completed items and checklist
    * 4. Updates initialDisplay to EXPANDED when there are new completed items
+   * 5. Expands the checklist if there are new completed items
+   * 6. Reports the expanded event
+   * 7. Reports the checklist completed event
+   * 8. Closes the checklist if it is auto-dismissed
    */
-  private async monitorItemConditions() {
+  async handleItemConditions() {
     // Get content and validate
     const content = this.getContent();
     const snapshot = this.getStore()?.getSnapshot();
@@ -558,13 +565,12 @@ export class Checklist extends BaseContent<ChecklistStore> {
   }
 
   /**
-   * Reports the checklist start event and creates a new session.
+   * Handle additional logic after content is shown
+   * @param isNewSession - Whether this is a new session
    */
-  async reportStartEvent(reason?: string) {
-    await this.reportChecklistEvent(BizEvents.CHECKLIST_STARTED, {
-      checklist_start_reason: reason ?? 'auto_start',
-    });
-    if (this.defaultIsExpanded()) {
+  async handleAfterShow(isNewSession?: boolean) {
+    // Only handle additional logic for new sessions
+    if (isNewSession && this.defaultIsExpanded()) {
       await this.reportSeenEvent();
     }
   }

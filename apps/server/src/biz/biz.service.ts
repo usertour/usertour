@@ -21,7 +21,7 @@ import {
   DeleteSegment,
   UpdateSegment,
 } from './dto/segment.input';
-import { Segment, SegmentDataType } from './models/segment.model';
+import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
 import { ParamsError, UnknownError } from '@/common/errors';
 import {
   capitalizeFirstLetter,
@@ -29,7 +29,9 @@ import {
   getAttributeType,
   isNull,
 } from '@/common/attribute/attribute';
-import { BizAttributeTypes } from '@/common/consts/attribute';
+import { BizAttributeTypes } from '@usertour/types';
+import { IntegrationSource } from '@/common/types/integration';
+import isEqual from 'fast-deep-equal';
 
 @Injectable()
 export class BizService {
@@ -59,6 +61,30 @@ export class BizService {
 
     return await this.prisma.segment.create({
       data: { ...data, projectId: environment.projectId },
+    });
+  }
+
+  async findSegmentBySource(projectId: string, source: IntegrationSource, sourceId: string) {
+    return await this.prisma.segment.findFirst({
+      where: { projectId, source, sourceId },
+    });
+  }
+
+  async createUserSegmentWithSource(
+    projectId: string,
+    name: string,
+    source: string,
+    sourceId: string,
+  ) {
+    return await this.prisma.segment.create({
+      data: {
+        projectId,
+        name,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+        source,
+        sourceId,
+      },
     });
   }
 
@@ -115,45 +141,44 @@ export class BizService {
       throw new ParamsError('No data provided');
     }
 
+    // Extract and validate first item
+    const firstItem = data[0];
+
     // Validate all items have the same segmentId
-    const firstSegmentId = data[0].segmentId;
-    if (!data.every((item) => item.segmentId === firstSegmentId)) {
+    const segmentIds = new Set(data.map((item) => item.segmentId));
+    if (segmentIds.size > 1) {
       throw new ParamsError('All items must have the same segmentId');
     }
 
     // Get segment and validate
-    const segment = await this.getSegment(firstSegmentId);
+    const segment = await this.getSegment(firstItem.segmentId);
     if (!segment) {
       throw new ParamsError('Segment not found');
     }
 
-    // Batch check all users exist in one query
-    const userIds = data.map((item) => item.bizUserId);
+    // Batch check all users exist and have the same environmentId
     const existingUsers = await this.prisma.bizUser.findMany({
       where: {
-        id: { in: userIds },
-        environmentId: segment.environmentId,
+        id: { in: data.map((item) => item.bizUserId) },
       },
-      select: { id: true },
+      select: { id: true, environmentId: true },
     });
 
-    const existingUserIds = new Set(existingUsers.map((user) => user.id));
-
-    // Filter and map valid items
-    const inserts = data
-      .filter((item) => existingUserIds.has(item.bizUserId))
-      .map((item) => ({
-        bizUserId: item.bizUserId,
-        segmentId: item.segmentId,
-        data: item.data || {},
-      }));
-
-    if (inserts.length === 0) {
-      throw new ParamsError('No valid users found');
+    const environmentIds = new Set(existingUsers.map((user) => user.environmentId));
+    if (environmentIds.size > 1) {
+      throw new ParamsError('All users must have the same environmentId');
     }
+
+    // Map items for insertion
+    const inserts = data.map((item) => ({
+      bizUserId: item.bizUserId,
+      segmentId: item.segmentId,
+      data: item.data || {},
+    }));
 
     return await this.prisma.bizUserOnSegment.createMany({
       data: inserts,
+      skipDuplicates: true, // Skip duplicate records based on unique constraint
     });
   }
 
@@ -167,26 +192,49 @@ export class BizService {
   }
 
   async createBizCompanyOnSegment(data: BizCompanyOnSegmentInput[]) {
-    if (!data.every((item) => item.segmentId === data[0].segmentId)) {
-      throw new ParamsError();
+    // Validate input data
+    if (!data?.length) {
+      throw new ParamsError('No data provided');
     }
-    const segment = await this.getSegment(data[0].segmentId);
+
+    // Extract and validate first item
+    const firstItem = data[0];
+
+    // Validate all items have the same segmentId
+    const segmentIds = new Set(data.map((item) => item.segmentId));
+    if (segmentIds.size > 1) {
+      throw new ParamsError('All items must have the same segmentId');
+    }
+
+    // Get segment and validate
+    const segment = await this.getSegment(firstItem.segmentId);
     if (!segment) {
-      throw new ParamsError();
+      throw new ParamsError('Segment not found');
     }
-    const inserts = data.filter(async (item) => {
-      return await this.prisma.bizCompany.findFirst({
-        where: {
-          id: item.bizCompanyId,
-          environmentId: segment.environmentId,
-        },
-      });
+
+    // Batch check all companies exist and have the same environmentId
+    const existingCompanies = await this.prisma.bizCompany.findMany({
+      where: {
+        id: { in: data.map((item) => item.bizCompanyId) },
+      },
+      select: { id: true, environmentId: true },
     });
-    if (inserts.length === 0) {
-      throw new ParamsError();
+
+    const environmentIds = new Set(existingCompanies.map((company) => company.environmentId));
+    if (environmentIds.size > 1) {
+      throw new ParamsError('All companies must have the same environmentId');
     }
+
+    // Map items for insertion
+    const inserts = data.map((item) => ({
+      bizCompanyId: item.bizCompanyId,
+      segmentId: item.segmentId,
+      data: item.data || {},
+    }));
+
     return await this.prisma.bizCompanyOnSegment.createMany({
       data: inserts,
+      skipDuplicates: true, // Skip duplicate records based on unique constraint
     });
   }
 
@@ -489,7 +537,7 @@ export class BizService {
 
   async upsertBizUsers(
     tx: Prisma.TransactionClient,
-    userId: string,
+    externalUserId: string,
     attributes: Record<string, any>,
     environmentId: string,
   ): Promise<BizUser | null> {
@@ -508,22 +556,27 @@ export class BizService {
     );
 
     const user = await tx.bizUser.findFirst({
-      where: { externalId: String(userId), environmentId },
+      where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
       return await tx.bizUser.create({
         data: {
-          externalId: String(userId),
+          externalId: String(externalUserId),
           environmentId,
           data: insertAttribute,
         },
       });
     }
-    const userData = JSON.parse(JSON.stringify(user.data));
+    const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
-      ...userData,
+      ...currentData,
       ...insertAttribute,
     });
+
+    // Only update if data has actually changed
+    if (isEqual(currentData, insertData)) {
+      return user;
+    }
 
     return await tx.bizUser.update({
       where: {
@@ -603,17 +656,23 @@ export class BizService {
     );
 
     if (company) {
-      const userData = JSON.parse(JSON.stringify(company.data));
-      const insertData = filterNullAttributes({
-        ...userData,
+      const currentData = (company.data as Record<string, any>) || {};
+      const mergedData = filterNullAttributes({
+        ...currentData,
         ...insertAttribute,
       });
+
+      // Only update if data has actually changed
+      if (isEqual(currentData, mergedData)) {
+        return company;
+      }
+
       return await tx.bizCompany.update({
         where: {
           id: company.id,
         },
         data: {
-          data: insertData,
+          data: mergedData,
         },
       });
     }
@@ -646,17 +705,23 @@ export class BizService {
     });
 
     if (relation) {
-      const userData = JSON.parse(JSON.stringify(relation.data));
-      const insertData = filterNullAttributes({
-        ...userData,
+      const currentData = (relation.data as Record<string, any>) || {};
+      const mergedData = filterNullAttributes({
+        ...currentData,
         ...insertAttribute,
       });
+
+      // Only update if data has actually changed
+      if (isEqual(currentData, mergedData)) {
+        return relation;
+      }
+
       return await tx.bizUserOnCompany.update({
         where: {
           id: relation.id,
         },
         data: {
-          data: insertData,
+          data: mergedData,
         },
       });
     }
@@ -728,7 +793,7 @@ export class BizService {
   }
 
   async upsertUser(
-    id: string,
+    externalUserId: string,
     environmentId: string,
     attributes?: Record<string, any>,
     companies?: Array<{ id: string; attributes?: Record<string, any> }>,
@@ -739,7 +804,7 @@ export class BizService {
   ) {
     return await this.prisma.$transaction(async (tx) => {
       // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, id, attributes || {}, environmentId);
+      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
       if (!user) {
         throw new UnknownError('Failed to upsert user');
@@ -751,7 +816,7 @@ export class BizService {
           await this.upsertBizCompanies(
             tx,
             company.id,
-            id,
+            externalUserId,
             company.attributes || {},
             environmentId,
             {},
@@ -764,7 +829,7 @@ export class BizService {
           await this.upsertBizCompanies(
             tx,
             membership.company.id,
-            id,
+            externalUserId,
             membership.company.attributes || {},
             environmentId,
             membership.attributes || {},

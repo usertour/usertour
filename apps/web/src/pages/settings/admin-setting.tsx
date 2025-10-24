@@ -9,6 +9,8 @@ import { SettingsMemberList } from './members';
 import { SettingsBilling } from './billing';
 import { SettingsApiList } from './api';
 import { SettingsProjectsDetail } from './projects';
+import { SettingsIntegrationsList } from './integrations';
+import { SettingsSubscription } from './subscription/';
 
 export const AdminSettings = () => {
   const { settingType } = useParams();
@@ -39,6 +41,12 @@ export const AdminSettings = () => {
   }
   if (settingType === 'companies') {
     return <SettingsProjectsDetail />;
+  }
+  if (settingType === 'integrations') {
+    return <SettingsIntegrationsList />;
+  }
+  if (settingType === 'subscription') {
+    return <SettingsSubscription />;
   }
   return <SettingsAccountDetail />;
 };

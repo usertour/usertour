@@ -1,18 +1,18 @@
 import { CaretSortIcon, CheckIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-ui/button';
+import { Button } from '@usertour-packages/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@usertour-ui/command';
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-ui/constants';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { getContentError } from '@usertour-ui/shared-utils';
-import { Content, ContentDataType, Step } from '@usertour-ui/types';
-import { cn } from '@usertour-ui/ui-utils';
+} from '@usertour-packages/command';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { getContentError } from '@usertour/helpers';
+import { Content, ContentDataType, Step } from '@usertour/types';
+import { cn } from '@usertour/helpers';
 import {
   Dispatch,
   SetStateAction,
@@ -37,7 +37,7 @@ import {
 } from './actions-popper';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
-import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-ui/icons';
+import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
 
 export interface SelectItemType {
   id: string;

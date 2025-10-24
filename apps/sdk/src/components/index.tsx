@@ -10,7 +10,7 @@ import '../index.css';
 const WIDGETS = {
   Tour: React.lazy(() =>
     import('./tour').then((module) => ({
-      default: module.Tour,
+      default: module.TourWidget,
     })),
   ),
   Launcher: React.lazy(() =>
@@ -25,12 +25,11 @@ const WIDGETS = {
   ),
 };
 
-// Add type definitions for props
-type AppProps = {
+interface AppProps {
   toursStore: ExternalStore<Tour[]>;
   launchersStore: ExternalStore<Launcher[]>;
   checklistsStore: ExternalStore<Checklist[]>;
-};
+}
 
 // Optimize App component with better type safety and error boundaries
 const App = ({ toursStore, launchersStore, checklistsStore }: AppProps) => {

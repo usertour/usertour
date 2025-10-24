@@ -1,32 +1,30 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-ui/alert-dialog';
-import { deleteBizCompany } from '@usertour-ui/gql';
-import { getErrorMessage } from '@usertour-ui/shared-utils';
-import { useToast } from '@usertour-ui/use-toast';
+} from '@usertour-packages/alert-dialog';
+import { deleteBizCompany } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
+import { LoadingButton } from '@/components/molecules/loading-button';
 
 interface BizCompanyDeleteFormProps {
   bizCompanyIds: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (success: boolean) => void;
+  onSubmit: (success: boolean) => Promise<void>;
 }
 
 export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
   const { open, onOpenChange, onSubmit, bizCompanyIds = [] } = props;
-  const [mutation] = useMutation(deleteBizCompany);
-  const { refetch } = useCompanyListContext();
+  const [mutation, { loading }] = useMutation(deleteBizCompany);
   const { environment } = useAppContext();
   const { toast } = useToast();
 
@@ -47,8 +45,7 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
           variant: 'success',
           title: `${count} ${companyText} has been successfully deleted`,
         });
-        await refetch();
-        onSubmit(true);
+        await onSubmit(true);
       }
     } catch (error) {
       toast({
@@ -57,7 +54,7 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
       });
       onSubmit(false);
     }
-  }, [bizCompanyIds, environment?.id, mutation, refetch, toast, onSubmit]);
+  }, [bizCompanyIds, environment?.id, mutation, toast, onSubmit, onOpenChange]);
 
   const companyText = bizCompanyIds.length === 1 ? 'company' : 'companies';
 
@@ -75,9 +72,9 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteSubmit} variant={'destructive'}>
+          <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
             Yes, delete {bizCompanyIds.length} {companyText}
-          </AlertDialogAction>
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

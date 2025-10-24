@@ -1,13 +1,13 @@
-import { AssetAttributes } from '@usertour-ui/frame';
-import { BizUserInfo, Theme } from '@usertour-ui/types';
-import { uuidV4 } from '@usertour-ui/ui-utils';
+import { AssetAttributes } from '@usertour-packages/frame';
+import { BizUserInfo, ThemeTypesSetting } from '@usertour/types';
+import { uuidV4 } from '@usertour/helpers';
 import { getUserTourCss } from '../utils/env';
 
 export const SESSION_TIMEOUT_HOURS = 24 * 2; // 2 days
 export const DEFAULT_TARGET_MISSING_SECONDS = 6;
 
-const getAssets = (theme: Theme): AssetAttributes[] => {
-  const { fontFamily } = theme.settings.font;
+const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
+  const { fontFamily } = themeSettings.font;
 
   const assets: AssetAttributes[] = [
     {

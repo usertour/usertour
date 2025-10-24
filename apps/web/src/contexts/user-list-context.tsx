@@ -1,7 +1,7 @@
-import { useQuery } from '@apollo/client';
+import { NetworkStatus, useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
-import { queryBizUser } from '@usertour-ui/gql';
-import { BizUser, PageInfo, Pagination } from '@usertour-ui/types';
+import { queryBizUser } from '@usertour-packages/gql';
+import { BizUser, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface UserQuery {
@@ -26,6 +26,7 @@ export interface UserListContextValue {
   pageCount: number;
   contents: BizUser[];
   loading: boolean;
+  isRefetching: boolean;
 }
 export const UserListContext = createContext<UserListContextValue | undefined>(undefined);
 
@@ -51,13 +52,16 @@ export function UserListProvider(props: UserListProviderProps): JSX.Element {
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  const { data, refetch, loading } = useQuery(queryBizUser, {
+  const { data, refetch, loading, networkStatus } = useQuery(queryBizUser, {
     variables: {
       ...requestPagination,
       query: { environmentId, ...query },
       orderBy: { field: 'createdAt', direction: 'desc' },
     },
+    notifyOnNetworkStatusChange: true,
   });
+
+  const isRefetching = networkStatus === NetworkStatus.refetch;
 
   const bizUserList = data?.queryBizUser;
 
@@ -127,6 +131,7 @@ export function UserListProvider(props: UserListProviderProps): JSX.Element {
     pageCount,
     contents,
     loading,
+    isRefetching,
   };
 
   return <UserListContext.Provider value={value}>{children}</UserListContext.Provider>;

@@ -1,5 +1,5 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour-ui/constants';
-import { PopperMadeWith } from '@usertour-ui/sdk';
+import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
+import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
   LauncherContainer,
   LauncherContentWrapper,
@@ -7,15 +7,15 @@ import {
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-ui/sdk/src/launcher';
-import { ContentEditor, ContentEditorRoot, createValue1 } from '@usertour-ui/shared-editor';
+} from '@usertour-packages/sdk/src/launcher';
+import { ContentEditor, ContentEditorRoot, createValue1 } from '@usertour-packages/shared-editor';
 import {
   ContentActionsItemType,
   LauncherActionType,
   LauncherData,
   LauncherPositionType,
   Theme,
-} from '@usertour-ui/types';
+} from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderContext } from '../../../contexts';
 export interface LauncherContentProps {
@@ -41,7 +41,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
     const isTooltipOpen = data.behavior.actionType === LauncherActionType.SHOW_TOOLTIP;
 
     return (
-      <LauncherRoot theme={theme} data={data}>
+      <LauncherRoot themeSettings={theme.settings} data={data}>
         <LauncherContainer>
           <LauncherPopper triggerRef={triggerReference} open={isTooltipOpen} zIndex={zIndex}>
             <LauncherPopperContentPotal ref={ref}>

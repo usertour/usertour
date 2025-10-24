@@ -1,12 +1,12 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-ui/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-ui/card';
-import { EXTENSION_SIDEBAR_MAIN } from '@usertour-ui/constants';
-import { SpinnerIcon } from '@usertour-ui/icons';
-import { ScrollArea } from '@usertour-ui/scroll-area';
-import { LauncherData } from '@usertour-ui/types';
+import { Button } from '@usertour-packages/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
+import { SpinnerIcon } from '@usertour-packages/icons';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { LauncherData } from '@usertour/types';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentWidth } from '../../components/content-width';
 import { useLauncherContext } from '../../contexts/launcher-context';
