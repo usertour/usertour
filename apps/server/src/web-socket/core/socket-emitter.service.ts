@@ -68,6 +68,18 @@ export class SocketEmitterService {
   }
 
   /**
+   * Unset the flow session
+   * @param socket - The socket
+   * @param sessionId - The session id to unset
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async unsetFlowSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.UNSET_FLOW_SESSION, {
+      sessionId,
+    });
+  }
+
+  /**
    * Set the checklist session
    * @param socket - The socket
    * @param session - The session to set
@@ -81,18 +93,6 @@ export class SocketEmitterService {
   }
 
   /**
-   * Unset the flow session
-   * @param socket - The socket
-   * @param sessionId - The session id to unset
-   * @returns Promise<boolean> - True if the event was acknowledged by client
-   */
-  async unsetFlowSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.UNSET_FLOW_SESSION, {
-      sessionId,
-    });
-  }
-
-  /**
    * Unset the checklist session
    * @param socket - The socket
    * @param sessionId - The session id to unset
@@ -100,6 +100,28 @@ export class SocketEmitterService {
    */
   async unsetChecklistSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
     return await this.emitWithAck(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, {
+      sessionId,
+    });
+  }
+
+  /**
+   *
+   * @param socket - The socket
+   * @param session - The session to add
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async addLauncherWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.ADD_LAUNCHER, session);
+  }
+
+  /**
+   * Remove a launcher
+   * @param socket - The socket
+   * @param sessionId - The session id to remove
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async removeLauncherWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.REMOVE_LAUNCHER, {
       sessionId,
     });
   }

@@ -45,6 +45,7 @@ export interface SocketData {
   waitTimers?: ConditionWaitTimer[];
   flowSession?: CustomContentSession;
   checklistSession?: CustomContentSession;
+  launcherSessions?: CustomContentSession[];
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
 }

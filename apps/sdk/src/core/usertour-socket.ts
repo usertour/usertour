@@ -12,6 +12,7 @@ import {
   ShowChecklistDto,
   TooltipTargetMissingDto,
   FireConditionWaitTimerDto,
+  ActivateLauncherDto,
 } from '@/types/websocket';
 
 import { Socket, logger } from '@/utils';
@@ -346,6 +347,10 @@ export class UsertourSocket implements IUsertourSocket {
       params,
       options,
     );
+  }
+
+  async activateLauncher(params: ActivateLauncherDto, options?: BatchOptions): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.ACTIVATE_LAUNCHER, params, options);
   }
 
   // Socket status methods

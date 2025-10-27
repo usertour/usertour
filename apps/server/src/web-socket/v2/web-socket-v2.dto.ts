@@ -42,6 +42,7 @@ export enum ClientMessageKind {
   REPORT_TOOLTIP_TARGET_MISSING = 'ReportTooltipTargetMissing',
   TOGGLE_CLIENT_CONDITION = 'ToggleClientCondition',
   FIRE_CONDITION_WAIT_TIMER = 'FireConditionWaitTimer',
+  ACTIVATE_LAUNCHER = 'ActivateLauncher',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
 }
@@ -55,6 +56,8 @@ export enum ServerMessageKind {
   SET_CHECKLIST_SESSION = 'SetChecklistSession',
   UNSET_FLOW_SESSION = 'UnsetFlowSession',
   UNSET_CHECKLIST_SESSION = 'UnsetChecklistSession',
+  ADD_LAUNCHER = 'AddLauncher',
+  REMOVE_LAUNCHER = 'RemoveLauncher',
   FORCE_GO_TO_STEP = 'ForceGoToStep',
   TRACK_CLIENT_CONDITION = 'TrackClientCondition',
   UNTRACK_CLIENT_CONDITION = 'UntrackClientCondition',
@@ -130,7 +133,7 @@ export type StartContentDto = {
 
 export type EndContentDto = {
   sessionId: string;
-  reason: string;
+  endReason: string;
 };
 
 export type GoToStepDto = {
@@ -168,6 +171,10 @@ export type TooltipTargetMissingDto = {
 
 export type FireConditionWaitTimerDto = {
   versionId: string;
+};
+
+export type ActivateLauncherDto = {
+  sessionId: string;
 };
 
 /**

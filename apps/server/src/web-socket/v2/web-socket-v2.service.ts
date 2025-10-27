@@ -17,6 +17,7 @@ import {
   FireConditionWaitTimerDto,
   WebSocketContext,
   SocketAuthData,
+  ActivateLauncherDto,
 } from './web-socket-v2.dto';
 import { ContentDataType, ClientContext, contentStartReason } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
@@ -308,6 +309,23 @@ export class WebSocketV2Service {
   }
 
   /**
+   * Activate launcher
+   * @param socket - The socket instance
+   * @param params - The parameters for the activate launcher event
+   * @returns True if the event was tracked successfully
+   */
+  async activateLauncher(context: WebSocketContext, params: ActivateLauncherDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    const { sessionId } = params;
+    return await this.eventTrackingService.trackLauncherActivatedEvent(
+      sessionId,
+      environment,
+      clientContext,
+    );
+  }
+
+  /**
    * End batch
    * @param server - The server instance
    * @param socket - The socket instance
@@ -367,7 +385,7 @@ export class WebSocketV2Service {
     const { server, socket, socketData } = context;
     const { externalUserId, environment, clientContext } = socketData;
 
-    const { sessionId, reason } = endContentDto;
+    const { sessionId, endReason } = endContentDto;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
       include: { content: true },
@@ -380,7 +398,7 @@ export class WebSocketV2Service {
         bizSession,
         environment,
         externalUserId,
-        reason,
+        endReason,
         clientContext,
       );
       if (!isEventTracked) return false;
@@ -391,9 +409,18 @@ export class WebSocketV2Service {
         sessionId,
         environment,
         clientContext,
-        reason,
+        endReason,
       );
       if (!trackResult) return false;
+    }
+    if (contentType === ContentDataType.LAUNCHER) {
+      // Track launcher dismissed event
+      return await this.eventTrackingService.trackLauncherDismissedEvent(
+        sessionId,
+        environment,
+        clientContext,
+        endReason,
+      );
     }
     return await this.contentOrchestratorService.cancelContent({
       server,
@@ -439,6 +466,10 @@ export class WebSocketV2Service {
         contentType,
       });
     }
+    await this.contentOrchestratorService.startLaunchers({
+      ...context,
+      contentType: ContentDataType.LAUNCHER,
+    });
 
     return true;
   }

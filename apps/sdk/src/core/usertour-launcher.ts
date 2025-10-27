@@ -1,23 +1,30 @@
 import {
-  ChecklistInitialDisplay,
-  ChecklistItemType,
   ContentActionsItemType,
   ContentEditorClickableElement,
+  ElementSelectorPropsData,
   RulesCondition,
   ThemeTypesSetting,
   contentEndReason,
+  contentStartReason,
 } from '@usertour/types';
-import { evalCode, isEqual } from '@usertour/helpers';
-import { ChecklistStore } from '@/types/store';
+import { evalCode, isEqual, isUndefined } from '@usertour/helpers';
+import { LauncherStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { logger } from '@/utils';
 import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
-import { CHECKLIST_CLOSED } from '@usertour-packages/constants';
+import {
+  ELEMENT_CHANGED,
+  ELEMENT_FOUND,
+  ELEMENT_FOUND_TIMEOUT,
+  LAUNCHER_CLOSED,
+} from '@usertour-packages/constants';
+import { UsertourElementWatcher } from './usertour-element-watcher';
 
-export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
+export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   // Tour-specific constants
   private static readonly Z_INDEX_OFFSET = 200;
+  private watcher: UsertourElementWatcher | null = null;
 
   /**
    * Checks the tour
@@ -26,70 +33,145 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     try {
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
-      logger.error('Error in checklist checking:', error);
+      logger.error('Error in launcher checking:', error);
     }
   }
 
   /**
-   * Shows the checklist by initializing its store data with closed state.
-   * This method sets up the initial state of the checklist without displaying it.
+   * Shows the launcher by initializing its store data with closed state.
+   * This method sets up the initial state of the launcher without displaying it.
    */
   async show() {
     const baseStoreData = await this.buildStoreData();
-    const checklistData = this.getChecklistData();
-    if (!baseStoreData || !checklistData) {
+    const launcherData = this.getLauncherData();
+    if (!baseStoreData || !launcherData) {
       return;
     }
-    const initialDisplay = checklistData.initialDisplay;
-    const expanded = initialDisplay === ChecklistInitialDisplay.EXPANDED;
-    // Process items to determine their status
     const store = {
       ...baseStoreData,
-      expanded,
-      checklistData,
-      openState: true,
-    };
-    this.setStoreData(store);
+      launcherData,
+    } as LauncherStore;
+    this.setupElementWatcher(store);
   }
 
   /**
-   * Expands or collapses the checklist
-   * @param isExpanded - Whether the checklist should be expanded or collapsed
-   * @returns Promise that resolves when the state update is complete
+   * Sets up the element watcher for a popper step
+   * @private
    */
-  expand(isExpanded: boolean) {
-    const store = this.getStoreData();
-    if (!store) {
+  private setupElementWatcher(store: LauncherStore): void {
+    const data = store.launcherData;
+
+    // Clean up existing watcher
+    if (this.watcher) {
+      this.watcher.destroy();
+      this.watcher = null;
+    }
+
+    const targetElement = data?.target?.element as ElementSelectorPropsData;
+    if (!targetElement) {
+      logger.error('Target element not found', { data });
       return;
     }
-    // Check if the component is already in the target state
-    if (store.expanded === isExpanded) {
-      return;
+
+    this.watcher = new UsertourElementWatcher(targetElement);
+    const targetMissingSeconds = this.instance.getTargetMissingSeconds();
+    if (!isUndefined(targetMissingSeconds)) {
+      this.watcher.setTargetMissingSeconds(targetMissingSeconds);
     }
-    // Update store to trigger component state change
+
+    // Handle element found
+    this.watcher.once(ELEMENT_FOUND, (el) => {
+      if (el instanceof Element) {
+        this.handleElementFound(el, store);
+      }
+    });
+
+    // Handle element not found
+    this.watcher.once(ELEMENT_FOUND_TIMEOUT, () => {
+      this.handleElementNotFound();
+    });
+
+    // Handle element changed
+    this.watcher.on(ELEMENT_CHANGED, (el) => {
+      if (el instanceof Element) {
+        this.handleElementChanged(el);
+      }
+    });
+    // Start watching
+    this.watcher.findElement();
+  }
+
+  /**
+   * Handles the element found event
+   * @param el - The element that was found
+   * @param store - The store data
+   */
+  private handleElementFound(el: Element, store: LauncherStore): void {
+    const sessionId = this.getSessionId();
+    if (!sessionId) {
+      this.instance.startContent(this.getContentId(), contentStartReason.START_FROM_CONDITION);
+    } else {
+      this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+    }
+  }
+
+  /**
+   * Handles the element not found event
+   */
+  private handleElementNotFound() {
+    this.hide();
+  }
+
+  /**
+   * Handles the element changed event
+   * @param el - The element that was changed
+   */
+  private handleElementChanged(el: Element): void {
     this.updateStore({
-      expanded: isExpanded,
+      triggerRef: el,
     });
   }
 
   /**
-   * Refreshes the store data for the checklist
+   * Refreshes the store data for the launcher
    */
   async refreshStore(): Promise<void> {
     const newStore = await this.buildStoreData();
-    const checklistData = this.getChecklistData();
+    const launcherData = this.getLauncherData();
     const existingStore = this.getStoreData();
-    if (!newStore || !existingStore || !checklistData) {
+    if (!newStore || !existingStore || !launcherData) {
       return;
     }
     const { userAttributes, assets, globalStyle, themeSettings } = newStore;
     this.updateStore({
-      checklistData,
+      launcherData,
       userAttributes,
       assets,
       globalStyle,
       themeSettings,
     });
+  }
+
+  /**
+   * Handles the activation of the launcher
+   * This method:
+   * 1. Reports the activation event
+   * 2. Auto-dismisses the launcher after activation if configured
+   */
+  async handleActive() {
+    const store = this.getStoreData();
+    if (!store) {
+      return;
+    }
+    const launcherData = store.launcherData;
+    const tooltip = launcherData?.tooltip;
+    await this.reportActiveEvent();
+    // Auto-dismiss after activation if configured
+    if (tooltip?.settings?.dismissAfterFirstActivation) {
+      setTimeout(() => {
+        this.close();
+      }, 2000);
+    }
   }
 
   /**
@@ -106,58 +188,23 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   };
 
   /**
-   * Handles the click event of a checklist item
-   * @param item - The checklist item that was clicked
-   */
-  async handleItemClick(item: ChecklistItemType) {
-    // Report the task click event
-    await this.reportTaskClickEvent(item);
-    // Handle actions after state update is complete
-    await this.handleActions(item.clickedActions);
-  }
-
-  /**
-   * Reports the open/close event of the checklist.
-   * @param {boolean} open - Whether the checklist is open
-   */
-  async reportExpandedChangeEvent(expanded: boolean) {
-    if (expanded) {
-      await this.reportSeenEvent();
-    } else {
-      await this.reportHiddenEvent();
-    }
-  }
-
-  /**
-   * Handles the open/close state change of the checklist.
-   * Triggers the appropriate event based on the open state.
-   * @param {boolean} expanded - Whether the checklist is expanded
-   */
-  handleExpandedChange(expanded: boolean) {
-    this.updateStore({
-      expanded,
-    });
-  }
-
-  /**
-   * Handles the dismiss event of the checklist
+   * Handles the dismiss event of the launcher
    */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
   }
 
   /**
-   * Closes the checklist
-   * @param reason - The reason for closing the checklist
+   * Closes the launcher
+   * @param reason - The reason for closing the launcher
    */
   async close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
-    // Set the checklist as dismissed
-    // Hide the checklist
+    // Set the launcher as dismissed
     this.hide();
-    // Destroy the checklist
+    // Destroy the launcher
     this.destroy();
-    // Trigger the checklist closed event
-    this.trigger(CHECKLIST_CLOSED, { sessionId: this.getSessionId() });
+    // Trigger the launcher closed event
+    this.trigger(LAUNCHER_CLOSED, { sessionId: this.getSessionId() });
     // Report the dismiss event
     await this.reportDismissEvent(reason);
   }
@@ -175,13 +222,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Builds the store data for the checklist
-   * This method combines the base store info with the current step data
-   * and sets default values for required fields
-   *
-   * @returns {TourStoreChecklistStore} The complete store data object
+   * Builds the store data for the launcher
    */
-  async buildStoreData(): Promise<ChecklistStore | null> {
+  async buildStoreData(): Promise<LauncherStore | null> {
     const themeSettings = await this.getThemeSettings();
     if (!themeSettings) {
       return null;
@@ -201,7 +244,8 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       openState: false,
       zIndex,
       expanded: false,
-    } as ChecklistStore;
+      triggerRef: undefined,
+    } as LauncherStore;
   }
 
   /**
@@ -226,12 +270,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Calculates the z-index for the checklist
+   * Calculates the z-index for the launcher
    * @private
    */
   private getCalculatedZIndex(): number {
     const baseZIndex = this.instance.getBaseZIndex() ?? 0;
-    return baseZIndex + UsertourChecklist.Z_INDEX_OFFSET;
+    return baseZIndex + UsertourLauncher.Z_INDEX_OFFSET;
   }
 
   /**
@@ -273,7 +317,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       case ContentActionsItemType.FLOW_START:
         await this.instance.startTour(action.data.contentId, { cvid: action.data.stepCvid });
         break;
-      case ContentActionsItemType.CHECKLIST_DISMIS:
+      case ContentActionsItemType.LAUNCHER_DISMIS:
         await this.close(contentEndReason.USER_CLOSED);
         break;
       case ContentActionsItemType.JAVASCRIPT_EVALUATE:
@@ -283,6 +327,26 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
         this.instance.handleNavigate(action.data);
         break;
     }
+  }
+
+  /**
+   * Reports the launcher dismiss event.
+   */
+  private async reportDismissEvent(endReason: contentEndReason = contentEndReason.USER_CLOSED) {
+    await this.socketService.endContent({
+      sessionId: this.getSessionId(),
+      endReason,
+    });
+  }
+
+  /**
+   * Reports when the launcher is activated by the user
+   * Deletes the current tracking session after activation
+   */
+  private async reportActiveEvent() {
+    await this.socketService.activateLauncher({
+      sessionId: this.getSessionId(),
+    });
   }
 
   /**
@@ -298,52 +362,5 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   destroy() {
     this.stopChecking();
     this.reset();
-  }
-  /**
-   * Reports the checklist dismiss event.
-   */
-  private async reportDismissEvent(endReason: contentEndReason = contentEndReason.USER_CLOSED) {
-    await this.socketService.endContent({
-      sessionId: this.getSessionId(),
-      endReason,
-    });
-  }
-
-  /**
-   * Reports the checklist seen event.
-   */
-  private async reportSeenEvent() {
-    await this.socketService.showChecklist(
-      {
-        sessionId: this.getSessionId(),
-      },
-      { batch: true },
-    );
-  }
-
-  /**
-   * Reports the checklist hidden event.
-   */
-  private async reportHiddenEvent() {
-    await this.socketService.hideChecklist(
-      {
-        sessionId: this.getSessionId(),
-      },
-      { batch: true },
-    );
-  }
-
-  /**
-   * Reports the checklist task click event.
-   * @param {ChecklistItemType} item - The clicked checklist item
-   */
-  private async reportTaskClickEvent(item: ChecklistItemType) {
-    await this.socketService.clickChecklistTask(
-      {
-        sessionId: this.getSessionId(),
-        taskId: item.id,
-      },
-      { batch: true },
-    );
   }
 }

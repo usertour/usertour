@@ -16,6 +16,7 @@ import {
   extractChecklistShowAnimationItems,
   extractChecklistTrackConditions,
   hasContentSessionChanges,
+  filterAvailableLauncherContentVersions,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -130,6 +131,43 @@ export class ContentOrchestratorService {
       await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
     }
     return true;
+  }
+
+  /**
+   * Start launchers
+   * @param context - The content start context
+   * @returns True if the launchers were started successfully
+   */
+  async startLaunchers(context: ContentStartContext) {
+    const { socketData, socket } = context;
+    const { clientConditions, launcherSessions = [] } = socketData;
+    const contentType = ContentDataType.LAUNCHER;
+    // Get evaluated content versions once and reuse for both strategy executions
+    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      socketData,
+      contentType,
+    );
+    const availableContentVersions = filterAvailableLauncherContentVersions(
+      evaluatedContentVersions,
+      clientConditions,
+    );
+    const targetSessions: CustomContentSession[] = [];
+    for (const contentVersion of availableContentVersions) {
+      const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
+      const result = await this.initializeSession(
+        contentVersion,
+        socketData,
+        {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+        !isAvailable,
+      );
+      if (result.session) {
+        targetSessions.push(result.session);
+      }
+    }
+
+    return await this.socketOperationService.addLaunchers(socket, launcherSessions, targetSessions);
   }
 
   /**

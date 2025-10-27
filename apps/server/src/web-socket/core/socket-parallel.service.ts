@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { ClientCondition, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
+import {
+  ClientCondition,
+  TrackCondition,
+  ConditionWaitTimer,
+  CustomContentSession,
+} from '@/common/types/sdk';
 import { SocketEmitterService } from './socket-emitter.service';
 
 /**
@@ -148,5 +153,41 @@ export class SocketParallelService {
       waitTimers,
       'cancelConditionWaitTimers',
     );
+  }
+
+  /**
+   * Add multiple launcher sessions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param launcherSessions - Array of launcher sessions to add
+   * @returns Promise<CustomContentSession[]> - Array of successfully added sessions
+   */
+  async addLaunchers(
+    socket: Socket,
+    launcherSessions: CustomContentSession[],
+  ): Promise<CustomContentSession[]> {
+    const operations = launcherSessions.map(
+      (session) => () => this.socketEmitterService.addLauncherWithAck(socket, session),
+    );
+
+    return await this.executeParallelOperations(
+      socket,
+      operations,
+      launcherSessions,
+      'addLaunchers',
+    );
+  }
+
+  /**
+   * Remove multiple launcher sessions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param sessionIds - Array of session ids to remove
+   * @returns Promise<string[]> - Array of successfully removed session ids
+   */
+  async removeLaunchers(socket: Socket, sessionIds: string[]): Promise<string[]> {
+    const operations = sessionIds.map(
+      (sessionId) => () => this.socketEmitterService.removeLauncherWithAck(socket, sessionId),
+    );
+
+    return await this.executeParallelOperations(socket, operations, sessionIds, 'removeLaunchers');
   }
 }

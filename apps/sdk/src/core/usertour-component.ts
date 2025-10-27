@@ -5,7 +5,7 @@ import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
-import { ChecklistData, contentEndReason, Step } from '@usertour/types';
+import { ChecklistData, contentEndReason, LauncherData, Step } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 
@@ -168,6 +168,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
   }
 
   /**
+   * Gets the version ID
+   */
+  getVersionId(): string {
+    return this.session.getVersionId();
+  }
+
+  /**
    * Hides the component
    */
   protected hide(): void {
@@ -222,6 +229,13 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected getChecklistData(): ChecklistData | undefined {
     return this.session.getChecklistData();
+  }
+
+  /**
+   * Gets the launcher data from session
+   */
+  protected getLauncherData(): LauncherData | undefined {
+    return this.session.getLauncherData();
   }
 
   /**

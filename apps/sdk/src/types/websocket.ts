@@ -40,7 +40,7 @@ export type StartContentDto = {
 
 export type EndContentDto = {
   sessionId: string;
-  reason: string;
+  endReason: string;
 };
 
 export type GoToStepDto = {
@@ -78,4 +78,8 @@ export type TooltipTargetMissingDto = {
 
 export type FireConditionWaitTimerDto = {
   versionId: string;
+};
+
+export type ActivateLauncherDto = {
+  sessionId: string;
 };

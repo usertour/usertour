@@ -1,5 +1,11 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import { ChecklistData, SDKContent, Step, ThemeTypesSetting, UserTourTypes } from '@usertour/types';
+import {
+  ChecklistData,
+  LauncherData,
+  Step,
+  ThemeTypesSetting,
+  UserTourTypes,
+} from '@usertour/types';
 
 // Base store interface
 export interface BaseStore {
@@ -30,6 +36,6 @@ export type ChecklistStore = BaseStore & {
 
 // Launcher store type
 export type LauncherStore = BaseStore & {
-  content: SDKContent | undefined;
-  triggerRef: any;
+  launcherData?: LauncherData;
+  triggerRef?: any;
 };

@@ -6,6 +6,7 @@ export const SDK_CONTAINER_CREATED = 'container-created';
 export const ELEMENT_FOUND = 'element-found';
 export const TOUR_CLOSED = 'tour-closed';
 export const CHECKLIST_CLOSED = 'checklist-closed';
+export const LAUNCHER_CLOSED = 'launcher-closed';
 
 export const ELEMENT_FOUND_TIMEOUT = 'element-found-timeout';
 export const CHECKLIST_FIRST_SEEN = 'checklist-first-seen';

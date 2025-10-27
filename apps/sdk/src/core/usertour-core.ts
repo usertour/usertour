@@ -1,5 +1,6 @@
 import {
   CHECKLIST_CLOSED,
+  LAUNCHER_CLOSED,
   MESSAGE_START_FLOW_WITH_TOKEN,
   SDK_DOM_LOADED,
   STORAGE_IDENTIFY_ANONYMOUS,
@@ -45,6 +46,7 @@ import {
   ClientCondition,
 } from '@/types';
 import { UsertourChecklist } from './usertour-checklist';
+import { UsertourLauncher } from './usertour-launcher';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -63,8 +65,10 @@ export class UsertourCore extends Evented {
   };
   toursStore = new ExternalStore<UsertourTour[]>([]);
   checklistsStore = new ExternalStore<UsertourChecklist[]>([]);
+  launchersStore = new ExternalStore<UsertourLauncher[]>([]);
   activatedTour: UsertourTour | null = null;
   activatedChecklist: UsertourChecklist | null = null;
+  launchers: UsertourLauncher[] = [];
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
@@ -487,6 +491,7 @@ export class UsertourCore extends Evented {
       const initialized = await this.uiManager.initialize({
         toursStore: this.toursStore,
         checklistsStore: this.checklistsStore,
+        launchersStore: this.launchersStore,
       });
       if (!initialized) {
         logger.error('Failed to initialize UI manager');
@@ -555,6 +560,8 @@ export class UsertourCore extends Evented {
       UnsetFlowSession: (payload) => this.handleUnsetFlowSession(payload),
       SetChecklistSession: (payload) => this.handleSetChecklistSession(payload),
       UnsetChecklistSession: (payload) => this.handleUnsetChecklistSession(payload),
+      AddLauncher: (payload) => this.handleAddLauncher(payload),
+      RemoveLauncher: (payload) => this.handleRemoveLauncher(payload),
       TrackClientCondition: (payload) => this.handleTrackClientCondition(payload),
       UntrackClientCondition: (payload) => this.handleUntrackClientCondition(payload),
       StartConditionWaitTimer: (payload) => this.handleStartConditionWaitTimer(payload),
@@ -633,6 +640,25 @@ export class UsertourCore extends Evented {
       this.updateSocketAuthInfo({ checklistSessionId: undefined });
     }
     return success;
+  }
+
+  /**
+   * Handles AddLauncher message - adds a launcher to the application
+   * @param payload - The launcher session data
+   * @returns boolean - True if launcher was added successfully
+   */
+  private async handleAddLauncher(payload: unknown): Promise<boolean> {
+    return await this.addLauncher(payload as CustomContentSession);
+  }
+
+  /**
+   * Handles RemoveLauncher message - removes a launcher from the application
+   * @param payload - Contains sessionId to remove
+   * @returns boolean - True if launcher was removed successfully
+   */
+  private handleRemoveLauncher(payload: unknown): boolean {
+    const { sessionId } = payload as { sessionId: string };
+    return this.removeLauncher(sessionId);
   }
 
   /**
@@ -771,6 +797,33 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Adds a launcher to the application
+   * @param session - The SDK content session to add the launcher to
+   * @returns True if the launcher was added, false otherwise
+   */
+  private async addLauncher(session: CustomContentSession): Promise<boolean> {
+    const contentId = session.content.id;
+    const existingLauncher = this.launchers.find(
+      (launcher) => launcher.getContentId() === contentId,
+    );
+    if (existingLauncher) {
+      existingLauncher.updateSession(session);
+      await existingLauncher.refreshStore();
+      await existingLauncher.show();
+      return true;
+    }
+    const launcher = new UsertourLauncher(this, new UsertourSession(session));
+    launcher.on(LAUNCHER_CLOSED, () => {
+      this.removeLauncher(launcher.getSessionId());
+    });
+    this.launchers.push(launcher);
+    // Sync store
+    this.syncLaunchersStore(this.launchers);
+    launcher.show();
+    return true;
+  }
+
+  /**
    * Gets the shared SocketService instance
    */
   getSocketService(): UsertourSocket {
@@ -786,6 +839,10 @@ export class UsertourCore extends Evented {
 
   private syncChecklistsStore(checklists: UsertourChecklist[]) {
     this.checklistsStore.setData([...checklists]);
+  }
+
+  private syncLaunchersStore(launchers: UsertourLauncher[]) {
+    this.launchersStore.setData([...launchers]);
   }
 
   /**
@@ -956,6 +1013,24 @@ export class UsertourCore extends Evented {
     this.activatedChecklist?.destroy();
     this.activatedChecklist = null;
     this.checklistsStore.setData(undefined);
+  }
+
+  /**
+   * Removes a launcher from the application
+   * @param sessionId - The session ID to remove the launcher from
+   * @returns True if the launcher was removed, false otherwise
+   */
+  private removeLauncher(sessionId: string): boolean {
+    const launcher = this.launchers.find((launcher) => launcher.getSessionId() === sessionId);
+    if (!launcher) {
+      return false;
+    }
+    // Destroy the launcher
+    launcher.destroy();
+    // Remove from the launchers array
+    this.launchers = this.launchers.filter((item) => item.getSessionId() !== sessionId);
+    this.launchersStore.setData(this.launchers);
+    return true;
   }
 
   /**

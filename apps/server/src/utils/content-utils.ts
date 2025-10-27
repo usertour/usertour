@@ -14,6 +14,7 @@ import {
   ChecklistItemType,
   ChecklistData,
   ChecklistInitialDisplay,
+  LauncherData,
 } from '@usertour/types';
 import {
   SessionAttribute,
@@ -44,6 +45,7 @@ import {
   evaluateRulesConditions,
   cuid,
   isEqual,
+  isArray,
 } from '@usertour/helpers';
 
 export const PRIORITIES = [
@@ -345,6 +347,10 @@ export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
   return bizEvents?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
 };
 
+export const launcherIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
+  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
+};
+
 /**
  * Checks if a custom content version is allowed based on wait timer conditions
  * @param customContentVersion - The custom content version to check
@@ -399,6 +405,26 @@ export const isAllowedByHideRules = (
   }
 
   return true;
+};
+
+/**
+ * Filters the available launcher custom content versions
+ * @param customContentVersions - The custom content versions
+ * @param clientConditions - The client conditions
+ * @returns The available launcher custom content versions
+ */
+export const filterAvailableLauncherContentVersions = (
+  customContentVersions: CustomContentVersion[],
+  clientConditions: ClientCondition[],
+) => {
+  const autoStartContentVersions = filterAvailableAutoStartContentVersions(
+    customContentVersions,
+    ContentDataType.LAUNCHER,
+    clientConditions,
+  );
+  return autoStartContentVersions.filter(
+    (contentVersion) => !launcherIsDismissed(contentVersion.session.latestSession?.bizEvent),
+  );
 };
 
 /**
@@ -466,8 +492,15 @@ export const findAvailableSessionId = (
     if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
       return latestSession.id;
     }
-  } else if (contentType === ContentDataType.FLOW) {
+  }
+  if (contentType === ContentDataType.FLOW) {
     if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
+      return latestSession.id;
+    }
+  }
+
+  if (contentType === ContentDataType.LAUNCHER) {
+    if (latestSession && !launcherIsDismissed(latestSession.bizEvent)) {
       return latestSession.id;
     }
   }
@@ -488,8 +521,14 @@ export const sessionIsAvailable = (
     if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
       return true;
     }
-  } else if (contentType === ContentDataType.FLOW) {
+  }
+  if (contentType === ContentDataType.FLOW) {
     if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
+      return true;
+    }
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    if (latestSession && !launcherIsDismissed(latestSession.bizEvent)) {
       return true;
     }
   }
@@ -970,6 +1009,14 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
     }
   }
   return attrCodes;
+};
+
+export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
+  const content = launcher?.tooltip?.content as unknown as ContentEditorRoot[];
+  if (content && isArray(content)) {
+    return extractUserAttrCodes(content);
+  }
+  return [];
 };
 
 // ===== SESSION COMPARISON UTILITIES =====

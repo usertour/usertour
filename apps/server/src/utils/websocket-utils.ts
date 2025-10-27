@@ -211,3 +211,36 @@ export const convertToClientConditions = (trackConditions: TrackCondition[]): Cl
     isActive: false, // Default to inactive state
   }));
 };
+
+/**
+ * Efficiently categorize launcher sessions into new, removed, and preserved groups
+ * Uses Set/Map for O(1) lookup performance while maintaining readable filter syntax
+ * @param currentSessions - Current launcher sessions
+ * @param targetSessions - Target launcher sessions
+ * @returns Object containing categorized sessions
+ */
+export const categorizeLauncherSessions = (
+  currentSessions: CustomContentSession[],
+  targetSessions: CustomContentSession[],
+): {
+  newSessions: CustomContentSession[];
+  removedSessions: CustomContentSession[];
+  preservedSessions: CustomContentSession[];
+} => {
+  // Create Set and Map for O(1) lookup performance
+  const targetSessionIds = new Set(targetSessions.map((session) => session.id));
+  const currentSessionMap = new Map(currentSessions.map((session) => [session.id, session]));
+
+  // Use filter with Set/Map for both performance and readability
+  const newSessions = targetSessions.filter((session) => !currentSessionMap.has(session.id));
+  const removedSessions = currentSessions.filter((session) => !targetSessionIds.has(session.id));
+  const preservedSessions = targetSessions
+    .filter((session) => currentSessionMap.has(session.id))
+    .map((session) => currentSessionMap.get(session.id)!);
+
+  return {
+    newSessions,
+    removedSessions,
+    preservedSessions,
+  };
+};

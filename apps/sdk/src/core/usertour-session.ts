@@ -1,4 +1,5 @@
 import { CustomContentSession, SessionStep, SessionTheme } from '@/types/sdk';
+import { LauncherData } from '@usertour/types';
 
 /**
  * Session data access class
@@ -101,6 +102,13 @@ export class UsertourSession {
    */
   getChecklistData() {
     return this.session.version.checklist;
+  }
+
+  /**
+   * Gets launcher data from session
+   */
+  getLauncherData(): LauncherData | undefined {
+    return this.session.version.launcher;
   }
 
   /**

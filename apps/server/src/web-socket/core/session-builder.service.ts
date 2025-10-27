@@ -4,6 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   ChecklistData,
   ContentDataType,
+  LauncherData,
   RulesType,
   Step as SDKStep,
   ThemeTypesSetting,
@@ -16,6 +17,7 @@ import {
   getAttributeValue,
   evaluateChecklistItems,
   getChecklistInitialDisplay,
+  extractLauncherAttrCodes,
 } from '@/utils/content-utils';
 import {
   SessionAttribute,
@@ -262,6 +264,9 @@ export class SessionBuilderService {
         stepCvid,
       );
     }
+    if (contentType === ContentDataType.LAUNCHER) {
+      return await this.processLauncherSession(session, customContentVersion, socketData);
+    }
     return session;
   }
 
@@ -356,6 +361,35 @@ export class SessionBuilderService {
       };
     }
 
+    return session;
+  }
+
+  /**
+   * Process LAUNCHER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processLauncherSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const launcher = customContentVersion.data as unknown as LauncherData;
+    const attrCodes = extractLauncherAttrCodes(launcher);
+
+    const attributes = await this.extractAttributes(
+      [],
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+
+    session.version.launcher = { ...launcher };
     return session;
   }
 

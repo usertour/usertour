@@ -274,7 +274,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Handle element changed
     this.watcher.on(ELEMENT_CHANGED, (el) => {
       if (el instanceof Element) {
-        this.handleElementChanged(el, step, store);
+        this.handleElementChanged(el, step);
       }
     });
     // Start watching
@@ -374,15 +374,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     });
   }
 
-  private handleElementChanged(el: Element, step: SessionStep, store: TourStore): void {
+  private handleElementChanged(el: Element, step: SessionStep): void {
     const currentStep = this.getCurrentStep();
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
 
     // Update store
-    this.setStoreData({
-      ...store,
+    this.updateStore({
       triggerRef: el,
     });
   }
@@ -610,10 +609,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Ends the flow
    * @param reason - The reason for the end
    */
-  private async endFlow(reason: contentEndReason) {
+  private async endFlow(endReason: contentEndReason) {
     await this.socketService.endContent({
       sessionId: this.getSessionId(),
-      reason,
+      endReason,
     });
   }
 

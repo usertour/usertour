@@ -5,6 +5,7 @@ import {
   Content,
   ContentDataType,
   contentStartReason,
+  LauncherData,
   RulesCondition,
   Step,
   Theme,
@@ -44,6 +45,7 @@ export type CustomContentSession = {
     steps?: SessionStep[];
     theme?: SessionTheme;
     checklist?: ChecklistData;
+    launcher?: LauncherData;
   };
 };
 

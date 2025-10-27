@@ -28,6 +28,7 @@ export enum ClientMessageKind {
   REPORT_TOOLTIP_TARGET_MISSING = 'ReportTooltipTargetMissing',
   TOGGLE_CLIENT_CONDITION = 'ToggleClientCondition',
   FIRE_CONDITION_WAIT_TIMER = 'FireConditionWaitTimer',
+  ACTIVATE_LAUNCHER = 'ActivateLauncher',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
 }

@@ -15,6 +15,7 @@ import {
   filterAndPreserveConditions,
   filterAndPreserveWaitTimers,
   convertToClientConditions,
+  categorizeLauncherSessions,
 } from '@/utils/websocket-utils';
 import { SocketDataService } from './socket-data.service';
 
@@ -350,6 +351,50 @@ export class SocketOperationService {
     };
 
     return await this.socketDataService.set(socket.id, updatedSocketData, true);
+  }
+
+  /**
+   * Add launcher sessions
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param sessions - The sessions to add
+   * @returns Promise<boolean> - True if the sessions were added successfully
+   */
+  async addLaunchers(
+    socket: Socket,
+    currentSessions: CustomContentSession[],
+    targetSessions: CustomContentSession[],
+  ) {
+    // Use optimized utility function to categorize sessions in a single pass
+    const { newSessions, removedSessions, preservedSessions } = categorizeLauncherSessions(
+      currentSessions,
+      targetSessions,
+    );
+
+    // Execute parallel operations for adding and removing sessions
+    const [addedSessions, removedSessionIds] = await Promise.all([
+      this.socketParallelService.addLaunchers(socket, newSessions),
+      this.socketParallelService.removeLaunchers(
+        socket,
+        removedSessions.map((session) => session.id),
+      ),
+    ]);
+
+    // Filter out sessions that were not successfully removed
+    const unremovedSessions = removedSessions.filter(
+      (session) => !removedSessionIds.includes(session.id),
+    );
+
+    // Merge all sessions efficiently
+    const updatedLauncherSessions = [...preservedSessions, ...unremovedSessions, ...addedSessions];
+
+    return await this.socketDataService.set(
+      socket.id,
+      {
+        launcherSessions: updatedLauncherSessions,
+      },
+      true,
+    );
   }
 
   /**

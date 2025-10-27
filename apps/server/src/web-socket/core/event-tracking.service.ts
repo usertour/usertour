@@ -490,6 +490,25 @@ export class EventTrackingService {
   }
 
   /**
+   * Build event data for launcher seen events
+   * @param customContentVersion - The custom content version
+   * @param startReason - The start reason
+   * @returns Launcher seen event data
+   */
+  private buildLauncherSeenEventData(
+    customContentVersion: CustomContentVersion,
+    startReason: string,
+  ): Record<string, any> {
+    return {
+      [EventAttributes.LAUNCHER_ID]: customContentVersion.content.id,
+      [EventAttributes.LAUNCHER_NAME]: customContentVersion.content.name,
+      [EventAttributes.LAUNCHER_START_REASON]: startReason,
+      [EventAttributes.LAUNCHER_VERSION_ID]: customContentVersion.id,
+      [EventAttributes.LAUNCHER_VERSION_NUMBER]: customContentVersion.sequence,
+    };
+  }
+
+  /**
    * Get event name and data for auto start events
    * @param customContentVersion - The custom content version
    * @param startReason - The start reason
@@ -498,7 +517,7 @@ export class EventTrackingService {
   private getAutoStartEventConfig(
     customContentVersion: CustomContentVersion,
     startReason: string,
-  ): { eventName: string; eventData: Record<string, any> } {
+  ): { eventName: string; eventData: Record<string, any> } | null {
     const contentType = customContentVersion.content.type as ContentDataType;
 
     if (contentType === ContentDataType.FLOW) {
@@ -508,10 +527,21 @@ export class EventTrackingService {
       };
     }
 
-    return {
-      eventName: BizEvents.CHECKLIST_STARTED,
-      eventData: this.buildChecklistStartEventData(customContentVersion, startReason),
-    };
+    if (contentType === ContentDataType.CHECKLIST) {
+      return {
+        eventName: BizEvents.CHECKLIST_STARTED,
+        eventData: this.buildChecklistStartEventData(customContentVersion, startReason),
+      };
+    }
+
+    if (contentType === ContentDataType.LAUNCHER) {
+      return {
+        eventName: BizEvents.LAUNCHER_SEEN,
+        eventData: this.buildLauncherSeenEventData(customContentVersion, startReason),
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -535,14 +565,18 @@ export class EventTrackingService {
     clientContext: ClientContext,
   ): Promise<void> {
     const autoStartEventConfig = this.getAutoStartEventConfig(customContentVersion, startReason);
+    if (!autoStartEventConfig) {
+      return;
+    }
+    const { eventName, eventData } = autoStartEventConfig;
     // Execute both events in a single transaction
     await this.executeEventTransaction(
       tx,
       environment,
       externalUserId,
-      autoStartEventConfig.eventName,
+      eventName,
       bizSession.id,
-      autoStartEventConfig.eventData,
+      eventData,
       clientContext,
     );
   }
@@ -796,15 +830,13 @@ export class EventTrackingService {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    return Boolean(
-      await this.trackEvent(
-        environment,
-        externalUserId,
-        BizEvents.CHECKLIST_DISMISSED,
-        bizSession.id,
-        eventData,
-        clientContext,
-      ),
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.CHECKLIST_DISMISSED,
+      bizSession.id,
+      eventData,
+      clientContext,
     );
   }
 
@@ -843,15 +875,13 @@ export class EventTrackingService {
     }
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    return Boolean(
-      await this.trackEvent(
-        environment,
-        externalUserId,
-        BizEvents.QUESTION_ANSWERED,
-        bizSession.id,
-        eventData,
-        clientContext,
-      ),
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.QUESTION_ANSWERED,
+      bizSession.id,
+      eventData,
+      clientContext,
     );
   }
 
@@ -890,15 +920,13 @@ export class EventTrackingService {
     };
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    return Boolean(
-      await this.trackEvent(
-        environment,
-        externalUserId,
-        BizEvents.CHECKLIST_TASK_CLICKED,
-        bizSession.id,
-        eventData,
-        clientContext,
-      ),
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.CHECKLIST_TASK_CLICKED,
+      bizSession.id,
+      eventData,
+      clientContext,
     );
   }
 
@@ -930,15 +958,13 @@ export class EventTrackingService {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    return Boolean(
-      await this.trackEvent(
-        environment,
-        externalUserId,
-        BizEvents.CHECKLIST_HIDDEN,
-        bizSession.id,
-        eventData,
-        clientContext,
-      ),
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.CHECKLIST_HIDDEN,
+      bizSession.id,
+      eventData,
+      clientContext,
     );
   }
 
@@ -970,15 +996,13 @@ export class EventTrackingService {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    return Boolean(
-      await this.trackEvent(
-        environment,
-        externalUserId,
-        BizEvents.CHECKLIST_SEEN,
-        bizSession.id,
-        eventData,
-        clientContext,
-      ),
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.CHECKLIST_SEEN,
+      bizSession.id,
+      eventData,
+      clientContext,
     );
   }
 
@@ -1020,10 +1044,90 @@ export class EventTrackingService {
     };
 
     const externalUserId = String(bizSession.bizUser.externalId);
-    await this.trackEvent(
+    return await this.trackEvent(
       environment,
       externalUserId,
       BizEvents.TOOLTIP_TARGET_MISSING,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
+  }
+
+  /**
+   * Track launcher activated event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackLauncherActivatedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: true },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.LAUNCHER_ID]: content.id,
+      [EventAttributes.LAUNCHER_NAME]: content.name,
+      [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
+      [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
+    };
+
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.LAUNCHER_ACTIVATED,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
+  }
+
+  /**
+   * Track launcher dismissed event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param endReason - The end reason
+   * @returns True if the event was tracked successfully
+   */
+  async trackLauncherDismissedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    endReason: string,
+  ): Promise<boolean> {
+    if (!environment) return false;
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: true },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+
+    const eventData = {
+      [EventAttributes.LAUNCHER_ID]: content.id,
+      [EventAttributes.LAUNCHER_NAME]: content.name,
+      [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
+      [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.LAUNCHER_END_REASON]: endReason,
+    };
+
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.LAUNCHER_DISMISSED,
       bizSession.id,
       eventData,
       clientContext,

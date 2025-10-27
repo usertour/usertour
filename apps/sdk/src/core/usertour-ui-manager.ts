@@ -11,6 +11,7 @@ import { document, loadCSSResource, logger } from '@/utils';
 import { getMainCss } from '@/core/usertour-env';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourChecklist } from './usertour-checklist';
+import { UsertourLauncher } from './usertour-launcher';
 
 export interface UIManagerConfig {
   containerId?: string;
@@ -21,6 +22,7 @@ export interface UIManagerConfig {
 interface UIManagerInitializeProps {
   toursStore: ExternalStore<UsertourTour[]>;
   checklistsStore: ExternalStore<UsertourChecklist[]>;
+  launchersStore: ExternalStore<UsertourLauncher[]>;
 }
 
 /**
