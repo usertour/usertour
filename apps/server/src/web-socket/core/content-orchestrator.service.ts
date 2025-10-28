@@ -712,11 +712,7 @@ export class ContentOrchestratorService {
     const { contentId } = options!;
     const { environment } = socketData;
 
-    // Get published version ID for the specific content
-    const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
-      contentId,
-      environment.id,
-    );
+    const publishedVersionId = await this.getPublishedVersionId(contentId, environment);
     if (!publishedVersionId) {
       return {
         success: false,
