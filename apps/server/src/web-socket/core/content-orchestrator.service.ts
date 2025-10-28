@@ -182,8 +182,8 @@ export class ContentOrchestratorService {
         skipBizSession,
       );
 
-      if (result.session) {
-        targetSessions.push(result.session);
+      if (result) {
+        targetSessions.push(result);
       }
     }
     const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
@@ -1047,15 +1047,18 @@ export class ContentOrchestratorService {
     const { options, socketData } = context;
 
     // Handle session initialization
-    const sessionResult = await this.initializeSession(
+    const session = await this.initializeSession(
       customContentVersion,
       socketData,
       options,
       createNewSession,
     );
 
-    if (!sessionResult.success) {
-      return sessionResult;
+    if (!session) {
+      return {
+        success: false,
+        reason: 'Failed to initialize session',
+      };
     }
 
     // Extract tracking conditions for hide conditions
@@ -1064,12 +1067,12 @@ export class ContentOrchestratorService {
       ConditionExtractionMode.HIDE_ONLY,
     );
     // Extract tracking conditions for checklist conditions
-    const checklistConditions = extractChecklistTrackConditions(sessionResult.session);
+    const checklistConditions = extractChecklistTrackConditions(session);
     const postTracks = [...hideConditions, ...checklistConditions];
 
     return {
       success: true,
-      session: sessionResult.session,
+      session,
       postTracks,
       reason: 'Content session created successfully',
     };
@@ -1084,7 +1087,7 @@ export class ContentOrchestratorService {
     options?: StartContentOptions,
     createNewSession = false,
     skipBizSession = false,
-  ): Promise<{ success: boolean; session?: CustomContentSession; reason?: string }> {
+  ): Promise<CustomContentSession | null> {
     let sessionId: string | undefined;
     let currentStepCvid: string | undefined;
     if (!skipBizSession) {
@@ -1093,7 +1096,7 @@ export class ContentOrchestratorService {
         : this.findExistingSession(customContentVersion, options);
 
       if (!sessionResult.success) {
-        return sessionResult;
+        return null;
       }
       currentStepCvid = sessionResult.currentStepCvid ?? undefined;
       sessionId = sessionResult.sessionId ?? undefined;
@@ -1107,17 +1110,7 @@ export class ContentOrchestratorService {
       currentStepCvid,
     );
 
-    if (!session) {
-      return {
-        success: false,
-        reason: 'Failed to create content session',
-      };
-    }
-
-    return {
-      success: true,
-      session,
-    };
+    return session;
   }
 
   /**
@@ -1232,12 +1225,6 @@ export class ContentOrchestratorService {
     if (!customContentVersion || customContentVersion.session.latestSession.id !== sessionId) {
       return null;
     }
-    const sessionResult = await this.initializeSession(
-      customContentVersion,
-      socketData,
-      undefined,
-      false,
-    );
-    return sessionResult.session;
+    return await this.initializeSession(customContentVersion, socketData, undefined, false);
   }
 }
