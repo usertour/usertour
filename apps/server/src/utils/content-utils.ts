@@ -400,7 +400,6 @@ export const isAllowedByHideRules = (
   const hideRules = customContentVersion.config.hideRules;
   // Check if hide rules are enabled but conditions are not ready
   if (!conditionsIsReady(hideRules, clientConditions)) {
-    console.log('hideRules are enabled but conditions are not ready', clientConditions, hideRules);
     return false;
   }
 
@@ -614,6 +613,11 @@ export const filterActivatedContentWithoutClientConditions = (
       isAutoStartContentEligible(customContentVersion, customContentVersions, allowedConditionTypes)
     ) {
       return true;
+    }
+
+    // Launcher is not eligible for auto-start, return false
+    if (contentType === ContentDataType.LAUNCHER) {
+      return false;
     }
 
     // Path 2: Check activated content versions (session-based)
@@ -1162,11 +1166,9 @@ export const conditionsIsReady = (
   }
 
   const allowedConditions = flattenConditions(conditions, allowedTypes);
-  console.log('conditionIds', allowedConditions);
   const clientConditionIds = clientConditions
     .filter((cc) => cc.isActive !== undefined)
     .map((cc) => cc.conditionId);
-  console.log('clientConditionIds', clientConditionIds);
 
   // Check if all condition IDs exist in client conditions with feedback
   return allowedConditions.every((conditions) => clientConditionIds.includes(conditions.id));

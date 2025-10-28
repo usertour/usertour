@@ -80,7 +80,6 @@ export class ContentOrchestratorService {
   async startContent(context: ContentStartContext): Promise<boolean> {
     const { options } = context;
     const contentId = options?.contentId;
-
     // Strategy 1: Try to start by specific contentId
     if (contentId) {
       const result = await this.tryStartByContentId(context);
@@ -147,40 +146,11 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Get published version ID for specific content
-   * @param contentId - The content ID to get version for
-   * @param environment - The environment
-   * @returns The published version ID or undefined if not found
-   */
-  private async getPublishedVersionId(
-    contentId: string | undefined,
-    environment: Environment,
-  ): Promise<string | undefined> {
-    if (!contentId) {
-      return undefined;
-    }
-
-    const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
-      contentId,
-      environment.id,
-    );
-
-    if (!publishedVersionId) {
-      this.logger.warn(
-        `Published version not found for content: ${contentId} in environment: ${environment.id}`,
-      );
-      return undefined;
-    }
-
-    return publishedVersionId;
-  }
-
-  /**
    * Start launchers
    * @param context - The content start context
    * @returns True if the launchers were started successfully
    */
-  async startLaunchers(context: ContentStartContext) {
+  async startLaunchers(context: ContentStartContext): Promise<boolean> {
     const { socketData, options, socket } = context;
     const { clientConditions, launcherSessions = [], environment } = socketData;
     const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
@@ -201,6 +171,12 @@ export class ContentOrchestratorService {
     const availableContentVersions = filterAvailableLauncherContentVersions(
       evaluatedContentVersions,
       clientConditions,
+    );
+    const shouldTrackVersions = evaluatedContentVersions.filter(
+      (version) =>
+        !availableContentVersions.find(
+          (availableVersion) => availableVersion.contentId === version.contentId,
+        ),
     );
     const targetSessions: CustomContentSession[] = [];
     for (const contentVersion of availableContentVersions) {
@@ -225,6 +201,17 @@ export class ContentOrchestratorService {
         if (result.session) {
           targetSessions.push(result.session);
         }
+      }
+    }
+    const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
+    if (preTracks.length > 0) {
+      const success = await this.socketOperationService.trackClientConditions(
+        socket,
+        socketData,
+        preTracks,
+      );
+      if (!success) {
+        return false;
       }
     }
 
@@ -1207,6 +1194,35 @@ export class ContentOrchestratorService {
       versionId,
     );
     return evaluatedVersions?.[0] || null;
+  }
+
+  /**
+   * Get published version ID for specific content
+   * @param contentId - The content ID to get version for
+   * @param environment - The environment
+   * @returns The published version ID or undefined if not found
+   */
+  private async getPublishedVersionId(
+    contentId: string | undefined,
+    environment: Environment,
+  ): Promise<string | undefined> {
+    if (!contentId) {
+      return undefined;
+    }
+
+    const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
+      contentId,
+      environment.id,
+    );
+
+    if (!publishedVersionId) {
+      this.logger.warn(
+        `Published version not found for content: ${contentId} in environment: ${environment.id}`,
+      );
+      return undefined;
+    }
+
+    return publishedVersionId;
   }
 
   /**

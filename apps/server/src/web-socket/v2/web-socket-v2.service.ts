@@ -332,14 +332,9 @@ export class WebSocketV2Service {
    * @returns True if the batch was ended successfully
    */
   async endBatch(context: WebSocketContext): Promise<boolean> {
-    const { server, socket, socketData } = context;
+    const { server, socket } = context;
 
-    return await this.toggleContents(
-      server,
-      socket,
-      [ContentDataType.CHECKLIST, ContentDataType.FLOW],
-      socketData,
-    );
+    return await this.toggleContents(server, socket);
   }
 
   /**
@@ -439,38 +434,39 @@ export class WebSocketV2Service {
    * @param socketData - Optional socket client data, will be fetched if not provided
    * @returns True if the contents were toggled successfully
    */
-  async toggleContents(
-    server: Server,
-    socket: Socket,
-    contentTypes: ContentDataType[],
-    socketData?: SocketData,
-  ): Promise<boolean> {
-    // If socketData is not provided, fetch it using getSocketDataResolved
-    const resolvedSocketData = socketData ?? (await this.getSocketData(socket));
-
-    if (!resolvedSocketData) return false;
+  async toggleContents(server: Server, socket: Socket): Promise<boolean> {
+    const contentTypes = [
+      ContentDataType.CHECKLIST,
+      ContentDataType.FLOW,
+      ContentDataType.LAUNCHER,
+    ];
 
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
     const context = {
       server,
       socket,
-      socketData: resolvedSocketData,
       options: {
         startReason: contentStartReason.START_FROM_CONDITION,
       },
     };
 
     for (const contentType of contentTypes) {
-      await this.contentOrchestratorService.startContent({
+      const socketData = await this.getSocketData(socket);
+      if (!socketData) {
+        return false;
+      }
+      const startContentContext: ContentStartContext = {
         ...context,
+        socketData,
         contentType,
-      });
+      };
+      if (contentType === ContentDataType.LAUNCHER) {
+        await this.contentOrchestratorService.startLaunchers(startContentContext);
+      } else {
+        await this.contentOrchestratorService.startContent(startContentContext);
+      }
     }
-    await this.contentOrchestratorService.startLaunchers({
-      ...context,
-      contentType: ContentDataType.LAUNCHER,
-    });
 
     return true;
   }
