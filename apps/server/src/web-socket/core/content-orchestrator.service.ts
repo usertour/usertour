@@ -38,6 +38,7 @@ import {
   ContentStartResult,
   TryAutoStartContentOptions,
   ConditionExtractionMode,
+  Environment,
 } from '@/common/types';
 import { DistributedLockService } from './distributed-lock.service';
 import { DataResolverService } from './data-resolver.service';
@@ -146,6 +147,35 @@ export class ContentOrchestratorService {
   }
 
   /**
+   * Get published version ID for specific content
+   * @param contentId - The content ID to get version for
+   * @param environment - The environment
+   * @returns The published version ID or undefined if not found
+   */
+  private async getPublishedVersionId(
+    contentId: string | undefined,
+    environment: Environment,
+  ): Promise<string | undefined> {
+    if (!contentId) {
+      return undefined;
+    }
+
+    const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
+      contentId,
+      environment.id,
+    );
+
+    if (!publishedVersionId) {
+      this.logger.warn(
+        `Published version not found for content: ${contentId} in environment: ${environment.id}`,
+      );
+      return undefined;
+    }
+
+    return publishedVersionId;
+  }
+
+  /**
    * Start launchers
    * @param context - The content start context
    * @returns True if the launchers were started successfully
@@ -155,18 +185,11 @@ export class ContentOrchestratorService {
     const { clientConditions, launcherSessions = [], environment } = socketData;
     const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
     const contentType = ContentDataType.LAUNCHER;
-    let versionId: string | undefined;
 
-    if (contentId) {
-      // Get published version ID for the specific content
-      const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
-        contentId,
-        environment.id,
-      );
-      if (!publishedVersionId) {
-        return false;
-      }
-      versionId = publishedVersionId;
+    // Get published version ID if needed
+    const versionId = await this.getPublishedVersionId(contentId, environment);
+    if (contentId && !versionId) {
+      return false;
     }
 
     // Get evaluated content versions once and reuse for both strategy executions
