@@ -356,19 +356,20 @@ export class SocketOperationService {
   /**
    * Add launcher sessions
    * @param socket - The socket
-   * @param currentSessions - Current launcher sessions
-   * @param targetSessions - Target launcher sessions
+   * @param socketData - The socket client data
+   * @param sessions - Target launcher sessions
    * @returns Promise<boolean> - True if the sessions were added successfully
    */
   async addLaunchers(
     socket: Socket,
-    currentSessions: CustomContentSession[],
-    targetSessions: CustomContentSession[],
-  ) {
+    socketData: SocketData,
+    sessions: CustomContentSession[],
+  ): Promise<boolean> {
+    const { clientConditions = [], launcherSessions = [] } = socketData;
     // Use optimized utility function to categorize sessions in a single pass
     const { newSessions, removedSessions, preservedSessions } = categorizeLauncherSessions(
-      currentSessions,
-      targetSessions,
+      launcherSessions,
+      sessions,
     );
 
     // Execute parallel operations for adding and removing sessions
@@ -384,11 +385,36 @@ export class SocketOperationService {
     const unremovedSessions = removedSessions.filter(
       (session) => !removedContentIds.includes(session.content.id),
     );
-
     // Merge all sessions efficiently
-    const launcherSessions = [...preservedSessions, ...unremovedSessions, ...addedSessions];
+    const updatedLauncherSessions = [...preservedSessions, ...unremovedSessions, ...addedSessions];
 
-    return await this.socketDataService.set(socket.id, { launcherSessions }, true);
+    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
+      clientConditions,
+      [ContentDataType.LAUNCHER],
+    );
+
+    const untrackedConditions = filteredConditions.filter(
+      (condition) =>
+        addedSessions.some((session) => session.content.id === condition.contentId) ||
+        removedContentIds.some((id) => id === condition.contentId),
+    );
+
+    const trackedConditions = filteredConditions.filter(
+      (filteredCondition) =>
+        !untrackedConditions.some(
+          (untrack) => filteredCondition.conditionId === untrack.conditionId,
+        ),
+    );
+
+    untrackedConditions.map((condition) =>
+      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
+    );
+    const updatedClientConditions = [...preservedConditions, ...trackedConditions];
+    return await this.socketDataService.set(
+      socket.id,
+      { launcherSessions: updatedLauncherSessions, clientConditions: updatedClientConditions },
+      true,
+    );
   }
 
   /**

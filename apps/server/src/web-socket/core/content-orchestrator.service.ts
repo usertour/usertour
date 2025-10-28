@@ -140,7 +140,7 @@ export class ContentOrchestratorService {
    */
   async startLaunchers(context: ContentStartContext): Promise<boolean> {
     const { socketData, options, socket } = context;
-    const { clientConditions, launcherSessions = [], environment } = socketData;
+    const { clientConditions, environment } = socketData;
     const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
     const contentType = ContentDataType.LAUNCHER;
 
@@ -166,7 +166,7 @@ export class ContentOrchestratorService {
           (availableVersion) => availableVersion.contentId === version.contentId,
         ),
     );
-    const targetSessions: CustomContentSession[] = [];
+    const sessions: CustomContentSession[] = [];
     for (const contentVersion of availableContentVersions) {
       const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
 
@@ -183,14 +183,25 @@ export class ContentOrchestratorService {
       );
 
       if (result) {
-        targetSessions.push(result);
+        sessions.push(result);
       }
     }
+    if (sessions.length > 0) {
+      const success = await this.socketOperationService.addLaunchers(socket, socketData, sessions);
+      if (!success) {
+        return false;
+      }
+    }
+    const newSocketData = await this.getSocketData(socket);
+    if (!newSocketData) {
+      return false;
+    }
+
     const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
     if (preTracks.length > 0) {
       const success = await this.socketOperationService.trackClientConditions(
         socket,
-        socketData,
+        newSocketData,
         preTracks,
       );
       if (!success) {
@@ -198,7 +209,7 @@ export class ContentOrchestratorService {
       }
     }
 
-    return await this.socketOperationService.addLaunchers(socket, launcherSessions, targetSessions);
+    return true;
   }
 
   /**
