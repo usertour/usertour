@@ -878,6 +878,9 @@ export class AnalyticsService {
     if (bizSession.content.type === ContentType.CHECKLIST) {
       return await this.endChecklistSession(bizSession);
     }
+    if (bizSession.content.type === ContentType.LAUNCHER) {
+      return await this.endLauncherSession(bizSession);
+    }
     return false;
   }
 
@@ -967,6 +970,60 @@ export class AnalyticsService {
     };
     const dismissedAttributes =
       defaultEvents.find((event) => event.codeName === BizEvents.CHECKLIST_DISMISSED)?.attributes ||
+      [];
+
+    for (const attribute of dismissedAttributes) {
+      if (seenData?.[attribute]) {
+        data[attribute] = seenData[attribute];
+      }
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.bizEvent.create({
+        data: {
+          bizSessionId: sessionId,
+          eventId: endEvent.id,
+          bizUserId: bizSession.bizUserId,
+          data,
+        },
+      });
+      await tx.bizSession.update({
+        where: { id: sessionId },
+        data: { state: 1 },
+      });
+      return true;
+    });
+  }
+
+  /**
+   * End a launcher session
+   * @param session - The session to end
+   * @returns True if the session was ended successfully, false otherwise
+   */
+  async endLauncherSession(bizSession: BizSession) {
+    const sessionId = bizSession.id;
+    const endEvent = await this.prisma.event.findFirst({
+      where: { codeName: BizEvents.LAUNCHER_DISMISSED },
+    });
+    const latestBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId },
+      orderBy: { createdAt: 'desc' },
+    });
+    const endBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId, eventId: endEvent.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!endEvent || endBizEvent) {
+      return false;
+    }
+
+    const seenData = latestBizEvent?.data as any;
+    const data: any = {
+      [EventAttributes.LAUNCHER_END_REASON]: 'admin_ended',
+    };
+    const dismissedAttributes =
+      defaultEvents.find((event) => event.codeName === BizEvents.LAUNCHER_DISMISSED)?.attributes ||
       [];
 
     for (const attribute of dismissedAttributes) {
