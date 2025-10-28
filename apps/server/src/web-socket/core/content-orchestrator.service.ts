@@ -190,24 +190,21 @@ export class ContentOrchestratorService {
     if (!success) {
       return false;
     }
+
+    const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
+
+    if (preTracks.length === 0) {
+      return true;
+    }
     const newSocketData = await this.getSocketData(socket);
     if (!newSocketData) {
       return false;
     }
-
-    const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
-    if (preTracks.length > 0) {
-      const success = await this.socketOperationService.trackClientConditions(
-        socket,
-        newSocketData,
-        preTracks,
-      );
-      if (!success) {
-        return false;
-      }
-    }
-
-    return true;
+    return await this.socketOperationService.trackClientConditions(
+      socket,
+      newSocketData,
+      preTracks,
+    );
   }
 
   /**
