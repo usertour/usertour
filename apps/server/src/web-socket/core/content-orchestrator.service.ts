@@ -134,18 +134,46 @@ export class ContentOrchestratorService {
   }
 
   /**
+   * Start launcher
+   * @param context - The content start context
+   * @returns True if the launcher was started successfully
+   */
+  async startLauncher(context: ContentStartContext): Promise<boolean> {
+    if (!context?.options?.contentId) {
+      return false;
+    }
+    return await this.startLaunchers(context);
+  }
+
+  /**
    * Start launchers
    * @param context - The content start context
    * @returns True if the launchers were started successfully
    */
   async startLaunchers(context: ContentStartContext) {
-    const { socketData, socket } = context;
-    const { clientConditions, launcherSessions = [] } = socketData;
+    const { socketData, options, socket } = context;
+    const { clientConditions, launcherSessions = [], environment } = socketData;
+    const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
     const contentType = ContentDataType.LAUNCHER;
+    let versionId: string | undefined;
+
+    if (contentId) {
+      // Get published version ID for the specific content
+      const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
+        contentId,
+        environment.id,
+      );
+      if (!publishedVersionId) {
+        return false;
+      }
+      versionId = publishedVersionId;
+    }
+
     // Get evaluated content versions once and reuse for both strategy executions
     const evaluatedContentVersions = await this.getEvaluatedContentVersions(
       socketData,
       contentType,
+      versionId,
     );
     const availableContentVersions = filterAvailableLauncherContentVersions(
       evaluatedContentVersions,
@@ -154,16 +182,26 @@ export class ContentOrchestratorService {
     const targetSessions: CustomContentSession[] = [];
     for (const contentVersion of availableContentVersions) {
       const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
-      const result = await this.initializeSession(
-        contentVersion,
-        socketData,
-        {
-          startReason: contentStartReason.START_FROM_CONDITION,
-        },
-        !isAvailable,
-      );
-      if (result.session) {
-        targetSessions.push(result.session);
+
+      if (!isAvailable && !versionId) {
+        // Create content session
+        const session = await this.sessionBuilderService.createContentSession(
+          contentVersion,
+          socketData,
+        );
+        if (session) {
+          targetSessions.push(session);
+        }
+      } else {
+        const result = await this.initializeSession(
+          contentVersion,
+          socketData,
+          { startReason },
+          !isAvailable,
+        );
+        if (result.session) {
+          targetSessions.push(result.session);
+        }
       }
     }
 
@@ -1068,9 +1106,9 @@ export class ContentOrchestratorService {
 
     // Create content session
     const session = await this.sessionBuilderService.createContentSession(
-      sessionResult.sessionId!,
       customContentVersion,
       socketData,
+      sessionResult.sessionId!,
       currentStepCvid,
     );
 

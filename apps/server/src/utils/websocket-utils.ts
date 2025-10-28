@@ -227,16 +227,24 @@ export const categorizeLauncherSessions = (
   removedSessions: CustomContentSession[];
   preservedSessions: CustomContentSession[];
 } => {
-  // Create Set and Map for O(1) lookup performance
-  const targetSessionIds = new Set(targetSessions.map((session) => session.id));
-  const currentSessionMap = new Map(currentSessions.map((session) => [session.id, session]));
+  // Helper function to create composite key
+  const getSessionKey = (session: CustomContentSession) => `${session.id}:${session.content.id}`;
 
-  // Use filter with Set/Map for both performance and readability
-  const newSessions = targetSessions.filter((session) => !currentSessionMap.has(session.id));
-  const removedSessions = currentSessions.filter((session) => !targetSessionIds.has(session.id));
-  const preservedSessions = targetSessions
-    .filter((session) => currentSessionMap.has(session.id))
-    .map((session) => currentSessionMap.get(session.id)!);
+  // Create Sets for O(1) lookup performance
+  const targetContentIds = new Set(targetSessions.map((session) => session.content.id));
+  const currentSessionKeys = new Set(currentSessions.map(getSessionKey));
+
+  // Categorize sessions using helper function for cleaner code
+  const newSessions = targetSessions.filter(
+    (session) => !currentSessionKeys.has(getSessionKey(session)),
+  );
+  const preservedSessions = targetSessions.filter((session) =>
+    currentSessionKeys.has(getSessionKey(session)),
+  );
+
+  const removedSessions = currentSessions.filter(
+    (session) => !targetContentIds.has(session.content.id),
+  );
 
   return {
     newSessions,

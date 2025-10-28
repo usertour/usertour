@@ -22,7 +22,7 @@ import {
 import { ContentDataType, ClientContext, contentStartReason } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
-import { SocketData } from '@/common/types/content';
+import { ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { ClientCondition, CustomContentSession } from '@/common/types/sdk';
@@ -359,20 +359,21 @@ export class WebSocketV2Service {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
     });
-    const allowedTypes = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
     // Check if the content exists
     if (!content) return false;
     const contentType = content.type as ContentDataType;
-    // Only allow FLOW and CHECKLIST content types
-    if (!allowedTypes.includes(contentType)) return false;
-    // Start the content
-    return await this.contentOrchestratorService.startContent({
+    const startContentContext: ContentStartContext = {
       server,
       socket,
       contentType,
       socketData,
       options: startContentDto,
-    });
+    };
+    if (contentType === ContentDataType.LAUNCHER) {
+      return await this.contentOrchestratorService.startLauncher(startContentContext);
+    }
+    // Start the content
+    return await this.contentOrchestratorService.startContent(startContentContext);
   }
 
   /**

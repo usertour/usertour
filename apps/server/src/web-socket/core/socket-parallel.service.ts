@@ -180,14 +180,14 @@ export class SocketParallelService {
   /**
    * Remove multiple launcher sessions in parallel with acknowledgment
    * @param socket - The socket instance
-   * @param sessionIds - Array of session ids to remove
-   * @returns Promise<string[]> - Array of successfully removed session ids
+   * @param contentIds - Array of content ids to remove
+   * @returns Promise<string[]> - Array of successfully removed content ids
    */
-  async removeLaunchers(socket: Socket, sessionIds: string[]): Promise<string[]> {
-    const operations = sessionIds.map(
-      (sessionId) => () => this.socketEmitterService.removeLauncherWithAck(socket, sessionId),
+  async removeLaunchers(socket: Socket, contentIds: string[]): Promise<string[]> {
+    const operations = contentIds.map(
+      (contentId) => () => this.socketEmitterService.removeLauncherWithAck(socket, contentId),
     );
 
-    return await this.executeParallelOperations(socket, operations, sessionIds, 'removeLaunchers');
+    return await this.executeParallelOperations(socket, operations, contentIds, 'removeLaunchers');
   }
 }

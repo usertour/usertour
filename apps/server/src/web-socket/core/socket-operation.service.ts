@@ -356,8 +356,8 @@ export class SocketOperationService {
   /**
    * Add launcher sessions
    * @param socket - The socket
-   * @param socketData - The socket client data
-   * @param sessions - The sessions to add
+   * @param currentSessions - Current launcher sessions
+   * @param targetSessions - Target launcher sessions
    * @returns Promise<boolean> - True if the sessions were added successfully
    */
   async addLaunchers(
@@ -372,29 +372,23 @@ export class SocketOperationService {
     );
 
     // Execute parallel operations for adding and removing sessions
-    const [addedSessions, removedSessionIds] = await Promise.all([
+    const [addedSessions, removedContentIds] = await Promise.all([
       this.socketParallelService.addLaunchers(socket, newSessions),
       this.socketParallelService.removeLaunchers(
         socket,
-        removedSessions.map((session) => session.id),
+        removedSessions.map((session) => session.content.id),
       ),
     ]);
 
     // Filter out sessions that were not successfully removed
     const unremovedSessions = removedSessions.filter(
-      (session) => !removedSessionIds.includes(session.id),
+      (session) => !removedContentIds.includes(session.content.id),
     );
 
     // Merge all sessions efficiently
-    const updatedLauncherSessions = [...preservedSessions, ...unremovedSessions, ...addedSessions];
+    const launcherSessions = [...preservedSessions, ...unremovedSessions, ...addedSessions];
 
-    return await this.socketDataService.set(
-      socket.id,
-      {
-        launcherSessions: updatedLauncherSessions,
-      },
-      true,
-    );
+    return await this.socketDataService.set(socket.id, { launcherSessions }, true);
   }
 
   /**

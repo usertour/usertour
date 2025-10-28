@@ -117,12 +117,12 @@ export class SocketEmitterService {
   /**
    * Remove a launcher
    * @param socket - The socket
-   * @param sessionId - The session id to remove
+   * @param contentId - The content id to remove
    * @returns Promise<boolean> - True if the event was acknowledged by client
    */
-  async removeLauncherWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+  async removeLauncherWithAck(socket: Socket, contentId: string): Promise<boolean> {
     return await this.emitWithAck(socket, ServerMessageKind.REMOVE_LAUNCHER, {
-      sessionId,
+      contentId,
     });
   }
 

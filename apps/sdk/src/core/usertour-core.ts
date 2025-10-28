@@ -346,6 +346,7 @@ export class UsertourCore extends Evented {
     contentId: string,
     startReason: contentStartReason,
     opts?: UserTourTypes.StartOptions,
+    batch = true,
   ) {
     // Build start options
     const startOptions = {
@@ -354,7 +355,7 @@ export class UsertourCore extends Evented {
       contentId,
     };
     // Start the content
-    await this.socketService.startContent(startOptions, { batch: true });
+    await this.socketService.startContent(startOptions, { batch });
   }
 
   /**

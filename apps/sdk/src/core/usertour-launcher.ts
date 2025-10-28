@@ -109,7 +109,12 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   private handleElementFound(el: Element, store: LauncherStore): void {
     const sessionId = this.getSessionId();
     if (!sessionId) {
-      this.instance.startContent(this.getContentId(), contentStartReason.START_FROM_CONDITION);
+      this.instance.startContent(
+        this.getContentId(),
+        contentStartReason.START_FROM_CONDITION,
+        undefined,
+        false,
+      );
     } else {
       this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
     }

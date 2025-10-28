@@ -202,19 +202,16 @@ export class SessionBuilderService {
 
   /**
    * Create content session
-   * @param sessionId - The session ID
    * @param customContentVersion - The custom content version
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param contentType - The content type
-   * @param externalCompanyId - The external company ID
-   * @param stepIndex - The step index
+   * @param socketData - The socket data
+   * @param sessionId - The session ID
+   * @param stepCvid - The step CVID
    * @returns The content session or null if the session creation fails
    */
   async createContentSession(
-    sessionId: string,
     customContentVersion: CustomContentVersion,
     socketData: SocketData,
+    sessionId?: string,
     stepCvid?: string,
   ): Promise<CustomContentSession | null> {
     const { environment, externalUserId, externalCompanyId } = socketData;
