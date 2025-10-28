@@ -365,7 +365,7 @@ export class WebSocketV2Service {
       options: startContentDto,
     };
     if (contentType === ContentDataType.LAUNCHER) {
-      return await this.contentOrchestratorService.startLauncher(startContentContext);
+      return await this.contentOrchestratorService.startLaunchers(startContentContext);
     }
     // Start the content
     return await this.contentOrchestratorService.startContent(startContentContext);

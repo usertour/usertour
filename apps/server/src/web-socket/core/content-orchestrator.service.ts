@@ -134,18 +134,6 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Start launcher
-   * @param context - The content start context
-   * @returns True if the launcher was started successfully
-   */
-  async startLauncher(context: ContentStartContext): Promise<boolean> {
-    if (!context?.options?.contentId) {
-      return false;
-    }
-    return await this.startLaunchers(context);
-  }
-
-  /**
    * Start launchers
    * @param context - The content start context
    * @returns True if the launchers were started successfully
