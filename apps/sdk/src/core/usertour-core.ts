@@ -658,8 +658,8 @@ export class UsertourCore extends Evented {
    * @returns boolean - True if launcher was removed successfully
    */
   private handleRemoveLauncher(payload: unknown): boolean {
-    const { sessionId } = payload as { sessionId: string };
-    return this.removeLauncher(sessionId);
+    const { contentId } = payload as { contentId: string };
+    return this.removeLauncher(contentId);
   }
 
   /**
@@ -821,6 +821,24 @@ export class UsertourCore extends Evented {
     // Sync store
     this.syncLaunchersStore(this.launchers);
     launcher.show();
+    return true;
+  }
+
+  /**
+   * Removes a launcher from the application
+   * @param contentId - The content ID to remove the launcher from
+   * @returns True if the launcher was removed, false otherwise
+   */
+  private removeLauncher(contentId: string): boolean {
+    const launcher = this.launchers.find((launcher) => launcher.getContentId() === contentId);
+    if (!launcher) {
+      return false;
+    }
+    // Destroy the launcher
+    launcher.destroy();
+    // Remove from the launchers array
+    this.launchers = this.launchers.filter((item) => item.getContentId() !== contentId);
+    this.launchersStore.setData(this.launchers);
     return true;
   }
 
@@ -1014,24 +1032,6 @@ export class UsertourCore extends Evented {
     this.activatedChecklist?.destroy();
     this.activatedChecklist = null;
     this.checklistsStore.setData(undefined);
-  }
-
-  /**
-   * Removes a launcher from the application
-   * @param sessionId - The session ID to remove the launcher from
-   * @returns True if the launcher was removed, false otherwise
-   */
-  private removeLauncher(sessionId: string): boolean {
-    const launcher = this.launchers.find((launcher) => launcher.getSessionId() === sessionId);
-    if (!launcher) {
-      return false;
-    }
-    // Destroy the launcher
-    launcher.destroy();
-    // Remove from the launchers array
-    this.launchers = this.launchers.filter((item) => item.getSessionId() !== sessionId);
-    this.launchersStore.setData(this.launchers);
-    return true;
   }
 
   /**

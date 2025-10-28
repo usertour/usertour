@@ -393,10 +393,8 @@ export class SocketOperationService {
       [ContentDataType.LAUNCHER],
     );
 
-    const untrackedConditions = filteredConditions.filter(
-      (condition) =>
-        addedSessions.some((session) => session.content.id === condition.contentId) ||
-        removedContentIds.some((id) => id === condition.contentId),
+    const untrackedConditions = filteredConditions.filter((condition) =>
+      removedContentIds.some((id) => id === condition.contentId),
     );
 
     const trackedConditions = filteredConditions.filter(

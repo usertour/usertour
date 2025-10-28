@@ -186,11 +186,9 @@ export class ContentOrchestratorService {
         sessions.push(result);
       }
     }
-    if (sessions.length > 0) {
-      const success = await this.socketOperationService.addLaunchers(socket, socketData, sessions);
-      if (!success) {
-        return false;
-      }
+    const success = await this.socketOperationService.addLaunchers(socket, socketData, sessions);
+    if (!success) {
+      return false;
     }
     const newSocketData = await this.getSocketData(socket);
     if (!newSocketData) {
