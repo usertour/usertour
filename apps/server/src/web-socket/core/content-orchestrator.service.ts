@@ -48,6 +48,17 @@ import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
 
 /**
+ * Result of launcher data preparation
+ */
+interface LauncherDataPreparationResult {
+  success: boolean;
+  availableVersions: CustomContentVersion[];
+  shouldTrackVersions: CustomContentVersion[];
+  startReason: contentStartReason;
+  versionId?: string;
+}
+
+/**
  * Service responsible for managing content (flows, checklists) with various strategies
  */
 @Injectable()
@@ -131,80 +142,6 @@ export class ContentOrchestratorService {
       await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
     }
     return true;
-  }
-
-  /**
-   * Start launchers
-   * @param context - The content start context
-   * @returns True if the launchers were started successfully
-   */
-  async startLaunchers(context: ContentStartContext): Promise<boolean> {
-    const { socketData, options, socket } = context;
-    const { clientConditions, environment } = socketData;
-    const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
-    const contentType = ContentDataType.LAUNCHER;
-
-    // Get published version ID if needed
-    const versionId = await this.getPublishedVersionId(contentId, environment);
-    if (contentId && !versionId) {
-      return false;
-    }
-
-    // Get evaluated content versions once and reuse for both strategy executions
-    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
-      socketData,
-      contentType,
-      versionId,
-    );
-    const availableContentVersions = filterAvailableLauncherContentVersions(
-      evaluatedContentVersions,
-      clientConditions,
-    );
-    const shouldTrackVersions = evaluatedContentVersions.filter(
-      (version) =>
-        !availableContentVersions.find(
-          (availableVersion) => availableVersion.contentId === version.contentId,
-        ),
-    );
-    const sessions: CustomContentSession[] = [];
-    for (const contentVersion of availableContentVersions) {
-      const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
-
-      // Skip bizSession processing when session is not available and no versionId is specified
-      const createNewSession = !isAvailable;
-      const skipBizSession = !isAvailable && !versionId;
-
-      const result = await this.initializeSession(
-        contentVersion,
-        socketData,
-        { startReason },
-        createNewSession,
-        skipBizSession,
-      );
-
-      if (result) {
-        sessions.push(result);
-      }
-    }
-    const success = await this.socketOperationService.addLaunchers(socket, socketData, sessions);
-    if (!success) {
-      return false;
-    }
-
-    const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
-
-    if (preTracks.length === 0) {
-      return true;
-    }
-    const newSocketData = await this.getSocketData(socket);
-    if (!newSocketData) {
-      return false;
-    }
-    return await this.socketOperationService.trackClientConditions(
-      socket,
-      newSocketData,
-      preTracks,
-    );
   }
 
   /**
@@ -1232,5 +1169,160 @@ export class ContentOrchestratorService {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData, undefined, false);
+  }
+
+  /**
+   * Start launchers
+   * @param context - The content start context
+   * @returns True if the launchers were started successfully
+   */
+  async startLaunchers(context: ContentStartContext): Promise<boolean> {
+    // 1. Prepare launcher data
+    const preparationResult = await this.prepareLauncherData(context);
+    if (!preparationResult.success) {
+      return false;
+    }
+
+    // 2. Create launcher sessions
+    const sessions = await this.createLauncherSessions(
+      preparationResult.availableVersions,
+      context.socketData,
+      preparationResult.startReason,
+      preparationResult.versionId,
+    );
+
+    // 3. Execute launcher operations
+    return await this.executeLauncherOperations(
+      context.socket,
+      context.socketData,
+      sessions,
+      preparationResult.shouldTrackVersions,
+    );
+  }
+
+  /**
+   * Prepare launcher data for processing
+   * @param context - The content start context
+   * @returns Launcher data preparation result
+   */
+  private async prepareLauncherData(
+    context: ContentStartContext,
+  ): Promise<LauncherDataPreparationResult> {
+    const { socketData, options } = context;
+    const { clientConditions, environment } = socketData;
+    const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
+    const contentType = ContentDataType.LAUNCHER;
+
+    // Get published version ID if needed
+    const versionId = await this.getPublishedVersionId(contentId, environment);
+    if (contentId && !versionId) {
+      return { success: false, availableVersions: [], shouldTrackVersions: [], startReason };
+    }
+
+    // Get evaluated content versions once and reuse for both strategy executions
+    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+      socketData,
+      contentType,
+      versionId,
+    );
+    const availableContentVersions = filterAvailableLauncherContentVersions(
+      evaluatedContentVersions,
+      clientConditions,
+    );
+    const shouldTrackVersions = evaluatedContentVersions.filter(
+      (version) =>
+        !availableContentVersions.find(
+          (availableVersion) => availableVersion.contentId === version.contentId,
+        ),
+    );
+
+    return {
+      success: true,
+      availableVersions: availableContentVersions,
+      shouldTrackVersions,
+      startReason,
+      versionId,
+    };
+  }
+
+  /**
+   * Create launcher sessions for available content versions
+   * @param availableVersions - Available content versions
+   * @param socketData - Socket data
+   * @param startReason - Start reason
+   * @param versionId - Version ID
+   * @returns Array of created sessions
+   */
+  private async createLauncherSessions(
+    availableVersions: CustomContentVersion[],
+    socketData: SocketData,
+    startReason: contentStartReason,
+    versionId?: string,
+  ): Promise<CustomContentSession[]> {
+    const contentType = ContentDataType.LAUNCHER;
+    const sessions: CustomContentSession[] = [];
+
+    for (const contentVersion of availableVersions) {
+      const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
+
+      // Skip bizSession processing when session is not available and no versionId is specified
+      const createNewSession = !isAvailable;
+      const skipBizSession = !isAvailable && !versionId;
+
+      const result = await this.initializeSession(
+        contentVersion,
+        socketData,
+        { startReason },
+        createNewSession,
+        skipBizSession,
+      );
+
+      if (result) {
+        sessions.push(result);
+      }
+    }
+
+    return sessions;
+  }
+
+  /**
+   * Execute launcher operations including adding launchers and tracking conditions
+   * @param socket - Socket instance
+   * @param socketData - Socket data
+   * @param sessions - Sessions to add
+   * @param shouldTrackVersions - Versions to track
+   * @returns True if operations were successful
+   */
+  private async executeLauncherOperations(
+    socket: Socket,
+    socketData: SocketData,
+    sessions: CustomContentSession[],
+    shouldTrackVersions: CustomContentVersion[],
+  ): Promise<boolean> {
+    const contentType = ContentDataType.LAUNCHER;
+
+    // Add launchers to socket
+    const success = await this.socketOperationService.addLaunchers(socket, socketData, sessions);
+    if (!success) {
+      return false;
+    }
+
+    // Extract and track client conditions
+    const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
+
+    if (preTracks.length === 0) {
+      return true;
+    }
+
+    const newSocketData = await this.getSocketData(socket);
+    if (!newSocketData) {
+      return false;
+    }
+
+    return await this.socketOperationService.trackClientConditions(
+      socket,
+      newSocketData,
+      preTracks,
+    );
   }
 }
