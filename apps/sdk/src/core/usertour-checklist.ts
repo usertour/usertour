@@ -2,14 +2,11 @@ import {
   ChecklistInitialDisplay,
   ChecklistItemType,
   ContentEditorClickableElement,
-  ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
 import { ChecklistStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
-import { UsertourTheme } from '@/core/usertour-theme';
 import { logger } from '@/utils';
-import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
@@ -37,17 +34,15 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   async show() {
     const baseStoreData = await this.buildStoreData();
-    const checklistData = this.getChecklistData();
-    if (!baseStoreData || !checklistData) {
+    if (!baseStoreData?.checklistData) {
       return;
     }
-    const initialDisplay = checklistData.initialDisplay;
+    const initialDisplay = baseStoreData?.checklistData.initialDisplay;
     const expanded = initialDisplay === ChecklistInitialDisplay.EXPANDED;
     // Process items to determine their status
     const store = {
       ...baseStoreData,
       expanded,
-      checklistData,
       openState: true,
     };
     this.setStoreData(store);
@@ -79,10 +74,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   protected getCustomStoreData(): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
-    if (!checklistData) {
-      return {};
-    }
-    return { checklistData };
+    return {
+      checklistData,
+    };
   }
 
   /**
@@ -138,48 +132,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
-  }
-
-  /**
-   * Gets theme settings from session
-   * @protected
-   */
-  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
-    const theme = this.getVersionTheme();
-    if (!theme) {
-      return null;
-    }
-    return await UsertourTheme.getThemeSettings(theme);
-  }
-
-  /**
-   * Builds the store data for the checklist
-   * This method combines the base store info with the current step data
-   * and sets default values for required fields
-   *
-   * @returns {TourStoreChecklistStore} The complete store data object
-   */
-  async buildStoreData(): Promise<ChecklistStore | null> {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return null;
-    }
-
-    const themeData = UsertourTheme.createThemeData(themeSettings);
-    const contentSession = this.getSessionAttributes();
-    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
-    const removeBranding = this.isRemoveBranding();
-    const zIndex = this.getCalculatedZIndex();
-
-    // Combine all store data with proper defaults
-    return {
-      removeBranding,
-      ...themeData,
-      userAttributes,
-      openState: false,
-      zIndex,
-      expanded: false,
-    } as ChecklistStore;
   }
 
   /**

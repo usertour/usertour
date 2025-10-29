@@ -1,16 +1,13 @@
 import {
   ContentEditorClickableElement,
   ElementSelectorPropsData,
-  ThemeTypesSetting,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
-import { UsertourTheme } from '@/core/usertour-theme';
 import { logger } from '@/utils';
-import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
 import {
   ELEMENT_CHANGED,
   ELEMENT_FOUND,
@@ -46,13 +43,12 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async show() {
     const baseStoreData = await this.buildStoreData();
-    const launcherData = this.getLauncherData();
-    if (!baseStoreData || !launcherData) {
+    if (!baseStoreData?.launcherData) {
       return;
     }
     const store = {
       ...baseStoreData,
-      launcherData,
+      triggerRef: null,
     } as LauncherStore;
     this.setupElementWatcher(store);
   }
@@ -146,10 +142,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   protected getCustomStoreData(): Partial<LauncherStore> {
     const launcherData = this.getLauncherData();
-    if (!launcherData) {
-      return {};
-    }
-    return { launcherData };
+    return {
+      launcherData,
+    };
   }
 
   /**
@@ -193,45 +188,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
-  }
-
-  /**
-   * Gets theme settings from session
-   * @protected
-   */
-  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
-    const theme = this.getVersionTheme();
-    if (!theme) {
-      return null;
-    }
-    return await UsertourTheme.getThemeSettings(theme);
-  }
-
-  /**
-   * Builds the store data for the launcher
-   */
-  async buildStoreData(): Promise<LauncherStore | null> {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return null;
-    }
-
-    const themeData = UsertourTheme.createThemeData(themeSettings);
-    const contentSession = this.getSessionAttributes();
-    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
-    const removeBranding = this.isRemoveBranding();
-    const zIndex = this.getCalculatedZIndex();
-
-    // Combine all store data with proper defaults
-    return {
-      removeBranding,
-      ...themeData,
-      userAttributes,
-      openState: false,
-      zIndex,
-      expanded: false,
-      triggerRef: undefined,
-    } as LauncherStore;
   }
 
   /**

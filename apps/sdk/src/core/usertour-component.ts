@@ -4,6 +4,7 @@ import { timerManager } from '@/utils/timer-manager';
 import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
+import { UsertourTheme } from '@/core/usertour-theme';
 import { autoBind } from '@/utils';
 import {
   ChecklistData,
@@ -18,6 +19,7 @@ import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } fro
 import { ActionManager, ActionHandler } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { COMPONENT_CLOSED } from '@usertour-packages/constants';
+import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
 
 /**
  * Options for component initialization
@@ -74,7 +76,6 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   // Abstract methods that subclasses must implement
-  abstract buildStoreData(): Promise<TStore | null>;
   abstract check(): Promise<void>;
 
   /**
@@ -307,6 +308,33 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets theme settings from session
+   * This method combines version theme with component-specific theme settings
+   * @protected
+   */
+  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
+    const versionTheme = this.getVersionTheme();
+    const customTheme = this.getCustomTheme();
+
+    // Use custom theme if available, otherwise fall back to version theme
+    const themeToUse = customTheme || versionTheme;
+
+    if (!themeToUse) {
+      return null;
+    }
+
+    return await UsertourTheme.getThemeSettings(themeToUse);
+  }
+
+  /**
+   * Gets custom theme  - can be overridden by subclasses
+   * @protected
+   */
+  protected getCustomTheme(): SessionTheme | undefined {
+    return undefined;
+  }
+
+  /**
    * Checks if theme has changed and updates theme settings if needed
    * @protected
    */
@@ -329,10 +357,49 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Gets theme settings from session - must be implemented by subclasses
+   * Builds the base store data common to all components
+   * This method handles theme settings, user attributes, and other common properties
    * @protected
    */
-  protected abstract getThemeSettings(): Promise<ThemeTypesSetting | null>;
+  protected async buildBaseStoreData(): Promise<Partial<BaseStore> | null> {
+    const themeSettings = await this.getThemeSettings();
+    if (!themeSettings) {
+      return null;
+    }
+
+    const themeData = UsertourTheme.createThemeData(themeSettings);
+    const contentSession = this.getSessionAttributes();
+    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    const removeBranding = this.isRemoveBranding();
+    const zIndex = this.getCalculatedZIndex();
+
+    return {
+      removeBranding,
+      ...themeData,
+      userAttributes,
+      openState: false,
+      zIndex,
+    };
+  }
+
+  /**
+   * Builds the complete store data for the component
+   * This method combines base store data with component-specific data
+   * @returns {TStore | null} The complete store data object
+   */
+  async buildStoreData(): Promise<TStore | null> {
+    const baseData = await this.buildBaseStoreData();
+    if (!baseData) {
+      return null;
+    }
+
+    const customData = this.getCustomStoreData();
+
+    return {
+      ...baseData,
+      ...customData,
+    } as TStore;
+  }
 
   /**
    * Refreshes the store data for the component

@@ -4,29 +4,20 @@ import {
   ContentEditorQuestionElement,
   isQuestionElement,
 } from '@usertour-packages/shared-editor';
-import {
-  RulesCondition,
-  StepContentType,
-  ThemeTypesSetting,
-  contentEndReason,
-} from '@usertour/types';
+import { RulesCondition, StepContentType, contentEndReason } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { TourStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
-import { UsertourTheme } from '@/core/usertour-theme';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
-import {
-  convertToAttributeEvaluationOptions,
-  createQuestionAnswerEventData,
-} from '@/core/usertour-helper';
+import { createQuestionAnswerEventData } from '@/core/usertour-helper';
 import {
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
   ELEMENT_CHANGED,
 } from '@usertour-packages/constants';
-import { SessionStep } from '@/types';
+import { SessionStep, SessionTheme } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
@@ -58,25 +49,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       // Optionally handle the error or rethrow
       throw error;
     }
-  }
-
-  /**
-   * Gets theme settings from session
-   * @protected
-   */
-  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
-    const theme = this.getVersionTheme();
-    const currentStep = this.getCurrentStep();
-    // If the current step has a theme, use it
-    if (currentStep?.theme) {
-      return await UsertourTheme.getThemeSettings(currentStep?.theme);
-    }
-    // If the version has a theme, use it
-    if (theme) {
-      return await UsertourTheme.getThemeSettings(theme);
-    }
-    // If no theme is found, return null
-    return null;
   }
 
   /**
@@ -155,35 +127,23 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Builds the store data for the tour
-   * This method combines the base store info with the current step data
-   * and sets default values for required fields
-   *
-   * @returns {TourStore} The complete store data object
+   * Gets custom tour store data
+   * @protected
    */
-  async buildStoreData(): Promise<TourStore | null> {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return null;
-    }
-
-    const themeData = UsertourTheme.createThemeData(themeSettings);
-    const contentSession = this.getSessionAttributes();
-    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+  protected getCustomStoreData(): Partial<TourStore> {
     const currentStep = this.getCurrentStep();
-    const removeBranding = this.isRemoveBranding();
-    const zIndex = this.getCalculatedZIndex();
-
-    // Combine all store data with proper defaults
     return {
-      triggerRef: null, // Reset trigger reference
-      removeBranding,
-      ...themeData,
-      userAttributes,
-      openState: false,
       currentStep,
-      zIndex,
-    } as TourStore;
+    };
+  }
+
+  /**
+   * Gets custom theme settings for the tour
+   * @protected
+   */
+  protected getCustomTheme(): SessionTheme | undefined {
+    const currentStep = this.getCurrentStep();
+    return currentStep?.theme;
   }
 
   /**
@@ -222,12 +182,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     await this.stepTrigger?.process();
 
     // Set up element watcher
-    const store = await this.buildStoreData();
-    if (!store) {
+    const baseStoreData = await this.buildStoreData();
+    if (!baseStoreData?.currentStep) {
       logger.error('Store not found', { step });
       return;
     }
-    this.setupElementWatcher(step, store);
+    this.setupElementWatcher(step, { ...baseStoreData, triggerRef: null });
   }
 
   /**
@@ -384,8 +344,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async showModal(step: SessionStep) {
     // Build store data and get step information
-    const store = await this.buildStoreData();
-    if (!store) {
+    const baseStoreData = await this.buildStoreData();
+    if (!baseStoreData) {
       logger.error('Store not found', { step });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
@@ -400,7 +360,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Set up modal state
     this.setStoreData({
-      ...store,
+      ...baseStoreData,
       ...stepInfo,
       openState: true,
     });
