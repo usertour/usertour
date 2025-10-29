@@ -408,24 +408,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Refreshes the store data for the tour
-   */
-  async refreshStore(): Promise<void> {
-    const newStore = await this.buildStoreData();
-    const existingStore = this.getStoreData();
-    if (!newStore || !existingStore) {
-      return;
-    }
-    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-    this.updateStore({
-      userAttributes,
-      assets,
-      globalStyle,
-      themeSettings,
-    });
-  }
-
-  /**
    * Displays a hidden step in the tour
    * This method handles:
    * 1. Reporting the step seen event

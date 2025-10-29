@@ -142,23 +142,15 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   }
 
   /**
-   * Refreshes the store data for the launcher
+   * Gets custom launcher store data
+   * @protected
    */
-  async refreshStore(): Promise<void> {
-    const newStore = await this.buildStoreData();
+  protected getCustomStoreData(): Partial<LauncherStore> {
     const launcherData = this.getLauncherData();
-    const existingStore = this.getStoreData();
-    if (!newStore || !existingStore || !launcherData) {
-      return;
+    if (!launcherData) {
+      return {};
     }
-    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-    this.updateStore({
-      launcherData,
-      userAttributes,
-      assets,
-      globalStyle,
-      themeSettings,
-    });
+    return { launcherData };
   }
 
   /**

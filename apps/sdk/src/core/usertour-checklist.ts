@@ -75,23 +75,15 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Refreshes the store data for the checklist
+   * Gets custom checklist store data
+   * @protected
    */
-  async refreshStore(): Promise<void> {
-    const newStore = await this.buildStoreData();
+  protected getCustomStoreData(): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
-    const existingStore = this.getStoreData();
-    if (!newStore || !existingStore || !checklistData) {
-      return;
+    if (!checklistData) {
+      return {};
     }
-    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-    this.updateStore({
-      checklistData,
-      userAttributes,
-      assets,
-      globalStyle,
-      themeSettings,
-    });
+    return { checklistData };
   }
 
   /**

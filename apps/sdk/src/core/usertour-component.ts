@@ -335,4 +335,39 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    * @protected
    */
   protected abstract getThemeSettings(): Promise<ThemeTypesSetting | null>;
+
+  /**
+   * Refreshes the store data for the component
+   * @protected
+   */
+  protected async refreshStore(): Promise<void> {
+    const newStore = await this.buildStoreData();
+    const existingStore = this.getStoreData();
+    if (!newStore || !existingStore) {
+      return;
+    }
+
+    // Extract common properties
+    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
+
+    // Get custom store data
+    const customData = this.getCustomStoreData();
+
+    // Update store with common and specific data
+    this.updateStore({
+      userAttributes,
+      assets,
+      globalStyle,
+      themeSettings,
+      ...customData,
+    });
+  }
+
+  /**
+   * Gets custom store data - can be overridden by subclasses
+   * @protected
+   */
+  protected getCustomStoreData(): Partial<TStore> {
+    return {};
+  }
 }
