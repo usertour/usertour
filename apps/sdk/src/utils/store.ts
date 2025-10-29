@@ -1,5 +1,4 @@
 import { autoBind } from '@/utils';
-import { isEqual } from '@usertour/helpers';
 
 /**
  * A generic store class that manages state and notifies subscribers of changes
@@ -26,11 +25,8 @@ export class ExternalStore<T> {
    * @param newData New state to set
    */
   public setData(newData: T | undefined): void {
-    // Only update and emit if data has actually changed
-    if (!isEqual(this.data, newData)) {
-      this.data = newData;
-      this.emitChange();
-    }
+    this.data = newData;
+    this.emitChange();
   }
 
   /**
@@ -42,10 +38,8 @@ export class ExternalStore<T> {
     if (this.data) {
       const newData = { ...this.data, ...partialData };
       // Only update and emit if data has actually changed
-      if (!isEqual(this.data, newData)) {
-        this.data = newData;
-        this.emitChange();
-      }
+      this.data = newData;
+      this.emitChange();
     }
   }
 
