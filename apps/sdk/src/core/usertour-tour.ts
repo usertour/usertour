@@ -271,7 +271,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param step - The step to be displayed as a modal
    * @private
    */
-  private async showModal(step: SessionStep) {
+  private async showModal(step: SessionStep): Promise<void> {
     // Build store data and get step information
     const baseStoreData = await this.buildStoreData();
     if (!baseStoreData) {
@@ -303,7 +303,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    *
    * @private
    */
-  private async showHidden(step: SessionStep) {
+  private async showHidden(step: SessionStep): Promise<void> {
     await this.reportStepSeen(step);
   }
 
