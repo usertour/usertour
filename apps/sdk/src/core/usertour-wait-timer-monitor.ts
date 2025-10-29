@@ -5,6 +5,7 @@ import { autoBind } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
 import { ConditionWaitTimer } from '@/types/sdk';
 
+// === Interfaces ===
 /**
  * Options for wait timer monitoring
  */
@@ -36,10 +37,12 @@ interface WaitTimerItem extends ConditionWaitTimer {
  * Monitors ConditionWaitTimer objects and manages their timeout execution
  */
 export class ConditionWaitTimersMonitor extends Evented {
+  // === Properties ===
   private waitTimers: Map<string, WaitTimerItem> = new Map();
   private readonly id: string;
   private readonly options: WaitTimerMonitorOptions;
 
+  // === Constructor ===
   constructor(options: WaitTimerMonitorOptions = {}) {
     super();
     autoBind(this);
@@ -51,6 +54,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     };
   }
 
+  // === Public API ===
   /**
    * Adds a wait timer condition to the queue
    * @param condition - ConditionWaitTimer to add
@@ -113,54 +117,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     logger.info(`Wait timer cancelled for versionId: ${versionId}`);
   }
 
-  /**
-   * Handles timer firing
-   * @param versionId - Version ID of the fired timer
-   */
-  private handleTimerFired(versionId: string): void {
-    const waitTimerItem = this.waitTimers.get(versionId);
-
-    if (!waitTimerItem || !waitTimerItem.isActive) {
-      return; // Timer not found or already cancelled
-    }
-
-    // Mark as inactive
-    waitTimerItem.isActive = false;
-
-    // Remove from map
-    this.waitTimers.delete(versionId);
-
-    // Report timer fired
-    this.reportWaitTimerStateChange(waitTimerItem, 'fired');
-
-    logger.info(`Wait timer fired for versionId: ${versionId}`);
-  }
-
-  /**
-   * Reports a wait timer state change
-   * This method can be overridden or extended for custom reporting logic
-   */
-  protected async reportWaitTimerStateChange(
-    condition: ConditionWaitTimer,
-    state: 'started' | 'fired' | 'cancelled',
-  ): Promise<void> {
-    try {
-      const eventData: WaitTimerStateChangeEvent = {
-        condition,
-        timestamp: Date.now(),
-        state,
-      };
-
-      // Emit event for external listeners
-      this.trigger('wait-timer-state-changed', eventData);
-
-      // Log for debugging
-      logger.info(`Wait timer ${state}:`, eventData);
-    } catch (error) {
-      logger.error(`Error reporting wait timer ${state}:`, error);
-    }
-  }
-
+  // === Status Queries ===
   /**
    * Gets all active wait timers
    */
@@ -200,29 +157,6 @@ export class ConditionWaitTimersMonitor extends Evented {
   }
 
   /**
-   * Clears all wait timers
-   */
-  clearAllWaitTimers(): void {
-    for (const [, waitTimerItem] of this.waitTimers) {
-      // Clear the timeout
-      timerManager.clearTimeout(waitTimerItem.timerId);
-
-      // Report as cancelled
-      this.reportWaitTimerStateChange(waitTimerItem, 'cancelled');
-    }
-
-    this.waitTimers.clear();
-    logger.info('All wait timers cleared');
-  }
-
-  /**
-   * Cleans up the monitor and cleans up resources
-   */
-  cleanup(): void {
-    this.clearAllWaitTimers();
-  }
-
-  /**
    * Gets monitoring statistics
    */
   getStats(): {
@@ -240,5 +174,79 @@ export class ConditionWaitTimersMonitor extends Evented {
       totalWaitTimers: this.waitTimers.size,
       activeWaitTimers: activeCount,
     };
+  }
+
+  // === Timer Management ===
+  /**
+   * Handles timer firing
+   * @param versionId - Version ID of the fired timer
+   */
+  private handleTimerFired(versionId: string): void {
+    const waitTimerItem = this.waitTimers.get(versionId);
+
+    if (!waitTimerItem || !waitTimerItem.isActive) {
+      return; // Timer not found or already cancelled
+    }
+
+    // Mark as inactive
+    waitTimerItem.isActive = false;
+
+    // Remove from map
+    this.waitTimers.delete(versionId);
+
+    // Report timer fired
+    this.reportWaitTimerStateChange(waitTimerItem, 'fired');
+
+    logger.info(`Wait timer fired for versionId: ${versionId}`);
+  }
+
+  /**
+   * Clears all wait timers
+   */
+  clearAllWaitTimers(): void {
+    for (const [, waitTimerItem] of this.waitTimers) {
+      // Clear the timeout
+      timerManager.clearTimeout(waitTimerItem.timerId);
+
+      // Report as cancelled
+      this.reportWaitTimerStateChange(waitTimerItem, 'cancelled');
+    }
+
+    this.waitTimers.clear();
+    logger.info('All wait timers cleared');
+  }
+
+  // === Event Reporting ===
+  /**
+   * Reports a wait timer state change
+   * This method can be overridden or extended for custom reporting logic
+   */
+  protected async reportWaitTimerStateChange(
+    condition: ConditionWaitTimer,
+    state: 'started' | 'fired' | 'cancelled',
+  ): Promise<void> {
+    try {
+      const eventData: WaitTimerStateChangeEvent = {
+        condition,
+        timestamp: Date.now(),
+        state,
+      };
+
+      // Emit event for external listeners
+      this.trigger('wait-timer-state-changed', eventData);
+
+      // Log for debugging
+      logger.info(`Wait timer ${state}:`, eventData);
+    } catch (error) {
+      logger.error(`Error reporting wait timer ${state}:`, error);
+    }
+  }
+
+  // === Cleanup ===
+  /**
+   * Cleans up the monitor and cleans up resources
+   */
+  cleanup(): void {
+    this.clearAllWaitTimers();
   }
 }

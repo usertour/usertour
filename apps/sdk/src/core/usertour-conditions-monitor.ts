@@ -6,6 +6,7 @@ import { autoBind } from '@/utils';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
 import { TrackCondition } from '@/types';
 
+// === Interfaces ===
 /**
  * Options for condition monitoring
  */
@@ -30,12 +31,14 @@ export type ConditionStateChangeEvent = {
  * Monitors an array of TrackCondition and reports when they become active or inactive
  */
 export class UsertourConditionsMonitor extends Evented {
+  // === Properties ===
   private conditions: TrackCondition[] = [];
   private activeConditions: Set<string> = new Set(); // Track currently active conditions
   private readonly id: string;
   private readonly options: ConditionsMonitorOptions;
   private intervalId: string | null = null;
 
+  // === Constructor ===
   constructor(options: ConditionsMonitorOptions = {}) {
     super();
     autoBind(this);
@@ -53,6 +56,7 @@ export class UsertourConditionsMonitor extends Evented {
     }
   }
 
+  // === Public API ===
   /**
    * Adds conditions to monitor
    * @param conditions - Array of TrackCondition objects to add
@@ -109,6 +113,29 @@ export class UsertourConditionsMonitor extends Evented {
   }
 
   /**
+   * Gets set of active condition IDs
+   */
+  getActiveConditionIds(): Set<string> {
+    return new Set(this.activeConditions);
+  }
+
+  /**
+   * Gets monitoring statistics
+   */
+  getStats(): {
+    totalConditions: number;
+    activeConditions: number;
+    isMonitoring: boolean;
+  } {
+    return {
+      totalConditions: this.conditions.length,
+      activeConditions: this.activeConditions.size,
+      isMonitoring: this.intervalId !== null,
+    };
+  }
+
+  // === Monitoring Control ===
+  /**
    * Starts monitoring
    */
   start(): void {
@@ -136,6 +163,7 @@ export class UsertourConditionsMonitor extends Evented {
     }
   }
 
+  // === Condition Checking ===
   /**
    * Checks the initial state of newly added conditions
    * @param conditions - Array of TrackCondition objects to check
@@ -226,6 +254,7 @@ export class UsertourConditionsMonitor extends Evented {
     }
   }
 
+  // === Event Reporting ===
   /**
    * Reports a condition state change
    * This method can be overridden or extended for custom reporting logic
@@ -251,33 +280,12 @@ export class UsertourConditionsMonitor extends Evented {
     }
   }
 
+  // === Cleanup ===
   /**
    * Cleans up the monitor and cleans up resources
    */
   cleanup(): void {
     this.stop();
     this.clearConditions();
-  }
-
-  /**
-   * Gets set of active condition IDs
-   */
-  getActiveConditionIds(): Set<string> {
-    return new Set(this.activeConditions);
-  }
-
-  /**
-   * Gets monitoring statistics
-   */
-  getStats(): {
-    totalConditions: number;
-    activeConditions: number;
-    isMonitoring: boolean;
-  } {
-    return {
-      totalConditions: this.conditions.length,
-      activeConditions: this.activeConditions.size,
-      isMonitoring: this.intervalId !== null,
-    };
   }
 }

@@ -11,14 +11,17 @@ import { Evented } from '@/utils/evented';
  * Simple and focused - one trigger instance per step
  */
 export class UsertourTrigger extends Evented {
+  // === Static Members ===
   private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
 
+  // === Properties ===
   private triggers: StepTrigger[] = [];
   private readonly actionExecutor: (actions: RulesCondition[]) => Promise<void>;
   private readonly getSessionAttributes: () => SessionAttribute[];
   private readonly id: string; // Unique identifier for this trigger
   private activeTimeouts: Set<string> = new Set(); // Track active timeout keys
 
+  // === Constructor ===
   constructor(
     triggers: StepTrigger[],
     getSessionAttributes: () => SessionAttribute[],
@@ -32,6 +35,7 @@ export class UsertourTrigger extends Evented {
     this.getSessionAttributes = getSessionAttributes;
   }
 
+  // === Public API ===
   /**
    * Processes all remaining triggers
    * Returns true if there are still pending triggers
@@ -89,6 +93,7 @@ export class UsertourTrigger extends Evented {
     return this.triggers.length > 0;
   }
 
+  // === Status Queries ===
   /**
    * Gets the count of remaining triggers
    */
@@ -110,6 +115,7 @@ export class UsertourTrigger extends Evented {
     return [...this.triggers];
   }
 
+  // === Cleanup ===
   /**
    * Clears all triggers and timeouts
    */

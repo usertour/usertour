@@ -6,12 +6,15 @@ import { LauncherData } from '@usertour/types';
  * Provides common getter methods for session data
  */
 export class UsertourSession {
+  // === Properties ===
   private session: CustomContentSession;
 
+  // === Constructor ===
   constructor(session: CustomContentSession) {
     this.session = session;
   }
 
+  // === Session Management ===
   /**
    * Updates the session data
    * @param session - New session data to update
@@ -20,25 +23,12 @@ export class UsertourSession {
     this.session = session;
   }
 
+  // === Session Info ===
   /**
    * Gets the session ID
    */
   getSessionId(): string {
-    return this.session.id;
-  }
-
-  /**
-   * Gets the step by cvid
-   */
-  getStepByCvid(cvid: string): SessionStep | undefined {
-    return this.getSteps().find((step) => step.cvid === cvid);
-  }
-
-  /**
-   * Gets the step by id
-   */
-  getStepById(id: string): SessionStep | undefined {
-    return this.getSteps().find((step) => step.id === id);
+    return this.session.id || '';
   }
 
   /**
@@ -84,6 +74,21 @@ export class UsertourSession {
   }
 
   /**
+   * Checks if expand is pending
+   */
+  isExpandPending(): boolean {
+    return Boolean(this.session.expandPending);
+  }
+
+  /**
+   * Checks if the remove branding is enabled
+   */
+  isRemoveBranding(): boolean {
+    return this.session.content.project.removeBranding;
+  }
+
+  // === Steps ===
+  /**
    * Gets the steps array from session
    */
   getSteps(): SessionStep[] {
@@ -91,12 +96,35 @@ export class UsertourSession {
   }
 
   /**
+   * Gets the step by cvid
+   */
+  getStepByCvid(cvid: string): SessionStep | undefined {
+    return this.getSteps().find((step) => step.cvid === cvid);
+  }
+
+  /**
+   * Gets the step by id
+   */
+  getStepById(id: string): SessionStep | undefined {
+    return this.getSteps().find((step) => step.id === id);
+  }
+
+  /**
+   * Gets current step from session
+   */
+  getCurrentStepFromSession() {
+    return this.session.currentStep;
+  }
+
+  // === Theme ===
+  /**
    * Gets theme from session
    */
   getVersionTheme(): SessionTheme | undefined {
     return this.session.version.theme;
   }
 
+  // === Content Data ===
   /**
    * Gets checklist data from session
    */
@@ -111,31 +139,11 @@ export class UsertourSession {
     return this.session.version.launcher;
   }
 
+  // === Attributes ===
   /**
    * Gets attributes array
    */
   getAttributes() {
     return this.session.attributes;
-  }
-
-  /**
-   * Gets current step from session
-   */
-  getCurrentStepFromSession() {
-    return this.session.currentStep;
-  }
-
-  /**
-   * Checks if expand is pending
-   */
-  isExpandPending(): boolean {
-    return Boolean(this.session.expandPending);
-  }
-
-  /**
-   * Checks if the remove branding is enabled
-   */
-  isRemoveBranding(): boolean {
-    return this.session.content.project.removeBranding;
   }
 }

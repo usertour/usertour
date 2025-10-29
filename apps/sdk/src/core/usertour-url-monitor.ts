@@ -5,6 +5,7 @@ import { uuidV4 } from '@usertour/helpers';
 import { window } from '@/utils/globals';
 import { on, off } from '@/utils/listener';
 
+// === Interfaces ===
 /**
  * Options for URL monitoring
  */
@@ -28,12 +29,14 @@ export type URLChangeEvent = {
  * UsertourURLMonitor handles URL change detection
  */
 export class UsertourURLMonitor extends Evented {
+  // === Properties ===
   private currentUrl = '';
   private readonly id: string;
   private readonly options: URLMonitorOptions;
   private intervalId: string | null = null;
   private isListening = false;
 
+  // === Constructor ===
   constructor(options: URLMonitorOptions = {}) {
     super();
     autoBind(this);
@@ -51,6 +54,7 @@ export class UsertourURLMonitor extends Evented {
     }
   }
 
+  // === Public API ===
   /**
    * Start URL monitoring
    */
@@ -93,6 +97,29 @@ export class UsertourURLMonitor extends Evented {
     }
   }
 
+  /**
+   * Gets the current URL
+   */
+  getCurrentUrl(): string {
+    return this.currentUrl;
+  }
+
+  /**
+   * Gets monitoring statistics
+   */
+  getStats(): {
+    isListening: boolean;
+    intervalId: string | null;
+    currentUrl: string;
+  } {
+    return {
+      isListening: this.isListening,
+      intervalId: this.intervalId,
+      currentUrl: this.currentUrl,
+    };
+  }
+
+  // === Event Handlers ===
   private handlePopState = (): void => {
     this.checkUrlChange();
   };
@@ -101,6 +128,7 @@ export class UsertourURLMonitor extends Evented {
     this.checkUrlChange();
   };
 
+  // === URL Checking ===
   private checkUrlChange(): void {
     if (!window) return;
 
@@ -117,33 +145,12 @@ export class UsertourURLMonitor extends Evented {
     }
   }
 
-  /**
-   * Gets the current URL
-   */
-  getCurrentUrl(): string {
-    return this.currentUrl;
-  }
-
+  // === Cleanup ===
   /**
    * Cleans up the URL monitor
    */
   cleanup(): void {
     this.currentUrl = '';
     this.stop();
-  }
-
-  /**
-   * Gets monitoring statistics
-   */
-  getStats(): {
-    isListening: boolean;
-    intervalId: string | null;
-    currentUrl: string;
-  } {
-    return {
-      isListening: this.isListening,
-      intervalId: this.intervalId,
-      currentUrl: this.currentUrl,
-    };
   }
 }

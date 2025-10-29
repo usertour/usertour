@@ -15,13 +15,14 @@ import {
   ActivateLauncherDto,
 } from '@/types/websocket';
 
-import { Socket, logger } from '@/utils';
+import { Socket, logger, window } from '@/utils';
 import { ClientCondition } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents, ClientMessageKind } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
 import { getClientContext } from '@/core/usertour-helper';
 
+// === Interfaces ===
 // Batch options interface for consistency
 export interface BatchOptions {
   batch?: boolean;
@@ -94,12 +95,14 @@ export interface IUsertourSocket {
  * Now manages the Socket lifecycle internally
  */
 export class UsertourSocket implements IUsertourSocket {
+  // === Properties ===
   private socket: Socket;
   private authCredentials: AuthCredentials | undefined;
   private inBatch = false;
   private endBatchTimeout?: number;
   private readonly BATCH_TIMEOUT = 50; // ms
 
+  // === Constructor ===
   constructor() {
     // Create socket instance but don't auto-connect
     this.socket = new Socket({
@@ -115,6 +118,7 @@ export class UsertourSocket implements IUsertourSocket {
     });
   }
 
+  // === Connection Management ===
   /**
    * Connect Socket with given credentials
    */
@@ -183,6 +187,7 @@ export class UsertourSocket implements IUsertourSocket {
     this.authCredentials = undefined;
   }
 
+  // === Credential Management ===
   /**
    * Handle credential change by reconnecting with new credentials
    */
@@ -213,6 +218,45 @@ export class UsertourSocket implements IUsertourSocket {
     );
   }
 
+  // === Batch Management ===
+  /**
+   * Begin batch internally (send BeginBatch message)
+   */
+  private async beginBatchInternal(): Promise<void> {
+    this.inBatch = true;
+    await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+      kind: ClientMessageKind.BEGIN_BATCH,
+      payload: {},
+      requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    });
+  }
+
+  /**
+   * End batch and send EndBatch message
+   */
+  async endBatch(): Promise<void> {
+    if (this.inBatch) {
+      this.inBatch = false;
+      if (this.endBatchTimeout && window) {
+        window.clearTimeout(this.endBatchTimeout);
+        this.endBatchTimeout = undefined;
+      }
+      await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+        kind: ClientMessageKind.END_BATCH,
+        payload: {},
+        requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      });
+    }
+  }
+
+  /**
+   * Checks if socket is in batch mode
+   */
+  isInBatch(): boolean {
+    return this.inBatch;
+  }
+
+  // === Message Sending ===
   /**
    * Send a client message with unified format
    */
@@ -230,7 +274,7 @@ export class UsertourSocket implements IUsertourSocket {
 
     if (this.inBatch) {
       // Clear existing timeout
-      if (this.endBatchTimeout) {
+      if (this.endBatchTimeout && window) {
         window.clearTimeout(this.endBatchTimeout);
       }
 
@@ -246,9 +290,11 @@ export class UsertourSocket implements IUsertourSocket {
       }
 
       // Set timeout to auto-end batch
-      this.endBatchTimeout = window.setTimeout(() => {
-        this.endBatch();
-      }, this.BATCH_TIMEOUT);
+      if (window) {
+        this.endBatchTimeout = window.setTimeout(() => {
+          this.endBatch();
+        }, this.BATCH_TIMEOUT);
+      }
     }
 
     return await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
@@ -258,19 +304,7 @@ export class UsertourSocket implements IUsertourSocket {
     });
   }
 
-  /**
-   * Begin batch internally (send BeginBatch message)
-   */
-  private async beginBatchInternal(): Promise<void> {
-    this.inBatch = true;
-    await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-      kind: ClientMessageKind.BEGIN_BATCH,
-      payload: {},
-      requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    });
-  }
-
-  // User and Company operations
+  // === User and Company Operations ===
   async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.UPSERT_USER, params, options);
   }
@@ -279,12 +313,12 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.sendClientMessage(ClientMessageKind.UPSERT_COMPANY, params, options);
   }
 
-  // Event tracking
+  // === Event Tracking ===
   async trackEvent(params: TrackEventDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.TRACK_EVENT, params, options);
   }
 
-  // Content operations
+  // === Content Operations ===
   async startContent(params: StartContentDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.START_CONTENT, params, options);
   }
@@ -297,12 +331,12 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.sendClientMessage(ClientMessageKind.GO_TO_STEP, params, options);
   }
 
-  // Question operations
+  // === Question Operations ===
   async answerQuestion(params: AnswerQuestionDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.ANSWER_QUESTION, params, options);
   }
 
-  // Checklist operations
+  // === Checklist Operations ===
   async clickChecklistTask(
     params: ClickChecklistTaskDto,
     options?: BatchOptions,
@@ -318,7 +352,7 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.sendClientMessage(ClientMessageKind.SHOW_CHECKLIST, params, options);
   }
 
-  // Context and reporting
+  // === Context and Reporting ===
   async updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.UPDATE_CLIENT_CONTEXT, params, options);
   }
@@ -353,30 +387,15 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.sendClientMessage(ClientMessageKind.ACTIVATE_LAUNCHER, params, options);
   }
 
-  // Socket status methods
+  // === Status Methods ===
+  /**
+   * Checks if socket is connected
+   */
   isConnected(): boolean {
     return this.socket?.isConnected() ?? false;
   }
 
-  isInBatch(): boolean {
-    return this.inBatch;
-  }
-
-  async endBatch(): Promise<void> {
-    if (this.inBatch) {
-      this.inBatch = false;
-      if (this.endBatchTimeout) {
-        window.clearTimeout(this.endBatchTimeout);
-        this.endBatchTimeout = undefined;
-      }
-      await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.END_BATCH,
-        payload: {},
-        requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      });
-    }
-  }
-
+  // === Event Management ===
   /**
    * Register an event handler with acknowledgment support
    * @param event - The event name to handle
@@ -402,7 +421,10 @@ export class UsertourSocket implements IUsertourSocket {
     this.socket?.once(event, handler);
   }
 
-  // Auth management
+  // === Auth Management ===
+  /**
+   * Updates socket authentication credentials
+   */
   updateCredentials(authInfo: Partial<AuthCredentials>): void {
     if (!this.socket) {
       console.warn('Socket not initialized. Cannot update auth.');

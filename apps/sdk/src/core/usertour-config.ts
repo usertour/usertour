@@ -13,11 +13,23 @@ import { isConditionsActived } from '@usertour/helpers';
  * Extends Evented to support event handling functionality
  */
 export class UsertourConfig extends Evented {
+  // === Properties ===
   private config: ContentConfigObject;
+
+  // === Constructor ===
   constructor(config: ContentConfigObject) {
     super();
     autoBind(this);
     this.config = config;
+  }
+
+  // === Public API ===
+  /**
+   * Gets the priority level for auto-start rules
+   * @returns {ContentPriority} The configured priority level, defaults to MEDIUM
+   */
+  getPriority(): ContentPriority {
+    return this.config.autoStartRulesSetting?.priority ?? ContentPriority.MEDIUM;
   }
 
   /**
@@ -26,14 +38,6 @@ export class UsertourConfig extends Evented {
    */
   isWait(): boolean {
     return this.getWaitTime() > 0;
-  }
-
-  /**
-   * Gets the priority level for auto-start rules
-   * @returns {ContentPriority} The configured priority level, defaults to MEDIUM
-   */
-  getPriority(): ContentPriority {
-    return this.config.autoStartRulesSetting?.priority ?? ContentPriority.MEDIUM;
   }
 
   /**
@@ -48,22 +52,6 @@ export class UsertourConfig extends Evented {
       });
     }
     return Promise.resolve();
-  }
-
-  /**
-   * Gets the current configuration object
-   * @returns {ContentConfigObject} The current configuration
-   */
-  private getConfig() {
-    return this.config;
-  }
-
-  /**
-   * Updates the configuration with new settings
-   * @param {Partial<ContentConfigObject>} config - New configuration settings to merge
-   */
-  setConfig(config: Partial<ContentConfigObject>) {
-    this.config = { ...this.config, ...config };
   }
 
   /**
@@ -113,6 +101,46 @@ export class UsertourConfig extends Evented {
   }
 
   /**
+   * Updates the configuration with new settings
+   * @param {Partial<ContentConfigObject>} config - New configuration settings to merge
+   */
+  setConfig(config: Partial<ContentConfigObject>) {
+    this.config = { ...this.config, ...config };
+  }
+
+  /**
+   * Processes and activates conditions for both auto-start and hide rules
+   * Updates the configuration with activated rules
+   */
+  async activeConditions() {
+    // Helper function to process rules
+    const processRules = async (
+      enabled: boolean,
+      rules: any[] | undefined,
+      key: keyof ContentConfigObject,
+    ) => {
+      if (enabled && rules && rules.length > 0) {
+        const activedRules = await evaluateConditions(rules);
+        this.setConfig({ [key]: activedRules });
+      }
+    };
+
+    await Promise.all([
+      processRules(this.isEnabledAutoStartRules(), this.getAutoStartRules(), 'autoStartRules'),
+      processRules(this.isEnabledHideRules(), this.getHideRules(), 'hideRules'),
+    ]);
+  }
+
+  // === Private Helpers ===
+  /**
+   * Gets the current configuration object
+   * @returns {ContentConfigObject} The current configuration
+   */
+  private getConfig() {
+    return this.config;
+  }
+
+  /**
    * Gets the auto-start rules configuration
    * @returns {RulesCondition[]} Array of auto-start rules
    */
@@ -149,28 +177,5 @@ export class UsertourConfig extends Evented {
       return 0;
     }
     return Math.min(autoStartRulesSetting.wait, 300);
-  }
-
-  /**
-   * Processes and activates conditions for both auto-start and hide rules
-   * Updates the configuration with activated rules
-   */
-  async activeConditions() {
-    // Helper function to process rules
-    const processRules = async (
-      enabled: boolean,
-      rules: any[] | undefined,
-      key: keyof ContentConfigObject,
-    ) => {
-      if (enabled && rules && rules.length > 0) {
-        const activedRules = await evaluateConditions(rules);
-        this.setConfig({ [key]: activedRules });
-      }
-    };
-
-    await Promise.all([
-      processRules(this.isEnabledAutoStartRules(), this.getAutoStartRules(), 'autoStartRules'),
-      processRules(this.isEnabledHideRules(), this.getHideRules(), 'hideRules'),
-    ]);
   }
 }

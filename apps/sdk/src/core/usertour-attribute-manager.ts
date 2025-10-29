@@ -3,20 +3,24 @@ import { isEqual } from '@usertour/helpers';
 import { Evented } from '@/utils/evented';
 
 import { autoBind } from '@/utils';
+
 /**
  * Simple manager for user, company, and membership attributes
  * Extends Evented to provide event notification capabilities
  */
 export class UsertourAttributeManager extends Evented {
+  // === Properties ===
   private userAttributes: UserTourTypes.Attributes = {};
   private companyAttributes: UserTourTypes.Attributes = {};
   private membershipAttributes: UserTourTypes.Attributes = {};
 
+  // === Constructor ===
   constructor() {
     super();
     autoBind(this);
   }
 
+  // === Attribute Change Detection ===
   /**
    * Check if attributes have actually changed
    * @param currentAttributes - Current attributes
@@ -58,6 +62,7 @@ export class UsertourAttributeManager extends Evented {
     return this.hasAttributesChanged(this.membershipAttributes, attributes);
   }
 
+  // === Attribute Setters ===
   /**
    * Set user attributes
    * @param attributes - User attributes to set
@@ -103,6 +108,7 @@ export class UsertourAttributeManager extends Evented {
     return true;
   }
 
+  // === Attribute Getters ===
   /**
    * Get user attributes
    * @returns Current user attributes
@@ -128,15 +134,6 @@ export class UsertourAttributeManager extends Evented {
   }
 
   /**
-   * Cleans up all attributes
-   */
-  cleanup(): void {
-    this.userAttributes = {};
-    this.companyAttributes = {};
-    this.membershipAttributes = {};
-  }
-
-  /**
    * Get all attributes in a structured format
    * @returns Object containing all attribute types
    */
@@ -146,5 +143,15 @@ export class UsertourAttributeManager extends Evented {
       companyAttributes: this.getCompanyAttributes(),
       membershipAttributes: this.getMembershipAttributes(),
     };
+  }
+
+  // === Cleanup ===
+  /**
+   * Cleans up all attributes
+   */
+  cleanup(): void {
+    this.userAttributes = {};
+    this.companyAttributes = {};
+    this.membershipAttributes = {};
   }
 }

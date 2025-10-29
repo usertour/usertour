@@ -13,6 +13,7 @@ import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 
+// === Interfaces ===
 export interface UIManagerConfig {
   containerId?: string;
   maxRetries?: number;
@@ -29,12 +30,14 @@ interface UIManagerInitializeProps {
  * Manages UI lifecycle including CSS loading, container creation, and React root initialization
  */
 export class UsertourUIManager extends Evented {
+  // === Properties ===
   private container?: HTMLDivElement;
   private root: ReactDOM.Root | undefined;
   private isInitialized = false;
   private isInitializing = false;
   private readonly config: Required<UIManagerConfig>;
 
+  // === Constructor ===
   constructor(config: UIManagerConfig = {}) {
     super();
     this.config = {
@@ -45,6 +48,7 @@ export class UsertourUIManager extends Evented {
     };
   }
 
+  // === Public API ===
   /**
    * Initializes the UI manager
    * @param props - The properties to pass to the React root
@@ -97,6 +101,52 @@ export class UsertourUIManager extends Evented {
   }
 
   /**
+   * Check if UI is ready
+   */
+  isReady(): boolean {
+    return this.isInitialized && Boolean(this.container) && Boolean(this.root);
+  }
+
+  /**
+   * Get container element
+   */
+  getContainer(): HTMLDivElement | undefined {
+    return this.container;
+  }
+
+  /**
+   * Get React root
+   */
+  getRoot(): ReactDOM.Root | undefined {
+    return this.root;
+  }
+
+  /**
+   * Clean up UI resources
+   */
+  destroy(): void {
+    try {
+      // Unmount React root
+      if (this.root) {
+        this.root.unmount();
+        this.root = undefined;
+      }
+
+      // Remove container
+      if (this.container?.parentNode) {
+        this.container.parentNode.removeChild(this.container);
+        this.container = undefined;
+      }
+
+      this.isInitialized = false;
+      this.isInitializing = false;
+    } catch (error) {
+      logger.error('Error during UI cleanup:', error);
+    }
+  }
+
+  // === CSS Loading ===
+  /**
    * Load CSS with retry mechanism
    */
   private async loadCssWithRetry(): Promise<boolean> {
@@ -130,6 +180,7 @@ export class UsertourUIManager extends Evented {
     return false;
   }
 
+  // === Container Management ===
   /**
    * Create container element with proper error handling
    */
@@ -157,6 +208,7 @@ export class UsertourUIManager extends Evented {
     }
   }
 
+  // === React Root Management ===
   /**
    * Create React root with proper error handling
    */
@@ -179,51 +231,7 @@ export class UsertourUIManager extends Evented {
     }
   }
 
-  /**
-   * Clean up UI resources
-   */
-  destroy(): void {
-    try {
-      // Unmount React root
-      if (this.root) {
-        this.root.unmount();
-        this.root = undefined;
-      }
-
-      // Remove container
-      if (this.container?.parentNode) {
-        this.container.parentNode.removeChild(this.container);
-        this.container = undefined;
-      }
-
-      this.isInitialized = false;
-      this.isInitializing = false;
-    } catch (error) {
-      logger.error('Error during UI cleanup:', error);
-    }
-  }
-
-  /**
-   * Check if UI is ready
-   */
-  isReady(): boolean {
-    return this.isInitialized && Boolean(this.container) && Boolean(this.root);
-  }
-
-  /**
-   * Get container element
-   */
-  getContainer(): HTMLDivElement | undefined {
-    return this.container;
-  }
-
-  /**
-   * Get React root
-   */
-  getRoot(): ReactDOM.Root | undefined {
-    return this.root;
-  }
-
+  // === Utilities ===
   /**
    * Utility method for delays
    */

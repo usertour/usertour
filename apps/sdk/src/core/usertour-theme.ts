@@ -6,6 +6,10 @@ import { evaluateConditions } from '@/core/usertour-helper';
 import { isConditionsActived } from '@usertour/helpers';
 import { SessionTheme } from '@/types/sdk';
 
+// === Private Helpers ===
+/**
+ * Gets CSS assets based on theme settings
+ */
 const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
   const { fontFamily } = themeSettings.font;
 

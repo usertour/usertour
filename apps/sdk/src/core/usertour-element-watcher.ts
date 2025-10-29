@@ -11,6 +11,7 @@ import {
 } from '@usertour-packages/constants';
 import { uuidV4 } from '@usertour/helpers';
 
+// === Types ===
 /**
  * Interface to track element visibility state
  */
@@ -21,7 +22,7 @@ type CheckContentIsVisible = {
   isTimeout: boolean;
 };
 
-// Constants for element watching configuration
+// === Constants ===
 const RETRY_LIMIT = 30; // Maximum number of retry attempts
 const RETRY_DELAY = 200; // Delay between retries in milliseconds
 const DEFAULT_TARGET_MISSING_SECONDS = 6;
@@ -31,18 +32,21 @@ const DEFAULT_TARGET_MISSING_SECONDS = 6;
  * Handles element finding, visibility checking, and timeout management
  */
 export class UsertourElementWatcher extends Evented {
+  // === Properties ===
   private target: ElementSelectorPropsData; // Target element selector data
   private element: Element | null = null; // Reference to the found element
   private checker: CheckContentIsVisible | null = null; // Visibility state tracker
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
   private readonly id: string; // Unique identifier for this watcher
 
+  // === Constructor ===
   constructor(target: ElementSelectorPropsData) {
     super();
     this.target = target;
     this.id = uuidV4();
   }
 
+  // === Configuration ===
   /**
    * Sets the time allowed for target element to be missing
    * @param seconds - Time in seconds
@@ -51,6 +55,7 @@ export class UsertourElementWatcher extends Evented {
     this.targetMissingSeconds = seconds;
   }
 
+  // === Element Finding ===
   /**
    * Attempts to find the target element in the DOM
    * @param retryTimes Current number of retry attempts
@@ -78,6 +83,21 @@ export class UsertourElementWatcher extends Evented {
     this.trigger(ELEMENT_FOUND, el);
   }
 
+  /**
+   * Schedules the next retry attempt to find the element
+   * @param retryTimes Current number of retry attempts
+   */
+  private scheduleRetry(retryTimes: number) {
+    timerManager.setTimeout(
+      `${this.id}-retry`,
+      () => {
+        this.findElement(retryTimes + 1);
+      },
+      RETRY_DELAY,
+    );
+  }
+
+  // === Visibility Checking ===
   /**
    * Checks if the found element is currently visible
    * @returns Object containing visibility state and timeout status
@@ -117,20 +137,7 @@ export class UsertourElementWatcher extends Evented {
     };
   }
 
-  /**
-   * Schedules the next retry attempt to find the element
-   * @param retryTimes Current number of retry attempts
-   */
-  private scheduleRetry(retryTimes: number) {
-    timerManager.setTimeout(
-      `${this.id}-retry`,
-      () => {
-        this.findElement(retryTimes + 1);
-      },
-      RETRY_DELAY,
-    );
-  }
-
+  // === State Management ===
   /**
    * Resets the element watcher state
    * Useful when SPA navigation occurs and we want to start fresh
@@ -148,6 +155,7 @@ export class UsertourElementWatcher extends Evented {
     this.reset();
   }
 
+  // === Private Helpers ===
   /**
    * Checks if the document is ready for element finding
    * @returns boolean indicating if document is ready
