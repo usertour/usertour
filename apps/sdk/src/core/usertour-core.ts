@@ -1,10 +1,8 @@
 import {
-  CHECKLIST_CLOSED,
-  LAUNCHER_CLOSED,
+  COMPONENT_CLOSED,
   MESSAGE_START_FLOW_WITH_TOKEN,
   SDK_DOM_LOADED,
   STORAGE_IDENTIFY_ANONYMOUS,
-  TOUR_CLOSED,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
@@ -717,7 +715,7 @@ export class UsertourCore extends Evented {
 
     // Create new tour
     const targetTour = new UsertourTour(this, new UsertourSession(session));
-    targetTour.on(TOUR_CLOSED, () => {
+    targetTour.on(COMPONENT_CLOSED, () => {
       this.cleanupActivatedTour();
     });
     this.activatedTour = targetTour;
@@ -775,7 +773,7 @@ export class UsertourCore extends Evented {
 
     // Create new checklist
     this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
-    this.activatedChecklist.on(CHECKLIST_CLOSED, () => {
+    this.activatedChecklist.on(COMPONENT_CLOSED, () => {
       this.cleanupActivatedChecklist();
     });
     // Sync store
@@ -814,8 +812,8 @@ export class UsertourCore extends Evented {
       return true;
     }
     const launcher = new UsertourLauncher(this, new UsertourSession(session));
-    launcher.on(LAUNCHER_CLOSED, () => {
-      this.removeLauncher(launcher.getSessionId());
+    launcher.on(COMPONENT_CLOSED, () => {
+      this.removeLauncher(contentId);
     });
     this.launchers.push(launcher);
     // Sync store

@@ -25,7 +25,6 @@ import {
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
   ELEMENT_CHANGED,
-  TOUR_CLOSED,
 } from '@usertour-packages/constants';
 import { SessionStep } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
@@ -416,19 +415,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async showHidden(step: SessionStep) {
     await this.reportStepSeen(step);
-  }
-
-  /**
-   * Close the current tour
-   * @param reason - The reason for closing the tour, defaults to USER_CLOSED
-   */
-  async close(reason: contentEndReason = contentEndReason.USER_CLOSED) {
-    const sessionId = this.getSessionId();
-    // Destroy the tour
-    this.destroy();
-    this.trigger(TOUR_CLOSED, { sessionId });
-    // End flow
-    await this.endContent(reason);
   }
 
   /**

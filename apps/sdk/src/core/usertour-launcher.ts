@@ -15,7 +15,6 @@ import {
   ELEMENT_CHANGED,
   ELEMENT_FOUND,
   ELEMENT_FOUND_TIMEOUT,
-  LAUNCHER_CLOSED,
 } from '@usertour-packages/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
@@ -193,21 +192,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
-  }
-
-  /**
-   * Closes the launcher
-   * @param reason - The reason for closing the launcher
-   */
-  async close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
-    // Set the launcher as dismissed
-    this.hide();
-    // Destroy the launcher
-    this.destroy();
-    // Trigger the launcher closed event
-    this.trigger(LAUNCHER_CLOSED, { sessionId: this.getSessionId() });
-    // Report the dismiss event
-    await this.endContent(reason);
   }
 
   /**

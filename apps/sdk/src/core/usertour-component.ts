@@ -17,6 +17,7 @@ import { uuidV4, isEqual } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 import { ActionManager, ActionHandler } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
+import { COMPONENT_CLOSED } from '@usertour-packages/constants';
 
 /**
  * Options for component initialization
@@ -75,7 +76,6 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   // Abstract methods that subclasses must implement
   abstract buildStoreData(): Promise<TStore | null>;
   abstract check(): Promise<void>;
-  abstract close(reason?: contentEndReason): Promise<void>;
 
   /**
    * Initialize action handlers for this component
@@ -336,9 +336,8 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
   /**
    * Refreshes the store data for the component
-   * @protected
    */
-  protected async refreshStore(): Promise<void> {
+  async refreshStore(): Promise<void> {
     const newStore = await this.buildStoreData();
     const existingStore = this.getStoreData();
     if (!newStore || !existingStore) {
@@ -370,10 +369,26 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Destroys the component with common cleanup logic
+   * Closes the component with the specified reason
+   * @param reason - The reason for closing the component
    * @protected
    */
-  protected destroy(): void {
+  protected async close(reason: contentEndReason = contentEndReason.USER_CLOSED): Promise<void> {
+    const sessionId = this.getSessionId();
+    // Hide the component
+    this.hide();
+    // Trigger the component closed event
+    this.trigger(COMPONENT_CLOSED, { sessionId });
+    // Destroy the component
+    this.destroy();
+    // End the content session
+    await this.endContent(reason);
+  }
+
+  /**
+   * Destroys the component with common cleanup logic
+   */
+  destroy(): void {
     // Stop checking
     this.stopChecking();
     // Reset component state

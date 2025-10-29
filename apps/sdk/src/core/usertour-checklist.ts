@@ -10,7 +10,6 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
 import { logger } from '@/utils';
 import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
-import { CHECKLIST_CLOSED } from '@usertour-packages/constants';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
@@ -138,22 +137,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
-  }
-
-  /**
-   * Closes the checklist
-   * @param reason - The reason for closing the checklist
-   */
-  async close(reason: contentEndReason = contentEndReason.SYSTEM_CLOSED) {
-    // Set the checklist as dismissed
-    // Hide the checklist
-    this.hide();
-    // Destroy the checklist
-    this.destroy();
-    // Trigger the checklist closed event
-    this.trigger(CHECKLIST_CLOSED, { sessionId: this.getSessionId() });
-    // Report the dismiss event
-    await this.endContent(reason);
   }
 
   /**
