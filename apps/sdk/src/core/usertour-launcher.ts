@@ -173,9 +173,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     await this.reportActiveEvent();
     // Auto-dismiss after activation if configured
     if (tooltip?.settings?.dismissAfterFirstActivation) {
-      setTimeout(() => {
-        this.close();
-      }, 2000);
+      await this.close();
     }
   }
 
