@@ -92,11 +92,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    *
    * @param {ContentEditorClickableElement} element - The clicked element with its type and data
    */
-  handleOnClick = async ({ type, data }: ContentEditorClickableElement) => {
+  async handleOnClick(element: ContentEditorClickableElement) {
+    const { type, data } = element;
     if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
-  };
+  }
 
   /**
    * Handles the click event of a checklist item

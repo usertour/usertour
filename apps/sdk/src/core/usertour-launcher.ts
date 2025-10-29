@@ -181,11 +181,12 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    *
    * @param {ContentEditorClickableElement} element - The clicked element with its type and data
    */
-  handleOnClick = async ({ type, data }: ContentEditorClickableElement) => {
+  async handleOnClick(element: ContentEditorClickableElement) {
+    const { type, data } = element;
     if (type === 'button' && data.actions) {
       await this.handleActions(data.actions);
     }
-  };
+  }
 
   /**
    * Handles the dismiss event of the launcher
