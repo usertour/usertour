@@ -22,12 +22,12 @@ import {
 import { UsertourElementWatcher } from './usertour-element-watcher';
 
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
-  // Tour-specific constants
+  // Launcher-specific constants
   private static readonly Z_INDEX_OFFSET = 200;
   private watcher: UsertourElementWatcher | null = null;
 
   /**
-   * Checks the tour
+   * Checks the launcher
    */
   async check(): Promise<void> {
     try {
@@ -353,14 +353,14 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   }
 
   /**
-   * Resets the tour
+   * Resets the launcher
    */
   reset() {
     this.setStoreData(undefined);
   }
 
   /**
-   * Destroys the tour
+   * Destroys the launcher
    */
   destroy() {
     this.stopChecking();
