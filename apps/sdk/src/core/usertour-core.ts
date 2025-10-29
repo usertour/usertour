@@ -55,6 +55,7 @@ interface AppStartOptions {
 }
 
 export class UsertourCore extends Evented {
+  // === Public Properties ===
   socketService: UsertourSocket;
   startOptions: AppStartOptions = {
     environmentId: '',
@@ -71,23 +72,18 @@ export class UsertourCore extends Evented {
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
 
+  // === Private Properties ===
   private baseZIndex = 1000000;
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
-
-  // Use dedicated attribute manager instead of direct properties
   private attributeManager: UsertourAttributeManager;
-  // Use dedicated UI manager for DOM operations
   private uiManager: UsertourUIManager;
-  // Condition monitoring
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
-  // Wait timer monitoring
   private waitTimerMonitor: ConditionWaitTimersMonitor | null = null;
-  // URL monitoring
   private urlMonitor: UsertourURLMonitor | null = null;
-  // Socket event listeners initialization flag
 
+  // === Constructor ===
   constructor() {
     super();
     autoBind(this);
@@ -106,6 +102,7 @@ export class UsertourCore extends Evented {
     this.initializeURLMonitor();
   }
 
+  // === Public API: Initialization ===
   /**
    * Initializes the application with the given options
    * @param startOptions - Configuration options for starting the app
@@ -116,6 +113,7 @@ export class UsertourCore extends Evented {
     }
   }
 
+  // === Public API: User Management ===
   /**
    * Identifies a user with the given ID and attributes
    * @param userId - External user ID
@@ -174,34 +172,6 @@ export class UsertourCore extends Evented {
       storage.setLocalStorage(key, { userId });
     }
     await this.identify(userId, attributes);
-  }
-
-  /**
-   * Checks if a user is identified
-   * @returns True if user info exists, false otherwise
-   */
-  isIdentified() {
-    return Boolean(this.externalUserId);
-  }
-
-  /**
-   * Checks if a content has been started
-   * @param contentId - The content ID to check
-   * @returns True if the content has been started, false otherwise
-   */
-  isStarted(contentId: string) {
-    console.log('isStarted', contentId);
-    return false;
-  }
-
-  /**
-   * Previews content with specified options and test user
-   * @param startOptions - Preview configuration options including test user ID
-   */
-  async preview(startOptions: AppStartOptions & { userId: string }) {
-    this.startOptions = Object.assign({}, startOptions);
-    //reset
-    this.reset();
   }
 
   /**
@@ -327,17 +297,13 @@ export class UsertourCore extends Evented {
     }
   }
 
-  /**
-   * Ends all active content and resets the application
-   */
-  async endAll() {
-    this.reset();
-  }
-
+  // === Public API: Content Management ===
   /**
    * Starts a content
    * @param contentId - The content ID to start
+   * @param startReason - The reason for starting the content
    * @param opts - The options for starting the content
+   * @param batch - Whether to batch the request
    * @returns A promise that resolves when the content is started
    */
   async startContent(
@@ -365,44 +331,7 @@ export class UsertourCore extends Evented {
     await this.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
   }
 
-  /**
-   * Handles the navigation
-   * @param data - The data to navigate
-   */
-  handleNavigate(data: any) {
-    const userAttributes = this.getUserAttributes();
-    const url = buildNavigateUrl(data.value, userAttributes);
-
-    // Check if custom navigation function is set
-    const customNavigate = this.getCustomNavigate();
-    if (customNavigate) {
-      // Use custom navigation function
-      customNavigate(url);
-    } else {
-      // Use default behavior
-      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
-    }
-  }
-
-  /**
-   * Checks if app is in preview mode
-   * @returns True if in preview mode, false otherwise
-   */
-  isPreview() {
-    return this.startOptions.mode === SDKSettingsMode.PREVIEW;
-  }
-
-  /**
-   * Determines if current user should be used
-   * @returns False if in preview mode, true otherwise
-   */
-  useCurrentUser() {
-    if (this.isPreview()) {
-      return false;
-    }
-    return true;
-  }
-
+  // === Public API: Configuration ===
   /**
    * Sets the base z-index for UI elements
    * @param baseZIndex - The base z-index value to set
@@ -455,6 +384,64 @@ export class UsertourCore extends Evented {
     return this.customNavigate;
   }
 
+  // === Public API: State Queries ===
+  /**
+   * Checks if app is in preview mode
+   * @returns True if in preview mode, false otherwise
+   */
+  isPreview() {
+    return this.startOptions.mode === SDKSettingsMode.PREVIEW;
+  }
+
+  /**
+   * Determines if current user should be used
+   * @returns False if in preview mode, true otherwise
+   */
+  useCurrentUser() {
+    if (this.isPreview()) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Checks if a user is identified
+   * @returns True if user info exists, false otherwise
+   */
+  isIdentified() {
+    return Boolean(this.externalUserId);
+  }
+
+  /**
+   * Checks if a content has been started
+   * @param contentId - The content ID to check
+   * @returns True if the content has been started, false otherwise
+   */
+  isStarted(contentId: string) {
+    console.log('isStarted', contentId);
+    return false;
+  }
+
+  // === Public API: Utilities ===
+  /**
+   * Handles the navigation
+   * @param data - The data to navigate
+   */
+  handleNavigate(data: any) {
+    const userAttributes = this.getUserAttributes();
+    const url = buildNavigateUrl(data.value, userAttributes);
+
+    // Check if custom navigation function is set
+    const customNavigate = this.getCustomNavigate();
+    if (customNavigate) {
+      // Use custom navigation function
+      customNavigate(url);
+    } else {
+      // Use default behavior
+      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
+    }
+  }
+
   /**
    * Gets user attributes from attribute manager
    * @returns Current user attributes
@@ -483,6 +470,52 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Gets the shared SocketService instance
+   */
+  getSocketService(): UsertourSocket {
+    return this.socketService;
+  }
+
+  // === Public API: Lifecycle ===
+  /**
+   * Previews content with specified options and test user
+   * @param startOptions - Preview configuration options including test user ID
+   */
+  async preview(startOptions: AppStartOptions & { userId: string }) {
+    this.startOptions = Object.assign({}, startOptions);
+    //reset
+    this.reset();
+  }
+
+  /**
+   * Ends all active content and resets the application
+   */
+  async endAll() {
+    this.reset();
+  }
+
+  /**
+   * Resets the application state
+   */
+  reset() {
+    // Cleanup user data
+    this.cleanupUserData();
+    // Cleanup activated tour
+    this.cleanupActivatedTour();
+    // Cleanup activated checklist
+    this.cleanupActivatedChecklist();
+    // Cleanup condition monitor
+    this.cleanupConditionsMonitor();
+    // Cleanup wait timer monitor
+    this.cleanupWaitTimerMonitor();
+    // Stop URL monitor
+    this.cleanupURLMonitor();
+    // Cleanup time manager
+    this.cleanupTimeManager();
+  }
+
+  // === Event Listeners Initialization ===
+  /**
    * Initializes DOM event listeners for the application
    */
   private initializeEventListeners() {
@@ -510,6 +543,18 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Initialize socket event listeners
+   * This method sets up all WebSocket event handlers after socket is initialized
+   */
+  private initializeSocketEventListeners(): void {
+    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
+      const { kind, payload } = message as { kind: string; payload: unknown };
+      return this.handleServerMessage(kind, payload);
+    });
+  }
+
+  // === Message Handling ===
+  /**
    * Handles preview messages from the builder
    * @param e - Message event containing preview data
    */
@@ -532,17 +577,6 @@ export class UsertourCore extends Evented {
       versionId,
       mode: SDKSettingsMode.PREVIEW,
       userId: testUser.id,
-    });
-  }
-
-  /**
-   * Initialize socket event listeners
-   * This method sets up all WebSocket event handlers after socket is initialized
-   */
-  private initializeSocketEventListeners(): void {
-    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
-      const { kind, payload } = message as { kind: string; payload: unknown };
-      return this.handleServerMessage(kind, payload);
     });
   }
 
@@ -697,6 +731,7 @@ export class UsertourCore extends Evented {
     return this.cancelConditionWaitTimer(payload as ConditionWaitTimer);
   }
 
+  // === Session Management ===
   /**
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
@@ -756,6 +791,10 @@ export class UsertourCore extends Evented {
     return true;
   }
 
+  /**
+   * Sets the checklist session and manages checklist lifecycle
+   * @param session - The SDK content session to set
+   */
   private setChecklistSession(session: CustomContentSession): boolean {
     const contentId = session.content.id;
 
@@ -795,6 +834,7 @@ export class UsertourCore extends Evented {
     return true;
   }
 
+  // === Launcher Management ===
   /**
    * Adds a launcher to the application
    * @param session - The SDK content session to add the launcher to
@@ -840,13 +880,7 @@ export class UsertourCore extends Evented {
     return true;
   }
 
-  /**
-   * Gets the shared SocketService instance
-   */
-  getSocketService(): UsertourSocket {
-    return this.socketService;
-  }
-
+  // === Store Synchronization ===
   /**
    * Synchronizes tours store
    */
@@ -854,14 +888,21 @@ export class UsertourCore extends Evented {
     this.toursStore.setData([...tours]);
   }
 
+  /**
+   * Synchronizes checklists store
+   */
   private syncChecklistsStore(checklists: UsertourChecklist[]) {
     this.checklistsStore.setData([...checklists]);
   }
 
+  /**
+   * Synchronizes launchers store
+   */
   private syncLaunchersStore(launchers: UsertourLauncher[]) {
     this.launchersStore.setData([...launchers]);
   }
 
+  // === Monitor Initialization ===
   /**
    * Creates and initializes condition monitor
    */
@@ -939,19 +980,7 @@ export class UsertourCore extends Evented {
     });
   }
 
-  /**
-   * Updates the socket auth info
-   */
-  private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
-    const clientConditions = this.getClientConditions();
-    const clientContext = getClientContext();
-    this.socketService.updateCredentials({
-      clientConditions,
-      clientContext,
-      ...authInfo,
-    });
-  }
-
+  // === Monitor Management ===
   /**
    * Starts the condition monitor
    */
@@ -1002,6 +1031,20 @@ export class UsertourCore extends Evented {
     this.urlMonitor?.start();
   }
 
+  /**
+   * Updates the socket auth info
+   */
+  private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
+    const clientConditions = this.getClientConditions();
+    const clientContext = getClientContext();
+    this.socketService.updateCredentials({
+      clientConditions,
+      clientContext,
+      ...authInfo,
+    });
+  }
+
+  // === Cleanup ===
   /**
    * Cleans up user-related data including external IDs and attributes
    */
@@ -1058,25 +1101,5 @@ export class UsertourCore extends Evented {
    */
   private cleanupTimeManager(): void {
     timerManager.cleanup();
-  }
-
-  /**
-   * Resets the application state
-   */
-  reset() {
-    // Cleanup user data
-    this.cleanupUserData();
-    // Cleanup activated tour
-    this.cleanupActivatedTour();
-    // Cleanup activated checklist
-    this.cleanupActivatedChecklist();
-    // Cleanup condition monitor
-    this.cleanupConditionsMonitor();
-    // Cleanup wait timer monitor
-    this.cleanupWaitTimerMonitor();
-    // Stop URL monitor
-    this.cleanupURLMonitor();
-    // Cleanup time manager
-    this.cleanupTimeManager();
   }
 }

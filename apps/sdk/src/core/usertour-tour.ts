@@ -21,11 +21,12 @@ import { SessionStep, SessionTheme } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
-  // Tour-specific properties
+  // === Properties ===
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
   private currentStepCvid?: string;
 
+  // === Abstract Methods Implementation ===
   /**
    * Initialize action handlers for tour
    */
@@ -51,6 +52,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
   }
 
+  // === Public API Methods ===
   /**
    * Shows a specific step in the tour by its id
    * @param id - The id of the step to show
@@ -96,9 +98,66 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Handles the dismiss event
+   * @param reason - The reason for dismissing the tour, defaults to USER_CLOSED
+   */
+  async handleDismiss(reason?: contentEndReason) {
+    await this.close(reason);
+  }
+
+  /**
+   * Handles the click event on an element
+   * This method handles:
+   * 1. Updating the user's attributes if the element is a question element
+   * 2. Reporting the question answer event
+   * 3. Handling any actions associated with the element
+   *
+   * @param element - The element that was clicked
+   * @param value - The value of the element
+   */
+  async handleOnClick(element: ContentEditorClickableElement, value?: any) {
+    if (isQuestionElement(element)) {
+      const el = element as ContentEditorQuestionElement;
+      if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
+        await this.instance.updateUser({
+          [el.data.selectedAttribute]: value,
+        });
+      }
+      await this.reportQuestionAnswer(el, value);
+    }
+    if (element?.data?.actions) {
+      await this.handleActions(element.data.actions as RulesCondition[]);
+    }
+  }
+
+  // === Store Management ===
+  /**
+   * Gets custom tour store data
+   * @protected
+   */
+  protected getCustomStoreData(): Partial<TourStore> {
+    const currentStep = this.getCurrentStep();
+    return {
+      triggerRef: null,
+      currentStep,
+    };
+  }
+
+  // === Theme Management ===
+  /**
+   * Gets custom theme settings for the tour
+   * @protected
+   */
+  protected getCustomTheme(): SessionTheme | undefined {
+    const currentStep = this.getCurrentStep();
+    return currentStep?.theme;
+  }
+
+  // === Step Management ===
+  /**
    * Shows a specific step in the tour by its cvid, or the first step if no cvid is provided
-   * @param cvid - Optional cvid of the step to show. If not provided, shows the first step
-   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   * @param step - The step to show
+   * @private
    */
   private async show(step: SessionStep): Promise<void> {
     // Reset tour state and set new step
@@ -127,26 +186,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Gets custom tour store data
-   * @protected
-   */
-  protected getCustomStoreData(): Partial<TourStore> {
-    const currentStep = this.getCurrentStep();
-    return {
-      currentStep,
-    };
-  }
-
-  /**
-   * Gets custom theme settings for the tour
-   * @protected
-   */
-  protected getCustomTheme(): SessionTheme | undefined {
-    const currentStep = this.getCurrentStep();
-    return currentStep?.theme;
-  }
-
-  /**
    * Displays a step based on its type
    * @private
    */
@@ -164,6 +203,36 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Get the current step info for store data
+   * @param step - The step
+   * @returns Store data with step info
+   * @private
+   */
+  private getStepInfo(step: SessionStep) {
+    const steps = this.getSteps();
+    // Early return for edge cases
+    if (!steps.length) {
+      return {
+        totalSteps: 0,
+        currentStepIndex: 0,
+        progress: 0,
+      };
+    }
+
+    const total = steps.length;
+    const index = steps.findIndex((s) => s.cvid === step.cvid);
+    const validIndex = index === -1 ? 0 : index;
+    const progress = Math.round(((validIndex + 1) / total) * 100);
+
+    return {
+      totalSteps: total,
+      currentStepIndex: validIndex,
+      progress,
+    };
+  }
+
+  // === Step Display Methods ===
+  /**
    * Displays a tooltip step in the tour
    * This method handles:
    * 1. Validating the step and its target
@@ -171,8 +240,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * 3. Handling element found and timeout events
    * 4. Updating the store with the new state
    *
-   * @param currentStep - The step to display as a tooltip
+   * @param step - The step to display as a tooltip
    * @throws Will close the tour if validation fails or target is missing
+   * @private
    */
   private async showPopper(step: SessionStep): Promise<void> {
     // Report step seen event
@@ -190,6 +260,54 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     this.setupElementWatcher(step, { ...baseStoreData, triggerRef: null });
   }
 
+  /**
+   * Display a modal step in the tour
+   * This method handles:
+   * 1. Building the store data
+   * 2. Reporting step seen event
+   * 3. Setting up the modal state
+   * 4. Reporting completion event if it's the last step
+   *
+   * @param step - The step to be displayed as a modal
+   * @private
+   */
+  private async showModal(step: SessionStep) {
+    // Build store data and get step information
+    const baseStoreData = await this.buildStoreData();
+    if (!baseStoreData) {
+      logger.error('Store not found', { step });
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
+    const stepInfo = this.getStepInfo(step);
+
+    // Report step seen event
+    await this.reportStepSeen(step);
+
+    // Process trigger conditions
+    await this.stepTrigger?.process();
+
+    // Set up modal state
+    this.setStoreData({
+      ...baseStoreData,
+      ...stepInfo,
+      openState: true,
+    });
+  }
+
+  /**
+   * Displays a hidden step in the tour
+   * This method handles:
+   * 1. Reporting the step seen event
+   * 2. Reporting the completion event if it's the last step
+   *
+   * @private
+   */
+  private async showHidden(step: SessionStep) {
+    await this.reportStepSeen(step);
+  }
+
+  // === Element Watcher ===
   /**
    * Sets up the element watcher for a popper step
    * @private
@@ -236,6 +354,79 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Handles when the target element is found
+   * @private
+   */
+  private handleElementFound(el: Element, step: SessionStep, store: TourStore): void {
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
+    const stepInfo = this.getStepInfo(step);
+
+    // Scroll element into view if tour is visible
+    smoothScroll(el, { block: 'center' });
+
+    // Update store
+    this.setStoreData({
+      ...store,
+      ...stepInfo,
+      triggerRef: el,
+      openState: true,
+    });
+  }
+
+  /**
+   * Handles the element changed event
+   * @private
+   */
+  private handleElementChanged(el: Element, step: SessionStep): void {
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
+
+    // Update store
+    this.updateStore({
+      triggerRef: el,
+    });
+  }
+
+  /**
+   * Handles when the target element is not found
+   * @private
+   */
+  private async handleElementNotFound(step: SessionStep): Promise<void> {
+    const currentStep = this.getCurrentStep();
+    if (currentStep?.cvid !== step.cvid) {
+      return;
+    }
+    await this.reportTooltipTargetMissing(step);
+    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+  }
+
+  // === Trigger Management ===
+  /**
+   * Checks and processes the trigger for the current step
+   * @private
+   */
+  private async checkAndProcessTrigger(): Promise<void> {
+    if (this.stepTrigger) {
+      await this.stepTrigger.process();
+    }
+  }
+
+  /**
+   * Resets the step trigger
+   * @private
+   */
+  private resetStepTrigger() {
+    this.stepTrigger?.destroy();
+    this.stepTrigger = null;
+  }
+
+  // === Visibility Checking ===
+  /**
    * Checks and updates the visibility of a tooltip step
    * @private
    */
@@ -275,201 +466,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
   }
 
-  /**
-   * Checks and processes the trigger for the current step
-   */
-  private async checkAndProcessTrigger(): Promise<void> {
-    if (this.stepTrigger) {
-      await this.stepTrigger.process();
-    }
-  }
-
-  /**
-   * Handles when the target element is found
-   * @private
-   */
-  private handleElementFound(el: Element, step: SessionStep, store: TourStore): void {
-    const currentStep = this.getCurrentStep();
-    if (currentStep?.cvid !== step.cvid) {
-      return;
-    }
-    const stepInfo = this.getStepInfo(step);
-
-    // Scroll element into view if tour is visible
-    smoothScroll(el, { block: 'center' });
-
-    // Update store
-    this.setStoreData({
-      ...store,
-      ...stepInfo,
-      triggerRef: el,
-      openState: true,
-    });
-  }
-
-  private handleElementChanged(el: Element, step: SessionStep): void {
-    const currentStep = this.getCurrentStep();
-    if (currentStep?.cvid !== step.cvid) {
-      return;
-    }
-
-    // Update store
-    this.updateStore({
-      triggerRef: el,
-    });
-  }
-
-  /**
-   * Handles when the target element is not found
-   * @private
-   */
-  private async handleElementNotFound(step: SessionStep): Promise<void> {
-    const currentStep = this.getCurrentStep();
-    if (currentStep?.cvid !== step.cvid) {
-      return;
-    }
-    await this.reportTooltipTargetMissing(step);
-    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
-  }
-
-  /**
-   * Display a modal step in the tour
-   * This method handles:
-   * 1. Building the store data
-   * 2. Reporting step seen event
-   * 3. Setting up the modal state
-   * 4. Reporting completion event if it's the last step
-   *
-   * @param currentStep - The step to be displayed as a modal
-   */
-  private async showModal(step: SessionStep) {
-    // Build store data and get step information
-    const baseStoreData = await this.buildStoreData();
-    if (!baseStoreData) {
-      logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
-      return;
-    }
-    const stepInfo = this.getStepInfo(step);
-
-    // Report step seen event
-    await this.reportStepSeen(step);
-
-    // Process trigger conditions
-    await this.stepTrigger?.process();
-
-    // Set up modal state
-    this.setStoreData({
-      ...baseStoreData,
-      ...stepInfo,
-      openState: true,
-    });
-  }
-
-  /**
-   * Displays a hidden step in the tour
-   * This method handles:
-   * 1. Reporting the step seen event
-   * 2. Reporting the completion event if it's the last step
-   *
-   */
-  private async showHidden(step: SessionStep) {
-    await this.reportStepSeen(step);
-  }
-
-  /**
-   * Handles the dismiss event
-   * @param reason - The reason for dismissing the tour, defaults to USER_CLOSED
-   */
-  async handleDismiss(reason?: contentEndReason) {
-    await this.close(reason);
-  }
-
-  /**
-   * Handles the click event on an element
-   * This method handles:
-   * 1. Updating the user's attributes if the element is a question element
-   * 2. Reporting the question answer event
-   * 3. Handling any actions associated with the element
-   *
-   * @param element - The element that was clicked
-   * @param value - The value of the element
-   */
-  async handleOnClick(element: ContentEditorClickableElement, value?: any) {
-    if (isQuestionElement(element)) {
-      const el = element as ContentEditorQuestionElement;
-      if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
-        await this.instance.updateUser({
-          [el.data.selectedAttribute]: value,
-        });
-      }
-      await this.reportQuestionAnswer(el, value);
-    }
-    if (element?.data?.actions) {
-      await this.handleActions(element.data.actions as RulesCondition[]);
-    }
-  }
-
-  /**
-   * Reports the question answer event
-   * This method handles:
-   * 1. Reporting the question answer event with the correct event name
-   * 2. Adding the question cvid, name, and type to the event data
-   * 3. Handling multiple choice, scale, NPS, and star rating elements
-   *
-   * @param element - The question element that was answered
-   * @param value - The value of the answer
-   */
-  private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
-    const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
-    await this.socketService.answerQuestion(eventData, { batch: true });
-  }
-
-  /**
-   * Get the current step info for store data
-   * @param step - The step
-   * @returns Store data with step info
-   */
-  private getStepInfo(step: SessionStep) {
-    const steps = this.getSteps();
-    // Early return for edge cases
-    if (!steps.length) {
-      return {
-        totalSteps: 0,
-        currentStepIndex: 0,
-        progress: 0,
-      };
-    }
-
-    const total = steps.length;
-    const index = steps.findIndex((s) => s.cvid === step.cvid);
-    const validIndex = index === -1 ? 0 : index;
-    const progress = Math.round(((validIndex + 1) / total) * 100);
-
-    return {
-      totalSteps: total,
-      currentStepIndex: validIndex,
-      progress,
-    };
-  }
-
-  /**
-   * Reports the tooltip target missing event
-   * @param step - The step where target is missing
-   */
-  private async reportTooltipTargetMissing(step: SessionStep) {
-    await this.socketService.reportTooltipTargetMissing(
-      {
-        sessionId: this.getSessionId(),
-        stepId: String(step.id),
-      },
-      { batch: true },
-    );
-  }
-
+  // === Event Reporting ===
   /**
    * Reports step seen event
    * @param step - The step to report
+   * @private
    */
   private async reportStepSeen(step: SessionStep) {
     const currentStepInSession = this.getCurrentStepFromSession();
@@ -483,13 +484,37 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Resets the step trigger
+   * Reports the tooltip target missing event
+   * @param step - The step where target is missing
+   * @private
    */
-  private resetStepTrigger() {
-    this.stepTrigger?.destroy();
-    this.stepTrigger = null;
+  private async reportTooltipTargetMissing(step: SessionStep) {
+    await this.socketService.reportTooltipTargetMissing(
+      {
+        sessionId: this.getSessionId(),
+        stepId: String(step.id),
+      },
+      { batch: true },
+    );
   }
 
+  /**
+   * Reports the question answer event
+   * This method handles:
+   * 1. Reporting the question answer event with the correct event name
+   * 2. Adding the question cvid, name, and type to the event data
+   * 3. Handling multiple choice, scale, NPS, and star rating elements
+   *
+   * @param element - The question element that was answered
+   * @param value - The value of the answer
+   * @private
+   */
+  private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
+    const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
+    await this.socketService.answerQuestion(eventData, { batch: true });
+  }
+
+  // === Lifecycle Hooks ===
   /**
    * Tour-specific cleanup logic
    * @protected

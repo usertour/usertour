@@ -36,10 +36,10 @@ interface ComponentOptions {
  * Provides common functionality and enforces a consistent interface
  */
 export abstract class UsertourComponent<TStore extends BaseStore> extends Evented {
-  // Component constants
+  // === Static Members ===
   protected static readonly Z_INDEX_OFFSET = 200;
 
-  // Protected properties available to subclasses
+  // === Properties ===
   protected readonly instance: UsertourCore;
   protected readonly session: UsertourSession;
   protected readonly socketService: UsertourSocket;
@@ -48,6 +48,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   private readonly options: ComponentOptions;
   private actionManager: ActionManager;
 
+  // === Constructor ===
   constructor(instance: UsertourCore, session: UsertourSession, options: ComponentOptions = {}) {
     super();
     autoBind(this);
@@ -75,7 +76,11 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     }
   }
 
-  // Abstract methods that subclasses must implement
+  // === Abstract Methods ===
+  /**
+   * Checks the component state
+   * Subclasses must implement this method
+   */
   abstract check(): Promise<void>;
 
   /**
@@ -84,27 +89,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected abstract initializeActionHandlers(): void;
 
-  /**
-   * Starts checking for this component
-   * @param interval - Checking interval in milliseconds
-   */
-  protected startChecking(interval = 200): void {
-    timerManager.addTask(
-      `component-${this.id}-check`,
-      async () => {
-        await this.check();
-      },
-      interval,
-    );
-  }
-
-  /**
-   * Stops checking for this component
-   */
-  protected stopChecking(): void {
-    timerManager.removeTask(`component-${this.id}-check`);
-  }
-
+  // === Public API Methods ===
   /**
    * Gets the component ID
    */
@@ -117,6 +102,20 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   getSessionId(): string {
     return this.session.getSessionId();
+  }
+
+  /**
+   * Gets the content ID
+   */
+  getContentId(): string {
+    return this.session.getContentId();
+  }
+
+  /**
+   * Gets the version ID
+   */
+  getVersionId(): string {
+    return this.session.getVersionId();
   }
 
   /**
@@ -148,6 +147,94 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   };
 
   /**
+   * Builds the complete store data for the component
+   * This method combines base store data with component-specific data
+   * @returns {TStore | null} The complete store data object
+   */
+  async buildStoreData(): Promise<TStore | null> {
+    const baseData = await this.buildBaseStoreData();
+    if (!baseData) {
+      return null;
+    }
+
+    const customData = this.getCustomStoreData();
+
+    return {
+      ...baseData,
+      ...customData,
+    } as TStore;
+  }
+
+  /**
+   * Refreshes the store data for the component
+   */
+  async refreshStoreData(): Promise<void> {
+    const newStore = await this.buildStoreData();
+    const existingStore = this.getStoreData();
+    if (!newStore || !existingStore) {
+      return;
+    }
+
+    // Extract common properties
+    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
+
+    // Get custom store data
+    const customData = this.getCustomStoreData();
+
+    // Update store with common and specific data
+    this.updateStore({
+      userAttributes,
+      assets,
+      globalStyle,
+      themeSettings,
+      ...customData,
+    });
+  }
+
+  /**
+   * Handles actions using the strategy pattern
+   * @param actions - The actions to handle
+   */
+  async handleActions(actions: RulesCondition[]): Promise<void> {
+    await this.actionManager.handleActions(actions, this);
+  }
+
+  /**
+   * Destroys the component with common cleanup logic
+   */
+  destroy(): void {
+    // Stop checking
+    this.stopChecking();
+    // Reset component state
+    this.reset();
+    // Call component-specific cleanup
+    this.onDestroy();
+  }
+
+  // === Monitoring & Checking ===
+  /**
+   * Starts checking for this component
+   * @param interval - Checking interval in milliseconds
+   */
+  protected startChecking(interval = 200): void {
+    timerManager.addTask(
+      `component-${this.id}-check`,
+      async () => {
+        await this.check();
+      },
+      interval,
+    );
+  }
+
+  /**
+   * Stops checking for this component
+   */
+  protected stopChecking(): void {
+    timerManager.removeTask(`component-${this.id}-check`);
+  }
+
+  // === Store Management ===
+  /**
    * Updates the store with new data
    */
   protected updateStore(data: Partial<TStore>): void {
@@ -176,24 +263,45 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets custom store data - can be overridden by subclasses
+   * @protected
+   */
+  protected getCustomStoreData(): Partial<TStore> {
+    return {};
+  }
+
+  /**
+   * Builds the base store data common to all components
+   * This method handles theme settings, user attributes, and other common properties
+   * @protected
+   */
+  protected async buildBaseStoreData(): Promise<Partial<BaseStore> | null> {
+    const themeSettings = await this.getThemeSettings();
+    if (!themeSettings) {
+      return null;
+    }
+
+    const themeData = UsertourTheme.createThemeData(themeSettings);
+    const contentSession = this.getSessionAttributes();
+    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    const removeBranding = this.isRemoveBranding();
+    const zIndex = this.getCalculatedZIndex();
+
+    return {
+      removeBranding,
+      ...themeData,
+      userAttributes,
+      openState: false,
+      zIndex,
+    };
+  }
+
+  // === Component State ===
+  /**
    * Opens the component
    */
   protected open(): void {
     this.updateStore({ openState: true } as unknown as Partial<TStore>);
-  }
-
-  /**
-   * Gets the content ID
-   */
-  getContentId(): string {
-    return this.session.getContentId();
-  }
-
-  /**
-   * Gets the version ID
-   */
-  getVersionId(): string {
-    return this.session.getVersionId();
   }
 
   /**
@@ -203,7 +311,18 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     this.updateStore({ openState: false } as unknown as Partial<TStore>);
   }
 
-  // Session method wrappers
+  /**
+   * Resets the component state
+   * @protected
+   */
+  protected reset(): void {
+    // Clear store data
+    this.setStoreData(undefined);
+    // Call component-specific reset
+    this.onReset();
+  }
+
+  // === Session Wrappers ===
   /**
    * Gets the steps array from session
    */
@@ -274,39 +393,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     return this.session.isRemoveBranding();
   }
 
-  /**
-   * Handle actions using the strategy pattern
-   * @param actions - The actions to handle
-   */
-  async handleActions(actions: RulesCondition[]): Promise<void> {
-    await this.actionManager.handleActions(actions, this);
-  }
-
-  /**
-   * Register an action handler
-   * @param handler - The handler to register
-   */
-  protected registerActionHandler(handler: ActionHandler): void {
-    this.actionManager.registerHandler(handler);
-  }
-
-  /**
-   * Register multiple action handlers
-   * @param handlers - Array of handlers to register
-   */
-  protected registerActionHandlers(handlers: ActionHandler[]): void {
-    this.actionManager.registerHandlers(handlers);
-  }
-
-  /**
-   * Calculates the z-index for the component
-   * @protected
-   */
-  protected getCalculatedZIndex(): number {
-    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
-    return baseZIndex + UsertourComponent.Z_INDEX_OFFSET;
-  }
-
+  // === Theme Management ===
   /**
    * Gets theme settings from session
    * This method combines version theme with component-specific theme settings
@@ -327,7 +414,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Gets custom theme  - can be overridden by subclasses
+   * Gets custom theme - can be overridden by subclasses
    * @protected
    */
   protected getCustomTheme(): SessionTheme | undefined {
@@ -356,83 +443,48 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     this.updateStore({ themeSettings } as Partial<TStore>);
   }
 
+  // === Action Handlers ===
   /**
-   * Builds the base store data common to all components
-   * This method handles theme settings, user attributes, and other common properties
+   * Register an action handler
+   * @param handler - The handler to register
+   */
+  protected registerActionHandler(handler: ActionHandler): void {
+    this.actionManager.registerHandler(handler);
+  }
+
+  /**
+   * Register multiple action handlers
+   * @param handlers - Array of handlers to register
+   */
+  protected registerActionHandlers(handlers: ActionHandler[]): void {
+    this.actionManager.registerHandlers(handlers);
+  }
+
+  // === Utilities ===
+  /**
+   * Calculates the z-index for the component
    * @protected
    */
-  protected async buildBaseStoreData(): Promise<Partial<BaseStore> | null> {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return null;
-    }
-
-    const themeData = UsertourTheme.createThemeData(themeSettings);
-    const contentSession = this.getSessionAttributes();
-    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
-    const removeBranding = this.isRemoveBranding();
-    const zIndex = this.getCalculatedZIndex();
-
-    return {
-      removeBranding,
-      ...themeData,
-      userAttributes,
-      openState: false,
-      zIndex,
-    };
+  protected getCalculatedZIndex(): number {
+    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
+    return baseZIndex + UsertourComponent.Z_INDEX_OFFSET;
   }
 
+  // === Lifecycle Hooks ===
   /**
-   * Builds the complete store data for the component
-   * This method combines base store data with component-specific data
-   * @returns {TStore | null} The complete store data object
-   */
-  async buildStoreData(): Promise<TStore | null> {
-    const baseData = await this.buildBaseStoreData();
-    if (!baseData) {
-      return null;
-    }
-
-    const customData = this.getCustomStoreData();
-
-    return {
-      ...baseData,
-      ...customData,
-    } as TStore;
-  }
-
-  /**
-   * Refreshes the store data for the component
-   */
-  async refreshStoreData(): Promise<void> {
-    const newStore = await this.buildStoreData();
-    const existingStore = this.getStoreData();
-    if (!newStore || !existingStore) {
-      return;
-    }
-
-    // Extract common properties
-    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-
-    // Get custom store data
-    const customData = this.getCustomStoreData();
-
-    // Update store with common and specific data
-    this.updateStore({
-      userAttributes,
-      assets,
-      globalStyle,
-      themeSettings,
-      ...customData,
-    });
-  }
-
-  /**
-   * Gets custom store data - can be overridden by subclasses
+   * Component-specific cleanup logic - can be overridden by subclasses
    * @protected
    */
-  protected getCustomStoreData(): Partial<TStore> {
-    return {};
+  protected onDestroy(): void {
+    // Default: no additional cleanup
+  }
+
+  /**
+   * Component-specific reset logic - can be overridden by subclasses
+   * @protected
+   */
+  protected onReset(): void {
+    // Default: no additional reset
   }
 
   /**
@@ -450,45 +502,6 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     this.destroy();
     // End the content session
     await this.endContent(reason);
-  }
-
-  /**
-   * Destroys the component with common cleanup logic
-   */
-  destroy(): void {
-    // Stop checking
-    this.stopChecking();
-    // Reset component state
-    this.reset();
-    // Call component-specific cleanup
-    this.onDestroy();
-  }
-
-  /**
-   * Resets the component state
-   * @protected
-   */
-  protected reset(): void {
-    // Clear store data
-    this.setStoreData(undefined);
-    // Call component-specific reset
-    this.onReset();
-  }
-
-  /**
-   * Component-specific cleanup logic - can be overridden by subclasses
-   * @protected
-   */
-  protected onDestroy(): void {
-    // Default: no additional cleanup
-  }
-
-  /**
-   * Component-specific reset logic - can be overridden by subclasses
-   * @protected
-   */
-  protected onReset(): void {
-    // Default: no additional reset
   }
 
   /**

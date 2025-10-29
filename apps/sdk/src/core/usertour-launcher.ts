@@ -17,8 +17,10 @@ import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
+  // === Properties ===
   private watcher: UsertourElementWatcher | null = null;
 
+  // === Abstract Methods Implementation ===
   /**
    * Initialize action handlers for launcher
    */
@@ -37,6 +39,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     }
   }
 
+  // === Public API Methods ===
   /**
    * Shows the launcher by initializing its store data with closed state.
    * This method sets up the initial state of the launcher without displaying it.
@@ -48,13 +51,69 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     }
     const store = {
       ...baseStoreData,
-      triggerRef: null,
+      triggerRef: undefined,
     } as LauncherStore;
     this.setupElementWatcher(store);
   }
 
   /**
-   * Sets up the element watcher for a popper step
+   * Handles the activation of the launcher
+   * This method:
+   * 1. Reports the activation event
+   * 2. Auto-dismisses the launcher after activation if configured
+   */
+  async handleActive() {
+    const store = this.getStoreData();
+    if (!store) {
+      return;
+    }
+    const launcherData = store.launcherData;
+    const tooltip = launcherData?.tooltip;
+    await this.reportActiveEvent();
+    // Auto-dismiss after activation if configured
+    if (tooltip?.settings?.dismissAfterFirstActivation) {
+      setTimeout(() => {
+        this.close();
+      }, 2000);
+    }
+  }
+
+  /**
+   * Handles click events on content editor elements.
+   * Processes button clicks and executes associated actions.
+   *
+   * @param element - The clicked element with its type and data
+   */
+  async handleOnClick(element: ContentEditorClickableElement) {
+    const { type, data } = element;
+    if (type === 'button' && data.actions) {
+      await this.handleActions(data.actions);
+    }
+  }
+
+  /**
+   * Handles the dismiss event of the launcher
+   */
+  async handleDismiss() {
+    await this.close(contentEndReason.USER_CLOSED);
+  }
+
+  // === Store Management ===
+  /**
+   * Gets custom launcher store data
+   * @protected
+   */
+  protected getCustomStoreData(): Partial<LauncherStore> {
+    const launcherData = this.getLauncherData();
+    return {
+      launcherData,
+      triggerRef: undefined,
+    };
+  }
+
+  // === Element Watcher ===
+  /**
+   * Sets up the element watcher for a launcher
    * @private
    */
   private setupElementWatcher(store: LauncherStore): void {
@@ -136,60 +195,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     });
   }
 
-  /**
-   * Gets custom launcher store data
-   * @protected
-   */
-  protected getCustomStoreData(): Partial<LauncherStore> {
-    const launcherData = this.getLauncherData();
-    return {
-      launcherData,
-    };
-  }
-
-  /**
-   * Handles the activation of the launcher
-   * This method:
-   * 1. Reports the activation event
-   * 2. Auto-dismisses the launcher after activation if configured
-   */
-  async handleActive() {
-    const store = this.getStoreData();
-    if (!store) {
-      return;
-    }
-    const launcherData = store.launcherData;
-    const tooltip = launcherData?.tooltip;
-    await this.reportActiveEvent();
-    // Auto-dismiss after activation if configured
-    if (tooltip?.settings?.dismissAfterFirstActivation) {
-      setTimeout(() => {
-        this.close();
-      }, 2000);
-    }
-  }
-
-  /**
-   *
-   * Handles click events on content editor elements.
-   * Processes button clicks and executes associated actions.
-   *
-   * @param {ContentEditorClickableElement} element - The clicked element with its type and data
-   */
-  async handleOnClick(element: ContentEditorClickableElement) {
-    const { type, data } = element;
-    if (type === 'button' && data.actions) {
-      await this.handleActions(data.actions);
-    }
-  }
-
-  /**
-   * Handles the dismiss event of the launcher
-   */
-  async handleDismiss() {
-    await this.close(contentEndReason.USER_CLOSED);
-  }
-
+  // === Event Reporting ===
   /**
    * Reports when the launcher is activated by the user
    * Deletes the current tracking session after activation
@@ -200,6 +206,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     });
   }
 
+  // === Lifecycle Hooks ===
   /**
    * Launcher-specific cleanup logic
    * @protected

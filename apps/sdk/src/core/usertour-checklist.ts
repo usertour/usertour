@@ -10,6 +10,7 @@ import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
+  // === Abstract Methods Implementation ===
   /**
    * Initialize action handlers for checklist
    */
@@ -18,7 +19,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Checks the tour
+   * Checks the checklist
    */
   async check(): Promise<void> {
     try {
@@ -28,6 +29,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     }
   }
 
+  // === Public API Methods ===
   /**
    * Shows the checklist by initializing its store data with closed state.
    * This method sets up the initial state of the checklist without displaying it.
@@ -68,6 +70,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     });
   }
 
+  // === Store Management ===
   /**
    * Gets custom checklist store data
    * @protected
@@ -76,15 +79,16 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     const checklistData = this.getChecklistData();
     return {
       checklistData,
+      expanded: false,
     };
   }
 
+  // === Event Handlers ===
   /**
-   *
    * Handles click events on content editor elements.
    * Processes button clicks and executes associated actions.
    *
-   * @param {ContentEditorClickableElement} element - The clicked element with its type and data
+   * @param element - The clicked element with its type and data
    */
   async handleOnClick(element: ContentEditorClickableElement) {
     const { type, data } = element;
@@ -105,21 +109,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Reports the open/close event of the checklist.
-   * @param {boolean} open - Whether the checklist is open
-   */
-  async reportExpandedChangeEvent(expanded: boolean) {
-    if (expanded) {
-      await this.reportSeenEvent();
-    } else {
-      await this.reportHiddenEvent();
-    }
-  }
-
-  /**
    * Handles the open/close state change of the checklist.
    * Triggers the appropriate event based on the open state.
-   * @param {boolean} expanded - Whether the checklist is expanded
+   * @param expanded - Whether the checklist is expanded
    */
   handleExpandedChange(expanded: boolean) {
     this.updateStore({
@@ -132,6 +124,19 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   async handleDismiss() {
     await this.close(contentEndReason.USER_CLOSED);
+  }
+
+  // === Event Reporting ===
+  /**
+   * Reports the open/close event of the checklist.
+   * @param expanded - Whether the checklist is expanded
+   */
+  async reportExpandedChangeEvent(expanded: boolean) {
+    if (expanded) {
+      await this.reportSeenEvent();
+    } else {
+      await this.reportHiddenEvent();
+    }
   }
 
   /**
@@ -160,7 +165,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
 
   /**
    * Reports the checklist task click event.
-   * @param {ChecklistItemType} item - The clicked checklist item
+   * @param item - The clicked checklist item
    */
   private async reportTaskClickEvent(item: ChecklistItemType) {
     await this.socketService.clickChecklistTask(
