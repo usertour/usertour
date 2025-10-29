@@ -354,6 +354,83 @@ export class SocketOperationService {
   }
 
   /**
+   * Handle launcher sessions processing
+   * Processes session additions, removals, and preserves existing sessions
+   */
+  private async handleLauncherSessions(
+    currentSessions: CustomContentSession[],
+    newSessions: CustomContentSession[],
+    socket: Socket,
+  ): Promise<{
+    updatedSessions: CustomContentSession[];
+    removedContentIds: string[];
+  }> {
+    const {
+      newSessions: toAdd,
+      removedSessions,
+      preservedSessions,
+    } = categorizeLauncherSessions(currentSessions, newSessions);
+
+    const [addedSessions, removedContentIds] = await Promise.all([
+      this.socketParallelService.addLaunchers(socket, toAdd),
+      this.socketParallelService.removeLaunchers(
+        socket,
+        removedSessions.map((session) => session.content.id),
+      ),
+    ]);
+
+    const unremovedSessions = removedSessions.filter(
+      (session) => !removedContentIds.includes(session.content.id),
+    );
+
+    return {
+      updatedSessions: [...preservedSessions, ...unremovedSessions, ...addedSessions],
+      removedContentIds,
+    };
+  }
+
+  /**
+   * Handle launcher client conditions filtering and updating
+   * Processes conditions specifically for launcher content type
+   */
+  private handleLauncherClientConditions(
+    currentConditions: ClientCondition[],
+    removedContentIds: string[],
+    socket: Socket,
+  ): {
+    updatedConditions: ClientCondition[];
+  } {
+    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
+      currentConditions,
+      [ContentDataType.LAUNCHER],
+    );
+
+    // Use Set for O(1) lookup performance instead of nested array operations
+    const removedContentIdSet = new Set(removedContentIds);
+
+    const untrackedConditions: ClientCondition[] = [];
+    const trackedConditions: ClientCondition[] = [];
+
+    // Single pass categorization for better performance
+    for (const condition of filteredConditions) {
+      if (removedContentIdSet.has(condition.contentId)) {
+        untrackedConditions.push(condition);
+      } else {
+        trackedConditions.push(condition);
+      }
+    }
+
+    // Cancel tracking for conditions that are no longer needed
+    for (const condition of untrackedConditions) {
+      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId);
+    }
+
+    return {
+      updatedConditions: [...preservedConditions, ...trackedConditions],
+    };
+  }
+
+  /**
    * Add launcher sessions
    * @param socket - The socket
    * @param socketData - The socket client data
@@ -366,51 +443,28 @@ export class SocketOperationService {
     sessions: CustomContentSession[],
   ): Promise<boolean> {
     const { clientConditions = [], launcherSessions = [] } = socketData;
-    // Use optimized utility function to categorize sessions in a single pass
-    const { newSessions, removedSessions, preservedSessions } = categorizeLauncherSessions(
+
+    // Handle launcher sessions processing
+    const { updatedSessions, removedContentIds } = await this.handleLauncherSessions(
       launcherSessions,
       sessions,
+      socket,
     );
 
-    // Execute parallel operations for adding and removing sessions
-    const [addedSessions, removedContentIds] = await Promise.all([
-      this.socketParallelService.addLaunchers(socket, newSessions),
-      this.socketParallelService.removeLaunchers(
-        socket,
-        removedSessions.map((session) => session.content.id),
-      ),
-    ]);
-
-    // Filter out sessions that were not successfully removed
-    const unremovedSessions = removedSessions.filter(
-      (session) => !removedContentIds.includes(session.content.id),
-    );
-    // Merge all sessions efficiently
-    const updatedLauncherSessions = [...preservedSessions, ...unremovedSessions, ...addedSessions];
-
-    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
+    // Handle launcher client conditions update
+    const { updatedConditions } = this.handleLauncherClientConditions(
       clientConditions,
-      [ContentDataType.LAUNCHER],
+      removedContentIds,
+      socket,
     );
 
-    const untrackedConditions = filteredConditions.filter((condition) =>
-      removedContentIds.some((id) => id === condition.contentId),
-    );
-
-    const trackedConditions = filteredConditions.filter(
-      (filteredCondition) =>
-        !untrackedConditions.some(
-          (untrack) => filteredCondition.conditionId === untrack.conditionId,
-        ),
-    );
-
-    untrackedConditions.map((condition) =>
-      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
-    );
-    const updatedClientConditions = [...preservedConditions, ...trackedConditions];
+    // Update socket data with processed sessions and conditions
     return await this.socketDataService.set(
       socket.id,
-      { launcherSessions: updatedLauncherSessions, clientConditions: updatedClientConditions },
+      {
+        launcherSessions: updatedSessions,
+        clientConditions: updatedConditions,
+      },
       true,
     );
   }
