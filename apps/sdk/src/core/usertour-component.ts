@@ -5,9 +5,16 @@ import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { autoBind } from '@/utils';
-import { ChecklistData, contentEndReason, LauncherData, Step } from '@usertour/types';
+import {
+  ChecklistData,
+  contentEndReason,
+  LauncherData,
+  Step,
+  RulesCondition,
+} from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
+import { ActionManager, ActionHandler } from '@/core/action-handlers';
 
 /**
  * Options for component initialization
@@ -31,6 +38,7 @@ export abstract class UsertourComponent<TStore> extends Evented {
   protected readonly id: string;
   private store: ExternalStore<TStore>;
   private readonly options: ComponentOptions;
+  private actionManager: ActionManager;
 
   constructor(instance: UsertourCore, session: UsertourSession, options: ComponentOptions = {}) {
     super();
@@ -48,6 +56,10 @@ export abstract class UsertourComponent<TStore> extends Evented {
 
     this.id = uuidV4();
     this.store = new ExternalStore<TStore>(undefined);
+    this.actionManager = new ActionManager();
+
+    // Initialize action handlers
+    this.initializeActionHandlers();
 
     // Start checking automatically when component is created (if enabled)
     if (this.options.autoStartMonitoring) {
@@ -61,6 +73,12 @@ export abstract class UsertourComponent<TStore> extends Evented {
   abstract destroy(): void;
   abstract reset(): void;
   abstract close(reason?: contentEndReason): Promise<void>;
+
+  /**
+   * Initialize action handlers for this component
+   * Subclasses should override this method to register their specific handlers
+   */
+  protected abstract initializeActionHandlers(): void;
 
   /**
    * Starts checking for this component
@@ -250,5 +268,29 @@ export abstract class UsertourComponent<TStore> extends Evented {
    */
   protected isRemoveBranding(): boolean {
     return this.session.isRemoveBranding();
+  }
+
+  /**
+   * Handle actions using the strategy pattern
+   * @param actions - The actions to handle
+   */
+  async handleActions(actions: RulesCondition[]): Promise<void> {
+    await this.actionManager.handleActions(actions, this);
+  }
+
+  /**
+   * Register an action handler
+   * @param handler - The handler to register
+   */
+  protected registerActionHandler(handler: ActionHandler): void {
+    this.actionManager.registerHandler(handler);
+  }
+
+  /**
+   * Register multiple action handlers
+   * @param handlers - Array of handlers to register
+   */
+  protected registerActionHandlers(handlers: ActionHandler[]): void {
+    this.actionManager.registerHandlers(handlers);
   }
 }

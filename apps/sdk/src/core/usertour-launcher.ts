@@ -1,13 +1,11 @@
 import {
-  ContentActionsItemType,
   ContentEditorClickableElement,
   ElementSelectorPropsData,
-  RulesCondition,
   ThemeTypesSetting,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
-import { evalCode, isEqual, isUndefined } from '@usertour/helpers';
+import { isEqual, isUndefined } from '@usertour/helpers';
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
@@ -20,11 +18,19 @@ import {
   LAUNCHER_CLOSED,
 } from '@usertour-packages/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
+import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   // Launcher-specific constants
   private static readonly Z_INDEX_OFFSET = 200;
   private watcher: UsertourElementWatcher | null = null;
+
+  /**
+   * Initialize action handlers for launcher
+   */
+  protected initializeActionHandlers(): void {
+    this.registerActionHandlers([new CommonActionHandler(), new LauncherActionHandler()]);
+  }
 
   /**
    * Checks the launcher
@@ -173,7 +179,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     await this.reportActiveEvent();
     // Auto-dismiss after activation if configured
     if (tooltip?.settings?.dismissAfterFirstActivation) {
-      await this.close();
+      setTimeout(() => {
+        this.close();
+      }, 2000);
     }
   }
 
@@ -279,57 +287,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   private getCalculatedZIndex(): number {
     const baseZIndex = this.instance.getBaseZIndex() ?? 0;
     return baseZIndex + UsertourLauncher.Z_INDEX_OFFSET;
-  }
-
-  /**
-   * Handles the actions for the current step
-   * This method executes all actions in sequence
-   *
-   * @param actions - The actions to be handled
-   */
-  async handleActions(actions: RulesCondition[]) {
-    // Separate actions by type
-    const pageNavigateActions = actions.filter(
-      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
-    );
-    const otherActions = actions.filter(
-      (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
-    );
-
-    // Execute other actions first, then navigation actions
-    await this.executeActions(otherActions);
-    await this.executeActions(pageNavigateActions);
-  }
-
-  /**
-   * Executes all actions in sequence
-   * @private
-   */
-  private async executeActions(actions: RulesCondition[]) {
-    for (const action of actions) {
-      await this.executeAction(action);
-    }
-  }
-
-  /**
-   * Executes a single action
-   * @private
-   */
-  private async executeAction(action: RulesCondition) {
-    switch (action.type) {
-      case ContentActionsItemType.FLOW_START:
-        await this.instance.startTour(action.data.contentId, { cvid: action.data.stepCvid });
-        break;
-      case ContentActionsItemType.LAUNCHER_DISMIS:
-        await this.close(contentEndReason.USER_CLOSED);
-        break;
-      case ContentActionsItemType.JAVASCRIPT_EVALUATE:
-        evalCode(action.data.value);
-        break;
-      case ContentActionsItemType.PAGE_NAVIGATE:
-        this.instance.handleNavigate(action.data);
-        break;
-    }
   }
 
   /**

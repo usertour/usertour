@@ -5,13 +5,12 @@ import {
   isQuestionElement,
 } from '@usertour-packages/shared-editor';
 import {
-  ContentActionsItemType,
   RulesCondition,
   StepContentType,
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
-import { evalCode, isUndefined, isEqual } from '@usertour/helpers';
+import { isUndefined, isEqual } from '@usertour/helpers';
 import { TourStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
@@ -29,6 +28,7 @@ import {
   TOUR_CLOSED,
 } from '@usertour-packages/constants';
 import { SessionStep } from '@/types';
+import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
   // Tour-specific constants
@@ -38,6 +38,13 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
   private currentStepCvid?: string;
+
+  /**
+   * Initialize action handlers for tour
+   */
+  protected initializeActionHandlers(): void {
+    this.registerActionHandlers([new CommonActionHandler(), new TourActionHandler()]);
+  }
 
   /**
    * Checks the tour
@@ -481,60 +488,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async handleDismiss(reason?: contentEndReason) {
     await this.close(reason);
-  }
-
-  /**
-   * Handles the actions for the current step
-   * This method executes all actions in sequence
-   *
-   * @param actions - The actions to be handled
-   */
-  async handleActions(actions: RulesCondition[]) {
-    // Separate actions by type
-    const pageNavigateActions = actions.filter(
-      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
-    );
-    const otherActions = actions.filter(
-      (action) => action.type !== ContentActionsItemType.PAGE_NAVIGATE,
-    );
-
-    // Execute other actions first, then navigation actions
-    await this.executeActions(otherActions);
-    await this.executeActions(pageNavigateActions);
-  }
-
-  /**
-   * Executes all actions in sequence
-   * @private
-   */
-  private async executeActions(actions: RulesCondition[]) {
-    for (const action of actions) {
-      await this.executeAction(action);
-    }
-  }
-
-  /**
-   * Executes a single action
-   * @private
-   */
-  private async executeAction(action: RulesCondition) {
-    switch (action.type) {
-      case ContentActionsItemType.STEP_GOTO:
-        await this.showStepByCvid(action.data.stepCvid);
-        break;
-      case ContentActionsItemType.FLOW_START:
-        await this.instance.startTour(action.data.contentId, { cvid: action.data.stepCvid });
-        break;
-      case ContentActionsItemType.FLOW_DISMIS:
-        await this.handleDismiss(contentEndReason.USER_CLOSED);
-        break;
-      case ContentActionsItemType.JAVASCRIPT_EVALUATE:
-        evalCode(action.data.value);
-        break;
-      case ContentActionsItemType.PAGE_NAVIGATE:
-        this.instance.handleNavigate(action.data);
-        break;
-    }
   }
 
   /**
