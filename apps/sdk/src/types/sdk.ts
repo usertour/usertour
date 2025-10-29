@@ -28,7 +28,7 @@ export type SessionStep = Step & {
 };
 
 export type CustomContentSession = {
-  id: string;
+  id?: string;
   type: ContentDataType;
   draftMode: boolean;
   attributes: SessionAttribute[];
