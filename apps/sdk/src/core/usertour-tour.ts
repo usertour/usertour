@@ -428,7 +428,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     this.destroy();
     this.trigger(TOUR_CLOSED, { sessionId });
     // End flow
-    await this.endFlow(reason);
+    await this.endContent(reason);
   }
 
   /**
@@ -505,17 +505,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       currentStepIndex: validIndex,
       progress,
     };
-  }
-
-  /**
-   * Ends the flow
-   * @param reason - The reason for the end
-   */
-  private async endFlow(endReason: contentEndReason) {
-    await this.socketService.endContent({
-      sessionId: this.getSessionId(),
-      endReason,
-    });
   }
 
   /**

@@ -408,4 +408,18 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   protected onReset(): void {
     // Default: no additional reset
   }
+
+  /**
+   * Ends the content session
+   * @param endReason - The reason for ending the content
+   * @protected
+   */
+  protected async endContent(
+    endReason: contentEndReason = contentEndReason.USER_CLOSED,
+  ): Promise<void> {
+    await this.socketService.endContent({
+      sessionId: this.getSessionId(),
+      endReason,
+    });
+  }
 }

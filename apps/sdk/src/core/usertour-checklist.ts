@@ -153,7 +153,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     // Trigger the checklist closed event
     this.trigger(CHECKLIST_CLOSED, { sessionId: this.getSessionId() });
     // Report the dismiss event
-    await this.reportDismissEvent(reason);
+    await this.endContent(reason);
   }
 
   /**
@@ -196,16 +196,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       zIndex,
       expanded: false,
     } as ChecklistStore;
-  }
-
-  /**
-   * Reports the checklist dismiss event.
-   */
-  private async reportDismissEvent(endReason: contentEndReason = contentEndReason.USER_CLOSED) {
-    await this.socketService.endContent({
-      sessionId: this.getSessionId(),
-      endReason,
-    });
   }
 
   /**

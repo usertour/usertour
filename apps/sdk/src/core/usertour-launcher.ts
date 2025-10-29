@@ -207,7 +207,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     // Trigger the launcher closed event
     this.trigger(LAUNCHER_CLOSED, { sessionId: this.getSessionId() });
     // Report the dismiss event
-    await this.reportDismissEvent(reason);
+    await this.endContent(reason);
   }
 
   /**
@@ -247,16 +247,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       expanded: false,
       triggerRef: undefined,
     } as LauncherStore;
-  }
-
-  /**
-   * Reports the launcher dismiss event.
-   */
-  private async reportDismissEvent(endReason: contentEndReason = contentEndReason.USER_CLOSED) {
-    await this.socketService.endContent({
-      sessionId: this.getSessionId(),
-      endReason,
-    });
   }
 
   /**
