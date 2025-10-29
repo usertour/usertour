@@ -37,7 +37,7 @@ type LauncherWidgetCoreProps = {
   zIndex: number;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   userAttributes: UserTourTypes.Attributes;
-  handleActive: () => void;
+  handleActivate: () => void;
   removeBranding: boolean;
 };
 
@@ -52,14 +52,14 @@ const useLauncherHandlers = (
   data: LauncherData,
   actionType: LauncherActionType,
   setOpen: (open: boolean) => void,
-  handleActive: () => void,
+  handleActivate: () => void,
   handleActions: (actions: RulesCondition[]) => void,
   popperRef: React.RefObject<HTMLDivElement>,
 ): LauncherHandlers => {
   return useMemo(
     () => ({
       handleClick: () => {
-        handleActive();
+        handleActivate();
         if (actionType === LauncherActionType.SHOW_TOOLTIP) {
           setOpen(true);
         } else if (data) {
@@ -67,7 +67,7 @@ const useLauncherHandlers = (
         }
       },
       handleMouseEnter: () => {
-        handleActive();
+        handleActivate();
         if (actionType === LauncherActionType.SHOW_TOOLTIP) {
           setOpen(true);
         } else if (data) {
@@ -84,7 +84,7 @@ const useLauncherHandlers = (
         }
       },
     }),
-    [data, actionType, setOpen, handleActive, handleActions, popperRef],
+    [data, actionType, setOpen, handleActivate, handleActions, popperRef],
   );
 };
 
@@ -204,7 +204,7 @@ const LauncherWidgetCore = ({
   zIndex,
   handleOnClick,
   userAttributes,
-  handleActive,
+  handleActivate,
   removeBranding,
 }: LauncherWidgetCoreProps) => {
   const actionType = data?.behavior?.actionType;
@@ -224,7 +224,7 @@ const LauncherWidgetCore = ({
     data,
     actionType,
     setOpen,
-    handleActive,
+    handleActivate,
     handleActions,
     popperRef,
   );
@@ -285,7 +285,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
   return (
     <LauncherWidgetCore
       data={launcherData}
-      handleActive={launcher.handleActive}
+      handleActivate={launcher.handleActivate}
       handleActions={launcher.handleActions}
       themeSettings={themeSettings}
       zIndex={zIndex}
