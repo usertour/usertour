@@ -270,17 +270,14 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   }
 
   /**
-   * Resets the launcher
+   * Launcher-specific cleanup logic
+   * @protected
    */
-  reset() {
-    this.setStoreData(undefined);
-  }
-
-  /**
-   * Destroys the launcher
-   */
-  destroy() {
-    this.stopChecking();
-    this.reset();
+  protected onDestroy(): void {
+    // Clean up watcher
+    if (this.watcher) {
+      this.watcher.destroy();
+      this.watcher = null;
+    }
   }
 }

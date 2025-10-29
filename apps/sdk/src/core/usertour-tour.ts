@@ -556,26 +556,23 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Resets the tour
+   * Tour-specific cleanup logic
+   * @protected
    */
-  reset() {
-    this.currentStepCvid = undefined;
-    this.setStoreData(undefined);
-    this.resetStepTrigger();
-    this.watcher = null;
-  }
-
-  /**
-   * Destroys the tour
-   */
-  destroy() {
-    // Stop checking (inherited from UsertourComponent)
-    this.stopChecking();
+  protected onDestroy(): void {
     // Reset the step trigger
     this.resetStepTrigger();
     // Destroy the element watcher
     this.watcher?.destroy();
-    // Reset the tour (includes trigger cleanup)
-    this.reset();
+  }
+
+  /**
+   * Tour-specific reset logic
+   * @protected
+   */
+  protected onReset(): void {
+    this.currentStepCvid = undefined;
+    this.resetStepTrigger();
+    this.watcher = null;
   }
 }

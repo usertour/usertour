@@ -199,20 +199,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Resets the tour
-   */
-  reset() {
-    this.setStoreData(undefined);
-  }
-
-  /**
-   * Destroys the tour
-   */
-  destroy() {
-    this.stopChecking();
-    this.reset();
-  }
-  /**
    * Reports the checklist dismiss event.
    */
   private async reportDismissEvent(endReason: contentEndReason = contentEndReason.USER_CLOSED) {

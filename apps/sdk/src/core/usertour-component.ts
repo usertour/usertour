@@ -75,8 +75,6 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   // Abstract methods that subclasses must implement
   abstract buildStoreData(): Promise<TStore | null>;
   abstract check(): Promise<void>;
-  abstract destroy(): void;
-  abstract reset(): void;
   abstract close(reason?: contentEndReason): Promise<void>;
 
   /**
@@ -369,5 +367,45 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected getCustomStoreData(): Partial<TStore> {
     return {};
+  }
+
+  /**
+   * Destroys the component with common cleanup logic
+   * @protected
+   */
+  protected destroy(): void {
+    // Stop checking
+    this.stopChecking();
+    // Reset component state
+    this.reset();
+    // Call component-specific cleanup
+    this.onDestroy();
+  }
+
+  /**
+   * Resets the component state
+   * @protected
+   */
+  protected reset(): void {
+    // Clear store data
+    this.setStoreData(undefined);
+    // Call component-specific reset
+    this.onReset();
+  }
+
+  /**
+   * Component-specific cleanup logic - can be overridden by subclasses
+   * @protected
+   */
+  protected onDestroy(): void {
+    // Default: no additional cleanup
+  }
+
+  /**
+   * Component-specific reset logic - can be overridden by subclasses
+   * @protected
+   */
+  protected onReset(): void {
+    // Default: no additional reset
   }
 }
