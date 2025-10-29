@@ -16,6 +16,7 @@ import {
 import { uuidV4, isEqual } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 import { ActionManager, ActionHandler } from '@/core/action-handlers';
+import { BaseStore } from '@/types/store';
 
 /**
  * Options for component initialization
@@ -31,7 +32,7 @@ interface ComponentOptions {
  * Abstract base class for all Usertour components (Tour, Launcher, Checklist)
  * Provides common functionality and enforces a consistent interface
  */
-export abstract class UsertourComponent<TStore> extends Evented {
+export abstract class UsertourComponent<TStore extends BaseStore> extends Evented {
   // Component constants
   protected static readonly Z_INDEX_OFFSET = 200;
 
@@ -319,14 +320,14 @@ export abstract class UsertourComponent<TStore> extends Evented {
 
     // Get current theme settings from store
     const currentStore = this.getStoreData();
-    const currentThemeSettings = (currentStore as any)?.themeSettings;
+    const currentThemeSettings = currentStore?.themeSettings;
 
     if (isEqual(currentThemeSettings, themeSettings)) {
       return;
     }
 
     // Update theme settings in store
-    this.updateStore({ themeSettings } as unknown as Partial<TStore>);
+    this.updateStore({ themeSettings } as Partial<TStore>);
   }
 
   /**
