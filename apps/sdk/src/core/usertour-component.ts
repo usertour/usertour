@@ -404,7 +404,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   /**
    * Refreshes the store data for the component
    */
-  async refreshStore(): Promise<void> {
+  async refreshStoreData(): Promise<void> {
     const newStore = await this.buildStoreData();
     const existingStore = this.getStoreData();
     if (!newStore || !existingStore) {

@@ -707,7 +707,7 @@ export class UsertourCore extends Evented {
     if (this.activatedTour) {
       if (this.activatedTour.getContentId() === contentId) {
         this.activatedTour.updateSession(session);
-        this.activatedTour.refreshStore();
+        this.activatedTour.refreshStoreData();
         return true;
       }
       this.cleanupActivatedTour();
@@ -762,7 +762,7 @@ export class UsertourCore extends Evented {
     if (this.activatedChecklist) {
       if (this.activatedChecklist.getContentId() === contentId) {
         this.activatedChecklist.updateSession(session);
-        this.activatedChecklist.refreshStore();
+        this.activatedChecklist.refreshStoreData();
         if (!this.activatedTour) {
           this.activatedChecklist.expand(true);
         }
@@ -807,7 +807,7 @@ export class UsertourCore extends Evented {
     );
     if (existingLauncher) {
       existingLauncher.updateSession(session);
-      await existingLauncher.refreshStore();
+      await existingLauncher.refreshStoreData();
       await existingLauncher.show();
       return true;
     }
