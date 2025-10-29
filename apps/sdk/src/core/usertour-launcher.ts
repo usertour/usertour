@@ -5,7 +5,7 @@ import {
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
-import { isEqual, isUndefined } from '@usertour/helpers';
+import { isUndefined } from '@usertour/helpers';
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
@@ -21,8 +21,6 @@ import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
-  // Launcher-specific constants
-  private static readonly Z_INDEX_OFFSET = 200;
   private watcher: UsertourElementWatcher | null = null;
 
   /**
@@ -222,9 +220,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
   /**
    * Gets theme settings from session
-   * @private
+   * @protected
    */
-  private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
+  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
     const theme = this.getVersionTheme();
     if (!theme) {
       return null;
@@ -257,36 +255,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       expanded: false,
       triggerRef: undefined,
     } as LauncherStore;
-  }
-
-  /**
-   * Checks if theme has changed and updates theme settings if needed
-   */
-  private async checkAndUpdateThemeSettings() {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return;
-    }
-
-    // Get current theme settings from store
-    const currentStore = this.getStoreData();
-    const currentThemeSettings = currentStore?.themeSettings;
-
-    if (isEqual(currentThemeSettings, themeSettings)) {
-      return;
-    }
-
-    // Update theme settings in store
-    this.updateStore({ themeSettings });
-  }
-
-  /**
-   * Calculates the z-index for the launcher
-   * @private
-   */
-  private getCalculatedZIndex(): number {
-    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
-    return baseZIndex + UsertourLauncher.Z_INDEX_OFFSET;
   }
 
   /**

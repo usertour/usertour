@@ -5,7 +5,6 @@ import {
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
-import { isEqual } from '@usertour/helpers';
 import { ChecklistStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTheme } from '@/core/usertour-theme';
@@ -15,9 +14,6 @@ import { CHECKLIST_CLOSED } from '@usertour-packages/constants';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
-  // Tour-specific constants
-  private static readonly Z_INDEX_OFFSET = 200;
-
   /**
    * Initialize action handlers for checklist
    */
@@ -170,9 +166,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
 
   /**
    * Gets theme settings from session
-   * @private
+   * @protected
    */
-  private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
+  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
     const theme = this.getVersionTheme();
     if (!theme) {
       return null;
@@ -208,36 +204,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       zIndex,
       expanded: false,
     } as ChecklistStore;
-  }
-
-  /**
-   * Checks if theme has changed and updates theme settings if needed
-   */
-  private async checkAndUpdateThemeSettings() {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return;
-    }
-
-    // Get current theme settings from store
-    const currentStore = this.getStoreData();
-    const currentThemeSettings = currentStore?.themeSettings;
-
-    if (isEqual(currentThemeSettings, themeSettings)) {
-      return;
-    }
-
-    // Update theme settings in store
-    this.updateStore({ themeSettings });
-  }
-
-  /**
-   * Calculates the z-index for the checklist
-   * @private
-   */
-  private getCalculatedZIndex(): number {
-    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
-    return baseZIndex + UsertourChecklist.Z_INDEX_OFFSET;
   }
 
   /**

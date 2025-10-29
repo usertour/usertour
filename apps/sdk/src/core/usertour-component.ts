@@ -11,8 +11,9 @@ import {
   LauncherData,
   Step,
   RulesCondition,
+  ThemeTypesSetting,
 } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
+import { uuidV4, isEqual } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 import { ActionManager, ActionHandler } from '@/core/action-handlers';
 
@@ -31,6 +32,9 @@ interface ComponentOptions {
  * Provides common functionality and enforces a consistent interface
  */
 export abstract class UsertourComponent<TStore> extends Evented {
+  // Component constants
+  protected static readonly Z_INDEX_OFFSET = 200;
+
   // Protected properties available to subclasses
   protected readonly instance: UsertourCore;
   protected readonly session: UsertourSession;
@@ -293,4 +297,41 @@ export abstract class UsertourComponent<TStore> extends Evented {
   protected registerActionHandlers(handlers: ActionHandler[]): void {
     this.actionManager.registerHandlers(handlers);
   }
+
+  /**
+   * Calculates the z-index for the component
+   * @protected
+   */
+  protected getCalculatedZIndex(): number {
+    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
+    return baseZIndex + UsertourComponent.Z_INDEX_OFFSET;
+  }
+
+  /**
+   * Checks if theme has changed and updates theme settings if needed
+   * @protected
+   */
+  protected async checkAndUpdateThemeSettings(): Promise<void> {
+    const themeSettings = await this.getThemeSettings();
+    if (!themeSettings) {
+      return;
+    }
+
+    // Get current theme settings from store
+    const currentStore = this.getStoreData();
+    const currentThemeSettings = (currentStore as any)?.themeSettings;
+
+    if (isEqual(currentThemeSettings, themeSettings)) {
+      return;
+    }
+
+    // Update theme settings in store
+    this.updateStore({ themeSettings } as unknown as Partial<TStore>);
+  }
+
+  /**
+   * Gets theme settings from session - must be implemented by subclasses
+   * @protected
+   */
+  protected abstract getThemeSettings(): Promise<ThemeTypesSetting | null>;
 }

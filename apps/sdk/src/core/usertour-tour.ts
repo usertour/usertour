@@ -10,7 +10,7 @@ import {
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
-import { isUndefined, isEqual } from '@usertour/helpers';
+import { isUndefined } from '@usertour/helpers';
 import { TourStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
@@ -31,9 +31,6 @@ import { SessionStep } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
-  // Tour-specific constants
-  private static readonly Z_INDEX_OFFSET = 200;
-
   // Tour-specific properties
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
@@ -66,9 +63,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   /**
    * Gets theme settings from session
-   * @private
+   * @protected
    */
-  private async getThemeSettings(): Promise<ThemeTypesSetting | null> {
+  protected async getThemeSettings(): Promise<ThemeTypesSetting | null> {
     const theme = this.getVersionTheme();
     const currentStep = this.getCurrentStep();
     // If the current step has a theme, use it
@@ -188,15 +185,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       currentStep,
       zIndex,
     } as TourStore;
-  }
-
-  /**
-   * Calculates the z-index for the tour
-   * @private
-   */
-  private getCalculatedZIndex(): number {
-    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
-    return baseZIndex + UsertourTour.Z_INDEX_OFFSET;
   }
 
   /**
@@ -325,27 +313,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
     } else {
       this.hide();
-    }
-  }
-
-  /**
-   * Checks if theme has changed and updates theme settings if needed
-   */
-  private async checkAndUpdateThemeSettings() {
-    const themeSettings = await this.getThemeSettings();
-    if (!themeSettings) {
-      return;
-    }
-
-    // Get current theme settings from store
-    const currentStore = this.getStoreData();
-    const currentThemeSettings = currentStore?.themeSettings;
-
-    // Check if theme settings have changed using isEqual for deep comparison
-    if (!isEqual(currentThemeSettings, themeSettings)) {
-      this.updateStore({
-        themeSettings,
-      });
     }
   }
 
