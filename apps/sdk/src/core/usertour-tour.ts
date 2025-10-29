@@ -172,8 +172,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       );
     }
 
-    // Display step based on its type
-    await this.displayStep(step);
+    // Show step based on its type
+    await this.showStep(step);
   }
 
   /**
@@ -186,10 +186,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Displays a step based on its type
+   * Shows a step based on its type
    * @private
    */
-  private async displayStep(step: SessionStep): Promise<void> {
+  private async showStep(step: SessionStep): Promise<void> {
     if (step.type === StepContentType.TOOLTIP) {
       await this.showPopper(step);
     } else if (step.type === StepContentType.MODAL) {
