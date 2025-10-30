@@ -13,29 +13,22 @@ export const isPublishedInAllEnvironments = (
   environmentList: Environment[] | null,
   version: ContentVersion | null,
 ) => {
-  const isPublishedInAllEnvironments = environmentList?.every((env: Environment) =>
-    content?.contentOnEnvironments?.find(
+  // Early return if any required data is missing
+  if (!content?.contentOnEnvironments?.length || !environmentList?.length || !version?.id) {
+    return false;
+  }
+
+  // Check if all environments have the version published
+  return environmentList.every((env) =>
+    content?.contentOnEnvironments?.some(
       (item) =>
-        item.published && item.publishedVersionId === version?.id && item.environment.id === env.id,
+        item.published && item.publishedVersionId === version.id && item.environment.id === env.id,
     ),
   );
-
-  const isPublishedInOneEnvironment =
-    content?.published &&
-    content?.publishedVersionId === version?.id &&
-    environmentList &&
-    environmentList?.length === 1;
-
-  return content?.contentOnEnvironments && content?.contentOnEnvironments.length > 0
-    ? Boolean(isPublishedInAllEnvironments)
-    : Boolean(isPublishedInOneEnvironment);
 };
 
 export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
   if (content?.contentOnEnvironments && content?.contentOnEnvironments?.length > 0) {
-    return true;
-  }
-  if (content?.published && content?.publishedVersionId) {
     return true;
   }
   return false;
