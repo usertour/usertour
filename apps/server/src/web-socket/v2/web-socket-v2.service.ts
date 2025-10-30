@@ -161,6 +161,7 @@ export class WebSocketV2Service {
       token,
       flowSessionId,
       checklistSessionId,
+      launchers = [],
     } = auth;
 
     // Validate required fields
@@ -197,6 +198,13 @@ export class WebSocketV2Service {
       const checklistSession = await this.initializeSessionById(socketData, checklistSessionId);
       if (checklistSession) {
         socketData.checklistSession = checklistSession;
+      }
+    }
+
+    if (launchers.length > 0) {
+      const launcherSessions = await this.initializeLauncherSessions(socketData, launchers);
+      if (launcherSessions.length > 0) {
+        socketData.launcherSessions = launcherSessions;
       }
     }
 
@@ -553,5 +561,28 @@ export class WebSocketV2Service {
     sessionId: string,
   ): Promise<CustomContentSession | null> {
     return await this.contentOrchestratorService.initializeSessionById(socketData, sessionId);
+  }
+
+  /**
+   * Initialize launcher sessions by content IDs
+   * @param socketData - The socket client data
+   * @param contentIds - Array of content IDs
+   * @returns Array of initialized sessions
+   */
+  async initializeLauncherSessions(
+    socketData: SocketData,
+    launcherIds: string[],
+  ): Promise<CustomContentSession[]> {
+    const launcherSessions: CustomContentSession[] = [];
+    for (const launcherId of launcherIds) {
+      const launcherSession = await this.contentOrchestratorService.initializeLauncherSession(
+        socketData,
+        launcherId,
+      );
+      if (launcherSession) {
+        launcherSessions.push(launcherSession);
+      }
+    }
+    return launcherSessions;
   }
 }

@@ -18,6 +18,7 @@ export interface SocketAuthData {
   externalUserId?: string;
   externalCompanyId?: string;
   clientConditions?: ClientCondition[];
+  launchers?: string[];
   token?: string;
   flowSessionId?: string;
   checklistSessionId?: string;

@@ -12,7 +12,7 @@ import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourSession } from '@/core/usertour-session';
-import { AuthCredentials, UsertourSocket } from '@/core/usertour-socket';
+import { UsertourSocket } from '@/core/usertour-socket';
 import { UsertourAttributeManager } from '@/core/usertour-attribute-manager';
 import {
   ConditionStateChangeEvent,
@@ -43,6 +43,7 @@ import {
   ConditionWaitTimer,
   ClientCondition,
 } from '@/types';
+import { SERVER_MESSAGE_SUCCEEDED, SERVER_MESSAGE_FAILED } from '@usertour-packages/constants';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 
@@ -239,8 +240,6 @@ export class UsertourCore extends Evented {
 
     // Only update local state after successful API call
     this.externalCompanyId = companyId;
-    // Update socket auth info
-    this.updateSocketAuthInfo({ externalCompanyId: companyId });
     if (attributes) {
       this.attributeManager.setCompanyAttributes(attributes);
     }
@@ -547,9 +546,17 @@ export class UsertourCore extends Evented {
    * This method sets up all WebSocket event handlers after socket is initialized
    */
   private initializeSocketEventListeners(): void {
-    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, (message: unknown) => {
+    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, async (message: unknown) => {
       const { kind, payload } = message as { kind: string; payload: unknown };
-      return this.handleServerMessage(kind, payload);
+      const ok = await this.handleServerMessage(kind, payload);
+      this.trigger(ok ? SERVER_MESSAGE_SUCCEEDED : SERVER_MESSAGE_FAILED, { kind, payload });
+      return ok;
+    });
+
+    // Subscribe to succeeded server message to refresh credentials immediately
+    this.on(SERVER_MESSAGE_SUCCEEDED, () => {
+      this.syncSocketCredentials();
+      return true;
     });
   }
 
@@ -621,11 +628,7 @@ export class UsertourCore extends Evented {
    * @returns boolean - True if session was set successfully
    */
   private handleSetFlowSession(payload: unknown): boolean {
-    const success = this.setFlowSession(payload as CustomContentSession);
-    if (success) {
-      this.updateSocketAuthInfo({ flowSessionId: (payload as CustomContentSession).id });
-    }
-    return success;
+    return this.setFlowSession(payload as CustomContentSession);
   }
 
   /**
@@ -645,11 +648,7 @@ export class UsertourCore extends Evented {
    */
   private handleUnsetFlowSession(payload: unknown): boolean {
     const { sessionId } = payload as { sessionId: string };
-    const success = this.unsetFlowSession(sessionId);
-    if (success) {
-      this.updateSocketAuthInfo({ flowSessionId: undefined });
-    }
-    return success;
+    return this.unsetFlowSession(sessionId);
   }
 
   /**
@@ -668,11 +667,7 @@ export class UsertourCore extends Evented {
    */
   private handleUnsetChecklistSession(payload: unknown): boolean {
     const { sessionId } = payload as { sessionId: string };
-    const success = this.unsetChecklistSession(sessionId);
-    if (success) {
-      this.updateSocketAuthInfo({ checklistSessionId: undefined });
-    }
-    return success;
+    return this.unsetChecklistSession(sessionId);
   }
 
   /**
@@ -918,8 +913,6 @@ export class UsertourCore extends Evented {
         return;
       }
 
-      // Update socket auth info
-      this.updateSocketAuthInfo();
       // Toggle client condition
       this.socketService.toggleClientCondition(
         {
@@ -1032,15 +1025,26 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Updates the socket auth info
+   * Synchronizes socket credentials
    */
-  private updateSocketAuthInfo(authInfo?: Partial<AuthCredentials>) {
+  private syncSocketCredentials() {
     const clientConditions = this.getClientConditions();
     const clientContext = getClientContext();
+    const externalCompanyId = this.externalCompanyId;
+    const externalUserId = this.externalUserId;
+    const token = this.startOptions.token;
+    const flowSessionId = this.activatedTour?.getSessionId();
+    const checklistSessionId = this.activatedChecklist?.getSessionId();
+    const launchers = this.launchers.map((l) => l.getContentId());
     this.socketService.updateCredentials({
       clientConditions,
       clientContext,
-      ...authInfo,
+      externalCompanyId,
+      externalUserId,
+      token,
+      flowSessionId,
+      checklistSessionId,
+      launchers,
     });
   }
 

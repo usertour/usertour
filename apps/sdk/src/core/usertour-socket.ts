@@ -38,6 +38,7 @@ export interface AuthCredentials {
   clientConditions?: ClientCondition[];
   flowSessionId?: string;
   checklistSessionId?: string;
+  launchers?: string[];
 }
 
 /**

@@ -1325,4 +1325,32 @@ export class ContentOrchestratorService {
       preTracks,
     );
   }
+
+  /**
+   * Initialize launcher session by content ID
+   * @param socketData - Socket data
+   * @param contentId - Content ID
+   * @returns The initialized session or null if not found
+   */
+  async initializeLauncherSession(
+    socketData: SocketData,
+    contentId: string,
+  ): Promise<CustomContentSession | null> {
+    const { environment } = socketData;
+    const contentType = ContentDataType.LAUNCHER;
+
+    const versionId = await this.getPublishedVersionId(contentId, environment);
+    if (!versionId) {
+      return null;
+    }
+    const customContentVersion = await this.getEvaluatedContentVersion(
+      socketData,
+      contentType,
+      versionId,
+    );
+    if (!customContentVersion) {
+      return null;
+    }
+    return await this.initializeSession(customContentVersion, socketData);
+  }
 }
