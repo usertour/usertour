@@ -1024,6 +1024,7 @@ export class UsertourCore extends Evented {
     this.urlMonitor?.start();
   }
 
+  // === Socket Credentials Synchronization ===
   /**
    * Synchronizes socket credentials
    */
