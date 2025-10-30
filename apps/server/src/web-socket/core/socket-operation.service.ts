@@ -17,6 +17,7 @@ import {
   convertToClientConditions,
   categorizeLauncherSessions,
 } from '@/utils/websocket-utils';
+import { hasContentSessionChanges } from '@/utils/content-utils';
 import { SocketDataService } from './socket-data.service';
 
 /**
@@ -366,10 +367,28 @@ export class SocketOperationService {
     removedContentIds: string[];
   }> {
     const {
-      newSessions: toAdd,
+      newSessions: categorizedNewSessions,
       removedSessions,
       preservedSessions,
     } = categorizeLauncherSessions(currentSessions, newSessions);
+
+    // Second pass: detect changes in preserved sessions
+    const changedPreservedSessions: CustomContentSession[] = preservedSessions.filter((session) => {
+      if (!session?.id) {
+        return false;
+      }
+      const oldSession = currentSessions.find((s) => s.id === session.id);
+      if (!oldSession) {
+        return false;
+      }
+      return hasContentSessionChanges(oldSession, session);
+    });
+
+    const preservedUnchangedSessions = preservedSessions.filter(
+      (session) => !changedPreservedSessions.some((s) => s.id === session.id),
+    );
+
+    const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
 
     const [addedSessions, removedContentIds] = await Promise.all([
       this.socketParallelService.addLaunchers(socket, toAdd),
@@ -384,7 +403,7 @@ export class SocketOperationService {
     );
 
     return {
-      updatedSessions: [...preservedSessions, ...unremovedSessions, ...addedSessions],
+      updatedSessions: [...preservedUnchangedSessions, ...unremovedSessions, ...addedSessions],
       removedContentIds,
     };
   }

@@ -1151,6 +1151,19 @@ export const hasChecklistItemChanges = (
 };
 
 /**
+ * Checks if launcher data has changes
+ * @param oldLauncher - The old launcher data
+ * @param newLauncher - The new launcher data
+ * @returns True if there are differences
+ */
+export const hasLauncherDataChanges = (
+  oldLauncher: LauncherData,
+  newLauncher: LauncherData,
+): boolean => {
+  return !isEqual(oldLauncher, newLauncher);
+};
+
+/**
  * Checks if all condition IDs in rules conditions exist and are ready in client conditions
  * @param conditions - Array of rules conditions (hideRules, autoStartRules, etc.)
  * @param clientConditions - Array of client conditions from Redis socket data
@@ -1592,6 +1605,10 @@ export const hasContentSessionChanges = (
   if (
     hasChecklistItemChanges(oldVersion.checklist?.items || [], newVersion.checklist?.items || [])
   ) {
+    return true;
+  }
+
+  if (hasLauncherDataChanges(oldVersion.launcher, newVersion.launcher)) {
     return true;
   }
 
