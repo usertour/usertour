@@ -188,17 +188,7 @@ export class ContentResolver {
       if (!published) {
         conditions.OR = [
           {
-            environmentId,
-            published: false,
-            contentOnEnvironments: { none: {} },
-          },
-          {
-            environmentId: { not: environmentId },
-            contentOnEnvironments: { none: {} },
-          },
-          {
             contentOnEnvironments: {
-              some: {},
               none: {
                 environmentId,
               },
@@ -207,11 +197,6 @@ export class ContentResolver {
         ];
       } else {
         conditions.OR = [
-          {
-            environmentId,
-            published: true,
-            contentOnEnvironments: { none: {} },
-          },
           {
             contentOnEnvironments: {
               some: {

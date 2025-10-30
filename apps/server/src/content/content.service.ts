@@ -308,26 +308,6 @@ export class ContentService {
 
   async publishedContentVersion(versionId: string, environmentId: string) {
     const version = await this.getContentVersionById(versionId);
-    const oldContent = await this.prisma.content.findUnique({
-      where: { id: version.contentId },
-      include: { contentOnEnvironments: true },
-    });
-    if (
-      oldContent.published &&
-      oldContent.publishedVersionId &&
-      (!oldContent.contentOnEnvironments || oldContent.contentOnEnvironments.length === 0)
-    ) {
-      // Update or create ContentOnEnvironment
-      await this.prisma.contentOnEnvironment.create({
-        data: {
-          environmentId: oldContent.environmentId,
-          contentId: oldContent.id,
-          published: true,
-          publishedAt: new Date(),
-          publishedVersionId: oldContent.publishedVersionId,
-        },
-      });
-    }
 
     const content = await this.prisma.$transaction(async (tx) => {
       // Update Content table
